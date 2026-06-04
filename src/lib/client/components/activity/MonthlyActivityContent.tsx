@@ -22,6 +22,7 @@ import {ActivityEditor, ActivityKind, ActivitySearch} from "@/lib/types/activity
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
 import {monthlyActivityOptions} from "@/lib/client/react-query/query-options/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Separator} from "@/lib/client/components/ui/separator";
 
 
 interface MonthlyActivityContentProps {
@@ -198,6 +199,8 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                     )}
                 </div>
             }
+
+            <Separator/>
 
             <div className="text-muted-foreground text-sm flex justify-end -mt-2">
                 {apiData.total} items

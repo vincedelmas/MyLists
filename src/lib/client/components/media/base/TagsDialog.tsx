@@ -174,7 +174,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                         }
                     </div>
 
-                    {!mutation.isError &&
+                    {mutation.isError &&
                         <div className="mb-3 mt-1 px-2">
                             <InlineErrorContainer>
                                 {displayContainerError({ error: mutation.error })}

@@ -12,7 +12,7 @@ import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {allUpdatesOptions} from "@/lib/client/react-query/query-options/query-options";
+import {allUpdatesOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteAllUpdatesMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";

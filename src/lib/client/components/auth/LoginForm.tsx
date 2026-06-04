@@ -7,7 +7,7 @@ import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {Link, useLocation, useNavigate, useRouter} from "@tanstack/react-router";
-import {authOptions} from "@/lib/client/react-query/query-options/query-options";
+import {authOptions} from "@/lib/client/react-query/query-options";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 

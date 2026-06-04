@@ -3,7 +3,7 @@ import {statusUtils} from "@/lib/utils/media-mapping";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {MediaListItem} from "@/lib/client/components/media/base/MediaListItem";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 interface MediaGridProps {

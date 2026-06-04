@@ -9,7 +9,7 @@ import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
-import {historyOptions} from "@/lib/client/react-query/query-options/query-options";
+import {historyOptions} from "@/lib/client/react-query/query-options";
 import {BacklogModeSystem} from "@/lib/client/components/media/base/BacklogModeSystem";
 import {CustomCoverTabContent} from "@/lib/client/components/media/base/CustomCoverTab";
 import {UserMediaSpecificDetails} from "@/lib/client/components/media/base/UserMediaSpecificDetails";

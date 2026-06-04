@@ -16,7 +16,7 @@ import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
 import {Card, CardContent, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {useMoviedleGuessMutation} from "@/lib/client/react-query/query-mutations/mediadle.mutations";
-import {dailyMediadleOptions, mediadleSuggestionsOptions,} from "@/lib/client/react-query/query-options/query-options";
+import {dailyMediadleOptions, mediadleSuggestionsOptions,} from "@/lib/client/react-query/query-options";
 
 
 // Explicit constant for skipped guesses (lol c'est sale)

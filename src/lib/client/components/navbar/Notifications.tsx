@@ -14,7 +14,7 @@ import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Bell, LoaderCircle, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
 import {formatCalendarRelativeDate, formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
-import {notificationsCountOptions, notificationsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {notificationsCountOptions, notificationsOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteSocialNotif, useMarkAllNotifAsRead, useRespondFollowRequest} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 

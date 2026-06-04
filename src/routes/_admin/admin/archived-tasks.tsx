@@ -3,7 +3,7 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {TaskCard} from "@/lib/client/components/admin/TaskCard";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {adminArchivedTasksOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminArchivedTasksOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Archive} from "lucide-react";
 

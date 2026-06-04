@@ -7,7 +7,7 @@ import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
 import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab";
-import {profileOptions} from "@/lib/client/react-query/query-options/query-options";
+import {profileOptions} from "@/lib/client/react-query/query-options";
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
 import {Activity, ArrowBigUpDash, ArrowUp10, Award, ChartNoAxesColumn, LayoutGrid, User} from "lucide-react";

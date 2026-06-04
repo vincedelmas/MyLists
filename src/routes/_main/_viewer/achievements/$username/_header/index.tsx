@@ -6,7 +6,7 @@ import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {AchievementCard} from "@/lib/client/components/achievements/AchievementCard";
-import {achievementOptions} from "@/lib/client/react-query/query-options/query-options";
+import {achievementOptions} from "@/lib/client/react-query/query-options";
 import {AchievementSummary} from "@/lib/client/components/achievements/AchievementSummary";
 
 

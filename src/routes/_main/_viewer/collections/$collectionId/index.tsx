@@ -12,7 +12,7 @@ import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
-import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options/query-options";
+import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
 import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 

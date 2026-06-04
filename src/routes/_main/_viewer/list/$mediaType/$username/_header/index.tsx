@@ -12,7 +12,7 @@ import {MediaGrid} from "@/lib/client/components/media/base/MediaGrid";
 import {MediaTable} from "@/lib/client/components/media/base/MediaTable";
 import {AppliedFilters} from "@/lib/client/components/media/base/AppliedFilters";
 import {FiltersSideSheet} from "@/lib/client/components/media/base/FiltersSideSheet";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/")({

@@ -7,7 +7,7 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
-import {userCollectionsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {userCollectionsOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/user/$username")({

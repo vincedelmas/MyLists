@@ -5,7 +5,7 @@ import {
     collectionDetailsReadOptions,
     mediaCommunityCollectionsOptions,
     userCollectionMembershipsOptions
-} from "@/lib/client/react-query/query-options/query-options";
+} from "@/lib/client/react-query/query-options";
 import {
     postAddMediaToCollection,
     postCopyCollection,

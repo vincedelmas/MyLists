@@ -1,6 +1,6 @@
 import {toast} from "sonner";
 import {createFileRoute, redirect} from "@tanstack/react-router";
-import {authOptions} from "@/lib/client/react-query/query-options/query-options";
+import {authOptions} from "@/lib/client/react-query/query-options";
 
 
 type AuthRedirectSearch = {

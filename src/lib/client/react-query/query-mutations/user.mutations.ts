@@ -10,7 +10,7 @@ import {
     profileCustomOptions,
     profileHeaderOptions,
     profileOptions
-} from "@/lib/client/react-query/query-options/query-options";
+} from "@/lib/client/react-query/query-options";
 import {
     getDownloadListAsCSV,
     postDeleteUserAccount,

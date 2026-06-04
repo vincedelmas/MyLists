@@ -12,7 +12,7 @@ import {Pagination} from "@/lib/client/components/general/Pagination";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
-import {communityCollectionsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {communityCollectionsOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 

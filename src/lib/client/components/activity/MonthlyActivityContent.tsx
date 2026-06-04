@@ -20,7 +20,7 @@ import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerC
 import {ActivityStatusIcon} from "@/lib/client/components/activity/ActivityStatusIcon";
 import {ActivityEditor, ActivityKind, ActivitySearch} from "@/lib/types/activity.types";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
-import {monthlyActivityOptions} from "@/lib/client/react-query/query-options/query-options";
+import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Separator} from "@/lib/client/components/ui/separator";
 

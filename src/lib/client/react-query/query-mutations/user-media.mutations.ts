@@ -13,15 +13,7 @@ import {
     postUpdateUserCustomCover,
     postUpdateUserMedia
 } from "@/lib/server/functions/user-media";
-import {
-    allUpdatesOptions,
-    historyOptions,
-    mediaDetailsOptions,
-    mediaListOptions,
-    profileOptions,
-    tagNamesOptions,
-    tagsViewOptions
-} from "@/lib/client/react-query/query-options/query-options";
+import {allUpdatesOptions, historyOptions, mediaDetailsOptions, mediaListOptions, profileOptions, tagNamesOptions, tagsViewOptions} from "@/lib/client/react-query/query-options";
 
 
 export type UserMediaQueryOption = ReturnType<typeof mediaDetailsOptions> | ReturnType<typeof mediaListOptions>;

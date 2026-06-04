@@ -8,7 +8,7 @@ import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorite";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 

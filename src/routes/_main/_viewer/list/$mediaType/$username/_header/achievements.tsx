@@ -1,7 +1,7 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {AchievementCard} from "@/lib/client/components/achievements/AchievementCard";
-import {achievementOptions} from "@/lib/client/react-query/query-options/query-options";
+import {achievementOptions} from "@/lib/client/react-query/query-options";
 import {AchievementSummary} from "@/lib/client/components/achievements/AchievementSummary";
 
 

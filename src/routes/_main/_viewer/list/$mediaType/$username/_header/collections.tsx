@@ -5,7 +5,7 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
-import {userCollectionsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {userCollectionsOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/collections")({

@@ -7,7 +7,7 @@ import {formatDate} from "@/lib/utils/date-formatting";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
-import {jobDetailsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {jobDetailsOptions} from "@/lib/client/react-query/query-options";
 import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
 
 

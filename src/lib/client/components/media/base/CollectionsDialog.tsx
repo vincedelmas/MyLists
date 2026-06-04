@@ -10,7 +10,7 @@ import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {Check, ChevronRight, Folder, LoaderCircle, PlusCircle} from "lucide-react";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
-import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
 import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
 import {useAddMediaToCollectionMutation, useCreateCollectionMutation, useRemoveMediaFromCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 

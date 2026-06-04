@@ -9,7 +9,7 @@ import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab";
 import {ProfileFollows} from "@/lib/client/components/user-profile/ProfileFollows";
-import {profileOptions} from "@/lib/client/react-query/query-options/query-options";
+import {profileOptions} from "@/lib/client/react-query/query-options";
 import {OnboardingModal} from "@/lib/client/components/user-profile/OnboardingModal";
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";

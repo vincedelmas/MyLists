@@ -10,7 +10,7 @@ import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {Activity, AlertTriangle, BarChart3, Clock, Gauge, Radio} from "lucide-react";
 import {AdminApiMonitoringParams, ApiMonitoringRange} from "@/lib/types/admin.types";
-import {adminApiMonitoringOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminApiMonitoringOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";

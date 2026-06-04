@@ -1,6 +1,6 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {postAddMediadleGuess} from "@/lib/server/functions/moviedle";
-import {dailyMediadleOptions} from "@/lib/client/react-query/query-options/query-options";
+import {dailyMediadleOptions} from "@/lib/client/react-query/query-options";
 
 
 export const useMoviedleGuessMutation = () => {

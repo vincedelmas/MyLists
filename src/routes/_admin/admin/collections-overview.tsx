@@ -17,7 +17,7 @@ import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIc
 import {ChevronsUpDown, Copy, Eye, FolderKanban, Heart, UserPlus, Users} from "lucide-react";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, SortingState, useReactTable} from "@tanstack/react-table";
 
 

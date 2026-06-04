@@ -6,7 +6,7 @@ import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {DashboardContent} from "@/lib/client/media-stats/DashboardContent";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
-import {userStatsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {userStatsOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")({

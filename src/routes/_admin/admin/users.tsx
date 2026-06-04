@@ -15,7 +15,7 @@ import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {userAdminOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {useAdminUpdateUserMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 import {CheckCircle, ChevronsUpDown, MoreHorizontal, Trash2, UserCheck, UserPen, UserX} from "lucide-react";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";

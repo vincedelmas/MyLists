@@ -13,7 +13,7 @@ import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {HofRanking} from "@/lib/client/components/hall-of-fame/HofRanking";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
-import {hallOfFameOptions} from "@/lib/client/react-query/query-options/query-options";
+import {hallOfFameOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 

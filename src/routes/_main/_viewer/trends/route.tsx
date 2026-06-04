@@ -7,7 +7,7 @@ import {TrendHero} from "@/lib/client/components/trends/TrendHero";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
-import {trendsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {trendsOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/trends")({

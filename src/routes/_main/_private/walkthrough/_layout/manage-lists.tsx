@@ -5,7 +5,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Header} from "@/lib/client/components/media/base/Header";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 import {AlertTriangle, Bookmark, Grid2X2, ListFilter, Play, Plus, PlusCircle, Search, Settings2, Star, Users} from "lucide-react";
 import {

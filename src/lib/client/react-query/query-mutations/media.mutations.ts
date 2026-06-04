@@ -1,6 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
-import {mediaDetailsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {getMediaDetails, postEditMediaDetails, postUpdateBookCover, refreshMediaDetails} from "@/lib/server/functions/media-details";
 
 

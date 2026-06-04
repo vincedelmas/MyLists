@@ -18,7 +18,7 @@ import {CollectionsLists} from "@/lib/client/components/media/base/CollectionsLi
 import {MediaFollowsSection} from "@/lib/client/components/media/base/MediaFollowsSection";
 import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
 import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId")({

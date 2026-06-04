@@ -10,7 +10,7 @@ import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Clock, Loader2, UserCheck, UserPlus, UserX} from "lucide-react";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {followersOptions} from "@/lib/client/react-query/query-options/query-options";
+import {followersOptions} from "@/lib/client/react-query/query-options";
 import {useFollowMutation, useRemoveFollowerMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 

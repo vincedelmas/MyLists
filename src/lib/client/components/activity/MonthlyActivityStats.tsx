@@ -4,7 +4,7 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {getMonthlyActivityStatSummary} from "@/lib/utils/activity-utils";
-import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options";
 
 
 interface MonthlyActivityStatsProps {

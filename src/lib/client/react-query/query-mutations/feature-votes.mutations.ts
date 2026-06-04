@@ -1,5 +1,5 @@
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
-import {featureVotesOptions} from "@/lib/client/react-query/query-options/query-options";
+import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {postAdminDeleteFeatureRequest, postAdminUpdateFeatureStatus, postCreateFeatureRequest, postToggleFeatureVote} from "@/lib/server/functions/feature-votes";
 
 

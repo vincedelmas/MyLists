@@ -1,7 +1,7 @@
 import {CirclePlus} from "lucide-react";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 

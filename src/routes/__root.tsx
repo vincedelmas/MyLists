@@ -12,7 +12,7 @@ import {Footer} from "@/lib/client/components/general/Footer";
 import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
 import {PostHogAuthSync} from "@/lib/client/components/general/PostHogAuthSync";
 import {AuthSessionSync} from "@/lib/client/components/general/AuthSessionSync";
-import {authOptions} from "@/lib/client/react-query/query-options/query-options";
+import {authOptions} from "@/lib/client/react-query/query-options";
 import {AuthModalProvider} from "@/lib/client/components/general/AuthModalProvider";
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
 import {createRootRouteWithContext, HeadContent, Outlet, Scripts} from "@tanstack/react-router";

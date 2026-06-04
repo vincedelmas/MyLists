@@ -8,7 +8,7 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
-import {upcomingOptions} from "@/lib/client/react-query/query-options/query-options";
+import {upcomingOptions} from "@/lib/client/react-query/query-options";
 import {ComingNextSection} from "@/lib/client/components/coming-next/ComingNextSection";
 import {compareCalendarDates, formatCalendarRelativeDate} from "@/lib/utils/date-formatting";
 

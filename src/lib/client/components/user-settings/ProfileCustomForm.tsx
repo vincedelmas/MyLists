@@ -6,7 +6,7 @@ import {toItemKey} from "@/lib/utils/media-mapping";
 import {Form} from "@/lib/client/components/ui/form";
 import {FormZodError} from "@/lib/utils/error-classes";
 import {Skeleton} from "@/lib/client/components/ui/skeleton";
-import {profileCustomOptions} from "@/lib/client/react-query/query-options/query-options";
+import {profileCustomOptions} from "@/lib/client/react-query/query-options";
 import {useProfileCustomMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {TabCustomContent} from "@/lib/client/components/user-settings/profile-custom/TabCustomContent";
 import {ProfileSidebarTabs} from "@/lib/client/components/user-settings/profile-custom/ProfileSidebarTabs";

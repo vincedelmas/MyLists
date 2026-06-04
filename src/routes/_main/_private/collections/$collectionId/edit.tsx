@@ -7,7 +7,7 @@ import {FormZodError} from "@/lib/utils/error-classes";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
-import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options/query-options";
+import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteCollectionMutation, useUpdateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 

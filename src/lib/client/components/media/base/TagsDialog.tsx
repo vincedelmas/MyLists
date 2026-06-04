@@ -8,7 +8,7 @@ import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
 import {cn} from "@/lib/utils/classnames";
 import {displayContainerError} from "@/lib/utils/error-display";
-import {tagNamesOptions} from "@/lib/client/react-query/query-options/query-options";
+import {tagNamesOptions} from "@/lib/client/react-query/query-options";
 import {Check, ChevronRight, LoaderCircle, PlusCircle, Tags} from "lucide-react";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";

@@ -8,7 +8,7 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {navSearchOptions} from "@/lib/client/react-query/query-options/query-options";
+import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {BookImage, Cat, Gamepad2, Library, LoaderCircle, Monitor, Popcorn, Search, User, X} from "lucide-react";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 

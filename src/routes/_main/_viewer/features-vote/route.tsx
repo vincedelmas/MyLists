@@ -15,7 +15,7 @@ import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {FeatureStatus, isAtLeastRole, RoleType,} from "@/lib/utils/enums";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
-import {featureVotesOptions} from "@/lib/client/react-query/query-options/query-options";
+import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";

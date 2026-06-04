@@ -15,7 +15,7 @@ import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
-import {activityMediaAddSearchOptions} from "@/lib/client/react-query/query-options/query-options";
+import {activityMediaAddSearchOptions} from "@/lib/client/react-query/query-options";
 import {useAddActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";

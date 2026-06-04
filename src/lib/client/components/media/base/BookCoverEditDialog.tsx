@@ -6,7 +6,7 @@ import {Label} from "@/lib/client/components/ui/label";
 import {Button} from "@/lib/client/components/ui/button";
 import {displayContainerError} from "@/lib/utils/error-display";
 import {Link2, LoaderCircle, PencilLine, UploadCloud} from "lucide-react";
-import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options/query-options";
+import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options";
 import {useUpdateBookCoverMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 

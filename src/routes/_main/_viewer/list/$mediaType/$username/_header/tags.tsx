@@ -9,7 +9,7 @@ import {DropdownMenu} from "@radix-ui/react-dropdown-menu";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Layers, MoreVertical, Pen, Tags, Trash2} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {tagsViewOptions} from "@/lib/client/react-query/query-options/query-options";
+import {tagsViewOptions} from "@/lib/client/react-query/query-options";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 

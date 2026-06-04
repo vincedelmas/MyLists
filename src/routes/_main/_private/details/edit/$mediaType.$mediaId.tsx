@@ -10,7 +10,7 @@ import {splitIntoColumns} from "@/lib/utils/arrays";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {useEditMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 

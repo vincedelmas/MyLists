@@ -2,7 +2,7 @@ import {useRouter} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useQueryClient} from "@tanstack/react-query";
 import {useCallback, useEffect, useRef} from "react";
-import {authOptions} from "@/lib/client/react-query/query-options/query-options";
+import {authOptions} from "@/lib/client/react-query/query-options";
 
 
 const AUTH_SYNC_STORAGE_KEY = "mylists:auth-sync";

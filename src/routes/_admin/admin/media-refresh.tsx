@@ -12,7 +12,7 @@ import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {BarChart3, ExternalLink, Flame, RefreshCw, Users} from "lucide-react";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
-import {adminMediaRefreshOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminMediaRefreshOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";

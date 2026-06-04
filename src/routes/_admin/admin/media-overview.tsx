@@ -5,7 +5,7 @@ import {ArrowUpFromLine, BadgePlus} from "lucide-react";
 import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {adminMediaOverviewOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminMediaOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
 
 
 export const Route = createFileRoute("/_admin/admin/media-overview")({

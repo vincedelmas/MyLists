@@ -10,7 +10,7 @@ import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {adminMediadleOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminMediadleOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
 

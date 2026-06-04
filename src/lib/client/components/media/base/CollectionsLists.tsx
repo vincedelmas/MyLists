@@ -5,7 +5,7 @@ import {useQuery} from "@tanstack/react-query";
 import {Card} from "@/lib/client/components/ui/card";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {CollectionsDialog} from "@/lib/client/components/media/base/CollectionsDialog";
-import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
 
 
 interface CollectionsListsProps {

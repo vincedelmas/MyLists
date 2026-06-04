@@ -6,7 +6,7 @@ import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {MediaLevel} from "@/lib/client/components/general/MediaLevel";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {createFileRoute, Outlet, useLocation} from "@tanstack/react-router";
-import {userListHeaderOption} from "@/lib/client/react-query/query-options/query-options";
+import {userListHeaderOption} from "@/lib/client/react-query/query-options";
 import {Award, ChartNoAxesColumn, Library, ListOrdered, Tags, User, Zap} from "lucide-react";
 
 

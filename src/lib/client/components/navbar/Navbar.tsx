@@ -11,7 +11,7 @@ import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
 import {Link, useLocation, useNavigate} from "@tanstack/react-router";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
-import {authOptions} from "@/lib/client/react-query/query-options/query-options";
+import {authOptions} from "@/lib/client/react-query/query-options";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {useFeatureFlagMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {

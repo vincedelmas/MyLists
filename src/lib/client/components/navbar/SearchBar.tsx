@@ -12,7 +12,7 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {ChevronLeft, ChevronRight, Loader2, Search, X} from "lucide-react";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {Link, LinkProps, useRouter, useRouterState} from "@tanstack/react-router";
-import {navSearchOptions} from "@/lib/client/react-query/query-options/query-options";
+import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 

@@ -11,7 +11,7 @@ import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ChevronLeft, ChevronRight, Loader2, Search} from "lucide-react";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
-import {navSearchOptions} from "@/lib/client/react-query/query-options/query-options";
+import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {useAddMediaToCollectionMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 
 

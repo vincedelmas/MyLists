@@ -5,7 +5,7 @@ import {statusUtils} from "@/lib/utils/media-mapping";
 import {CircleCheck, Settings2} from "lucide-react";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 export type ColumnConfigProps = {

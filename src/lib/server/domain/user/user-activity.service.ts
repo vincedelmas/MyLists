@@ -59,6 +59,7 @@ export class UserActivityService {
         const mediaStats = mediaTypes
             .map((mt) => ({
                 mediaType: mt,
+                count: activityRecord[mt].count,
                 timeGained: activityRecord[mt].timeGained,
                 specificTotal: activityRecord[mt].specificTotal,
             }))

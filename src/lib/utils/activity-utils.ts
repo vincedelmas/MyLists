@@ -90,6 +90,22 @@ export const calculateActivityTime = (mediaType: MediaType, specificGained: numb
 };
 
 
+export const getMonthlyActivityStatSummary = (mediaType: MediaType, specificTotal: number, count: number) => {
+    if (mediaType === MediaType.GAMES) {
+        return count > 0 ? `${count} ${count === 1 ? "game" : "games"}` : null;
+    }
+
+    if (mediaType === MediaType.MOVIES) {
+        return specificTotal > 0 ? `${specificTotal} ${specificTotal === 1 ? "movie" : "movies"}` : null;
+    }
+
+    const unitLabel = getActivityUnitLabel(mediaType, "short");
+    if (!unitLabel || specificTotal <= 0) return null;
+
+    return `${toActivityDisplayValue(mediaType, specificTotal)} ${unitLabel}`;
+};
+
+
 export const getDefaultActivityDate = (year: number, month: number) => {
     const today = new Date();
     const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month;

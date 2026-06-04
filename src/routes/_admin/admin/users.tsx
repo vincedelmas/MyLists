@@ -29,6 +29,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/lib/client/components/ui/dropdown-menu";
+import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 
 
 export const Route = createFileRoute("/_admin/admin/users")({
@@ -94,6 +95,17 @@ function UserManagementPage() {
             cell: ({ row: { original } }) => <div>{original.id}</div>,
         },
         {
+            accessorKey: "privacy",
+            header: ({ column }) => {
+                return (
+                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                        Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
+                    </Button>
+                )
+            },
+            cell: ({ row: { original } }) => <PrivacyIcon type={original.privacy} className="size-3.5"/>,
+        },
+        {
             accessorKey: "name",
             header: ({ column }) => {
                 return (
@@ -149,26 +161,6 @@ function UserManagementPage() {
                 )
             },
             cell: ({ row: { original } }) => formatDate(original.updatedAt),
-        },
-        {
-            accessorKey: "privacy",
-            header: ({ column }) => {
-                return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
-                        Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                    </Button>
-                )
-            },
-            cell: ({ row: { original } }) => {
-                switch (original.privacy) {
-                    case PrivacyType.PUBLIC:
-                        return <Badge variant="outline" className="text-green-600">Public</Badge>
-                    case PrivacyType.RESTRICTED:
-                        return <Badge variant="outline" className="text-yellow-600">Restricted</Badge>
-                    case PrivacyType.PRIVATE:
-                        return <Badge variant="outline" className="text-red-600">Private</Badge>
-                }
-            },
         },
         {
             accessorKey: "showUpdateModal",

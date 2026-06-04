@@ -1,7 +1,5 @@
-import {useMemo} from "react";
+import React, {useMemo} from "react";
 import {SearchType} from "@/lib/schemas";
-import {PrivacyType} from "@/lib/utils/enums";
-import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
@@ -70,6 +68,15 @@ function AdminCollectionsOverviewPage() {
             cell: ({ row: { original } }) => <MainThemeIcon size={16} type={original.mediaType}/>,
         },
         {
+            accessorKey: "privacy",
+            header: ({ column }) => (
+                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
+                </Button>
+            ),
+            cell: ({ row: { original } }) => <PrivacyIcon type={original.privacy} className="size-3.5"/>,
+        },
+        {
             accessorKey: "title",
             header: ({ column }) => (
                 <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
@@ -96,25 +103,6 @@ function AdminCollectionsOverviewPage() {
                     {original.ownerName}
                 </Link>
             ),
-        },
-        {
-            accessorKey: "privacy",
-            header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
-                    Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
-            ),
-            cell: ({ row: { original } }) => {
-                switch (original.privacy) {
-                    case PrivacyType.PUBLIC:
-                        return <Badge variant="outline" className="text-green-600">Public</Badge>;
-                    case PrivacyType.RESTRICTED:
-                        return <Badge variant="outline" className="text-yellow-600">Restricted</Badge>;
-                    case PrivacyType.PRIVATE:
-                    default:
-                        return <Badge variant="outline" className="text-red-600">Private</Badge>;
-                }
-            },
         },
         {
             accessorKey: "itemsCount",

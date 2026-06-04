@@ -1,5 +1,4 @@
 import path from "path";
-import sharp from "sharp";
 import crypto from "crypto";
 import {mkdir} from "fs/promises";
 import {serverEnv} from "@/env/server";
@@ -82,6 +81,7 @@ const processAndSaveImage = createServerOnlyFn(() => async ({ buffer, dirSaveNam
     const filePath = path.join(saveLocation, fileName);
 
     try {
+        const sharp = (await import("sharp")).default;
         const sharpInstance = sharp(buffer);
         if (resize) {
             sharpInstance.resize(resize.width ?? null, resize.height);

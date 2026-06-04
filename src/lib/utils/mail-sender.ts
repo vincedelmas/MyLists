@@ -1,9 +1,6 @@
-import nodemailer from "nodemailer";
 import {serverEnv} from "@/env/server";
-import {render} from "@react-email/render";
-import {Options} from "nodemailer/lib/mailer";
+import type {Options} from "nodemailer/lib/mailer";
 import {createServerOnlyFn} from "@tanstack/react-start";
-import {PasswordResetEmail, RegisterEmail} from "@/lib/client/components/emails";
 
 
 interface EmailOptions {
@@ -16,6 +13,12 @@ interface EmailOptions {
 
 
 export const sendEmail = createServerOnlyFn(() => async (options: EmailOptions) => {
+    const [{ default: nodemailer }, { render }, { PasswordResetEmail, RegisterEmail }] = await Promise.all([
+        import("nodemailer"),
+        import("@react-email/render"),
+        import("@/lib/client/components/emails"),
+    ]);
+
     const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {

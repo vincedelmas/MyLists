@@ -55,7 +55,7 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                 {achievements.length !== 0 &&
                     <Button className="mt-4" variant="dashed" asChild>
                         <Link to="/achievements/$username" params={{ username }}>
-                            View all 63 achievements
+                            View all achievements
                         </Link>
                     </Button>
                 }

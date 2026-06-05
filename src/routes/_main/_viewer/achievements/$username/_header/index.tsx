@@ -4,9 +4,9 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
+import {achievementOptions} from "@/lib/client/react-query/query-options";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {AchievementCard} from "@/lib/client/components/achievements/AchievementCard";
-import {achievementOptions} from "@/lib/client/react-query/query-options";
 import {AchievementSummary} from "@/lib/client/components/achievements/AchievementSummary";
 
 
@@ -20,8 +20,9 @@ export const Route = createFileRoute("/_main/_viewer/achievements/$username/_hea
 
 function AchievementPage() {
     const { username } = Route.useParams();
-    const mediaTypes = Object.values(MediaType);
     const apiData = useSuspenseQuery(achievementOptions(username)).data;
+
+    const mediaTypes = apiData.userActivatedMediaTypes;
     const [activeTab, setActiveTab] = useState<MediaType | "all">("all");
     const mediaAchievements = apiData.result.filter((r) => activeTab === "all" || r.mediaType === activeTab);
 

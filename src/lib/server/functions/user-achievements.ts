@@ -11,5 +11,9 @@ export const getUserAchievements = createServerFn({ method: "GET" })
         const result = await achievementsService.getUserAchievements(user.id);
         const summary = await achievementsService.getUserAchievementStats(user.id);
 
-        return { result, summary };
+        return {
+            result,
+            summary,
+            userActivatedMediaTypes: user.userMediaSettings.filter(s => s.active).map(s => s.mediaType),
+        };
     });

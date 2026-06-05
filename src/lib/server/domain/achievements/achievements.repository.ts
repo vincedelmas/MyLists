@@ -5,8 +5,7 @@ import {AchievementDifficulty} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AchievementSeedData} from "@/lib/types/achievements.types";
 import {and, asc, count, desc, eq, inArray, max, notInArray, SQL, sql} from "drizzle-orm";
-import {achievement, achievementTier, user, userAchievement} from "@/lib/server/database/schema";
-import {UserStatsRepository} from "@/lib/server/domain/user/user-stats.repository";
+import {achievement, achievementTier, user, userAchievement, userMediaSettings} from "@/lib/server/database/schema";
 
 
 export class AchievementsRepository {
@@ -155,7 +154,12 @@ export class AchievementsRepository {
 
     static async getUserAchievementStats(userId: number) {
         const tierOrder = this._getSQLTierOrdering();
-        const activeMedia = await UserStatsRepository.userActiveMediaSettings(userId);
+
+        const activeMediaTypes = await getDbClient()
+            .select({ mediaType: userMediaSettings.mediaType })
+            .from(userMediaSettings)
+            .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.active, true)))
+            .then((rows) => rows.map((r) => r.mediaType));
 
         const subq = getDbClient()
             .select({
@@ -166,7 +170,11 @@ export class AchievementsRepository {
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
             .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
+            .where(and(
+                eq(userAchievement.userId, userId),
+                eq(userAchievement.completed, true),
+                inArray(achievement.mediaType, activeMediaTypes),
+            ))
             .groupBy(achievement.mediaType, userAchievement.achievementId)
             .as("subq");
 
@@ -187,7 +195,7 @@ export class AchievementsRepository {
                 mediaType: achievement.mediaType,
             })
             .from(achievement)
-            .where(inArray(achievement.mediaType, activeMedia.map(item => item.mediaType)))
+            .where(inArray(achievement.mediaType, activeMediaTypes))
             .groupBy(achievement.mediaType);
 
         return { completedResult, totalAchievementsResult };

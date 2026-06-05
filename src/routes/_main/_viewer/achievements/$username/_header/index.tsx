@@ -24,7 +24,7 @@ function AchievementPage() {
 
     const mediaTypes = apiData.userActivatedMediaTypes;
     const [activeTab, setActiveTab] = useState<MediaType | "all">("all");
-    const mediaAchievements = apiData.result.filter((r) => activeTab === "all" && mediaTypes.includes(r.mediaType) || r.mediaType === activeTab);
+    const mediaAchievements = apiData.result.filter((r) => activeTab === "all" || r.mediaType === activeTab);
 
     const mediaTabs: TabItem<"all" | MediaType>[] = [
         {

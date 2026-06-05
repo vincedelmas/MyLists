@@ -1,6 +1,7 @@
 import {Link} from "@tanstack/react-router";
-import {getFeelingIcon} from "@/lib/utils/ratings";
-import {getThemeColor} from "@/lib/utils/colors-and-icons";
+import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
+import {getThemeColor} from "@/lib/utils/theme-utils";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {RatingSystemType, Status} from "@/lib/utils/enums";
 import {PerMediaSummaryType} from "@/lib/types/query.options.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -24,7 +25,10 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
 
     const rating = mediaSummary.avgRated;
     const ratingDisplay = ratingSystem === "score"
-        ? rating?.toFixed(2) ?? "-"
+        ? formatNumber(rating, {
+            fractionDigits: 2,
+            locale: "en",
+        })
         : getFeelingIcon(rating, { size: 28, className: "mt-1" });
 
     return (
@@ -36,7 +40,7 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
                 />
                 <SimpleStatCard
                     title="Time (Days)"
-                    value={Math.round(mediaSummary.timeSpentDays)}
+                    value={formatNumber(mediaSummary.timeSpentDays, { fractionDigits: 0 })}
                 />
                 <SimpleStatCard
                     title="Avg. Rating"
@@ -61,7 +65,7 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
                             <div
                                 key={status.status}
                                 className="h-full flex items-center justify-center"
-                                title={`${status.status}: ${status.percent.toFixed(1)}%`}
+                                title={`${status.status}: ${formatPercent(status.percent)}`}
                                 style={{ width: `${status.percent}%`, backgroundColor: getThemeColor(status.status) }}
                             />
                         )}

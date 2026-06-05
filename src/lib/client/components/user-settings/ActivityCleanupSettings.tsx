@@ -3,12 +3,13 @@ import {useForm} from "react-hook-form";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
-import {toDateInputValue} from "@/lib/utils/formating";
+import {FormZodError} from "@/lib/utils/error-classes";
 import {Button} from "@/lib/client/components/ui/button";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {useBulkHideActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
+import {useBulkHideActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 type FormValues = {
@@ -21,21 +22,21 @@ type FormValues = {
 export function ActivityCleanupSettings() {
     const mediaType = "all";
     const { currentUser } = useAuth();
+    const today = toDateInputValue(new Date());
     const bulkMutation = useBulkHideActivityMutation();
-    const today = toDateInputValue(new Date().toISOString());
-    const accountCreatedAt = currentUser?.createdAt ? toDateInputValue(currentUser.createdAt.toISOString()) : today;
+    const accountCreatedAt = currentUser?.createdAt ? toDateInputValue(currentUser.createdAt) : today;
     const availableMediaTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? Object.values(MediaType);
     const form = useForm<FormValues>({
         values: {
             mediaType,
             startDate: accountCreatedAt,
-            endDate: addDays(accountCreatedAt, 60, today),
+            endDate: shiftDateInputValue(accountCreatedAt, { days: 60, max: today }),
         },
     });
 
     const applyPreset = (days: number) => {
         form.setValue("startDate", accountCreatedAt, { shouldDirty: true });
-        form.setValue("endDate", addDays(accountCreatedAt, days, today), { shouldDirty: true });
+        form.setValue("endDate", shiftDateInputValue(accountCreatedAt, { days, max: today }), { shouldDirty: true });
     };
 
     const handleSubmit = (values: FormValues) => {
@@ -49,6 +50,13 @@ export function ActivityCleanupSettings() {
                 mediaType: values.mediaType === "all" ? undefined : values.mediaType,
             },
         }, {
+            onError: (err) => {
+                if (err instanceof FormZodError) {
+                    err.issues.forEach((issue) => {
+                        form.setError(issue.path.join("."), { type: "server", message: issue.message });
+                    });
+                }
+            },
             onSuccess: (result) => {
                 toast.success(`Hidden ${result.count} Activit${result.count === 1 ? "y" : "ies"}`);
             },
@@ -154,12 +162,3 @@ export function ActivityCleanupSettings() {
         </Form>
     );
 }
-
-
-const addDays = (dateValue: string, days: number, maxDate: string) => {
-    const date = new Date(`${dateValue}T00:00:00`);
-    date.setDate(date.getDate() + days);
-    const value = toDateInputValue(date.toISOString());
-
-    return value > maxDate ? maxDate : value;
-};

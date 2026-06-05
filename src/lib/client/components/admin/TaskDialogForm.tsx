@@ -31,16 +31,12 @@ export function TaskFormDialog({ task, isRunning, mutation }: TaskFormDialogProp
 
         mutation.mutate({ data: { taskName: task.name, input: formData } }, {
             onError: (err) => {
-                if (err instanceof FormZodError && err.issues.length > 0) {
-                    err?.issues.forEach((issue: any) => {
+                if (err instanceof FormZodError) {
+                    err.issues.forEach((issue) => {
                         setErrors((prev) => [
-                            ...(prev || []),
-                            { field: issue.path?.[1] ?? issue.path[0], message: issue.message },
+                            ...(prev || []), { field: issue.path?.[1] ?? issue.path[0], message: issue.message },
                         ]);
                     });
-                }
-                else {
-                    toast.error(err.message || "An unexpected error occurred.");
                 }
             },
             onSuccess: () => {
@@ -85,7 +81,7 @@ export function TaskFormDialog({ task, isRunning, mutation }: TaskFormDialogProp
                         )}
                     </div>
                     {errors && errors.map((error, idx) =>
-                        <p key={idx} className="text-red-400 text-sm">
+                        <p key={idx} className="text-destructive text-sm">
                             {error.field}: {error.message}
                         </p>
                     )}

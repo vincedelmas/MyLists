@@ -1,5 +1,5 @@
 import * as React from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Slot} from "@radix-ui/react-slot";
 import {Label} from "@/lib/client/components/ui/label";
 import * as LabelPrimitive from "@radix-ui/react-label";
@@ -80,7 +80,7 @@ function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPri
         <Label
             data-error={!!error}
             data-slot="form-label"
-            className={cn("data-[error=true]:text-red-400", className)}
+            className={cn("data-[error=true]:text-destructive", className)}
             htmlFor={formItemId}
             {...props}
         />
@@ -129,7 +129,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
         <p
             id={formMessageId}
             data-slot="form-message"
-            className={cn("text-red-400 text-sm", className)}
+            className={cn("text-destructive text-sm", className)}
             {...props}
         >
             {body}

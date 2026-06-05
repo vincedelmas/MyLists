@@ -13,7 +13,7 @@ import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {GamesPlatformsEnum, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {ChevronDown, ChevronUp, CircleHelp, LoaderCircle, X} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
-import {filterSearchOptions, listFiltersOptions} from "@/lib/client/react-query/query-options/query-options";
+import {filterSearchOptions, listFiltersOptions} from "@/lib/client/react-query/query-options";
 import {Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle} from "@/lib/client/components/ui/sheet";
 
 
@@ -89,7 +89,7 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
                                 <EmptyState
                                     icon={X}
                                     message={error.message}
-                                    className="text-red-400"
+                                    className="text-destructive"
                                 />
                             </div>
                             :
@@ -244,10 +244,9 @@ const CheckboxGroup = ({ title, items, onChange, defaultChecked, render }: Check
             </div>
             {items.length > initVisibleItems &&
                 <Button variant="outline" size="xs" onClick={toggleShowAll} className="mt-1">
-                    {showAll ?
-                        <>Less <ChevronUp className="size-3.5"/></>
-                        :
-                        <>More <ChevronDown className="size-3.5"/></>
+                    {showAll
+                        ? <>Less <ChevronUp className="size-3.5"/></>
+                        : <>More <ChevronDown className="size-3.5"/></>
                     }
                 </Button>
             }

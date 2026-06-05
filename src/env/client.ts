@@ -9,6 +9,7 @@ export const clientEnv = createEnv({
         VITE_PUBLIC_POSTHOG_KEY: z.string(),
         VITE_PUBLIC_POSTHOG_HOST: z.string(),
         VITE_PUBLIC_POSTHOG_UI_HOST: z.string(),
+        VITE_CONTACT_MAIL: z.string(),
     },
     runtimeEnv: import.meta.env,
 });

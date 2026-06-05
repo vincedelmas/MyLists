@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {AchievementTier} from "@/lib/schemas";
-import {capitalize} from "@/lib/utils/formating";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {Label} from "@/lib/client/components/ui/label";
@@ -11,7 +11,7 @@ import {Achievement} from "@/lib/types/achievements.types";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {adminAchievementsOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminAchievementsOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {useAdminUpdateAchievementMutation, useAdminUpdateTiersMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
@@ -39,7 +39,6 @@ function AchievementPage() {
 
     useEffect(() => {
         if (editAchievementDialogOpen && editingAchievement) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setEditedName(editingAchievement.name);
             setEditedMediaType(editingAchievement.mediaType);
             setEditedDescription(editingAchievement.description);
@@ -48,7 +47,6 @@ function AchievementPage() {
 
     useEffect(() => {
         if (isTierDialogOpen && editingAchievement) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setEditableTiers(JSON.parse(JSON.stringify(editingAchievement.tiers || [])));
         }
     }, [isTierDialogOpen, editingAchievement]);
@@ -88,7 +86,7 @@ function AchievementPage() {
             {
                 ...tier,
                 criteria: {
-                    count: isNaN(count) ? 0 : count
+                    count: Number.isFinite(count) ? count : 0
                 }
             }
             : tier

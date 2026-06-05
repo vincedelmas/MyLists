@@ -1,4 +1,3 @@
-import {toast} from "sonner";
 import {useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
 import {useMutation} from "@tanstack/react-query";
@@ -27,31 +26,28 @@ export const EmailAndPasswordForm = () => {
             const { error } = await authClient.changeEmail({ newEmail: email });
             if (error) throw error;
         },
-        onError: (error) => {
-            emailForm.setError("email", { type: "server", message: error.message || "Failed to update email." });
+        onError: (err) => {
+            emailForm.setError("email", { type: "server", message: err.message || "Failed to update email." });
         },
         onSuccess: () => emailForm.reset(),
     });
 
     const onPasswordSubmit = (values: FormValues) => {
-        passwordMutation.mutate({ newPassword: values.newPassword, currentPassword: values.currentPassword }, {
+        passwordMutation.mutate({ data: { newPassword: values.newPassword, currentPassword: values.currentPassword } }, {
             onError: (err) => {
-                if (err instanceof FormZodError && err.issues.length > 0) {
+                if (err instanceof FormZodError) {
                     err.issues.forEach((issue) => {
-                        passwordForm.setError(issue.path[0], { message: issue.message });
+                        passwordForm.setError(issue.path.join("."), { message: issue.message });
                     });
                 }
                 else if (err?.message?.toLowerCase().includes("current password")) {
-                    passwordForm.setError("currentPassword", { message: err.message });
+                    passwordForm.setError("currentPassword", { message: err.message || "Failed to update password." });
                 }
                 else {
-                    passwordForm.setError("root", {
-                        message: err.message || "An unexpected error occurred.",
-                    });
+                    passwordForm.setError("root", { message: err.message || "An unexpected error occurred." });
                 }
             },
             onSuccess: () => {
-                toast.success("Password updated successfully");
                 passwordForm.reset();
             },
         });
@@ -139,7 +135,6 @@ export const EmailAndPasswordForm = () => {
                         rules={{
                             required: "Please confirm your password",
                             validate: (val) => {
-                                // eslint-disable-next-line react-hooks/incompatible-library
                                 if (passwordForm.watch("newPassword") !== val) {
                                     return "Passwords do not match";
                                 }
@@ -156,16 +151,13 @@ export const EmailAndPasswordForm = () => {
                         )}
                     />
 
-                    {passwordForm.formState.errors.root && (
+                    {passwordForm.formState.errors.root &&
                         <p className="text-sm font-medium text-destructive">
                             {passwordForm.formState.errors.root.message}
                         </p>
-                    )}
+                    }
 
-                    <Button
-                        type="submit"
-                        disabled={passwordMutation.isPending || !passwordForm.formState.isDirty}
-                    >
+                    <Button type="submit" disabled={passwordMutation.isPending || !passwordForm.formState.isDirty}>
                         {passwordMutation.isPending ? "Updating..." : "Update Password"}
                     </Button>
                 </form>

@@ -4,9 +4,9 @@ import {useForm} from "react-hook-form";
 import {LoaderCircle} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
 import {Input} from "@/lib/client/components/ui/input";
+import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_main/_public/forgot-password")({
 
 
 function ForgotPasswordPage() {
-    const navigate = useNavigate();
+    const navigate = Route.useNavigate();
     const [emailSent, setEmailSent] = useState(false);
     const form = useForm<{ email: string }>({
         defaultValues: {

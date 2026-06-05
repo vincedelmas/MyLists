@@ -1,4 +1,5 @@
 import {alias} from "drizzle-orm/sqlite-core";
+import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
@@ -8,7 +9,7 @@ import {ProviderSearchResult, ProviderSearchResults} from "@/lib/types/provider.
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, SocialState} from "@/lib/utils/enums";
 
 
-export const orderByMediaType = sql`
+const orderByMediaType = sql`
     CASE ${userMediaSettings.mediaType}
         WHEN 'series' THEN 1
         WHEN 'anime' THEN 2
@@ -127,7 +128,7 @@ export class UserRepository {
 
         return results.map((row) => ({
             count: row.count,
-            month: new Date(row.month).toLocaleString("en-US", { month: "short", year: "numeric" }),
+            month: formatMonthYear(row.month),
         }));
     }
 
@@ -189,7 +190,7 @@ export class UserRepository {
                 eq(currentUserFollows.followedId, user.id),
                 eq(currentUserFollows.followerId, currentUserId ?? -1),
             ))
-            .where(eq(followers.followedId, userId))
+            .where(and(eq(followers.followedId, userId), eq(followers.status, SocialState.ACCEPTED)))
             .orderBy(asc(user.name))
             .limit(limit);
 
@@ -218,7 +219,8 @@ export class UserRepository {
                 eq(currentUserFollows.followedId, user.id),
                 eq(currentUserFollows.followerId, currentUserId ?? -1),
             ))
-            .where(eq(followers.followerId, userId))
+            .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED),
+            ))
             .orderBy(asc(user.name))
             .limit(limit);
 
@@ -266,6 +268,17 @@ export class UserRepository {
             .from(user)
             .where(eq(user.name, name))
             .get();
+    }
+
+    static async getMinimalUserSettings(userId: number) {
+        return getDbClient()
+            .select({
+                active: userMediaSettings.active,
+                mediaType: userMediaSettings.mediaType,
+            })
+            .from(userMediaSettings)
+            .where(eq(userMediaSettings.userId, userId))
+            .orderBy(orderByMediaType);
     }
 
     static async updateUserSettings(userId: number, payload: Partial<typeof user.$inferInsert>) {
@@ -411,6 +424,7 @@ export class UserRepository {
                 name: user.name,
                 image: user.image,
                 date: user.createdAt,
+                privacy: user.privacy,
             })
             .from(user)
             .where(like(user.name, `%${query}%`))

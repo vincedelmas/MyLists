@@ -1,15 +1,15 @@
 import {toast} from "sonner";
 import React, {useState} from "react";
 import {ListSettings} from "@/lib/schemas";
-import {capitalize} from "@/lib/utils/formating";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {useForm, useWatch} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {getZodMutationError} from "@/lib/utils/helpers";
+import {FormZodError} from "@/lib/utils/error-classes";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {CircleHelp, Download, TriangleAlert} from "lucide-react";
-import {convertToCsv, saveAsFile} from "@/lib/utils/blob-download";
+import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
@@ -71,10 +71,15 @@ export const MediaListForm = () => {
 
     const onSubmit = (submittedData: ListSettings) => {
         listSettingsMutation.mutate({ data: submittedData }, {
-            onError: (err) => toast.error(getZodMutationError(err) || "An error occurred while updating the data"),
+            onError: (err) => {
+                if (err instanceof FormZodError) {
+                    err.issues.forEach((issue) => {
+                        form.setError(issue.path.join("."), { type: "server", message: issue.message });
+                    });
+                }
+            },
             onSuccess: async () => {
                 await setCurrentUser();
-                toast.success("Settings successfully updated");
             }
         });
     };
@@ -82,8 +87,7 @@ export const MediaListForm = () => {
     const handleDownloadCSV = async (ev: React.MouseEvent<HTMLButtonElement>) => {
         ev.preventDefault();
 
-        downloadListAsCSVMutation.mutate({ selectedList: selectedListForExport }, {
-            onError: (err) => toast.error(getZodMutationError(err) || "An error occurred querying the CSV data"),
+        downloadListAsCSVMutation.mutate({ data: { selectedList: selectedListForExport } }, {
             onSuccess: (data) => {
                 if (!data) return;
 
@@ -92,7 +96,7 @@ export const MediaListForm = () => {
                     saveAsFile(formattedData, selectedListForExport, "text/csv");
                 }
                 catch {
-                    toast.error("An error occurred while formatting the CSV");
+                    toast.error("An error occurred while formatting the CSV.");
                 }
             }
         });

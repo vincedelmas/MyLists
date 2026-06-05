@@ -1,6 +1,7 @@
 import {z} from "zod";
 import {defineTask} from "@/lib/server/tasks/define-task";
 import {dbMaintenanceTask} from "@/lib/server/tasks/definitions/db-maintenance.task";
+import {flushApiMonitoringTask} from "@/lib/server/tasks/definitions/flush-api-monitoring.task";
 import {lockOldMoviesTask} from "@/lib/server/tasks/definitions/lock-old-movies.task";
 import {bulkMediaRefreshTask} from "@/lib/server/tasks/definitions/bulk-media-refresh.task";
 import {removeAllOrphansMediaTask} from "@/lib/server/tasks/definitions/remove-all-orphans-media";
@@ -32,5 +33,6 @@ export const maintenanceTask = defineTask({
         await ctx.step(calculateAchievementsTask.name, () => calculateAchievementsTask.handler(ctx, input));
         await ctx.step(dbMaintenanceTask.name, () => dbMaintenanceTask.handler(ctx, input));
         await ctx.step(addGenresToBooksUsingLlmTask.name, () => addGenresToBooksUsingLlmTask.handler(ctx, input));
+        await ctx.step(flushApiMonitoringTask.name, () => flushApiMonitoringTask.handler(ctx, { olderThanSecs: 90 }));
     },
 });

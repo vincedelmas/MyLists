@@ -1,7 +1,7 @@
 import {RotateCw} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 
-import {zeroPad} from "@/lib/utils/formating";
+import {zeroPad} from "@/lib/utils/number-formatting";
 
 
 interface DisplayTvRedoProps {

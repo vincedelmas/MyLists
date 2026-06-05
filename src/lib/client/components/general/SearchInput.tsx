@@ -5,13 +5,14 @@ import {Input} from "@/lib/client/components/ui/input";
 
 interface SearchInputUIProps {
     value: string;
+    disabled?: boolean;
     className?: string;
     placeholder: string;
     onChange: (ev: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 
-export const SearchInput = ({ value, onChange, placeholder, className }: SearchInputUIProps) => {
+export const SearchInput = ({ value, onChange, placeholder, className, disabled }: SearchInputUIProps) => {
     return (
         <div className="relative">
             <Search
@@ -21,6 +22,7 @@ export const SearchInput = ({ value, onChange, placeholder, className }: SearchI
             <Input
                 type="search"
                 value={value}
+                disabled={disabled}
                 onChange={onChange}
                 placeholder={placeholder}
                 className={`pl-8 text-sm ${className}`}

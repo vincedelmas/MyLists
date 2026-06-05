@@ -2,7 +2,7 @@ import React from "react";
 import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
 import {AdminSidebar} from "@/lib/client/components/admin/AdminSidebar";
 import {createFileRoute, notFound, Outlet} from "@tanstack/react-router";
-import {authOptions} from "@/lib/client/react-query/query-options/query-options";
+import {authOptions} from "@/lib/client/react-query/query-options";
 import {SidebarInset, SidebarProvider, SidebarTrigger} from "@/lib/client/components/ui/sidebar";
 
 

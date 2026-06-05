@@ -1,9 +1,10 @@
 import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
+import {formatDate} from "@/lib/utils/date-formatting";
+import {formatMinutes} from "@/lib/utils/number-formatting";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
-import {formatDateTime, formatMinutes} from "@/lib/utils/formating";
 
 
 type MangaDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]>[number];
@@ -34,9 +35,9 @@ export const MangaInfoGrid = ({ mediaType, media }: MangaDetailsProps<typeof Med
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Releasing Dates">
-                {formatDateTime(media.releaseDate, { noTime: true })}
+                {formatDate(media.releaseDate)}
                 <br/>
-                {formatDateTime(media.endDate, { noTime: true })}
+                {formatDate(media.endDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Total Chapters">
                 {media.chapters ?? "?"} chapters

@@ -1,16 +1,16 @@
 import {List} from "lucide-react";
 import {useMemo, useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
-import {getDaysRemaining} from "@/lib/utils/formating";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {ComingNextItem} from "@/lib/types/query.options.types";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
-import {upcomingOptions} from "@/lib/client/react-query/query-options/query-options";
+import {upcomingOptions} from "@/lib/client/react-query/query-options";
 import {ComingNextSection} from "@/lib/client/components/coming-next/ComingNextSection";
+import {compareCalendarDates, formatCalendarRelativeDate} from "@/lib/utils/date-formatting";
 
 
 export const Route = createFileRoute("/_main/_private/coming-next")({
@@ -23,28 +23,18 @@ function ComingNextPage() {
     const apiData = useSuspenseQuery(upcomingOptions).data;
     const mediaTypes = apiData.map((next) => next.mediaType);
     const [activeTab, setActiveTab] = useState<MediaType | "all">("all");
-
-    const allItems = useMemo(() => {
-        return apiData.flatMap((group) =>
-            group.items.map(item => ({ ...item, mediaType: group.mediaType }))
-        );
-    }, []);
+    const allItems = apiData.flatMap(g => g.items.map(item => ({ ...item, mediaType: g.mediaType })));
 
     const processedData = useMemo(() => {
         let filtered = activeTab === "all" ? allItems : allItems.filter((item) => item.mediaType === activeTab);
 
         filtered = filtered.filter((item) => {
             if (!item.date) return true;
-            const days = getDaysRemaining(item.date);
+            const days = formatCalendarRelativeDate(item.date).diffDays;
             return days === null || days >= -7;
         });
 
-        return filtered.sort((a, b) => {
-            if (!a.date && !b.date) return 0;
-            if (!a.date) return 1;
-            if (!b.date) return -1;
-            return new Date(a.date).getTime() - new Date(b.date).getTime();
-        });
+        return filtered.sort((a, b) => compareCalendarDates(a.date, b.date));
     }, [allItems, activeTab]);
 
     const sections = useMemo(() => {
@@ -53,7 +43,7 @@ function ComingNextPage() {
         };
 
         processedData.forEach((item) => {
-            const days = getDaysRemaining(item.date);
+            const days = formatCalendarRelativeDate(item.date).diffDays;
 
             if (item.date === null || days === null) groups.tba.push(item);
             else if (days <= 0) groups.today.push(item);

@@ -5,6 +5,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {user, userMediaActivity} from "@/lib/server/database/schema";
 import {LogActivity, PaginatedActivityFilter} from "@/lib/types/activity.types";
+import {dateFromUTCInput, monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {and, asc, count, desc, eq, gt, gte, inArray, isNull, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
 
 
@@ -14,8 +15,9 @@ const BULK_IMPORT_ACTIVITY_THRESHOLD = 200;
 
 export class UserActivityRepository {
     static async logActivity(activity: LogActivity) {
-        const date = activity.lastUpdate ? new Date(activity.lastUpdate) : new Date();
-        const monthBucket = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        const date = activity.lastUpdate ? dateFromUTCInput(activity.lastUpdate) : new Date();
+        
+        const monthBucket = monthBucketFromDateInput(date);
         const newActivity = { ...activity, monthBucket, lastUpdate: date.toISOString() }
 
         if (newActivity.specificGained > 0) {
@@ -203,8 +205,7 @@ export class UserActivityRepository {
 
         let newMonthBucket = existing.monthBucket;
         if (payload.lastUpdate) {
-            const date = new Date(payload.lastUpdate);
-            newMonthBucket = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+            newMonthBucket = monthBucketFromDateInput(payload.lastUpdate);
         }
 
         if (newMonthBucket !== existing.monthBucket) {

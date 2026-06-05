@@ -51,6 +51,7 @@ const sidebarItems: LinkSidebarItem[] = [
 
 function SidebarLayout() {
     const { currentUser } = useAuth();
+    if (!currentUser) return null;
 
     return (
         <PageTitle title="How to use MyLists.info" subtitle="Here to guide you how to use mylists.info :).">
@@ -65,13 +66,13 @@ function SidebarLayout() {
                     <OnboardingNav
                         position="top"
                         items={sidebarItems}
-                        username={currentUser!.name}
+                        username={currentUser.name}
                     />
                     <Outlet/>
                     <OnboardingNav
                         position="bottom"
                         items={sidebarItems}
-                        username={currentUser!.name}
+                        username={currentUser.name}
                     />
                 </main>
             </div>

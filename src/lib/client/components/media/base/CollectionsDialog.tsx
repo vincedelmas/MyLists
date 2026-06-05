@@ -1,15 +1,16 @@
-import {toast} from "sonner";
 import {useState} from "react";
-import {cn} from "@/lib/utils/helpers";
 import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
+import {cn} from "@/lib/utils/classnames";
+import {displayContainerError} from "@/lib/utils/error-display";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {Check, ChevronRight, Folder, LoaderCircle, PlusCircle, TriangleAlert} from "lucide-react";
-import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {Check, ChevronRight, Folder, LoaderCircle, PlusCircle} from "lucide-react";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
 import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
 import {useAddMediaToCollectionMutation, useCreateCollectionMutation, useRemoveMediaFromCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
@@ -25,9 +26,9 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const addMutation = useAddMediaToCollectionMutation(mediaType, mediaId);
-    const removeMutation = useRemoveMediaFromCollectionMutation(mediaType, mediaId);
-    const createMutation = useCreateCollectionMutation("Private collection created.");
+    const createMutation = useCreateCollectionMutation({ noGlobalErrorToast: true });
+    const addMutation = useAddMediaToCollectionMutation(mediaType, mediaId, { noGlobalErrorToast: true });
+    const removeMutation = useRemoveMediaFromCollectionMutation(mediaType, mediaId, { noGlobalErrorToast: true });
 
     const isPending = addMutation.isPending || removeMutation.isPending || createMutation.isPending;
     const { data: collections = [], isLoading } = useQuery(userCollectionMembershipsOptions(mediaId, mediaType, isOpen));
@@ -49,7 +50,6 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                 privacy: PrivacyType.PRIVATE,
             }
         }, {
-            onError: () => toast.error("Collection creation failed."),
             onSuccess: async () => {
                 setSearchQuery("");
                 await queryClient.invalidateQueries({ queryKey: userCollectionMembershipsOptions(mediaId, mediaType, isOpen).queryKey });
@@ -59,16 +59,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
 
     const handleToggle = (collection: NonNullable<typeof collections>[number]) => {
         const selectedMutation = activeIds.has(collection.id) ? removeMutation : addMutation;
-
-        selectedMutation.mutate({
-            data: {
-                mediaId,
-                mediaType,
-                collectionId: collection.id,
-            }
-        }, {
-            onError: (error: any) => toast.error(error.message ?? "Action failed."),
-        });
+        selectedMutation.mutate({ data: { mediaId, mediaType, collectionId: collection.id } });
     };
 
     const onSearchKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
@@ -208,6 +199,14 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                         }
                     </div>
 
+                    {(addMutation.isError || removeMutation.isError || createMutation.isError) &&
+                        <div className="mb-3 mt-1 px-2">
+                            <InlineErrorContainer>
+                                {displayContainerError({ error: addMutation.error ?? removeMutation.error ?? createMutation.error })}
+                            </InlineErrorContainer>
+                        </div>
+                    }
+
                     <div className="p-4 border-t flex items-center justify-between bg-popover">
                         <Link
                             to="/collections/user/$username"
@@ -223,16 +222,6 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                         </Button>
                     </div>
                 </div>
-
-                {(addMutation.isError || removeMutation.isError) &&
-                    <div className="absolute bottom-20 left-4 right-4 animate-in slide-in-from-bottom-2">
-                        <div className="p-2.5 rounded-lg border text-xs font-medium flex items-center gap-2 shadow-lg
-                        bg-rose-500/10 border-rose-500/20 text-rose-400">
-                            <TriangleAlert className="size-3.5"/>
-                            Sorry, this action failed.
-                        </div>
-                    </div>
-                }
             </CredenzaContent>
         </Credenza>
     );

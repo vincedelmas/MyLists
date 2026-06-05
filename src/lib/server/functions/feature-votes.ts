@@ -2,15 +2,15 @@ import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {tryFormZodError} from "@/lib/utils/try-not-found";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
-import {requiredAuthAndAdminRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {postFeatureDeleteSchema, postFeatureRequestSchema, postFeatureStatusSchema, postFeatureVoteSchema} from "@/lib/schemas";
+import {publicAuthMiddleware, requiredAuthAndAdminRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 
 
 export const getFeatureVotes = createServerFn({ method: "GET" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([publicAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const featureVotesService = await getContainer().then((c) => c.services.featureVotes);
-        return featureVotesService.getFeatureVotes(currentUser.id);
+        return featureVotesService.getFeatureVotes(currentUser?.id);
     });
 
 
@@ -25,14 +25,14 @@ export const postCreateFeatureRequest = createServerFn({ method: "POST" })
 
 export const postToggleFeatureVote = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(postFeatureVoteSchema))
+    .inputValidator(postFeatureVoteSchema)
     .handler(async ({ data: { featureId }, context: { currentUser } }) => {
         const featureVotesService = await getContainer().then((c) => c.services.featureVotes);
         await featureVotesService.toggleFeatureVote(featureId, currentUser.id);
     });
 
 
-export const postUpdateFeatureStatus = createServerFn({ method: "POST" })
+export const postAdminUpdateFeatureStatus = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminRoleMiddleware, transactionMiddleware])
     .inputValidator(tryFormZodError(postFeatureStatusSchema))
     .handler(async ({ data, context: { currentUser } }) => {
@@ -41,7 +41,7 @@ export const postUpdateFeatureStatus = createServerFn({ method: "POST" })
     });
 
 
-export const postDeleteFeatureRequest = createServerFn({ method: "POST" })
+export const postAdminDeleteFeatureRequest = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminRoleMiddleware, transactionMiddleware])
     .inputValidator(tryFormZodError(postFeatureDeleteSchema))
     .handler(async ({ data }) => {

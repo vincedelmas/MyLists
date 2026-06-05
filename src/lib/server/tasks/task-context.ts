@@ -30,6 +30,7 @@ type TaskContextOptions = {
 
 export const createTaskContext = (options: TaskContextOptions) => {
     const { taskId, taskName, triggeredBy, stdoutAsJson } = options;
+    const startedAtMs = Date.now();
     const startedAt = new Date().toISOString();
 
     const logs: TaskLog[] = [];
@@ -186,7 +187,7 @@ export const createTaskContext = (options: TaskContextOptions) => {
 
     const finalize = (status: TaskStatus, errorMessage?: string): TaskResult => {
         const finishedAt = new Date().toISOString();
-        const durationMs = new Date(finishedAt).getTime() - new Date(startedAt).getTime();
+        const durationMs = Date.now() - startedAtMs;
 
         const analyzeSteps = (stepList: TaskStep[]): { failed: number; partial: number } => {
             return stepList.reduce((acc, s) => {

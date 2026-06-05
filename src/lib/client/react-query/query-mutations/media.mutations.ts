@@ -1,7 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
-import {ProviderSearchResult} from "@/lib/types/provider.types";
-import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {mediaDetailsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
+import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {getMediaDetails, postEditMediaDetails, postUpdateBookCover, refreshMediaDetails} from "@/lib/server/functions/media-details";
 
 
@@ -10,6 +9,10 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaOrApiId: numb
 
     return useMutation({
         mutationFn: refreshMediaDetails,
+        meta: {
+            errorToastMessage: "Failed to refresh media details.",
+            successToastMessage: "Metadata refreshed successfully!",
+        },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaOrApiId.toString(), external).queryKey });
         },
@@ -18,15 +21,19 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaOrApiId: numb
 
 
 export const useEditMediaMutation = () => {
-    return useMutation({ mutationFn: postEditMediaDetails });
+    return useMutation({
+        mutationFn: postEditMediaDetails,
+        meta: { errorToastMessage: "Failed to edit this media." },
+    });
 };
 
 
-export const useUpdateBookCoverMutation = (mediaOrApiId: number | string, external: boolean) => {
+export const useUpdateBookCoverMutation = (mediaOrApiId: number | string, external: boolean, meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postUpdateBookCover,
+        meta: { ...meta },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(MediaType.BOOKS, mediaOrApiId.toString(), external).queryKey });
         },
@@ -34,10 +41,9 @@ export const useUpdateBookCoverMutation = (mediaOrApiId: number | string, extern
 };
 
 
-export const useAddMediaToCollectionMutation = (mediaType: MediaType) => {
+export const useAddMediaToCollectionMutation = () => {
     return useMutation({
-        mutationFn: (item: ProviderSearchResult) => {
-            return getMediaDetails({ data: { mediaType, external: true, mediaId: item.id } });
-        },
+        mutationFn: getMediaDetails,
+        meta: { errorToastMessage: "Failed to add media to collection." },
     });
 };

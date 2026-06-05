@@ -190,6 +190,20 @@
       "when": 1779141600001,
       "tag": "0026_activity_recap_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1779141600002,
+      "tag": "0027_provider_api_monitoring",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1780272000000,
+      "tag": "0028_normalize_calendar_dates",
+      "breakpoints": true
     }
   ]
 }

@@ -3,9 +3,9 @@ import {useForm} from "react-hook-form";
 import {LoaderCircle} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
 import {Input} from "@/lib/client/components/ui/input";
+import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
@@ -23,8 +23,8 @@ type FormValues = {
 
 
 function ResetPasswordPage() {
-    const navigate = useNavigate();
     const { token } = Route.useSearch();
+    const navigate = Route.useNavigate();
     const form = useForm<FormValues>({
         defaultValues: {
             newPassword: "",
@@ -44,8 +44,8 @@ function ResetPasswordPage() {
             },
             onSuccess: async () => {
                 form.reset();
+                await navigate({ to: "/login", replace: true });
                 toast.success("Your password was successfully modified");
-                await navigate({ to: "/", replace: true });
             }
         });
     };
@@ -85,7 +85,6 @@ function ResetPasswordPage() {
                                     rules={{
                                         required: "The password confirmation is required.",
                                         validate: (val) => {
-                                            // eslint-disable-next-line react-hooks/incompatible-library
                                             if (form.watch("newPassword") !== val) return "The passwords do not match.";
                                         }
                                     }}

@@ -2,7 +2,7 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {RatingSystemType, UpdateType} from "@/lib/utils/enums";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {getFeelingIcon, getFeelingList, getScoreList} from "@/lib/utils/ratings";
+import {getFeelingIcon, getFeelingList, getScoreList} from "@/lib/utils/ratings-formatting";
 
 
 interface RatingComponentProps {

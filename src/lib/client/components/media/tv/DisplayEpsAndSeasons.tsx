@@ -1,7 +1,7 @@
 import {Status} from "@/lib/utils/enums";
 
 
-import {zeroPad} from "@/lib/utils/formating";
+import {zeroPad} from "@/lib/utils/number-formatting";
 
 
 interface DisplayEpsAndSeasonsProps {

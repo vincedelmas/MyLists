@@ -1,9 +1,12 @@
+import {serverEnv} from "@/env/server";
 import {SearchType} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
-import {AdminErrorLog, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
+import {getRedisConnection} from "@/lib/server/core/redis-client";
 import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
+import {getRollupKey, PENDING_ROLLUPS_KEY} from "@/lib/server/core/cache-keys";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import {AdminApiMonitoringParams, AdminErrorLog, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 
 
 export class AdminService {
@@ -108,7 +111,7 @@ export class AdminService {
             ? (summary.firstRefreshDate ? new Date(`${summary.firstRefreshDate}T00:00:00.000Z`) : null)
             : new Date(today.getTime() - ((dailyDays ?? 1) - 1) * 24 * 60 * 60 * 1000);
 
-        const daily = dailyStartDate ? buildDailySeriesByType(dailyStartDate, today, mediaTypes, countsByKey) : [];
+        const daily = dailyStartDate ? this._buildDailySeriesByKey(dailyStartDate, today, mediaTypes, countsByKey) : [];
 
         const normalizedTotalsByType = mediaTypes
             .map((mediaType) => ({
@@ -135,28 +138,199 @@ export class AdminService {
                 busiestDay: summary.busiestDay,
                 uniqueUsers: summary.uniqueUsers,
                 busiestCount: summary.busiestCount,
-                avgPerDay: summary.total && activeDays ? Number((summary.total / activeDays).toFixed(1)) : 0,
+                avgPerDay: summary.total && activeDays ? Math.round((summary.total / activeDays) * 10) / 10 : 0,
             },
         };
     }
-}
 
+    async getApiMonitoringStats({ range = "30d", dailyRange = "30d", recentPage = 1 }: AdminApiMonitoringParams = {}) {
+        await this.flushProviderApiRedisRollups().catch();
+        const rangeDays = { "24h": 1, "7d": 7, "30d": 30, "90d": 90, all: null };
 
-const buildDailySeriesByType = (startDate: Date, endDate: Date, mediaTypes: MediaType[], countsMap: Map<string, number>) => {
-    const days = Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1);
+        const selectedDays = rangeDays[range];
+        const dailyDays = rangeDays[dailyRange];
+        const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
 
-    return Array.from({ length: days }, (_value, idx) => {
-        const date = new Date(startDate);
-        date.setUTCDate(startDate.getUTCDate() + idx);
-        const key = date.toISOString().slice(0, 10);
-        const entry: Record<string, number | string> = { date: key, total: 0 };
+        const [providers, dailyByProvider, totalsByProvider, statusTotals, summary, recentCalls, liveRedis] = await Promise.all([
+            this.repository.getApiCallProviders(),
+            this.repository.getApiCallDailyCountsByProvider(dailyDays),
+            this.repository.getApiCallTotalsByProvider(selectedDays),
+            this.repository.getApiCallStatusTotals(selectedDays),
+            this.repository.getApiCallSummary(selectedDays),
+            this.repository.getRecentApiCalls(recentPage),
+            this._getProviderApiRedisSnapshot().catch((err) => {
+                console.warn("Failed to read provider API live Redis snapshot:", err);
+                return null;
+            }),
+        ]);
 
-        for (const mediaType of mediaTypes) {
-            const value = countsMap.get(`${key}|${mediaType}`) ?? 0;
-            entry[mediaType] = value;
-            entry.total = Number(entry.total) + value;
+        const firstCallDate = summary.firstCallAt ? new Date(summary.firstCallAt) : null;
+        const providerKeys = providers.length > 0 ? providers : totalsByProvider.map((row) => row.provider);
+        const countsByKey = new Map(dailyByProvider.map((row) => [`${row.date}|${row.provider}`, Number(row.count)]));
+
+        const dailyStartDate = (dailyRange === "all")
+            ? (firstCallDate ? new Date(firstCallDate.setUTCHours(0, 0, 0, 0)) : null)
+            : new Date(today.getTime() - ((dailyDays ?? 1) - 1) * 24 * 60 * 60 * 1000);
+
+        const daily = dailyStartDate
+            ? this._buildDailySeriesByKey(dailyStartDate, today, providerKeys, countsByKey)
+            : [];
+
+        const rangeStart = selectedDays
+            ? Date.now() - (selectedDays * 24 * 60 * 60 * 1000)
+            : summary.firstCallAt ? new Date(summary.firstCallAt).getTime() : null;
+
+        const activeSeconds = rangeStart ? Math.max(1, Math.floor((Date.now() - rangeStart) / 1000)) : 0;
+        const activeDays = rangeStart ? Math.max(1, Math.ceil((Date.now() - rangeStart) / (24 * 60 * 60 * 1000))) : 0;
+
+        return {
+            daily,
+            range,
+            liveRedis,
+            dailyRange,
+            recentCalls,
+            statusTotals,
+            totalsByProvider,
+            providers: providerKeys,
+            dailyWindowDays: daily.length,
+            summary: {
+                ...summary,
+                avgPerDay: summary.total && activeDays ? Math.round((summary.total / activeDays) * 10) / 10 : 0,
+                avgPerSecond: summary.total && activeSeconds ? Math.round((summary.total / activeSeconds) * 10000) / 10000 : 0,
+            },
+        };
+    }
+
+    async flushProviderApiRedisRollups(cutoffMinuteMs?: number) {
+        if (!serverEnv.REDIS_ENABLED) return { flushed: 0 };
+
+        const redis = await getRedisConnection();
+        const cutOff = cutoffMinuteMs ?? (Math.floor(Date.now() / 60_000) * 60_000) - 60_000;
+
+        let flushed = 0;
+        const members = await redis.zrangebyscore(PENDING_ROLLUPS_KEY, 0, cutOff);
+
+        for (const member of members) {
+            const [bucket, provider] = member.split("|");
+            const bucketStartMs = Number(bucket);
+
+            if (!provider || !Number.isFinite(bucketStartMs)) {
+                await redis.zrem(PENDING_ROLLUPS_KEY, member);
+                continue;
+            }
+
+            const lockKey = `api-monitor:rollups:lock:${member}`;
+            const lockAcquired = await redis.set(lockKey, "1", "EX", 120, "NX");
+            if (lockAcquired !== "OK") {
+                continue;
+            }
+
+            const rollupKey = getRollupKey(bucketStartMs, provider);
+            const secondsKey = getRollupKey(bucketStartMs, provider, { seconds: true });
+            const statusKey = getRollupKey(bucketStartMs, provider, { statuses: true });
+
+            try {
+                const [rollupData, statusData, secondData] = await Promise.all([
+                    redis.hgetall(rollupKey),
+                    redis.hgetall(statusKey),
+                    redis.hgetall(secondsKey),
+                ]);
+
+                const total = Number(rollupData.total ?? 0);
+                if (total <= 0) {
+                    await redis.zrem(PENDING_ROLLUPS_KEY, member);
+                    continue;
+                }
+
+                await this.repository.upsertApiCallRollup({
+                    total,
+                    provider,
+                    bucketStartMs,
+                    errors: Number(rollupData.errors ?? 0),
+                    durationMsTotal: Number(rollupData.durationMsTotal ?? 0),
+                    maxSecondBurst: Math.max(0, ...Object.values(secondData).map(Number)),
+                    statusCounts: Object.fromEntries(Object.entries(statusData).map(([k, v]) => [k, Number(v)])),
+                });
+
+                await redis
+                    .pipeline()
+                    .del(rollupKey)
+                    .del(statusKey)
+                    .del(secondsKey)
+                    .zrem(PENDING_ROLLUPS_KEY, member)
+                    .exec();
+
+                flushed += 1;
+            }
+            finally {
+                await redis.del(lockKey);
+            }
         }
 
-        return entry as { date: string; total: number } & Record<MediaType, number>;
-    });
-};
+        return { flushed };
+    };
+
+    private async _getProviderApiRedisSnapshot() {
+        if (!serverEnv.REDIS_ENABLED) return null;
+
+        const redis = await getRedisConnection();
+
+        const pipeline = redis.pipeline();
+        const currentSecond = Math.floor(Date.now() / 1000);
+        const seconds = Array.from({ length: 60 }, (_value, idx) => currentSecond - idx);
+
+        for (const second of seconds) {
+            pipeline.hgetall(`api-monitor:second:${second}`);
+        }
+
+        const rows = await pipeline.exec();
+        if (!rows) return null;
+
+        let lastMinuteTotal = 0;
+        let peakSecondCount = 0;
+        let currentSecondTotal = 0;
+        let peakSecondAt: string | null = null;
+
+        rows.forEach(([err, value], idx) => {
+            if (err || !value) return;
+
+            const second = seconds[idx] ?? currentSecond;
+            const total = Number((value as Record<string, string>).total ?? 0);
+
+            lastMinuteTotal += total;
+            if (idx === 0) currentSecondTotal = total;
+
+            if (total > peakSecondCount) {
+                peakSecondCount = total;
+                peakSecondAt = new Date(second * 1000).toISOString();
+            }
+        });
+
+        return {
+            peakSecondAt,
+            lastMinuteTotal,
+            peakSecondCount,
+            currentSecondTotal,
+            avgPerSecondLastMinute: Math.round((lastMinuteTotal / 60) * 100) / 100,
+        };
+    };
+
+    private _buildDailySeriesByKey = <TKey extends string>(startDate: Date, endDate: Date, keys: TKey[], countsMap: Map<string, number>) => {
+        const days = Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1);
+
+        return Array.from({ length: days }, (_value, idx) => {
+            const date = new Date(startDate);
+            date.setUTCDate(startDate.getUTCDate() + idx);
+            const dateKey = date.toISOString().slice(0, 10);
+            const entry: Record<string, number | string> = { date: dateKey, total: 0 };
+
+            for (const key of keys) {
+                const value = countsMap.get(`${dateKey}|${key}`) ?? 0;
+                entry[key] = value;
+                entry.total = Number(entry.total) + value;
+            }
+
+            return entry as { date: string; total: number } & Record<TKey, number>;
+        });
+    };
+}

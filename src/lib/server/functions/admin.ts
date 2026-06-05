@@ -5,7 +5,7 @@ import {createServerFn} from "@tanstack/react-start";
 import {runTask} from "@/lib/server/tasks/task-runner";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getContainer} from "@/lib/server/core/container";
-import {setSignedCookie} from "@/lib/utils/auth-cookies";
+import {setSignedCookie} from "@/lib/utils/signed-cookies";
 import {tryFormZodError} from "@/lib/utils/try-not-found";
 import {deleteCookie} from "@tanstack/react-start/server";
 import {getAllTasksMetadata, getTask} from "@/lib/server/tasks/registry";
@@ -14,6 +14,7 @@ import {requiredAuthAndAdminTokenMiddleware, requiredAuthAndManagerRoleMiddlewar
 import {
     adminDeleteArchivedTaskSchema,
     adminDeleteErrorLogSchema,
+    adminApiMonitoringSchema,
     adminPostUpdateTiersSchema,
     adminPostUpdateUserSchema,
     adminRefreshSchema,
@@ -195,6 +196,15 @@ export const getAdminMediaRefreshStats = createServerFn({ method: "GET" })
     .handler(async ({ data }) => {
         const adminService = await getContainer().then((c) => c.services.admin);
         return adminService.getMediaRefreshStats(data);
+    });
+
+
+export const getAdminApiMonitoringStats = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .inputValidator(adminApiMonitoringSchema)
+    .handler(async ({ data }) => {
+        const adminService = await getContainer().then((c) => c.services.admin);
+        return adminService.getApiMonitoringStats(data);
     });
 
 

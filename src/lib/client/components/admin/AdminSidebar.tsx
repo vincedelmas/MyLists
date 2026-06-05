@@ -1,6 +1,6 @@
 import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Archive, Award, CircleX, Film, FolderKanban, History, Home, ListCheck, Play, RefreshCw, Settings, Users} from "lucide-react";
+import {Archive, Award, CircleX, Film, FolderKanban, History, Home, ListCheck, Play, Radio, RefreshCw, Settings, Users} from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -133,6 +133,14 @@ export function AdminSidebar() {
                                     <Link to="/admin/media-refresh">
                                         <RefreshCw className="size-4"/>
                                         <span>Refresh Monitoring</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild>
+                                    <Link to="/admin/api-monitoring">
+                                        <Radio className="size-4"/>
+                                        <span>API Monitoring</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon,} from "lucide-react";
 import {type DayButton, DayPicker, getDefaultClassNames,} from "react-day-picker";
@@ -77,7 +77,6 @@ function Calendar({
                         : "flex h-8 items-center gap-1 rounded-md pr-1 pl-2 text-sm [&>svg]:size-3.5 [&>svg]:text-muted-foreground",
                     defaultClassNames.caption_label
                 ),
-                table: "w-full border-collapse",
                 weekdays: cn("flex", defaultClassNames.weekdays),
                 weekday: cn(
                     "flex-1 rounded-md text-[0.8rem] font-normal text-muted-foreground select-none",
@@ -121,7 +120,6 @@ function Calendar({
                 ...classNames,
             }}
             components={{
-                // eslint-disable-next-line @eslint-react/component-hook-factories,@eslint-react/no-nested-component-definitions
                 Root: ({ className, rootRef, ...props }) => {
                     return (
                         <div
@@ -132,7 +130,6 @@ function Calendar({
                         />
                     )
                 },
-                // eslint-disable-next-line @eslint-react/component-hook-factories,@eslint-react/no-nested-component-definitions
                 Chevron: ({ className, orientation, ...props }) => {
                     if (orientation === "left") {
                         return (
@@ -160,7 +157,6 @@ function Calendar({
                     )
                 },
                 DayButton: CalendarDayButton,
-                // eslint-disable-next-line @eslint-react/component-hook-factories,@eslint-react/no-nested-component-definitions
                 WeekNumber: ({ children, ...props }) => {
                     return (
                         <td {...props}>

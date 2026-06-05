@@ -36,7 +36,7 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
 
         const airedCondition = and(
             isNotNull(mediaTable.nextEpisodeToAir),
-            lte(mediaTable.nextEpisodeToAir, sql`datetime('now')`),
+            lte(mediaTable.nextEpisodeToAir, sql`date('now')`),
         );
 
         const staleListCondition = apiIds.length > 0
@@ -237,8 +237,8 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
             .where(and(
                 userId ? eq(listTable.userId, userId) : undefined,
                 notInArray(listTable.status, [Status.DROPPED, Status.RANDOM]),
-                gte(mediaTable.nextEpisodeToAir, sql`datetime('now')`),
-                maxAWeek ? lte(mediaTable.nextEpisodeToAir, sql`datetime('now', '+7 days')`) : undefined,
+                gte(mediaTable.nextEpisodeToAir, sql`date('now')`),
+                maxAWeek ? lte(mediaTable.nextEpisodeToAir, sql`date('now', '+7 days')`) : undefined,
             ))
             .orderBy(asc(mediaTable.nextEpisodeToAir));
     }

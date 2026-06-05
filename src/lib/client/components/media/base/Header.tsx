@@ -1,5 +1,5 @@
 import React from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Status} from "@/lib/utils/enums";
 import {MediaListArgs, SearchType} from "@/lib/schemas";
 import {Button} from "@/lib/client/components/ui/button";

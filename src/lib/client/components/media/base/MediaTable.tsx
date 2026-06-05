@@ -5,7 +5,7 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {ListPagination, UserMediaItem} from "@/lib/types/query.options.types";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 import {flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";

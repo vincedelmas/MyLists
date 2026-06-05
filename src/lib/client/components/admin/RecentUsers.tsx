@@ -35,7 +35,7 @@ export function RecentUsers({ users }: RecentUsersProps) {
                     </div>
                     <div className="ml-auto text-sm">
                         <div className="flex items-center gap-2">
-                            <RelativeTime value={user.updatedAt}/>
+                            <RelativeTime date={user.updatedAt}/>
                         </div>
                     </div>
                 </div>

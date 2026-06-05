@@ -1,5 +1,5 @@
 import {SearchType} from "@/lib/schemas";
-import {statusUtils} from "@/lib/utils/mapping";
+import {statusUtils} from "@/lib/utils/media-mapping";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {UserMediaStats} from "@/lib/types/user-media.types";
@@ -32,7 +32,7 @@ export class UserStatsService {
         await this.repository.updateAllUsersPreComputedStats(mediaType, userStats);
     }
 
-    async userHallofFameData(userId: number, filters: SearchType) {
+    async userHallofFameData(filters: SearchType, userId?: number) {
         const {
             mediaTypes,
             currentUserRankData,
@@ -42,7 +42,7 @@ export class UserStatsService {
             userSettingsMap,
             rankSelectionColName,
             page, pages, total,
-        } = await this.repository.userHallofFameData(userId, filters);
+        } = await this.repository.userHallofFameData(filters, userId);
 
         // Calculate Current User's Percentile Ranks
         const userRanks = [];
@@ -50,7 +50,7 @@ export class UserStatsService {
             let percent: number | null = null;
             const rankKey = `${mediaType}Rank` as keyof typeof currentUserRankData;
 
-            const rank = (currentUserRankData[rankKey] as unknown as number) ?? null;
+            const rank = (currentUserRankData?.[rankKey] as unknown as number) ?? null;
             const mtCount = mediaTypeCountMap.get(mediaType) ?? 0;
             const active = currentUserActiveSettings.has(mediaType);
 
@@ -77,6 +77,7 @@ export class UserStatsService {
                 id: row.id,
                 name: row.name,
                 image: row.image,
+                privacy: row.privacy,
                 totalTime: row.totalTime,
                 settings: userSettingsMap.get(row.id) ?? [],
                 rank: (row[rankSelectionColName as keyof typeof row] as number) ?? null,

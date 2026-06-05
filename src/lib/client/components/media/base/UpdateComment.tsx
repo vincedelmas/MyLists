@@ -71,12 +71,13 @@ export const UpdateComment = ({ content, updateComment, disabled = false }: Comm
                             <Maximize2 className="size-3.5"/>
                         </Button>
                     }
-                    <span role="button" onClick={handleEditToggle} className={disabled ? "pointer-events-none opacity-40" : ""}>
+                    <span
+                        role="button" onClick={handleEditToggle} className={disabled ? "pointer-events-none opacity-40" : ""}>
                         {content ? "Edit" : "Add"}
                     </span>
                 </div>
             </h4>
-            <Separator className="-mt-1 mb-1"/>
+            <Separator className="-mt-2 mb-1"/>
             {isEditing ?
                 <>
                     <Textarea

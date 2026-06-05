@@ -6,7 +6,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {TaskFormDialog} from "@/lib/client/components/admin/TaskDialogForm";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {adminTasksOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminTasksOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {useAdminTriggerTaskMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 

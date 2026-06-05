@@ -1,16 +1,17 @@
+import {Calendar} from "lucide-react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
+import {zeroPad} from "@/lib/utils/number-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {formatDateTime, getDaysRemaining, zeroPad} from "@/lib/utils/formating";
 import {ComingNextItem} from "@/lib/types/query.options.types";
-import {Hourglass, AlertCircle, Clock, Calendar} from "lucide-react";
 import {StatusBadge} from "@/lib/client/components/general/StatusBadge";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {extractYear, formatCalendarRelativeDate, formatDate} from "@/lib/utils/date-formatting";
 
 
 export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, mediaType: MediaType }) => {
-    const daysRemaining = getDaysRemaining(item.date);
-    const isTvShow = mediaType === MediaType.SERIES || mediaType === MediaType.ANIME;
+    const { relativeTime } = formatCalendarRelativeDate(item.date, { style: "long" });
+    const isTvShow = (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME);
 
     return (
         <Link search={{ external: false }} to="/details/$mediaType/$mediaId" params={{ mediaType, mediaId: item.mediaId }}>
@@ -48,7 +49,7 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
                                             S{zeroPad(item.seasonToAir)}.E{zeroPad(item.episodeToAir)}
                                         </span>
                                         {item.episodeToAir === 1 &&
-                                            <span className="text-[10px] text-red-400 px-1.5 rounded border border-red-500">
+                                            <span className="text-[10px] text-destructive px-1.5 rounded border border-red-500">
                                                 Premiere
                                             </span>
                                         }
@@ -63,10 +64,10 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
 
                         <div className="text-right shrink-0">
                             <div className="text-lg font-bold">
-                                {formatDateTime(item.date, { noTime: true })}
+                                {formatDate(item.date)}
                             </div>
                             <div className="text-xs text-muted-foreground mt-0.5">
-                                {item.date ? new Date(item.date).getFullYear() : "-"}
+                                {extractYear(item.date)}
                             </div>
                         </div>
                     </div>
@@ -74,31 +75,15 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
                         <StatusBadge
                             status={item.status}
                         />
-                        <MediaCountdownBadge
-                            days={daysRemaining}
-                        />
+                        {relativeTime !== "never" &&
+                            <Badge variant="black" className="capitalize">
+                                <Calendar/>
+                                <span>{relativeTime}</span>
+                            </Badge>
+                        }
                     </div>
                 </div>
             </div>
         </Link>
-    );
-};
-
-
-const MediaCountdownBadge = ({ days }: { days: number | null }) => {
-    const getBadgeConfig = () => {
-        if (days === null) return { icon: <Hourglass/>, label: "TBA" };
-        if (days === 0) return { icon: <AlertCircle/>, label: "TODAY" };
-        if (days === 1) return { icon: <Clock/>, label: "TOMORROW" };
-        return { icon: <Calendar/>, label: `In ${days} Days` };
-    };
-
-    const { icon, label } = getBadgeConfig();
-
-    return (
-        <Badge variant="black">
-            {icon}
-            <span>{label}</span>
-        </Badge>
     );
 };

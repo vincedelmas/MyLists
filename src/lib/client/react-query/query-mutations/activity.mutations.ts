@@ -1,13 +1,16 @@
-import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {postAddActivity, postBulkHideActivity, postDeleteActivity, postUpdateActivity} from "@/lib/server/functions/user-activity";
 
 
-export const useAddActivityMutation = () => {
+export const useAddActivityMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postAddActivity,
-        meta: { errorMessage: "Failed to add activity." },
+        meta: {
+            successToastMessage: "Activity added successfully!",
+            ...meta,
+        },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
             await queryClient.invalidateQueries({ queryKey: ["specific-activity"] });
@@ -16,12 +19,15 @@ export const useAddActivityMutation = () => {
 };
 
 
-export const useUpdateActivityMutation = () => {
+export const useUpdateActivityMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postUpdateActivity,
-        meta: { errorMessage: "Failed to update activity." },
+        meta: {
+            successToastMessage: "Activity updated successfully!",
+            ...meta,
+        },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
             await queryClient.invalidateQueries({ queryKey: ["specific-activity"] });
@@ -30,12 +36,15 @@ export const useUpdateActivityMutation = () => {
 };
 
 
-export const useDeleteActivityMutation = () => {
+export const useDeleteActivityMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postDeleteActivity,
-        meta: { errorMessage: "Failed to delete activity." },
+        meta: {
+            successToastMessage: "Activity deleted successfully!",
+            ...meta,
+        },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
         },
@@ -48,7 +57,7 @@ export const useBulkHideActivityMutation = () => {
 
     return useMutation({
         mutationFn: postBulkHideActivity,
-        meta: { errorMessage: "Failed to bulk hide activity." },
+        meta: { errorToastMessage: "Failed to bulk hide activity." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
             await queryClient.invalidateQueries({ queryKey: ["specific-activity"] });

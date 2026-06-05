@@ -1,10 +1,10 @@
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
-import {computeLevel} from "@/lib/utils/compute-level";
-import {getThemeColor} from "@/lib/utils/colors-and-icons";
+import {getThemeColor} from "@/lib/utils/theme-utils";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {formatLevel, formatPercent} from "@/lib/utils/number-formatting";
 
 
 interface MediaLevelsProps {
@@ -32,7 +32,7 @@ export const MediaLevels = ({ username, settings }: MediaLevelsProps) => {
                             username={username}
                             key={data.mediaType}
                             mediaType={data.mediaType}
-                            level={computeLevel(data.timeSpent)}
+                            level={formatLevel(data.timeSpent)}
                         />
                     )}
                 </div>
@@ -69,7 +69,7 @@ const MediaLevelBar = ({ mediaType, username, level }: MediaLevelBarProps) => {
                 </div>
                 <span className="inline-block font-semibold text-sm tracking-wide" style={{ color: getThemeColor(mediaType) }}>
                     <div className="inline-block text-[11px] text-muted-foreground text-right">
-                        ({Math.round(percent)}%)
+                        ({formatPercent(percent, { fractionDigits: 0 })})
                     </div>
                     &nbsp; Lvl {intLevel}
                 </span>

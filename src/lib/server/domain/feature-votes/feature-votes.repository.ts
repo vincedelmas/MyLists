@@ -5,37 +5,36 @@ import {featureRequests, featureVotes, user} from "@/lib/server/database/schema"
 
 
 export class FeatureVotesRepository {
-    static async getFeatureVotesData(userId: number) {
-        const tx = getDbClient();
+    static async getFeatureVotesData(userId?: number) {
+        const db = getDbClient();
 
-        const [features, voteAgg, userVotes] =
-            await Promise.all([
-                tx
-                    .select({
-                        author: {
-                            id: user.id,
-                            name: user.name,
-                            image: user.image,
-                        },
-                        ...getTableColumns(featureRequests),
-                    })
-                    .from(featureRequests)
-                    .leftJoin(user, eq(featureRequests.createdBy, user.id))
-                    .orderBy(desc(featureRequests.createdAt)),
-                tx
-                    .select({
-                        totalVotes: count(),
-                        featureId: featureVotes.featureId,
-                    })
-                    .from(featureVotes)
-                    .groupBy(featureVotes.featureId),
-                tx
-                    .select({
-                        featureId: featureVotes.featureId,
-                    })
-                    .from(featureVotes)
-                    .where(eq(featureVotes.userId, userId)),
-            ]);
+        const [features, voteAgg] = await Promise.all([
+            db.select({
+                author: {
+                    id: user.id,
+                    name: user.name,
+                    image: user.image,
+                },
+                ...getTableColumns(featureRequests),
+            })
+                .from(featureRequests)
+                .leftJoin(user, eq(featureRequests.createdBy, user.id))
+                .orderBy(desc(featureRequests.createdAt)),
+            db.select({
+                totalVotes: count(),
+                featureId: featureVotes.featureId,
+            })
+                .from(featureVotes)
+                .groupBy(featureVotes.featureId),
+        ]);
+
+        let userVotes: { featureId: number }[] = [];
+        if (userId) {
+            userVotes = await db
+                .select({ featureId: featureVotes.featureId })
+                .from(featureVotes)
+                .where(eq(featureVotes.userId, userId));
+        }
 
         return { features, voteAgg, userVotes };
     }

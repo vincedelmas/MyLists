@@ -1,6 +1,5 @@
-import {toast} from "sonner";
 import {useForm} from "react-hook-form";
-import {toDateInputValue} from "@/lib/utils/formating";
+import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {Input} from "@/lib/client/components/ui/input";
 import {Label} from "@/lib/client/components/ui/label";
 import {Button} from "@/lib/client/components/ui/button";
@@ -9,6 +8,8 @@ import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {useDeleteActivityMutation, useUpdateActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {getActivityInputStep, getActivityUnitLabel, toActivityDisplayValue, toActivityStoredValue} from "@/lib/utils/activity-utils";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {displayContainerError} from "@/lib/utils/error-display";
 
 
 type FormValues = {
@@ -28,8 +29,8 @@ interface ActivityEditDialogProps {
 
 
 export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEditDialogProps) => {
-    const updateMutation = useUpdateActivityMutation();
-    const deleteMutation = useDeleteActivityMutation();
+    const updateMutation = useUpdateActivityMutation({ noGlobalErrorToast: true });
+    const deleteMutation = useDeleteActivityMutation({ noGlobalErrorToast: true });
     const form = useForm<FormValues>({
         values: {
             isRedo: activity.isRedo ?? false,
@@ -57,7 +58,6 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
         }, {
             onSuccess: () => {
                 onOpenChange(false);
-                toast.success("Activity updated");
             }
         });
     };
@@ -68,7 +68,6 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
         deleteMutation.mutate({ data: { activityId: activity.id } }, {
             onSuccess: () => {
                 onOpenChange(false);
-                toast.success("Activity deleted");
             }
         });
     };
@@ -97,14 +96,14 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                         <Input
                             type="date"
                             {...form.register("lastUpdate")}
-                            max={toDateInputValue(new Date().toISOString())}
+                            max={toDateInputValue(new Date())}
                         />
                     </div>
 
                     <div className="flex flex-wrap gap-4">
-                        <label className="flex items-center gap-2 text-sm">
+                        <label className="flex items-center gap-2 text-sm" htmlFor="checkbox-1">
                             <Checkbox
-                                // eslint-disable-next-line react-hooks/incompatible-library
+                                id="checkbox-1"
                                 checked={!form.watch().isCompleted && !form.watch().isRedo}
                                 onCheckedChange={() => {
                                     form.setValue("isRedo", false);
@@ -113,8 +112,9 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                             />
                             Progress
                         </label>
-                        <label className="flex items-center gap-2 text-sm">
+                        <label className="flex items-center gap-2 text-sm" htmlFor="checkbox-2">
                             <Checkbox
+                                id="checkbox-2"
                                 checked={form.watch().isCompleted}
                                 onCheckedChange={(val) => {
                                     form.setValue("isCompleted", !!val);
@@ -123,8 +123,9 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                             />
                             Completed
                         </label>
-                        <label className="flex items-center gap-2 text-sm">
+                        <label className="flex items-center gap-2 text-sm" htmlFor="checkbox-3">
                             <Checkbox
+                                id="checkbox-3"
                                 checked={form.watch().isRedo}
                                 onCheckedChange={(val) => {
                                     form.setValue("isRedo", !!val);
@@ -135,8 +136,9 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                         </label>
                     </div>
 
-                    <label className="flex items-start gap-2 rounded-md border border-border p-3 text-sm">
+                    <label className="flex items-start gap-2 rounded-md border border-border p-3 text-sm" htmlFor="checkbox-4">
                         <Checkbox
+                            id="checkbox-4"
                             checked={form.watch().hidden}
                             onCheckedChange={(val) => form.setValue("hidden", !!val)}
                         />
@@ -150,6 +152,12 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                         </span>
                     </label>
 
+                    {(updateMutation.isError || deleteMutation.isError) &&
+                        <InlineErrorContainer>
+                            {displayContainerError({ error: updateMutation.error ?? deleteMutation.error })}
+                        </InlineErrorContainer>
+                    }
+
                     <DialogFooter className="pt-2 mx-auto gap-3">
                         <Button type="button" variant="destructive" onClick={handleOnDelete} disabled={deleteMutation.isPending}>
                             Delete
@@ -160,7 +168,7 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                     </DialogFooter>
                 </form>
 
-                <div className="text-xs text-red-400">
+                <div className="text-xs text-destructive">
                     <b>Note:</b> These values determine how your time is allocated to your{" "}
                     monthly and yearly recaps. For example, you can log a show you watched years
                     ago without it inflating your current monthly / yearly recap. This does not affect your total lifetime

@@ -1,20 +1,21 @@
 import {MediaType} from "@/lib/utils/enums";
-import {createFileRoute, Link} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {BarChart3, ExternalLink, Flame, RefreshCw, Users} from "lucide-react";
-import {AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
+import {formatDate} from "@/lib/utils/date-formatting";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
+import {createFileRoute, Link} from "@tanstack/react-router";
 import {UserStats} from "@/lib/client/components/admin/UserStats";
+import {AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 import {Pagination} from "@/lib/client/components/general/Pagination";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
+import {BarChart3, ExternalLink, Flame, RefreshCw, Users} from "lucide-react";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {formatDateTime, formatNumber} from "@/lib/utils/formating";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
-import {adminMediaRefreshOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminMediaRefreshOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 
 
 export const Route = createFileRoute("/_admin/admin/media-refresh")({
@@ -96,7 +97,7 @@ function MediaRefreshPage() {
                     <UserStats
                         icon={Flame}
                         title="Busiest Day"
-                        value={formatDateTime(apiData.summary.busiestDay, { noTime: true })}
+                        value={formatDate(apiData.summary.busiestDay)}
                         description={`Highest Daily Volume - ${apiData.summary.busiestCount}`}
                     />
                 </div>
@@ -171,7 +172,7 @@ function MediaRefreshPage() {
                                                     {row.mediaType}
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">
-                                                    {formatNumber(row.count)} ({pct}%)
+                                                    {formatNumber(row.count)} ({formatPercent(pct, { fractionDigits: 0 })})
                                                 </span>
                                             </div>
                                             <div className="h-2 rounded-full bg-muted">
@@ -315,7 +316,7 @@ function MediaRefreshPage() {
                                             </Link>
                                         </TableCell>
                                         <TableCell className="text-right text-muted-foreground">
-                                            <RelativeTime value={row.refreshedAt}/>
+                                            <RelativeTime date={row.refreshedAt}/>
                                         </TableCell>
                                     </TableRow>
                                 )}

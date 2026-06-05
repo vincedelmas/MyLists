@@ -2,6 +2,7 @@ import {useState} from "react";
 import {useForm} from "react-hook-form";
 import {CreateCollection} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {FormZodError} from "@/lib/utils/error-classes";
 import {createFileRoute} from "@tanstack/react-router";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
@@ -22,7 +23,7 @@ function CollectionCreatePage() {
     const createMutation = useCreateCollectionMutation();
     const [mediaType, setMediaType] = useState<MediaType | null>(null);
     const [step, setStep] = useState<"mediaType" | "editor">("mediaType");
-    const activeTypes = currentUser?.settings.filter((s) => s.active).map((s) => s.mediaType) ?? [];
+    const activeTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? [];
     const form = useForm<CreateCollection>({
         defaultValues: {
             title: "",
@@ -41,10 +42,11 @@ function CollectionCreatePage() {
 
     const handleSubmit = async (payload: CreateCollection) => {
         createMutation.mutate({ data: payload }, {
-            onError: (error: any) => {
-                if (error.issues) {
-                    error.issues.forEach((issue: any) => {
-                        form.setError(issue.path.join("."), { message: issue.message });
+            onError: (err) => {
+                if (err instanceof FormZodError) {
+                    err.issues.forEach((issue) => {
+                        const fieldPath = issue.path[0] === "items" ? "items" : issue.path.join(".");
+                        form.setError(fieldPath, { message: issue.message });
                     });
                 }
             },

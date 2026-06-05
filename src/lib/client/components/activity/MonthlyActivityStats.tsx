@@ -1,10 +1,10 @@
 import {Clock} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
-import {formatMinutes} from "@/lib/utils/formating";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {formatMinutes} from "@/lib/utils/number-formatting";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {getActivityUnitLabel, toActivityDisplayValue} from "@/lib/utils/activity-utils";
-import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {getMonthlyActivityStatSummary} from "@/lib/utils/activity-utils";
+import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options";
 
 
 interface MonthlyActivityStatsProps {
@@ -35,7 +35,7 @@ export function MonthlyActivityStats({ username, year, month, mediaType }: Month
             </div>
 
             {stats.mediaStats.map((stat) => {
-                const unitLabel = getActivityUnitLabel(stat.mediaType, "short");
+                const summary = getMonthlyActivityStatSummary(stat.mediaType, stat.specificTotal, stat.count);
 
                 return (
                     <div key={stat.mediaType} className="flex min-h-20 w-full min-w-0 flex-col justify-between rounded-lg border bg-background px-3 py-2">
@@ -46,9 +46,9 @@ export function MonthlyActivityStats({ username, year, month, mediaType }: Month
                                     {stat.mediaType}
                                 </span>
                             </div>
-                            {unitLabel && stat.specificTotal > 0 &&
+                            {summary &&
                                 <span className="shrink-0 text-xs text-muted-foreground">
-                                    {toActivityDisplayValue(stat.mediaType, stat.specificTotal)} {unitLabel}
+                                    {summary}
                                 </span>
                             }
                         </div>

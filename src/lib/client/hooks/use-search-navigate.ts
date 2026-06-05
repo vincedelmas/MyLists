@@ -1,7 +1,6 @@
 import {useRef, useState} from "react";
-import {useNavigate} from "@tanstack/react-router";
-import type {NavigateOptions} from "@tanstack/router-core";
 import {useDebounceCallback} from "@/lib/client/hooks/use-debounce";
+import {NavigateOptions, useNavigate} from "@tanstack/react-router";
 
 
 type BaseSearchParams = {

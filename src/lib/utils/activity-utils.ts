@@ -1,8 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
-import {toDateInputValue} from "@/lib/utils/formating";
+import {zeroPad} from "@/lib/utils/number-formatting";
+import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
 
-
-export type ActivityStatusKind = "redo" | "completed" | "progressed";
 
 type ActivityMediaConfig = {
     longUnit?: string;
@@ -14,7 +13,7 @@ type ActivityMediaConfig = {
 }
 
 
-export const activityMediaConfig: Record<MediaType, ActivityMediaConfig> = {
+const activityMediaConfig: Record<MediaType, ActivityMediaConfig> = {
     [MediaType.SERIES]: {
         inputStep: 1,
         shortUnit: "eps",
@@ -43,7 +42,7 @@ export const activityMediaConfig: Record<MediaType, ActivityMediaConfig> = {
         longUnit: "Hours Played",
         calculateTime: identity,
         toStoredValue: (hours) => hours * 60,
-        toDisplayValue: (minutes) => Number((minutes / 60).toFixed(2)),
+        toDisplayValue: (minutes) => Math.round((minutes / 60) * 100) / 100,
     },
     [MediaType.BOOKS]: {
         inputStep: 1,
@@ -91,13 +90,28 @@ export const calculateActivityTime = (mediaType: MediaType, specificGained: numb
 };
 
 
+export const getMonthlyActivityStatSummary = (mediaType: MediaType, specificTotal: number, count: number) => {
+    if (mediaType === MediaType.GAMES) {
+        return count > 0 ? `${count} ${count === 1 ? "game" : "games"}` : null;
+    }
+
+    if (mediaType === MediaType.MOVIES) {
+        return specificTotal > 0 ? `${specificTotal} ${specificTotal === 1 ? "movie" : "movies"}` : null;
+    }
+
+    const unitLabel = getActivityUnitLabel(mediaType, "short");
+    if (!unitLabel || specificTotal <= 0) return null;
+
+    return `${toActivityDisplayValue(mediaType, specificTotal)} ${unitLabel}`;
+};
+
+
 export const getDefaultActivityDate = (year: number, month: number) => {
     const today = new Date();
     const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month;
-    if (isCurrentMonth) return toDateInputValue(today.toISOString());
+    if (isCurrentMonth) return toDateInputValue(today);
 
-    const lastDayOfMonth = new Date(year, month, 0).getDate();
-    return `${year}-${String(month).padStart(2, "0")}-${String(lastDayOfMonth).padStart(2, "0")}`;
+    return shiftDateInputValue(`${year}-${zeroPad(month)}-01`, { days: -1, months: 1 });
 };
 
 

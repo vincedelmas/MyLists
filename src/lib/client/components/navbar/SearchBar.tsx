@@ -1,18 +1,18 @@
 import {useState} from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {capitalize, formatDateTime} from "@/lib/utils/formating";
+import {formatDate} from "@/lib/utils/date-formatting";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {ChevronLeft, ChevronRight, Loader2, Search, X} from "lucide-react";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {Link, LinkProps, useRouter, useRouterState} from "@tanstack/react-router";
-import {navSearchOptions} from "@/lib/client/react-query/query-options/query-options";
+import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
@@ -26,13 +26,13 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     const [page, setPage] = useState(1);
     const [selectOpen, setSelectOpen] = useState(false);
     const [prevSelector, setPrevSelector] = useState(currentUser?.searchSelector);
-    const [selectDrop, setSelectDrop] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.TMDB);
+    const [selectDrop, setSelectDrop] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.USERS);
     const { search, setSearch, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer({ onReset: () => setPage(1) });
     const { data: searchResults, isFetching, error } = useQuery(navSearchOptions(debouncedSearch, page, selectDrop));
 
     if (prevSelector !== currentUser?.searchSelector) {
         setPrevSelector(currentUser?.searchSelector);
-        setSelectDrop(currentUser?.searchSelector ?? ApiProviderType.TMDB);
+        setSelectDrop(currentUser?.searchSelector ?? ApiProviderType.USERS);
     }
 
     const handleInputChange = (ev: any) => {
@@ -91,10 +91,9 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     focus:border-none focus-visible:border-none focus-visible:ring-0 dark:bg-background"
                 />
                 <div className="px-3 text-muted-foreground">
-                    {isOpen ?
-                        <X className="size-4 cursor-pointer" onClick={reset}/>
-                        :
-                        <Search className="size-4"/>
+                    {isOpen
+                        ? <X className="size-4 cursor-pointer" onClick={reset}/>
+                        : <Search className="size-4"/>
                     }
                 </div>
             </div>
@@ -210,11 +209,11 @@ const SearchComponent = ({ item, resetSearch, setMobileMenu }: SearchComponentPr
                         <div className="font-semibold mb-2 line-clamp-2">
                             {item.name}
                         </div>
-                        <div className="text-primary">
-                            {capitalize(item.itemType)}
+                        <div className="text-primary capitalize">
+                            {item.itemType}
                         </div>
                         <div className="text-muted-foreground text-sm">
-                            {formatDateTime(item.date, { noTime: true })}
+                            {formatDate(item.date)}
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import {formatDateTime} from "@/lib/utils/formating";
+import {formatDate} from "@/lib/utils/date-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {TrendsMedia} from "@/lib/types/provider.types";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
@@ -21,7 +21,7 @@ export const TrendCard = ({ media }: { media: TrendsMedia }) => {
                 </div>
                 <div className="flex w-full flex-wrap items-center justify-between">
                     <div className="shrink-0 text-xs font-medium text-muted-foreground">
-                        {formatDateTime(media.releaseDate, { noTime: true })}
+                        {formatDate(media.releaseDate)}
                     </div>
                     <Badge variant="outline" className="shrink-0 backdrop-blur-md capitalize">
                         {media.mediaType}

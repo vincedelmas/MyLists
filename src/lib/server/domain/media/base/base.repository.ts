@@ -1,20 +1,21 @@
 import {MediaListArgs} from "@/lib/schemas";
 import {notFound} from "@tanstack/react-router";
-import {statusUtils} from "@/lib/utils/mapping";
+import {statusUtils} from "@/lib/utils/media-mapping";
+import {MediaInfo} from "@/lib/types/activity.types";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {TopAffinityConfig} from "@/lib/types/stats.types";
 import {Achievement} from "@/lib/types/achievements.types";
-import {getDbClient} from "@/lib/server/database/async-storage";
-import {MediaSchemaConfig} from "@/lib/types/media.config.types";
-import {JobType, MediaType, Status, TagAction} from "@/lib/utils/enums";
-import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
-import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user} from "@/lib/server/database/schema";
-import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
-import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
-import {ExpandedListFilters, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData, UserTag} from "@/lib/types/media-list.types";
 import {UpComingMedia} from "@/lib/types/notifications.types";
-import {UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MediaInfo} from "@/lib/types/activity.types";
+import {getDbClient} from "@/lib/server/database/async-storage";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
+import {MediaSchemaConfig} from "@/lib/types/media.config.types";
+import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
+import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
+import {JobType, MediaType, SocialState, Status, TagAction} from "@/lib/utils/enums";
+import {UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
+import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user} from "@/lib/server/database/schema";
+import {ExpandedListFilters, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData, UserTag} from "@/lib/types/media-list.types";
+import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
 
 
 const SIMILAR_MAX_GENRES = 10;
@@ -281,36 +282,46 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
     }
 
     async editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {
+        const db = getDbClient();
         const { tagTable } = this.config;
 
         if (action === TagAction.ADD) {
-            const [tagData] = await getDbClient()
+            const [tagData] = await db
                 .insert(tagTable)
                 .values({ userId, name: tag.name, mediaId })
-                .returning({ name: tagTable.name })
+                .returning({ name: tagTable.name });
+
             return tagData satisfies Tag;
         }
         else if (action === TagAction.RENAME) {
-            const [tagData] = await getDbClient()
+            if (!tag.oldName) return;
+
+            const existingTag = db
+                .select()
+                .from(tagTable)
+                .where(and(eq(tagTable.userId, userId), eq(tagTable.name, tag.name)))
+                .get();
+
+            if (existingTag) {
+                throw new FormattedError("A tag with this name already exists.");
+            }
+
+            const [tagData] = await db
                 .update(tagTable)
                 .set({ name: tag.name })
                 .where(and(
                     eq(tagTable.userId, userId),
-                    eq(tagTable.name, tag?.oldName)
-                )).returning({ name: tagTable.name })
+                    eq(tagTable.name, tag.oldName)
+                )).returning({ name: tagTable.name });
             return tagData satisfies Tag;
         }
         else if (action === TagAction.DELETE_ONE) {
-            await getDbClient()
+            await db
                 .delete(tagTable)
-                .where(and(
-                    eq(tagTable.userId, userId),
-                    eq(tagTable.name, tag.name),
-                    eq(tagTable.mediaId, mediaId),
-                ));
+                .where(and(eq(tagTable.userId, userId), eq(tagTable.name, tag.name), eq(tagTable.mediaId, mediaId)));
         }
         else if (action === TagAction.DELETE_ALL) {
-            await getDbClient()
+            await db
                 .delete(tagTable)
                 .where(and(eq(tagTable.userId, userId), eq(tagTable.name, tag.name)));
         }
@@ -355,8 +366,10 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         return result;
     }
 
-    async findUserMedia(userId: number, mediaId: number): Promise<UserMediaWithTags<TConfig["listTable"]["$inferSelect"]> | null> {
+    async findUserMedia(userId: number | undefined, mediaId: number): Promise<UserMediaWithTags<TConfig["listTable"]["$inferSelect"]> | null> {
         const { listTable, tagTable } = this.config;
+
+        if (!userId) return null;
 
         const mainUserMediaData = getDbClient()
             .select({
@@ -404,8 +417,10 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         return data;
     }
 
-    async getUserFollowsMediaData(userId: number, mediaId: number): Promise<UserFollowsMediaData<TConfig["listTable"]["$inferSelect"]>[]> {
+    async getUserFollowsMediaData(userId: number | undefined, mediaId: number): Promise<UserFollowsMediaData<TConfig["listTable"]["$inferSelect"]>[]> {
         const { listTable } = this.config;
+
+        if (!userId) return [];
 
         const inFollowsLists = await getDbClient()
             .select({
@@ -418,7 +433,7 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
             .from(followers)
             .innerJoin(user, eq(user.id, followers.followedId))
             .innerJoin(listTable, eq(listTable.userId, followers.followedId))
-            .where(and(eq(followers.followerId, userId), eq(listTable.mediaId, mediaId)))
+            .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED), eq(listTable.mediaId, mediaId)))
             .orderBy(asc(user.name));
 
         return inFollowsLists;
@@ -601,26 +616,26 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
                 userId ? eq(listTable.userId, userId) : undefined,
                 maxAWeek ?
                     and(
-                        gte(mediaTable.releaseDate, sql`datetime('now')`),
-                        lte(mediaTable.releaseDate, sql`datetime('now', '+7 days')`),
+                        gte(mediaTable.releaseDate, sql`date('now')`),
+                        lte(mediaTable.releaseDate, sql`date('now', '+7 days')`),
                     )
                     :
                     or(
                         isNull(mediaTable.releaseDate),
-                        gte(mediaTable.releaseDate, sql`datetime('now')`),
+                        gte(mediaTable.releaseDate, sql`date('now')`),
                     )
             ))
             .orderBy(asc(mediaTable.releaseDate));
     }
 
-    async getMediaJobDetails(userId: number, job: JobType, name: string, offset: number, limit = 25) {
+    // TODO: use the paginate function?
+    async getMediaJobDetails(job: JobType, name: string, offset: number, limit = 25, userId?: number) {
         const { mediaTable, listTable, jobDefinitions } = this.config;
-
-        // TODO: use the paginate function?
 
         const jobHandler = jobDefinitions[job];
         if (!jobHandler) throw notFound();
 
+        const hasUser = !!userId;
         const { sourceTable, nameColumn, mediaIdColumn } = jobHandler;
 
         let dataQuery = getDbClient()
@@ -629,11 +644,16 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
                 mediaName: mediaTable.name,
                 imageCover: mediaTable.imageCover,
                 releaseDate: mediaTable.releaseDate,
-                inUserList: isNotNull(listTable.userId).mapWith(Boolean).as("inUserList"),
+                inUserList: hasUser
+                    ? isNotNull(listTable.userId).mapWith(Boolean).as("inUserList")
+                    : sql<boolean>`false`.as("inUserList"),
             })
             .from(mediaTable)
-            .leftJoin(listTable, and(eq(listTable.mediaId, mediaTable.id), eq(listTable.userId, userId)))
             .$dynamic();
+
+        if (hasUser) {
+            dataQuery = dataQuery.leftJoin(listTable, and(eq(listTable.mediaId, mediaTable.id), eq(listTable.userId, userId)));
+        }
 
         let countQuery = getDbClient()
             .select({ value: countDistinct(mediaTable.id) })

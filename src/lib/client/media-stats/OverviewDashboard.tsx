@@ -1,8 +1,8 @@
-import {formatAvgRating} from "@/lib/utils/ratings";
+import {formatAvgRating} from "@/lib/utils/ratings-formatting";
 import {ExtractStatsByType} from "@/lib/types/stats.types";
 import {StatCard} from "@/lib/client/media-stats/StatCard";
 import {DistributionChart} from "@/lib/client/media-stats/DistributionChart";
-import {formatHours, formatNumber, formatPercent} from "@/lib/utils/formating";
+import {formatHours, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {ActivityByMonthChart} from "@/lib/client/media-stats/ActivityByMonthChart";
 import {ChartColumn, Clock, Heart, MessageSquare, RefreshCw, Star, Tags, TrendingUp, Trophy, User} from "lucide-react";
 
@@ -37,7 +37,7 @@ export function OverviewDashboard({ stats }: OverviewDashboardProps) {
                     title="Total Time"
                     icon={<Clock className="size-4"/>}
                     value={formatHours(stats.totalHours)}
-                    subtitle={`${formatNumber(Math.round(stats.totalHours))} hours`}
+                    subtitle={`${formatNumber(stats.totalHours, { fractionDigits: 0 })} hours`}
                 />
                 <StatCard
                     title="Avg. Rating"
@@ -61,19 +61,19 @@ export function OverviewDashboard({ stats }: OverviewDashboardProps) {
                     title="Total Favorites"
                     icon={<Heart className="size-4"/>}
                     value={formatNumber(stats.totalFavorites)}
-                    subtitle={`Avg: ${stats.avgFavorites?.toFixed(2) ?? "-"}`}
+                    subtitle={`Avg: ${formatNumber(stats.avgFavorites, { fractionDigits: 2 })}`}
                 />
                 <StatCard
                     title="Total Comments"
                     value={formatNumber(stats.totalComments)}
                     icon={<MessageSquare className="size-4"/>}
-                    subtitle={`Avg: ${stats.avgComments?.toFixed(2) ?? "-"}`}
+                    subtitle={`Avg: ${formatNumber(stats.avgComments, { fractionDigits: 2 })}`}
                 />
                 <StatCard
                     title="Total Updates"
                     icon={<ChartColumn className="size-4"/>}
                     value={formatNumber(stats.updatesPerMonth.totalUpdates)}
-                    subtitle={`Avg: ${stats.updatesPerMonth.avgUpdates?.toFixed(2) ?? "-"}`}
+                    subtitle={`Avg: ${formatNumber(stats.updatesPerMonth.avgUpdates, { fractionDigits: 2 })}`}
                 />
                 <StatCard
                     title="Total Tags"

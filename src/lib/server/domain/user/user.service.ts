@@ -115,6 +115,10 @@ export class UserService {
         return this.repository.deleteUserAccount(userId);
     }
 
+    async getMinimalUserSettings(userId: number) {
+        return this.repository.getMinimalUserSettings(userId);
+    }
+
     async updateUserSettings(userId: number, payload: Partial<typeof user.$inferInsert>) {
         await this.repository.updateUserSettings(userId, payload);
     }

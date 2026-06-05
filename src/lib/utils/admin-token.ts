@@ -1,28 +1,9 @@
 import {serverEnv} from "@/env/server";
+import {signCookieValue} from "@/lib/utils/signed-cookies";
 import {getCookie, setCookie} from "@tanstack/react-start/server";
 
 
-const algorithm = { name: "HMAC", hash: "SHA-256" };
-
 export const ADMIN_COOKIE_NAME = "myListsAdminToken";
-
-
-const sign = async (value: string) => {
-    const key = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(serverEnv.ADMIN_TOKEN_SECRET),
-        algorithm,
-        false,
-        ["sign"]
-    );
-    const sig = await crypto.subtle.sign(
-        algorithm,
-        key,
-        new TextEncoder().encode(value)
-    );
-
-    return btoa(String.fromCharCode(...new Uint8Array(sig)));
-};
 
 
 const verifyAdminToken = async (token: string, currentUserId: number) => {
@@ -31,7 +12,7 @@ const verifyAdminToken = async (token: string, currentUserId: number) => {
 
     const payload = token.slice(0, dotIdx);
     const sig = token.slice(dotIdx + 1);
-    const expected = await sign(payload);
+    const expected = await signCookieValue(payload, serverEnv.ADMIN_TOKEN_SECRET);
 
     if (sig !== expected) return false;
 
@@ -49,7 +30,7 @@ const verifyAdminToken = async (token: string, currentUserId: number) => {
 export const setAdminCookie = async (userId: number) => {
     const exp = Date.now() + serverEnv.ADMIN_TTL_COOKIE_MIN * 60 * 1000;
     const payload = `${userId}:${exp}`;
-    const sig = await sign(payload);
+    const sig = await signCookieValue(payload, serverEnv.ADMIN_TOKEN_SECRET);
 
     setCookie(ADMIN_COOKIE_NAME, `${payload}.${sig}`, {
         path: "/",

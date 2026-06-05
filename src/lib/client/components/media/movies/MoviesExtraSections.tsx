@@ -28,7 +28,7 @@ export const MoviesExtraSections = ({ mediaType, media }: MoviesDetailsProps<typ
                     <MediaSectionTitle title="Main Actors"/>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         {cleanedActors.map((actor) =>
-                            <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "actor", name: actor.name }}>
+                            <Link key={actor.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "actor", name: actor.name }}>
                                 <MediaExtraGrid
                                     subname="Actor"
                                     clickable={true}

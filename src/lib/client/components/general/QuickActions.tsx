@@ -6,8 +6,6 @@ import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 
 export const QuickActions = ({ username, mediaType }: { username: string, mediaType?: MediaType }) => {
     const { pathname } = useLocation();
-    const year = String(new Date().getFullYear());
-    const month = String(new Date().getMonth() + 1);
 
     const actions = [
         {
@@ -28,10 +26,10 @@ export const QuickActions = ({ username, mediaType }: { username: string, mediaT
         {
             icon: Zap,
             params: { username },
-            search: { year, month, activeTab: mediaType },
             label: "User's Activity",
             to: "/activity/$username",
             match: `/activity/${username}`,
+            search: { activeTab: mediaType },
         },
         {
             icon: ListOrdered,

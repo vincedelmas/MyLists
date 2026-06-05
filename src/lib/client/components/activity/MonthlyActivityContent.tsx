@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {formatMinutes} from "@/lib/utils/formating";
+import {formatMinutes} from "@/lib/utils/number-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {LayoutGrid, Plus, Settings2} from "lucide-react";
@@ -20,8 +20,9 @@ import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerC
 import {ActivityStatusIcon} from "@/lib/client/components/activity/ActivityStatusIcon";
 import {ActivityEditor, ActivityKind, ActivitySearch} from "@/lib/types/activity.types";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
-import {monthlyActivityOptions} from "@/lib/client/react-query/query-options/query-options";
+import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Separator} from "@/lib/client/components/ui/separator";
 
 
 interface MonthlyActivityContentProps {
@@ -198,6 +199,8 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                     )}
                 </div>
             }
+
+            <Separator/>
 
             <div className="text-muted-foreground text-sm flex justify-end -mt-2">
                 {apiData.total} items

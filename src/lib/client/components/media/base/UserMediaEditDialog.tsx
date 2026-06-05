@@ -1,7 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle} from "@/lib/client/components/ui/credenza";
 
 

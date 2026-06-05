@@ -9,7 +9,7 @@ import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ErrorLogCard} from "@/lib/client/components/admin/ErrorLogCard";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {adminErrorLogsOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminErrorLogsOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {useAdminDeleteErrorLogsMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 
 

@@ -1,19 +1,22 @@
 import {toast} from "sonner";
+import {useState} from "react";
 import {Search} from "lucide-react";
 import {useForm} from "react-hook-form";
-import {useEffect, useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {useQuery} from "@tanstack/react-query";
 import {Input} from "@/lib/client/components/ui/input";
 import {Label} from "@/lib/client/components/ui/label";
 import {Button} from "@/lib/client/components/ui/button";
+import {displayContainerError} from "@/lib/utils/error-display";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {capitalize, toDateInputValue} from "@/lib/utils/formating";
+import {capitalize} from "@/lib/utils/text-formatting";
+import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {activityMediaAddSearchOptions} from "@/lib/client/react-query/query-options";
 import {useAddActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
-import {activityMediaAddSearchOptions} from "@/lib/client/react-query/query-options/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {getActivityInputStep, getActivityUnitLabel, getDefaultActivityDate, toActivityStoredValue} from "@/lib/utils/activity-utils";
@@ -37,7 +40,7 @@ interface ActivityAddDialogProps {
 
 
 export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange }: ActivityAddDialogProps) => {
-    const addMutation = useAddActivityMutation();
+    const addMutation = useAddActivityMutation({ noGlobalErrorToast: true });
     const [selectedType, setSelectedType] = useState<MediaType>(mediaTypes[0] ?? MediaType.SERIES);
     const [selectedMedia, setSelectedMedia] = useState<{ id: number; name: string; imageCover: string } | null>(null);
     const { search, setSearch, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer({
@@ -53,14 +56,6 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
             lastUpdate: getDefaultActivityDate(year, month),
         },
     });
-
-    useEffect(() => {
-        if (!mediaTypes.includes(selectedType)) {
-            reset();
-            setSelectedMedia(null);
-            setSelectedType(mediaTypes[0] ?? MediaType.SERIES);
-        }
-    }, [mediaTypes, reset, selectedType]);
 
     const handleTypeChange = (value: MediaType) => {
         reset();
@@ -86,7 +81,6 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
         }, {
             onSuccess: () => {
                 onOpenChange(false);
-                toast.success("Activity added");
             },
         });
     };
@@ -128,8 +122,8 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                                         src={selectedMedia.imageCover}
                                         className="h-16 w-11 shrink-0 rounded-sm object-cover"
                                     />
-                                    <div className="min-w-0">
-                                        <div className="truncate font-medium">
+                                    <div className="min-w-0 max-w-50">
+                                        <div className="truncate font-medium line-clamp-1">
                                             {selectedMedia.name}
                                         </div>
                                         <div className="text-xs text-muted-foreground">
@@ -220,15 +214,16 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                             <Label>Progress date</Label>
                             <Input
                                 type="date"
-                                max={toDateInputValue(new Date().toISOString())}
+                                max={toDateInputValue(new Date())}
                                 {...form.register("lastUpdate", { required: true })}
                             />
                         </div>
                     </div>
 
                     <div className="flex flex-wrap gap-4">
-                        <label className="flex items-center gap-2 text-sm">
+                        <label className="flex items-center gap-2 text-sm" htmlFor="is-progress">
                             <Checkbox
+                                id="is-progress"
                                 checked={form.watch().isCompleted}
                                 onCheckedChange={(val) => {
                                     form.setValue("isCompleted", !!val);
@@ -237,8 +232,9 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                             />
                             Completed
                         </label>
-                        <label className="flex items-center gap-2 text-sm">
+                        <label className="flex items-center gap-2 text-sm" htmlFor="is-re-experience">
                             <Checkbox
+                                id="is-re-experience"
                                 checked={form.watch().isRedo}
                                 onCheckedChange={(val) => {
                                     form.setValue("isRedo", !!val);
@@ -248,6 +244,12 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                             Re-experience
                         </label>
                     </div>
+
+                    {addMutation.isError &&
+                        <InlineErrorContainer>
+                            {displayContainerError({ error: addMutation.error })}
+                        </InlineErrorContainer>
+                    }
 
                     <DialogFooter>
                         <Button type="submit" disabled={addMutation.isPending || !selectedMedia}>

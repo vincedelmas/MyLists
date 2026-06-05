@@ -3,10 +3,10 @@ import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {Input} from "@/lib/client/components/ui/input";
 import {Label} from "@/lib/client/components/ui/label";
-import {getZodMutationError} from "@/lib/utils/helpers";
 import {Button} from "@/lib/client/components/ui/button";
+import {displayContainerError} from "@/lib/utils/error-display";
 import {Link2, LoaderCircle, PencilLine, UploadCloud} from "lucide-react";
-import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options/query-options";
+import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options";
 import {useUpdateBookCoverMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 
@@ -25,7 +25,7 @@ export const BookCoverEditDialog = ({ mediaId, apiId, external, mediaName }: Boo
     const [fileInputKey, setFileInputKey] = useState(0);
     const [mode, setMode] = useState<"link" | "upload">("link");
     const [imageFile, setImageFile] = useState<File | null>(null);
-    const updateCoverMutation = useUpdateBookCoverMutation(external ? apiId : mediaId, external);
+    const updateCoverMutation = useUpdateBookCoverMutation(external ? apiId : mediaId, external, { noGlobalErrorToast: true });
 
     // Using simple suggestion system using openLibrary
     const suggestedCoverUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(mediaName.trim())}-L.jpg?default=false`;
@@ -59,7 +59,6 @@ export const BookCoverEditDialog = ({ mediaId, apiId, external, mediaName }: Boo
         }
 
         updateCoverMutation.mutate({ data: formData }, {
-            onError: (err: any) => toast.error(getZodMutationError(err) || "Could not update the book cover."),
             onSuccess: () => {
                 resetForm();
                 setOpen(false);
@@ -126,15 +125,16 @@ export const BookCoverEditDialog = ({ mediaId, apiId, external, mediaName }: Boo
                             />
                         </div>
                     }
-                    {suggestedCoverQuery.isLoading &&
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                            <LoaderCircle className="size-4 animate-spin"/>
-                            Looking for a suggested cover...
+
+                    {updateCoverMutation.isError &&
+                        <div className="text-sm text-destructive">
+                            {displayContainerError({ error: updateCoverMutation.error })}
                         </div>
                     }
-                    {suggestedCoverQuery.data === "available" &&
-                        <div className="space-y-2">
-                            <Label>Suggested cover</Label>
+
+                    <div className="space-y-2">
+                        <Label>Suggested cover</Label>
+                        {suggestedCoverQuery.data === "available" &&
                             <div className="flex items-center gap-3">
                                 <img
                                     alt="Suggested cover"
@@ -154,10 +154,16 @@ export const BookCoverEditDialog = ({ mediaId, apiId, external, mediaName }: Boo
                                     Use suggested cover
                                 </Button>
                             </div>
+                        }
+                    </div>
+                    {suggestedCoverQuery.isLoading &&
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <LoaderCircle className="size-4 animate-spin"/>
+                            Looking for a suggested cover...
                         </div>
                     }
                     {(suggestedCoverQuery.data === "missing" || suggestedCoverQuery.isError) &&
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground -mt-3">
                             No suggestion found.
                         </div>
                     }

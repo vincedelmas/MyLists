@@ -2,7 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
-import {mediaCommunityCollectionsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaCommunityCollectionsOptions} from "@/lib/client/react-query/query-options";
 
 
 export const MediaCommunityCollections = ({ mediaId, mediaType }: { mediaId: number, mediaType: MediaType }) => {

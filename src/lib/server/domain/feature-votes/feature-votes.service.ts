@@ -11,15 +11,12 @@ export class FeatureVotesService {
     ) {
     }
 
-    async getFeatureVotes(currentUserId: number) {
-        const { features, voteAgg, userVotes } = await this.repository.getFeatureVotesData(currentUserId);
+    async getFeatureVotes(userId?: number) {
+        const { features, voteAgg, userVotes } = await this.repository.getFeatureVotesData(userId);
 
         const votesByFeature = new Map<number, number>();
         const userVoteIds = new Set(userVotes.map((vote) => vote.featureId));
-
-        voteAgg.forEach((vote) => {
-            votesByFeature.set(vote.featureId, Number(vote.totalVotes ?? 0));
-        });
+        voteAgg.forEach((vote) => votesByFeature.set(vote.featureId, Number(vote.totalVotes ?? 0)));
 
         const items = features.map((feature) => {
             const totalVotes = votesByFeature.get(feature.id) ?? 0;

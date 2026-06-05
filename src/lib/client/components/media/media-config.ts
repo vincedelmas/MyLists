@@ -41,7 +41,7 @@ import {getMangaColumns} from "@/lib/client/components/media/manga/MangaListColu
 import {MovieFollowCard} from "@/lib/client/components/media/movies/MovieFollowCard";
 import {BooksUserDetails} from "@/lib/client/components/media/books/BookUserDetails";
 import {MoviesOverTitle} from "@/lib/client/components/media/movies/MoviesOverTitle";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {MangaUserDetails} from "@/lib/client/components/media/manga/MangaUserDetails";
 import {GamesUserDetails} from "@/lib/client/components/media/games/GamesUserDetails";
 import {getMoviesColumns} from "@/lib/client/components/media/movies/MoviesListColumns";

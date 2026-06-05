@@ -1,6 +1,6 @@
 import {MoveRight} from "lucide-react";
 import {Link} from "@tanstack/react-router";
-import {zeroPad} from "@/lib/utils/formating";
+import {zeroPad} from "@/lib/utils/number-formatting";
 import {MediaType, UpdateType} from "@/lib/utils/enums";
 import {UserUpdateType} from "@/lib/types/query.options.types";
 

@@ -1,6 +1,5 @@
 import {useMemo} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {toItemKey} from "@/lib/utils/formating";
 import {Label} from "@/lib/client/components/ui/label";
 import {Input} from "@/lib/client/components/ui/input";
 import {ArrowDown, ArrowUp, Trash2} from "lucide-react";
@@ -8,8 +7,9 @@ import {Button} from "@/lib/client/components/ui/button";
 import {useFieldArray, useFormContext} from "react-hook-form";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
-import {profileCustomSearchOptions} from "@/lib/client/react-query/query-options/query-options";
+import {profileCustomSearchOptions} from "@/lib/client/react-query/query-options";
 import {HighlightedMediaRef, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab, PROFILE_MAX_HIGHLIGHTED_MEDIA} from "@/lib/types/profile-custom.types";
+import {toItemKey} from "@/lib/utils/media-mapping";
 
 
 interface CuratedMediaManagerProps {

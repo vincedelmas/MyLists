@@ -1,7 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
-import {isLatin1} from "@/lib/utils/formating";
-import {CoverType} from "@/lib/types/media-common.types";
 import {getImageUrl} from "@/lib/utils/image-url";
+import {isLatin1} from "@/lib/utils/text-formatting";
+import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {moviesConfig} from "@/lib/server/domain/media/movies/movies.config";
 import {
@@ -17,6 +17,7 @@ import {
     TmdbTvSearchResult,
     TrendsMedia
 } from "@/lib/types/provider.types";
+import {formatDateForDb} from "@/lib/utils/date-formatting";
 
 
 type Options = {
@@ -65,18 +66,18 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Option
         prodStatus: rawData?.status,
         voteCount: rawData?.vote_count ?? 0,
         popularity: rawData?.popularity ?? 0,
+        createdBy: processCreatedBy(rawData),
         originalName: rawData?.original_name,
         voteAverage: rawData?.vote_average ?? 0,
-        createdBy: processCreatedBy(rawData),
         originCountry: rawData?.origin_country?.[0],
         totalSeasons: rawData?.number_of_seasons ?? 1,
         totalEpisodes: rawData?.number_of_episodes ?? 1,
+        lastAirDate: formatDateForDb(rawData.last_air_date),
+        releaseDate: formatDateForDb(rawData.first_air_date),
         duration: rawData?.episode_run_time?.[0] ?? defaultDuration,
-        nextEpisodeToAir: rawData?.next_episode_to_air?.air_date ?? null,
         seasonToAir: rawData?.next_episode_to_air?.season_number ?? null,
         episodeToAir: rawData?.next_episode_to_air?.episode_number ?? null,
-        lastAirDate: rawData?.last_air_date ? new Date(rawData.last_air_date).toISOString() : null,
-        releaseDate: rawData?.first_air_date ? new Date(rawData.first_air_date).toISOString() : null,
+        nextEpisodeToAir: formatDateForDb(rawData?.next_episode_to_air?.air_date),
         imageCover: await saveImageFromUrl({
             dirSaveName: dirSaveName,
             imageUrl: `${imageBaseUrl}${rawData?.poster_path}`,
@@ -174,9 +175,9 @@ const transformMoviesDetailsResults = async (rawData: TmdbMovieDetails) => {
         voteAverage: rawData?.vote_average ?? 0,
         originalLanguage: rawData?.original_language,
         collectionId: rawData?.belongs_to_collection?.id,
+        releaseDate: formatDateForDb(rawData.release_date),
         duration: rawData?.runtime ?? moviesDefaultDuration,
         directorName: rawData?.credits?.crew?.find((crew) => crew.job === "Director")?.name,
-        releaseDate: rawData.release_date ? new Date(rawData.release_date).toISOString() : null,
         compositorName: rawData?.credits?.crew?.find((crew) => crew.job === "Original Music Composer")?.name,
         imageCover: await saveImageFromUrl({
             dirSaveName: "movies-covers",

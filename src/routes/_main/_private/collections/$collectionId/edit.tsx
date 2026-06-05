@@ -3,10 +3,11 @@ import {CreateCollection} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {FormZodError} from "@/lib/utils/error-classes";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
-import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options/query-options";
+import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteCollectionMutation, useUpdateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 
@@ -49,7 +50,6 @@ function CollectionEditPage() {
             onSuccess: async () => {
                 const redirectUsername = currentUser?.id === apiData.collection.ownerId
                     ? currentUser?.name : apiData.collection.ownerName;
-
                 return navigate({ to: "/collections/user/$username", params: { username: redirectUsername } });
             }
         });
@@ -57,10 +57,13 @@ function CollectionEditPage() {
 
     const handleSubmit = async (payload: CreateCollection) => {
         updateMutation.mutate({ data: { collectionId, ...payload } }, {
-            onError: (error: any) => {
-                error.issues?.forEach((issue: any) => {
-                    form.setError(issue.path.join("."), { message: issue.message });
-                });
+            onError: (err) => {
+                if (err instanceof FormZodError) {
+                    err.issues.forEach((issue) => {
+                        const fieldPath = issue.path[0] === "items" ? "items" : issue.path.join(".");
+                        form.setError(fieldPath, { message: issue.message });
+                    });
+                }
             },
             onSuccess: () => {
                 form.reset(payload);

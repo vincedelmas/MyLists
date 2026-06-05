@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
+import {formatDateForDb} from "@/lib/utils/date-formatting";
 import {JikanDetails, JikanMangaSearchResponse, ProviderSearchResult, SearchData} from "@/lib/types/provider.types";
 
 
@@ -33,10 +34,10 @@ const transformMangaDetailsResults = async (rawData: JikanDetails) => {
         voteAverage: rawData.score,
         originalName: rawData.title,
         voteCount: rawData.scored_by,
-        endDate: rawData.published.to,
         popularity: rawData.popularity,
-        releaseDate: rawData.published.from,
         name: rawData.title_english ?? rawData.title,
+        endDate: formatDateForDb(rawData.published.to),
+        releaseDate: formatDateForDb(rawData.published.from),
         publishers: rawData.serializations?.[0]?.name ?? null,
         imageCover: await saveImageFromUrl({
             dirSaveName: "manga-covers",

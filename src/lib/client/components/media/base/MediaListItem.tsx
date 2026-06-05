@@ -1,8 +1,8 @@
-import {formatRating} from "@/lib/utils/ratings";
+import {formatRating} from "@/lib/utils/ratings-formatting";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {ExtractListByType} from "@/lib/types/query.options.types";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 interface MediaListItemProps<T extends MediaType> {

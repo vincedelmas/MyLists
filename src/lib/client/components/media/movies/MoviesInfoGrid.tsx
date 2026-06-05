@@ -1,10 +1,11 @@
 import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
+import {formatDate} from "@/lib/utils/date-formatting";
+import {formatCurrency} from "@/lib/utils/number-formatting";
+import {formatLocaleName} from "@/lib/utils/text-formatting";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
-
-import {formatCurrency, formatDateTime, formatLocaleName} from "@/lib/utils/formating";
 
 
 type MoviesDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]>[number];
@@ -30,7 +31,7 @@ export const MoviesInfoGrid = ({ mediaType, media }: MoviesDetailsProps<typeof M
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Release Date">
-                {formatDateTime(media.releaseDate, { noTime: true })}
+                {formatDate(media.releaseDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Original Lang.">
                 {formatLocaleName(media.originalLanguage, "language")}

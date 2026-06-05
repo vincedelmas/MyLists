@@ -107,7 +107,6 @@ function HomePage() {
                             {Array.from({ length: 32 }).map((_, i) =>
                                 <div
                                     key={i}
-                                    // eslint-disable-next-line react-hooks/purity
                                     style={{ animationDelay: `${i * Math.random()}s` }}
                                     className="bg-linear-to-br from-primary/20 to-accent/20 rounded-lg float-animation"
                                 />

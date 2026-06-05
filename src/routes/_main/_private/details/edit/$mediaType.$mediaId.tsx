@@ -1,15 +1,16 @@
 import {toast} from "sonner";
 import {useForm} from "react-hook-form";
 import {MediaType} from "@/lib/utils/enums";
-import {capitalize} from "@/lib/utils/formating";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {FormZodError} from "@/lib/utils/error-classes";
 import {Button} from "@/lib/client/components/ui/button";
-import {splitIntoColumns} from "@/lib/utils/split-columns";
+import {splitIntoColumns} from "@/lib/utils/arrays";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {useEditMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
@@ -78,10 +79,16 @@ function MediaEditPage() {
         }
 
         editMediaMutation.mutate({ data: { mediaType, mediaId, payload: submittedData } }, {
-            onError: () => toast.error("An error occurred while updating the media"),
+            onError: (err) => {
+                if (err instanceof FormZodError) {
+                    err.issues.forEach((issue) => {
+                        form.setError(issue.path.join("."), { message: issue.message });
+                    });
+                }
+            },
             onSuccess: async () => {
-                toast.success("Media successfully updated!");
                 history.go(-1);
+                toast.success("Media successfully updated!");
             },
         });
     };

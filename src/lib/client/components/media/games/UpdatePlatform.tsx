@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {GamesPlatformsEnum, UpdateType} from "@/lib/utils/enums";
-import {gameCompatiblePlatformsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {gameCompatiblePlatformsOptions} from "@/lib/client/react-query/query-options";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 

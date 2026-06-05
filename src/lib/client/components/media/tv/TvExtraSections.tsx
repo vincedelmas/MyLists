@@ -1,7 +1,7 @@
 import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
-import {zeroPad} from "@/lib/utils/formating";
+import {zeroPad} from "@/lib/utils/number-formatting";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
 
@@ -19,7 +19,7 @@ export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<typeof Medi
                     <MediaSectionTitle title="Main Actors"/>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         {cleanedActors.map((actor) =>
-                            <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "actor", name: actor.name }}>
+                            <Link key={actor.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "actor", name: actor.name }}>
                                 <MediaExtraGrid
                                     subname="Actor"
                                     clickable={true}
@@ -39,6 +39,7 @@ export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<typeof Medi
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 overflow-y-auto scrollbar-thin max-h-68">
                         {media.epsPerSeason.map((s) =>
                             <MediaExtraGrid
+                                key={`season-${s.season}`}
                                 name={`Season ${s.season}`}
                                 initials={`S${zeroPad(s.season)}`}
                                 subname={`${s.episodes} Episodes`}

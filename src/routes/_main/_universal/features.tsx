@@ -1,8 +1,7 @@
 import {JSX} from "react";
 import {ApiProviderType} from "@/lib/utils/enums";
-import {createFileRoute} from "@tanstack/react-router";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
-import {BlockLink} from "@/lib/client/components/general/BlockLink";
+import {createFileRoute, Link} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {
@@ -402,9 +401,9 @@ const FEATURES_DATA: FeatureData[] = [
         description: (
             <span>
                 Have an idea? Add it and vote for what you would like me to build next{" "}
-                <BlockLink to="/features-vote" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
+                <Link to="/features-vote" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
                     here
-                </BlockLink>.
+                </Link>.
             </span>
         )
     },
@@ -416,9 +415,9 @@ const FEATURES_DATA: FeatureData[] = [
         description: (
             <span>
                 New here? There is a small walkthrough to help you add your first media and understand the basics{" "}
-                <BlockLink to="/walkthrough/search-media" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
+                <Link to="/walkthrough/search-media" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
                     here
-                </BlockLink>.
+                </Link>.
             </span>
         )
     },

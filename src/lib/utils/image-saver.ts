@@ -1,5 +1,4 @@
 import path from "path";
-import sharp from "sharp";
 import crypto from "crypto";
 import {mkdir} from "fs/promises";
 import {serverEnv} from "@/env/server";
@@ -81,12 +80,17 @@ const processAndSaveImage = createServerOnlyFn(() => async ({ buffer, dirSaveNam
     await mkdir(saveLocation, { recursive: true });
     const filePath = path.join(saveLocation, fileName);
 
-    const sharpInstance = sharp(buffer);
-    if (resize) {
-        sharpInstance.resize(resize.width ?? null, resize.height);
+    try {
+        const sharp = (await import("sharp")).default;
+        const sharpInstance = sharp(buffer);
+        if (resize) {
+            sharpInstance.resize(resize.width ?? null, resize.height);
+        }
+        await sharpInstance.jpeg({ quality: 90 }).toFile(filePath);
     }
-
-    await sharpInstance.jpeg({ quality: 90 }).toFile(filePath);
+    catch {
+        throw new FormattedError("This image could not be processed");
+    }
 
     return fileName;
 })();

@@ -1,4 +1,4 @@
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {HighlightedMediaTab, PROFILE_MAX_HIGHLIGHTED_MEDIA} from "@/lib/types/profile-custom.types";

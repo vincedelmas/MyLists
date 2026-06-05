@@ -12,13 +12,13 @@ export const OnboardingModal = () => {
     const [open, setOpen] = useState(true);
 
     const handleStartTour = async () => {
-        mutation.mutate();
+        mutation.mutate({});
         setOpen(false);
         await navigate({ to: "/walkthrough/search-media" });
     };
 
     const handleNoThanks = async () => {
-        mutation.mutate();
+        mutation.mutate({});
         setOpen(false);
     };
 
@@ -36,7 +36,6 @@ export const OnboardingModal = () => {
                         </p>
                     </DialogHeader>
 
-                    {/* Feature List - Gives the user a reason to say "Yes" */}
                     <div className="space-y-4 mb-8">
                         <div className="flex items-start gap-4">
                             <div className="mt-1 p-2 rounded-md bg-accent/50">
@@ -82,19 +81,12 @@ export const OnboardingModal = () => {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3">
-                        <Button
-                            className="flex-1 h-11 font-semibold group"
-                            onClick={handleStartTour}
-                        >
+                        <Button className="flex-1 h-11 font-semibold group" onClick={handleStartTour}>
                             Start Walkthrough
                             <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform"/>
                         </Button>
 
-                        <Button
-                            variant="outline"
-                            className="flex-1 h-11"
-                            onClick={handleNoThanks}
-                        >
+                        <Button variant="outline" className="flex-1 h-11" onClick={handleNoThanks}>
                             I know my way around
                         </Button>
                     </div>

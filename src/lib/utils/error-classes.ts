@@ -39,3 +39,27 @@ export const formZodErrorAdapter = createSerializationAdapter({
     toSerializable: ({ message, issues }) => ({ message, issues }),
     fromSerializable: ({ message, issues }) => new FormZodError({ issues } as z.ZodError, message),
 });
+
+
+export class UnauthorizedError extends Error {
+    public type: "restricted" | "private";
+
+    constructor(type: "restricted" | "private") {
+        super(type);
+
+        this.type = type;
+        this.name = "UnauthorizedError";
+
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, UnauthorizedError);
+        }
+    };
+}
+
+
+export const unauthorizedErrorAdapter = createSerializationAdapter({
+    key: "unauthorized-error",
+    test: (v) => v instanceof UnauthorizedError,
+    toSerializable: ({ type }) => ({ type }),
+    fromSerializable: ({ type }) => new UnauthorizedError(type),
+});

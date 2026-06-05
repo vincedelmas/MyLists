@@ -13,6 +13,7 @@ import {IgdbGameDetails, IgdbSearchResponse, IgdbSearchResultItem, IgdbTokenResp
 
 export class IgdbApi extends BaseApi {
     private static readonly consumeKey = "igdb-API";
+    private static readonly maxSearchQueryLength = 100;
     private readonly clientId = serverEnv.IGDB_CLIENT_ID;
     private readonly secretId = serverEnv.IGDB_CLIENT_SECRET;
     private static readonly tokenCacheKey = "igdb:accessToken";
@@ -33,9 +34,18 @@ export class IgdbApi extends BaseApi {
 
     async search(query: string, page: number = 1): Promise<SearchData<IgdbSearchResponse>> {
         const offset = (page - 1) * this.resultsPerPage;
-        const escapedQuery = query.replace(/\\/g, "\\\\")
+        const sanitizedQuery = this._sanitizeSearchQuery(query);
+
+        if (sanitizedQuery.length < 2) {
+            return {
+                page,
+                rawData: { count: 0, result: [] },
+                resultsPerPage: this.resultsPerPage,
+            };
+        }
+
+        const escapedQuery = sanitizedQuery.replace(/\\/g, "\\\\")
             .replace(/"/g, '\\"')
-            .replace(/\r?\n/g, " ")
             .trim();
 
         const headers = await this._getHeaders();
@@ -60,6 +70,14 @@ export class IgdbApi extends BaseApi {
             rawData: { count, result },
             resultsPerPage: this.resultsPerPage,
         }
+    }
+
+    private _sanitizeSearchQuery(query: string) {
+        return query
+            .replace(/\s+/g, " ")
+            .replace(/[;{}]/g, "")
+            .trim()
+            .slice(0, IgdbApi.maxSearchQueryLength);
     }
 
     async getGameDetails(apiId: number): Promise<IgdbGameDetails> {

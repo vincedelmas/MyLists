@@ -63,4 +63,10 @@ export const adminRefreshSchema = z.object({
     recentPage: z.coerce.number().int().min(1).default(1),
     topRange: z.enum(["30d", "90d", "1y", "all"]).default("all"),
     dailyRange: z.enum(["30d", "90d", "1y", "all"]).default("30d"),
-})
+});
+
+export const adminApiMonitoringSchema = z.object({
+    recentPage: z.coerce.number().int().min(1).default(1),
+    range: z.enum(["24h", "7d", "30d", "90d", "all"]).default("30d"),
+    dailyRange: z.enum(["7d", "30d", "90d", "all"]).default("30d"),
+});

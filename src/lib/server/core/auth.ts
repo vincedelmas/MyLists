@@ -5,7 +5,7 @@ import {clientEnv} from "@/env/client";
 import {serverEnv} from "@/env/server";
 import {betterAuth} from "better-auth";
 import {db} from "@/lib/server/database/db";
-import {statusUtils} from "@/lib/utils/mapping";
+import {statusUtils} from "@/lib/utils/media-mapping";
 import {sendEmail} from "@/lib/utils/mail-sender";
 import {createServerOnlyFn} from "@tanstack/react-start";
 import {drizzleAdapter} from "better-auth/adapters/drizzle";

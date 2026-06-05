@@ -2,6 +2,7 @@ import {SearchType} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {paginate} from "@/lib/server/database/pagination";
+import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, count, desc, eq, getTableColumns, gte, isNotNull, like, notInArray, sql} from "drizzle-orm";
 import {dailyMediadle, mediadleStats, movies, user, userMediadleProgress} from "@/lib/server/database/schema";
@@ -44,7 +45,7 @@ export class MediadleRepository {
     }
 
     static async getTodayMoviedle() {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = toDateInputValue(new Date(), { timeZone: "utc" });
 
         return getDbClient()
             .select()
@@ -77,7 +78,7 @@ export class MediadleRepository {
             .values({
                 mediaId: selectedMovie.id,
                 mediaType: MediaType.MOVIES,
-                date: new Date().toISOString().slice(0, 10),
+                date: toDateInputValue(new Date(), { timeZone: "utc" }),
             }).returning();
 
         return newMoviedle;

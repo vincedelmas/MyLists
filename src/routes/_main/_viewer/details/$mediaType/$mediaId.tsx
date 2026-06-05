@@ -1,0 +1,167 @@
+import {Suspense} from "react";
+import {MediaType} from "@/lib/utils/enums";
+import {ExternalLink, Plus} from "lucide-react";
+import {useAuth} from "@/lib/client/hooks/use-auth";
+import {Card} from "@/lib/client/components/ui/card";
+import {useSuspenseQuery} from "@tanstack/react-query";
+import {createFileRoute} from "@tanstack/react-router";
+import {Button} from "@/lib/client/components/ui/button";
+import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
+import {LockedContent} from "@/lib/client/components/general/LockedContent";
+import {SimilarMedia} from "@/lib/client/components/media/base/SimilarMedia";
+import {MediaSynopsis} from "@/lib/client/components/media/base/MediaSynopsis";
+import {MediaComponent} from "@/lib/client/components/media/base/MediaComponent";
+import {RefreshAndEdit} from "@/lib/client/components/media/base/RefreshAndEdit";
+import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
+import {CollectionsLists} from "@/lib/client/components/media/base/CollectionsLists";
+import {MediaFollowsSection} from "@/lib/client/components/media/base/MediaFollowsSection";
+import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
+import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
+import {mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+
+
+export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId")({
+    params: {
+        parse: (params) => {
+            return {
+                mediaType: params.mediaType as MediaType,
+                mediaId: params.mediaId as string | number,
+            }
+        }
+    },
+    validateSearch: (search) => ({ external: Boolean(search?.external ?? false) }),
+    loaderDeps: ({ search: { external } }) => ({ external }),
+    loader: async ({ context: { queryClient }, params: { mediaType, mediaId }, deps: { external } }) => {
+        const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId, external));
+        void queryClient.prefetchQuery(mediaCommunityCollectionsOptions(details.media.id, mediaType));
+    },
+    component: MediaDetailsPage,
+});
+
+
+function MediaDetailsPage() {
+    const { isAnonymous } = useAuth();
+    const { external } = Route.useSearch();
+    const { mediaType, mediaId } = Route.useParams();
+    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsOptions(mediaType, mediaId, external));
+    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsOptions(mediaType, mediaId, external)).data;
+
+    const handleAddMediaToUser = () => {
+        addMediaToListMutation.mutate({ data: { mediaType, mediaId: media.id } });
+    };
+
+    return (
+        <PageTitle title={media.name} onlyHelmet>
+            <MediaHero
+                media={media}
+                external={external}
+                mediaType={mediaType}
+            />
+            <div className="grid grid-cols-12 gap-8 mx-auto px-4 py-2 max-sm:py-0 max-lg:grid-cols-1">
+                <div className="col-span-8 space-y-8 max-lg:col-span-1 max-lg:order-2">
+                    <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 border-y border-app-accent/30">
+                        <MediaComponent
+                            media={media}
+                            name="infoGrid"
+                            mediaType={mediaType}
+                        />
+                    </section>
+
+                    <MediaSynopsis
+                        media={media}
+                    />
+
+                    <MediaComponent
+                        media={media}
+                        name="extraSections"
+                        mediaType={mediaType}
+                    />
+
+                    <SimilarMedia
+                        mediaType={mediaType}
+                        similarMedia={similarMedia}
+                    />
+
+                    <Suspense>
+                        <MediaCommunityCollections
+                            mediaId={media.id}
+                            mediaType={mediaType}
+                        />
+                    </Suspense>
+                </div>
+                <div className="col-span-4 space-y-6 max-lg:col-span-1 max-lg:order-1">
+                    <div className="space-y-6 max-lg:grid max-lg:grid-cols-2 max-md:grid-cols-1 max-lg:gap-6">
+                        <div className="space-y-6 max-lg:mb-0">
+                            {!isAnonymous &&
+                                <RefreshAndEdit
+                                    mediaId={media.id}
+                                    apiId={media.apiId}
+                                    external={external}
+                                    mediaType={mediaType}
+                                    lastUpdate={media.lastApiUpdate}
+                                />
+                            }
+
+                            <MediaComponent
+                                media={media}
+                                name="upComingAlert"
+                                mediaType={mediaType}
+                            />
+
+                            <Button variant="outline" className="w-full gap-2" asChild>
+                                <a href={media.providerData.url} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="size-4"/>
+                                    View on {media.providerData.name}
+                                </a>
+                            </Button>
+
+                            {userMedia ?
+                                <UserMediaDetails
+                                    mediaType={mediaType}
+                                    userMedia={userMedia}
+                                    queryOption={mediaDetailsOptions(mediaType, mediaId, external)}
+                                />
+                                :
+                                isAnonymous ?
+                                    <LockedContent
+                                        variant="inline"
+                                        showAuthButtons={true}
+                                        isAnonymous={isAnonymous}
+                                        title="Want to track your progress?"
+                                        description="Log-in or register to add this media to your list, track your
+                                        progress, add ratings, comments, tags and more."
+                                    />
+                                    :
+                                    <Card>
+                                        <div className="text-center space-y-2">
+                                            <h3 className="text-lg font-semibold text-slate-200">
+                                                Are you interested in this?
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                Add this {mediaType} to your list to track your progress.
+                                            </p>
+                                        </div>
+                                        <Button className="w-full mt-2" onClick={handleAddMediaToUser}>
+                                            <Plus className="size-4"/> Add to List
+                                        </Button>
+                                    </Card>
+                            }
+                            <CollectionsLists
+                                mediaId={media.id}
+                                mediaType={mediaType}
+                                isAnonymous={isAnonymous}
+                            />
+                        </div>
+
+                        <MediaFollowsSection
+                            mediaType={mediaType}
+                            isAnonymous={isAnonymous}
+                            followsData={followsData}
+                        />
+                    </div>
+                </div>
+            </div>
+        </PageTitle>
+    );
+}

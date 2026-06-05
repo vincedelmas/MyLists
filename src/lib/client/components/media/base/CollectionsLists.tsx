@@ -5,17 +5,18 @@ import {useQuery} from "@tanstack/react-query";
 import {Card} from "@/lib/client/components/ui/card";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {CollectionsDialog} from "@/lib/client/components/media/base/CollectionsDialog";
-import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
 
 
 interface CollectionsListsProps {
     mediaId: number;
     mediaType: MediaType;
+    isAnonymous: boolean;
 }
 
 
-export const CollectionsLists = ({ mediaType, mediaId }: CollectionsListsProps) => {
-    const { data: collections = [] } = useQuery(userCollectionMembershipsOptions(mediaId, mediaType, true));
+export const CollectionsLists = ({ mediaType, mediaId, isAnonymous }: CollectionsListsProps) => {
+    const { data: collections = [] } = useQuery(userCollectionMembershipsOptions(mediaId, mediaType, !isAnonymous));
     const activeCollections = collections.filter((collection) => collection.hasMedia);
 
     return (
@@ -28,42 +29,50 @@ export const CollectionsLists = ({ mediaType, mediaId }: CollectionsListsProps) 
                             Your Collections ({activeCollections.length})
                         </span>
                     </span>
-                    <CollectionsDialog
-                        mediaId={mediaId}
-                        mediaType={mediaType}
-                    />
+                    {!isAnonymous &&
+                        <CollectionsDialog
+                            mediaId={mediaId}
+                            mediaType={mediaType}
+                        />
+                    }
                 </h3>
             </div>
             <div className="overflow-y-auto scrollbar-thin max-h-53 space-y-1 px-2 pb-3">
-                {activeCollections.length === 0 ?
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                        Not added to a collection yet.
-                    </div>
-                    :
-                    activeCollections.map((collection) =>
-                        <Link
-                            key={collection.id}
-                            to="/collections/$collectionId"
-                            params={{ collectionId: collection.id }}
-                            className="block rounded-lg p-3 transition-colors hover:bg-accent/50"
-                        >
-                            <div className="min-w-0 space-y-1">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="truncate text-sm font-medium leading-snug text-primary" title={collection.title}>
-                                        {collection.title}
-                                    </div>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                {
+                    isAnonymous ?
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                            Log-in or register to see your collections.
+                        </div>
+                        :
+                        activeCollections.length === 0 ?
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                                Not added to a collection yet.
+                            </div>
+                            :
+                            activeCollections.map((collection) =>
+                                <Link
+                                    key={collection.id}
+                                    to="/collections/$collectionId"
+                                    params={{ collectionId: collection.id }}
+                                    className="block rounded-lg p-3 transition-colors hover:bg-accent/50"
+                                >
+                                    <div className="min-w-0 space-y-1">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="truncate text-sm font-medium leading-snug text-primary" title={collection.title}>
+                                                {collection.title}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                     <span className="inline-flex items-center gap-1">
                                         <PrivacyIcon type={collection.privacy}/>
                                     </span>
-                                    <span>
+                                            <span>
                                         {collection.itemsCount} item{collection.itemsCount > 1 ? "s" : ""}
                                     </span>
-                                </div>
-                            </div>
-                        </Link>
-                    )
+                                        </div>
+                                    </div>
+                                </Link>
+                            )
                 }
             </div>
         </Card>

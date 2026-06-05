@@ -92,18 +92,11 @@ export class UserStatsRepository {
         }
     }
 
-    static async userHallofFameData(userId: number, filters: SearchType) {
+    static async userHallofFameData(filters: SearchType, userId?: number) {
         const { search = "" } = filters;
-        const sorting = resolveSorting(filters.sorting, ["normalized", "profile", ...Object.values(MediaType)] as const, "normalized");
-
-        const { page, perPage, offset, limit } = resolvePagination({
-            defaultPerPage: 10,
-            page: filters.page,
-            perPage: filters.perPage,
-        });
-
         const mediaTypes = Object.values(MediaType);
-        const umsAlias = alias(userMediaSettings, "ums");
+        const sorting = resolveSorting(filters.sorting, ["normalized", "profile", ...mediaTypes] as const, "normalized");
+        const { page, perPage, offset, limit } = resolvePagination({ defaultPerPage: 10, page: filters.page, perPage: filters.perPage });
 
         const maxTimePerMedia = getDbClient()
             .select({
@@ -114,6 +107,8 @@ export class UserStatsRepository {
             .where(eq(userMediaSettings.active, true))
             .groupBy(userMediaSettings.mediaType)
             .as("max_time_per_media");
+
+        const umsAlias = alias(userMediaSettings, "ums");
 
         // Dynamically create normalized score columns
         const normalizedScoreColumns: Record<string, SQL.Aliased<number>> = {};
@@ -142,6 +137,7 @@ export class UserStatsRepository {
                 id: user.id,
                 name: user.name,
                 image: user.image,
+                privacy: user.privacy,
                 ...normalizedScoreColumns,
                 totalScore: sql<number>`sum(${totalScoreSumExpression})`.as("total_score"),
                 totalTime: sql<number>`sum(CASE WHEN ${umsAlias.active} = 1 THEN ${umsAlias.timeSpent} ELSE 0 END)`.as("total_time"),
@@ -166,6 +162,7 @@ export class UserStatsRepository {
                 id: baseQuery.id,
                 name: baseQuery.name,
                 image: baseQuery.image,
+                privacy: baseQuery.privacy,
                 ...mediaTypes.reduce((acc, mt) => {
                     const scoreKey = `${mt}Score` as keyof typeof baseQuery;
                     acc[scoreKey] = baseQuery[scoreKey];
@@ -263,17 +260,21 @@ export class UserStatsRepository {
             }
         });
 
-        // Get Current User's Ranks
-        const currentUserRankData = getDbClient()
-            .with(allUsersRanked)
-            .select()
-            .from(allUsersRanked)
-            .where(eq(allUsersRanked.id, userId))
-            .get();
+        let currentUserRankData = undefined;
+        let currentUserActiveSettings: Set<MediaType> = new Set();
+        if (userId) {
+            // Get Current User's Ranks
+            currentUserRankData = getDbClient()
+                .with(allUsersRanked)
+                .select()
+                .from(allUsersRanked)
+                .where(eq(allUsersRanked.id, userId))
+                .get();
 
-        // Get Current User's Active Media Settings
-        const settings = await this.userActiveMediaSettings(userId);
-        const currentUserActiveSettings = new Set(settings.map((s) => s.mediaType));
+            // Get Current User's Active Media Settings
+            const settings = await this.userActiveMediaSettings(userId);
+            currentUserActiveSettings = new Set(settings.map((s) => s.mediaType));
+        }
 
         return {
             mediaTypes,

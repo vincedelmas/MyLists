@@ -26,7 +26,7 @@ export class MangaRepository extends BaseRepository<MangaSchemaConfig> {
                 lte(manga.lastApiUpdate, sql`datetime('now', '-6 days')`),
                 or(
                     isNull(manga.releaseDate),
-                    gte(manga.releaseDate, sql`datetime('now')`),
+                    gte(manga.releaseDate, sql`date('now')`),
                     inArray(manga.prodStatus, ["Publishing", "On Hiatus"]),
                 ),
             ));

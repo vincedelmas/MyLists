@@ -1,5 +1,5 @@
 import React from "react";
-import {mail} from "@/lib/utils/helpers";
+import {clientEnv} from "@/env/client";
 import {Link} from "@tanstack/react-router";
 import {ArrowLeft, Home} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
@@ -39,7 +39,7 @@ export const ErrorComponent = ({ title, icon, text, footerText }: ErrorComponent
                                 >
                                     <ArrowLeft className="size-4"/> Go Back?
                                 </Button>
-                                <Button asChild className="flex items-center gap-2">
+                                <Button asChild className="flex items-center gap-2" variant="emeraldy">
                                     <Link to="/">
                                         <Home className="size-4"/> Home
                                     </Link>
@@ -49,7 +49,7 @@ export const ErrorComponent = ({ title, icon, text, footerText }: ErrorComponent
                         <div className="pt-3 border-t">
                             <p className="text-sm text-destructive-foreground">
                                 {footerText}{" "}
-                                <a href={`mailto:${mail}`} className="font-semibold">
+                                <a href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`} className="font-semibold text-app-accent">
                                     Contact Me
                                 </a>
                             </p>

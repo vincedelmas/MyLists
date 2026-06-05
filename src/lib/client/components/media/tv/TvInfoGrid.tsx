@@ -1,8 +1,10 @@
 import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
+import {formatDate} from "@/lib/utils/date-formatting";
+import {formatMinutes} from "@/lib/utils/number-formatting";
+import {formatLocaleName} from "@/lib/utils/text-formatting";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
-import {formatDateTime, formatLocaleName, formatMinutes} from "@/lib/utils/formating";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
@@ -20,7 +22,7 @@ export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps<typeof MediaType
             <MediaInfoGridItem label="Created By">
                 {creators.length > 0 ?
                     creators.map((c) =>
-                        <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: c.name }}>
+                        <Link key={c.name} to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: c.name }}>
                             <div key={c.name}>
                                 {c.name}
                             </div>
@@ -30,9 +32,9 @@ export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps<typeof MediaType
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Airing Dates">
-                {formatDateTime(media.releaseDate, { noTime: true })}
+                {formatDate(media.releaseDate)}
                 <br/>
-                {formatDateTime(media.lastAirDate, { noTime: true })}
+                {formatDate(media.lastAirDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Origin">
                 {formatLocaleName(media.originCountry, "region")}

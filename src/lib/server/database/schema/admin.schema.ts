@@ -3,7 +3,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {TaskResult} from "@/lib/types/tasks.types";
 import {user} from "@/lib/server/database/schema/auth.schema";
-import {index, integer, sqliteTable, text} from "drizzle-orm/sqlite-core";
+import {index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {customJson, dateAsString} from "@/lib/server/database/custom-types";
 
 
@@ -61,3 +61,21 @@ export const mediaRefreshLogRelations = relations(mediaRefreshLog, ({ one }) => 
         fields: [mediaRefreshLog.userId],
     }),
 }));
+
+
+export const apiCallRollup = sqliteTable("api_call_rollup", {
+    id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
+    provider: text("provider").notNull(),
+    bucketStartMs: integer("bucket_start_ms").notNull(),
+    bucketStart: text("bucket_start").notNull(),
+    total: integer("total").notNull(),
+    errors: integer("errors").notNull(),
+    durationMsTotal: integer("duration_ms_total").notNull(),
+    maxSecondBurst: integer("max_second_burst").notNull(),
+    statusCounts: customJson<Record<string, number>>("status_counts").notNull(),
+}, (table) => [
+    index("ix_api_call_rollup_provider").on(table.provider),
+    index("ix_api_call_rollup_bucket_start_ms").on(table.bucketStartMs),
+    index("ix_api_call_rollup_bucket_start").on(table.bucketStart),
+    uniqueIndex("ux_api_call_rollup_bucket_provider").on(table.bucketStartMs, table.provider),
+]);

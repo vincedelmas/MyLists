@@ -2,18 +2,18 @@ import {MediaType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
-import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {addMediadleGuessSchema, mediadleSuggestionsSchema} from "@/lib/schemas";
+import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 
 
 export const getDailyMediadle = createServerFn({ method: "GET" })
-    .middleware([requiredAuthMiddleware, transactionMiddleware])
+    .middleware([publicAuthMiddleware, transactionMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const container = await getContainer();
         const mediadleService = container.services.mediadle;
         const moviesService = container.registries.mediaService.getService(MediaType.MOVIES);
 
-        return mediadleService.getDailyMediadleData(currentUser.id, moviesService);
+        return mediadleService.getDailyMediadleData(moviesService, currentUser?.id);
     });
 
 

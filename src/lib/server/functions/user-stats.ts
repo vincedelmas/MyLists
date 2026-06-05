@@ -4,12 +4,12 @@ import {tryNotFound} from "@/lib/utils/try-not-found";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {AdvancedMediaStats} from "@/lib/types/stats.types";
-import {privateAuthZMiddleware} from "@/lib/server/middlewares/authorization";
+import {authorizationMiddleware} from "@/lib/server/middlewares/authorization";
 import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 
 
 export const getUserStats = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
+    .middleware([authorizationMiddleware])
     .inputValidator(tryNotFound(getUserStatsSchema))
     .handler(async ({ data: { mediaType }, context: { user } }) => {
         const container = await getContainer();

@@ -58,7 +58,7 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
                     updateTag={updateTagNames}
                 />
             </h4>
-            <Separator className="-mt-1 mb-1"/>
+            <Separator className="mb-1"/>
             <div className="flex flex-wrap gap-2">
                 {tags.length === 0 ?
                     <div className="text-muted-foreground text-sm">

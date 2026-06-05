@@ -1,5 +1,5 @@
 import React from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 
 
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {

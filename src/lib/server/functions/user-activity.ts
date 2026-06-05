@@ -2,7 +2,7 @@ import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {tryFormZodError, tryNotFound} from "@/lib/utils/try-not-found";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
-import {privateAuthZMiddleware} from "@/lib/server/middlewares/authorization";
+import {authorizationMiddleware} from "@/lib/server/middlewares/authorization";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     activityAddMediaSearchSchema,
@@ -16,7 +16,7 @@ import {
 
 
 export const getMonthlyActivityStats = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
+    .middleware([authorizationMiddleware])
     .inputValidator(tryNotFound(monthlyActivityStatsSchema))
     .handler(async ({ data, context: { user } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);
@@ -25,7 +25,7 @@ export const getMonthlyActivityStats = createServerFn({ method: "GET" })
 
 
 export const getMonthlyActivity = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
+    .middleware([authorizationMiddleware])
     .inputValidator(tryNotFound(monthlyActivitySchema))
     .handler(async ({ data, context: { user } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);

@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
-import {getThemeColor} from "@/lib/utils/colors-and-icons";
-import {formatNumber} from "@/lib/utils/formating";
+import {getThemeColor} from "@/lib/utils/theme-utils";
+import {formatMonthYear} from "@/lib/utils/date-formatting";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {MonthlyActivityChartDatum} from "@/lib/types/activity.types";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
@@ -33,8 +34,8 @@ export function ActivityByMonthChart({ title, data, mediaTypes, mediaType, stack
                             dataKey="month"
                             tickLine={false}
                             axisLine={false}
-                            tickFormatter={formatMonthLabel}
                             tick={{ fontSize: 12, fill: "var(--primary)" }}
+                            tickFormatter={(value) => formatMonthYear(value)}
                         />
                         <YAxis
                             tickLine={false}
@@ -72,33 +73,26 @@ function ActivityTooltip({ active, payload, label, mediaTypes }: any & { mediaTy
 
     return (
         <div className="rounded-md bg-gray-800 px-4 py-2 text-sm text-white">
-            <p className="mb-1 font-medium">{formatMonthLabel(label)}</p>
+            <p className="mb-1 font-medium">{formatMonthYear(label)}</p>
             {rows.length === 0 ?
                 <p>No activity</p>
                 :
                 rows.map((entry: any) =>
                     <p key={entry.dataKey} className="grid grid-cols-2 gap-2 capitalize">
                         <div>{entry.dataKey}:</div>
-                        <div>{formatNumber(Number(entry.value), { notation: "compact", maximumFractionDigits: 1 })}h</div>
+                        <div>{formatNumber(Number(entry.value), { fractionDigits: 1, notation: "compact" })}h</div>
                     </p>
                 )}
             {mediaTypes.length > 1 && rows.length > 0 &&
                 <p className="mt-1 border-t border-white/20 pt-1">
                     Total: {
-                    formatNumber(rows.reduce(
-                            (sum: number, entry: any) => sum + Number(entry.value), 0),
-                        { notation: "compact", maximumFractionDigits: 1 })
-                }h
+                        formatNumber(
+                            rows.reduce((sum: number, entry: any) => sum + Number(entry.value), 0),
+                            { fractionDigits: 1, notation: "compact" },
+                        )
+                    }h
                 </p>
             }
         </div>
     );
-}
-
-
-function formatMonthLabel(value: string) {
-    const [year, month] = value.split("-");
-    const date = new Date(Number(year), Number(month) - 1);
-
-    return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }

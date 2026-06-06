@@ -49,6 +49,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
     useNProgress();
+    const app = <AppShell/>;
 
     return (
         <html lang="en" className="dark" suppressHydrationWarning>
@@ -57,26 +58,25 @@ function RootComponent() {
         </head>
         <body>
 
-        <PostHogProvider
-            apiKey={clientEnv.VITE_PUBLIC_POSTHOG_KEY}
-            options={{
-                defaults: "2026-01-30",
-                disable_session_recording: true,
-                capture_pageview: "history_change",
-                person_profiles: "identified_only",
-                api_host: clientEnv.VITE_PUBLIC_POSTHOG_HOST,
-                ui_host: clientEnv.VITE_PUBLIC_POSTHOG_UI_HOST,
-            }}
-        >
-            <PostHogAuthSync/>
-            <AuthSessionSync/>
-            <Toaster/>
-            <AuthModalProvider/>
-            <Navbar/>
-            <Outlet/>
-            <Footer/>
-            <FeatureVoteLink/>
-        </PostHogProvider>
+        {clientEnv.VITE_PUBLIC_POSTHOG_KEY
+            ? (
+                <PostHogProvider
+                    apiKey={clientEnv.VITE_PUBLIC_POSTHOG_KEY}
+                    options={{
+                        defaults: "2026-01-30",
+                        disable_session_recording: true,
+                        capture_pageview: "history_change",
+                        person_profiles: "identified_only",
+                        api_host: clientEnv.VITE_PUBLIC_POSTHOG_HOST || undefined,
+                        ui_host: clientEnv.VITE_PUBLIC_POSTHOG_UI_HOST || undefined,
+                    }}
+                >
+                    <PostHogAuthSync/>
+                    {app}
+                </PostHogProvider>
+            )
+            : app
+        }
 
         {import.meta.env.DEV &&
             <ReactQueryDevtools buttonPosition="bottom-left"/>
@@ -85,5 +85,20 @@ function RootComponent() {
         <Scripts/>
         </body>
         </html>
+    );
+}
+
+
+function AppShell() {
+    return (
+        <>
+            <AuthSessionSync/>
+            <Toaster/>
+            <AuthModalProvider/>
+            <Navbar/>
+            <Outlet/>
+            <Footer/>
+            <FeatureVoteLink/>
+        </>
     );
 }

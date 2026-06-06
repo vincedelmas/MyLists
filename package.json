@@ -12,15 +12,17 @@
         "dk": "drizzle-kit",
         "ui": "bunx shadcn@latest",
         "preview": "bun --bun vite preview",
+        "cli:docker": "bun dist/cli/index.js",
         "build:server": "bun --bun vite build",
         "dev": "bun --bun vite dev --port 3000",
         "cli": "bun --env-file=.env src/cli/index.ts",
         "build": "bun run build:server && bun run build:cli",
-        "seed:achievements": "bun run cli -- seedAchievements",
+        "seed:achievements": "bun run cli -- seed-achievements",
         "email": "email dev -d src/lib/client/components/emails",
         "build:cli": "bun --bun vite build --config vite.cli.config.ts",
         "auth:generate": "bunx @better-auth/cli@latest generate --y --output src/lib/server/database/schema/auth.schema.ts",
-        "new:db": "mkdir -p instance && bun run dk push --force && bun run seed:achievements && bun run cli -- calculateAchievements"
+        "new:db": "mkdir -p instance && bun run dk push --force && bun run seed:achievements && bun run cli -- calculate-achievements",
+        "new:db:docker": "mkdir -p instance && bun run dk push --force && bun run cli:docker -- seed-achievements && bun run cli:docker -- calculate-achievements"
     },
     "dependencies": {
         "@radix-ui/react-avatar": "^1.1.11",

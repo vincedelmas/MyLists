@@ -68,6 +68,11 @@ export default defineConfig({
     },
     plugins: [
         tanstackStart({
+            prerender: {
+                failOnError: false,
+                retryCount: 3,
+                retryDelay: 500,
+            },
             spa: {
                 enabled: true,
             },

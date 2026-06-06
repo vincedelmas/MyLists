@@ -6,10 +6,10 @@ export const clientEnv = createEnv({
     clientPrefix: "VITE_",
     client: {
         VITE_BASE_URL: z.url().default("http://localhost:3000"),
-        VITE_PUBLIC_POSTHOG_KEY: z.string(),
-        VITE_PUBLIC_POSTHOG_HOST: z.string(),
-        VITE_PUBLIC_POSTHOG_UI_HOST: z.string(),
-        VITE_CONTACT_MAIL: z.string(),
+        VITE_PUBLIC_POSTHOG_KEY: z.string().default(""),
+        VITE_PUBLIC_POSTHOG_HOST: z.string().default(""),
+        VITE_PUBLIC_POSTHOG_UI_HOST: z.string().default(""),
+        VITE_CONTACT_MAIL: z.string().default(""),
     },
     runtimeEnv: import.meta.env,
 });

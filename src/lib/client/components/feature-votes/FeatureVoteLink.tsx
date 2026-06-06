@@ -1,10 +1,10 @@
 import {Lightbulb} from "lucide-react";
-import {BlockLink} from "@/lib/client/components/general/BlockLink";
+import {Link} from "@tanstack/react-router";
 
 
 export const FeatureVoteLink = () => {
     return (
-        <BlockLink
+        <Link
             to="/features-vote"
             className="group fixed bottom-5 right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full border
             border-white/20 bg-black/20 backdrop-blur-xl transition-all duration-300 hover:border-amber-400
@@ -14,6 +14,6 @@ export const FeatureVoteLink = () => {
             from-transparent via-white/30 to-transparent"/>
             <Lightbulb className="size-4 transition-transform duration-300 group-hover:scale-110 group-hover:text-amber-300"/>
             <span className="sr-only">Feature voting</span>
-        </BlockLink>
+        </Link>
     );
 };

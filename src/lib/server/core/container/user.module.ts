@@ -10,6 +10,8 @@ import {AchievementsRepository} from "@/lib/server/domain/achievements/achieveme
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {
+    UserActivityRepository,
+    UserActivityService,
     UserMediaService,
     UserProfileRepository,
     UserProfileService,
@@ -30,6 +32,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
     const userUpdatesRepository = UserUpdatesRepository;
     const userProfileRepository = UserProfileRepository;
     const collectionsRepository = CollectionsRepository;
+    const userActivityRepository = UserActivityRepository;
     const achievementsRepository = AchievementsRepository;
     const featureVotesRepository = FeatureVotesRepository;
     const notificationsRepository = NotificationsRepository;
@@ -42,9 +45,10 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
     const notificationsService = new NotificationsService(notificationsRepository);
     const userProfileService = new UserProfileService(userProfileRepository, mediaServiceRegistry);
     const featureVotesService = new FeatureVotesService(featureVotesRepository, notificationsService);
+    const userActivityService = new UserActivityService(userActivityRepository, mediaServiceRegistry);
     const collectionsService = new CollectionsService(userService, collectionsRepository, mediaServiceRegistry);
-    const userStatsService = new UserStatsService(userStatsRepository, achievementsRepository, userUpdatesRepository, mediaServiceRegistry);
-    const userMediaService = new UserMediaService(userStatsService, userUpdatesService, notificationsService, mediaServiceRegistry);
+    const userStatsService = new UserStatsService(userStatsRepository, userActivityService, achievementsRepository, userUpdatesRepository, mediaServiceRegistry);
+    const userMediaService = new UserMediaService(userStatsService, userActivityService, userUpdatesService, notificationsService, mediaServiceRegistry);
 
     return {
         repositories: {
@@ -55,6 +59,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
             userProfile: userProfileRepository,
             collections: collectionsRepository,
             achievements: achievementsRepository,
+            userActivity: userActivityRepository,
             featureVotes: featureVotesRepository,
             notifications: notificationsRepository,
         },
@@ -66,6 +71,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
             userProfile: userProfileService,
             userUpdates: userUpdatesService,
             collections: collectionsService,
+            userActivity: userActivityService,
             achievements: achievementsService,
             featureVotes: featureVotesService,
             notifications: notificationsService,

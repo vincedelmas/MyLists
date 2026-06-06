@@ -3,7 +3,7 @@ import {Heart} from "lucide-react";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
-import {formatRating} from "@/lib/utils/ratings";
+import {formatRating} from "@/lib/utils/ratings-formatting";
 
 
 export const CommonInfoTableCell = ({ userMedia }: { userMedia: UserMediaItem }) => {

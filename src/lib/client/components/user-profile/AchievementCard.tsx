@@ -1,7 +1,7 @@
 import {Award} from "lucide-react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
-import {diffColors} from "@/lib/utils/colors-and-icons";
+import {diffColors} from "@/lib/utils/theme-utils";
 import {Button} from "@/lib/client/components/ui/button";
 import {AchievementsType} from "@/lib/types/query.options.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -41,7 +41,7 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                                         </div>
                                     </div>
                                     <RelativeTime
-                                        value={ach.completedAt}
+                                        date={ach.completedAt}
                                         className="text-muted-foreground text-xs"
                                     />
                                 </div>
@@ -55,7 +55,7 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                 {achievements.length !== 0 &&
                     <Button className="mt-4" variant="dashed" asChild>
                         <Link to="/achievements/$username" params={{ username }}>
-                            View all 63 achievements
+                            View all achievements
                         </Link>
                     </Button>
                 }

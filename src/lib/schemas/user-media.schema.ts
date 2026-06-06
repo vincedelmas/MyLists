@@ -1,23 +1,15 @@
 import * as z from "zod";
 import {tagSchema} from "@/lib/schemas/common.schema";
+import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 
 
-export type AddMediaToList = z.infer<typeof addMediaToListSchema>;
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
 export type UpdateUserCustomCover = z.infer<typeof updateUserCustomCoverSchema>;
 
 
-const isValidDateInput = (value: string) => {
-    const [year, month, day] = value.split("-").map(Number);
-    const date = new Date(`${value}T00:00:00.000Z`);
-    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
-};
-
-const loggedAtSchema = z.string().trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD.")
-    .refine(isValidDateInput, "Invalid date.")
-    .refine((value) => new Date(`${value}T00:00:00.000Z`).getTime() <= Date.now(), "Date cannot be in the future.")
+const loggedAtSchema = z.string().trim().pipe(z.iso.date())
+    .refine((value) => dateFromUTCInput(value).getTime() <= Date.now(), "Date cannot be in the future.")
     .optional();
 
 const loggedActivityUpdateTypes = new Set<UpdateType>([
@@ -36,17 +28,24 @@ export const updateUserCustomCoverSchema = z.object({
     imageUrl: z.url().trim().optional(),
     imageFile: z.instanceof(File).optional(),
     remove: z.coerce.boolean().optional().default(false),
-}).refine((data) => {
-    if (data.remove) {
-        return !data.imageUrl && !data.imageFile;
+}).superRefine((data, ctx) => {
+    const addFieldIssues = (message: string) => {
+        ctx.addIssue({ code: "custom", message, path: ["imageUrl"] });
+        ctx.addIssue({ code: "custom", message, path: ["imageFile"] });
+    };
+
+    if (data.remove && (data.imageUrl || data.imageFile)) {
+        addFieldIssues("Provide an image link, upload a file, or choose remove.");
     }
-    return !!data.imageUrl || !!data.imageFile;
-}, {
-    message: "Provide an image link, upload a file, or choose remove.",
-}).refine((data) => {
-    if (data.remove) return true;
-    return !(data.imageUrl && data.imageFile);
-}, { message: "Please, choose only one cover option." });
+
+    if (!data.remove && !data.imageUrl && !data.imageFile) {
+        addFieldIssues("Provide an image link, upload a file, or choose remove.");
+    }
+
+    if (!data.remove && data.imageUrl && data.imageFile) {
+        addFieldIssues("Please, choose only one cover option.");
+    }
+});
 
 export const addMediaToListSchema = z.object({
     mediaType: z.enum(MediaType),
@@ -78,10 +77,9 @@ export const updateUserMediaSchema = z.object({
             .map(([key, _]) => key);
         return definedFields.length === 1;
     }, {
-        message: "Too many fields provided in the payload."
+        message: "Too many fields provided in the payload.", path: ["type"],
     }).refine((data) => !data.loggedAt || loggedActivityUpdateTypes.has(data.type), {
-        message: "Only progress changes can be backdated.",
-        path: ["loggedAt"],
+        message: "Only progress changes can be backdated.", path: ["loggedAt"],
     })
 });
 

@@ -4,10 +4,9 @@ import {alias} from "drizzle-orm/sqlite-core";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {UserMediaStats} from "@/lib/types/user-media.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {LogActivity, UpdateActivity} from "@/lib/types/activity.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
-import {user, userMediaActivity, userMediaSettings, userMediaStatsHistory} from "@/lib/server/database/schema";
-import {and, asc, count, countDistinct, desc, eq, gt, gte, inArray, lt, lte, ne, SQL, sql, sum} from "drizzle-orm";
+import {and, count, countDistinct, eq, gt, inArray, ne, SQL, sql, sum} from "drizzle-orm";
+import {user, userMediaSettings, userMediaStatsHistory} from "@/lib/server/database/schema";
 
 
 export class UserStatsRepository {
@@ -93,18 +92,11 @@ export class UserStatsRepository {
         }
     }
 
-    static async userHallofFameData(userId: number, filters: SearchType) {
+    static async userHallofFameData(filters: SearchType, userId?: number) {
         const { search = "" } = filters;
-        const sorting = resolveSorting(filters.sorting, ["normalized", "profile", ...Object.values(MediaType)] as const, "normalized");
-
-        const { page, perPage, offset, limit } = resolvePagination({
-            defaultPerPage: 10,
-            page: filters.page,
-            perPage: filters.perPage,
-        });
-
         const mediaTypes = Object.values(MediaType);
-        const umsAlias = alias(userMediaSettings, "ums");
+        const sorting = resolveSorting(filters.sorting, ["normalized", "profile", ...mediaTypes] as const, "normalized");
+        const { page, perPage, offset, limit } = resolvePagination({ defaultPerPage: 10, page: filters.page, perPage: filters.perPage });
 
         const maxTimePerMedia = getDbClient()
             .select({
@@ -115,6 +107,8 @@ export class UserStatsRepository {
             .where(eq(userMediaSettings.active, true))
             .groupBy(userMediaSettings.mediaType)
             .as("max_time_per_media");
+
+        const umsAlias = alias(userMediaSettings, "ums");
 
         // Dynamically create normalized score columns
         const normalizedScoreColumns: Record<string, SQL.Aliased<number>> = {};
@@ -143,6 +137,7 @@ export class UserStatsRepository {
                 id: user.id,
                 name: user.name,
                 image: user.image,
+                privacy: user.privacy,
                 ...normalizedScoreColumns,
                 totalScore: sql<number>`sum(${totalScoreSumExpression})`.as("total_score"),
                 totalTime: sql<number>`sum(CASE WHEN ${umsAlias.active} = 1 THEN ${umsAlias.timeSpent} ELSE 0 END)`.as("total_time"),
@@ -167,6 +162,7 @@ export class UserStatsRepository {
                 id: baseQuery.id,
                 name: baseQuery.name,
                 image: baseQuery.image,
+                privacy: baseQuery.privacy,
                 ...mediaTypes.reduce((acc, mt) => {
                     const scoreKey = `${mt}Score` as keyof typeof baseQuery;
                     acc[scoreKey] = baseQuery[scoreKey];
@@ -264,17 +260,21 @@ export class UserStatsRepository {
             }
         });
 
-        // Get Current User's Ranks
-        const currentUserRankData = getDbClient()
-            .with(allUsersRanked)
-            .select()
-            .from(allUsersRanked)
-            .where(eq(allUsersRanked.id, userId))
-            .get();
+        let currentUserRankData = undefined;
+        let currentUserActiveSettings: Set<MediaType> = new Set();
+        if (userId) {
+            // Get Current User's Ranks
+            currentUserRankData = getDbClient()
+                .with(allUsersRanked)
+                .select()
+                .from(allUsersRanked)
+                .where(eq(allUsersRanked.id, userId))
+                .get();
 
-        // Get Current User's Active Media Settings
-        const settings = await this.userActiveMediaSettings(userId);
-        const currentUserActiveSettings = new Set(settings.map((s) => s.mediaType));
+            // Get Current User's Active Media Settings
+            const settings = await this.userActiveMediaSettings(userId);
+            currentUserActiveSettings = new Set(settings.map((s) => s.mediaType));
+        }
 
         return {
             mediaTypes,
@@ -411,174 +411,5 @@ export class UserStatsRepository {
             statusCountsList,
             mediaTimeDistribution,
         };
-    }
-
-    static async getEntriesInRange(userId: number, mediaType: MediaType, start: Date, end: Date) {
-        return getDbClient()
-            .select()
-            .from(userMediaStatsHistory)
-            .where(and(
-                eq(userMediaStatsHistory.userId, userId),
-                eq(userMediaStatsHistory.mediaType, mediaType),
-                gte(userMediaStatsHistory.timestamp, start.toISOString()),
-                lte(userMediaStatsHistory.timestamp, end.toISOString()),
-            ))
-            .orderBy(asc(userMediaStatsHistory.timestamp));
-    }
-
-    static async getLastEntryBefore(userId: number, mediaType: MediaType, timestamp: string) {
-        return getDbClient()
-            .select()
-            .from(userMediaStatsHistory)
-            .where(and(
-                eq(userMediaStatsHistory.userId, userId),
-                eq(userMediaStatsHistory.mediaType, mediaType),
-                lt(userMediaStatsHistory.timestamp, timestamp),
-            ))
-            .orderBy(desc(userMediaStatsHistory.timestamp))
-            .limit(1)
-            .get();
-    }
-
-    // --- Activity System -------------------------------------------------------
-
-    static async logActivity(activity: LogActivity) {
-        const date = activity.lastUpdate ? new Date(activity.lastUpdate) : new Date();
-        const monthBucket = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        const newActivity = { ...activity, monthBucket, lastUpdate: date.toISOString() }
-
-        if (newActivity.specificGained > 0) {
-            await getDbClient()
-                .insert(userMediaActivity)
-                .values(newActivity)
-                .onConflictDoUpdate({
-                    target: [
-                        userMediaActivity.userId,
-                        userMediaActivity.mediaId,
-                        userMediaActivity.mediaType,
-                        userMediaActivity.monthBucket,
-                    ],
-                    set: {
-                        lastUpdate: sql`excluded.last_update`,
-                        isRedo: sql`${userMediaActivity.isRedo} OR excluded.is_redo`,
-                        isCompleted: sql`${userMediaActivity.isCompleted} OR excluded.is_completed`,
-                        specificGained: sql`${userMediaActivity.specificGained} + excluded.specific_gained`,
-                    },
-                });
-        }
-
-        if (newActivity.specificGained === 0 && (newActivity.isCompleted || newActivity.isRedo)) {
-            await getDbClient()
-                .update(userMediaActivity)
-                .set({
-                    lastUpdate: newActivity.lastUpdate,
-                    isRedo: sql`${userMediaActivity.isRedo} OR ${newActivity.isRedo}`,
-                    isCompleted: sql`${userMediaActivity.isCompleted} OR ${newActivity.isCompleted}`,
-                })
-                .where(and(
-                    eq(userMediaActivity.userId, newActivity.userId),
-                    eq(userMediaActivity.mediaId, newActivity.mediaId),
-                    eq(userMediaActivity.mediaType, newActivity.mediaType),
-                    eq(userMediaActivity.monthBucket, newActivity.monthBucket),
-                ));
-        }
-    }
-
-    static async getSpecificActivity(userId: number, mediaType: MediaType, mediaId: number, timeBucket: string) {
-        return getDbClient()
-            .select()
-            .from(userMediaActivity)
-            .where(and(
-                eq(userMediaActivity.userId, userId),
-                eq(userMediaActivity.mediaId, mediaId),
-                eq(userMediaActivity.mediaType, mediaType),
-                eq(userMediaActivity.monthBucket, timeBucket),
-            ))
-            .orderBy(asc(userMediaActivity.lastUpdate))
-            .get();
-    }
-
-    static async getMediaTypeActivity(userId: number, mediaType: MediaType, timeBucket: string) {
-        return getDbClient()
-            .select()
-            .from(userMediaActivity)
-            .where(and(
-                eq(userMediaActivity.userId, userId),
-                eq(userMediaActivity.mediaType, mediaType),
-                gt(userMediaActivity.specificGained, 0),
-                eq(userMediaActivity.monthBucket, timeBucket),
-            ))
-            .orderBy(asc(userMediaActivity.lastUpdate));
-    }
-
-    static async updateSpecificActivity(userId: number, activityId: number, payload: UpdateActivity) {
-        const [existing] = await getDbClient()
-            .select()
-            .from(userMediaActivity)
-            .where(and(eq(userMediaActivity.id, activityId), eq(userMediaActivity.userId, userId)));
-
-        if (!existing) return null;
-
-        let newMonthBucket = existing.monthBucket;
-        if (payload.lastUpdate) {
-            const date = new Date(payload.lastUpdate);
-            newMonthBucket = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-        }
-
-        if (newMonthBucket !== existing.monthBucket) {
-            const { id: _existingId, ...existingWithoutId } = existing;
-            const [upserted] = await getDbClient()
-                .insert(userMediaActivity)
-                .values({
-                    ...existingWithoutId,
-                    ...payload,
-                    monthBucket: newMonthBucket,
-                })
-                .onConflictDoUpdate({
-                    target: [
-                        userMediaActivity.userId,
-                        userMediaActivity.mediaId,
-                        userMediaActivity.mediaType,
-                        userMediaActivity.monthBucket,
-                    ],
-                    set: {
-                        isRedo: payload.isRedo ?? existing.isRedo,
-                        lastUpdate: payload.lastUpdate ?? existing.lastUpdate,
-                        isCompleted: payload.isCompleted ?? existing.isCompleted,
-                        specificGained: sql`${userMediaActivity.specificGained} + ${payload.specificGained ?? 0}`,
-                    },
-                })
-                .returning();
-
-            await getDbClient()
-                .delete(userMediaActivity)
-                .where(eq(userMediaActivity.id, activityId));
-
-            return upserted;
-        }
-
-        const [updated] = await getDbClient()
-            .update(userMediaActivity)
-            .set(payload)
-            .where(and(eq(userMediaActivity.id, activityId), eq(userMediaActivity.userId, userId)))
-            .returning();
-
-        return updated;
-    }
-
-    static async deleteSpecificActivity(userId: number, activityId: number) {
-        await getDbClient()
-            .delete(userMediaActivity)
-            .where(and(eq(userMediaActivity.id, activityId), eq(userMediaActivity.userId, userId)));
-    }
-
-    static async deleteAssociatedActivities(userId: number, mediaType: MediaType, mediaId: number) {
-        await getDbClient()
-            .delete(userMediaActivity)
-            .where(and(
-                eq(userMediaActivity.userId, userId),
-                eq(userMediaActivity.mediaId, mediaId),
-                eq(userMediaActivity.mediaType, mediaType),
-            ));
     }
 }

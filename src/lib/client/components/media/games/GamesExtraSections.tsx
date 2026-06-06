@@ -19,6 +19,7 @@ export const GamesExtraSections = ({ media }: GamesDetailsProps<typeof MediaType
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 overflow-y-auto max-h-50 scrollbar-thin">
                         {sortedPlatforms.map((plat) =>
                             <MediaExtraGrid
+                                key={plat.name}
                                 name={plat.name}
                                 subname="Platform"
                                 initials={plat.name[0] + plat.name[1]}

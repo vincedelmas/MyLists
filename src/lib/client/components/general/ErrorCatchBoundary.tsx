@@ -1,15 +1,22 @@
 import React from "react";
 import {Skull} from "lucide-react";
+import {UnauthorizedError} from "@/lib/utils/error-classes";
 import {type ErrorComponentProps} from "@tanstack/react-router";
 import {ErrorComponent} from "@/lib/client/components/general/ErrorComponent";
-import {PrivateComponent} from "@/lib/client/components/general/PrivateComponent";
-
-
-const GENERIC_OUTAGE_TEXT = "Sorry, the app is temporarily unavailable. Please refresh the page or try again in a few minutes.";
-const GENERIC_ERROR_TEXT = "Sorry, it looks like something isn't working right now. Please try refreshing the page or come back later.";
+import {UnauthorizedComponent} from "@/lib/client/components/general/UnauthorizedComponent";
 
 
 export function ErrorCatchBoundary({ error }: Readonly<ErrorComponentProps>) {
+    if (error instanceof UnauthorizedError) {
+        return (
+            <div className="py-20">
+                <UnauthorizedComponent
+                    type={error.type}
+                />
+            </div>
+        );
+    }
+
     const message = getErrorMessage(error);
     const statusCode = getStatusCode(error);
     const upstreamFailure = isUpstreamFailure(message, statusCode);
@@ -17,27 +24,19 @@ export function ErrorCatchBoundary({ error }: Readonly<ErrorComponentProps>) {
     if (!message) {
         return (
             <ErrorComponent
-                text={GENERIC_ERROR_TEXT}
                 title="Well, This is Awkward"
                 icon={<Skull className="size-9"/>}
                 footerText="If this keeps happening, we probably broke something important."
+                text="Sorry, it looks like something isn't working right now. Please try refreshing the page or come back later."
             />
-        );
-    }
-
-    if (message === "Unauthorized" || statusCode === 401) {
-        return (
-            <div className="py-20">
-                <PrivateComponent/>
-            </div>
         );
     }
 
     return (
         <ErrorComponent
-            text={upstreamFailure ? GENERIC_OUTAGE_TEXT : message}
             footerText="If this keeps happening, we probably broke something important."
             title={upstreamFailure ? "App Temporarily Unavailable" : "An Error Occurred"}
+            text={upstreamFailure ? "Sorry, the app is temporarily unavailable. Please refresh the page or try again in a few minutes." : message}
         />
     );
 }

@@ -1,23 +1,23 @@
-import {useMemo} from "react";
+import React, {useMemo} from "react";
 import {SearchType} from "@/lib/schemas";
-import {PrivacyType} from "@/lib/utils/enums";
-import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {capitalize, formatDateTime, formatNumber} from "@/lib/utils/formating";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ChevronsUpDown, Copy, Eye, FolderKanban, Heart, UserPlus, Users} from "lucide-react";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, SortingState, useReactTable} from "@tanstack/react-table";
 
 
@@ -68,6 +68,15 @@ function AdminCollectionsOverviewPage() {
             cell: ({ row: { original } }) => <MainThemeIcon size={16} type={original.mediaType}/>,
         },
         {
+            accessorKey: "privacy",
+            header: ({ column }) => (
+                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
+                </Button>
+            ),
+            cell: ({ row: { original } }) => <PrivacyIcon type={original.privacy} className="size-3.5"/>,
+        },
+        {
             accessorKey: "title",
             header: ({ column }) => (
                 <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
@@ -94,25 +103,6 @@ function AdminCollectionsOverviewPage() {
                     {original.ownerName}
                 </Link>
             ),
-        },
-        {
-            accessorKey: "privacy",
-            header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
-                    Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
-            ),
-            cell: ({ row: { original } }) => {
-                switch (original.privacy) {
-                    case PrivacyType.PUBLIC:
-                        return <Badge variant="outline" className="text-green-600">Public</Badge>;
-                    case PrivacyType.RESTRICTED:
-                        return <Badge variant="outline" className="text-yellow-600">Restricted</Badge>;
-                    case PrivacyType.PRIVATE:
-                    default:
-                        return <Badge variant="outline" className="text-red-600">Private</Badge>;
-                }
-            },
         },
         {
             accessorKey: "itemsCount",
@@ -153,11 +143,10 @@ function AdminCollectionsOverviewPage() {
                     Created <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
-            cell: ({ row: { original } }) => formatDateTime(original.createdAt),
+            cell: ({ row: { original } }) => <RelativeTime date={original.createdAt}/>,
         },
     ], []);
 
-    // eslint-disable-next-line react-hooks/incompatible-library
     const table = useReactTable({
         columns,
         onSortingChange,

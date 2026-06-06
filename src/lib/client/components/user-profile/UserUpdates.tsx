@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {Activity} from "lucide-react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Button} from "@/lib/client/components/ui/button";
@@ -30,16 +30,14 @@ export const UserUpdates = ({ username, updates }: UserUpdatesProps) => {
     return (
         <Card className={cn(updates.length === 0 && "h-fit")}>
             <CardHeader>
-                <CardTitle>
-                    Recent Activity
-                </CardTitle>
+                <CardTitle>Recent Feed</CardTitle>
             </CardHeader>
             <CardContent>
                 {updates.length === 0 ?
                     <EmptyState
                         icon={Activity}
                         className="py-2"
-                        message="No recent activity found."
+                        message="No recent feed found."
                     />
                     :
                     <div className="flex flex-col gap-1">
@@ -58,7 +56,7 @@ export const UserUpdates = ({ username, updates }: UserUpdatesProps) => {
                 {updates.length !== 0 &&
                     <Button className="mt-4" variant="dashed" asChild>
                         <Link to="/profile/$username/history" params={{ username }}>
-                            View all Activities
+                            View all Feed
                         </Link>
                     </Button>
                 }
@@ -73,7 +71,7 @@ export const FollowsUpdates = ({ username: _username, updates }: UserUpdatesProp
         <Card className={cn("h-120", updates.length === 0 && "h-fit")}>
             <CardHeader>
                 <CardTitle>
-                    Follows Recent Activity
+                    Follows Recent Feed
                 </CardTitle>
             </CardHeader>
             <CardContent className="overflow-y-auto scrollbar-thin">
@@ -81,7 +79,7 @@ export const FollowsUpdates = ({ username: _username, updates }: UserUpdatesProp
                     {updates.length === 0 ?
                         <EmptyState
                             icon={Activity}
-                            message="No follows activity found."
+                            message="No follows feed found."
                         />
                         :
                         <div className="flex flex-col gap-1 ">

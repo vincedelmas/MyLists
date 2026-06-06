@@ -5,8 +5,8 @@ import {useForm} from "react-hook-form";
 import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
+import {FormZodError} from "@/lib/utils/error-classes";
 import {Button} from "@/lib/client/components/ui/button";
-import {FormattedError, FormZodError} from "@/lib/utils/error-classes";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -29,7 +29,6 @@ const MAX_FILE_SIZE = 10 * 1024 * 1000;
 export const GeneralForm = () => {
     const { currentUser, setCurrentUser } = useAuth();
     const generalSettingsMutation = useGeneralSettingsMutation();
-    // eslint-disable-next-line react-hooks/purity,@eslint-react/purity
     const [imageCropperKey, setImageCropperKey] = useState(Date.now());
     const form = useForm<FormValues>({
         values: {
@@ -49,17 +48,10 @@ export const GeneralForm = () => {
 
         generalSettingsMutation.mutate({ data: formData }, {
             onError: (err) => {
-                if (err instanceof FormZodError && err.issues.length > 0) {
-                    err?.issues.forEach((issue: any) => {
-                        form.setError(issue.path[0], { type: "server", message: issue.message });
+                if (err instanceof FormZodError) {
+                    err.issues.forEach((issue) => {
+                        form.setError(issue.path.join("."), { type: "server", message: issue.message });
                     });
-                }
-                else if (err instanceof FormattedError) {
-                    form.setError("username", { type: "server", message: err.message });
-                }
-                else {
-                    const message = err?.message || "An unexpected error occurred.";
-                    form.setError("root", { type: "server", message: message });
                 }
             },
             onSuccess: async () => {
@@ -126,7 +118,6 @@ export const GeneralForm = () => {
                         control={form.control}
                         rules={{
                             validate: (file?: File) => {
-                                console.log({ file });
                                 if (!file) return true;
                                 if (file.size > MAX_FILE_SIZE) return "Image must be less than 10MB.";
                                 return true;

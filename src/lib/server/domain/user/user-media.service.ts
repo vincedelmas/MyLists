@@ -3,6 +3,7 @@ import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {UserStatsService} from "@/lib/server/domain/user/user-stats.service";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {UserUpdatesService} from "@/lib/server/domain/user/user-updates.service";
+import {UserActivityService} from "@/lib/server/domain/user/user-activity.service";
 import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
 
 
@@ -16,6 +17,7 @@ type MediaAction = {
 export class UserMediaService {
     constructor(
         private userStatsService: UserStatsService,
+        private userActivityService: UserActivityService,
         private userUpdatesService: UserUpdatesService,
         private notificationsService: NotificationsService,
         private mediaServiceRegistry: typeof MediaServiceRegistry,
@@ -27,7 +29,7 @@ export class UserMediaService {
 
         const { newState, media, delta, logPayload } = await mediaService.addMediaToUserList(userId, mediaId, status);
         await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
-        await this.userStatsService.logActivityFromDelta({ userId, mediaType, mediaId, delta, newState });
+        await this.userActivityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, newState });
 
         await this.userUpdatesService.logUpdate({
             media,
@@ -52,7 +54,7 @@ export class UserMediaService {
         const { newState, media, delta, logPayload } = await mediaService.updateUserMediaDetails(userId, mediaId, mediaPayload);
 
         await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
-        await this.userStatsService.logActivityFromDelta({ userId, mediaType, mediaId, delta, newState, lastUpdate: timestamp });
+        await this.userActivityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, newState, lastUpdate: timestamp });
 
         if (logPayload) {
             await this.userUpdatesService.logUpdate({
@@ -75,6 +77,6 @@ export class UserMediaService {
         await this.userUpdatesService.deleteMediaUpdatesForUser(userId, mediaType, mediaId);
         await this.notificationsService.deleteUserMediaNotifications(userId, mediaType, mediaId);
         await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
-        await this.userStatsService.deleteAssociatedActivities(userId, mediaType, mediaId);
+        await this.userActivityService.deleteAssociatedActivities(userId, mediaType, mediaId);
     }
 }

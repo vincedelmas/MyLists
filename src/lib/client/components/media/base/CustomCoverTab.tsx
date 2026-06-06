@@ -3,7 +3,6 @@ import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {Label} from "@/lib/client/components/ui/label";
 import {Input} from "@/lib/client/components/ui/input";
-import {getZodMutationError} from "@/lib/utils/helpers";
 import {Button} from "@/lib/client/components/ui/button";
 import {ImageOff, Link2, UploadCloud, X} from "lucide-react";
 import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
@@ -13,11 +12,11 @@ import {useUpdateCustomCoverMutation} from "@/lib/client/react-query/query-mutat
 interface CustomCoverTabContentProps {
     mediaType: MediaType;
     userMedia: UserMedia | UserMediaItem;
-    mutation: ReturnType<typeof useUpdateCustomCoverMutation>;
+    onUpdateMutation: ReturnType<typeof useUpdateCustomCoverMutation>;
 }
 
 
-export const CustomCoverTabContent = ({ mediaType, userMedia, mutation }: CustomCoverTabContentProps) => {
+export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }: CustomCoverTabContentProps) => {
     const [imageUrl, setImageUrl] = useState("");
     const [fileInputKey, setFileInputKey] = useState(0);
     const [mode, setMode] = useState<"link" | "upload">("link");
@@ -51,26 +50,20 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, mutation }: Custom
             formData.append("imageFile", imageFile);
         }
 
-        mutation.mutate({ data: formData }, {
-            onError: (err) => toast.error(getZodMutationError(err) || "Could not update the custom cover."),
-            onSuccess: () => {
-                resetForm();
-                toast.success("Custom cover saved.");
-            },
+        onUpdateMutation.mutate({ data: formData }, {
+            onSuccess: () => resetForm(),
         });
     };
 
     const handleRemove = () => {
         const formData = new FormData();
+        formData.append("remove", "true");
         formData.append("mediaType", mediaType);
         formData.append("mediaId", userMedia.mediaId.toString());
-        formData.append("remove", "true");
 
-        mutation.mutate({ data: formData }, {
-            onError: (err) => toast.error(getZodMutationError(err) || "Could not remove the custom cover."),
+        onUpdateMutation.mutate({ data: formData }, {
             onSuccess: () => {
                 resetForm();
-                toast.success("Custom cover removed.");
             },
         });
     };
@@ -148,7 +141,7 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, mutation }: Custom
             }
 
             <div className="pb-6 border-b">
-                <Button type="button" onClick={handleSubmit} disabled={mutation.isPending}>
+                <Button type="button" onClick={handleSubmit} disabled={onUpdateMutation.isPending}>
                     Save Custom Cover
                 </Button>
             </div>

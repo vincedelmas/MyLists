@@ -1,8 +1,9 @@
 import {useMemo} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {NamedValue} from "@/lib/types/stats.types";
-import {getThemeColor} from "@/lib/utils/colors-and-icons";
-import {capitalize, formatNumber} from "@/lib/utils/formating";
+import {getThemeColor} from "@/lib/utils/theme-utils";
+import {capitalize} from "@/lib/utils/text-formatting";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Bar, BarChart, LabelList, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 
@@ -22,11 +23,11 @@ export function DistributionChart({ title, mediaType, data, unit, enableBinning 
         const value = datum.value;
         let displayName = String(datum.name);
 
-        if (enableBinning && !isNaN(Number(datum.name))) {
+        if (enableBinning && Number.isFinite(Number(datum.name))) {
             const currentName = Number(datum.name);
             const nextItem = data[idx + 1];
 
-            if (nextItem && !isNaN(Number(nextItem.name))) {
+            if (nextItem && Number.isFinite(Number(nextItem.name))) {
                 const nextName = Number(nextItem.name);
                 displayName = `${currentName} - ${nextName - 1} ${unit ?? ""}`;
             }
@@ -127,7 +128,7 @@ const customLabel = ({ x, y, width, height, value }: any) => {
 
     return (
         <text x={X} y={Y} fontWeight={500} textAnchor="middle" dominantBaseline="central" fontSize={Number(height) < 20 ? 12 : 14}>
-            {formatNumber(Number(value), { notation: "compact", maximumFractionDigits: 1 })}
+            {formatNumber(Number(value), { fractionDigits: 1, notation: "compact" })}
         </text>
     );
 };
@@ -140,7 +141,7 @@ export const CustomTooltip = (props: any) => {
         return (
             <div className="bg-gray-800 px-4 py-2 rounded-md capitalize">
                 <p>Label: {label}</p>
-                <p>Value: {`${formatNumber(payload[0].value)}`}</p>
+                <p>Value: {`${formatNumber(payload[0].value, { fractionDigits: 1, notation: "compact" })}`}</p>
             </div>
         );
     }

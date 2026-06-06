@@ -101,7 +101,7 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --muted-foreground: oklch(0.5560 0 0);
     --accent: oklch(0.9700 0 0);
     --accent-foreground: oklch(0.2050 0 0);
-    --destructive: oklch(0.5770 0.2450 27.3250);
+    --destructive: oklch(70.4% 0.191 22.216);
     --destructive-foreground: oklch(1 0 0);
 
     --border: oklch(0.9220 0 0);
@@ -193,7 +193,7 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --accent: hsl(0 0% 14.9%);
     --accent-foreground: hsl(0 0% 98%);
 
-    --destructive: hsl(0, 79%, 33%);
+    --destructive: oklch(70.4% 0.191 22.216);
     --destructive-foreground: hsl(0 0% 98%);
 
     --radius: 0.5rem;

@@ -1,6 +1,6 @@
 import {Eye, Flame} from "lucide-react";
 import {Link} from "@tanstack/react-router";
-import {formatDateTime} from "@/lib/utils/formating";
+import {formatDate} from "@/lib/utils/date-formatting";
 import {TrendsMedia} from "@/lib/types/provider.types";
 import {Button} from "@/lib/client/components/ui/button";
 
@@ -29,7 +29,7 @@ export const TrendHero = ({ trend }: { trend: TrendsMedia }) => {
                 </h1>
                 <div className="flex items-center gap-4 text-muted-foreground text-sm mb-4">
                     <span className="bg-popover px-2 py-0.5 rounded border">
-                        {formatDateTime(trend.releaseDate, { noTime: true })}
+                        {formatDate(trend.releaseDate)}
                     </span>
                     <span className="capitalize">
                         {trend.mediaType}

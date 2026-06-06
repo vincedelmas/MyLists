@@ -1,15 +1,17 @@
 import {MediaType} from "@/lib/utils/enums";
-import {formatAvgRating} from "@/lib/utils/ratings";
+import {formatAvgRating} from "@/lib/utils/ratings-formatting";
+import {getMediaNaming} from "@/lib/utils/stats-utils";
 import {ExtractStatsByType} from "@/lib/types/stats.types";
 import {StatCard} from "@/lib/client/media-stats/StatCard";
 import {RatingsChart} from "@/lib/client/media-stats/RatingsChart";
-import {getMediaNaming} from "@/lib/client/media-stats/stats-utils";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {TopAffinityCard} from "@/lib/client/media-stats/TopAffinityCard";
-import {ChartColumn, Clock, DollarSign, Heart, Play, SquareStack, Star, Tags, XLineTop} from "lucide-react";
 import {DistributionChart} from "@/lib/client/media-stats/DistributionChart";
 import {StatusDistribution} from "@/lib/client/media-stats/StatusDistribution";
-import {capitalize, formatCurrency, formatHours, formatNumber} from "@/lib/utils/formating";
+import {ActivityByMonthChart} from "@/lib/client/media-stats/ActivityByMonthChart";
+import {capitalize} from "@/lib/utils/text-formatting";
+import {formatCurrency, formatHours, formatNumber} from "@/lib/utils/number-formatting";
+import {ChartColumn, Clock, DollarSign, Heart, Play, SquareStack, Star, Tags, XLineTop} from "lucide-react";
 
 
 interface MediaTypeDashboardProps {
@@ -34,7 +36,10 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                     title={"Time Spent"}
                     icon={<Clock className="size-4"/>}
                     value={formatHours(stats.timeSpentHours)}
-                    subtitle={`${stats.timeSpentHours.toFixed(1)} hours`}
+                    subtitle={`${formatNumber(stats.timeSpentHours, {
+                        locale: "fr",
+                        fractionDigits: 0,
+                    })} hours`}
                 />
                 {mediaType !== MediaType.GAMES &&
                     <StatCard
@@ -54,7 +59,7 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                     title="Avg. Updates"
                     subtitle="Updates per month"
                     icon={<ChartColumn className="size-4"/>}
-                    value={stats.avgUpdates?.toFixed(2) ?? "-"}
+                    value={formatNumber(stats.avgUpdates, { fractionDigits: 0 })}
                 />
                 <MediaSpecificStats
                     stats={stats}
@@ -85,6 +90,12 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                     title={getMediaNaming(mediaType).durationDistribution}
                     unit={getMediaNaming(mediaType).durationDistributionUnit}
                 />
+                <ActivityByMonthChart
+                    mediaType={mediaType}
+                    title="Activity Time by Month"
+                    data={stats.activityByMonth.data}
+                    mediaTypes={stats.activityByMonth.mediaTypes}
+                />
                 <DistributionChart
                     height={300}
                     enableBinning={true}
@@ -98,13 +109,13 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                     ratingSystem={ratingSystem}
                     ratings={specificMediaStats.ratings}
                 />
-                <DistributionChart
-                    height={300}
-                    mediaType={mediaType}
-                    title="Updates per Month"
-                    data={stats.updatesDistribution}
-                />
             </div>
+            <DistributionChart
+                height={300}
+                mediaType={mediaType}
+                title="Updates per Month"
+                data={stats.updatesDistribution}
+            />
 
             <MediaSpecificTopStats
                 stats={stats}
@@ -122,7 +133,10 @@ function MediaSpecificStats({ stats }: { stats: ExtractStatsByType<MediaType> })
                     title="Avg. Series Duration"
                     icon={<XLineTop className="size-4"/>}
                     value={stats.specificMediaStats.avgDuration ?
-                        `${(stats.specificMediaStats.avgDuration / 60).toFixed(1)} hours`
+                        `${formatNumber(stats.specificMediaStats.avgDuration / 60, {
+                            fractionDigits: 1,
+                            locale: "en",
+                        })} hours`
                         : "-"
                     }
                 />
@@ -141,7 +155,7 @@ function MediaSpecificStats({ stats }: { stats: ExtractStatsByType<MediaType> })
                 <StatCard
                     title="Avg. Movie Duration"
                     icon={<XLineTop className="size-4"/>}
-                    value={stats.specificMediaStats.avgDuration ? `${stats.specificMediaStats.avgDuration.toFixed(0)} min` : "-"}
+                    value={`${formatNumber(stats.specificMediaStats.avgDuration, { fractionDigits: 0 })} min`}
                 />
                 <StatCard
                     title="Total Budget"
@@ -164,7 +178,7 @@ function MediaSpecificStats({ stats }: { stats: ExtractStatsByType<MediaType> })
                     title="Avg. Game Playtime"
                     subtitle="All games included"
                     icon={<XLineTop className="size-4"/>}
-                    value={stats.specificMediaStats.avgDuration ? `${stats.specificMediaStats.avgDuration.toFixed(0)} hours` : "-"}
+                    value={`${formatNumber(stats.specificMediaStats.avgDuration, { fractionDigits: 1 })} hours`}
                 />
             </>
         );
@@ -188,7 +202,7 @@ function MediaSpecificStats({ stats }: { stats: ExtractStatsByType<MediaType> })
                 <StatCard
                     title="Avg. Manga Chapters"
                     icon={<XLineTop className="size-4"/>}
-                    value={formatNumber(stats.specificMediaStats.avgDuration)}
+                    value={formatNumber(stats.specificMediaStats.avgDuration, { fractionDigits: 0 })}
                 />
             </>
         );

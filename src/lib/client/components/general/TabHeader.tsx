@@ -1,4 +1,4 @@
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import React, {ReactNode} from "react";
 
 

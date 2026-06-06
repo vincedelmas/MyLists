@@ -8,7 +8,7 @@ const program = new Command();
 
 program
     .name("mylists-cli")
-    .description("CLI commands for MyLists")
+    .description("CLI for MyLists")
     .version("1.0.0");
 
 const tasks = getAllTasks();
@@ -20,25 +20,28 @@ for (const task of tasks) {
         .option("-j, --json", "Output logs as JSON");
 
     const cliOptions = extractCLIOptions(task.inputSchema);
+
     for (const option of cliOptions) {
+        const description = option.defaultValue === undefined
+            ? option.description
+            : `${option.description} (default: ${formatDefaultValue(option.defaultValue)})`;
+
         if (option.required) {
-            cmd.requiredOption(option.flag, option.description);
-        }
-        else if (option.defaultValue !== undefined) {
-            cmd.option(option.flag, option.description, String(option.defaultValue));
+            cmd.requiredOption(option.flag, description);
         }
         else {
-            cmd.option(option.flag, option.description);
+            cmd.option(option.flag, description);
         }
     }
 
     cmd.action(async (options) => {
-        const input = parseCliOptions(options, cliOptions);
-
-        console.log(`\nRunning task: ${task.name}`);
-        console.log(`Input: ${JSON.stringify(input, null, 2)}\n`);
-
         try {
+            const rawInput = parseClIOptions(options, cliOptions);
+            const input = task.inputSchema.parse(rawInput);
+
+            console.log(`\nRunning task: ${task.name}`);
+            console.log(`Input: ${JSON.stringify(input, null, 2)}\n`);
+
             await runTask({
                 input: input as any,
                 taskName: task.name,
@@ -69,13 +72,13 @@ interface CLIOption {
     required: boolean;
     description: string;
     enumValues?: string[];
+    defaultValue?: unknown;
     arrayItemType?: "string" | "number";
-    defaultValue?: string | number | boolean | string[];
     type: "string" | "number" | "boolean" | "enum" | "array";
 }
 
 
-function parseCliOptions(options: Record<string, any>, definitions: CLIOption[]) {
+function parseClIOptions(options: Record<string, any>, definitions: CLIOption[]) {
     const result: Record<string, any> = {};
 
     for (const def of definitions) {
@@ -85,13 +88,7 @@ function parseCliOptions(options: Record<string, any>, definitions: CLIOption[])
         const kebabKey = match[1];
         const camelKey = kebabKey.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
         const value = options[camelKey];
-
-        if (value === undefined) {
-            if (def.defaultValue !== undefined) {
-                result[camelKey] = def.defaultValue;
-            }
-            continue;
-        }
+        if (value === undefined) continue;
 
         switch (def.type) {
             case "number":
@@ -102,9 +99,7 @@ function parseCliOptions(options: Record<string, any>, definitions: CLIOption[])
                 break;
             case "enum":
                 if (def.enumValues && !def.enumValues.includes(value)) {
-                    throw new Error(
-                        `Invalid value "${value}" for ${camelKey}. Valid: ${def.enumValues.join(", ")}`
-                    );
+                    throw new Error(`Invalid value "${value}" for ${camelKey}. Valid: ${def.enumValues.join(", ")}`);
                 }
                 result[camelKey] = value;
                 break;
@@ -134,43 +129,21 @@ function parseCliOptions(options: Record<string, any>, definitions: CLIOption[])
 }
 
 
-function extractCLIOptions(schema: z.ZodType) {
+function extractCLIOptions(schema: z.ZodObject) {
     const options: CLIOption[] = [];
     const takenShortFlags = new Set<string>(["j", "h", "v"]);
 
-    if (schema instanceof z.ZodObject) {
-        const shape = schema.shape as Record<string, z.ZodType>;
-
-        for (const [key, fieldSchema] of Object.entries(shape)) {
-            const option = extractSingleOption(key, fieldSchema, takenShortFlags);
-            if (option) {
-                options.push(option);
-            }
-        }
+    for (const [key, fieldSchema] of Object.entries(schema.shape)) {
+        const option = extractSingleOption(key, fieldSchema, takenShortFlags);
+        if (option) options.push(option);
     }
 
     return options;
 }
 
 
-function extractSingleOption(key: string, schema: z.ZodType, takenShortFlags: Set<string>): CLIOption | null {
-    let required = true;
-    let innerSchema = schema;
-    let defaultValue: CLIOption["defaultValue"];
-
-    // Unwrap optional
-    if (innerSchema instanceof z.ZodOptional) {
-        required = false;
-        innerSchema = innerSchema.unwrap() as any;
-    }
-
-    // Unwrap default
-    if (innerSchema instanceof z.ZodDefault) {
-        defaultValue = innerSchema.def.defaultValue as any;
-        innerSchema = innerSchema.def.innerType as any;
-    }
-
-    const description = innerSchema.description ?? `The ${key} parameter`;
+function extractSingleOption(key: string, schema: z.ZodType, takenShortFlags: Set<string>) {
+    const { innerSchema, required, defaultValue, description } = unwrapClISchema(key, schema);
 
     let enumValues: string[] | undefined;
     let type: CLIOption["type"] = "string";
@@ -212,7 +185,11 @@ function extractSingleOption(key: string, schema: z.ZodType, takenShortFlags: Se
     }
 
     const flagBase = shortFlag ? `-${shortFlag}, --${kebab}` : `--${kebab}`;
-    const flag = type === "boolean" ? flagBase : type === "array" ? `${flagBase} <values...>` : `${flagBase} <value>`;
+    const flag = type === "boolean"
+        ? flagBase
+        : type === "array"
+            ? `${flagBase} <values...>`
+            : `${flagBase} <value>`;
 
     let finalDescription = description;
     if (enumValues) {
@@ -228,6 +205,43 @@ function extractSingleOption(key: string, schema: z.ZodType, takenShortFlags: Se
         arrayItemType,
         description: finalDescription,
     };
+}
+
+
+function unwrapClISchema(key: string, schema: z.ZodType) {
+    let required = true;
+    let innerSchema = schema;
+    let defaultValue: CLIOption["defaultValue"];
+    const wrapperDescription = schema.description;
+
+    while (true) {
+        if (innerSchema instanceof z.ZodOptional) {
+            required = false;
+            innerSchema = innerSchema.unwrap() as any;
+            continue;
+        }
+
+        if (innerSchema instanceof z.ZodDefault) {
+            required = false;
+            defaultValue = innerSchema.def.defaultValue as any;
+            innerSchema = innerSchema.def.innerType as any;
+            continue;
+        }
+
+        break;
+    }
+
+    return {
+        required,
+        innerSchema,
+        defaultValue,
+        description: wrapperDescription ?? innerSchema.description ?? `The ${key} parameter`,
+    };
+}
+
+
+function formatDefaultValue(value: CLIOption["defaultValue"]) {
+    return Array.isArray(value) ? value.join(", ") : String(value);
 }
 
 

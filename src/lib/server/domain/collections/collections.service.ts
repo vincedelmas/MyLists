@@ -1,7 +1,7 @@
 import {notFound} from "@tanstack/react-router";
 import {UserService} from "@/lib/server/domain/user";
 import {MediaInfo} from "@/lib/types/activity.types";
-import {FormattedError} from "@/lib/utils/error-classes";
+import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {isAtLeastRole, MediaType, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
@@ -24,7 +24,9 @@ export class CollectionsService {
         const isModerator = isAtLeastRole(actorRole, RoleType.MANAGER);
 
         if (mode === "edit") {
-            if (!isOwner && !isModerator) throw new FormattedError("Unauthorized");
+            if (!isOwner && !isModerator) {
+                throw new UnauthorizedError("private");
+            }
         }
         else {
             await this._assertVisible(collection, isOwner, isModerator, actorId);
@@ -125,10 +127,10 @@ export class CollectionsService {
         items: CollectionItemInput[];
     }) {
         const { items, ...collectionData } = params;
-        const sanitizedItems = this._normalizeItems(items);
+        const uniqueItems = this._normalizeItems(items);
 
         const collectionId = await this.repository.createCollection({ ...collectionData });
-        await this.repository.replaceCollectionItems(collectionId, sanitizedItems.map((item, index) => ({
+        await this.repository.replaceCollectionItems(collectionId, uniqueItems.map((item, index) => ({
             collectionId,
             mediaId: item.mediaId,
             orderIndex: index + 1,
@@ -290,13 +292,17 @@ export class CollectionsService {
 
         // Private collections are strictly for owners
         if (collection.privacy === PrivacyType.PRIVATE) {
-            throw new FormattedError("Unauthorized");
+            throw new UnauthorizedError("private");
         }
 
         // Handle non-authed user
         if (!actorId) {
-            if (collection.ownerPrivacy !== PrivacyType.PUBLIC) {
-                throw new FormattedError("Unauthorized");
+            if (collection.privacy === PrivacyType.RESTRICTED && collection.ownerPrivacy === PrivacyType.PUBLIC) {
+                return;
+            }
+
+            if (collection.privacy !== PrivacyType.PUBLIC) {
+                throw new UnauthorizedError(collection.ownerPrivacy === PrivacyType.RESTRICTED ? "restricted" : "private");
             }
             return;
         }
@@ -305,7 +311,7 @@ export class CollectionsService {
         if (collection.privacy === PrivacyType.RESTRICTED && collection.ownerPrivacy === PrivacyType.PRIVATE) {
             const followStatus = await this.userService.getFollowingStatus(actorId, collection.ownerId);
             if (followStatus?.status !== SocialState.ACCEPTED) {
-                throw new FormattedError("Unauthorized");
+                throw new UnauthorizedError("private");
             }
         }
     }

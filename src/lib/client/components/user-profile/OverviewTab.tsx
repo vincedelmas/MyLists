@@ -1,7 +1,8 @@
 import {Link} from "@tanstack/react-router";
 import {RatingSystemType} from "@/lib/utils/enums";
-import {getFeelingIcon} from "@/lib/utils/ratings";
-import {getThemeColor} from "@/lib/utils/colors-and-icons";
+import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
+import {getThemeColor} from "@/lib/utils/theme-utils";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {Clock, ClockAlert, MoveRight, Star} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
@@ -23,7 +24,10 @@ interface OverviewTabProps {
 export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, highlightedMedia }: OverviewTabProps) => {
     const rating = globalStats.avgRated;
     const ratingDisplay = ratingSystem === "score"
-        ? rating?.toFixed(2) ?? "-"
+        ? formatNumber(rating, {
+            fractionDigits: 2,
+            locale: "en",
+        })
         : getFeelingIcon(rating, { size: 28, className: "mt-1" });
 
     return (
@@ -31,7 +35,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
             <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-2">
                 <SimpleStatCard
                     title="Total Time"
-                    value={`${globalStats.totalDays.toFixed(0)} d`}
+                    value={`${formatNumber(globalStats.totalDays, { fractionDigits: 0 })} d`}
                 />
                 <SimpleStatCard
                     title="Total Entries"
@@ -44,7 +48,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
                 />
                 <SimpleStatCard
                     title="Rated Media"
-                    value={globalStats.percentRated ? `${globalStats.percentRated.toFixed(1)}%` : undefined}
+                    value={globalStats.percentRated ? formatPercent(globalStats.percentRated) : undefined}
                 />
             </div>
 
@@ -64,7 +68,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
                                 <div
                                     key={media.mediaType}
                                     className="h-full flex items-center justify-center transition-all"
-                                    title={`${media.mediaType}: ${percentage.toFixed(1)}%`}
+                                    title={`${media.mediaType}: ${formatPercent(percentage)}`}
                                     style={{
                                         width: `${percentage}%`,
                                         backgroundColor: getThemeColor(media.mediaType),
@@ -72,7 +76,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
                                 >
                                     {percentage > 5 &&
                                         <span className="text-xs truncate tracking-wider font-medium text-black px-0.5">
-                                        {Math.round(percentage)}%
+                                        {formatPercent(percentage, { fractionDigits: 0 })}
                                     </span>
                                     }
                                 </div>

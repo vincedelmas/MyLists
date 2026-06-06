@@ -2,13 +2,13 @@ import {notFound} from "@tanstack/react-router";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {Achievement} from "@/lib/types/achievements.types";
+import {StatsCTE, Tag} from "@/lib/types/media-common.types";
 import {MediaSchemaConfig} from "@/lib/types/media.config.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {BaseProviderService} from "@/lib/server/domain/media/base/provider.service";
 import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {MediaListArgs, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
-import {StatsCTE, Tag} from "@/lib/types/media-common.types";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 
 
@@ -46,6 +46,10 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
 
     async searchUserListByName(userId: number, query: string, limit?: number) {
         return this.repository.searchUserListByName(userId, query, limit);
+    }
+
+    async hasUserMedia(userId: number, mediaId: number) {
+        return !!await this.repository.findUserMedia(userId, mediaId);
     }
 
     async getOrphanedMediaIds(mediaType: MediaType) {
@@ -116,12 +120,12 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return this.repository.getSearchListFilters(userId, query, job);
     }
 
-    async getMediaJobDetails(userId: number, job: JobType, name: string, search: SearchType) {
+    async getMediaJobDetails(job: JobType, name: string, search: SearchType, userId?: number) {
         const page = search.page ?? 1;
         const perPage = search.perPage ?? 24;
         const offset = (page - 1) * perPage;
 
-        return this.repository.getMediaJobDetails(userId, job, name, offset, perPage);
+        return this.repository.getMediaJobDetails(job, name, offset, perPage, userId);
     }
 
     async editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {
@@ -222,7 +226,7 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return delta;
     }
 
-    async getMediaAndUserDetails(userId: number, mediaId: string, external: boolean, providerService: BaseProviderService<any, any, any>) {
+    async getMediaAndUserDetails(userId: number | undefined, mediaId: string, external: boolean, providerService: BaseProviderService<any, any, any>) {
         const media = external ? await this.repository.findByApiId(mediaId) : await this.repository.findById(Number(mediaId));
 
         let internalMediaId = media?.id;

@@ -1,0 +1,102 @@
+x-app-build: &app-build
+  context: .
+  dockerfile: Dockerfile
+  args:
+    VITE_BASE_URL: ${VITE_BASE_URL:-http://localhost:3000}
+    VITE_CONTACT_MAIL: ${VITE_CONTACT_MAIL:-}
+    VITE_PUBLIC_POSTHOG_KEY: ${VITE_PUBLIC_POSTHOG_KEY:-}
+    VITE_PUBLIC_POSTHOG_HOST: ${VITE_PUBLIC_POSTHOG_HOST:-}
+    VITE_PUBLIC_POSTHOG_UI_HOST: ${VITE_PUBLIC_POSTHOG_UI_HOST:-}
+
+services:
+  app:
+    build: *app-build
+    image: mylists-app
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ./instance/site.db
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379
+      UPLOADS_DIR_NAME: ${UPLOADS_DIR_NAME:-images}
+      BASE_UPLOADS_LOCATION: /app/storage/images
+    volumes:
+      - mylists-db:/app/instance
+      - mylists-uploads:/app/storage/images
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    expose:
+      - "3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:3000').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  maintenance:
+    build: *app-build
+    image: mylists-app
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ./instance/site.db
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379
+      UPLOADS_DIR_NAME: ${UPLOADS_DIR_NAME:-images}
+      BASE_UPLOADS_LOCATION: /app/storage/images
+    command: ["/bin/sh", "-c", "export -p > /etc/cron.env && cron -f"]
+    volumes:
+      - mylists-db:/app/instance
+      - mylists-uploads:/app/storage/images
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  tooling:
+    build:
+      <<: *app-build
+      target: tooling
+    image: mylists-tooling
+    profiles:
+      - tools
+    env_file:
+      - .env.docker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ./instance/site.db
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis:6379
+      UPLOADS_DIR_NAME: ${UPLOADS_DIR_NAME:-images}
+      BASE_UPLOADS_LOCATION: /app/storage/images
+    volumes:
+      - mylists-db:/app/instance
+      - mylists-uploads:/app/storage/images
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mylists-db:
+  mylists-uploads:
+  redis-data:

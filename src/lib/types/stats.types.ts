@@ -7,7 +7,7 @@ import {MoviesService} from "@/lib/server/domain/media/movies";
 import {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import {UserStatsRepository, UserStatsService, UserUpdatesRepository} from "@/lib/server/domain/user";
+import {UserActivityService, UserStatsRepository, UserStatsService, UserUpdatesRepository} from "@/lib/server/domain/user";
 
 
 export type DeltaStats = {
@@ -37,6 +37,7 @@ export type TopAffinityConfig = {
 
 type BaseMediaStats = Awaited<ReturnType<typeof UserStatsRepository.getAggregatedMediaStats>>;
 type UpdatesStats = Awaited<ReturnType<typeof UserUpdatesRepository.mediaUpdatesStatsPerMonth>>;
+type ActivityStats = { activityByMonth: Awaited<ReturnType<UserActivityService["getActivityStatsByMonth"]>> };
 type OtherBase = { activatedMediaTypes: MediaType[]; ratingSystem: RatingSystemType; };
 type TvSpecificStats = Awaited<ReturnType<TvService["calculateAdvancedMediaStats"]>>;
 type MoviesSpecificStats = Awaited<ReturnType<MoviesService["calculateAdvancedMediaStats"]>>;
@@ -46,12 +47,12 @@ type MangaSpecificStats = Awaited<ReturnType<MangaService["calculateAdvancedMedi
 
 
 export type AdvancedMediaStats =
-    | (BaseMediaStats & UpdatesStats & OtherBase & { mediaType: typeof MediaType.SERIES; specificMediaStats: TvSpecificStats })
-    | (BaseMediaStats & UpdatesStats & OtherBase & { mediaType: typeof MediaType.ANIME; specificMediaStats: TvSpecificStats })
-    | (BaseMediaStats & UpdatesStats & OtherBase & { mediaType: typeof MediaType.MOVIES; specificMediaStats: MoviesSpecificStats })
-    | (BaseMediaStats & UpdatesStats & OtherBase & { mediaType: typeof MediaType.GAMES; specificMediaStats: GamesSpecificStats })
-    | (BaseMediaStats & UpdatesStats & OtherBase & { mediaType: typeof MediaType.BOOKS; specificMediaStats: BooksSpecificStats })
-    | (BaseMediaStats & UpdatesStats & OtherBase & { mediaType: typeof MediaType.MANGA; specificMediaStats: MangaSpecificStats });
+    | (BaseMediaStats & UpdatesStats & ActivityStats & OtherBase & { mediaType: typeof MediaType.SERIES; specificMediaStats: TvSpecificStats })
+    | (BaseMediaStats & UpdatesStats & ActivityStats & OtherBase & { mediaType: typeof MediaType.ANIME; specificMediaStats: TvSpecificStats })
+    | (BaseMediaStats & UpdatesStats & ActivityStats & OtherBase & { mediaType: typeof MediaType.MOVIES; specificMediaStats: MoviesSpecificStats })
+    | (BaseMediaStats & UpdatesStats & ActivityStats & OtherBase & { mediaType: typeof MediaType.GAMES; specificMediaStats: GamesSpecificStats })
+    | (BaseMediaStats & UpdatesStats & ActivityStats & OtherBase & { mediaType: typeof MediaType.BOOKS; specificMediaStats: BooksSpecificStats })
+    | (BaseMediaStats & UpdatesStats & ActivityStats & OtherBase & { mediaType: typeof MediaType.MANGA; specificMediaStats: MangaSpecificStats });
 
 export type OverviewStats = Awaited<ReturnType<UserStatsService["userAdvancedSummaryStats"]>> & OtherBase & { mediaType: undefined };
 

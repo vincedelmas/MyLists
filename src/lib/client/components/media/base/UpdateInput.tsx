@@ -17,7 +17,6 @@ export const UpdateInput = ({ total, initValue, updateInput, payloadName, update
     const [currentValue, setCurrentValue] = useState(initValue?.toString() ?? "0");
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCurrentValue(initValue?.toString() ?? "0");
     }, [initValue]);
 
@@ -28,7 +27,7 @@ export const UpdateInput = ({ total, initValue, updateInput, payloadName, update
         }
 
         const parsed = Number(currentValue);
-        if (isNaN(parsed)) {
+        if (!Number.isFinite(parsed)) {
             setCurrentValue(initValue?.toString() ?? "0");
             return;
         }

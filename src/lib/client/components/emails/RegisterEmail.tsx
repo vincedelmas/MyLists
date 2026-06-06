@@ -1,5 +1,4 @@
-import {Tailwind} from "@react-email/tailwind";
-import {Body, Button, Container, Head, Heading, Html, Link, Preview, Section, Text} from "@react-email/components";
+import {Body, Button, Container, Head, Heading, Html, Link, Preview, Section, Tailwind, Text} from "@react-email/components";
 
 
 interface RegisterEmailProps {

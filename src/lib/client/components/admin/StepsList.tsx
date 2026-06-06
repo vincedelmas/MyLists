@@ -1,12 +1,12 @@
 import {useState} from "react";
-import {cn} from "@/lib/utils/helpers";
-import {formatMs} from "@/lib/utils/formating";
+import {cn} from "@/lib/utils/classnames";
+import {formatMs} from "@/lib/utils/number-formatting";
 import {TaskStep} from "@/lib/types/tasks.types";
 import {AlertTriangle, CheckCircle, ChevronDown, SkipForward, XCircle} from "lucide-react";
 
 
 const stepStatusConfig = {
-    failed: { icon: XCircle, color: "text-red-400" },
+    failed: { icon: XCircle, color: "text-destructive" },
     completed: { icon: CheckCircle, color: "text-green-500" },
     partial: { icon: AlertTriangle, color: "text-yellow-500" },
     skipped: { icon: SkipForward, color: "text-muted-foreground" },
@@ -79,7 +79,7 @@ const StepItem = ({ step, depth = 0, defaultExpanded = false }: StepItemProps) =
                         </div>
                     </div>
                     {step.error &&
-                        <p className="text-xs text-red-400 mt-1 font-mono">
+                        <p className="text-xs text-destructive mt-1 font-mono">
                             {step.error}
                         </p>
                     }

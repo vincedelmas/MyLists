@@ -1,6 +1,6 @@
 import * as React from "react";
 import {XIcon} from "lucide-react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 

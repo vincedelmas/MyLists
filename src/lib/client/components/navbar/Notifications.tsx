@@ -1,19 +1,20 @@
 import {useState} from "react";
 import {Link} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
-import {NotifTab} from "@/lib/types/notifications.types";
 import {SocialNotifType} from "@/lib/utils/enums";
+import {zeroPad} from "@/lib/utils/number-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
+import {NotifTab} from "@/lib/types/notifications.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {formatDateTime, formatRelativeTime, zeroPad} from "@/lib/utils/formating";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Bell, LoaderCircle, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
-import {notificationsCountOptions, notificationsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {formatCalendarRelativeDate, formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
+import {notificationsCountOptions, notificationsOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteSocialNotif, useMarkAllNotifAsRead, useRespondFollowRequest} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
@@ -154,7 +155,8 @@ export const Notifications = () => {
 
 const MediaNotificationItem = ({ notif }: { notif: MediaNotif }) => {
     const isUnread = !notif.read;
-    const isTv = notif.season !== null;
+    const isTvNotification = notif.season !== null;
+    const { relativeTime } = formatCalendarRelativeDate(notif.releaseDate, { style: "long" });
 
     return (
         <div className="relative flex gap-3 py-3 px-2 border-b hover:bg-muted/30 rounded-lg mt-1">
@@ -174,28 +176,25 @@ const MediaNotificationItem = ({ notif }: { notif: MediaNotif }) => {
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: notif.mediaType, mediaId: notif.mediaId }}
                         >
-                                    <span title={notif.name} className="font-medium text-foreground line-clamp-1 hover:text-app-accent">
-                                        {notif.name}
-                                    </span>
+                            <span title={notif.name} className="font-medium text-foreground line-clamp-1 max-w-55 hover:text-app-accent">
+                                {notif.name}
+                            </span>
                         </Link>
                     </p>
                 </div>
                 <div className="flex items-baseline justify-between">
                     <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-primary/80">
-                            <span>
-                                {isTv ?
-                                    `S${zeroPad(notif.season)}.E${zeroPad(notif.episode)} ${notif.isSeasonFinale ? "(Finale)" : ""}`
-                                    :
-                                    <div>Release</div>
-                                }
-                            </span>
-                        <MoveRight className="size-4 text-app-accent"/>
                         <span>
-                                {formatDateTime(notif.releaseDate, { noTime: true })}
-                            </span>
+                            {isTvNotification
+                                ? `S${zeroPad(notif.season)}.E${zeroPad(notif.episode)} ${notif.isSeasonFinale ? "(Finale)" : ""}`
+                                : <div>Release</div>
+                            }
+                        </span>
+                        <MoveRight className="size-4 text-app-accent"/>
+                        <span>{formatDate(notif.releaseDate)}</span>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                        {formatRelativeTime(notif.releaseDate)}
+                        {relativeTime}
                     </div>
                 </div>
             </div>
@@ -211,6 +210,7 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
     const isUnread = !notification.read;
     const deleteMutation = useDeleteSocialNotif();
     const respondMutation = useRespondFollowRequest();
+    const relativeTime = formatRelativeTime(notification.createdAt);
     const isFollowRequest = notification.type === SocialNotifType.FOLLOW_REQUESTED;
 
     const respond = async (action: "accept" | "decline") => {
@@ -268,7 +268,7 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
                         }
                     </p>
                     <p className="text-xs text-muted-foreground">
-                        {formatRelativeTime(notification.createdAt)}
+                        {relativeTime}
                     </p>
                 </div>
                 {isUnread &&

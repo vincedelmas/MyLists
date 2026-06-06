@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
+import {formatDateForDb} from "@/lib/utils/date-formatting";
 import {gamesConfig} from "@/lib/server/domain/media/games/games.config";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {HltbGameEntry, IgdbGameDetails, IgdbSearchResponse, IgdbTrendGamesResponse, ProviderSearchResult, SearchData, TrendsMedia} from "@/lib/types/provider.types";
@@ -37,10 +38,10 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails) => {
         voteAverage: rawData?.total_rating ?? 0,
         voteCount: rawData?.total_rating_count ?? 0,
         gameEngine: rawData?.game_engines?.[0]?.name,
+        releaseDate: formatDateForDb(rawData.first_release_date),
         playerPerspective: rawData?.player_perspectives?.[0]?.name,
         gameModes: rawData?.game_modes?.map((mode) => mode?.name).join(","),
         steamApiId: rawData.external_games?.find((source) => source.external_game_source === 1)?.uid,
-        releaseDate: rawData.first_release_date ? new Date(rawData.first_release_date * 1000).toISOString() : null,
         hltbMainTime: null,
         hltbMainAndExtraTime: null,
         hltbTotalCompleteTime: null,
@@ -98,8 +99,8 @@ const transformGamesTrends = (rawData: IgdbTrendGamesResponse[]): TrendsMedia[] 
         displayName: item.game.name,
         mediaType: MediaType.GAMES,
         overview: item.game.summary ?? "",
+        releaseDate: item.game.first_release_date,
         posterPath: item.game.cover?.image_id ? `${imageBaseUrl}${item.game.cover.image_id}.jpg` : "",
-        releaseDate: item.game.first_release_date ? new Date(item.game.first_release_date * 1000).toISOString() : "",
     }));
 };
 

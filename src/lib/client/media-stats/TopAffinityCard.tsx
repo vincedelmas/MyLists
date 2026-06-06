@@ -1,9 +1,9 @@
 import React from "react";
-import {capitalize} from "@/lib/utils/formating";
+import {Link} from "@tanstack/react-router";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {TopAffinity} from "@/lib/types/stats.types";
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {BlockLink} from "@/lib/client/components/general/BlockLink";
 import {CircleHelp, CircleOff, Heart, Play, Star} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
@@ -46,9 +46,9 @@ export const TopAffinityCard = ({ title, topAffinity, job, mediaType }: TopAffin
                             <div className="flex flex-col min-w-0">
                                 <span className="truncate text-sm font-medium">
                                     {job && mediaType ?
-                                        <BlockLink to="/details/$mediaType/$job/$name" params={{ mediaType, job, name: item.name }}>
+                                        <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job, name: item.name }}>
                                             <>{capitalize(item.name)}</>
-                                        </BlockLink>
+                                        </Link>
                                         :
                                         <>{capitalize(item.name)}</>
                                     }
@@ -92,7 +92,7 @@ const AffinityPopover = () => {
             </PopoverTrigger>
             <PopoverContent className="w-75">
                 <div className="mb-3 flex items-center gap-2 font-semibold">
-                    Affinity Score <span className="-ml-1 text-sm text-red-400">*</span>
+                    Affinity Score <span className="-ml-1 text-sm text-destructive">*</span>
                 </div>
                 <div className="text-sm text-muted-foreground space-y-3">
                     <p>A score (0-10) representing the preference for a category based on:</p>
@@ -117,7 +117,7 @@ const AffinityPopover = () => {
                         </li>
                     </ul>
                     <p className="italic text-xs pt-2 border-t">
-                        <span className="text-sm text-red-400">*</span>{" "}
+                        <span className="text-sm text-destructive">*</span>{" "}
                         Requires at least 3 entries to appear.
                     </p>
                 </div>

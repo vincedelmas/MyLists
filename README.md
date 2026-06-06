@@ -58,6 +58,23 @@ Ensure you have [Bun](https://bun.sh) installed on your machine.
    ```bash
    bun run dev
    ```
+6. **Create a new user**
+   You can create a new user with different roles (user, manager, admin) without email verification or OAuth2 setup using the CLI:
+   ```bash
+   bun run cli -- create-user \
+     --email admin@example.com \
+     --password "change-me-strong-password" \
+     --username admin \
+     --role admin
+   ```
+
+### Docker Deployment
+
+Docker Compose deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).
+
+The default Docker stack is local-only on `http://localhost:3000` and includes the app, Redis,
+and the daily maintenance cron container. Public HTTPS should be handled by your own reverse proxy
+or tunnel setup. PostHog is optional and disabled when its public key is empty.
 
 ---
 
@@ -70,6 +87,7 @@ Below is an explanation for each key found in `.env.example`:
 | **Main Configuration**                      |                                                             |          |                                |
 | `DATABASE_URL`                              | SQLite / PostgreSQL / other DB connection URL               | ✅        | `file:./instance/site.db`      |
 | `VITE_BASE_URL`                             | Base URL used by the frontend                               | ✅        | `http://localhost:3000`        |
+| `VITE_CONTACT_MAIL`                         | Email used to be contacted by users                         | ❌        |                                |
 | **File Management**                         |                                                             |          |                                |
 | `UPLOADS_DIR_NAME`                          | Folder name where uploaded files are stored                 | ✅        | `static`                       |
 | `BASE_UPLOADS_LOCATION`                     | Path to the uploads directory (relative or absolute)        | ✅        | `./public/static/`             |

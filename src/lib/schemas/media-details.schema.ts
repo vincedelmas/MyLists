@@ -29,10 +29,19 @@ export const updateBookCoverSchema = z.object({
     apiId: z.coerce.string(),
     imageUrl: z.url().trim().optional(),
     imageFile: z.instanceof(File).optional(),
-}).refine((data) => !!data.imageUrl || !!data.imageFile, {
-    message: "Provide an image link or upload a file.",
-}).refine((data) => !(data.imageUrl && data.imageFile), {
-    message: "Please, choose only one cover option.",
+}).superRefine((data, ctx) => {
+    const addFieldIssues = (message: string) => {
+        ctx.addIssue({ code: "custom", message, path: ["imageUrl"] });
+        ctx.addIssue({ code: "custom", message, path: ["imageFile"] });
+    };
+
+    if (!data.imageUrl && !data.imageFile) {
+        addFieldIssues("Provide an image link or upload a file.");
+    }
+
+    if (data.imageUrl && data.imageFile) {
+        addFieldIssues("Please, choose only one cover option.");
+    }
 });
 
 export const jobDetailsSchema = z.object({

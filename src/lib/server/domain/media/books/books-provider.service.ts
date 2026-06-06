@@ -21,7 +21,7 @@ export class BooksProviderService extends BaseProviderService<BooksRepository, G
     }
 
     protected _getMediaIdsForBulkRefresh() {
-        return Promise.all([]);
+        return Promise.resolve([]);
     }
 
     async llmResponse(content: string, schema: z.ZodSchema) {

@@ -1,10 +1,9 @@
-import {toast} from "sonner";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {Pencil, RefreshCw} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {formatDateTime} from "@/lib/utils/formating";
 import {Button} from "@/lib/client/components/ui/button";
+import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {isAtLeastRole, MediaType, RoleType} from "@/lib/utils/enums";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {useRefreshMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
@@ -14,16 +13,15 @@ interface RefreshAndEditProps {
     mediaId: number;
     external: boolean;
     mediaType: MediaType;
-    providerName: string;
     apiId: number | string;
     lastUpdate: string | null;
 }
 
 
-export const RefreshAndEdit = ({ mediaType, mediaId, apiId, providerName, external, lastUpdate }: RefreshAndEditProps) => {
+export const RefreshAndEdit = ({ mediaType, mediaId, apiId, external, lastUpdate }: RefreshAndEditProps) => {
     const { currentUser } = useAuth();
     const isBook = (mediaType === MediaType.BOOKS);
-    const lastUpdateDate = lastUpdate ? new Date(lastUpdate) : null;
+    const lastUpdateDate = lastUpdate ? dateFromUTCInput(lastUpdate) : null;
     const isManagerOrAbove = isAtLeastRole(currentUser?.role, RoleType.MANAGER);
     const refreshMutation = useRefreshMediaMutation(mediaType, external ? apiId : mediaId, external);
 
@@ -37,27 +35,13 @@ export const RefreshAndEdit = ({ mediaType, mediaId, apiId, providerName, extern
     const canRefreshThisType = isManagerOrAbove || !isBook;
 
     // Cooldown only applies to users below MANAGER
-    // eslint-disable-next-line react-hooks/purity,@eslint-react/purity
     const isRefreshCooldown = !isManagerOrAbove && !!nextRefreshAt && Date.now() < nextRefreshAt.getTime();
 
     // Check availability of refresh
     const refreshDisabled = refreshMutation.isPending || !currentUser || isRefreshCooldown;
 
-    const refreshTitle = isRefreshCooldown && nextRefreshAt
-        ? `Refresh available ${formatDateTime(nextRefreshAt.toISOString())}` : "Refresh metadata";
-
     const handleRefresh = () => {
-        refreshMutation.mutate({ data: { mediaType, apiId } }, {
-            onError: (error: any) => {
-                if (error?.isNotFound) {
-                    toast.error(`Media not available anymore on ${providerName}.`);
-                }
-                else {
-                    toast.error("An error occurred while refreshing the metadata");
-                }
-            },
-            onSuccess: () => toast.success("Metadata successfully refreshed"),
-        });
+        refreshMutation.mutate({ data: { apiId, mediaType } });
     };
 
     return (
@@ -92,7 +76,7 @@ export const RefreshAndEdit = ({ mediaType, mediaId, apiId, providerName, extern
 
             <RelativeTime
                 prefix="Updated "
-                value={lastUpdate}
+                date={lastUpdate}
                 className="px-3 text-xs text-muted-foreground"
             />
         </div>

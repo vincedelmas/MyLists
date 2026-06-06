@@ -20,15 +20,14 @@ export function MediaHero({ media, mediaType, external }: MediaHeroProps) {
     };
 
     return (
-        <div className="relative flex items-end overflow-hidden min-h-[50vh] left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen">
+        <div className="relative flex items-end overflow-hidden min-h-[50vh] left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] w-screen">
             <div style={backdropStyle} className="absolute inset-0 z-0"/>
             <div className="relative max-w-7xl mx-auto w-full px-8 max-sm:px-2">
                 <div className="
                     flex flex-row items-end gap-10 container mx-auto px-4 pb-12
                     max-lg:flex-col max-lg:items-start pt-15
                     max-sm:items-center
-                    "
-                >
+                ">
                     <div className="relative lg:w-60 w-52 shrink-0 overflow-hidden rounded-lg shadow-2xl border">
                         <img
                             alt={media.name}
@@ -57,7 +56,6 @@ export function MediaHero({ media, mediaType, external }: MediaHeroProps) {
                         </h1>
                         {"originalName" in media && media.originalName && media.originalName !== media.name &&
                             <div className="text-sm italic text-muted-foreground">
-                                {/*<span className="text-muted-foreground">Original Name - </span>{" "}*/}
                                 <span className="font-medium">{media.originalName}</span>
                             </div>
                         }

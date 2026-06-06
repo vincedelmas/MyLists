@@ -1,7 +1,5 @@
-import {toast} from "sonner";
 import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {capitalize} from "@/lib/utils/formating";
 import {Card} from "@/lib/client/components/ui/card";
 import {Button} from "@/lib/client/components/ui/button";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
@@ -11,7 +9,7 @@ import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
-import {historyOptions} from "@/lib/client/react-query/query-options/query-options";
+import {historyOptions} from "@/lib/client/react-query/query-options";
 import {BacklogModeSystem} from "@/lib/client/components/media/base/BacklogModeSystem";
 import {CustomCoverTabContent} from "@/lib/client/components/media/base/CustomCoverTab";
 import {UserMediaSpecificDetails} from "@/lib/client/components/media/base/UserMediaSpecificDetails";
@@ -47,7 +45,6 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMedi
         if (!window.confirm(`Do you want to remove this ${mediaType} from your list?`)) return;
         removeMediaFromListMutation.mutate({ data: { mediaType, mediaId: userMedia.mediaId } }, {
             onSuccess: () => {
-                toast.success(`${capitalize(mediaType)} removed from your list`);
                 queryClient.removeQueries({ queryKey: historyOptions(mediaType, userMedia.mediaId).queryKey });
             },
         });
@@ -119,7 +116,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMedi
                     <CustomCoverTabContent
                         mediaType={mediaType}
                         userMedia={userMedia}
-                        mutation={updateCustomCoverMutation}
+                        onUpdateMutation={updateCustomCoverMutation}
                     />
                     :
                     <div className="overflow-y-auto scrollbar-thin max-h-83 px-1">

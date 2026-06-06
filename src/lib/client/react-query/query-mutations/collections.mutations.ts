@@ -1,12 +1,11 @@
-import {toast} from "sonner";
 import {MediaType} from "@/lib/utils/enums";
-import {useMutation, useQueryClient} from "@tanstack/react-query";
+import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {
     collectionDetailsEditOptions,
     collectionDetailsReadOptions,
     mediaCommunityCollectionsOptions,
     userCollectionMembershipsOptions
-} from "@/lib/client/react-query/query-options/query-options";
+} from "@/lib/client/react-query/query-options";
 import {
     postAddMediaToCollection,
     postCopyCollection,
@@ -18,13 +17,17 @@ import {
 } from "@/lib/server/functions/collections";
 
 
-export const useCreateCollectionMutation = (successMessage = "New collection created!") => {
+export const useCreateCollectionMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postCreateCollection,
+        meta: {
+            successToastMessage: "New collection created!",
+            errorToastMessage: "Failed to create a new collection.",
+            ...meta,
+        },
         onSuccess: async () => {
-            toast.success(successMessage);
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
             await queryClient.invalidateQueries({ queryKey: ["collections", "community"] });
         },
@@ -37,11 +40,32 @@ export const useUpdateCollectionMutation = (collectionId: number) => {
 
     return useMutation({
         mutationFn: postUpdateCollection,
-        meta: { successMessage: "Collection updated." },
+        meta: {
+            errorToastMessage: "Failed to update this collection.",
+            successToastMessage: "Collection updated successfully!",
+        },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
             await queryClient.invalidateQueries({ queryKey: collectionDetailsReadOptions(collectionId).queryKey });
             await queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey });
+        },
+    });
+};
+
+
+export const useDeleteCollectionMutation = (collectionId: number) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: postDeleteCollection,
+        meta: {
+            errorToastMessage: "Failed to delete this collection.",
+            successToastMessage: "Collection deleted successfully!",
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
+            await queryClient.invalidateQueries({ queryKey: ["collections", "community"] });
+            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadOptions(collectionId).queryKey });
         },
     });
 };
@@ -52,7 +76,7 @@ export const useToggleCollectionLikeMutation = (collectionId: number) => {
 
     return useMutation({
         mutationFn: postToggleCollectionLike,
-        onError: () => toast.error("Failed to update the like."),
+        meta: { errorToastMessage: "Failed to toggle like on the collection." },
         onSuccess: async () => {
             queryClient.setQueryData(collectionDetailsReadOptions(collectionId).queryKey, (oldData) => {
                 if (!oldData) return;
@@ -77,8 +101,10 @@ export const useCopyCollectionMutation = (collectionId: number) => {
 
     return useMutation({
         mutationFn: postCopyCollection,
-        meta: { successMessage: "Collection copied." },
-        onError: () => toast.error("Failed to copy the collection."),
+        meta: {
+            errorToastMessage: "Failed to copy the collection.",
+            successToastMessage: "Collection copied successfully!",
+        },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["collections", "community"] });
             await queryClient.invalidateQueries({ queryKey: collectionDetailsReadOptions(collectionId).queryKey });
@@ -87,27 +113,12 @@ export const useCopyCollectionMutation = (collectionId: number) => {
 };
 
 
-export const useDeleteCollectionMutation = (collectionId: number) => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: postDeleteCollection,
-        meta: { successMessage: "Collection deleted." },
-        onError: () => toast.error("Failed to delete the collection."),
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
-            await queryClient.invalidateQueries({ queryKey: ["collections", "community"] });
-            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadOptions(collectionId).queryKey });
-        },
-    });
-};
-
-
-export const useAddMediaToCollectionMutation = (mediaType: MediaType, mediaId: number) => {
+export const useAddMediaToCollectionMutation = (mediaType: MediaType, mediaId: number, meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postAddMediaToCollection,
+        meta: { ...meta },
         onSuccess: async (_data, variables) => {
             const collectionId = Number(variables.data.collectionId);
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
@@ -120,11 +131,12 @@ export const useAddMediaToCollectionMutation = (mediaType: MediaType, mediaId: n
 };
 
 
-export const useRemoveMediaFromCollectionMutation = (mediaType: MediaType, mediaId: number) => {
+export const useRemoveMediaFromCollectionMutation = (mediaType: MediaType, mediaId: number, meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postRemoveMediaFromCollection,
+        meta: { ...meta },
         onSuccess: async (_data, variables) => {
             const collectionId = Number(variables.data.collectionId);
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });

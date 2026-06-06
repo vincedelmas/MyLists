@@ -1,11 +1,12 @@
 import {SearchType} from "@/lib/schemas";
-import {AdminErrorLog} from "@/lib/types/admin.types";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
+import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {AdminErrorLog, ProviderApiRollup} from "@/lib/types/admin.types";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
 import {asc, count, countDistinct, desc, eq, gte, inArray, like, or, sql} from "drizzle-orm";
-import {collections, errorLogs, mediaRefreshLog, taskHistory, user} from "@/lib/server/database/schema";
+import {apiCallRollup, collections, errorLogs, mediaRefreshLog, taskHistory, user} from "@/lib/server/database/schema";
 
 
 export class AdminRepository {
@@ -77,7 +78,7 @@ export class AdminRepository {
 
         return results.map((row) => ({
             count: Number(row.count),
-            month: new Date(`${row.month}-01T00:00:00.000Z`).toLocaleString("en-US", { month: "short", year: "numeric" }),
+            month: formatMonthYear(row.month),
         }));
     }
 
@@ -367,6 +368,197 @@ export class AdminRepository {
             },
         });
     }
+
+    static async getApiCallProviders() {
+        const rows = await getDbClient()
+            .select({ provider: apiCallRollup.provider })
+            .from(apiCallRollup)
+            .groupBy(apiCallRollup.provider)
+            .orderBy(apiCallRollup.provider);
+
+        return rows.map((row) => row.provider);
+    }
+
+    static async getApiCallDailyCountsByProvider(days?: number | null) {
+        const dateFilter = days
+            ? gte(sql`date(${apiCallRollup.bucketStart})`, sql`date('now', ${`-${Math.max(days - 1, 0)} day`})`)
+            : undefined;
+
+        const query = getDbClient()
+            .select({
+                provider: apiCallRollup.provider,
+                count: sql<number>`sum(${apiCallRollup.total})`.as("count"),
+                date: sql<string>`date(${apiCallRollup.bucketStart})`.as("date"),
+            })
+            .from(apiCallRollup)
+            .$dynamic();
+
+        return (dateFilter ? query.where(dateFilter) : query)
+            .groupBy(sql`date(${apiCallRollup.bucketStart})`, apiCallRollup.provider)
+            .orderBy(sql`date(${apiCallRollup.bucketStart})`);
+    }
+
+    static async getApiCallTotalsByProvider(days?: number | null) {
+        const dateFilter = this._buildApiCallMsFilter(days);
+
+        const query = getDbClient()
+            .select({
+                provider: apiCallRollup.provider,
+                count: sql<number>`sum(${apiCallRollup.total})`.as("count"),
+                errors: sql<number>`sum(${apiCallRollup.errors})`.as("errors"),
+                avgDurationMs: sql<number>`round(sum(${apiCallRollup.durationMsTotal}) / nullif(sum(${apiCallRollup.total}), 0), 0)`.as("avgDurationMs"),
+            })
+            .from(apiCallRollup)
+            .$dynamic();
+
+        return (dateFilter ? query.where(dateFilter) : query)
+            .groupBy(apiCallRollup.provider)
+            .orderBy(desc(sql`sum(${apiCallRollup.total})`));
+    }
+
+    static async getApiCallStatusTotals(days?: number | null) {
+        const dateFilter = this._buildApiCallMsFilter(days);
+
+        const rows = await getDbClient()
+            .select()
+            .from(apiCallRollup)
+            .where(dateFilter);
+
+        const counts = new Map<string, number>();
+        for (const row of rows) {
+            for (const [status, value] of Object.entries(row.statusCounts)) {
+                counts.set(status, (counts.get(status) ?? 0) + Number(value));
+            }
+        }
+
+        return Array.from(counts.entries())
+            .map(([status, count]) => ({ status: status === "network-error" ? null : status, count }))
+            .sort((a, b) => b.count - a.count);
+    }
+
+    static async getApiCallSummary(days?: number | null) {
+        const dateFilter = this._buildApiCallMsFilter(days);
+
+        const summaryQuery = getDbClient()
+            .select({
+                total: sql<number>`coalesce(sum(${apiCallRollup.total}), 0)`.as("total"),
+                failed: sql<number>`coalesce(sum(${apiCallRollup.errors}), 0)`.as("failed"),
+                lastCallAt: sql<string | null>`max(${apiCallRollup.bucketStart})`.as("lastCallAt"),
+                firstCallAt: sql<string | null>`min(${apiCallRollup.bucketStart})`.as("firstCallAt"),
+                avgDurationMs: sql<number>`round(sum(${apiCallRollup.durationMsTotal}) / nullif(sum(${apiCallRollup.total}), 0), 0)`.as("avgDurationMs"),
+            })
+            .from(apiCallRollup)
+            .$dynamic();
+
+        const busiestDayQuery = getDbClient()
+            .select({
+                count: sql<number>`sum(${apiCallRollup.total})`.as("count"),
+                date: sql<string>`date(${apiCallRollup.bucketStart})`.as("date"),
+            })
+            .from(apiCallRollup)
+            .$dynamic();
+
+        const busiestSecondQuery = getDbClient()
+            .select({
+                count: sql<number>`max(${apiCallRollup.maxSecondBurst})`.as("count"),
+                bucketStartMs: apiCallRollup.bucketStartMs,
+            })
+            .from(apiCallRollup)
+            .$dynamic();
+
+        const busiestMinuteQuery = getDbClient()
+            .select({
+                count: sql<number>`sum(${apiCallRollup.total})`.as("count"),
+                bucketStartMs: apiCallRollup.bucketStartMs,
+            })
+            .from(apiCallRollup)
+            .$dynamic();
+
+        const [summary, busiestDay, busiestSecond, busiestMinute] = await Promise.all([
+            (dateFilter ? summaryQuery.where(dateFilter) : summaryQuery).get(),
+            (dateFilter ? busiestDayQuery.where(dateFilter) : busiestDayQuery)
+                .groupBy(sql`date(${apiCallRollup.bucketStart})`)
+                .orderBy(desc(sql`sum(${apiCallRollup.total})`), desc(sql`date(${apiCallRollup.bucketStart})`))
+                .limit(1)
+                .get(),
+            (dateFilter ? busiestSecondQuery.where(dateFilter) : busiestSecondQuery)
+                .groupBy(apiCallRollup.bucketStartMs)
+                .orderBy(desc(sql`max(${apiCallRollup.maxSecondBurst})`))
+                .limit(1)
+                .get(),
+            (dateFilter ? busiestMinuteQuery.where(dateFilter) : busiestMinuteQuery)
+                .groupBy(apiCallRollup.bucketStartMs)
+                .orderBy(desc(sql`sum(${apiCallRollup.total})`))
+                .limit(1)
+                .get(),
+        ]);
+
+        return {
+            total: Number(summary?.total ?? 0),
+            busiestDay: busiestDay?.date ?? "",
+            failed: Number(summary?.failed ?? 0),
+            lastCallAt: summary?.lastCallAt ?? null,
+            firstCallAt: summary?.firstCallAt ?? null,
+            busiestDayCount: Number(busiestDay?.count ?? 0),
+            avgDurationMs: Number(summary?.avgDurationMs ?? 0),
+            busiestSecondCount: Number(busiestSecond?.count ?? 0),
+            busiestMinuteCount: Number(busiestMinute?.count ?? 0),
+            busiestSecond: busiestSecond?.bucketStartMs ? new Date(busiestSecond.bucketStartMs).toISOString() : null,
+            busiestMinute: busiestMinute?.bucketStartMs ? new Date(busiestMinute.bucketStartMs).toISOString() : null,
+        };
+    }
+
+    static async getRecentApiCalls(page: number) {
+        return paginate({
+            page,
+            maxPerPage: 30,
+            defaultPerPage: 12,
+            getTotal: async () => {
+                return getDbClient()
+                    .select({ count: count() })
+                    .from(apiCallRollup)
+                    .get()?.count ?? 0;
+            },
+            getItems: ({ limit, offset }) => {
+                return getDbClient()
+                    .select()
+                    .from(apiCallRollup)
+                    .orderBy(desc(apiCallRollup.bucketStartMs))
+                    .offset(offset)
+                    .limit(limit);
+            },
+        });
+    }
+
+    static async upsertApiCallRollup(rollup: ProviderApiRollup) {
+        await getDbClient()
+            .insert(apiCallRollup)
+            .values({
+                total: rollup.total,
+                errors: rollup.errors,
+                provider: rollup.provider,
+                statusCounts: rollup.statusCounts,
+                bucketStartMs: rollup.bucketStartMs,
+                maxSecondBurst: rollup.maxSecondBurst,
+                durationMsTotal: rollup.durationMsTotal,
+                bucketStart: new Date(rollup.bucketStartMs).toISOString(),
+            })
+            .onConflictDoUpdate({
+                target: [apiCallRollup.bucketStartMs, apiCallRollup.provider],
+                set: {
+                    total: rollup.total,
+                    errors: rollup.errors,
+                    statusCounts: rollup.statusCounts,
+                    maxSecondBurst: rollup.maxSecondBurst,
+                    durationMsTotal: rollup.durationMsTotal,
+                },
+            });
+    };
+
+    private static _buildApiCallMsFilter(days?: number | null) {
+        if (!days) return undefined;
+        return gte(apiCallRollup.bucketStartMs, Date.now() - (Math.max(days, 1) * 24 * 60 * 60 * 1000));
+    };
 
     private static _buildMediaRefreshDateFilter(days?: number | null) {
         if (!days) return undefined;

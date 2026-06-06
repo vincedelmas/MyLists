@@ -7,19 +7,28 @@ import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
 import {isAdminAuthenticated} from "@/lib/utils/admin-token";
 
 
-export const requiredAuthMiddleware = createMiddleware({ type: "function" })
+export const publicAuthMiddleware = createMiddleware({ type: "function" })
     .server(async ({ next }) => {
         const { headers } = getRequest();
         const session = await auth.api.getSession({ headers, query: { disableCookieCache: true } });
 
         const currentUser = session?.user ? { ...session.user, id: Number(session.user.id) } : undefined;
-        if (!currentUser) {
-            throw redirect({ to: "/", search: { authExpired: true } });
+        if (currentUser) {
+            void getContainer()
+                .then((c) => c.services.user.updateUserLastSeen(c.cacheManager, currentUser.id))
+                .catch()
         }
 
-        void getContainer()
-            .then((c) => c.services.user.updateUserLastSeen(c.cacheManager, currentUser.id))
-            .catch()
+        return next({ context: { currentUser } });
+    });
+
+
+export const requiredAuthMiddleware = createMiddleware({ type: "function" })
+    .middleware([publicAuthMiddleware])
+    .server(async ({ next, context: { currentUser } }) => {
+        if (!currentUser) {
+            throw redirect({ to: "/login", search: { authExpired: true } })
+        }
 
         return next({ context: { currentUser } });
     });

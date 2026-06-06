@@ -1,4 +1,4 @@
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Avatar, AvatarFallback, AvatarImage} from "@/lib/client/components/ui/avatar";
 
 

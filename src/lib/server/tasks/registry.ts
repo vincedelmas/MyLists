@@ -6,11 +6,13 @@ import {dbMaintenanceTask} from "@/lib/server/tasks/definitions/db-maintenance.t
 import {lockOldMoviesTask} from "@/lib/server/tasks/definitions/lock-old-movies.task";
 import {checkHltbWorksTask} from "@/lib/server/tasks/definitions/check-hltb-works.task";
 import {seedAchievementsTask} from "@/lib/server/tasks/definitions/seed-achievements.task";
+import {flushApiMonitoringTask} from "@/lib/server/tasks/definitions/flush-api-monitoring.task";
 import {bulkMediaRefreshTask} from "@/lib/server/tasks/definitions/bulk-media-refresh.task";
 import {removeAllOrphansMediaTask} from "@/lib/server/tasks/definitions/remove-all-orphans-media";
 import {calculateAchievementsTask} from "@/lib/server/tasks/definitions/calculate-achievements.task";
 import {computeAllUsersStatsTask} from "@/lib/server/tasks/definitions/compute-all-users-stats.task";
 import {addGenresToBooksUsingLlmTask} from "@/lib/server/tasks/definitions/add-books-genres-llm.task";
+import {precomputePlatformStatsTask} from "@/lib/server/tasks/definitions/precompute-platform-stats.task";
 import {deleteNonActivatedUsersTask} from "@/lib/server/tasks/definitions/delete-non-activated-users.task";
 import {removeUnusedMediaCoversTask} from "@/lib/server/tasks/definitions/remove-unused-media-covers.task";
 import {createMediaNotificationsTask} from "@/lib/server/tasks/definitions/create-media-notifications.task";
@@ -25,11 +27,13 @@ export const taskRegistry = {
     [checkHltbWorksTask.name]: checkHltbWorksTask,
     [bulkMediaRefreshTask.name]: bulkMediaRefreshTask,
     [seedAchievementsTask.name]: seedAchievementsTask,
+    [flushApiMonitoringTask.name]: flushApiMonitoringTask,
     [computeAllUsersStatsTask.name]: computeAllUsersStatsTask,
     [calculateAchievementsTask.name]: calculateAchievementsTask,
     [removeAllOrphansMediaTask.name]: removeAllOrphansMediaTask,
     [deleteNonActivatedUsersTask.name]: deleteNonActivatedUsersTask,
     [removeUnusedMediaCoversTask.name]: removeUnusedMediaCoversTask,
+    [precomputePlatformStatsTask.name]: precomputePlatformStatsTask,
     [createMediaNotificationsTask.name]: createMediaNotificationsTask,
     [addGenresToBooksUsingLlmTask.name]: addGenresToBooksUsingLlmTask,
     [removeUnusedProfileImagesTask.name]: removeUnusedProfileImagesTask,
@@ -63,39 +67,45 @@ export const getAllTasksMetadata = (): TaskMetadata[] => {
 
 function zodToJsonSchema(schema: z.ZodType): TaskMetadata["inputSchema"] {
     const properties: TaskMetadata["inputSchema"]["properties"] = {};
+    const jsonSchema = z.toJSONSchema(schema, { io: "input" }) as {
+        type?: string;
+        required?: string[];
+        properties?: Record<string, {
+            default?: any;
+            enum?: unknown[];
+            description?: string;
+            type?: string | string[];
+        }>;
+    };
+    const requiredKeys = new Set(jsonSchema.required ?? []);
 
-    if (schema instanceof z.ZodObject) {
-        const shape = schema.shape as Record<string, z.ZodType>;
+    for (const [key, propertySchema] of Object.entries(jsonSchema.properties ?? {})) {
+        const type = normalizeJsonSchemaType(propertySchema.type);
+        const enumValues = type === "array"
+            ? undefined
+            : getStringEnumValues(propertySchema.enum);
 
-        for (const [key, fieldSchema] of Object.entries(shape)) {
-            let required = true;
-            let defaultValue: any;
-            let innerSchema = fieldSchema;
-
-            if (innerSchema instanceof z.ZodOptional) {
-                required = false;
-                innerSchema = innerSchema.unwrap() as any;
-            }
-
-            if (innerSchema instanceof z.ZodDefault) {
-                defaultValue = innerSchema.def.defaultValue as any;
-                innerSchema = innerSchema.def.innerType as any;
-            }
-
-            let type = "string";
-            if (innerSchema instanceof z.ZodNumber) type = "number";
-            else if (innerSchema instanceof z.ZodBoolean) type = "boolean";
-            else if (innerSchema instanceof z.ZodArray) type = "array";
-            else if (innerSchema instanceof z.ZodEnum) type = "enum";
-
-            properties[key] = {
-                type,
-                required,
-                default: defaultValue,
-                description: innerSchema.description,
-            };
-        }
+        properties[key] = {
+            type,
+            enum: enumValues,
+            required: requiredKeys.has(key),
+            default: propertySchema.default,
+            description: propertySchema.description,
+        };
     }
 
-    return { type: "object", properties };
+    return { type: jsonSchema.type ?? "object", properties };
+}
+
+
+function normalizeJsonSchemaType(type: string | string[] | undefined) {
+    if (Array.isArray(type)) return type.find((val) => val !== "null") ?? "string";
+    return type ?? "string";
+}
+
+
+function getStringEnumValues(values: unknown[] | undefined) {
+    if (!values) return undefined;
+    const stringValues = values.filter((val): val is string => typeof val === "string");
+    return stringValues.length > 0 ? stringValues : undefined;
 }

@@ -1,11 +1,13 @@
 import {useState} from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {TaskResult} from "@/lib/types/tasks.types";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
 import {LogsList} from "@/lib/client/components/admin/LogsList";
 import {StepsList} from "@/lib/client/components/admin/StepsList";
-import {capitalize, formatDateTime, formatMs} from "@/lib/utils/formating";
+import {capitalize} from "@/lib/utils/text-formatting";
+import {formatDateTime} from "@/lib/utils/date-formatting";
+import {formatMs} from "@/lib/utils/number-formatting";
 import {AlertTriangle, CheckCircle, ChevronDown, ChevronRight, Trash, XCircle} from "lucide-react";
 import {useAdminDeleteTaskMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 import {Card, CardAction, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
@@ -33,8 +35,8 @@ const statusConfig = {
     },
     failed: {
         icon: XCircle,
-        badge: "bg-red-400",
-        color: "text-red-400",
+        badge: "bg-destructive",
+        color: "text-destructive",
     },
 } as const;
 
@@ -102,7 +104,7 @@ export function TaskCard({ task }: TaskCardProps) {
                             {" / "}{logs.steps.length}
                             {failedSteps > 0 &&
                                 <>{" "}
-                                    (<span className="text-red-400">
+                                    (<span className="text-destructive">
                                         {failedSteps} failed
                                     </span>)
                                 </>

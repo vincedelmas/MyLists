@@ -223,28 +223,29 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                             <FormLabel className="font-normal flex items-center gap-1">
                                                                 <PrivacyIcon type={pt}/>
                                                                 {pt === PrivacyType.RESTRICTED
-                                                                    ? "Personal" : pt === PrivacyType.PRIVATE
+                                                                    ? "Profile Only" : pt === PrivacyType.PRIVATE
                                                                         ? "Only Me" : "Public"
                                                                 }
                                                             </FormLabel>
                                                             <FormDescription className="text-xs">
                                                                 {pt === PrivacyType.PRIVATE &&
                                                                     <span>
-                                                                        Visible only to you. This collection is
-                                                                        completely hidden from everyone else.
+                                                                        Visible only to you. Hidden from profiles,
+                                                                        direct links, and discovery.
                                                                     </span>
                                                                 }
                                                                 {pt === PrivacyType.RESTRICTED &&
                                                                     <span>
-                                                                        Not displayed on the community page. It remains
-                                                                        visible on your profile to followers (or anyone if
-                                                                        your account is public).
+                                                                        Hidden from community discovery. Visible to people
+                                                                        who can view your profile: everyone if public,
+                                                                        signed-in users if restricted, approved followers
+                                                                        if private.
                                                                     </span>
                                                                 }
                                                                 {pt === PrivacyType.PUBLIC &&
                                                                     <span>
-                                                                        Visible to everyone. This collection will be featured
-                                                                        on the community discovery page.
+                                                                        Visible to everyone by direct link and in community
+                                                                        discovery, even if your account is private.
                                                                     </span>
                                                                 }
                                                             </FormDescription>

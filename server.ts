@@ -5,6 +5,7 @@
 
 import path from "path";
 import {fileURLToPath} from "bun";
+import {serverEnv} from "./src/env/server";
 
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -12,6 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const CLIENT_DIR = path.resolve(__dirname, "dist/client");
 const SERVER_ENTRY = path.resolve(__dirname, "dist/server/server.js");
+const UPLOADS_ROUTE = `/${serverEnv.UPLOADS_DIR_NAME}/*`;
 
 
 let isShuttingDown = false;
@@ -52,6 +54,29 @@ const startServer = async () => {
         port: PORT,
         routes: {
             ...routes,
+            [UPLOADS_ROUTE]: async (req: Request) => {
+                const url = new URL(req.url);
+                const routePrefix = `/${serverEnv.UPLOADS_DIR_NAME}/`;
+                const relativePath = decodeURIComponent(url.pathname.slice(routePrefix.length));
+                const resolvedPath = path.resolve(serverEnv.BASE_UPLOADS_LOCATION, relativePath);
+                const uploadsRoot = path.resolve(serverEnv.BASE_UPLOADS_LOCATION);
+
+                if (!resolvedPath.startsWith(`${uploadsRoot}${path.sep}`) && resolvedPath !== uploadsRoot) {
+                    return new Response("Not Found", { status: 404 });
+                }
+
+                const file = Bun.file(resolvedPath);
+                if (!await file.exists()) {
+                    return new Response("Not Found", { status: 404 });
+                }
+
+                return new Response(file, {
+                    headers: {
+                        "Cache-Control": "public, max-age=31536000, immutable",
+                        "Content-Type": file.type || "application/octet-stream",
+                    },
+                });
+            },
             "/*": (req: Request) => {
                 // Reject new requests during shutdown
                 if (isShuttingDown) {

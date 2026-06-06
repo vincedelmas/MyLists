@@ -1,15 +1,13 @@
-import {toast} from "sonner";
 import {Trash2} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
+import {useNavigate} from "@tanstack/react-router";
 import {useQueryClient} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
-import {useNavigate, useRouter} from "@tanstack/react-router";
-import {authOptions} from "@/lib/client/react-query/query-options/query-options";
+import {authOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteAccountMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
 export const DangerForm = () => {
-    const router = useRouter();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const deleteAccountMutation = useDeleteAccountMutation();
@@ -22,14 +20,11 @@ export const DangerForm = () => {
         if (!secondConfirm) return;
 
         deleteAccountMutation.mutate(undefined, {
-            onError: () => toast.error("An error occurred deleting your account. Please try again later."),
             onSuccess: async () => {
                 await authClient.signOut();
-                await router.invalidate();
                 queryClient.setQueryData(authOptions.queryKey, null);
                 await navigate({ to: "/", replace: true });
-                queryClient.removeQueries();
-                toast.success("Account successfully deleted");
+                queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
             }
         });
     };
@@ -38,7 +33,7 @@ export const DangerForm = () => {
         <div className="h-fit max-w-125 rounded-xl border border-red-900/30 bg-red-950/10 p-6">
             <div className="flex flex-col gap-5">
                 <div>
-                    <h3 className="text-base font-bold text-red-400">
+                    <h3 className="text-base font-bold text-destructive">
                         Delete Account
                     </h3>
                     <p className="text-sm text-red-200/60 mt-1">

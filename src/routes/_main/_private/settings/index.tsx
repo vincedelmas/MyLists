@@ -5,9 +5,10 @@ import {DangerForm} from "@/lib/client/components/user-settings/DangerForm";
 import {Sidebar, SidebarItem} from "@/lib/client/components/general/Sidebar";
 import {GeneralForm} from "@/lib/client/components/user-settings/GeneralForm";
 import {MediaListForm} from "@/lib/client/components/user-settings/MediaListForm";
+import {ProfileCustomForm} from "@/lib/client/components/user-settings/ProfileCustomForm";
 import {FeaturesWalkthrough} from "@/lib/client/components/user-settings/FeaturesWalkthrough";
 import {EmailAndPasswordForm} from "@/lib/client/components/user-settings/EmailAndPasswordForm";
-import {ProfileCustomForm} from "../../../../lib/client/components/user-settings/ProfileCustomForm";
+import {ActivityCleanupSettings} from "@/lib/client/components/user-settings/ActivityCleanupSettings";
 
 
 export const Route = createFileRoute("/_main/_private/settings/")({
@@ -19,6 +20,7 @@ const tabConfig = [
     { sidebarTitle: "General", component: <GeneralForm/> },
     { sidebarTitle: "Content & Lists", component: <MediaListForm/> },
     { sidebarTitle: "Profile Customization", component: <ProfileCustomForm/> },
+    { sidebarTitle: "Activity Cleanup", component: <ActivityCleanupSettings/> },
     { sidebarTitle: "Email & Password", component: <EmailAndPasswordForm/> },
     { sidebarTitle: "Features Walkthrough", component: <FeaturesWalkthrough/> },
     { sidebarTitle: "Danger", component: <DangerForm/> },

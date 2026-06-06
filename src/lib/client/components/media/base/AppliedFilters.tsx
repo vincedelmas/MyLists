@@ -3,7 +3,7 @@ import {Fragment} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {MediaListArgs} from "@/lib/schemas";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {capitalize, formatLocaleName} from "@/lib/utils/formating";
+import {capitalize, formatLocaleName} from "@/lib/utils/text-formatting";
 
 
 interface AppliedFiltersProps {

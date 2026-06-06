@@ -1,34 +1,19 @@
-import {cn} from "@/lib/utils/helpers";
-import {formatDateTime, formatRelativeTime} from "@/lib/utils/formating";
+import {cn} from "@/lib/utils/classnames";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
+import {formatDateTime, formatRelativeTime, toDateTimeAttribute} from "@/lib/utils/date-formatting";
 
 
 interface RelativeTimeProps {
     prefix?: string;
     className?: string;
-    value: string | number | null | undefined;
+    date: string | number | null | undefined;
 }
 
 
-const toDateTimeAttribute = (value: string | number | null | undefined) => {
-    if (!value) return undefined;
-
-    const date = typeof value === "number"
-        ? new Date(value * 1000) : new Date(value.includes(" ")
-            ? `${value.replace(" ", "T")}Z`
-            : value);
-
-    if (isNaN(date.getTime())) return undefined;
-
-    return date.toISOString();
-};
-
-
-export function RelativeTime({ value, className, prefix }: RelativeTimeProps) {
-    const dateTime = formatDateTime(value);
-    const relativeTime = formatRelativeTime(value);
-    const dateTimeAttribute = toDateTimeAttribute(value);
-    const readableDateTime = dateTime === "-" ? relativeTime : dateTime;
+export function RelativeTime({ date, className, prefix }: RelativeTimeProps) {
+    const dateTime = formatDateTime(date);
+    const relativeTime = formatRelativeTime(date);
+    const dateTimeAttribute = toDateTimeAttribute(date);
 
     return (
         <Popover>
@@ -47,7 +32,7 @@ export function RelativeTime({ value, className, prefix }: RelativeTimeProps) {
                 </button>
             </PopoverTrigger>
             <PopoverContent className="w-auto px-3 py-2 text-xs" side="top">
-                {readableDateTime}
+                {dateTime === "-" ? relativeTime : dateTime}
             </PopoverContent>
         </Popover>
     );

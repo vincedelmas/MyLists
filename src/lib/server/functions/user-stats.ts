@@ -1,99 +1,45 @@
-import {zeroPad} from "@/lib/utils/formating";
+import {getUserStatsSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
 import {tryNotFound} from "@/lib/utils/try-not-found";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {AdvancedMediaStats} from "@/lib/types/stats.types";
-import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
-import {privateAuthZMiddleware} from "@/lib/server/middlewares/authorization";
-import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
-import {
-    deleteActivitySchema,
-    getSectionActivitySchema,
-    getSpecificActivitySchema,
-    getUserStatsSchema,
-    monthlyActivitySchema,
-    updateActivitySchema
-} from "@/lib/schemas";
+import {authorizationMiddleware} from "@/lib/server/middlewares/authorization";
+import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 
 
 export const getUserStats = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
+    .middleware([authorizationMiddleware])
     .inputValidator(tryNotFound(getUserStatsSchema))
     .handler(async ({ data: { mediaType }, context: { user } }) => {
-        const userStatsService = await getContainer().then(c => c.services.userStats);
-        const activatedMediaTypes = user.userMediaSettings.filter((s) => s.active).map((s) => s.mediaType)
-
-        if (!mediaType) {
-            const userStats = await userStatsService.userAdvancedSummaryStats(user.id);
-            return {
-                ...userStats,
-                activatedMediaTypes,
-                mediaType: undefined,
-                ratingSystem: user.ratingSystem,
-            };
-        }
-
-        if (user.userMediaSettings.find((s) => s.mediaType === mediaType)?.active === false) {
-            throw new FormattedError("MediaType not activated");
-        }
-
-        const mediaStats = await userStatsService.userAdvancedMediaStats(user.id, mediaType);
-        return {
-            ...mediaStats,
-            mediaType,
-            activatedMediaTypes,
-            ratingSystem: user.ratingSystem,
-        } as AdvancedMediaStats;
-    });
-
-
-export const getMonthlyActivity = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
-    .inputValidator(tryNotFound(monthlyActivitySchema))
-    .handler(async ({ data: { year, month }, context: { user } }) => {
-        const container = await getContainer();
-
-        const timeBucket = `${year}-${zeroPad(month)}`;
-        const userStatsService = container.services.userStats;
-
-        return userStatsService.getMonthlyActivity(user.id, timeBucket);
-    });
-
-
-export const getSectionActivity = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
-    .inputValidator(tryNotFound(getSectionActivitySchema))
-    .handler(async ({ data, context: { user } }) => {
         const container = await getContainer();
         const userStatsService = container.services.userStats;
+        const activatedMediaTypes = user.userMediaSettings.filter(s => s.active).map(s => s.mediaType);
 
-        return userStatsService.getSectionActivity(user.id, data);
-    });
+        return container.cacheManager.wrap(
+            getUserStatsCacheKey(user.id, { mediaType }), async () => {
+                if (!mediaType) {
+                    const userStats = await userStatsService.userAdvancedSummaryStats(user.id);
+                    return {
+                        ...userStats,
+                        activatedMediaTypes,
+                        mediaType: undefined,
+                        ratingSystem: user.ratingSystem,
+                    };
+                }
 
+                if (user.userMediaSettings.find((s) => s.mediaType === mediaType)?.active === false) {
+                    throw new FormattedError("MediaType not activated");
+                }
 
-export const getSpecificActivity = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
-    .inputValidator(tryNotFound(getSpecificActivitySchema))
-    .handler(async ({ data: { year, month, mediaType, mediaId }, context: { user } }) => {
-        const userStatsService = await getContainer().then(c => c.services.userStats);
-        return userStatsService.getSpecificActivity(user.id, { year, month, mediaType, mediaId });
-    });
-
-
-export const postUpdateSpecificActivity = createServerFn({ method: "POST" })
-    .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(updateActivitySchema)
-    .handler(async ({ data: { activityId, payload }, context: { currentUser } }) => {
-        const userStatsService = await getContainer().then(c => c.services.userStats);
-        return userStatsService.updateSpecificActivity(currentUser.id, activityId, payload);
-    });
-
-
-export const postDeleteSpecificActivity = createServerFn({ method: "POST" })
-    .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(deleteActivitySchema)
-    .handler(async ({ data: { activityId }, context: { currentUser } }) => {
-        const userStatsService = await getContainer().then(c => c.services.userStats);
-        await userStatsService.deleteSpecificActivity(currentUser.id, activityId);
+                const mediaStats = await userStatsService.userAdvancedMediaStats(user.id, mediaType);
+                return {
+                    ...mediaStats,
+                    mediaType,
+                    activatedMediaTypes,
+                    ratingSystem: user.ratingSystem,
+                } as AdvancedMediaStats;
+            },
+            { ttl: ONE_HOUR_CACHE_TTL_MS },
+        );
     });

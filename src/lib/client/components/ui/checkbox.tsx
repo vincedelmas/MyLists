@@ -1,6 +1,6 @@
 import * as React from "react";
 import {CheckIcon} from "lucide-react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 
 

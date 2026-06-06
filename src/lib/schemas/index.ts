@@ -12,3 +12,4 @@ export * from "./platform-stats.schema";
 export * from "./search.schema";
 export * from "./user-profile.schema";
 export * from "./social.schema";
+export * from "./activity.schema";

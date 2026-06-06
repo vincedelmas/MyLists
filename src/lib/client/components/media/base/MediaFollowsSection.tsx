@@ -7,11 +7,12 @@ import {MediaFollowCard} from "@/lib/client/components/media/base/MediaFollowCar
 
 interface MediaFollowsSectionProps {
     mediaType: MediaType;
+    isAnonymous?: boolean;
     followsData: MediaFollowsDetails;
 }
 
 
-export function MediaFollowsSection({ followsData, mediaType }: MediaFollowsSectionProps) {
+export function MediaFollowsSection({ followsData, mediaType, isAnonymous }: MediaFollowsSectionProps) {
     return (
         <Card className="bg-popover p-0 h-fit min-w-0">
             <div className="p-4 border-b">
@@ -30,9 +31,14 @@ export function MediaFollowsSection({ followsData, mediaType }: MediaFollowsSect
                         />
                     )
                     :
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                        None of your follows track this media yet.
-                    </div>
+                    isAnonymous ?
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                            Log-in or register to see your follows activity.
+                        </div>
+                        :
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                            None of your follows track this media yet.
+                        </div>
                 }
             </div>
         </Card>

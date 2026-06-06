@@ -3,7 +3,7 @@ import {useMutation} from "@tanstack/react-query";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {adminAuth, checkAdminAuth} from "@/lib/server/functions/admin";
-import {createFileRoute, redirect, useNavigate} from "@tanstack/react-router";
+import {createFileRoute, redirect} from "@tanstack/react-router";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
@@ -27,7 +27,7 @@ type AdminAuthForm = {
 
 
 function AdminStepUpPage() {
-    const navigate = useNavigate();
+    const navigate = Route.useNavigate();
     const adminAuthMutation = useMutation({ mutationFn: adminAuth });
     const form = useForm<AdminAuthForm>({
         defaultValues: {

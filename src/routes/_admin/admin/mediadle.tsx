@@ -1,6 +1,7 @@
 import React, {useMemo} from "react";
 import {SearchType} from "@/lib/schemas";
-import {formatDateTime} from "@/lib/utils/formating";
+import {formatDateTime} from "@/lib/utils/date-formatting";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
@@ -9,7 +10,7 @@ import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {adminMediadleOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminMediadleOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
 
@@ -66,23 +67,19 @@ function AdminMediadlePage() {
         {
             accessorKey: "createdAt",
             header: "Registered",
-            cell: ({ row: { original } }) => {
-                return formatDateTime(original.createdAt);
-            }
+            cell: ({ row: { original } }) => formatDateTime(original.createdAt),
         },
         {
             accessorKey: "updatedAt",
             header: "Last Seen",
-            cell: ({ row: { original } }) => {
-                return formatDateTime(original.updatedAt);
-            },
+            cell: ({ row: { original } }) => formatDateTime(original.updatedAt),
         },
         {
             accessorKey: "averageAttempts",
             header: "Avg. Attempts",
             cell: ({ row: { original } }) => (
                 <div className="text-center">
-                    {original?.averageAttempts?.toFixed(1)}
+                    {formatNumber(original?.averageAttempts, { fractionDigits: 1, locale: "en" })}
                 </div>
             ),
         },

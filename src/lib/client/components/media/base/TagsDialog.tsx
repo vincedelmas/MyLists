@@ -1,16 +1,18 @@
-import {cn} from "@/lib/utils/helpers";
 import {useMemo, useState} from "react";
-import {Tag} from "@/lib/types/media-common.types";
 import {Link} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
+import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {tagNamesOptions} from "@/lib/client/react-query/query-options/query-options";
-import {Check, ChevronRight, LoaderCircle, PlusCircle, Tags, TriangleAlert} from "lucide-react";
+import {cn} from "@/lib/utils/classnames";
+import {displayContainerError} from "@/lib/utils/error-display";
+import {tagNamesOptions} from "@/lib/client/react-query/query-options";
+import {Check, ChevronRight, LoaderCircle, PlusCircle, Tags} from "lucide-react";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 
 
 interface TagsDialogProps {
@@ -24,10 +26,9 @@ interface TagsDialogProps {
 export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogProps) => {
     const { currentUser } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
-    const mutation = useEditTagMutation(mediaType, mediaId);
     const [searchQuery, setSearchQuery] = useState("");
+    const mutation = useEditTagMutation(mediaType, mediaId, { noGlobalErrorToast: true });
     const { data: allTags = [], isLoading } = useQuery(tagNamesOptions(mediaType, isOpen));
-    const [toast, setToast] = useState<{ type: "error" | "success"; message: string } | null>(null);
 
     const activeIds = useMemo(() => new Set(tags.map((c) => c.name)), [tags]);
     const filteredTags = allTags.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -46,7 +47,6 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                     updateTag(tags.filter((c) => c.name !== tag.name));
                 }
             },
-            onError: () => setToast({ message: "Action failed", type: "error" })
         });
     };
 
@@ -174,6 +174,14 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                         }
                     </div>
 
+                    {mutation.isError &&
+                        <div className="mb-3 mt-1 px-2">
+                            <InlineErrorContainer>
+                                {displayContainerError({ error: mutation.error })}
+                            </InlineErrorContainer>
+                        </div>
+                    }
+
                     <div className="p-4 border-t flex items-center justify-between bg-popover">
                         <Link
                             to="/list/$mediaType/$username/tags"
@@ -189,17 +197,6 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                         </Button>
                     </div>
                 </div>
-
-                {toast &&
-                    <div className="absolute bottom-20 left-4 right-4 animate-in slide-in-from-bottom-2">
-                        <div className={cn("p-2.5 rounded-lg border text-xs font-medium flex items-center gap-2 shadow-lg",
-                            toast.type === "error" ? "bg-rose-500/10 border-rose-500/20 text-rose-400" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                        )}>
-                            <TriangleAlert className="size-3.5"/>
-                            {toast.message}
-                        </div>
-                    </div>
-                }
             </CredenzaContent>
         </Credenza>
     );

@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {mediaTypeUtils} from "@/lib/utils/mapping";
+import {mediaTypeUtils} from "@/lib/utils/media-mapping";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 

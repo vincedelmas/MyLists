@@ -2,7 +2,7 @@ import {JobType} from "@/lib/utils/enums";
 import {SheetFilterObject} from "@/lib/types/media-list.types";
 
 
-import {formatLocaleName} from "@/lib/utils/formating";
+import {formatLocaleName} from "@/lib/utils/text-formatting";
 
 
 export const getMoviesActiveFilters = (): SheetFilterObject[] => {

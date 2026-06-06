@@ -1,7 +1,7 @@
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Globe, Lock, Shield} from "lucide-react";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
-import {getThemeColor, THEME_ICONS_MAP} from "@/lib/utils/colors-and-icons";
+import {getThemeColor, THEME_ICONS_MAP} from "@/lib/utils/theme-utils";
 
 
 interface MainThemeIconProps {
@@ -30,7 +30,7 @@ export const PrivacyIcon = ({ type, className }: { type: PrivacyType, className?
         case PrivacyType.PUBLIC:
             return <Globe className={cn("size-3 text-emerald-400", className)}/>;
         case PrivacyType.PRIVATE:
-            return <Lock className={cn("size-3 text-red-400", className)}/>;
+            return <Lock className={cn("size-3 text-destructive", className)}/>;
         case PrivacyType.RESTRICTED:
         default:
             return <Shield className={cn("size-3 text-amber-400", className)}/>;

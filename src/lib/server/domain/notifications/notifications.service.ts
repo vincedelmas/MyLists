@@ -1,4 +1,5 @@
 import {MediaType, SocialNotifType} from "@/lib/utils/enums";
+import {compareCalendarDates} from "@/lib/utils/date-formatting";
 import {NotifTab, UpComingMedia} from "@/lib/types/notifications.types";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 
@@ -24,21 +25,13 @@ export class NotificationsService {
     // --- Media Notifications -----------------------------
 
     async createMediaNotifications(mediaType: MediaType, mediaArray: UpComingMedia[]) {
-        const isSameDate = (d1: any, d2: any) => {
-            const time1 = new Date(d1).getTime();
-            const time2 = new Date(d2).getTime();
-
-            if (isNaN(time1) || isNaN(time2)) return false;
-            return time1 === time2;
-        };
-
         for (const item of mediaArray) {
             const notification = await this.repository.searchMediaNotification(item.userId, mediaType, item.mediaId);
 
             if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
                 if (
                     notification
-                    && isSameDate(notification.releaseDate, item.date) &&
+                    && compareCalendarDates(notification.releaseDate, item.date) === 0 &&
                     notification.episode === item.episodeToAir &&
                     notification.season === item.seasonToAir
                 ) {
@@ -57,7 +50,7 @@ export class NotificationsService {
                 });
             }
             else {
-                if (notification && isSameDate(notification.releaseDate, item.date)) {
+                if (notification && compareCalendarDates(notification.releaseDate, item.date) === 0) {
                     continue;
                 }
 

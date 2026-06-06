@@ -1,7 +1,7 @@
 import {useState} from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {TaskLog} from "@/lib/types/tasks.types";
-import {formatDateTime} from "@/lib/utils/formating";
+import {formatDateTime} from "@/lib/utils/date-formatting";
 import {AlertTriangle, ChevronDown, XCircle} from "lucide-react";
 
 
@@ -29,14 +29,12 @@ export function LogsList({ logs }: { logs: TaskLog[] }) {
                         return (
                             <div key={i} className="p-2 flex items-start gap-2 text-sm">
                                 <Icon
-                                    className={cn("size-4 mt-0.5 shrink-0", isError ? "text-red-400" : "text-yellow-500")}
+                                    className={cn("size-4 mt-0.5 shrink-0", isError ? "text-destructive" : "text-yellow-500")}
                                 />
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline gap-2">
                                         <span className="text-xs text-muted-foreground font-mono">
-                                            {formatDateTime(log.time, {
-                                                seconds: true,
-                                            })}
+                                            {formatDateTime(log.time, { seconds: true })}
                                         </span>
                                         {log.step &&
                                             <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
@@ -44,7 +42,7 @@ export function LogsList({ logs }: { logs: TaskLog[] }) {
                                             </span>
                                         }
                                     </div>
-                                    <p className={cn(isError ? "text-red-400" : "text-yellow-400")}>
+                                    <p className={cn(isError ? "text-destructive" : "text-yellow-400")}>
                                         {log.message}
                                     </p>
                                     {log.data &&

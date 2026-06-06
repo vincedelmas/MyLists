@@ -21,8 +21,8 @@ export interface TrendsMedia {
     overview: string,
     posterPath: string,
     displayName: string,
-    releaseDate: string,
     mediaType: MediaType,
+    releaseDate: string | number | undefined | null;
 }
 
 

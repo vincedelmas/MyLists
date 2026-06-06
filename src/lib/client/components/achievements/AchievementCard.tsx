@@ -1,9 +1,9 @@
 import {useMemo} from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Award, Check} from "lucide-react";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {AchCard} from "@/lib/types/query.options.types";
-import {diffColors} from "@/lib/utils/colors-and-icons";
+import {diffColors} from "@/lib/utils/theme-utils";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {TiersDetails} from "@/lib/client/components/achievements/TierDetails";
@@ -34,8 +34,6 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
     const iconColorClass = diffColors(displayDifficulty);
     const borderColorClass = diffColors(displayDifficulty, "border");
 
-    console.log({ nextTier });
-
     const tierForProgressDisplay = nextTier ?? tiers[tiers.length - 1];
     const currentCount = tierForProgressDisplay?.count ?? 0;
     const progressValue = tierForProgressDisplay?.progress ?? 0;
@@ -50,7 +48,7 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
                         <div className="flex flex-col">
                             {name}
                             <RelativeTime
-                                value={highestCompletedTier?.completedAt}
+                                date={highestCompletedTier?.completedAt}
                                 className="text-xs font-medium text-muted-foreground"
                             />
                         </div>

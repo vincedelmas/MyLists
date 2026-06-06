@@ -6,12 +6,12 @@ import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaListDataByType} from "@/lib/server/domain/media/base/base.repository";
 import {mediaListFiltersSchema, mediaListSchema, mediaListSearchFiltersSchema} from "@/lib/schemas";
-import {privateAuthZMiddleware, resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
+import {authorizationMiddleware, resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
 
 
 export const getUserListHeaderSF = createServerFn({ method: "GET" })
     .middleware([resolveTargetUserMiddleware])
-    .inputValidator(z.object({ username: z.string(), mediaType: z.enum(MediaType) }))
+    .inputValidator(tryNotFound(z.object({ username: z.string(), mediaType: z.enum(MediaType) })))
     .handler(async ({ data: { mediaType }, context: { currentUser, targetUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
@@ -30,7 +30,7 @@ export const getUserListHeaderSF = createServerFn({ method: "GET" })
 
 
 export const getMediaListSF = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
+    .middleware([authorizationMiddleware])
     .inputValidator(tryNotFound(mediaListSchema))
     .handler(async ({ data, context: { currentUser, user } }) => {
         const { mediaType, args } = data;
@@ -61,7 +61,7 @@ export const getMediaListSF = createServerFn({ method: "GET" })
 
 
 export const getTagsViewFn = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
+    .middleware([authorizationMiddleware])
     .inputValidator(z.object({ username: z.string(), mediaType: z.enum(MediaType) }))
     .handler(async ({ data: { mediaType }, context: { user } }) => {
         const targetUserId = user.id;
@@ -73,7 +73,7 @@ export const getTagsViewFn = createServerFn({ method: "GET" })
 
 
 export const getMediaListFilters = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
+    .middleware([authorizationMiddleware])
     .inputValidator(mediaListFiltersSchema)
     .handler(async ({ data: { mediaType }, context: { user } }) => {
         const container = await getContainer();
@@ -83,7 +83,7 @@ export const getMediaListFilters = createServerFn({ method: "GET" })
 
 
 export const getMediaListSearchFilters = createServerFn({ method: "GET" })
-    .middleware([privateAuthZMiddleware])
+    .middleware([authorizationMiddleware])
     .inputValidator(mediaListSearchFiltersSchema)
     .handler(async ({ data: { mediaType, query, job }, context: { user } }) => {
         const container = await getContainer();

@@ -3,8 +3,8 @@ import {relations} from "drizzle-orm/relations";
 import {customJson} from "@/lib/server/database/custom-types";
 import {ProfileCustomKey} from "@/lib/types/profile-custom.types";
 import {taskHistory} from "@/lib/server/database/schema/admin.schema";
-import {MediaType, SocialState, Status, UpdateType} from "@/lib/utils/enums";
 import {index, integer, real, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {MediaType, SocialState, Status, UpdateType} from "@/lib/utils/enums";
 import {
     animeList,
     animeTags,
@@ -61,6 +61,7 @@ export const userMediaActivity = sqliteTable("user_media_activity", {
     isRedo: integer({ mode: "boolean" }).default(false).notNull(),
     monthBucket: text().notNull(),
     lastUpdate: text().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+    hidden: integer({ mode: "boolean" }).default(false).notNull(),
 }, (table) => [
     index("ix_user_media_activity_user_id").on(table.userId),
     index("ix_user_media_activity_media_id").on(table.mediaId),

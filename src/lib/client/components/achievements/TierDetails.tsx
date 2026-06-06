@@ -1,12 +1,13 @@
 import {Award} from "lucide-react";
-import {cn} from "@/lib/utils/helpers";
-import {capitalize} from "@/lib/utils/formating";
+import {cn} from "@/lib/utils/classnames";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {AchCard} from "@/lib/types/query.options.types";
 import {Button} from "@/lib/client/components/ui/button";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {diffColors} from "@/lib/utils/colors-and-icons";
+import {diffColors} from "@/lib/utils/theme-utils";
+import {formatPercent} from "@/lib/utils/number-formatting";
 
 
 interface TierDetailsProps {
@@ -57,7 +58,7 @@ export const TiersDetails = ({ achievement }: TierDetailsProps) => {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-end text-xs">
-                                        {tier.rarity ? tier.rarity.toFixed(1) : "- "}%
+                                        {tier.rarity ? formatPercent(tier.rarity) : "- %"}
                                     </TableCell>
                                 </TableRow>
                             );

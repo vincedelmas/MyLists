@@ -1,5 +1,5 @@
 {
-    "$schema": "https://unpkg.com/knip@5/schema.json",
+    "$schema": "https://unpkg.com/knip@6/schema.json",
     "ignoreExportsUsedInFile": {
         "interface": true,
         "type": true
@@ -7,7 +7,11 @@
     "tags": [
         "-lintignore"
     ],
+    "ignoreDependencies": [
+        "@radix-ui/react-tabs"
+    ],
     "entry": [
+        "server.ts",
         "src/client.tsx",
         "src/router.ts",
         "src/routeTree.gen.ts",
@@ -19,11 +23,19 @@
         "src/**/*.{ts,tsx}"
     ],
     "vite": {
-        "config": "vite.config.ts"
+        "config": [
+            "vite.config.ts",
+            "vite.cli.config.ts"
+        ]
     },
-    "ignore": [
-        ".output/**",
-        "dist/**",
-        "src/lib/client/components/ui/**"
-    ]
+    "ignoreIssues": {
+        "src/lib/client/components/emails/**": [
+            "duplicates",
+            "exports"
+        ],
+        "src/lib/client/components/ui/**": [
+            "exports",
+            "files"
+        ]
+    }
 }

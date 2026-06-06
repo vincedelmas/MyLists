@@ -1,5 +1,5 @@
 import * as React from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Slot} from "@radix-ui/react-slot";
 import {PanelLeftIcon} from "lucide-react";
 import {Input} from "@/lib/client/components/ui/input";
@@ -66,7 +66,6 @@ function SidebarProvider({ defaultOpen = true, open: openProp, onOpenChange: set
             }
 
             // This sets the cookie to keep the sidebar state.
-            // eslint-disable-next-line react-compiler/react-compiler
             document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
         },
         [setOpenProp, open]

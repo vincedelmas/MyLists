@@ -1,6 +1,7 @@
 import {ReactNode} from "react";
 import {Loader2, SearchX} from "lucide-react";
-import {cn, getZodMutationError} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
+import {displayContainerError} from "@/lib/utils/error-display";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 
 
@@ -41,7 +42,7 @@ export const SearchContainer = (props: SearchContainerProps) => {
 
             {(!isPending && error) &&
                 <div className="p-4 text-sm text-destructive text-center">
-                    {getZodMutationError(error)}
+                    {displayContainerError({ error })}
                 </div>
             }
 

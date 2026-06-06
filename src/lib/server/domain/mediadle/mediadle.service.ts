@@ -24,33 +24,49 @@ export class MediadleService {
         return { ...userMediadleStats, attempts };
     }
 
-    async getDailyMediadleData(userId: number, mediaService: MoviesService) {
+    async getDailyMediadleData(mediaService: MoviesService, userId?: number) {
         let dailyMediadle = await this.repository.getTodayMoviedle();
         if (!dailyMediadle) {
             dailyMediadle = await this.repository.createDailyMoviedle();
         }
 
-        let userProgress = await this.repository.getUserProgress(userId, dailyMediadle.id);
-        if (!userProgress) userProgress = await this.repository.createUserProgress(userId, dailyMediadle.id);
-
         const selectedMovie = await mediaService.findById(dailyMediadle.mediaId);
-        if (!selectedMovie) throw new Error("mediaId for mediadle not found");
+        if (!selectedMovie) {
+            throw new Error("mediaId for mediadle not found");
+        }
 
-        const pixelationLevel = Math.min(dailyMediadle.pixelationLevels!, userProgress.attempts! + 1);
-        const userMediadleStats = await this.getUserMediadleStats(userId);
+        let userData = undefined;
+        if (userId) {
+            const userStats = await this.getUserMediadleStats(userId);
+            let userProgress = await this.repository.getUserProgress(userId, dailyMediadle.id);
+            if (!userProgress) {
+                userProgress = await this.repository.createUserProgress(userId, dailyMediadle.id);
+            }
 
-        const pixelatedCover = await pixelateImage(selectedMovie?.imageCover, pixelationLevel);
+            userData = {
+                stats: userStats,
+                attempts: userProgress.attempts,
+                completed: userProgress.completed,
+                succeeded: userProgress.succeeded,
+            };
+        }
+
+        const currentAttempts = userData ? userData.attempts : 0;
+        const isCompleted = userData ? userData.completed : false;
+
+        const pixelationLevel = Math.min(dailyMediadle.pixelationLevels, currentAttempts + 1);
+        const pixelatedCover = await pixelateImage(selectedMovie.imageCover, pixelationLevel);
+
+        const result = isCompleted
+            ? { mediaId: dailyMediadle.mediaId, nonPixelatedCover: selectedMovie.imageCover }
+            : null;
 
         return {
+            result,
+            userData,
             pixelatedCover,
-            stats: userMediadleStats,
             mediadleId: dailyMediadle.id,
-            mediaId: dailyMediadle.mediaId,
-            attempts: userProgress.attempts!,
-            completed: userProgress.completed!,
-            succeeded: userProgress.succeeded!,
-            maxAttempts: dailyMediadle.pixelationLevels!,
-            nonPixelatedCover: userProgress.completed ? selectedMovie?.imageCover : null,
+            maxAttempts: dailyMediadle.pixelationLevels,
         };
     }
 

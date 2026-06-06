@@ -1,7 +1,7 @@
 import {toast} from "sonner";
 import React, {useCallback, useMemo} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {formatDateTime} from "@/lib/utils/formating";
+import {formatDate} from "@/lib/utils/date-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {PrivacyType, RoleType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
@@ -15,7 +15,7 @@ import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {userAdminOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {useAdminUpdateUserMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 import {CheckCircle, ChevronsUpDown, MoreHorizontal, Trash2, UserCheck, UserPen, UserX} from "lucide-react";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
@@ -29,6 +29,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/lib/client/components/ui/dropdown-menu";
+import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 
 
 export const Route = createFileRoute("/_admin/admin/users")({
@@ -94,6 +95,17 @@ function UserManagementPage() {
             cell: ({ row: { original } }) => <div>{original.id}</div>,
         },
         {
+            accessorKey: "privacy",
+            header: ({ column }) => {
+                return (
+                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                        Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
+                    </Button>
+                )
+            },
+            cell: ({ row: { original } }) => <PrivacyIcon type={original.privacy} className="size-3.5"/>,
+        },
+        {
             accessorKey: "name",
             header: ({ column }) => {
                 return (
@@ -137,9 +149,7 @@ function UserManagementPage() {
                     </Button>
                 )
             },
-            cell: ({ row: { original } }) => {
-                return formatDateTime(original.createdAt, { noTime: true });
-            }
+            cell: ({ row: { original } }) => formatDate(original.createdAt),
         },
         {
             accessorKey: "updatedAt",
@@ -150,29 +160,7 @@ function UserManagementPage() {
                     </Button>
                 )
             },
-            cell: ({ row: { original } }) => {
-                return formatDateTime(original.updatedAt);
-            },
-        },
-        {
-            accessorKey: "privacy",
-            header: ({ column }) => {
-                return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
-                        Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                    </Button>
-                )
-            },
-            cell: ({ row: { original } }) => {
-                switch (original.privacy) {
-                    case PrivacyType.PUBLIC:
-                        return <Badge variant="outline" className="text-green-600">Public</Badge>
-                    case PrivacyType.RESTRICTED:
-                        return <Badge variant="outline" className="text-yellow-600">Restricted</Badge>
-                    case PrivacyType.PRIVATE:
-                        return <Badge variant="outline" className="text-red-600">Private</Badge>
-                }
-            },
+            cell: ({ row: { original } }) => formatDate(original.updatedAt),
         },
         {
             accessorKey: "showUpdateModal",

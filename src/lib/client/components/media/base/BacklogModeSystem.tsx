@@ -1,10 +1,10 @@
 import {useState} from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Button} from "@/lib/client/components/ui/button";
 import {Calendar} from "@/lib/client/components/ui/calendar";
 import {Calendar as CalendarIcon, TriangleAlert} from "lucide-react";
-import {formatDateTime, toDateInputValue} from "@/lib/utils/formating";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
+import {dateInputValueToDate, formatDate, shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
 
 
 interface BacklogModeBannerProps {
@@ -16,35 +16,19 @@ interface BacklogModeBannerProps {
 }
 
 
-export const BacklogModeSystem = ({ enabled, date, disabled, onDateChange, onEnabledChange }: BacklogModeBannerProps) => {
-    // eslint-disable-next-line @eslint-react/purity
-    const today = toDateInputValue(new Date().toISOString());
-
-    const todayDate = dateInputValueToDate(today);
+export const BacklogModeSystem = ({ date, onDateChange, onEnabledChange, disabled, enabled }: BacklogModeBannerProps) => {
+    const todayCalendar = toDateInputValue(new Date());
+    const todayDate = dateInputValueToDate(todayCalendar);
     const [calendarOpen, setCalendarOpen] = useState(false);
-    const selectedDate = dateInputValueToDate(enabled && date ? date : today);
+    const selectedLabel = enabled && date ? formatDate(date) : "TODAY";
+    const selectedDate = dateInputValueToDate(enabled && date ? date : todayCalendar);
     const calendarStartDate = new Date(todayDate.getFullYear() - 20, 0, 1);
-    const selectedLabel = enabled && date ? formatDateTime(date, { noTime: true }) : "TODAY";
-
-    const getPresetDate = (daysAgo: number) => {
-        const preset = new Date();
-        preset.setDate(preset.getDate() - daysAgo);
-
-        return toDateInputValue(preset.toISOString());
-    };
-
-    const getPresetMonthDate = () => {
-        const preset = new Date();
-        preset.setMonth(preset.getMonth() - 1);
-
-        return toDateInputValue(preset.toISOString());
-    };
 
     const presets = [
-        { label: "Today", value: today, enabled: false },
-        { label: "-2d", value: getPresetDate(2), enabled: true },
-        { label: "-1 wk.", value: getPresetDate(7), enabled: true },
-        { label: "-1 mo.", value: getPresetMonthDate(), enabled: true },
+        { label: "Today", value: todayCalendar, enabled: false },
+        { label: "-2d", value: shiftDateInputValue(todayCalendar, { days: -2 }), enabled: true },
+        { label: "-1 wk.", value: shiftDateInputValue(todayCalendar, { days: -7 }), enabled: true },
+        { label: "-1 mo.", value: shiftDateInputValue(todayCalendar, { months: -1 }), enabled: true },
     ];
 
     const selectDate = (value: string, shouldEnable: boolean) => {
@@ -53,14 +37,14 @@ export const BacklogModeSystem = ({ enabled, date, disabled, onDateChange, onEna
     };
 
     const handleCustomDate = (value: string) => {
-        const isToday = value === today;
+        const isToday = value === todayCalendar;
         onDateChange(isToday ? "" : value);
         onEnabledChange(!!value && !isToday);
     };
 
     const handleCalendarSelect = (selected?: Date) => {
         if (!selected) return;
-        handleCustomDate(toDateInputValueFromDate(selected));
+        handleCustomDate(toDateInputValue(selected));
         setCalendarOpen(false);
     };
 
@@ -129,20 +113,4 @@ export const BacklogModeSystem = ({ enabled, date, disabled, onDateChange, onEna
             }
         </div>
     );
-};
-
-
-const dateInputValueToDate = (value: string) => {
-    const [year, month, day] = value.split("-").map(Number);
-
-    return new Date(year, month - 1, day);
-};
-
-
-const toDateInputValueFromDate = (value: Date) => {
-    const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, "0");
-    const day = String(value.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
 };

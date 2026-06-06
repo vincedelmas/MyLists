@@ -1,8 +1,6 @@
-import {toast} from "sonner";
-import {getZodMutationError} from "@/lib/utils/helpers";
-import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {featureVotesOptions} from "@/lib/client/react-query/query-options/query-options";
-import {postCreateFeatureRequest, postDeleteFeatureRequest, postToggleFeatureVote, postUpdateFeatureStatus} from "@/lib/server/functions/feature-votes";
+import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
+import {featureVotesOptions} from "@/lib/client/react-query/query-options";
+import {postAdminDeleteFeatureRequest, postAdminUpdateFeatureStatus, postCreateFeatureRequest, postToggleFeatureVote} from "@/lib/server/functions/feature-votes";
 
 
 export const useCreateFeatureRequestMutation = () => {
@@ -10,7 +8,13 @@ export const useCreateFeatureRequestMutation = () => {
 
     return useMutation({
         mutationFn: postCreateFeatureRequest,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey }),
+        meta: {
+            errorToastMessage: "Failed to submit feature request.",
+            successToastMessage: "Feature request submitted successfully!",
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
+        },
     });
 };
 
@@ -20,7 +24,7 @@ export const useToggleFeatureVoteMutation = () => {
 
     return useMutation({
         mutationFn: postToggleFeatureVote,
-        onError: (err) => toast.error(getZodMutationError(err) || "Failed to update your vote."),
+        meta: { errorToastMessage: "Failed to toggle feature vote." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
         },
@@ -28,12 +32,12 @@ export const useToggleFeatureVoteMutation = () => {
 };
 
 
-export const useUpdateFeatureStatusMutation = () => {
+export const useAdminUpdateFeatureStatusMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: postUpdateFeatureStatus,
-        onError: (err) => toast.error(getZodMutationError(err) || "Failed to update the feature status."),
+        mutationFn: postAdminUpdateFeatureStatus,
+        meta: { ...meta },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
         },
@@ -41,12 +45,12 @@ export const useUpdateFeatureStatusMutation = () => {
 };
 
 
-export const useDeleteFeatureRequestMutation = () => {
+export const useAdminDeleteFeatureRequestMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: postDeleteFeatureRequest,
-        onError: (err) => toast.error(getZodMutationError(err) || "Failed to delete the feature request."),
+        mutationFn: postAdminDeleteFeatureRequest,
+        meta: { ...meta },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
         },

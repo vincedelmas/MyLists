@@ -22,12 +22,12 @@ export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
         const [{ count }] = await getDbClient()
             .select({ count: sql<number>`count(*)` })
             .from(movies)
-            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`datetime('now', '-6 months')`)));
+            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', '-6 months')`)));
 
         await getDbClient()
             .update(movies)
             .set({ lockStatus: true })
-            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`datetime('now', '-6 months')`)));
+            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', '-6 months')`)));
 
         return count;
     }
@@ -50,7 +50,7 @@ export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
             .where(and(
                 eq(movies.lockStatus, false),
                 lte(movies.lastApiUpdate, sql`datetime('now', '-2 days')`),
-                or(isNull(movies.releaseDate), gte(movies.releaseDate, sql`datetime('now', '-6 months')`)),
+                or(isNull(movies.releaseDate), gte(movies.releaseDate, sql`date('now', '-6 months')`)),
             ));
 
         return results.map((r) => r.apiId);

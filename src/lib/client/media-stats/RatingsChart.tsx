@@ -1,9 +1,9 @@
 import {NamedValue} from "@/lib/types/stats.types";
-import {getFeelingList} from "@/lib/utils/ratings";
-import {getThemeColor} from "@/lib/utils/colors-and-icons";
+import {getFeelingList} from "@/lib/utils/ratings-formatting";
+import {getThemeColor} from "@/lib/utils/theme-utils";
 import {MediaType, RatingSystemType} from "@/lib/utils/enums";
+import {transformRatingToFeeling} from "@/lib/utils/stats-utils";
 import {CustomTooltip} from "@/lib/client/media-stats/DistributionChart";
-import {transformRatingToFeeling} from "@/lib/client/media-stats/stats-utils";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Bar, BarChart, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 

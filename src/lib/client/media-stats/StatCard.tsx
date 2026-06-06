@@ -1,4 +1,4 @@
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
 

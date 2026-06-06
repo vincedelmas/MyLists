@@ -1,8 +1,9 @@
 import {navbarSearchSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
-import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
 import {jikanTransformer} from "@/lib/server/api-providers/transformers/jikan.transformer";
@@ -10,9 +11,9 @@ import {gbooksTransformer} from "@/lib/server/api-providers/transformers/gbook.t
 
 
 export const getSearchResults = createServerFn({ method: "GET" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([publicAuthMiddleware])
     .inputValidator(navbarSearchSchema)
-    .handler(async ({ data: { query, page, apiProvider } }) => {
+    .handler(async ({ data: { query, page, apiProvider }, context: { currentUser } }) => {
         const container = await getContainer();
         const igdbClient = container.clients.igdb;
         const tmdbClient = container.clients.tmdb;
@@ -26,6 +27,10 @@ export const getSearchResults = createServerFn({ method: "GET" })
 
         if (apiProvider === ApiProviderType.USERS) {
             return userService.searchUsers(query, page);
+        }
+
+        if (!currentUser) {
+            throw new FormattedError("Log-in or register to search for media.");
         }
 
         if (apiProvider === ApiProviderType.TMDB) {

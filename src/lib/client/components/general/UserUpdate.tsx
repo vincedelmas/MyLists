@@ -1,9 +1,9 @@
 import {Trash} from "lucide-react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
+import {Link} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {UserUpdateType} from "@/lib/types/query.options.types";
 import {Payload} from "@/lib/client/components/general/Payload";
-import {BlockLink} from "@/lib/client/components/general/BlockLink";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 
@@ -38,18 +38,19 @@ export function UserUpdate({ update, username, onDelete, canDelete, isPending, m
             <div className="flex-1">
                 <div className="flex justify-between items-start">
                     <p className="text-sm">
-                        <BlockLink
+                        <Link
                             disabled={isPending}
+                            search={{ external: false }}
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: update.mediaType, mediaId: update.mediaId }}
                         >
                              <span title={update.mediaName} className="font-medium text-foreground line-clamp-1 hover:text-app-accent">
                                 {update.mediaName}
                             </span>
-                        </BlockLink>
+                        </Link>
                     </p>
                     <RelativeTime
-                        value={update.timestamp}
+                        date={update.timestamp}
                         className="ml-2 whitespace-nowrap text-xs text-muted-foreground"
                     />
                 </div>

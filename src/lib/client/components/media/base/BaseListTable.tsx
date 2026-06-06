@@ -1,11 +1,11 @@
+import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {ColumnDef} from "@tanstack/react-table";
-import {statusUtils} from "@/lib/utils/mapping";
+import {statusUtils} from "@/lib/utils/media-mapping";
 import {CircleCheck, Settings2} from "lucide-react";
 import {UserMediaItem} from "@/lib/types/query.options.types";
-import {BlockLink} from "@/lib/client/components/general/BlockLink";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
-import {mediaListOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 export type ColumnConfigProps = {
@@ -22,12 +22,12 @@ export const getBaseColumns = <T extends UserMediaItem>({ isCurrent, isConnected
         id: "name",
         header: "Name",
         cell: ({ row: { original } }) => (
-            <BlockLink to="/details/$mediaType/$mediaId" params={{ mediaType, mediaId: original.mediaId }}>
+            <Link to="/details/$mediaType/$mediaId" params={{ mediaType, mediaId: original.mediaId }} search={{ external: false }}>
                 <div className="flex items-center gap-3">
                     {original.mediaName}
                     {!isCurrent && original.common && <CircleCheck className="h-4 w-4 text-green-500"/>}
                 </div>
-            </BlockLink>
+            </Link>
         ),
     },
     {

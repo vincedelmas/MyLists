@@ -1,17 +1,20 @@
+import path from "path";
 import {defineConfig} from "vite";
-import tsConfigPaths from "vite-tsconfig-paths";
 
 
 export default defineConfig({
-    plugins: [
-        tsConfigPaths({ projects: ["./tsconfig.json"] }),
-    ],
+    resolve: {
+        tsconfigPaths: true,
+        alias: {
+            "@": path.resolve(__dirname, "./src"),
+        },
+    },
     build: {
         minify: false,
         target: "esnext",
         emptyOutDir: true,
-        copyPublicDir: false,
         outDir: "dist/cli",
+        copyPublicDir: false,
         ssr: "src/cli/index.ts",
     },
 })

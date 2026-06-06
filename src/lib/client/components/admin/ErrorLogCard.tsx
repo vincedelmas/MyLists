@@ -1,8 +1,8 @@
 import {useState} from "react";
 import {Clock, Info, Trash} from "lucide-react";
-import {formatDateTime} from "@/lib/utils/formating";
+import {formatDateTime} from "@/lib/utils/date-formatting";
 import {Button} from "@/lib/client/components/ui/button";
-import {adminErrorLogsOptions} from "@/lib/client/react-query/query-options/admin-options";
+import {adminErrorLogsOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Card, CardAction, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {useAdminDeleteErrorLogsMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 

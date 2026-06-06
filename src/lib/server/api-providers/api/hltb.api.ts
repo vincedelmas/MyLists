@@ -1,4 +1,3 @@
-import UserAgent from "user-agents";
 import {closest} from "@/lib/utils/levenshtein";
 import {RateLimiterAbstract} from "rate-limiter-flexible";
 import {BaseApi} from "@/lib/server/api-providers/api/base.api";
@@ -12,6 +11,8 @@ export class HltbApi extends BaseApi {
     private static searchUrl = HltbApi.baseUrl + "api/bleed"
     private static tokenUrl = HltbApi.baseUrl + "api/bleed/init";
     private static readonly throttleOptions = { points: 4, duration: 1, keyPrefix: "hltbAPI" };
+    private static readonly userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +
+        "Chrome/125.0.0.0 Safari/537.36";
 
     constructor(limiter: RateLimiterAbstract, consumeKey: string) {
         super(limiter, consumeKey);
@@ -31,7 +32,7 @@ export class HltbApi extends BaseApi {
         };
 
         try {
-            const ua = new UserAgent().toString();
+            const ua = HltbApi.userAgent;
 
             const htmlResult = await this._sendWebRequest(gameName, ua);
             if (!htmlResult) return defaultEntry;

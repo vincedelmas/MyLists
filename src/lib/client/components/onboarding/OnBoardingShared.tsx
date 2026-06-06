@@ -1,5 +1,5 @@
 import React from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Button} from "@/lib/client/components/ui/button";
 import {useLocation, useNavigate} from "@tanstack/react-router";
 import {LinkSidebarItem} from "@/lib/client/components/general/LinkSidebar";

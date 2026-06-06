@@ -1,42 +1,38 @@
 import {JSX} from "react";
 import {ApiProviderType} from "@/lib/utils/enums";
-import {createFileRoute} from "@tanstack/react-router";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
-import {BlockLink} from "@/lib/client/components/general/BlockLink";
+import {createFileRoute, Link} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {
     Activity,
+    BadgePlus,
     BarChart3,
     BellRing,
     BookOpen,
-    Calendar,
     CheckCheck,
     ChevronDown,
     ClockCheck,
-    Crop,
+    ClockPlus,
     Edit3,
-    FileSpreadsheet,
-    Filter,
+    EyeOff,
     Gamepad2,
     GraduationCap,
     Highlighter,
     ImageUp,
     LayoutList,
-    LineChart,
     ListOrdered,
-    Lock,
     LucideIcon,
     Monitor,
     Repeat,
     Search,
-    Share2,
+    Settings2,
     Shield,
-    Tags,
+    SlidersHorizontal,
     Trash2,
     Trophy,
     Users,
-    Zap
+    Wrench,
 } from "lucide-react";
 
 
@@ -47,7 +43,7 @@ export const Route = createFileRoute("/_main/_universal/features")({
             image: "/logo512.png",
             canonical: "/features",
             title: "MyLists Features - Lists, stats, follows, achievements and collections",
-            description: "Explore MyLists features for media lists, advanced stats, achievements, custom collections, social updates, privacy controls and CSV exports.",
+            description: "See what changed recently in MyLists, and the main features already available.",
         }),
     }),
     component: FeaturesPage,
@@ -56,25 +52,21 @@ export const Route = createFileRoute("/_main/_universal/features")({
 
 function FeaturesPage() {
     const groupedFeatures = FEATURES_DATA.reduce((acc, feature) => {
-        const cat = feature.category;
-        if (!acc[cat]) {
-            acc[cat] = [];
-        }
-        acc[cat]!.push(feature);
-        return acc;
-    }, {} as Partial<Record<FeatureData["category"], FeatureData[]>>);
+            const cat = feature.area;
+            if (!acc[cat]) {
+                acc[cat] = [];
+            }
+            acc[cat]!.push(feature);
+            return acc;
+        },
+        {} as Partial<Record<FeatureData["area"], FeatureData[]>>
+    );
 
-    const activeCategories = (Object.keys(groupedFeatures) as FeatureData["category"][]).sort((a, b) => {
-        if (a === "New") return -1;
-        if (b === "New") return 1;
-        return a.localeCompare(b);
-    });
+    const activeCategories = AREA_ORDER.filter((area) => groupedFeatures[area]?.length);
 
-    const getCategoryIcon = (category: FeatureData["category"]) => {
+    const getCategoryIcon = (category: FeatureData["area"]) => {
         switch (category) {
-            case "New":
-                return Activity;
-            case "Library & Management":
+            case "Lists & Tracking":
                 return LayoutList;
             case "Stats & Insights":
                 return BarChart3;
@@ -90,140 +82,242 @@ function FeaturesPage() {
     };
 
     return (
-        <PageTitle title="What's New in MyLists" subtitle="Discover the latest features and what's new and Improved">
-            <div className="space-y-15 mb-20">
-                {activeCategories.map((category) =>
-                    <section key={category}>
-                        <SectionHeader
-                            title={category}
-                            icon={getCategoryIcon(category)}
-                        />
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {groupedFeatures[category]?.map((feature, idx) =>
-                                <FeatureCard
-                                    feature={feature}
-                                    key={`${category}-${idx}`}
-                                />
-                            )}
-                        </div>
-                    </section>
-                )}
+        <PageTitle title="News & Features" subtitle="The latest changes first, then a quick look at what MyLists can do today.">
+            <div className="mb-20 space-y-16">
+                <section>
+                    <SectionHeader
+                        icon={ClockPlus}
+                        title="Latest Release"
+                        description="This is the place where I put the last things I shipped (mix of new stuff, fixes, and bigger rewrites)."
+                    />
+                    <ReleaseCard
+                        release={LATEST_RELEASE}
+                    />
+                </section>
+
+                <div className="space-y-15">
+                    {activeCategories.map((category) =>
+                        <section key={category}>
+                            <SectionHeader
+                                title={category}
+                                icon={getCategoryIcon(category)}
+                                description={AREA_DESCRIPTIONS[category]}
+                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                {groupedFeatures[category]?.map((feature, idx) =>
+                                    <FeatureCard
+                                        feature={feature}
+                                        key={`${category}-${idx}`}
+                                    />
+                                )}
+                            </div>
+                        </section>
+                    )}
+                </div>
             </div>
         </PageTitle>
     );
 }
 
 
+type UpdateType = "New" | "Revamped" | "Improved" | "Existing";
+type FeatureArea = "Lists & Tracking" | "Stats & Insights" | "Social & Notifications" | "Customization" | "Gamification";
+
+type ReleaseData = {
+    title: string,
+    date: string,
+    icon: LucideIcon,
+    type: UpdateType,
+    items: FeatureData[],
+    summary: JSX.Element | string,
+}
+
 type FeatureData = {
     name: string,
     icon: LucideIcon,
+    type: UpdateType,
+    area: FeatureArea;
     details?: JSX.Element,
     description: JSX.Element | string,
-    category: "New" | "Library & Management" | "Stats & Insights" | "Social & Notifications" | "Customization" | "Gamification";
 }
+
+
+const AREA_ORDER: FeatureArea[] = [
+    "Lists & Tracking",
+    "Stats & Insights",
+    "Social & Notifications",
+    "Customization",
+    "Gamification",
+];
+
+
+const AREA_DESCRIPTIONS: Record<FeatureArea, string> = {
+    "Lists & Tracking": "The main tools to keep your media lists clean, update your progress, and organize everything.",
+    "Stats & Insights": "Stats for your own profile, the global site, and the little patterns hidden in your lists.",
+    "Social & Notifications": "Follow people, see updates, vote for ideas, and keep an eye on upcoming releases.",
+    Customization: "Small settings to make your profile and media pages feel a bit more like yours.",
+    Gamification: "Optional fun things around achievements, rankings, and mini-games.",
+};
+
+
+const LATEST_RELEASE: ReleaseData = {
+    icon: Activity,
+    type: "Revamped",
+    date: "May 2026",
+    title: "Activity System Revamp",
+    summary: (
+        <span>
+            I reworked the activity system. It still logs what you update (status, episodes, playtime, etc...) automatically,
+            but you now have much more control over what stays visible.
+        </span>
+    ),
+    items: [
+        {
+            icon: Settings2,
+            type: "Revamped",
+            area: "Lists & Tracking",
+            name: "Cleaner Automatic Activity",
+            description: (
+                <span>
+                    When you change a status, an episode, a season, playtime, or progress,
+                    MyLists creates a cleaner activity entry around that change.
+                </span>
+            )
+        },
+        {
+            type: "New",
+            icon: Trash2,
+            area: "Lists & Tracking",
+            name: "Bulk Activity Cleanup",
+            description: (
+                <span>
+                    If you arrive and add years of old movies, shows, games, or books,
+                    you can clean those setup updates in bulk instead of deleting them one by one.
+                </span>
+            )
+        },
+        {
+            type: "New",
+            icon: EyeOff,
+            area: "Lists & Tracking",
+            name: "Hide Activity",
+            description: (
+                <span>
+                    Hide an activity entry without deleting the real progress from your list.
+                    Useful when the update is either not correct or not interesting.
+                </span>
+            )
+        },
+        {
+            type: "New",
+            icon: Activity,
+            area: "Lists & Tracking",
+            name: "Add Activity Yourself",
+            description: (
+                <span>
+                    Add an activity manually when the automatic one is not exactly what you wanted to show.
+                    To split the time spent on a media over several months for example.
+                </span>
+            )
+        },
+        {
+            icon: BarChart3,
+            type: "Improved",
+            area: "Stats & Insights",
+            name: "Activity in Stats",
+            description: (
+                <span>
+                    Activity is now used in the user stats and platform stats pages,
+                    so recent progress is not hidden behind only big list totals.
+                </span>
+            )
+        },
+    ]
+};
 
 
 const FEATURES_DATA: FeatureData[] = [
     {
-        category: "New",
+        icon: Activity,
+        type: "Existing",
+        area: "Lists & Tracking",
+        name: "Activity You Can Clean",
+        description: (
+            <span>
+                MyLists logs your changes automatically, but you can still hide entries,
+                add one yourself, or clean a big batch when it gets messy.
+            </span>
+        )
+    },
+    {
+        type: "Existing",
+        area: "Lists & Tracking",
         icon: ClockCheck,
-        name: "Backlog Your Progress",
+        name: "Backlog and Monthly Progress",
         description: (
             <span>
-                Forgot to log something? Pick a past date and update the progress you watched, read, or played.
-                Switch back to 'TODAY' when you are done to keep logging and editing normally.
-        </span>
-        )
-    },
-    {
-        category: "New",
-        icon: Highlighter,
-        name: "Custom Profile Highlights",
-        description: (
-            <span>
-                Customize the Highlighted Media block on your profile for each tab. Pick a random selection,
-                curate the exact media to show, or disable the section entirely from your settings.
+                Forgot to update something yesterday? You can pick an old date, then check what you watched,
+                read, or played during the month.
             </span>
         )
     },
     {
-        icon: ImageUp,
-        category: "New",
-        name: "Custom Covers Per Media",
+        icon: LayoutList,
+        type: "Existing",
+        area: "Lists & Tracking",
+        name: "Your Lists, Without the Pain",
         description: (
             <span>
-                Override the cover of any media already in your list. Add your own cover from an image link
-                or upload a file directly, and remove it anytime from the 'custom' tab media edit panel.
+                Edit entries directly from your lists, use grid or table view,
+                filter things properly, and remove updates when you made a mistake.
             </span>
         )
     },
     {
+        icon: Repeat,
+        type: "Existing",
+        name: "Progress Details",
+        area: "Lists & Tracking",
+        description: (
+            <span>
+                Track the details that matter, like the platform for a game or re-watches by season for a series.
+            </span>
+        ),
+    },
+    {
+        icon: BookOpen,
+        type: "Existing",
+        area: "Lists & Tracking",
+        name: "All Media Types",
+        description: (
+            <span>
+                Movies, series, anime, games, books, and manga are all supported.
+                You can also export your lists as CSV if you want your data outside the site.
+            </span>
+        )
+    },
+    {
+        type: "Existing",
         icon: ListOrdered,
-        category: "New",
-        name: "New (real) Collection System",
+        name: "Collections & Tags",
+        area: "Lists & Tracking",
         description: (
             <span>
-                Create, and rank collections of media. Keep your collections private for organization,
-                or publish them to the Community page to share with others.
-                (The previous `Collection` system is now called `Tags`).
+                Make ranked collections if you want to share a selection, or keep them private.
+                Tags are there for your own messy organization system.
             </span>
-        )
-    },
-    {
-        icon: CheckCheck,
-        category: "New",
-        name: "Features Voting!",
-        description: (
-            <span>
-                Have a great idea? Tell me about it! You can now request new features and vote on what should get built next{" "}
-                <BlockLink to="/features-vote" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
-                    here
-                </BlockLink> or by clicking on the bulb in the bottom right.
-            </span>
-        )
-    },
-    {
-        icon: Zap,
-        category: "New",
-        name: "Monthly Activity",
-        description: (
-            <span>
-                Track your progress in real-time. View a detailed breakdown of what
-                you've spent time on during the month. Your activity can be found
-                in the <b>'MyMedia'</b> dropdown.
-            </span>
-        )
-    },
-    {
-        icon: Lock,
-        category: "Social & Notifications",
-        name: "Private Accounts",
-        description: (
-            <span>
-                Only approved followers can see your profile, lists, and updates.
-                Accept followers request in the new notifications 'Social' tab.
-                Go to the settings to update your privacy settings.
-            </span>
-        )
-    },
-    {
-        icon: GraduationCap,
-        category: "Library & Management",
-        name: "New Walkthrough Tutorial",
-        description: (
-            <span>
-                New here? Follow this walkthrough to learn how to use MyLists.info, add media, and get the most out it {" "}
-                <BlockLink to="/walkthrough/search-media" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
-                    here
-                </BlockLink>.
-            </span>
-        )
+        ),
     },
     {
         icon: Search,
-        name: "Search using !bangs",
-        category: "Library & Management",
-        description: "Power user? You can now search MyLists Media and Users directly via URL parameters using custom bangs.",
+        type: "Existing",
+        name: "Search Shortcuts",
+        area: "Lists & Tracking",
+        description: (
+            <span>
+                If you like shortcuts, you can search media and users directly from an URL with custom bangs.
+            </span>
+        ),
         details: (
             <div className="space-y-4 text-sm mt-2">
                 <div className="p-3 bg-popover rounded border">
@@ -235,213 +329,111 @@ const FEATURES_DATA: FeatureData[] = [
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-                    <div>
-                        <div className="font-semibold mb-2">
-                            Providers
-                        </div>
-                        <ul className="space-y-1 text-xs text-slate-400 font-mono">
-                            <li><span className="text-blue-400">{ApiProviderType.TMDB}</span> - Series, Anime, Movies</li>
-                            <li><span className="text-blue-400">{ApiProviderType.IGDB}</span> - Games</li>
-                            <li><span className="text-blue-400">{ApiProviderType.BOOKS}</span> - Books</li>
-                            <li><span className="text-blue-400">{ApiProviderType.MANGA}</span> - Manga</li>
-                            <li><span className="text-blue-400">{ApiProviderType.USERS}</span> - Users</li>
-                        </ul>
+                <div>
+                    <div className="font-semibold mb-2">
+                        Providers
                     </div>
-                    <div>
-                        <div className="font-semibold mb-2">
-                            Example
-                        </div>
-                        <div className="p-2 bg-popover border rounded text-xs font-mono text-muted-foreground break-all">
-                            ...?q=<span className="text-emerald-400">interstellar</span>&apiProvider=<span className="text-orange-400">tmdb</span>
-                        </div>
-                    </div>
+                    <ul className="space-y-1 text-xs text-slate-400 font-mono">
+                        <li><span className="text-blue-400">{ApiProviderType.TMDB}</span> - Series, Anime, Movies</li>
+                        <li><span className="text-blue-400">{ApiProviderType.IGDB}</span> - Games</li>
+                        <li><span className="text-blue-400">{ApiProviderType.BOOKS}</span> - Books</li>
+                        <li><span className="text-blue-400">{ApiProviderType.MANGA}</span> - Manga</li>
+                        <li><span className="text-blue-400">{ApiProviderType.USERS}</span> - Users</li>
+                    </ul>
                 </div>
             </div>
         )
     },
     {
-        icon: Repeat,
-        name: "Season-based Re-watch",
-        category: "Library & Management",
-        description: "Granular control: add re-watch information per individual season instead of the entire show.",
-        details: (
-            <div className="mt-2 space-y-4 text-sm">
-                <div className="rounded border bg-popover p-3">
-                    <div className="mb-1 font-semibold">
-                        Data Redistribution
-                    </div>
-                    <div className="leading-relaxed text-muted-foreground">
-                        Your rewatch data for <span className="text-series font-medium">Series</span> and{" "}
-                        <span className="text-anime font-medium">Anime</span> has been moved to a{" "}
-                        <span className="font-medium">per-season</span> basis.
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                        <div className="mb-2 font-semibold">
-                            Old System
-                        </div>
-                        <div className="rounded bg-popover p-2 font-mono text-xs text-muted-foreground border">
-                            <div className="flex justify-between">
-                                <span>Series Global:</span>
-                                <span className="text-red-400">5x</span>
-                            </div>
-                            <div className="mt-1 opacity-70">
-                                (Applied to S1, S2, and S3 etc...)
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div className="mb-2 font-semibold">
-                            New System
-                        </div>
-                        <div className="rounded bg-popover p-2 font-mono text-xs text-muted-foreground border">
-                            <div className="flex justify-between">
-                                <span>Season 1:</span>
-                                <span>3x</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Season 2:</span>
-                                <span>2x</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <p className="text-xs text-muted-foreground">
-                    * All existing data was automatically migrated to match your previous totals.
-                </p>
-            </div>
-        )
+        icon: BarChart3,
+        type: "Existing",
+        area: "Stats & Insights",
+        name: "Personal & Global Stats",
+        description: "Profile stats, global stats, activity stats, and more detailed pages when you want to dig a bit.",
     },
     {
-        icon: BookOpen,
-        name: "New Manga List",
-        category: "Library & Management",
-        description: "Manga is officially supported! Enable it in your settings to start tracking your reading."
+        icon: Trophy,
+        name: "Rankings",
+        type: "Existing",
+        area: "Stats & Insights",
+        description: "The Hall of Fame is a simple ranking page for people who like comparing progress."
     },
     {
-        icon: Tags,
-        category: "Customization",
-        name: "Labels become Tags",
+        type: "Existing",
+        icon: Highlighter,
+        area: "Customization",
+        name: "Profile Highlights",
+        description: "Choose what appears in your profile highlights, let it pick random media, or just hide the block."
+    },
+    {
+        icon: ImageUp,
+        type: "Existing",
+        area: "Customization",
+        name: "Media & Profile Images",
+        description: "Use your own covers, crop profile images, and avoid ugly stretched pictures.",
+    },
+    {
+        icon: Shield,
+        type: "Existing",
+        area: "Customization",
+        name: "Privacy Controls",
+        description: "Choose what people can see on your profile, lists, stats, and updates."
+    },
+    {
+        icon: Users,
+        type: "Existing",
+        name: "Social Feed",
+        area: "Social & Notifications",
+        description: "Follow people and see their updates, when their privacy settings allow it."
+    },
+    {
+        icon: BellRing,
+        type: "Existing",
+        name: "Release Tracking",
+        area: "Social & Notifications",
+        description: "Keep an eye on upcoming releases and get reminders before episodes or games are out."
+    },
+    {
+        icon: CheckCheck,
+        type: "Existing",
+        name: "Feature Voting",
+        area: "Social & Notifications",
         description: (
             <span>
-                Labels have a fresh new look and are now called 'tags'.
-                Check out the new design on your lists page.
-                The tags management modal has also been updated.
+                Have an idea? Add it and vote for what you would like me to build next{" "}
+                <Link to="/features-vote" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
+                    here
+                </Link>.
             </span>
         )
     },
     {
-        icon: Crop,
-        name: "Image Cropping",
-        category: "Customization",
-        description: "No more stretched images. Crop your profile picture and back cover directly during upload."
-    },
-    {
-        icon: BarChart3,
-        category: "Stats & Insights",
-        name: "New Global Stats Page",
-        description: "Revamped overview with a new 'Overall' section containing aggregated metrics.",
-    },
-    {
-        icon: LineChart,
-        category: "Stats & Insights",
-        name: "Enhanced Stats Dashboard",
-        description: "Drill down into specific media lists via 'Advanced Stats' on your profile."
-    },
-    {
-        icon: Trophy,
-        name: "HoF Ranking System",
-        category: "Stats & Insights",
-        description: "The Hall of Fame page has been redesigned with a new ranking algorithm."
-    },
-    {
-        icon: Edit3,
-        name: "Updates in /lists",
-        category: "Library & Management",
-        description: "Edit everything about a media entry directly from your main list view."
-    },
-    {
-        icon: Filter,
-        name: "Advanced Filtering",
-        category: "Library & Management",
-        description: "Refine your library with an expanded set of granular filter options."
-    },
-    {
-        icon: LayoutList,
-        name: "Table View",
-        category: "Library & Management",
-        description: "Switch between Grid view and a data-dense Table layout for your lists."
-    },
-    {
-        icon: Tags,
-        name: "Custom Tags",
-        category: "Customization",
-        description: "Create and apply custom tags to organize your media list your way."
-    },
-    {
-        name: "CSV Export",
-        icon: FileSpreadsheet,
-        category: "Library & Management",
-        description: "Data liberation: Download your entire media list as a CSV file."
-    },
-    {
-        icon: Trash2,
-        name: "Media Update Removal",
-        category: "Library & Management",
-        description: "Made a mistake? You can now delete erroneous media history updates."
-    },
-    {
-        icon: Gamepad2,
-        name: "Game Platform",
-        category: "Library & Management",
-        description: "Specify exactly which console or platform (PC, PS5, Switch) you played on."
+        type: "Existing",
+        icon: GraduationCap,
+        name: "Walkthrough",
+        area: "Social & Notifications",
+        description: (
+            <span>
+                New here? There is a small walkthrough to help you add your first media and understand the basics{" "}
+                <Link to="/walkthrough/search-media" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
+                    here
+                </Link>.
+            </span>
+        )
     },
     {
         icon: Monitor,
+        type: "Existing",
+        area: "Gamification",
         name: "Moviedle Game",
-        category: "Gamification",
-        description: "A Wordle-like mini-game: guess the movie from a pixelated poster."
+        description: "A small Wordle-like game where you guess the movie from a pixelated poster."
     },
     {
         icon: Trophy,
-        category: "Gamification",
-        name: "Achievements System",
-        description: "Earn badges with 4 difficulty levels based on your viewing habits."
-    },
-    {
-        icon: Shield,
-        name: "Privacy Mode",
-        category: "Customization",
-        description: "Fine-tune visibility for your profile, lists, stats, and updates."
-    },
-    {
-        icon: Activity,
-        name: "User Updates",
-        category: "Social & Notifications",
-        description: "Follow friends to populate your personalized activity feed."
-    },
-    {
-        icon: Share2,
-        name: "Social Connections",
-        category: "Social & Notifications",
-        description: "View follower/following networks and discover new users."
-    },
-    {
-        icon: Calendar,
-        name: "Upcoming Releases",
-        category: "Social & Notifications",
-        description: "Track release dates for your ongoing series, movies, and games."
-    },
-    {
-        icon: BellRing,
-        name: "Release Reminders",
-        category: "Social & Notifications",
-        description: "Get notified 7 days before new episodes or game drops."
+        type: "Existing",
+        area: "Gamification",
+        name: "Achievements",
+        description: "Badges you unlock naturally while filling your lists and updating your progress."
     },
 ];
 
@@ -450,25 +442,17 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
     const Icon = feature.icon;
 
     return (
-        <div className="relative overflow-hidden rounded-xl border transition-all duration-300 flex flex-col bg-background">
-            {feature.category === "New" &&
-                <div className="absolute top-0 right-0">
-                    <div className="bg-app-accent text-black text-[10px] font-bold px-3 py-1 rounded-bl-lg">
-                        NEW
-                    </div>
-                </div>
-            }
-
-            <div className="p-5 flex-1">
-                <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-lg shrink-0 bg-app-accent/20 text-primary">
-                        <Icon className="size-6"/>
+        <div className="relative overflow-hidden rounded-lg border transition-all duration-300 flex flex-col bg-background">
+            <div className="p-4 flex-1">
+                <div className="flex items-start gap-3">
+                    <div className="p-2.5 rounded-lg shrink-0 bg-app-accent/20 text-primary">
+                        <Icon className="size-5"/>
                     </div>
                     <div>
-                        <h3 className="font-bold text-lg mb-2">
+                        <h3 className="font-bold text-base mb-1.5">
                             {feature.name}
                         </h3>
-                        <div className="text-sm text-muted-foreground leading-relaxed">
+                        <div className="text-sm text-muted-foreground leading-normal">
                             {feature.description}
                         </div>
                     </div>
@@ -502,20 +486,112 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
 };
 
 
-interface SectionHeaderProps {
-    title: string,
-    icon: LucideIcon,
-}
-
-
-const SectionHeader = ({ title, icon: Icon }: SectionHeaderProps) => (
+const SectionHeader = ({ title, icon: Icon, description }: { title: string, icon: LucideIcon, description?: string }) => (
     <div className="mb-6">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2">
             <Icon className="size-4 text-app-accent"/>
             <h2 className="text-lg font-bold text-primary tracking-wide">
                 {title}
             </h2>
         </div>
+        {description &&
+            <p className="max-w-3xl text-sm text-muted-foreground leading-relaxed mb-2">
+                {description}
+            </p>
+        }
         <div className="h-1 w-30 bg-linear-to-r from-app-accent to-transparent rounded-full mb-2"/>
     </div>
 );
+
+
+const ReleaseCard = ({ release }: { release: ReleaseData }) => {
+    const Icon = release.icon;
+
+    return (
+        <div className="rounded-lg border bg-background overflow-hidden">
+            <div className="p-4 border-b bg-popover/40">
+                <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg shrink-0 bg-app-accent/20 text-primary md:p-3">
+                                <Icon className="size-5 md:size-7"/>
+                            </div>
+                            <div className="flex flex-col">
+                                <h3 className="text-xl font-bold text-primary leading-tight md:text-2xl">
+                                    {release.title}
+                                </h3>
+                                <span className="mt-0.5 text-xs text-muted-foreground font-medium">
+                                    {release.date}
+                                </span>
+                            </div>
+                        </div>
+                        <p className="mt-4 max-w-3xl text-sm text-muted-foreground leading-relaxed">
+                            {release.summary}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                {release.items.map((item, idx) =>
+                    <ReleaseItem
+                        item={item}
+                        key={`${item.name}-${idx}`}
+                    />
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+const ReleaseItem = ({ item }: { item: FeatureData }) => {
+    const Icon = item.icon;
+
+    return (
+        <div className="p-5">
+            <div className="mb-3 flex items-center gap-2">
+                <Icon className="size-4 text-app-accent"/>
+                <UpdateTypeBadge type={item.type}/>
+            </div>
+            <h4 className="font-bold text-primary mb-2">
+                {item.name}
+            </h4>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+                {item.description}
+            </p>
+        </div>
+    );
+};
+
+
+const UpdateTypeBadge = ({ type }: { type: UpdateType }) => {
+    const config = {
+        New: {
+            icon: BadgePlus,
+            className: "border-app-accent/40 bg-app-accent/15 text-primary ",
+        },
+        Revamped: {
+            icon: Wrench,
+            className: "border-cyan-500/40 bg-cyan-500/10 text-cyan-300",
+        },
+        Improved: {
+            icon: SlidersHorizontal,
+            className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+        },
+        Existing: {
+            icon: CheckCheck,
+            className: "border-muted-foreground/30 bg-popover text-muted-foreground",
+        },
+    } satisfies Record<UpdateType, { icon: LucideIcon, className: string }>;
+
+    const Icon = config[type].icon;
+
+    return (
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold 
+        uppercase tracking-wide ${config[type].className}`}>
+            <Icon className="size-3"/>
+            {type}
+        </span>
+    );
+};

@@ -1,5 +1,5 @@
 import * as React from "react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 
 

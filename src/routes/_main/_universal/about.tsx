@@ -1,4 +1,4 @@
-import {mail} from "@/lib/utils/helpers";
+import {clientEnv} from "@/env/client";
 import {createFileRoute} from "@tanstack/react-router";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
 import {Separator} from "@/lib/client/components/ui/separator";
@@ -34,7 +34,7 @@ function AboutPage() {
                     </p>
                     <div className="mt-4">
                         <a
-                            href={`mailto:${mail}`}
+                            href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`}
                             className="inline-flex items-center gap-2 text-app-accent hover:underline font-medium"
                         >
                             <Mail className="size-4"/>

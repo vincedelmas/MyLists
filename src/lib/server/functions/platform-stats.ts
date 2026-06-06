@@ -2,33 +2,20 @@ import {platformStatsSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
 import {tryNotFound} from "@/lib/utils/try-not-found";
 import {getContainer} from "@/lib/server/core/container";
-import {AdvancedMediaStats} from "@/lib/types/stats.types";
-import {MediaType, RatingSystemType} from "@/lib/utils/enums";
-import {platformStatsCacheMiddleware} from "@/lib/server/middlewares/caching";
-import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {getPlatformStatsData} from "@/lib/server/functions/platform-stats-data";
+import {getPlatformStatsCacheKey, ONE_DAY_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 
 
 export const getPlatformStats = createServerFn({ method: "GET" })
-    .middleware([requiredAuthMiddleware, platformStatsCacheMiddleware])
+    .middleware([publicAuthMiddleware])
     .inputValidator(tryNotFound(platformStatsSchema))
     .handler(async ({ data: { mediaType } }) => {
-        const userStatsService = await getContainer().then(c => c.services.userStats);
+        const container = await getContainer();
 
-        if (!mediaType) {
-            const platformStats = await userStatsService.platformAdvancedStatsSummary();
-            return {
-                ...platformStats,
-                mediaType: undefined,
-                ratingSystem: RatingSystemType.SCORE,
-                activatedMediaTypes: Object.values(MediaType),
-            };
-        }
-
-        const mediaStats = await userStatsService.platformMediaAdvancedStats(mediaType);
-        return {
-            ...mediaStats,
-            mediaType,
-            ratingSystem: RatingSystemType.SCORE,
-            activatedMediaTypes: Object.values(MediaType),
-        } as AdvancedMediaStats;
+        return container.cacheManager.wrap(
+            getPlatformStatsCacheKey({ mediaType }),
+            () => getPlatformStatsData(mediaType),
+            { ttl: ONE_DAY_CACHE_TTL_MS },
+        );
     });

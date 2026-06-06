@@ -1,6 +1,9 @@
+import {serverEnv} from "@/env/server";
 import {notFound} from "@tanstack/react-router";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {getRedisConnection} from "@/lib/server/core/redis-client";
 import {RateLimiterAbstract, RateLimiterQueue} from "rate-limiter-flexible";
+import {getRollupKey, PENDING_ROLLUPS_KEY, TWO_DAYS_CACHE_TTL_S} from "@/lib/server/core/cache-keys";
 
 
 export class BaseApi {
@@ -20,11 +23,23 @@ export class BaseApi {
             for (let attempt = 1; attempt <= BaseApi.maxAttempts; attempt += 1) {
                 await Promise.all(this.queues.map((queue) => queue.removeTokens(1, this.consumeKey)));
 
-                const response = await fetch(url, {
-                    method: method.toUpperCase(),
-                    signal: AbortSignal.timeout(100_000),
-                    ...options,
-                });
+                let response: Response;
+                const startedAt = Date.now();
+
+                try {
+                    response = await fetch(url, {
+                        method: method.toUpperCase(),
+                        signal: AbortSignal.timeout(100_000),
+                        ...options,
+                    });
+                }
+                catch (err) {
+                    const errorName = err instanceof Error ? err.name : "UnknownError";
+                    void this._recordCall({ url, method, startedAt, success: false, errorName }).catch();
+                    throw err;
+                }
+
+                void this._recordCall({ url, method, startedAt, success: response.ok, status: response.status }).catch();
 
                 if (response.ok) {
                     return response;
@@ -97,5 +112,35 @@ export class BaseApi {
                 throw new Error(`Unexpected Error: ${res.status}`);
             }
         }
+    }
+
+    private async _recordCall(params: { url: string; method: "post" | "get"; success: boolean; startedAt: number; status?: number; errorName?: string }) {
+        if (!serverEnv.REDIS_ENABLED) return;
+
+        const redis = await getRedisConnection();
+
+        const calledAtMs = Date.now();
+        const second = Math.floor(calledAtMs / 1000);
+        const durationMs = calledAtMs - params.startedAt;
+
+        const secondInMinute = second % 60;
+        const bucketStartMs = Math.floor(calledAtMs / 60_000) * 60_000;
+        const statusKey = String(params.status ?? params.errorName ?? "network-error");
+
+        await redis
+            .pipeline()
+            .zadd(PENDING_ROLLUPS_KEY, bucketStartMs, `${bucketStartMs}|${this.consumeKey}`)
+            .hincrby(getRollupKey(bucketStartMs, this.consumeKey), "total", 1)
+            .hincrby(getRollupKey(bucketStartMs, this.consumeKey), "errors", params.success ? 0 : 1)
+            .hincrby(getRollupKey(bucketStartMs, this.consumeKey), "durationMsTotal", durationMs)
+            .hincrby(getRollupKey(bucketStartMs, this.consumeKey, { statuses: true }), statusKey, 1)
+            .hincrby(getRollupKey(bucketStartMs, this.consumeKey, { seconds: true }), String(secondInMinute), 1)
+            .hincrby(`api-monitor:second:${second}`, this.consumeKey, 1)
+            .hincrby(`api-monitor:second:${second}`, "total", 1)
+            .expire(getRollupKey(bucketStartMs, this.consumeKey), TWO_DAYS_CACHE_TTL_S)
+            .expire(getRollupKey(bucketStartMs, this.consumeKey, { seconds: true }), TWO_DAYS_CACHE_TTL_S)
+            .expire(getRollupKey(bucketStartMs, this.consumeKey, { statuses: true }), TWO_DAYS_CACHE_TTL_S)
+            .expire(`api-monitor:second:${second}`, 60 * 60)
+            .exec();
     }
 }

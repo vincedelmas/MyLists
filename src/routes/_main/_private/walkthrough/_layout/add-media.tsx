@@ -5,7 +5,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
-import {mediaDetailsOptions} from "@/lib/client/react-query/query-options/query-options";
+import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {ExternalLink, Heart, List, MessageCircle, Plus, RotateCcw, Star, Tags} from "lucide-react";
 import {
     OnboardingContainer,
@@ -82,11 +82,13 @@ function RouteComponent() {
             >
                 <OnboardingDemoBox>
                     {!!userMedia &&
-                        <UserMediaDetails
-                            userMedia={userMedia}
-                            mediaType={MediaType.MOVIES}
-                            queryOption={mediaDetailsOptions(MediaType.MOVIES, mediaId, false)}
-                        />
+                        <div className="max-w-100">
+                            <UserMediaDetails
+                                userMedia={userMedia}
+                                mediaType={MediaType.MOVIES}
+                                queryOption={mediaDetailsOptions(MediaType.MOVIES, mediaId, false)}
+                            />
+                        </div>
                     }
                 </OnboardingDemoBox>
 

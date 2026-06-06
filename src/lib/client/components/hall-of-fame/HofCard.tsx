@@ -1,15 +1,15 @@
 import {useState} from "react";
 import {Trophy} from "lucide-react";
-import {cn} from "@/lib/utils/helpers";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
-import {capitalize} from "@/lib/utils/formating";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {computeLevel} from "@/lib/utils/compute-level";
 import {HofUserData} from "@/lib/types/query.options.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {MediaLevel} from "@/lib/client/components/general/MediaLevel";
+import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {formatLevel} from "@/lib/utils/number-formatting";
 
 
 interface HofCardProps {
@@ -38,10 +38,9 @@ export const HofCard = ({ userData }: HofCardProps) => {
                 <div className="grid grid-cols-12 py-4">
                     <div className="col-span-1 max-sm:col-span-2">
                         <div className="flex items-center ml-2 text-lg h-full font-medium">
-                            {userData.rank === 1 ?
-                                <Trophy className="text-app-rating size-6"/>
-                                :
-                                <>#{userData.rank}</>
+                            {userData.rank === 1
+                                ? <Trophy className="text-app-rating size-6"/>
+                                : <>#{userData.rank}</>
                             }
                         </div>
                     </div>
@@ -54,14 +53,14 @@ export const HofCard = ({ userData }: HofCardProps) => {
                             />
                             <div className="space-y-1">
                                 <h3 className="text-lg font-medium sm:truncate sm:w-38">
-                                    <Link to="/profile/$username" params={{ username: userData.name }}>
-                                        {userData.name}
+                                    <Link to="/profile/$username" params={{ username: userData.name }} className="flex items-center gap-2">
+                                        {userData.name} <PrivacyIcon type={userData.privacy} className="size-3.5 mt-0.5"/>
                                     </Link>
                                 </h3>
                                 <div className="-ml-1.5">
                                     <div className="w-18 h-7 flex items-center justify-center text-left rounded-full font-bold
-                                        text-xs bg-app-accent text-black border-4 border-background shadow-lg">
-                                        Lvl. {Math.floor(computeLevel(userData.totalTime))}
+                                    text-xs bg-app-accent text-black border-4 border-background shadow-lg">
+                                        Lvl. {Math.floor(formatLevel(userData.totalTime))}
                                     </div>
                                 </div>
                             </div>
@@ -73,7 +72,7 @@ export const HofCard = ({ userData }: HofCardProps) => {
                             "max-sm:max-h-40 max-sm:opacity-100": isOpen,
                         })}>
                             {userData.settings.map((setting) =>
-                                <div className="group">
+                                <div key={setting.mediaType} className="group">
                                     <Link
                                         key={setting.mediaType}
                                         disabled={!setting.active}
@@ -85,11 +84,10 @@ export const HofCard = ({ userData }: HofCardProps) => {
                                             mediaType={setting.mediaType}
                                             timeSpentMin={setting.timeSpent}
                                         />
-                                        <div className={cn(
-                                            "text-xs font-semibold text-muted-foreground",
+                                        <div className={cn("text-xs font-semibold text-muted-foreground capitalize",
                                             setting.active && "group-hover:text-app-accent"
                                         )}>
-                                            {capitalize(setting.mediaType)}
+                                            {setting.mediaType}
                                         </div>
                                     </Link>
                                 </div>

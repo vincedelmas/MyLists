@@ -1,8 +1,9 @@
 import {toast} from "sonner";
 import {routeTree} from "@/routeTree.gen";
-import {AnyRouter, createRouter} from "@tanstack/react-router";
+import {createRouter} from "@tanstack/react-router";
 import {NotFound} from "@/lib/client/components/general/NotFound";
 import {NavLoader} from "./lib/client/components/general/NavLoader";
+import {FormattedError, FormZodError} from "@/lib/utils/error-classes";
 import {MutationCache, QueryCache, QueryClient} from "@tanstack/react-query";
 import {setupRouterSsrQueryIntegration} from "@tanstack/react-router-ssr-query";
 import {ErrorCatchBoundary} from "@/lib/client/components/general/ErrorCatchBoundary";
@@ -11,27 +12,32 @@ import {ErrorCatchBoundary} from "@/lib/client/components/general/ErrorCatchBoun
 export function getRouter() {
     const queryClient = new QueryClient({
         queryCache: new QueryCache({
-            onError: (error, query) => {
-                if (query?.meta?.displayErrorMsg) {
-                    toast.error(error.message);
-                }
-                if (query?.meta?.errorMessage) {
-                    toast.error(query.meta.errorMessage.toString());
+            onError: async (_error, query) => {
+                if (query?.meta?.errorToastMessage) {
+                    toast.error(query.meta.errorToastMessage);
                 }
             },
         }),
         mutationCache: new MutationCache({
-            onError: (error, _variables, _context, mutation) => {
-                if (error.name === "FormattedError") {
-                    toast.error(error.message);
+            onError: async (error, _variables, _context, mutation) => {
+                if (mutation.meta?.noGlobalErrorToast) return;
+
+                if (error instanceof FormattedError) {
+                    toast.warning(error.message);
                 }
-                else if (mutation?.meta?.errorMessage) {
-                    toast.error(mutation.meta.errorMessage.toString());
+                else if (error instanceof FormZodError) {
+                    toast.error("Please check the form for errors.");
+                }
+                else if ("isNotFound" in error && error.isNotFound) {
+                    toast.error("The requested resource was not found.");
+                }
+                else {
+                    toast.error(mutation.meta?.errorToastMessage || error.message || "An unexpected error occurred.");
                 }
             },
             onSuccess: (_data, _variables, _context, mutation) => {
-                if (mutation?.meta?.successMessage) {
-                    toast.success(mutation.meta.successMessage.toString());
+                if (mutation?.meta?.successToastMessage) {
+                    toast.success(mutation.meta.successToastMessage);
                 }
             }
         }),
@@ -59,9 +65,6 @@ export function getRouter() {
         notFoundMode: "root",
     });
 
-    // Necessary patch otherwise `notFound` page display `Something Went Wrong` in prod (not in dev)
-    installDefaultNotFoundBoundaries(router);
-
     setupRouterSsrQueryIntegration({
         router,
         queryClient,
@@ -73,22 +76,15 @@ export function getRouter() {
 }
 
 
-function installDefaultNotFoundBoundaries(router: AnyRouter) {
-    for (const route of Object.values(router.routesById)) {
-        route.options.notFoundComponent ??= NotFound;
-    }
-}
-
-
 declare module "@tanstack/react-query" {
     interface Register {
         queryMeta: {
-            errorMessage?: string,
-            displayErrorMsg?: boolean,
+            errorToastMessage?: string,
         },
         mutationMeta: {
-            errorMessage?: string,
-            successMessage?: string,
+            errorToastMessage?: string,
+            successToastMessage?: string,
+            noGlobalErrorToast?: boolean,
         }
     }
 }

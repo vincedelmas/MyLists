@@ -132,7 +132,7 @@ export const postPasswordSettings = createServerFn({ method: "POST" })
         }
 
         const hash = await ctx.password.hash(newPassword);
-        await ctx.internalAdapter.updatePassword(currentUser.id.toString(), hash)
+        await ctx.internalAdapter.updatePassword(currentUser.id.toString(), hash);
     });
 
 
@@ -150,71 +150,3 @@ export const postUpdateFeatureFlag = createServerFn({ method: "POST" })
         const userService = await getContainer().then((c) => c.services.user);
         return userService.updateFeatureFlag(currentUser.id);
     });
-
-
-// const csvFileZodSchema = z.object({
-//     file: z
-//         .instanceof(File)
-//         .refine((file) => file.size <= 1 * 1024 * 1024, `File size must be less than 1MB.`)
-//         .refine((file) => ["text/csv"].includes(file.type), "File must be a .csv file."),
-// });
-//
-//
-// export const postUploadsCsvFile = createServerFn({ method: "POST" })
-//     .middleware([authMiddleware])
-//     .inputValidator((data) => {
-//         if (!(data instanceof FormData)) throw new Error();
-//         return tryFormZodError(csvFileZodSchema, Object.fromEntries(data.entries()));
-//     })
-//     .handler(async ({ data, context: { currentUser } }) => {
-//         try {
-//             // Save file to tmp location
-//             const buffer = Buffer.from(await data.file.arrayBuffer());
-//             const tempDir = path.join(process.cwd(), "tmp", "csv-uploads");
-//             await mkdir(tempDir, { recursive: true });
-//             const filePath = path.join(tempDir, `${currentUser.id}-${Date.now()}.csv`);
-//             await writeFile(filePath, buffer);
-//
-//             const taskId = randomUUID();
-//
-//             await executeTask({
-//                 taskId,
-//                 filePath,
-//                 triggeredBy: "user",
-//                 userId: currentUser.id,
-//                 taskName: "processCsv",
-//             });
-//
-//             return { taskId: taskId };
-//         }
-//         catch (err) {
-//             if (err instanceof FormattedError) {
-//                 throw err;
-//             }
-//             throw new FormattedError("Sorry, failed to process your CSV.");
-//         }
-//     });
-//
-//
-// export const getUserUploads = createServerFn({ method: "GET" })
-//     .middleware([authMiddleware])
-//     .inputValidator((data) => data as { taskId: string })
-//     .handler(async ({ data: { taskId }, context: { currentUser } }) => {
-//         try {
-//             const dbRow = await getDbClient()
-//                 .select()
-//                 .from(taskHistory)
-//                 .where(and(eq(taskHistory.userId, currentUser.id), eq(taskHistory.taskId, taskId)))
-//                 .get();
-//
-//             const resultLog = dbRow?.logs.find((log) => "result" in log);
-//             return resultLog?.result;
-//         }
-//         catch (err) {
-//             if (err instanceof FormattedError) {
-//                 throw err;
-//             }
-//
-//             throw new FormattedError("Failed to fetch your CSV uploads results.");
-//         }
-//     });

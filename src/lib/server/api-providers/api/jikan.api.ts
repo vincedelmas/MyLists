@@ -2,6 +2,7 @@ import {RateLimiterAbstract} from "rate-limiter-flexible";
 import {createRateLimiter} from "@/lib/server/core/rate-limiter";
 import {BaseApi} from "@/lib/server/api-providers/api/base.api";
 import {JikanAnimeSearchResponse, JikanDetails, JikanMangaSearchResponse, SearchData} from "@/lib/types/provider.types";
+import {FormattedError} from "@/lib/utils/error-classes";
 
 
 export class JikanApi extends BaseApi {
@@ -41,6 +42,11 @@ export class JikanApi extends BaseApi {
     async getMangaDetails(mangaId: number): Promise<JikanDetails> {
         const response = await this.call(`${this.mangaUrl}/${mangaId}/full`);
         const data = await response.json();
+
+        if ("status" in data && data.status === 500) {
+            throw new FormattedError("Sorry the API is has an internal error (not my fault :D). Please try again later.");
+        }
+
         return data.data;
     }
 

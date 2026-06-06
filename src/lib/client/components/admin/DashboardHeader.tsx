@@ -1,6 +1,3 @@
-import type React from "react";
-
-
 interface DashboardHeaderProps {
     heading: string;
     description: string;

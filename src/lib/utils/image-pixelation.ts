@@ -1,5 +1,4 @@
 import path from "path";
-import sharp from "sharp";
 import fs from "fs/promises";
 import {clientEnv} from "@/env/client";
 import {serverEnv} from "@/env/server";
@@ -24,6 +23,7 @@ export const pixelateImage = createServerOnlyFn(() => async (url: string, level:
         return "";
     }
 
+    const sharp = (await import("sharp")).default;
     const meta = await sharp(inputBuffer).metadata();
     const w = meta.width!;
     const h = meta.height!;

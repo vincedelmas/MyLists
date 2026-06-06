@@ -67,39 +67,45 @@ export const getAllTasksMetadata = (): TaskMetadata[] => {
 
 function zodToJsonSchema(schema: z.ZodType): TaskMetadata["inputSchema"] {
     const properties: TaskMetadata["inputSchema"]["properties"] = {};
+    const jsonSchema = z.toJSONSchema(schema, { io: "input" }) as {
+        type?: string;
+        required?: string[];
+        properties?: Record<string, {
+            default?: any;
+            enum?: unknown[];
+            description?: string;
+            type?: string | string[];
+        }>;
+    };
+    const requiredKeys = new Set(jsonSchema.required ?? []);
 
-    if (schema instanceof z.ZodObject) {
-        const shape = schema.shape as Record<string, z.ZodType>;
+    for (const [key, propertySchema] of Object.entries(jsonSchema.properties ?? {})) {
+        const type = normalizeJsonSchemaType(propertySchema.type);
+        const enumValues = type === "array"
+            ? undefined
+            : getStringEnumValues(propertySchema.enum);
 
-        for (const [key, fieldSchema] of Object.entries(shape)) {
-            let required = true;
-            let defaultValue: any;
-            let innerSchema = fieldSchema;
-
-            if (innerSchema instanceof z.ZodOptional) {
-                required = false;
-                innerSchema = innerSchema.unwrap() as any;
-            }
-
-            if (innerSchema instanceof z.ZodDefault) {
-                defaultValue = innerSchema.def.defaultValue as any;
-                innerSchema = innerSchema.def.innerType as any;
-            }
-
-            let type = "string";
-            if (innerSchema instanceof z.ZodNumber) type = "number";
-            else if (innerSchema instanceof z.ZodBoolean) type = "boolean";
-            else if (innerSchema instanceof z.ZodArray) type = "array";
-            else if (innerSchema instanceof z.ZodEnum) type = "enum";
-
-            properties[key] = {
-                type,
-                required,
-                default: defaultValue,
-                description: innerSchema.description,
-            };
-        }
+        properties[key] = {
+            type,
+            enum: enumValues,
+            required: requiredKeys.has(key),
+            default: propertySchema.default,
+            description: propertySchema.description,
+        };
     }
 
-    return { type: "object", properties };
+    return { type: jsonSchema.type ?? "object", properties };
+}
+
+
+function normalizeJsonSchemaType(type: string | string[] | undefined) {
+    if (Array.isArray(type)) return type.find((val) => val !== "null") ?? "string";
+    return type ?? "string";
+}
+
+
+function getStringEnumValues(values: unknown[] | undefined) {
+    if (!values) return undefined;
+    const stringValues = values.filter((val): val is string => typeof val === "string");
+    return stringValues.length > 0 ? stringValues : undefined;
 }

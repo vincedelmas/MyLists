@@ -12,8 +12,8 @@ export const addGenresToBooksUsingLlmTask = defineTask({
     visibility: "admin",
     description: "Use LLM to assign genres to books without genres",
     inputSchema: z.object({
-        batchSize: z.coerce.number().min(1).max(10).optional().describe("Number of books per batch (default 10)"),
-        batchLimit: z.coerce.number().min(1).max(50).optional().describe("Maximum number of batches to process (default 10)"),
+        batchSize: z.coerce.number().min(1).max(10).default(10).optional().describe("Number of books per batch"),
+        batchLimit: z.coerce.number().min(1).max(50).default(10).optional().describe("Maximum number of batches to process"),
     }),
     handler: async (ctx, input) => {
         const container = await getContainer();

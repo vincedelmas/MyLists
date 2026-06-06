@@ -252,11 +252,11 @@ function getDefaultValues(inputSchema: TaskMetadata["inputSchema"]) {
         else if (prop.type === "boolean") {
             defaults[key] = false;
         }
-        else if (prop.type === "number") {
-            defaults[key] = 0;
+        else if (prop.type === "array") {
+            defaults[key] = [];
         }
         else {
-            defaults[key] = "";
+            defaults[key] = undefined;
         }
     }
 

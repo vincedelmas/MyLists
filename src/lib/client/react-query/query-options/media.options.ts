@@ -4,7 +4,7 @@ import {JobType, MediaType} from "@/lib/utils/enums";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
 import {getComingNextMedia} from "@/lib/server/functions/coming-next";
 import {getAdminAllUpdatesHistory} from "@/lib/server/functions/admin";
-import {getGameCompatiblePlatforms, getJobDetails, getMediaDetails, getMediaDetailsToEdit} from "@/lib/server/functions/media-details";
+import {getGameCompatiblePlatforms, getJobDetails, getMediaDetails, getMediaDetailsToEdit, resolveExternalMedia} from "@/lib/server/functions/media-details";
 
 
 export const upcomingOptions = queryOptions({
@@ -20,9 +20,15 @@ export const trendsOptions = queryOptions({
 });
 
 
-export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number | string, external: boolean) => queryOptions({
-    queryKey: ["details", mediaType, mediaId, external] as const,
-    queryFn: () => getMediaDetails({ data: { mediaType, mediaId, external } }),
+export const mediaExternalOptions = (mediaType: MediaType, apiId: string) => queryOptions({
+    queryKey: ["media-details", "external", mediaType, apiId] as const,
+    queryFn: () => resolveExternalMedia({ data: { mediaType, apiId } }),
+})
+
+
+export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number) => queryOptions({
+    queryKey: ["details", mediaType, mediaId] as const,
+    queryFn: () => getMediaDetails({ data: { mediaType, mediaId } }),
     staleTime: 3 * 1000,
 });
 

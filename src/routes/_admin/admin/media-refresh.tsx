@@ -1,13 +1,13 @@
 import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatDate} from "@/lib/utils/date-formatting";
-import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {BarChart3, ExternalLink, Flame, RefreshCw, Users} from "lucide-react";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
@@ -307,10 +307,9 @@ function MediaRefreshPage() {
                                         <TableCell className="capitalize">{row.role}</TableCell>
                                         <TableCell>
                                             <Link
-                                                search={{ external: true }}
-                                                to="/details/$mediaType/$mediaId"
                                                 className="flex items-center gap-2"
-                                                params={{ mediaType: row.mediaType, mediaId: row.apiId }}
+                                                to="/details/$mediaType/external/$apiId"
+                                                params={{ mediaType: row.mediaType, apiId: row.apiId.toString() }}
                                             >
                                                 Details <ExternalLink className="size-3.5"/>
                                             </Link>

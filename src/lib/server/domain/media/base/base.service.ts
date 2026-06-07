@@ -226,33 +226,30 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return delta;
     }
 
-    async getMediaAndUserDetails(userId: number | undefined, mediaId: string, external: boolean, providerService: BaseProviderService<any, any, any>) {
-        const media = external ? await this.repository.findByApiId(mediaId) : await this.repository.findById(Number(mediaId));
+    async resolveExternalMedia(apiId: number | string, providerService: BaseProviderService<any, any, any>) {
+        const media = await this.repository.findByApiId(apiId);
+        if (media) return media.id;
 
-        let internalMediaId = media?.id;
-        if (external && !internalMediaId) {
-            internalMediaId = await providerService.fetchAndStoreMediaDetails(mediaId);
-        }
+        return providerService.fetchAndStoreMediaDetails(apiId);
+    }
 
-        if (internalMediaId) {
-            const mediaWithDetails = await this.repository.findAllAssociatedDetails(internalMediaId);
-            if (!mediaWithDetails) {
-                throw notFound();
-            }
+    async getMediaAndUserDetails(userId: number | undefined, mediaId: number) {
+        const media = await this.repository.findById(mediaId);
+        if (!media) throw notFound();
 
-            const similarMedia = await this.repository.findSimilarMedia(mediaWithDetails.id);
-            const userMedia = await this.repository.findUserMedia(userId, mediaWithDetails.id);
-            const followsData = await this.repository.getUserFollowsMediaData(userId, mediaWithDetails.id);
+        const mediaWithDetails = await this.repository.findAllAssociatedDetails(media.id);
+        if (!mediaWithDetails) throw notFound();
 
-            return {
-                userMedia,
-                followsData,
-                similarMedia,
-                media: mediaWithDetails,
-            };
-        }
+        const similarMedia = await this.repository.findSimilarMedia(mediaWithDetails.id);
+        const userMedia = await this.repository.findUserMedia(userId, mediaWithDetails.id);
+        const followsData = await this.repository.getUserFollowsMediaData(userId, mediaWithDetails.id);
 
-        throw notFound();
+        return {
+            userMedia,
+            followsData,
+            similarMedia,
+            media: mediaWithDetails,
+        };
     }
 
     getAchievementCte(achievement: Achievement, userId?: number) {

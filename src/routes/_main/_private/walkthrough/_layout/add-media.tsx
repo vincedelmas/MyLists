@@ -24,14 +24,14 @@ const mediaId = 110;
 
 export const Route = createFileRoute("/_main/_private/walkthrough/_layout/add-media")({
     loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(mediaDetailsOptions(MediaType.MOVIES, mediaId, false));
+        return queryClient.ensureQueryData(mediaDetailsOptions(MediaType.MOVIES, mediaId));
     },
     component: RouteComponent,
 });
 
 
 function RouteComponent() {
-    const apiData = useSuspenseQuery(mediaDetailsOptions(MediaType.MOVIES, mediaId, false)).data;
+    const apiData = useSuspenseQuery(mediaDetailsOptions(MediaType.MOVIES, mediaId)).data;
     const { media, userMedia } = apiData;
 
     return (
@@ -86,7 +86,7 @@ function RouteComponent() {
                             <UserMediaDetails
                                 userMedia={userMedia}
                                 mediaType={MediaType.MOVIES}
-                                queryOption={mediaDetailsOptions(MediaType.MOVIES, mediaId, false)}
+                                queryOption={mediaDetailsOptions(MediaType.MOVIES, mediaId)}
                             />
                         </div>
                     }

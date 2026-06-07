@@ -13,19 +13,17 @@ import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Dia
 
 interface BookCoverEditDialogProps {
     mediaId: number;
-    external: boolean;
     mediaName: string;
-    apiId: number | string;
 }
 
 
-export const BookCoverEditDialog = ({ mediaId, apiId, external, mediaName }: BookCoverEditDialogProps) => {
+export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogProps) => {
     const [open, setOpen] = useState(false);
     const [imageUrl, setImageUrl] = useState("");
     const [fileInputKey, setFileInputKey] = useState(0);
     const [mode, setMode] = useState<"link" | "upload">("link");
     const [imageFile, setImageFile] = useState<File | null>(null);
-    const updateCoverMutation = useUpdateBookCoverMutation(external ? apiId : mediaId, external, { noGlobalErrorToast: true });
+    const updateCoverMutation = useUpdateBookCoverMutation(mediaId, { noGlobalErrorToast: true });
 
     // Using simple suggestion system using openLibrary
     const suggestedCoverUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(mediaName.trim())}-L.jpg?default=false`;
@@ -40,7 +38,7 @@ export const BookCoverEditDialog = ({ mediaId, apiId, external, mediaName }: Boo
 
     const handleSubmit = () => {
         const formData = new FormData();
-        formData.append("apiId", apiId.toString());
+        formData.append("mediaId", mediaId.toString());
 
         if (mode === "link") {
             const value = imageUrl.trim();

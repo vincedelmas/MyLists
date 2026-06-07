@@ -4,14 +4,18 @@ import {searchTypeSchema} from "@/lib/schemas/common.schema";
 
 
 export const mediaDetailsSchema = z.object({
-    external: z.boolean(),
-    mediaId: z.coerce.string(),
+    mediaType: z.enum(MediaType),
+    mediaId: z.coerce.number().int().positive(),
+});
+
+export const externalMediaResolveSchema = z.object({
+    apiId: z.coerce.string(),
     mediaType: z.enum(MediaType),
 });
 
 export const refreshMediaDetailsSchema = z.object({
-    apiId: z.coerce.string(),
     mediaType: z.enum(MediaType),
+    mediaId: z.coerce.number().int().positive(),
 });
 
 export const mediaDetailsToEditSchema = z.object({
@@ -26,9 +30,9 @@ export const editMediaDetailsSchema = z.object({
 });
 
 export const updateBookCoverSchema = z.object({
-    apiId: z.coerce.string(),
     imageUrl: z.url().trim().optional(),
     imageFile: z.instanceof(File).optional(),
+    mediaId: z.coerce.number().int().positive(),
 }).superRefine((data, ctx) => {
     const addFieldIssues = (message: string) => {
         ctx.addIssue({ code: "custom", message, path: ["imageUrl"] });

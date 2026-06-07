@@ -121,9 +121,8 @@ function SearchPage() {
                                         </Link>
                                         :
                                         <Link
-                                            search={{ external: true }}
-                                            to="/details/$mediaType/$mediaId"
-                                            params={{ mediaType: item.itemType as MediaType, mediaId: item.id }}
+                                            to="/details/$mediaType/external/$apiId"
+                                            params={{ mediaType: item.itemType as MediaType, apiId: item.id.toString() }}
                                         >
                                             <img
                                                 alt={item.name}

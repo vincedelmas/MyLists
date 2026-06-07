@@ -92,7 +92,6 @@ function AllUpdates() {
                             type={original.mediaType}
                         />
                         <Link
-                            search={{ external: false }}
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: original.mediaType, mediaId: original.mediaId }}
                         >

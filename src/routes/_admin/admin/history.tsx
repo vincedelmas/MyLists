@@ -68,7 +68,6 @@ function AdminGlobalHistory() {
                             type={original.mediaType}
                         />
                         <Link
-                            search={{ external: false }}
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: original.mediaType, mediaId: original.mediaId }}
                             className="hover:underline"

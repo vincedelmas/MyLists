@@ -25,15 +25,13 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
     params: {
         parse: (params) => {
             return {
+                mediaId: Number(params.mediaId),
                 mediaType: params.mediaType as MediaType,
-                mediaId: params.mediaId as string | number,
             }
         }
     },
-    validateSearch: (search) => ({ external: Boolean(search?.external ?? false) }),
-    loaderDeps: ({ search: { external } }) => ({ external }),
-    loader: async ({ context: { queryClient }, params: { mediaType, mediaId }, deps: { external } }) => {
-        const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId, external));
+    loader: async ({ context: { queryClient }, params: { mediaType, mediaId } }) => {
+        const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId));
         void queryClient.prefetchQuery(mediaCommunityCollectionsOptions(details.media.id, mediaType));
     },
     component: MediaDetailsPage,
@@ -42,10 +40,9 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
 
 function MediaDetailsPage() {
     const { isAnonymous } = useAuth();
-    const { external } = Route.useSearch();
     const { mediaType, mediaId } = Route.useParams();
-    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsOptions(mediaType, mediaId, external));
-    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsOptions(mediaType, mediaId, external)).data;
+    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsOptions(mediaType, mediaId));
+    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsOptions(mediaType, mediaId)).data;
 
     const handleAddMediaToUser = () => {
         addMediaToListMutation.mutate({ data: { mediaType, mediaId: media.id } });
@@ -55,7 +52,6 @@ function MediaDetailsPage() {
         <PageTitle title={media.name} onlyHelmet>
             <MediaHero
                 media={media}
-                external={external}
                 mediaType={mediaType}
             />
             <div className="grid grid-cols-12 gap-8 mx-auto px-4 py-2 max-sm:py-0 max-lg:grid-cols-1">
@@ -96,8 +92,6 @@ function MediaDetailsPage() {
                             {!isAnonymous &&
                                 <RefreshAndEdit
                                     mediaId={media.id}
-                                    apiId={media.apiId}
-                                    external={external}
                                     mediaType={mediaType}
                                     lastUpdate={media.lastApiUpdate}
                                 />
@@ -120,7 +114,7 @@ function MediaDetailsPage() {
                                 <UserMediaDetails
                                     mediaType={mediaType}
                                     userMedia={userMedia}
-                                    queryOption={mediaDetailsOptions(mediaType, mediaId, external)}
+                                    queryOption={mediaDetailsOptions(mediaType, mediaId)}
                                 />
                                 :
                                 isAnonymous ?

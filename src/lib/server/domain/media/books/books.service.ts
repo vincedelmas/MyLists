@@ -119,8 +119,8 @@ export class BooksService extends BaseService<MangaSchemaConfig, BooksRepository
         await this.repository.updateMediaWithDetails({ mediaData: fields, authorsData });
     }
 
-    async updateDefaultCover(apiId: string, payload: { imageUrl?: string; imageFile?: File }) {
-        const media = await this.repository.findByApiId(apiId);
+    async updateDefaultCover(mediaId: number, payload: { imageUrl?: string; imageFile?: File }) {
+        const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
 
         const currentCover = media.imageCover.split("/").pop();

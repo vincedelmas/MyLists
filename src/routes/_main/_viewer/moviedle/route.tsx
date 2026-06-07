@@ -74,7 +74,6 @@ function MediadlePage() {
                             <div className="relative aspect-2/3 max-w-75 mx-auto">
                                 {mediadleData.result ?
                                     <Link
-                                        search={{ external: false }}
                                         to="/details/$mediaType/$mediaId"
                                         params={{ mediaType: MediaType.MOVIES, mediaId: mediadleData.result.mediaId }}
                                     >

@@ -71,7 +71,6 @@ RUN apt-get update \
 COPY --from=prod-deps /app/node_modules /app/node_modules
 COPY --from=build /app/dist /app/dist
 COPY --from=build /app/public/static /app/public/static
-COPY --from=build /app/src/env /app/src/env
 COPY --from=build /app/package.json /app/package.json
 COPY --from=build /app/server.ts /app/server.ts
 COPY docker/app-entrypoint.sh /usr/local/bin/mylists-entrypoint

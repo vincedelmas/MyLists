@@ -5,7 +5,6 @@
 
 import path from "path";
 import {fileURLToPath} from "bun";
-import {serverEnv} from "./src/env/server";
 
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -13,7 +12,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const CLIENT_DIR = path.resolve(__dirname, "dist/client");
 const SERVER_ENTRY = path.resolve(__dirname, "dist/server/server.js");
-const UPLOADS_ROUTE = `/${serverEnv.UPLOADS_DIR_NAME}/*`;
+
+const UPLOADS_DIR_NAME = process.env.UPLOADS_DIR_NAME ?? "static";
+const BASE_UPLOADS_LOCATION = process.env.BASE_UPLOADS_LOCATION ?? "./public/static/";
+const UPLOADS_ROUTE = `/${UPLOADS_DIR_NAME}/*`;
 
 
 let isShuttingDown = false;
@@ -56,10 +58,10 @@ const startServer = async () => {
             ...routes,
             [UPLOADS_ROUTE]: async (req: Request) => {
                 const url = new URL(req.url);
-                const routePrefix = `/${serverEnv.UPLOADS_DIR_NAME}/`;
+                const routePrefix = `/${UPLOADS_DIR_NAME}/`;
                 const relativePath = decodeURIComponent(url.pathname.slice(routePrefix.length));
-                const resolvedPath = path.resolve(serverEnv.BASE_UPLOADS_LOCATION, relativePath);
-                const uploadsRoot = path.resolve(serverEnv.BASE_UPLOADS_LOCATION);
+                const resolvedPath = path.resolve(BASE_UPLOADS_LOCATION, relativePath);
+                const uploadsRoot = path.resolve(BASE_UPLOADS_LOCATION);
 
                 if (!resolvedPath.startsWith(`${uploadsRoot}${path.sep}`) && resolvedPath !== uploadsRoot) {
                     return new Response("Not Found", { status: 404 });

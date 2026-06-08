@@ -24,7 +24,7 @@ export const BaseMediaFollowCard = ({ followData, rating, redoDisplay, mediaDeta
                     <Link to="/profile/$username" params={{ username: followData.name }}>
                         <ProfileIcon
                             fallbackSize="text-lg"
-                            className="size-10  border-2"
+                            className="size-10 border-0"
                             user={{ image: followData.image, name: followData.name }}
                         />
                     </Link>
@@ -38,39 +38,30 @@ export const BaseMediaFollowCard = ({ followData, rating, redoDisplay, mediaDeta
                         </Link>
                     </p>
                     <StatusBadge
+                        className="h-5"
                         status={followData.userMedia.status}
                     />
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                    <span className="item">
-                        {mediaDetailsDisplay}
-                    </span>
+                <div className="flex gap-x-3 text-xs text-muted-foreground mt-1">
+                    {mediaDetailsDisplay}
 
-                    <span className="item">
-                        <DisplayRating
-                            rating={rating}
+                    <DisplayRating
+                        rating={rating}
+                    />
+
+                    {!!followData.userMedia.favorite &&
+                        <DisplayFavorite
+                            isFavorite={followData.userMedia.favorite}
                         />
-                    </span>
+                    }
 
-                    <span className="item">
-                        {redoDisplay}
-                    </span>
+                    {redoDisplay}
 
-                    <span className="item">
-                        {followData.userMedia.comment &&
-                            <DisplayComment
-                                content={followData.userMedia.comment}
-                            />
-                        }
-                    </span>
-
-                    <span className="item">
-                        {!!followData.userMedia.favorite &&
-                            <DisplayFavorite
-                                isFavorite={!!followData.userMedia.favorite}
-                            />
-                        }
-                    </span>
+                    {followData.userMedia.comment &&
+                        <DisplayComment
+                            content={followData.userMedia.comment}
+                        />
+                    }
                 </div>
             </div>
         </div>

@@ -128,6 +128,13 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return this.repository.getMediaJobDetails(job, name, offset, perPage, userId);
     }
 
+    async getMediaCommunityActivity(userId: number | undefined, mediaId: number, search: SearchType) {
+        const media = await this.repository.findById(mediaId);
+        if (!media) throw notFound();
+
+        return this.repository.getMediaCommunityActivity(userId, mediaId, search);
+    }
+
     async editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {
         return this.repository.editUserTag(userId, tag, action, mediaId);
     }

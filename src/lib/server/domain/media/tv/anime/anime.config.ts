@@ -80,6 +80,10 @@ export const animeConfig: AnimeSchemaConfig = {
             "Re-watched": [desc(animeList.redo), asc(anime.name)],
         },
     },
+    communityActivityStats: {
+        totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${animeList.redo2}))), 0)`,
+        totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
+    },
     apiProvider: {
         maxGenres: 5,
         name: "TMDB",

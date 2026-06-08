@@ -80,6 +80,10 @@ export const seriesConfig: SeriesSchemaConfig = {
             "Re-watched": [desc(seriesList.redo), asc(series.name)],
         },
     },
+    communityActivityStats: {
+        totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${seriesList.redo2}))), 0)`,
+        totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
+    },
     apiProvider: {
         maxGenres: 5,
         name: "TMDB",

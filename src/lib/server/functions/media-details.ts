@@ -11,6 +11,7 @@ import {
     externalMediaResolveSchema,
     jobDetailsSchema,
     mediaActionSchema,
+    mediaCommunityActivitySchema,
     mediaDetailsSchema,
     mediaDetailsToEditSchema,
     refreshMediaDetailsSchema,
@@ -33,6 +34,16 @@ export const getMediaDetails = createServerFn({ method: "GET" })
         } = await mediaService.getMediaAndUserDetails(currentUser?.id, mediaId);
 
         return { media, userMedia, followsData, similarMedia };
+    });
+
+
+export const getMediaCommunityActivity = createServerFn({ method: "GET" })
+    .middleware([publicAuthMiddleware, transactionMiddleware])
+    .inputValidator(tryNotFound(mediaCommunityActivitySchema))
+    .handler(async ({ data: { mediaType, mediaId, search }, context: { currentUser } }) => {
+        const container = await getContainer();
+        const mediaService = container.registries.mediaService.getService(mediaType);
+        return mediaService.getMediaCommunityActivity(currentUser?.id, mediaId, search);
     });
 
 

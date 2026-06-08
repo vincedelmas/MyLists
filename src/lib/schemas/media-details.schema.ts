@@ -1,11 +1,15 @@
 import * as z from "zod";
 import {JobType, MediaType} from "@/lib/utils/enums";
-import {searchTypeSchema} from "@/lib/schemas/common.schema";
+import {paginationSchema, searchTypeSchema} from "@/lib/schemas/common.schema";
 
 
 export const mediaDetailsSchema = z.object({
     mediaType: z.enum(MediaType),
     mediaId: z.coerce.number().int().positive(),
+});
+
+export const mediaCommunityActivitySchema = mediaDetailsSchema.extend({
+    search: paginationSchema,
 });
 
 export const externalMediaResolveSchema = z.object({

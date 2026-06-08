@@ -85,6 +85,16 @@ export type UserFollowsMediaData<TList> = {
     ratingSystem: RatingSystemType;
 }
 
+export type MediaCommunityActivityStats = {
+    total: number;
+    totalRedo: number;
+    likedCount: number;
+    totalSpecific: number;
+    totalPlaytime: number;
+    completedCount: number;
+    averageRating: number | null;
+}
+
 export type UpdateUserMediaDetails<TMedia, TList> = {
     media: TMedia;
     newState: TList;

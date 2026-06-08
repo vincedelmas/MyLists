@@ -17,11 +17,12 @@ import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDeta
 import {CollectionsLists} from "@/lib/client/components/media/base/CollectionsLists";
 import {MediaFollowsSection} from "@/lib/client/components/media/base/MediaFollowsSection";
 import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
+import {MediaCommunityActivity} from "@/lib/client/components/media/base/MediaCommunityActivity";
 import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 
 
-export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId")({
+export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId/")({
     params: {
         parse: (params) => {
             return {
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
     loader: async ({ context: { queryClient }, params: { mediaType, mediaId } }) => {
         const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId));
         void queryClient.prefetchQuery(mediaCommunityCollectionsOptions(details.media.id, mediaType));
+        void queryClient.prefetchQuery(mediaCommunityActivityOptions(details.media.id, mediaType, { page: 1, perPage: 8 }));
     },
     component: MediaDetailsPage,
 });
@@ -78,6 +80,13 @@ function MediaDetailsPage() {
                         mediaType={mediaType}
                         similarMedia={similarMedia}
                     />
+
+                    <Suspense>
+                        <MediaCommunityActivity
+                            mediaId={media.id}
+                            mediaType={mediaType}
+                        />
+                    </Suspense>
 
                     <Suspense>
                         <MediaCommunityCollections

@@ -59,6 +59,10 @@ export const moviesConfig: MovieSchemaConfig = {
             "Re-Watched": [desc(moviesList.redo), asc(movies.name)],
         },
     },
+    communityActivityStats: {
+        totalRedo: sql<number>`COALESCE(SUM(${moviesList.redo}), 0)`,
+        totalSpecific: sql<number>`COALESCE(SUM(${moviesList.total}), 0)`,
+    },
     apiProvider: {
         maxGenres: 5,
         name: "TMDB",

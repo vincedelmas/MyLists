@@ -4,7 +4,14 @@ import {JobType, MediaType} from "@/lib/utils/enums";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
 import {getComingNextMedia} from "@/lib/server/functions/coming-next";
 import {getAdminAllUpdatesHistory} from "@/lib/server/functions/admin";
-import {getGameCompatiblePlatforms, getJobDetails, getMediaDetails, getMediaDetailsToEdit, resolveExternalMedia} from "@/lib/server/functions/media-details";
+import {
+    getGameCompatiblePlatforms,
+    getJobDetails,
+    getMediaCommunityActivity,
+    getMediaDetails,
+    getMediaDetailsToEdit,
+    resolveExternalMedia
+} from "@/lib/server/functions/media-details";
 
 
 export const upcomingOptions = queryOptions({
@@ -30,6 +37,12 @@ export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number) => qu
     queryKey: ["details", mediaType, mediaId] as const,
     queryFn: () => getMediaDetails({ data: { mediaType, mediaId } }),
     staleTime: 3 * 1000,
+});
+
+
+export const mediaCommunityActivityOptions = (mediaId: number, mediaType: MediaType, search: SearchType = { page: 1, perPage: 8 }) => queryOptions({
+    queryKey: ["details", "activity", "community", mediaType, mediaId, search] as const,
+    queryFn: () => getMediaCommunityActivity({ data: { mediaId, mediaType, search } }),
 });
 
 

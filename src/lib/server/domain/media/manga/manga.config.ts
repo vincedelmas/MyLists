@@ -55,6 +55,10 @@ export const mangaConfig: MangaSchemaConfig = {
             "Chapters -": [asc(manga.chapters), asc(manga.name)],
         },
     },
+    communityActivityStats: {
+        totalRedo: sql<number>`COALESCE(SUM(${mangaList.redo}), 0)`,
+        totalSpecific: sql<number>`COALESCE(SUM(${mangaList.total}), 0)`,
+    },
     apiProvider: {
         maxGenres: 5,
         name: "MyAnimeList",

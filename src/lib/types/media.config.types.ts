@@ -90,6 +90,7 @@ export interface MediaSchemaConfig<
         availableSorts: Record<string, SQL | SQL[]>;
         baseSelection: BaseSelection<TListTable, TMediaTable>;
     }
+    communityActivityStats: Partial<Record<"totalRedo" | "totalSpecific" | "totalPlaytime", SQL<number>>>;
     apiProvider: {
         name: string,
         maxGenres: number,

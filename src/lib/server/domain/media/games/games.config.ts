@@ -55,6 +55,9 @@ export const gamesConfig: GamesSchemaConfig = {
             "Playtime -": [asc(gamesList.playtime), asc(games.name)],
         },
     },
+    communityActivityStats: {
+        totalPlaytime: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0)`,
+    },
     apiProvider: {
         maxGenres: 5,
         name: "IGDB",

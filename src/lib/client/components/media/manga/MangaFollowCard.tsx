@@ -9,11 +9,12 @@ import {BaseMediaFollowCard} from "@/lib/client/components/media/base/BaseMediaF
 type MangaFollowCardProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaFollowCard"]>[number];
 
 
-export const MangaFollowCard = ({ followData, rating }: MangaFollowCardProps<typeof MediaType.MANGA>) => {
+export const MangaFollowCard = ({ followData, rating, showComment }: MangaFollowCardProps<typeof MediaType.MANGA>) => {
     return (
         <BaseMediaFollowCard
             rating={rating}
             followData={followData}
+            showComment={showComment}
             redoDisplay={
                 <DisplayRedoValue
                     redoValue={followData.userMedia.redo}

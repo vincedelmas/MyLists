@@ -8,11 +8,12 @@ import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsA
 type TvFollowCardProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaFollowCard"]>[number];
 
 
-export const TvFollowCard = ({ followData, rating }: TvFollowCardProps<typeof MediaType.SERIES | typeof MediaType.ANIME>) => {
+export const TvFollowCard = ({ followData, rating, showComment }: TvFollowCardProps<typeof MediaType.SERIES | typeof MediaType.ANIME>) => {
     return (
         <BaseMediaFollowCard
             rating={rating}
             followData={followData}
+            showComment={showComment}
             redoDisplay={
                 <DisplayTvRedo
                     redoValues={followData.userMedia.redo2}

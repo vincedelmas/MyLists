@@ -1,4 +1,4 @@
-import {MediaListArgs} from "@/lib/schemas";
+import {MediaListArgs, SearchType} from "@/lib/schemas";
 import {notFound} from "@tanstack/react-router";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {MediaInfo} from "@/lib/types/activity.types";
@@ -11,8 +11,8 @@ import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {MediaSchemaConfig} from "@/lib/types/media.config.types";
 import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
-import {JobType, MediaType, SocialState, Status, TagAction} from "@/lib/utils/enums";
-import {UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
+import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
+import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user} from "@/lib/server/database/schema";
 import {ExpandedListFilters, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData, UserTag} from "@/lib/types/media-list.types";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
@@ -437,6 +437,81 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
             .orderBy(asc(user.name));
 
         return inFollowsLists;
+    }
+
+    async getMediaCommunityActivity(userId: number | undefined, mediaId: number, search: SearchType) {
+        const { listTable } = this.config;
+        const communityStats = this.config.communityActivityStats;
+        const totalRedo = communityStats.totalRedo ?? sql<number>`0`;
+        const totalSpecific = communityStats.totalSpecific ?? sql<number>`0`;
+        const totalPlaytime = communityStats.totalPlaytime ?? sql<number>`0`;
+
+        const { page, perPage, offset, limit } = resolvePagination({
+            maxPerPage: 50,
+            page: search.page,
+            defaultPerPage: 8,
+            perPage: search.perPage,
+        });
+
+        const conditions = and(
+            eq(listTable.mediaId, mediaId),
+            ne(user.name, "DemoProfile"),
+            userId ? ne(user.id, userId) : undefined,
+            userId ? inArray(user.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]) : eq(user.privacy, PrivacyType.PUBLIC),
+        );
+
+        const statsQuery = getDbClient()
+            .select({
+                totalRedo,
+                totalSpecific,
+                totalPlaytime,
+                total: count(listTable.id),
+                averageRating: sql<number | null>`AVG(${listTable.rating})`,
+                likedCount: sql<number>`COALESCE(SUM(CASE WHEN ${listTable.favorite} = 1 THEN 1 ELSE 0 END), 0)`,
+                completedCount: sql<number>`COALESCE(SUM(CASE WHEN ${listTable.status} = ${Status.COMPLETED} THEN 1 ELSE 0 END), 0)`,
+            })
+            .from(listTable)
+            .innerJoin(user, eq(user.id, listTable.userId))
+            .where(conditions)
+            .get();
+
+        const itemsQuery = getDbClient()
+            .select({
+                id: user.id,
+                name: user.name,
+                image: user.image,
+                userMedia: {
+                    ...getTableColumns(listTable),
+                    comment: sql<string | null>`NULL`,
+                },
+                ratingSystem: user.ratingSystem,
+            })
+            .from(listTable)
+            .innerJoin(user, eq(user.id, listTable.userId))
+            .where(conditions)
+            .orderBy(desc(sql`COALESCE(${listTable.lastUpdated}, ${listTable.addedAt})`))
+            .limit(limit)
+            .offset(offset);
+
+        const [stats, items] = await Promise.all([statsQuery, itemsQuery]);
+        const total = stats?.total ?? 0;
+
+        return {
+            page,
+            items,
+            total,
+            perPage,
+            pages: Math.ceil(total / perPage),
+            stats: {
+                total,
+                totalRedo: stats?.totalRedo ?? 0,
+                likedCount: stats?.likedCount ?? 0,
+                totalSpecific: stats?.totalSpecific ?? 0,
+                totalPlaytime: stats?.totalPlaytime ?? 0,
+                completedCount: stats?.completedCount ?? 0,
+                averageRating: stats?.averageRating ?? null,
+            } satisfies MediaCommunityActivityStats,
+        };
     }
 
     async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<TConfig["listTable"]["$inferSelect"]>> {

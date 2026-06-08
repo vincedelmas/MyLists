@@ -55,6 +55,10 @@ export const booksConfig: MangaSchemaConfig = {
             "Pages -": [asc(books.pages), asc(books.name)],
         },
     },
+    communityActivityStats: {
+        totalRedo: sql<number>`COALESCE(SUM(${booksList.redo}), 0)`,
+        totalSpecific: sql<number>`COALESCE(SUM(${booksList.total}), 0)`,
+    },
     apiProvider: {
         maxGenres: 5,
         name: "GoogleBooks",

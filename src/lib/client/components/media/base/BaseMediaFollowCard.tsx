@@ -23,7 +23,7 @@ export const BaseMediaFollowCard = ({ followData, rating, redoDisplay, mediaDeta
                 <div className="flex items-center justify-center">
                     <Link to="/profile/$username" params={{ username: followData.name }}>
                         <ProfileIcon
-                            fallbackSize="text-lg"
+                            fallbackSize="text-md"
                             className="size-10 border-0"
                             user={{ image: followData.image, name: followData.name }}
                         />

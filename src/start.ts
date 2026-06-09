@@ -52,7 +52,7 @@ const csrfMiddleware = createCsrfMiddleware({
 export const startInstance = createStart(() => {
     return {
         defaultSsr: false,
-        requestMiddleware: [reqErrorMiddleware],
+        requestMiddleware: [csrfMiddleware, reqErrorMiddleware],
         functionMiddleware: [funcErrorMiddleware],
         serializationAdapters: [
             formZodErrorAdapter,

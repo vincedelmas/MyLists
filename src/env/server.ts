@@ -50,6 +50,3 @@ export const serverEnv = createEnv({
 });
 
 
-if (process.env.NODE_ENV === "production" && !serverEnv.REDIS_ENABLED) {
-    throw new Error("REDIS_ENABLED must be enabled in production");
-}

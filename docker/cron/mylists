@@ -1,4 +1,0 @@
-SHELL=/bin/sh
-PATH=/usr/local/bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
-0 3 * * * root . /etc/cron.env; cd /app && bun dist/cli/index.js maintenance --json >> /proc/1/fd/1 2>> /proc/1/fd/2

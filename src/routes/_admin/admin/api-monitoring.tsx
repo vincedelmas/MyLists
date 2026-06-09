@@ -71,6 +71,20 @@ function ApiMonitoringPage() {
         <DashboardShell>
             <DashboardHeader heading="API Monitoring" description="Track outbound provider traffic, quotas, latency, errors, and bursts."/>
             <div className="space-y-6">
+                {!apiData.liveRedis &&
+                    <Card className="border-amber-500/40 bg-amber-500/10">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-amber-600">
+                                <AlertTriangle className="size-4"/>
+                                Redis monitoring unavailable
+                            </CardTitle>
+                            <CardDescription>
+                                API monitoring rollups and live counters require Redis. Enable Redis to collect outbound provider metrics.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                }
+
                 <div className="grid gap-4 grid-cols-6 max-sm:grid-cols-2">
                     <UserStats
                         icon={Radio}
@@ -93,7 +107,7 @@ function ApiMonitoringPage() {
                     <UserStats
                         icon={Clock}
                         title="Live / Min"
-                        description="Redis last minute"
+                        description="Requires Redis"
                         value={formatNumber(apiData.liveRedis?.lastMinuteTotal ?? 0)}
                     />
                     <UserStats

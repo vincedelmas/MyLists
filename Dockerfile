@@ -2,8 +2,8 @@ FROM oven/bun:1.3.14 AS build
 
 WORKDIR /app
 
-COPY package.json ./
-RUN bun install
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 COPY . .
 
@@ -21,7 +21,7 @@ RUN DATABASE_URL=./instance/build.db \
     ADMIN_MAIL_USERNAME=build@example.com \
     ADMIN_MAIL_PASSWORD=build-password \
     DEMO_PASSWORD=build-password \
-    REDIS_ENABLED=true \
+    REDIS_ENABLED=false \
     REDIS_URL=redis://localhost:6379 \
     BETTER_AUTH_SECRET=build-auth-secret-at-least-20-chars \
     GITHUB_CLIENT_ID= \
@@ -46,16 +46,8 @@ FROM oven/bun:1.3.14 AS prod-deps
 
 WORKDIR /app
 
-COPY package.json ./
-RUN bun install --production
-
-FROM build AS tooling
-
-COPY docker/app-entrypoint.sh /usr/local/bin/mylists-entrypoint
-RUN chmod +x /usr/local/bin/mylists-entrypoint
-
-ENTRYPOINT ["mylists-entrypoint"]
-CMD ["sh"]
+COPY package.json bun.lock ./
+RUN bun install --production --frozen-lockfile
 
 FROM oven/bun:1.3.14 AS runtime
 
@@ -65,7 +57,7 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates cron \
+    && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=prod-deps /app/node_modules /app/node_modules
@@ -74,10 +66,10 @@ COPY --from=build /app/public/static /app/public/static
 COPY --from=build /app/package.json /app/package.json
 COPY --from=build /app/server.ts /app/server.ts
 COPY docker/app-entrypoint.sh /usr/local/bin/mylists-entrypoint
-COPY docker/cron/mylists /etc/cron.d/mylists
 
-RUN chmod +x /usr/local/bin/mylists-entrypoint \
-    && chmod 0644 /etc/cron.d/mylists
+RUN chmod +x /usr/local/bin/mylists-entrypoint
+
+EXPOSE 3000
 
 ENTRYPOINT ["mylists-entrypoint"]
 CMD ["bun", "server.ts"]

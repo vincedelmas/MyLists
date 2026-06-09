@@ -70,11 +70,12 @@ Ensure you have [Bun](https://bun.sh) installed on your machine.
 
 ### Docker Deployment
 
-Docker Compose deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).
+Docker deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).
 
-The default Docker stack is local-only on `http://localhost:3000` and includes the app, Redis,
-and the daily maintenance cron container. Public HTTPS should be handled by your own reverse proxy
-or tunnel setup. PostHog is optional and disabled when its public key is empty.
+The Docker image runs only the app.
+Mount persistent storage for SQLite and images, and provide Redis,
+cron/maintenance scheduling, and public HTTPS from your deployment platform when needed.
+PostHog is optional and disabled when its public key is empty.
 
 ---
 
@@ -102,8 +103,8 @@ Below is an explanation for each key found in `.env.example`:
 | `DEMO_PASSWORD`                             | Password for demo profile (if enabled)                      | ❌        |                                |
 | **Cache / Redis**                           |                                                             |          |                                |
 | `CACHE_TTL_MIN`                             | Cache duration (min)                                        | ❌        | `5`                            |
-| `REDIS_ENABLED`                             | Enables Redis usage; `false` for dev, required for prod     | ✅        | `false` (dev) / `true` (prod)  |
-| `REDIS_URL`                                 | Redis connection string                                     | ✅        | `redis://localhost:6379`       |
+| `REDIS_ENABLED`                             | Enables Redis-backed cache, rate limits, and API monitoring | ❌        | `false`                        |
+| `REDIS_URL`                                 | Redis connection string, required only if Redis is enabled  | ❌        | `redis://localhost:6379`       |
 | **Authentication**                          |                                                             |          |                                |
 | `BETTER_AUTH_SECRET`                        | Secret used by Better Auth for encryption                   | ✅        |                                |
 | **OAuth2 Providers**                        |                                                             |          |                                |
@@ -122,20 +123,20 @@ Below is an explanation for each key found in `.env.example`:
 
 ### Redis Setup
 
-Redis caching is **optional for dev** and **mandatory for prod**.
+Redis caching is optional.
 
-- In **dev**, set:
+- To run without Redis, set:
   ```bash
   REDIS_ENABLED=false
   ```
-- In **prod**, ensure Redis is available and configured:
+- To use Redis, ensure Redis is available and configured:
   ```bash
   REDIS_ENABLED=true
   REDIS_URL=redis://your-redis-instance:6379
   ```
 
-Redis is used for caching, session/state management, and performance optimization.
-The app will not build without it (but it can be changed of course, you do you :)).
+Redis is used for shared caching, shared rate limiting, and API monitoring rollups.
+Without Redis, the app falls back to in-memory cache/rate limiting. The admin API monitoring page will not collect outbound API rollups without Redis.
 
 ---
 

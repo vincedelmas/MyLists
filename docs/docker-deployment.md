@@ -156,18 +156,24 @@ The available roles are `user`, `manager`, and `admin`.
 
 ## Database Initialization
 
-The production image contains the runtime app and built CLI, but not development tooling such as `drizzle-kit`.
-
-For a new SQLite database, run schema setup from a checkout of the repo with dependencies installed:
+For a new SQLite volume, initialize the database from the same Docker image after the app has the correct env and volumes attached:
 
 ```bash
-bun install
-DATABASE_URL=./instance/site.db bun run dk push --force
-bun run cli -- seed-achievements
-bun run cli -- calculate-achievements
+docker run --rm \
+  --env-file .env.docker \
+  -v mylists-db:/app/instance \
+  -v mylists-uploads:/app/storage/images \
+  mylists-app \
+  bun run new:db:docker
 ```
 
-Then copy the initialized SQLite files into the mounted `/app/instance` volume, or run equivalent migration/init commands in your deployment pipeline with dev tooling available.
+or in the container, run the same command as a one-off job:
+
+```bash
+bun run new:db:docker
+```
+
+This runs Drizzle schema push, seeds achievements, and calculates achievements against the mounted `/app/instance` SQLite volume.
 
 ## Public Deployment
 

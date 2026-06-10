@@ -1,8 +1,11 @@
 # Docker Deployment
 
-MyLists ships a single Docker image for the app. The image runs the Bun web server by default and also contains the built CLI for one-off commands and scheduled maintenance.
+MyLists ships a Docker Compose setup with the app and Redis.
+The app image runs the Bun web server by default and also contains
+the built CLI for one-off commands and scheduled maintenance.
 
-The image does not include Redis, a scheduler, or a reverse proxy. In production, provide those from your platform when you need them.
+The Compose setup does not include a scheduler or reverse proxy.
+In production, provide those from your platform when you need them.
 
 ## Build
 
@@ -14,16 +17,10 @@ cp .env.docker.example .env.docker
 
 Edit `.env.docker` with real secrets and API keys.
 
-Build the image:
+Build the app image:
 
 ```bash
-docker build \
-  --build-arg VITE_BASE_URL=http://localhost:3000 \
-  --build-arg VITE_CONTACT_MAIL= \
-  --build-arg VITE_PUBLIC_POSTHOG_KEY= \
-  --build-arg VITE_PUBLIC_POSTHOG_HOST= \
-  --build-arg VITE_PUBLIC_POSTHOG_UI_HOST= \
-  -t mylists-app .
+docker compose --env-file .env.docker build
 ```
 
 Public `VITE_*` values are embedded in the client build. Rebuild the image after changing them. For public production, set `VITE_BASE_URL` to the public HTTPS origin, for example:
@@ -34,16 +31,10 @@ VITE_BASE_URL=https://example.com
 
 ## Run
 
-Run the app with persistent mounts for SQLite and images:
+Run the app and Redis with persistent volumes:
 
 ```bash
-docker run -d \
-  --name mylists \
-  --env-file .env.docker \
-  -p 127.0.0.1:3000:3000 \
-  -v mylists-db:/app/instance \
-  -v mylists-uploads:/app/storage/images \
-  mylists-app
+docker compose --env-file .env.docker up -d --build
 ```
 
 Open:
@@ -56,11 +47,12 @@ The app listens on `PORT`, which defaults to `3000`.
 
 ## Persistent Data
 
-Use persistent storage for these paths:
+Compose creates persistent volumes for these paths:
 
 ```text
 /app/instance
 /app/storage/images
+/data
 ```
 
 Default Docker env values:
@@ -73,19 +65,20 @@ BASE_UPLOADS_LOCATION=/app/storage/images
 
 - `/app/instance` contains the SQLite database and WAL/SHM files.
 - `/app/storage/images` contains uploaded and downloaded images.
+- `/data` contains Redis append-only data.
 
-Do not store either path only inside the container filesystem in prod.
+Do not store these paths only inside the container filesystem in prod.
 
 ## Redis
 
-Redis is optional. When Redis is disabled, the app uses in-memory cache and in-memory rate limiting inside each app process.
-
-Enable Redis when you want shared cache/rate limits across restarts or multiple app containers:
+Compose starts Redis by default and the Docker env example enables it:
 
 ```env
 REDIS_ENABLED=true
-REDIS_URL=redis://your-redis-host:6379
+REDIS_URL=redis://redis:6379
 ```
+
+When Redis is disabled, the app uses in-memory cache and in-memory rate limiting inside each app process.
 
 API monitoring in the admin dashboard is Redis-backed. Without Redis, outbound API calls are not recorded into the monitoring rollups and the live Redis counters show zero/null
 data.
@@ -97,11 +90,7 @@ The image does not run cron. Use Dokploy cron, host cron, systemd timers, Kubern
 Run the maintenance task with the same image, env, and persistent mounts as the app:
 
 ```bash
-docker run --rm \
-  --env-file .env.docker \
-  -v mylists-db:/app/instance \
-  -v mylists-uploads:/app/storage/images \
-  mylists-app \
+docker compose --env-file .env.docker run --rm app \
   bun dist/cli/index.js maintenance --json
 ```
 
@@ -112,26 +101,18 @@ A typical schedule is once per day, for example 03:00 AM UTC.
 Use the built CLI in the image:
 
 ```bash
-docker run --rm --env-file .env.docker mylists-app bun dist/cli/index.js --help
+docker compose --env-file .env.docker run --rm app bun dist/cli/index.js --help
 ```
 
-Examples that need database/uploads access should include the same volumes as the app:
+Examples run with the same database/uploads volumes as the app:
 
 ```bash
-docker run --rm \
-  --env-file .env.docker \
-  -v mylists-db:/app/instance \
-  -v mylists-uploads:/app/storage/images \
-  mylists-app \
+docker compose --env-file .env.docker run --rm app \
   bun dist/cli/index.js seed-achievements
 ```
 
 ```bash
-docker run --rm \
-  --env-file .env.docker \
-  -v mylists-db:/app/instance \
-  -v mylists-uploads:/app/storage/images \
-  mylists-app \
+docker compose --env-file .env.docker run --rm app \
   bun dist/cli/index.js calculate-achievements
 ```
 
@@ -140,11 +121,7 @@ docker run --rm \
 For localhost deployments, email verification and OAuth sign-up may be unavailable or unnecessary. Use the CLI to create a verified user directly:
 
 ```bash
-docker run --rm \
-  --env-file .env.docker \
-  -v mylists-db:/app/instance \
-  -v mylists-uploads:/app/storage/images \
-  mylists-app \
+docker compose --env-file .env.docker run --rm app \
   bun dist/cli/index.js create-user \
     --email admin@example.com \
     --password "change-me-strong-password" \
@@ -156,21 +133,10 @@ The available roles are `user`, `manager`, and `admin`.
 
 ## Database Initialization
 
-For a new SQLite volume, initialize the database from the same Docker image after the app has the correct env and volumes attached:
+For a new SQLite volume, initialize the database from the app service after it has the correct env and volumes attached:
 
 ```bash
-docker run --rm \
-  --env-file .env.docker \
-  -v mylists-db:/app/instance \
-  -v mylists-uploads:/app/storage/images \
-  mylists-app \
-  bun run new:db:docker
-```
-
-or in the container, run the same command as a one-off job:
-
-```bash
-bun run new:db:docker
+docker compose --env-file .env.docker run --rm app bun run new:db:docker
 ```
 
 This runs Drizzle schema push, seeds achievements, and calculates achievements against the mounted `/app/instance` SQLite volume.
@@ -206,8 +172,13 @@ If `VITE_PUBLIC_POSTHOG_KEY` is empty, the app does not mount `PostHogProvider` 
 Copy existing SQLite files into the database volume and existing image folders into the uploads volume. Example restore from local backup folders:
 
 ```bash
-docker run --rm -v mylists-db:/data -v "$PWD/backups/mylists-db:/backup" alpine sh -c "cp -a /backup/. /data/"
-docker run --rm -v mylists-uploads:/data -v "$PWD/backups/mylists-uploads:/backup" alpine sh -c "cp -a /backup/. /data/"
+docker compose --env-file .env.docker run --rm --no-deps \
+  -v "$PWD/backups/mylists-db:/backup:ro" \
+  app sh -c "cp -a /backup/. /app/instance/"
+
+docker compose --env-file .env.docker run --rm --no-deps \
+  -v "$PWD/backups/mylists-uploads:/backup:ro" \
+  app sh -c "cp -a /backup/. /app/storage/images/"
 ```
 
 ## Operations
@@ -215,20 +186,19 @@ docker run --rm -v mylists-uploads:/data -v "$PWD/backups/mylists-uploads:/backu
 View logs:
 
 ```bash
-docker logs -f mylists
+docker compose logs -f app
 ```
 
 Restart the app:
 
 ```bash
-docker restart mylists
+docker compose restart app
 ```
 
 Stop without deleting database or images:
 
 ```bash
-docker stop mylists
-docker rm mylists
+docker compose down
 ```
 
-Do not delete the Docker volumes unless you intentionally want to delete the SQLite database and uploaded images.
+Do not run `docker compose down -v` or delete the Docker volumes unless you intentionally want to delete the SQLite database, uploaded images, and Redis data.

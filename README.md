@@ -72,9 +72,9 @@ Ensure you have [Bun](https://bun.sh) installed on your machine.
 
 Docker deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).
 
-The Docker image runs only the app.
-Mount persistent storage for SQLite and images, and provide Redis,
-cron/maintenance scheduling, and public HTTPS from your deployment platform when needed.
+The Docker Compose setup builds the app image and starts Redis.
+It mounts persistent storage for SQLite, images, and Redis data. Provide
+cron/maintenance scheduling and public HTTPS from your deployment platform when needed.
 PostHog is optional and disabled when its public key is empty.
 
 ---
@@ -132,7 +132,7 @@ Redis caching is optional.
 - To use Redis, ensure Redis is available and configured:
   ```bash
   REDIS_ENABLED=true
-  REDIS_URL=redis://your-redis-instance:6379
+  REDIS_URL=redis://redis:6379
   ```
 
 Redis is used for shared caching, shared rate limiting, and API monitoring rollups.

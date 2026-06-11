@@ -47,6 +47,5 @@ export const serverEnv = createEnv({
         LLM_BASE_URL: z.string(),
     },
     runtimeEnv: process.env,
+    skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
-
-

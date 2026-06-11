@@ -1,45 +1,44 @@
 services:
-  app:
+  mylists:
     image: mylists-app
+    container_name: mylists
     build:
-      context: .
-      args:
-        VITE_BASE_URL: ${VITE_BASE_URL:-http://localhost:3000}
-        VITE_CONTACT_MAIL: ${VITE_CONTACT_MAIL:-}
-        VITE_PUBLIC_POSTHOG_KEY: ${VITE_PUBLIC_POSTHOG_KEY:-}
-        VITE_PUBLIC_POSTHOG_HOST: ${VITE_PUBLIC_POSTHOG_HOST:-}
-        VITE_PUBLIC_POSTHOG_UI_HOST: ${VITE_PUBLIC_POSTHOG_UI_HOST:-}
+      context: ./src
     env_file:
       - .env.docker
-    environment:
-      REDIS_ENABLED: ${REDIS_ENABLED:-true}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     depends_on:
       redis:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:3000:3000"
     volumes:
-      - mylists-db:/app/instance
-      - mylists-uploads:/app/storage/images
+      - ./data/db:/app/instance
+      - ./data/images:/app/storage/images
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.mylists-maintenance.schedule: "0 0 3 * * *"
+      ofelia.job-exec.mylists-maintenance.command: "bun /app/dist/cli/index.js maintenance"
     restart: unless-stopped
+    networks:
+      - default
+      - web_net
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes"]
+    container_name: mylists-redis
+    command: [ "redis-server", "--appendonly", "yes" ]
+    volumes:
+      - redis_data:/data
+    networks:
+      - default
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 5
-    volumes:
-      - mylists-redis:/data
     restart: unless-stopped
 
 volumes:
-  mylists-db:
-    name: mylists-db
-  mylists-uploads:
-    name: mylists-uploads
-  mylists-redis:
-    name: mylists-redis
+  redis_data:
+
+networks:
+  web_net:
+    external: true

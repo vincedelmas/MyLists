@@ -5,8 +5,8 @@ node_modules
 dist
 instance
 
-.env
 .env.*
+!.env.docker
 !.env.docker.example
 
 .DS_Store

@@ -20,7 +20,7 @@ import {
 
 export const postGeneralSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(generalSettingsSchema))
+    .validator(tryFormZodError(generalSettingsSchema))
     .handler(async ({ data, context: { currentUser } }) => {
         const userService = await getContainer().then((c) => c.services.user);
         const updatesToApply: Partial<typeof user.$inferInsert> = { privacy: data.privacy };
@@ -54,7 +54,7 @@ export const postGeneralSettings = createServerFn({ method: "POST" })
 
 export const postMediaListSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(mediaListSettingsSchema))
+    .validator(tryFormZodError(mediaListSettingsSchema))
     .handler(async ({ data, context: { currentUser } }) => {
         const userService = await getContainer().then(c => c.services.user);
         const userStatsService = await getContainer().then(c => c.services.userStats);
@@ -93,7 +93,7 @@ export const getProfileCustomSettings = createServerFn({ method: "GET" })
 
 export const getProfileCustomSearch = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryFormZodError(highlightedMediaSearchSchema))
+    .validator(tryFormZodError(highlightedMediaSearchSchema))
     .handler(async ({ data, context: { currentUser } }) => {
         const userProfileService = await getContainer().then((c) => c.services.userProfile);
         return userProfileService.searchHighlightedMedia(currentUser.id, data.tab, data.query);
@@ -102,7 +102,7 @@ export const getProfileCustomSearch = createServerFn({ method: "GET" })
 
 export const postProfileCustomSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(highlightedMediaSettingsSchema))
+    .validator(tryFormZodError(highlightedMediaSettingsSchema))
     .handler(async ({ data, context: { currentUser } }) => {
         const userProfileService = await getContainer().then((c) => c.services.userProfile);
         return userProfileService.saveHighlightedMediaSettings(currentUser.id, data);
@@ -111,7 +111,7 @@ export const postProfileCustomSettings = createServerFn({ method: "POST" })
 
 export const getDownloadListAsCSV = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryFormZodError(downloadListAsCsvSchema))
+    .validator(tryFormZodError(downloadListAsCsvSchema))
     .handler(async ({ data: { selectedList }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(selectedList);
@@ -121,7 +121,7 @@ export const getDownloadListAsCSV = createServerFn({ method: "GET" })
 
 export const postPasswordSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryFormZodError(passwordSettingsSchema))
+    .validator(tryFormZodError(passwordSettingsSchema))
     .handler(async ({ data: { newPassword, currentPassword }, context: { currentUser } }) => {
         const ctx = await auth.$context;
         const userAccount = await ctx.internalAdapter.findAccount(currentUser.id.toString());

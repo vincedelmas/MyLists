@@ -21,7 +21,7 @@ import {
 
 export const getMediaDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryNotFound(mediaDetailsSchema))
+    .validator(tryNotFound(mediaDetailsSchema))
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
@@ -39,7 +39,7 @@ export const getMediaDetails = createServerFn({ method: "GET" })
 
 export const getMediaCommunityActivity = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryNotFound(mediaCommunityActivitySchema))
+    .validator(tryNotFound(mediaCommunityActivitySchema))
     .handler(async ({ data: { mediaType, mediaId, search }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
@@ -49,7 +49,7 @@ export const getMediaCommunityActivity = createServerFn({ method: "GET" })
 
 export const resolveExternalMedia = createServerFn({ method: "POST" })
     .middleware([publicAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryNotFound(externalMediaResolveSchema))
+    .validator(tryNotFound(externalMediaResolveSchema))
     .handler(async ({ data: { mediaType, apiId } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
@@ -62,7 +62,7 @@ export const resolveExternalMedia = createServerFn({ method: "POST" })
 
 export const getJobDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .inputValidator(tryNotFound(jobDetailsSchema))
+    .validator(tryNotFound(jobDetailsSchema))
     .handler(async ({ data: { mediaType, job, name, search }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
@@ -72,7 +72,7 @@ export const getJobDetails = createServerFn({ method: "GET" })
 
 export const refreshMediaDetails = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(refreshMediaDetailsSchema)
+    .validator(refreshMediaDetailsSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
         const adminService = container.services.admin;
@@ -103,7 +103,7 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
 
 export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryNotFound(mediaActionSchema))
+    .validator(tryNotFound(mediaActionSchema))
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();
         const gamesService = container.registries.mediaService.getService(MediaType.GAMES);
@@ -118,7 +118,7 @@ export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
 
 export const postUpdateBookCover = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(updateBookCoverSchema))
+    .validator(tryFormZodError(updateBookCoverSchema))
     .handler(async ({ data: { mediaId, imageUrl, imageFile } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(MediaType.BOOKS);
@@ -128,7 +128,7 @@ export const postUpdateBookCover = createServerFn({ method: "POST" })
 
 export const getMediaDetailsToEdit = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndManagerRoleMiddleware, transactionMiddleware])
-    .inputValidator(tryNotFound(mediaDetailsToEditSchema))
+    .validator(tryNotFound(mediaDetailsToEditSchema))
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
@@ -138,7 +138,7 @@ export const getMediaDetailsToEdit = createServerFn({ method: "GET" })
 
 export const postEditMediaDetails = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndManagerRoleMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(editMediaDetailsSchema))
+    .validator(tryFormZodError(editMediaDetailsSchema))
     .handler(async ({ data: { mediaType, mediaId, payload } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);

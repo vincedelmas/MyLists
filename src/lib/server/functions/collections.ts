@@ -19,7 +19,7 @@ import {
 
 export const getCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .inputValidator(tryNotFound(communityCollectionsSchema))
+    .validator(tryNotFound(communityCollectionsSchema))
     .handler(async ({ data: { search, page, mediaType } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -29,7 +29,7 @@ export const getCommunityCollections = createServerFn({ method: "GET" })
 
 export const getMediaCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .inputValidator(tryNotFound(mediaCommunityCollectionsSchema))
+    .validator(tryNotFound(mediaCommunityCollectionsSchema))
     .handler(async ({ data: { mediaId, mediaType } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -39,7 +39,7 @@ export const getMediaCommunityCollections = createServerFn({ method: "GET" })
 
 export const getReadCollectionDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .inputValidator(tryNotFound(collectionIdSchema))
+    .validator(tryNotFound(collectionIdSchema))
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -49,7 +49,7 @@ export const getReadCollectionDetails = createServerFn({ method: "GET" })
 
 export const getUserCollections = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .inputValidator(tryNotFound(userCollectionsSchema))
+    .validator(tryNotFound(userCollectionsSchema))
     .handler(async ({ data: { mediaType }, context: { user, currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -59,7 +59,7 @@ export const getUserCollections = createServerFn({ method: "GET" })
 
 export const getUserCollectionMemberships = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryNotFound(collectionMediaMembershipsSchema))
+    .validator(tryNotFound(collectionMediaMembershipsSchema))
     .handler(async ({ data: { mediaId, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -69,7 +69,7 @@ export const getUserCollectionMemberships = createServerFn({ method: "GET" })
 
 export const getEditCollectionDetails = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryNotFound(collectionIdSchema))
+    .validator(tryNotFound(collectionIdSchema))
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -79,7 +79,7 @@ export const getEditCollectionDetails = createServerFn({ method: "GET" })
 
 export const postCreateCollection = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(createCollectionSchema))
+    .validator(tryFormZodError(createCollectionSchema))
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -91,17 +91,21 @@ export const postCreateCollection = createServerFn({ method: "POST" })
 
 export const postUpdateCollection = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(updateCollectionSchema))
+    .validator(tryFormZodError(updateCollectionSchema))
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        await collectionService.updateCollection({ ...data, actorId: currentUser.id, actorRole: currentUser.role as RoleType });
+        await collectionService.updateCollection({
+            ...data,
+            actorId: currentUser.id,
+            actorRole: currentUser.role as RoleType
+        });
     });
 
 
 export const postAddMediaToCollection = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(collectionMediaItemActionSchema)
+    .validator(collectionMediaItemActionSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -111,7 +115,7 @@ export const postAddMediaToCollection = createServerFn({ method: "POST" })
 
 export const postRemoveMediaFromCollection = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(collectionMediaItemActionSchema)
+    .validator(collectionMediaItemActionSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -121,7 +125,7 @@ export const postRemoveMediaFromCollection = createServerFn({ method: "POST" })
 
 export const postDeleteCollection = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(collectionIdSchema)
+    .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -131,7 +135,7 @@ export const postDeleteCollection = createServerFn({ method: "POST" })
 
 export const postToggleCollectionLike = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(collectionIdSchema)
+    .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -141,7 +145,7 @@ export const postToggleCollectionLike = createServerFn({ method: "POST" })
 
 export const postCopyCollection = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(collectionIdSchema)
+    .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;

@@ -12,7 +12,7 @@ import {gbooksTransformer} from "@/lib/server/api-providers/transformers/gbook.t
 
 export const getSearchResults = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .inputValidator(navbarSearchSchema)
+    .validator(navbarSearchSchema)
     .handler(async ({ data: { query, page, apiProvider }, context: { currentUser } }) => {
         const container = await getContainer();
         const igdbClient = container.clients.igdb;

@@ -106,7 +106,7 @@ export const getUsersFollowers = createServerFn({ method: "GET" })
 
 export const getAllUpdatesHistory = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .inputValidator(allUpdatesHistorySchema)
+    .validator(allUpdatesHistorySchema)
     .handler(async ({ data, context: { user } }) => {
         const userUpdatesService = await getContainer().then((c) => c.services.userUpdates);
         return userUpdatesService.getUserUpdatesPaginated(data, user.id);

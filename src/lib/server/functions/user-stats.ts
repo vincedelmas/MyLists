@@ -10,7 +10,7 @@ import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cac
 
 export const getUserStats = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .inputValidator(tryNotFound(getUserStatsSchema))
+    .validator(tryNotFound(getUserStatsSchema))
     .handler(async ({ data: { mediaType }, context: { user } }) => {
         const container = await getContainer();
         const userStatsService = container.services.userStats;

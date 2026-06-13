@@ -10,7 +10,7 @@ import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 
 export const postFollow = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(z.object({ targetUserId: z.coerce.number().int().positive() }))
+    .validator(z.object({ targetUserId: z.coerce.number().int().positive() }))
     .handler(async ({ data: { targetUserId }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
@@ -42,7 +42,7 @@ export const postFollow = createServerFn({ method: "POST" })
 
 export const postUnfollow = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(z.object({ targetUserId: z.coerce.number().int().positive() }))
+    .validator(z.object({ targetUserId: z.coerce.number().int().positive() }))
     .handler(async ({ data: { targetUserId }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
@@ -69,7 +69,7 @@ export const postUnfollow = createServerFn({ method: "POST" })
 
 export const postRespondToFollowRequest = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(respondToFollowRequest)
+    .validator(respondToFollowRequest)
     .handler(async ({ data: { followerId, action }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
@@ -97,7 +97,7 @@ export const postRespondToFollowRequest = createServerFn({ method: "POST" })
 
 export const postRemoveFollower = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(z.object({ followerId: z.coerce.number().int().positive() }))
+    .validator(z.object({ followerId: z.coerce.number().int().positive() }))
     .handler(async ({ data: { followerId }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;

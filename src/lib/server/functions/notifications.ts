@@ -6,7 +6,7 @@ import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 
 export const getNotifications = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(z.object({ type: z.enum(["media", "social"]) }))
+    .validator(z.object({ type: z.enum(["media", "social"]) }))
     .handler(async ({ data: { type }, context: { currentUser } }) => {
         const container = await getContainer();
         const notificationsService = container.services.notifications;
@@ -25,7 +25,7 @@ export const getNotificationsCount = createServerFn({ method: "GET" })
 
 export const markAllNotifAsRead = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(z.object({ type: z.enum(["media", "social"]) }))
+    .validator(z.object({ type: z.enum(["media", "social"]) }))
     .handler(async ({ data: { type }, context: { currentUser } }) => {
         const container = await getContainer();
         const notificationsService = container.services.notifications;
@@ -35,7 +35,7 @@ export const markAllNotifAsRead = createServerFn({ method: "POST" })
 
 export const postDeleteSocialNotif = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(z.object({ notificationId: z.coerce.number().int().positive() }))
+    .validator(z.object({ notificationId: z.coerce.number().int().positive() }))
     .handler(async ({ data: { notificationId }, context: { currentUser } }) => {
         const container = await getContainer();
         const notificationsService = container.services.notifications;

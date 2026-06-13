@@ -16,7 +16,7 @@ import {
 
 export const getUserMediaHistory = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(mediaActionSchema)
+    .validator(mediaActionSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const userUpdatesService = await getContainer().then(c => c.services.userUpdates);
         return userUpdatesService.getUserMediaHistory(currentUser.id, mediaType, mediaId);
@@ -25,7 +25,7 @@ export const getUserMediaHistory = createServerFn({ method: "GET" })
 
 export const postAddMediaToList = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(addMediaToListSchema)
+    .validator(addMediaToListSchema)
     .handler(async ({ data: { mediaType, mediaId, status }, context: { currentUser } }) => {
         const userMediaService = await getContainer().then(c => c.services.userMedia);
         return userMediaService.addMediaToList({ mediaType, mediaId, status, userId: currentUser.id });
@@ -34,7 +34,7 @@ export const postAddMediaToList = createServerFn({ method: "POST" })
 
 export const postUpdateUserMedia = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(updateUserMediaSchema)
+    .validator(updateUserMediaSchema)
     .handler(async ({ data: { mediaType, mediaId, payload }, context: { currentUser } }) => {
         const userMediaService = await getContainer().then(c => c.services.userMedia);
         return userMediaService.updateUserMedia({ mediaType, mediaId, payload, userId: currentUser.id });
@@ -43,7 +43,7 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
 
 export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(updateUserCustomCoverSchema))
+    .validator(tryFormZodError(updateUserCustomCoverSchema))
     .handler(async ({ data, context: { currentUser } }) => {
         const { mediaType, mediaId } = data;
 
@@ -56,7 +56,7 @@ export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
 
 export const postRemoveMediaFromList = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(mediaActionSchema)
+    .validator(mediaActionSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const userMediaService = await getContainer().then(c => c.services.userMedia);
         await userMediaService.removeMediaFromList({ mediaType, mediaId, userId: currentUser.id });
@@ -65,7 +65,7 @@ export const postRemoveMediaFromList = createServerFn({ method: "POST" })
 
 export const postDeleteUserUpdates = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(deleteUserUpdatesSchema)
+    .validator(deleteUserUpdatesSchema)
     .handler(async ({ data: { updateIds, returnData }, context: { currentUser } }) => {
         const userUpdatesService = await getContainer().then(c => c.services.userUpdates);
         return userUpdatesService.deleteUserUpdates(currentUser.id, updateIds, returnData);
@@ -74,7 +74,7 @@ export const postDeleteUserUpdates = createServerFn({ method: "POST" })
 
 export const getUserTagNames = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(userTagNamesSchema)
+    .validator(userTagNamesSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
@@ -84,7 +84,7 @@ export const getUserTagNames = createServerFn({ method: "GET" })
 
 export const postEditUserTag = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(editUserTagSchema)
+    .validator(editUserTagSchema)
     .handler(async ({ data: { mediaType, mediaId, tag, action }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);

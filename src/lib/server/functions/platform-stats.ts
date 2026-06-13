@@ -9,7 +9,7 @@ import {getPlatformStatsCacheKey, ONE_DAY_CACHE_TTL_MS} from "@/lib/server/core/
 
 export const getPlatformStats = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .inputValidator(tryNotFound(platformStatsSchema))
+    .validator(tryNotFound(platformStatsSchema))
     .handler(async ({ data: { mediaType } }) => {
         const container = await getContainer();
 

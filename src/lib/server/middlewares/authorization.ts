@@ -10,7 +10,7 @@ import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
 
 export const resolveTargetUserMiddleware = createMiddleware({ type: "function" })
     .middleware([publicAuthMiddleware])
-    .inputValidator(tryNotFound(baseUsernameSchema))
+    .validator(tryNotFound(baseUsernameSchema))
     .server(async ({ next, data: { username }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;

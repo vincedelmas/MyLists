@@ -12,9 +12,9 @@ import {getAllTasksMetadata, getTask} from "@/lib/server/tasks/registry";
 import {ADMIN_COOKIE_NAME, isAdminAuthenticated, setAdminCookie} from "@/lib/utils/admin-token";
 import {requiredAuthAndAdminTokenMiddleware, requiredAuthAndManagerRoleMiddleware} from "@/lib/server/middlewares/authentication";
 import {
+    adminApiMonitoringSchema,
     adminDeleteArchivedTaskSchema,
     adminDeleteErrorLogSchema,
-    adminApiMonitoringSchema,
     adminPostUpdateTiersSchema,
     adminPostUpdateUserSchema,
     adminRefreshSchema,
@@ -33,7 +33,7 @@ export const checkAdminAuth = createServerFn({ method: "GET" })
 
 export const adminAuth = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndManagerRoleMiddleware])
-    .inputValidator((data) => z.object({ password: z.string() }).parse(data))
+    .validator((data) => z.object({ password: z.string() }).parse(data))
     .handler(async ({ data, context: { currentUser } }) => {
         if (data.password !== serverEnv.ADMIN_PASSWORD) {
             return { success: false, message: "Incorrect Password" };
@@ -73,7 +73,7 @@ export const getAdminCollectionsOverview = createServerFn({ method: "GET" })
 
 export const getAdminAllCollections = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(searchTypeSchema)
+    .validator(searchTypeSchema)
     .handler(async ({ data }) => {
         const adminService = await getContainer().then((c) => c.services.admin);
         return adminService.getPaginatedCollectionsForAdmin(data);
@@ -82,7 +82,7 @@ export const getAdminAllCollections = createServerFn({ method: "GET" })
 
 export const getAdminAllUsers = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(searchTypeSchema)
+    .validator(searchTypeSchema)
     .handler(async ({ data }) => {
         const userService = await getContainer().then((c) => c.services.user);
         return userService.getPaginatedUsersForAdmin(data);
@@ -99,7 +99,7 @@ export const getAdminAchievements = createServerFn({ method: "GET" })
 
 export const getAdminMediadleStats = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(searchTypeSchema)
+    .validator(searchTypeSchema)
     .handler(async ({ data }) => {
         const mediadleService = await getContainer().then((c) => c.services.mediadle);
         return mediadleService.getAllUsersStatsForAdmin(data);
@@ -108,7 +108,7 @@ export const getAdminMediadleStats = createServerFn({ method: "GET" })
 
 export const postAdminUpdateUser = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(adminPostUpdateUserSchema)
+    .validator(adminPostUpdateUserSchema)
     .handler(async ({ data: { userId, payload } }) => {
         const userService = await getContainer().then((c) => c.services.user);
         return userService.updateUserForAdmin(userId, payload);
@@ -117,7 +117,7 @@ export const postAdminUpdateUser = createServerFn({ method: "POST" })
 
 export const postAdminUpdateAchievement = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(adminUpdateAchievementSchema)
+    .validator(adminUpdateAchievementSchema)
     .handler(async ({ data: { achievementId, name, description } }) => {
         const achievementService = await getContainer().then((c) => c.services.achievements);
         return achievementService.updateAchievementForAdmin(achievementId, name, description);
@@ -126,7 +126,7 @@ export const postAdminUpdateAchievement = createServerFn({ method: "POST" })
 
 export const postAdminUpdateTiers = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(adminPostUpdateTiersSchema)
+    .validator(adminPostUpdateTiersSchema)
     .handler(async ({ data: { tiers } }) => {
         const achievementService = await getContainer().then((c) => c.services.achievements);
         return achievementService.updateTiersForAdmin(tiers);
@@ -140,7 +140,7 @@ export const getAdminTasks = createServerFn({ method: "GET" })
 
 export const postAdminTriggerTask = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(adminTriggerTaskSchema)
+    .validator(adminTriggerTaskSchema)
     .handler(async ({ data: { taskName, input } }) => {
         const task = getTask(taskName);
         if (!task) throw new Error(`Task ${taskName} not found`);
@@ -165,7 +165,7 @@ export const getAdminArchivedTasks = createServerFn({ method: "GET" })
 
 export const postAdminDeleteArchivedTask = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(adminDeleteArchivedTaskSchema)
+    .validator(adminDeleteArchivedTaskSchema)
     .handler(async ({ data: { taskId } }) => {
         const adminService = await getContainer().then((c) => c.services.admin);
         return adminService.deleteArchivedTaskForAdmin(taskId);
@@ -174,7 +174,7 @@ export const postAdminDeleteArchivedTask = createServerFn({ method: "POST" })
 
 export const getAdminErrorLogs = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(searchTypeSchema)
+    .validator(searchTypeSchema)
     .handler(async ({ data }) => {
         const adminService = await getContainer().then((c) => c.services.admin);
         return adminService.getPaginatedErrorLogs(data);
@@ -183,7 +183,7 @@ export const getAdminErrorLogs = createServerFn({ method: "GET" })
 
 export const postAdminDeleteErrorLog = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(adminDeleteErrorLogSchema)
+    .validator(adminDeleteErrorLogSchema)
     .handler(async ({ data: { errorIds } }) => {
         const adminService = await getContainer().then((c) => c.services.admin);
         return adminService.deleteErrorLogs(errorIds);
@@ -192,7 +192,7 @@ export const postAdminDeleteErrorLog = createServerFn({ method: "POST" })
 
 export const getAdminMediaRefreshStats = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(adminRefreshSchema)
+    .validator(adminRefreshSchema)
     .handler(async ({ data }) => {
         const adminService = await getContainer().then((c) => c.services.admin);
         return adminService.getMediaRefreshStats(data);
@@ -201,7 +201,7 @@ export const getAdminMediaRefreshStats = createServerFn({ method: "GET" })
 
 export const getAdminApiMonitoringStats = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(adminApiMonitoringSchema)
+    .validator(adminApiMonitoringSchema)
     .handler(async ({ data }) => {
         const adminService = await getContainer().then((c) => c.services.admin);
         return adminService.getApiMonitoringStats(data);
@@ -210,7 +210,7 @@ export const getAdminApiMonitoringStats = createServerFn({ method: "GET" })
 
 export const getAdminAllUpdatesHistory = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator(searchTypeSchema)
+    .validator(searchTypeSchema)
     .handler(async ({ data }) => {
         const userUpdatesService = await getContainer().then((c) => c.services.userUpdates);
         return userUpdatesService.getUserUpdatesPaginated(data);
@@ -219,7 +219,7 @@ export const getAdminAllUpdatesHistory = createServerFn({ method: "GET" })
 
 export const postImpersonateUser = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .inputValidator((data) => z.object({ userId: z.coerce.number().int().positive() }).parse(data))
+    .validator((data) => z.object({ userId: z.coerce.number().int().positive() }).parse(data))
     .handler(async ({ data: { userId } }) => {
         const ctx = await auth.$context;
         const prefix = ctx.options?.advanced?.cookiePrefix ?? "better-auth";

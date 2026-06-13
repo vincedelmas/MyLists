@@ -17,7 +17,7 @@ import {
 
 export const getMonthlyActivityStats = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .inputValidator(tryNotFound(monthlyActivityStatsSchema))
+    .validator(tryNotFound(monthlyActivityStatsSchema))
     .handler(async ({ data, context: { user } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);
         return userActivityService.getMonthlyActivityStats(user.id, data);
@@ -26,7 +26,7 @@ export const getMonthlyActivityStats = createServerFn({ method: "GET" })
 
 export const getMonthlyActivity = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .inputValidator(tryNotFound(monthlyActivitySchema))
+    .validator(tryNotFound(monthlyActivitySchema))
     .handler(async ({ data, context: { user } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);
         return userActivityService.getMonthlyActivity(user.id, data);
@@ -35,7 +35,7 @@ export const getMonthlyActivity = createServerFn({ method: "GET" })
 
 export const getActivityAddMediaSearch = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryNotFound(activityAddMediaSearchSchema))
+    .validator(tryNotFound(activityAddMediaSearchSchema))
     .handler(async ({ data: { mediaType, query }, context: { currentUser } }) => {
         const mediaService = await getContainer().then(c => c.registries.mediaService.getService(mediaType));
         return mediaService.searchUserListByName(currentUser.id, query.trim(), 20);
@@ -44,7 +44,7 @@ export const getActivityAddMediaSearch = createServerFn({ method: "GET" })
 
 export const postUpdateActivity = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(updateActivitySchema))
+    .validator(tryFormZodError(updateActivitySchema))
     .handler(async ({ data: { activityId, payload }, context: { currentUser } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);
         return userActivityService.updateActivity(currentUser.id, activityId, payload);
@@ -53,7 +53,7 @@ export const postUpdateActivity = createServerFn({ method: "POST" })
 
 export const postAddActivity = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(addActivitySchema))
+    .validator(tryFormZodError(addActivitySchema))
     .handler(async ({ data, context: { currentUser } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);
         await userActivityService.addActivity(currentUser.id, data);
@@ -62,7 +62,7 @@ export const postAddActivity = createServerFn({ method: "POST" })
 
 export const postDeleteActivity = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(deleteActivitySchema)
+    .validator(deleteActivitySchema)
     .handler(async ({ data: { activityId }, context: { currentUser } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);
         await userActivityService.deleteActivity(currentUser.id, activityId);
@@ -71,7 +71,7 @@ export const postDeleteActivity = createServerFn({ method: "POST" })
 
 export const postBulkHideActivity = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(bulkHideActivitySchema))
+    .validator(tryFormZodError(bulkHideActivitySchema))
     .handler(async ({ data, context: { currentUser } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);
         return userActivityService.bulkHideActivity(currentUser.id, data);

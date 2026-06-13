@@ -19,7 +19,7 @@ export const getDailyMediadle = createServerFn({ method: "GET" })
 
 export const getMediadleSuggestions = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(mediadleSuggestionsSchema)
+    .validator(mediadleSuggestionsSchema)
     .handler(async ({ data: { query } }) => {
         if (query.length < 2) return [];
 
@@ -31,7 +31,7 @@ export const getMediadleSuggestions = createServerFn({ method: "GET" })
 
 export const postAddMediadleGuess = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(addMediadleGuessSchema)
+    .validator(addMediadleGuessSchema)
     .handler(async ({ data: { guess }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediadleService = container.services.mediadle;

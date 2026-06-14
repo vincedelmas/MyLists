@@ -16,8 +16,8 @@ import {RefreshAndEdit} from "@/lib/client/components/media/base/RefreshAndEdit"
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {CollectionsLists} from "@/lib/client/components/media/base/CollectionsLists";
 import {MediaFollowsSection} from "@/lib/client/components/media/base/MediaFollowsSection";
-import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
 import {MediaCommunityActivity} from "@/lib/client/components/media/base/MediaCommunityActivity";
+import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
 import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 

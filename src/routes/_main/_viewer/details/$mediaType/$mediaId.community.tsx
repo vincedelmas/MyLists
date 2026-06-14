@@ -7,7 +7,7 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {mediaCommunityActivityOptions} from "@/lib/client/react-query/query-options";
-import {CommunityActivityList, CommunityActivityStatsGrid} from "@/lib/client/components/media/base/MediaCommunityActivity";
+import {CommunityActivityList, CommunityActivityStats} from "@/lib/client/components/media/base/MediaCommunityActivity";
 
 
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId/community")({
@@ -50,7 +50,7 @@ function MediaCommunityActivityPage() {
                 />
                 :
                 <div className="space-y-4">
-                    <CommunityActivityStatsGrid
+                    <CommunityActivityStats
                         stats={apiData.stats}
                         mediaType={mediaType}
                     />

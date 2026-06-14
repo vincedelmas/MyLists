@@ -25,13 +25,14 @@ export const MediaInfoGridItem = ({ label, children }: MediaInfoGridItemProps) =
 
 interface MediaSectionTitleProps {
     title: string;
+    className?: string;
     children?: React.ReactNode;
 }
 
 
-export const MediaSectionTitle = ({ children, title }: MediaSectionTitleProps) => {
+export const MediaSectionTitle = ({ children, title, className }: MediaSectionTitleProps) => {
     return (
-        <div className="flex justify-between items-end mb-3">
+        <div className={cn("flex justify-between items-end mb-3", className)}>
             <h2 className="text-xl font-semibold text-primary">
                 {title}
             </h2>

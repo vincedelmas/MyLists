@@ -97,38 +97,6 @@ export const formatMinutes = (minutes: number | string | null | undefined, optio
 };
 
 
-export const formatAdaptiveMinutes = (minutes: number | string | null | undefined) => {
-    const totalMinutes = Math.floor(Number(minutes ?? 0));
-    if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return DEFAULT_FALLBACK;
-
-    const hours = Math.floor(totalMinutes / 60);
-    const remainingMinutes = totalMinutes % 60;
-
-    if (hours < 1) return `${remainingMinutes}m`;
-    if (hours < 10) return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
-    if (hours < 24) return `${Math.round(totalMinutes / 60)}h`;
-
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-
-    if (days < 30) {
-        return remainingHours > 0 && days < 7 ? `${days}d ${remainingHours}h` : `${days}d`;
-    }
-
-    const months = Math.floor(days / 30);
-    const remainingDays = days % 30;
-
-    if (months < 12) {
-        return remainingDays > 0 ? `${months}mo ${remainingDays}d` : `${months}mo`;
-    }
-
-    const years = Math.floor(months / 12);
-    const remainingMonths = months % 12;
-
-    return remainingMonths > 0 ? `${years}y ${remainingMonths}mo` : `${years}y`;
-};
-
-
 export const formatMs = (ms: number) => {
     if (!Number.isFinite(ms) || ms < 0) return DEFAULT_FALLBACK;
     if (ms < 1000) return `${Math.round(ms)}ms`;

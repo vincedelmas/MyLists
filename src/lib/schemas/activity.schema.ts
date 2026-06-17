@@ -1,12 +1,35 @@
 import z from "zod";
-import {MediaType} from "@/lib/utils/enums";
+import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {calendarDateRangeToISOString} from "@/lib/utils/date-formatting";
 
 
 export type AddActivity = z.infer<typeof addActivitySchema>;
+export type ActivitySearch = z.infer<typeof activitySearchSchema>;
 export type MonthlyActivityFilters = z.infer<typeof monthlyActivitySchema>;
 export type UpdateActivity = z.infer<typeof updateActivitySchema>["payload"];
 export type MonthlyActivityStatsFilters = z.infer<typeof monthlyActivityStatsSchema>;
+
+
+const activityDateSearchSchema = {
+    year: z.preprocess((val) => {
+        const year = Number(val);
+        return Number.isInteger(year) && year > 0 ? String(year) : String(new Date().getFullYear());
+    }, z.string()),
+    month: z.preprocess((val) => {
+        const month = Number(val);
+        return Number.isInteger(month) && month >= 1 && month <= 12 ? String(month) : String(new Date().getMonth() + 1);
+    }, z.string()),
+};
+
+
+export const activitySearchSchema = z.object({
+    ...activityDateSearchSchema,
+    search: z.string().optional().catch(undefined),
+    page: z.coerce.number().int().positive().optional().default(1),
+    hiddenOnly: z.preprocess((value) => value === true || value === "true", z.boolean()).default(false),
+    activeTab: z.union([z.enum(MediaType), z.literal("all")]).optional().default("all").catch("all"),
+    activityKind: z.enum(ActivityKind).optional().default(ActivityKind.ALL).catch(ActivityKind.ALL),
+});
 
 
 export const monthlyActivitySchema = z.object({
@@ -17,7 +40,7 @@ export const monthlyActivitySchema = z.object({
     page: z.coerce.number().int().positive().optional().default(1),
     month: z.coerce.number().int().positive().min(1).max(12),
     activeTab: z.union([z.enum(MediaType), z.literal("all")]).optional().default("all"),
-    activityKind: z.enum(["all", "completed", "progressed", "redo"]).optional().default("all"),
+    activityKind: z.enum(ActivityKind).optional().default(ActivityKind.ALL),
 });
 
 export const monthlyActivityStatsSchema = monthlyActivitySchema.pick({

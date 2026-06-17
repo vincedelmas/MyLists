@@ -1,8 +1,7 @@
 import {Activity} from "lucide-react";
-import {SearchType} from "@/lib/schemas";
-import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {mediaTypeMediaIdSchema, SearchType} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -13,11 +12,10 @@ import {CommunityActivityList, CommunityActivityStats} from "@/lib/client/compon
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId/community")({
     params: {
         parse: (params) => {
-            return {
-                mediaId: Number(params.mediaId),
-                mediaType: params.mediaType as MediaType,
-            }
-        }
+            const result = mediaTypeMediaIdSchema.safeParse(params);
+            if (!result.success) return false;
+            return result.data;
+        },
     },
     validateSearch: (search) => search as SearchType,
     loaderDeps: ({ search }) => ({ search }),

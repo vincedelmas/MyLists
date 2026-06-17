@@ -1,6 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
+import {ActivitySearch} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
-import {ActivitySearch} from "@/lib/types/activity.types";
 import {getActivityAddMediaSearch, getMonthlyActivity, getMonthlyActivityStats} from "@/lib/server/functions/user-activity";
 
 

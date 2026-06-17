@@ -15,14 +15,14 @@ export const precomputePlatformStatsTask = defineTask({
         const cacheManager = await getContainer().then((c) => c.cacheManager);
 
         await ctx.step("platform-stats-overview", async () => {
-            const data = await getPlatformStatsData();
-            await cacheManager.set(getPlatformStatsCacheKey({}), data, ONE_DAY_CACHE_TTL_MS);
+            const data = await getPlatformStatsData("overview");
+            await cacheManager.set(getPlatformStatsCacheKey("overview"), data, ONE_DAY_CACHE_TTL_MS);
         });
 
         for (const mediaType of Object.values(MediaType)) {
             await ctx.step(`platform-stats-${mediaType}`, async () => {
                 const data = await getPlatformStatsData(mediaType);
-                await cacheManager.set(getPlatformStatsCacheKey({ mediaType }), data, ONE_DAY_CACHE_TTL_MS);
+                await cacheManager.set(getPlatformStatsCacheKey(mediaType), data, ONE_DAY_CACHE_TTL_MS);
             });
         }
     },

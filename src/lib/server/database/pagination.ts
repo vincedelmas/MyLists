@@ -41,7 +41,6 @@ export const resolveSorting = <T extends string>(value: string | undefined, allo
     if (value && allowed.includes(value as T)) {
         return value as T;
     }
-
     return fallback;
 };
 

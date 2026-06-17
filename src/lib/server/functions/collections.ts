@@ -19,7 +19,7 @@ import {
 
 export const getCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(tryNotFound(communityCollectionsSchema))
+    .validator(communityCollectionsSchema)
     .handler(async ({ data: { search, page, mediaType } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -29,7 +29,7 @@ export const getCommunityCollections = createServerFn({ method: "GET" })
 
 export const getMediaCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(tryNotFound(mediaCommunityCollectionsSchema))
+    .validator(mediaCommunityCollectionsSchema)
     .handler(async ({ data: { mediaId, mediaType } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -39,7 +39,7 @@ export const getMediaCommunityCollections = createServerFn({ method: "GET" })
 
 export const getReadCollectionDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(tryNotFound(collectionIdSchema))
+    .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -49,7 +49,7 @@ export const getReadCollectionDetails = createServerFn({ method: "GET" })
 
 export const getUserCollections = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .validator(tryNotFound(userCollectionsSchema))
+    .validator(userCollectionsSchema)
     .handler(async ({ data: { mediaType }, context: { user, currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -59,7 +59,7 @@ export const getUserCollections = createServerFn({ method: "GET" })
 
 export const getUserCollectionMemberships = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .validator(tryNotFound(collectionMediaMembershipsSchema))
+    .validator(collectionMediaMembershipsSchema)
     .handler(async ({ data: { mediaId, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;

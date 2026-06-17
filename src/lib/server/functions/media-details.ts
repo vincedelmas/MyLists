@@ -49,7 +49,7 @@ export const getMediaCommunityActivity = createServerFn({ method: "GET" })
 
 export const resolveExternalMedia = createServerFn({ method: "POST" })
     .middleware([publicAuthMiddleware, transactionMiddleware])
-    .validator(tryNotFound(externalMediaResolveSchema))
+    .validator(externalMediaResolveSchema)
     .handler(async ({ data: { mediaType, apiId } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
@@ -62,11 +62,11 @@ export const resolveExternalMedia = createServerFn({ method: "POST" })
 
 export const getJobDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(tryNotFound(jobDetailsSchema))
-    .handler(async ({ data: { mediaType, job, name, search }, context: { currentUser } }) => {
+    .validator(jobDetailsSchema)
+    .handler(async ({ data: { mediaType, job, name, pagination }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
-        return mediaService.getMediaJobDetails(job, name, search, currentUser?.id);
+        return mediaService.getMediaJobDetails(job, name, pagination, currentUser?.id);
     });
 
 
@@ -103,7 +103,7 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
 
 export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .validator(tryNotFound(mediaActionSchema))
+    .validator(mediaActionSchema)
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();
         const gamesService = container.registries.mediaService.getService(MediaType.GAMES);

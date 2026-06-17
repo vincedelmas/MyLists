@@ -4,6 +4,7 @@ import {paginationSchema} from "@/lib/schemas/common.schema";
 
 
 export type CreateCollection = z.infer<typeof createCollectionSchema>;
+export type CommunitySearch = z.infer<typeof communityCollectionsSchema>;
 
 
 const collectionItemSchema = z.object({
@@ -51,8 +52,8 @@ export const communityCollectionsSchema = paginationSchema.extend({
 });
 
 export const mediaCommunityCollectionsSchema = z.object({
-    mediaId: z.coerce.number().int().positive(),
     mediaType: z.enum(MediaType),
+    mediaId: z.coerce.number().int().positive(),
 });
 
 export const collectionMediaMembershipsSchema = z.object({

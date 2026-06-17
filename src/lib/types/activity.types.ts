@@ -1,20 +1,6 @@
-import {MediaType} from "@/lib/utils/enums";
 import {DeltaStats} from "@/lib/types/stats.types";
+import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {UpdateUserMediaDetails} from "@/lib/types/user-media.types";
-
-
-export type ActivityKind = "all" | "completed" | "progressed" | "redo";
-
-
-export type ActivitySearch = {
-    year: string;
-    month: string;
-    page?: number;
-    search?: string;
-    hiddenOnly?: boolean;
-    activityKind?: ActivityKind;
-    activeTab?: MediaType | "all";
-}
 
 
 export type MediaInfo = {

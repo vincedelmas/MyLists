@@ -55,6 +55,15 @@ export const MediaType = {
 export type MediaType = (typeof MediaType)[keyof typeof MediaType];
 
 
+export const ActivityKind = {
+    ALL: "all",
+    COMPLETED: "completed",
+    PROGRESSED: "progressed",
+    REDO: "redo",
+} as const;
+export type ActivityKind = (typeof ActivityKind)[keyof typeof ActivityKind];
+
+
 export const Status = {
     READING: "Reading",
     PLAYING: "Playing",
@@ -206,5 +215,4 @@ export const FeatureStatus = {
     COMPLETED: "Completed",
 } as const;
 export type FeatureStatus = (typeof FeatureStatus)[keyof typeof FeatureStatus];
-
 

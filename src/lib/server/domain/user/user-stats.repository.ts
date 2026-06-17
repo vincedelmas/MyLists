@@ -92,7 +92,7 @@ export class UserStatsRepository {
         }
     }
 
-    static async userHallofFameData(filters: SearchType, userId?: number) {
+    static async userHalloFameData(filters: SearchType, userId?: number) {
         const { search = "" } = filters;
         const mediaTypes = Object.values(MediaType);
         const sorting = resolveSorting(filters.sorting, ["normalized", "profile", ...mediaTypes] as const, "normalized");

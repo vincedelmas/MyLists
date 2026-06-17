@@ -8,7 +8,7 @@ import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {BaseProviderService} from "@/lib/server/domain/media/base/provider.service";
 import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {MediaListArgs, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
+import {MediaListArgs, Pagination, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 
 
@@ -120,9 +120,9 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return this.repository.getSearchListFilters(userId, query, job);
     }
 
-    async getMediaJobDetails(job: JobType, name: string, search: SearchType, userId?: number) {
-        const page = search.page ?? 1;
-        const perPage = search.perPage ?? 24;
+    async getMediaJobDetails(job: JobType, name: string, pagination: Pagination, userId?: number) {
+        const page = pagination.page ?? 1;
+        const perPage = pagination.perPage ?? 24;
         const offset = (page - 1) * perPage;
 
         return this.repository.getMediaJobDetails(job, name, offset, perPage, userId);

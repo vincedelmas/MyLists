@@ -1,52 +1,59 @@
 import {toast} from "sonner";
 import {useForm} from "react-hook-form";
-import {LoaderCircle} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
-import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {ResetPassword, resetPasswordSchema, tokenSchema} from "@/lib/schemas";
+import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
 export const Route = createFileRoute("/_main/_public/reset-password")({
-    validateSearch: (search) => search as { token: string },
+    validateSearch: tokenSchema,
     loaderDeps: ({ search }) => ({ search }),
     component: ResetPasswordPage,
+    errorComponent: ({ error }) => {
+        if (!(error instanceof SearchParamError)) {
+            throw error;
+        }
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh]">
+                <div className="text-center mb-4">
+                    <h1>Invalid reset link</h1>
+                    <p>The password reset link is invalid.</p>
+                </div>
+                <Link to="/forgot-password">
+                    <Button>Request a new reset link</Button>
+                </Link>
+            </div>
+        );
+    }
 });
-
-
-type FormValues = {
-    newPassword: string,
-    confirmPassword: string,
-}
 
 
 function ResetPasswordPage() {
     const { token } = Route.useSearch();
     const navigate = Route.useNavigate();
-    const form = useForm<FormValues>({
+    const form = useForm<ResetPassword>({
+        resolver: zodResolver(resetPasswordSchema),
         defaultValues: {
             newPassword: "",
             confirmPassword: "",
         }
     });
 
-    const onSubmit = async (submitted: FormValues) => {
-        if (!token) {
-            toast.error("The provided token is invalid or expired.");
-            return navigate({ to: "/", replace: true });
-        }
-
+    const onSubmit = async (submitted: ResetPassword) => {
         await authClient.resetPassword({ token, newPassword: submitted.newPassword }, {
-            onError: () => {
-                toast.error("An unexpected error occurred. Please try again later.");
+            onError: (ctx) => {
+                toast.error(ctx.error.message ?? "An unexpected error occurred. Please try again later.");
             },
             onSuccess: async () => {
                 form.reset();
                 await navigate({ to: "/login", replace: true });
-                toast.success("Your password was successfully modified");
-            }
+                toast.success("Your password was modified successfully!");
+            },
         });
     };
 
@@ -58,13 +65,8 @@ function ResetPasswordPage() {
                         <fieldset disabled={form.formState.isSubmitting}>
                             <div className="space-y-4">
                                 <FormField
-                                    control={form.control}
                                     name="newPassword"
-                                    rules={{
-                                        required: "The password is required.",
-                                        minLength: { value: 8, message: "The password is too short (8 min)." },
-                                        maxLength: { value: 50, message: "The password is too long (128 max)." },
-                                    }}
+                                    control={form.control}
                                     render={({ field }) =>
                                         <FormItem>
                                             <FormLabel>Password</FormLabel>
@@ -80,14 +82,8 @@ function ResetPasswordPage() {
                                     }
                                 />
                                 <FormField
-                                    control={form.control}
                                     name="confirmPassword"
-                                    rules={{
-                                        required: "The password confirmation is required.",
-                                        validate: (val) => {
-                                            if (form.watch("newPassword") !== val) return "The passwords do not match.";
-                                        }
-                                    }}
+                                    control={form.control}
                                     render={({ field }) =>
                                         <FormItem>
                                             <FormLabel>Confirm Password</FormLabel>
@@ -105,7 +101,7 @@ function ResetPasswordPage() {
                             </div>
                         </fieldset>
                         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting && <LoaderCircle className="size-4 animate-spin"/>} Submit
+                            Submit
                         </Button>
                     </form>
                 </Form>

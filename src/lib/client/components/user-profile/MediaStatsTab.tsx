@@ -97,7 +97,7 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
             />
 
             <div className="flex justify-end items-center gap-2 -mt-4 font-semibold text-muted-foreground">
-                <Link to="/stats/$username" params={{ username }} search={{ mediaType: mediaSummary.mediaType }}>
+                <Link to="/stats/$username" params={{ username }} search={{ activeTab: mediaSummary.mediaType }}>
                     <div className="flex justify-end items-center gap-2">
                         Advanced Stats <MoveRight className="size-4"/>
                     </div>

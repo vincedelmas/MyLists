@@ -1,4 +1,4 @@
-import {MediaType, PrivacyType} from "@/lib/utils/enums";
+import {PrivacyType} from "@/lib/utils/enums";
 
 
 export type CollectionItemInput = {
@@ -19,11 +19,4 @@ export type DraftItem = {
     mediaName: string;
     mediaCover: string;
     annotation?: string | null;
-};
-
-
-export type CommunitySearch = {
-    page?: number;
-    search?: string;
-    mediaType?: MediaType;
 };

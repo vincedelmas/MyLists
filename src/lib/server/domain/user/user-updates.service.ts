@@ -1,4 +1,4 @@
-import {SearchType} from "@/lib/schemas";
+import {SimpleSearch} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
 import {LogUpdateParams} from "@/lib/types/user-updates.types";
 import {UserUpdatesRepository} from "@/lib/server/domain/user/user-updates.repository";
@@ -30,7 +30,7 @@ export class UserUpdatesService {
         return this.repository.deleteRecentInitialAdd(userId, mediaType, mediaId);
     }
 
-    async getUserUpdatesPaginated(filters: SearchType, userId?: number) {
+    async getUserUpdatesPaginated(filters: SimpleSearch, userId?: number) {
         return this.repository.getUserUpdatesPaginated(filters, userId)
     }
 

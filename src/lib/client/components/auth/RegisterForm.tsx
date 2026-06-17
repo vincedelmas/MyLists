@@ -3,19 +3,13 @@ import {useForm} from "react-hook-form";
 import {LoaderCircle} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
 import {FaGithub, FaGoogle} from "react-icons/fa";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {useLocation} from "@tanstack/react-router";
+import {Register, registerSchema} from "@/lib/schemas";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-
-
-type FormValues = {
-    email: string;
-    username: string;
-    password: string;
-    confirmPassword: string;
-}
 
 
 interface RegisterFormProps {
@@ -26,21 +20,22 @@ interface RegisterFormProps {
 
 export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) => {
     const location = useLocation();
-    const form = useForm<FormValues>({
+    const form = useForm<Register>({
+        resolver: zodResolver(registerSchema),
+        shouldFocusError: false,
         defaultValues: {
             email: "",
             username: "",
             password: "",
             confirmPassword: "",
         },
-        shouldFocusError: false,
     });
 
     const getRedirectTarget = () => {
         return redirectTo || location.href || "/";
     };
 
-    const onSubmit = async (submitted: FormValues) => {
+    const onSubmit = async (submitted: Register) => {
         await authClient.signUp.email({
             email: submitted.email,
             name: submitted.username,
@@ -73,13 +68,8 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                     <fieldset disabled={form.formState.isSubmitting}>
                         <div className="space-y-4">
                             <FormField
-                                control={form.control}
                                 name="username"
-                                rules={{
-                                    required: "Username is required.",
-                                    minLength: { value: 3, message: "The username is too short (3 min)." },
-                                    maxLength: { value: 15, message: "The username is too long (15 max)." },
-                                }}
+                                control={form.control}
                                 render={({ field }) =>
                                     <FormItem>
                                         <FormLabel>Username</FormLabel>
@@ -94,9 +84,8 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                                 }
                             />
                             <FormField
-                                control={form.control}
                                 name="email"
-                                rules={{ required: "Email is required." }}
+                                control={form.control}
                                 render={({ field }) =>
                                     <FormItem>
                                         <FormLabel>Email</FormLabel>
@@ -112,13 +101,8 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                                 }
                             />
                             <FormField
-                                control={form.control}
                                 name="password"
-                                rules={{
-                                    required: "Password is required.",
-                                    minLength: { value: 8, message: "The password is too short (8 min)." },
-                                    maxLength: { value: 50, message: "The password is too long (50 max)." },
-                                }}
+                                control={form.control}
                                 render={({ field }) =>
                                     <FormItem>
                                         <FormLabel>Password</FormLabel>
@@ -134,15 +118,8 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                                 }
                             />
                             <FormField
-                                control={form.control}
                                 name="confirmPassword"
-                                rules={{
-                                    validate: (val) => {
-                                        if (form.watch("password") !== val) {
-                                            return "The passwords do not match.";
-                                        }
-                                    }
-                                }}
+                                control={form.control}
                                 render={({ field }) =>
                                     <FormItem>
                                         <FormLabel>Confirm Password</FormLabel>
@@ -164,8 +141,9 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                             {form.formState.errors.root.message}
                         </FormMessage>
                     }
-                    <Button disabled={form.formState.isSubmitting} className="flex text-center w-full  mb-4">
-                        {form.formState.isSubmitting && <LoaderCircle className="size-4 animate-spin"/>} Create an account
+                    <Button className="flex text-center w-full mb-4" disabled={form.formState.isSubmitting}>
+                        {form.formState.isSubmitting && <LoaderCircle className="size-4 animate-spin"/>}{" "}
+                        Create an Account
                     </Button>
                 </form>
             </Form>

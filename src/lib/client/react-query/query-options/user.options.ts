@@ -1,6 +1,5 @@
-import {SearchType} from "@/lib/schemas";
-import {MediaType} from "@/lib/utils/enums";
 import {queryOptions} from "@tanstack/react-query";
+import {HallOfFameSearch, SimpleSearch, StatsActiveTab} from "@/lib/schemas";
 import {getUserStats} from "@/lib/server/functions/user-stats";
 import {getHallOfFame} from "@/lib/server/functions/hall-of-fame";
 import {HighlightedMediaTab} from "@/lib/types/profile-custom.types";
@@ -48,13 +47,13 @@ export const followsOptions = (username: string) => queryOptions({
 });
 
 
-export const allUpdatesOptions = (username: string, filters: SearchType) => queryOptions({
+export const allUpdatesOptions = (username: string, filters: SimpleSearch) => queryOptions({
     queryKey: ["allUpdates", username, filters],
     queryFn: () => getAllUpdatesHistory({ data: { ...filters, username } }),
 });
 
 
-export const hallOfFameOptions = (search: SearchType) => queryOptions({
+export const hallOfFameOptions = (search: HallOfFameSearch) => queryOptions({
     queryKey: ["hof", search],
     queryFn: () => getHallOfFame({ data: search }),
 });
@@ -66,13 +65,13 @@ export const achievementOptions = (username: string) => queryOptions({
 });
 
 
-export const userStatsOptions = (username: string, search: { mediaType?: MediaType }) => queryOptions({
-    queryKey: ["userStats", username, search],
-    queryFn: () => getUserStats({ data: { username, ...search } }),
+export const userStatsOptions = (username: string, activeTab: StatsActiveTab) => queryOptions({
+    queryKey: ["userStats", username, activeTab],
+    queryFn: () => getUserStats({ data: { username, activeTab } }),
 });
 
 
-export const platformStatsOptions = (search: { mediaType?: MediaType }) => queryOptions({
-    queryKey: ["platformStats", search],
-    queryFn: () => getPlatformStats({ data: search }),
+export const platformStatsOptions = (activeTab: StatsActiveTab) => queryOptions({
+    queryKey: ["platformStats", activeTab],
+    queryFn: () => getPlatformStats({ data: { activeTab } }),
 });

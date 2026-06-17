@@ -146,7 +146,7 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         enabled: true,
         autoSignIn: false,
         minPasswordLength: 8,
-        maxPasswordLength: 50,
+        maxPasswordLength: 128,
         requireEmailVerification: true,
         resetPasswordTokenExpiresIn: 3600,
         sendResetPassword: async ({ user, url }) => {

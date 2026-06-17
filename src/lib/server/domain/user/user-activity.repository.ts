@@ -1,6 +1,6 @@
-import {MediaType} from "@/lib/utils/enums";
 import {UpdateActivity} from "@/lib/schemas";
 import {alias} from "drizzle-orm/sqlite-core";
+import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {user, userMediaActivity} from "@/lib/server/database/schema";
@@ -16,7 +16,7 @@ const BULK_IMPORT_ACTIVITY_THRESHOLD = 200;
 export class UserActivityRepository {
     static async logActivity(activity: LogActivity) {
         const date = activity.lastUpdate ? dateFromUTCInput(activity.lastUpdate) : new Date();
-        
+
         const monthBucket = monthBucketFromDateInput(date);
         const newActivity = { ...activity, monthBucket, lastUpdate: date.toISOString() }
 
@@ -137,17 +137,17 @@ export class UserActivityRepository {
             conditions.push(eq(userMediaActivity.mediaType, filters.mediaType));
         }
 
-        if (filters.activityKind && filters.activityKind !== "all") {
-            if (filters.activityKind === "redo") {
+        if (filters.activityKind && filters.activityKind !== ActivityKind.ALL) {
+            if (filters.activityKind === ActivityKind.REDO) {
                 conditions.push(eq(userMediaActivity.isRedo, true));
             }
-            else if (filters.activityKind === "completed") {
+            else if (filters.activityKind === ActivityKind.COMPLETED) {
                 conditions.push(and(
                     eq(userMediaActivity.isRedo, false),
                     eq(userMediaActivity.isCompleted, true),
                 )!);
             }
-            else if (filters.activityKind === "progressed") {
+            else if (filters.activityKind === ActivityKind.PROGRESSED) {
                 conditions.push(and(
                     eq(userMediaActivity.isRedo, false),
                     gt(userMediaActivity.specificGained, 0),

@@ -1,6 +1,6 @@
 import * as z from "zod";
 import {JobType, MediaType} from "@/lib/utils/enums";
-import {paginationSchema, searchTypeSchema} from "@/lib/schemas/common.schema";
+import {paginationSchema} from "@/lib/schemas/common.schema";
 
 
 export const mediaDetailsSchema = z.object({
@@ -52,9 +52,14 @@ export const updateBookCoverSchema = z.object({
     }
 });
 
-export const jobDetailsSchema = z.object({
+
+export const mediaDetailsJobSchema = z.object({
     name: z.string(),
     job: z.enum(JobType),
-    search: searchTypeSchema,
     mediaType: z.enum(MediaType),
+})
+
+
+export const jobDetailsSchema = mediaDetailsJobSchema.extend({
+    pagination: paginationSchema,
 });

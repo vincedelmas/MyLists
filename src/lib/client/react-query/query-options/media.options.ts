@@ -1,4 +1,4 @@
-import {SearchType} from "@/lib/schemas";
+import {Pagination, SearchType} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
@@ -68,9 +68,9 @@ export const editMediaDetailsOptions = (mediaType: MediaType, mediaId: number) =
 });
 
 
-export const jobDetailsOptions = (mediaType: MediaType, job: JobType, name: string, search: SearchType) => queryOptions({
-    queryKey: ["jobDetails", mediaType, job, name, search],
-    queryFn: () => getJobDetails({ data: { mediaType, job, name, search } }),
+export const jobDetailsOptions = (mediaType: MediaType, job: JobType, name: string, pagination: Pagination) => queryOptions({
+    queryKey: ["jobDetails", mediaType, job, name, pagination],
+    queryFn: () => getJobDetails({ data: { mediaType, job, name, pagination } }),
 });
 
 

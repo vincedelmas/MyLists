@@ -28,7 +28,12 @@ export const mediaListArgsSchema = paginationSchema.extend({
     platforms: z.array(z.enum(GamesPlatformsEnum)).optional().catch(undefined),
 });
 
+export const mediaListSearchSchema = mediaListArgsSchema.extend({
+    view: z.enum(["grid", "list"]).optional().catch(undefined),
+});
+
 export const mediaListSchema = z.object({
+    username: z.string(),
     args: mediaListArgsSchema,
     mediaType: z.enum(MediaType),
 });

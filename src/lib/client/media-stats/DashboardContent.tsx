@@ -1,27 +1,17 @@
-import {MediaType} from "@/lib/utils/enums";
-import {ExtractStatsByType, TabValue} from "@/lib/types/stats.types";
+import {UserStatsResult} from "@/lib/types/stats.types";
 import {OverviewDashboard} from "@/lib/client/media-stats/OverviewDashboard";
 import {MediaTypeDashboard} from "@/lib/client/media-stats/MediaTypeDashboard";
 
 
-interface DashboardContentProps<T extends TabValue> {
-    selectedTab: T;
-    data: ExtractStatsByType<T extends "overview" ? undefined : MediaType>;
+interface DashboardContentProps {
+    data: UserStatsResult;
 }
 
 
-export const DashboardContent = <T extends TabValue>({ data, selectedTab }: DashboardContentProps<T>) => {
-    if (selectedTab === "overview") {
-        return (
-            <OverviewDashboard
-                stats={data as ExtractStatsByType<undefined>}
-            />
-        );
+export const DashboardContent = ({ data }: DashboardContentProps) => {
+    if (data.mediaType === undefined) {
+        return <OverviewDashboard stats={data}/>;
     }
 
-    return (
-        <MediaTypeDashboard
-            stats={data as ExtractStatsByType<MediaType>}
-        />
-    );
+    return <MediaTypeDashboard stats={data}/>;
 };

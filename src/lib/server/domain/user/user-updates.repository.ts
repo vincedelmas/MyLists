@@ -1,4 +1,4 @@
-import {SearchType} from "@/lib/schemas";
+import {SimpleSearch} from "@/lib/schemas";
 import {alias} from "drizzle-orm/sqlite-core";
 import {paginate} from "@/lib/server/database/pagination";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
@@ -24,7 +24,7 @@ export class UserUpdatesRepository {
         });
     }
 
-    static async getUserUpdatesPaginated(filters: SearchType, userId?: number) {
+    static async getUserUpdatesPaginated(filters: SimpleSearch, userId?: number) {
         const search = filters?.search ?? "";
 
         const baseConditions: SQL[] = [];

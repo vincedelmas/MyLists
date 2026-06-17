@@ -1,7 +1,7 @@
 import {createServerFn} from "@tanstack/react-start";
-import {allUpdatesHistorySchema} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {simpleSearchUsernameSchema} from "@/lib/schemas";
 import {authorizationMiddleware, resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
 
 
@@ -106,7 +106,7 @@ export const getUsersFollowers = createServerFn({ method: "GET" })
 
 export const getAllUpdatesHistory = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .validator(allUpdatesHistorySchema)
+    .validator(simpleSearchUsernameSchema)
     .handler(async ({ data, context: { user } }) => {
         const userUpdatesService = await getContainer().then((c) => c.services.userUpdates);
         return userUpdatesService.getUserUpdatesPaginated(data, user.id);

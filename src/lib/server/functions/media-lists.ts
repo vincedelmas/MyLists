@@ -1,25 +1,22 @@
 import {z} from "zod";
 import {MediaType} from "@/lib/utils/enums";
+import {notFound} from "@tanstack/react-router";
 import {createServerFn} from "@tanstack/react-start";
-import {tryNotFound} from "@/lib/utils/try-not-found";
 import {getContainer} from "@/lib/server/core/container";
-import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaListDataByType} from "@/lib/server/domain/media/base/base.repository";
-import {mediaListFiltersSchema, mediaListSchema, mediaListSearchFiltersSchema} from "@/lib/schemas";
 import {authorizationMiddleware, resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
+import {mediaListFiltersSchema, mediaListSchema, mediaListSearchFiltersSchema, mediaTypeUsernameSchema} from "@/lib/schemas";
 
 
 export const getUserListHeaderSF = createServerFn({ method: "GET" })
     .middleware([resolveTargetUserMiddleware])
-    .validator(tryNotFound(z.object({ username: z.string(), mediaType: z.enum(MediaType) })))
+    .validator(mediaTypeUsernameSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser, targetUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
 
         const userHasMediaTypeActive = await userService.hasActiveMediaType(targetUser.id, mediaType);
-        if (!userHasMediaTypeActive) {
-            throw new FormattedError("MediaType not-activated");
-        }
+        if (!userHasMediaTypeActive) throw notFound();
 
         if (currentUser && currentUser.id !== targetUser.id) {
             await userService.incrementMediaTypeView(targetUser.id, mediaType);
@@ -31,7 +28,7 @@ export const getUserListHeaderSF = createServerFn({ method: "GET" })
 
 export const getMediaListSF = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .validator(tryNotFound(mediaListSchema))
+    .validator(mediaListSchema)
     .handler(async ({ data, context: { currentUser, user } }) => {
         const { mediaType, args } = data;
         const container = await getContainer();
@@ -45,9 +42,7 @@ export const getMediaListSF = createServerFn({ method: "GET" })
         }
 
         const userHasMediaTypeActive = await userService.hasActiveMediaType(targetUserId, data.mediaType);
-        if (!userHasMediaTypeActive) {
-            throw new FormattedError("MediaType not-activated");
-        }
+        if (!userHasMediaTypeActive) throw notFound();
 
         const mediaService = container.registries.mediaService.getService(mediaType);
         const results = await mediaService.getMediaList(currentUserId, targetUserId, args) as MediaListDataByType[typeof mediaType];

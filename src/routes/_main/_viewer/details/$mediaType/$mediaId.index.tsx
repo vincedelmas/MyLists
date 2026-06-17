@@ -1,10 +1,10 @@
 import {Suspense} from "react";
-import {MediaType} from "@/lib/utils/enums";
 import {ExternalLink, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Card} from "@/lib/client/components/ui/card";
-import {useSuspenseQuery} from "@tanstack/react-query";
+import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
@@ -25,11 +25,10 @@ import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDe
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId/")({
     params: {
         parse: (params) => {
-            return {
-                mediaId: Number(params.mediaId),
-                mediaType: params.mediaType as MediaType,
-            }
-        }
+            const result = mediaTypeMediaIdSchema.safeParse(params);
+            if (!result.success) return false;
+            return result.data;
+        },
     },
     loader: async ({ context: { queryClient }, params: { mediaType, mediaId } }) => {
         const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId));

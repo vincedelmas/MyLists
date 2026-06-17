@@ -56,6 +56,7 @@ export const moviesConfig: MovieSchemaConfig = {
             "Release Date +": [desc(movies.releaseDate), asc(movies.name)],
             "Release Date -": [sql`${movies.releaseDate} ASC NULLS LAST`, asc(movies.name)],
             "Recently Added": [desc(moviesList.addedAt), asc(movies.name)],
+            "Recently Modified": [desc(moviesList.lastUpdated), asc(movies.name)],
             "Re-Watched": [desc(moviesList.redo), asc(movies.name)],
         },
     },

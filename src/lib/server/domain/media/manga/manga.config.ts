@@ -50,6 +50,7 @@ export const mangaConfig: MangaSchemaConfig = {
             "Published Date +": [desc(manga.releaseDate), asc(manga.name)],
             "Published Date -": [sql`${manga.releaseDate} ASC NULLS LAST`, asc(manga.name)],
             "Recently Added": [desc(mangaList.addedAt), asc(manga.name)],
+            "Recently Modified": [desc(mangaList.lastUpdated), asc(manga.name)],
             "Re-Read": [desc(mangaList.redo), asc(manga.name)],
             "Chapters +": [desc(manga.chapters), asc(manga.name)],
             "Chapters -": [asc(manga.chapters), asc(manga.name)],

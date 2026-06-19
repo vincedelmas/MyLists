@@ -1,12 +1,13 @@
 import * as z from "zod";
-import {JobType, MediaType} from "@/lib/utils/enums";
-import {paginationSchema} from "@/lib/schemas/common.schema";
+import {JobType} from "@/lib/utils/enums";
+import {mediaIdFieldSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas/common.schema";
 
 
-export const mediaDetailsSchema = z.object({
-    mediaType: z.enum(MediaType),
-    mediaId: z.coerce.number().int().positive(),
-});
+export type UpdateBookCoverInput = z.input<typeof updateBookCoverSchema>;
+export type EditMediaDetailsPayload = z.infer<typeof editMediaDetailsPayloadSchema>;
+
+
+export const mediaDetailsSchema = mediaTypeMediaIdSchema;
 
 export const mediaCommunityActivitySchema = mediaDetailsSchema.extend({
     search: paginationSchema,
@@ -14,29 +15,23 @@ export const mediaCommunityActivitySchema = mediaDetailsSchema.extend({
 
 export const externalMediaResolveSchema = z.object({
     apiId: z.coerce.string(),
-    mediaType: z.enum(MediaType),
+    mediaType: mediaTypeFieldSchema,
 });
 
-export const refreshMediaDetailsSchema = z.object({
-    mediaType: z.enum(MediaType),
-    mediaId: z.coerce.number().int().positive(),
-});
+export const refreshMediaDetailsSchema = mediaTypeMediaIdSchema;
 
-export const mediaDetailsToEditSchema = z.object({
-    mediaType: z.enum(MediaType),
-    mediaId: z.coerce.number().int().positive(),
-});
+export const mediaDetailsToEditSchema = mediaTypeMediaIdSchema;
 
-export const editMediaDetailsSchema = z.object({
-    mediaType: z.enum(MediaType),
-    payload: z.record(z.any(), z.any()),
-    mediaId: z.coerce.number().int().positive(),
+export const editMediaDetailsPayloadSchema = z.record(z.string(), z.any());
+
+export const editMediaDetailsSchema = mediaTypeMediaIdSchema.extend({
+    payload: editMediaDetailsPayloadSchema,
 });
 
 export const updateBookCoverSchema = z.object({
     imageUrl: z.url().trim().optional(),
     imageFile: z.instanceof(File).optional(),
-    mediaId: z.coerce.number().int().positive(),
+    mediaId: mediaIdFieldSchema,
 }).superRefine((data, ctx) => {
     const addFieldIssues = (message: string) => {
         ctx.addIssue({ code: "custom", message, path: ["imageUrl"] });
@@ -46,7 +41,6 @@ export const updateBookCoverSchema = z.object({
     if (!data.imageUrl && !data.imageFile) {
         addFieldIssues("Provide an image link or upload a file.");
     }
-
     if (data.imageUrl && data.imageFile) {
         addFieldIssues("Please, choose only one cover option.");
     }
@@ -56,7 +50,7 @@ export const updateBookCoverSchema = z.object({
 export const mediaDetailsJobSchema = z.object({
     name: z.string(),
     job: z.enum(JobType),
-    mediaType: z.enum(MediaType),
+    mediaType: mediaTypeFieldSchema,
 })
 
 

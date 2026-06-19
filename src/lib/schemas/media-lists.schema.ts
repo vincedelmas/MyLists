@@ -1,20 +1,27 @@
 import * as z from "zod";
-import {paginationSchema} from "@/lib/schemas/common.schema";
-import {GamesPlatformsEnum, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {GamesPlatformsEnum, JobType, Status} from "@/lib/utils/enums";
+import {
+    mediaTypeFieldSchema,
+    optionalCoercedBooleanFieldSchema,
+    optionalSearchFieldSchema,
+    paginationSchema,
+    sortingFieldSchema,
+    usernameFieldSchema
+} from "@/lib/schemas/common.schema";
 
 
 export type MediaListArgs = z.infer<typeof mediaListArgsSchema>;
 
 
 export const mediaListArgsSchema = paginationSchema.extend({
-    search: z.string().optional().catch(undefined),
-    sorting: z.string().optional().catch(undefined),
+    sorting: sortingFieldSchema,
+    search: optionalSearchFieldSchema,
+    comment: optionalCoercedBooleanFieldSchema,
+    favorite: optionalCoercedBooleanFieldSchema,
+    hideCommon: optionalCoercedBooleanFieldSchema,
     status: z.array(z.enum(Status)).optional().catch(undefined),
     currentUserId: z.coerce.number().int().optional().catch(undefined),
     userId: z.coerce.number().int().optional().catch(undefined),
-    favorite: z.coerce.boolean().optional().catch(undefined),
-    comment: z.coerce.boolean().optional().catch(undefined),
-    hideCommon: z.coerce.boolean().optional().catch(undefined),
     genres: z.array(z.string()).optional().catch(undefined),
     tags: z.array(z.string()).optional().catch(undefined),
     langs: z.array(z.string()).optional().catch(undefined),
@@ -33,17 +40,17 @@ export const mediaListSearchSchema = mediaListArgsSchema.extend({
 });
 
 export const mediaListSchema = z.object({
-    username: z.string(),
     args: mediaListArgsSchema,
-    mediaType: z.enum(MediaType),
+    username: usernameFieldSchema,
+    mediaType: mediaTypeFieldSchema,
 });
 
 export const mediaListFiltersSchema = z.looseObject({
-    mediaType: z.enum(MediaType),
+    mediaType: mediaTypeFieldSchema,
 });
 
 export const mediaListSearchFiltersSchema = z.looseObject({
     job: z.enum(JobType),
-    mediaType: z.enum(MediaType),
+    mediaType: mediaTypeFieldSchema,
     query: z.string().min(1),
 });

@@ -1,11 +1,12 @@
 import * as z from "zod";
-import {tagSchema} from "@/lib/schemas/common.schema";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
-import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {GamesPlatformsEnum, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {coercedPositiveIntFieldSchema, mediaIdFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 
 
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
 export type UpdateUserCustomCover = z.infer<typeof updateUserCustomCoverSchema>;
+export type UpdateUserCustomCoverInput = z.input<typeof updateUserCustomCoverSchema>;
 
 
 const loggedAtSchema = z.string().trim().pipe(z.iso.date())
@@ -23,8 +24,8 @@ const loggedActivityUpdateTypes = new Set<UpdateType>([
 
 
 export const updateUserCustomCoverSchema = z.object({
-    mediaType: z.enum(MediaType),
-    mediaId: z.coerce.number().int().positive(),
+    mediaId: mediaIdFieldSchema,
+    mediaType: mediaTypeFieldSchema,
     imageUrl: z.url().trim().optional(),
     imageFile: z.instanceof(File).optional(),
     remove: z.coerce.boolean().optional().default(false),
@@ -37,25 +38,23 @@ export const updateUserCustomCoverSchema = z.object({
     if (data.remove && (data.imageUrl || data.imageFile)) {
         addFieldIssues("Provide an image link, upload a file, or choose remove.");
     }
-
     if (!data.remove && !data.imageUrl && !data.imageFile) {
         addFieldIssues("Provide an image link, upload a file, or choose remove.");
     }
-
     if (!data.remove && data.imageUrl && data.imageFile) {
         addFieldIssues("Please, choose only one cover option.");
     }
 });
 
 export const addMediaToListSchema = z.object({
-    mediaType: z.enum(MediaType),
+    mediaType: mediaTypeFieldSchema,
     status: z.enum(Status).optional(),
-    mediaId: z.coerce.number().int().positive(),
+    mediaId: mediaIdFieldSchema,
 });
 
 export const updateUserMediaSchema = z.object({
-    mediaType: z.enum(MediaType),
-    mediaId: z.coerce.number().int().positive(),
+    mediaType: mediaTypeFieldSchema,
+    mediaId: mediaIdFieldSchema,
     payload: z.object({
         type: z.enum(UpdateType),
         loggedAt: loggedAtSchema,
@@ -84,17 +83,20 @@ export const updateUserMediaSchema = z.object({
 });
 
 export const deleteUserUpdatesSchema = z.object({
-    updateIds: z.array(z.number().int().positive()),
+    updateIds: z.array(positiveIntFieldSchema),
     returnData: z.coerce.boolean().default(false),
 });
 
 export const userTagNamesSchema = z.object({
-    mediaType: z.enum(MediaType),
+    mediaType: mediaTypeFieldSchema,
 });
 
 export const editUserTagSchema = z.object({
-    tag: tagSchema,
     action: z.enum(TagAction),
-    mediaType: z.enum(MediaType),
-    mediaId: z.coerce.number().int().positive().optional(),
+    mediaType: mediaTypeFieldSchema,
+    mediaId: coercedPositiveIntFieldSchema.optional(),
+    tag: z.object({
+        name: z.string(),
+        oldName: z.string().optional(),
+    }),
 });

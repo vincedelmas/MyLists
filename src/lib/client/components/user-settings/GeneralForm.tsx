@@ -4,9 +4,10 @@ import {CircleHelp} from "lucide-react";
 import {useForm} from "react-hook-form";
 import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
-import {FormZodError} from "@/lib/utils/error-classes";
 import {Button} from "@/lib/client/components/ui/button";
+import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -14,30 +15,19 @@ import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
-type FormValues = {
-    username: string;
-    profileImage?: File;
-    privacy: PrivacyType;
-    backgroundImage?: File;
-};
-
-
-// A bit less than 10 Mb
-const MAX_FILE_SIZE = 10 * 1024 * 1000;
-
-
 export const GeneralForm = () => {
     const { currentUser, setCurrentUser } = useAuth();
     const generalSettingsMutation = useGeneralSettingsMutation();
     const [imageCropperKey, setImageCropperKey] = useState(Date.now());
-    const form = useForm<FormValues>({
+    const form = useForm<GeneralSettings>({
+        resolver: zodResolver(generalSettingsSchema),
         values: {
             username: currentUser?.name ?? "",
             privacy: currentUser?.privacy ?? PrivacyType.RESTRICTED,
         },
     });
 
-    const onSubmit = async (submittedData: FormValues) => {
+    const onSubmit = async (submittedData: GeneralSettings) => {
         const formData = new FormData();
 
         Object.entries(submittedData).forEach(([key, value]) => {
@@ -47,13 +37,6 @@ export const GeneralForm = () => {
         });
 
         generalSettingsMutation.mutate({ data: formData }, {
-            onError: (err) => {
-                if (err instanceof FormZodError) {
-                    err.issues.forEach((issue) => {
-                        form.setError(issue.path.join("."), { type: "server", message: issue.message });
-                    });
-                }
-            },
             onSuccess: async () => {
                 await setCurrentUser();
                 setImageCropperKey(Date.now());
@@ -69,13 +52,8 @@ export const GeneralForm = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="w-90 max-sm:w-full">
                 <div className="space-y-7">
                     <FormField
-                        control={form.control}
                         name="username"
-                        rules={{
-                            required: { value: true, message: "Username is required." },
-                            minLength: { value: 3, message: "Username too short (3 min)." },
-                            maxLength: { value: 15, message: "Username too long (15 max)." },
-                        }}
+                        control={form.control}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Username</FormLabel>
@@ -87,8 +65,8 @@ export const GeneralForm = () => {
                         )}
                     />
                     <FormField
-                        control={form.control}
                         name="privacy"
+                        control={form.control}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>
@@ -97,7 +75,7 @@ export const GeneralForm = () => {
                                         <PrivacyPopover/>
                                     </div>
                                 </FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                         <SelectTrigger className="w-full">
                                             <SelectValue placeholder="Select a privacy mode"/>
@@ -116,13 +94,6 @@ export const GeneralForm = () => {
                     <FormField
                         name="profileImage"
                         control={form.control}
-                        rules={{
-                            validate: (file?: File) => {
-                                if (!file) return true;
-                                if (file.size > MAX_FILE_SIZE) return "Image must be less than 10MB.";
-                                return true;
-                            },
-                        }}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Profile image</FormLabel>
@@ -143,13 +114,6 @@ export const GeneralForm = () => {
                     <FormField
                         name="backgroundImage"
                         control={form.control}
-                        rules={{
-                            validate: (file?: File) => {
-                                if (!file) return true;
-                                if (file.size > MAX_FILE_SIZE) return "Image must be less than 10MB.";
-                                return true;
-                            },
-                        }}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Background Image</FormLabel>
@@ -168,11 +132,6 @@ export const GeneralForm = () => {
                         )}
                     />
                 </div>
-                {form.formState.errors.root &&
-                    <p className="mt-2 text-sm font-medium text-destructive">
-                        {form.formState.errors.root.message}
-                    </p>
-                }
                 <Button type="submit" className="mt-5" disabled={!form.formState.isDirty || generalSettingsMutation.isPending}>
                     Update
                 </Button>

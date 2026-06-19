@@ -1,7 +1,9 @@
 import * as z from "zod";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {coercedPositiveIntFieldSchema, optionalTrimmedSearchFieldSchema} from "@/lib/schemas/common.schema";
 
 
+export type GlobalSearch = z.infer<typeof globalSearchSchema>;
 export type TrendsActiveTab = z.infer<typeof trendsActiveTabSchema>;
 
 
@@ -18,8 +20,14 @@ export const trendsSearchSchema = z.object({
 });
 
 
+export const globalSearchSchema = z.object({
+    query: optionalTrimmedSearchFieldSchema,
+    apiProvider: z.enum(ApiProviderType).optional().default(ApiProviderType.TMDB).catch(ApiProviderType.TMDB),
+});
+
+
 export const navbarSearchSchema = z.object({
     query: z.string().trim(),
     apiProvider: z.enum(ApiProviderType),
-    page: z.coerce.number().int().positive(),
+    page: coercedPositiveIntFieldSchema,
 });

@@ -1,7 +1,6 @@
 import {RoleType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {tryFormZodError, tryNotFound} from "@/lib/utils/try-not-found";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {authorizationMiddleware} from "@/lib/server/middlewares/authorization";
 import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
@@ -69,7 +68,7 @@ export const getUserCollectionMemberships = createServerFn({ method: "GET" })
 
 export const getEditCollectionDetails = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .validator(tryNotFound(collectionIdSchema))
+    .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -79,7 +78,7 @@ export const getEditCollectionDetails = createServerFn({ method: "GET" })
 
 export const postCreateCollection = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .validator(tryFormZodError(createCollectionSchema))
+    .validator(createCollectionSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
@@ -91,15 +90,11 @@ export const postCreateCollection = createServerFn({ method: "POST" })
 
 export const postUpdateCollection = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .validator(tryFormZodError(updateCollectionSchema))
+    .validator(updateCollectionSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        await collectionService.updateCollection({
-            ...data,
-            actorId: currentUser.id,
-            actorRole: currentUser.role as RoleType
-        });
+        await collectionService.updateCollection({ ...data, actorId: currentUser.id, actorRole: currentUser.role as RoleType });
     });
 
 

@@ -1,5 +1,6 @@
 import * as z from "zod";
 import {AchievementDifficulty, PrivacyType, RoleType} from "@/lib/utils/enums";
+import {coercedPositiveIntFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 
 
 export type AchievementTier = z.infer<typeof tierAchievementSchema>;
@@ -27,12 +28,12 @@ const tierAchievementSchema = z.object({
 
 
 export const adminPostUpdateUserSchema = z.object({
-    userId: z.number().int().positive().optional(),
+    userId: positiveIntFieldSchema.optional(),
     payload: adminUpdatePayloadSchema,
 });
 
 export const adminUpdateAchievementSchema = z.object({
-    achievementId: z.number().int().positive(),
+    achievementId: positiveIntFieldSchema,
     name: z.string(),
     description: z.string(),
 });
@@ -60,13 +61,13 @@ export const adminLlmResponseSchema = z.array(z.object({
 }));
 
 export const adminRefreshSchema = z.object({
-    recentPage: z.coerce.number().int().min(1).default(1),
+    recentPage: coercedPositiveIntFieldSchema.default(1),
     topRange: z.enum(["30d", "90d", "1y", "all"]).default("all"),
     dailyRange: z.enum(["30d", "90d", "1y", "all"]).default("30d"),
 });
 
 export const adminApiMonitoringSchema = z.object({
-    recentPage: z.coerce.number().int().min(1).default(1),
+    recentPage: coercedPositiveIntFieldSchema.default(1),
     range: z.enum(["24h", "7d", "30d", "90d", "all"]).default("30d"),
     dailyRange: z.enum(["7d", "30d", "90d", "all"]).default("30d"),
 });

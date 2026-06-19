@@ -186,11 +186,11 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return { media, delta, newState, logPayload };
     }
 
-    async updateUserCustomCover(userId: number, mediaId: number, payload: UpdateUserCustomCover) {
-        const media = await this.repository.findById(mediaId);
+    async updateUserCustomCover(userId: number, payload: UpdateUserCustomCover) {
+        const media = await this.repository.findById(payload.mediaId);
         if (!media) throw notFound();
 
-        const userMedia = await this.repository.findUserMedia(userId, mediaId);
+        const userMedia = await this.repository.findUserMedia(userId, payload.mediaId);
         if (!userMedia) throw new FormattedError("Media not in your list");
 
         let imageName: string | null = null;
@@ -217,7 +217,7 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
             }
         }
 
-        return this.repository.updateUserMediaDetails(userId, mediaId, { customCover: imageName });
+        return this.repository.updateUserMediaDetails(userId, payload.mediaId, { customCover: imageName });
     }
 
     async removeMediaFromUserList(userId: number, mediaId: number) {

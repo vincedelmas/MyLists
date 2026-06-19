@@ -1,16 +1,15 @@
-import z from "zod";
 import {notFound} from "@tanstack/react-router";
 import {createServerFn} from "@tanstack/react-start";
-import {respondToFollowRequest} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {PrivacyType, SocialNotifType} from "@/lib/utils/enums";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {followUserSchema, removeFollowerSchema, respondToFollowRequestSchema} from "@/lib/schemas";
 
 
 export const postFollow = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .validator(z.object({ targetUserId: z.coerce.number().int().positive() }))
+    .validator(followUserSchema)
     .handler(async ({ data: { targetUserId }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
@@ -42,7 +41,7 @@ export const postFollow = createServerFn({ method: "POST" })
 
 export const postUnfollow = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .validator(z.object({ targetUserId: z.coerce.number().int().positive() }))
+    .validator(followUserSchema)
     .handler(async ({ data: { targetUserId }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
@@ -69,7 +68,7 @@ export const postUnfollow = createServerFn({ method: "POST" })
 
 export const postRespondToFollowRequest = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .validator(respondToFollowRequest)
+    .validator(respondToFollowRequestSchema)
     .handler(async ({ data: { followerId, action }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
@@ -97,7 +96,7 @@ export const postRespondToFollowRequest = createServerFn({ method: "POST" })
 
 export const postRemoveFollower = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .validator(z.object({ followerId: z.coerce.number().int().positive() }))
+    .validator(removeFollowerSchema)
     .handler(async ({ data: { followerId }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;

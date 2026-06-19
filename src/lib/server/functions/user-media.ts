@@ -1,6 +1,5 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {tryFormZodError} from "@/lib/utils/try-not-found";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
@@ -43,14 +42,16 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
 
 export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .validator(tryFormZodError(updateUserCustomCoverSchema))
+    .validator((data) => {
+        return updateUserCustomCoverSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data);
+    })
     .handler(async ({ data, context: { currentUser } }) => {
-        const { mediaType, mediaId } = data;
+        const { mediaType } = data;
 
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
 
-        return mediaService.updateUserCustomCover(currentUser.id, mediaId, data);
+        return mediaService.updateUserCustomCover(currentUser.id, data);
     });
 
 

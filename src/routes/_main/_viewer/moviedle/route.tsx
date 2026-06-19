@@ -1,7 +1,6 @@
 import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {PartyPopper, ThumbsDown} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -9,6 +8,7 @@ import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CountdownTimer} from "@/lib/client/components/moviedle/CountdownTimer";
@@ -38,8 +38,6 @@ function MediadlePage() {
     const { search, setSearch, selectValue, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer();
     const { data: suggestions = [], isLoading, error } = useQuery(mediadleSuggestionsOptions(debouncedSearch));
 
-    const maxAttempts = mediadleData.maxAttempts ?? 5;
-
     const handleSearchClick = (input: string) => {
         selectValue(input);
     };
@@ -51,8 +49,9 @@ function MediadlePage() {
     };
 
     const onGuessClick = () => {
-        if (!search) return;
-        handleMutation(search);
+        const guess = search.trim();
+        if (!guess) return;
+        handleMutation(guess);
     };
 
     const onSkipClick = () => {
@@ -121,10 +120,10 @@ function MediadlePage() {
                                             <div className="space-y-1">
                                                 <div className="flex justify-between text-xs font-medium uppercase text-muted-foreground">
                                                     <span>Attempts</span>
-                                                    <span>{userData?.attempts ?? 0} / {maxAttempts}</span>
+                                                    <span>{userData?.attempts ?? 0} / {mediadleData.maxAttempts}</span>
                                                 </div>
                                                 <div className="flex gap-1.5 h-2">
-                                                    {Array.from({ length: maxAttempts }).map((_, idx) => {
+                                                    {Array.from({ length: mediadleData.maxAttempts }).map((_, idx) => {
                                                         const isUsed = idx < (userData?.attempts ?? 0);
                                                         return (
                                                             <div
@@ -149,8 +148,9 @@ function MediadlePage() {
                                                     position="top"
                                                     search={search}
                                                     isOpen={isOpen}
-                                                    className="max-w-100"
+                                                    minSearchLength={1}
                                                     isPending={isLoading}
+                                                    className={"max-w-100"}
                                                     debouncedSearch={debouncedSearch}
                                                     hasResults={!!suggestions?.length}
                                                 >
@@ -159,7 +159,7 @@ function MediadlePage() {
                                                             <button
                                                                 key={idx}
                                                                 type="button"
-                                                                onClick={() => handleSearchClick(item.name!)}
+                                                                onClick={() => handleSearchClick(item.name)}
                                                                 className="flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors"
                                                             >
                                                                 <ProfileIcon
@@ -168,8 +168,8 @@ function MediadlePage() {
                                                                     user={{ image: null, name: item.name! }}
                                                                 />
                                                                 <span className="text-left text-sm font-medium">
-                                                                {item.name}
-                                                            </span>
+                                                                    {item.name}
+                                                                </span>
                                                             </button>
                                                         )}
                                                     </div>
@@ -179,7 +179,7 @@ function MediadlePage() {
                                                 <Button className="flex-1" variant="emeraldy" onClick={onSkipClick}>
                                                     Skip
                                                 </Button>
-                                                <Button className="flex-2" onClick={onGuessClick} disabled={!search}>
+                                                <Button className="flex-2" onClick={onGuessClick} disabled={!search.trim()}>
                                                     Submit Guess
                                                 </Button>
                                             </div>

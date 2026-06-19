@@ -21,8 +21,6 @@ export const getMediadleSuggestions = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(mediadleSuggestionsSchema)
     .handler(async ({ data: { query } }) => {
-        if (query.length < 2) return [];
-
         const container = await getContainer();
         const moviesService = container.registries.mediaService.getService(MediaType.MOVIES);
         return moviesService.searchMediadleSuggestion(query);

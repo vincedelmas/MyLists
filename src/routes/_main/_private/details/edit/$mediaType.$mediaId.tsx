@@ -1,28 +1,27 @@
 import {toast} from "sonner";
 import {useForm} from "react-hook-form";
-import {MediaType} from "@/lib/utils/enums";
+import {splitIntoColumns} from "@/lib/utils/arrays";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {FormZodError} from "@/lib/utils/error-classes";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Button} from "@/lib/client/components/ui/button";
-import {splitIntoColumns} from "@/lib/utils/arrays";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {useEditMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
+import {EditMediaDetailsPayload, editMediaDetailsPayloadSchema, mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
 export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$mediaId")({
     params: {
         parse: (params) => {
-            return {
-                mediaId: parseInt(params.mediaId),
-                mediaType: params.mediaType as MediaType,
-            }
-        }
+            const result = mediaTypeMediaIdSchema.safeParse(params);
+            if (!result.success) return false;
+            return result.data;
+        },
     },
     loader: ({ context: { queryClient }, params: { mediaType, mediaId } }) => {
         return queryClient.ensureQueryData(editMediaDetailsOptions(mediaType, mediaId));
@@ -37,7 +36,8 @@ function MediaEditPage() {
     const editMediaMutation = useEditMediaMutation();
     const apiData = useSuspenseQuery(editMediaDetailsOptions(mediaType, mediaId)).data;
 
-    const form = useForm({
+    const form = useForm<EditMediaDetailsPayload>({
+        resolver: zodResolver(editMediaDetailsPayloadSchema),
         defaultValues: {
             imageCover: undefined,
             name: apiData.fields?.name,
@@ -70,22 +70,17 @@ function MediaEditPage() {
     });
     const parts = splitIntoColumns(Object.entries(apiData.fields), 3);
 
-    const onSubmit = (submittedData: Record<string, any>) => {
-        if (submittedData?.lockStatus === "false") {
-            submittedData.lockStatus = false;
+    const onSubmit = (submittedData: EditMediaDetailsPayload) => {
+        const payload = { ...submittedData };
+
+        if (payload?.lockStatus === "false") {
+            payload.lockStatus = false;
         }
-        else if (submittedData?.lockStatus === "true") {
-            submittedData.lockStatus = true;
+        else if (payload?.lockStatus === "true") {
+            payload.lockStatus = true;
         }
 
-        editMediaMutation.mutate({ data: { mediaType, mediaId, payload: submittedData } }, {
-            onError: (err) => {
-                if (err instanceof FormZodError) {
-                    err.issues.forEach((issue) => {
-                        form.setError(issue.path.join("."), { message: issue.message });
-                    });
-                }
-            },
+        editMediaMutation.mutate({ data: { mediaType, mediaId, payload } }, {
             onSuccess: async () => {
                 history.go(-1);
                 toast.success("Media successfully updated!");
@@ -105,10 +100,9 @@ function MediaEditPage() {
                     <FormItem>
                         <FormLabel>{capitalize(key.replaceAll("_", " "))}</FormLabel>
                         <FormControl>
-                            {key === "synopsis" ?
-                                <Textarea {...field} className="h-60"/>
-                                :
-                                <Input {...field}/>
+                            {key === "synopsis"
+                                ? <Textarea {...field} className="h-60"/>
+                                : <Input {...field}/>
                             }
                         </FormControl>
                         <FormMessage/>

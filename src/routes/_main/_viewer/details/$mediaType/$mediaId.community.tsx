@@ -1,10 +1,10 @@
 import {Activity} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {mediaTypeMediaIdSchema, SearchType} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas";
 import {mediaCommunityActivityOptions} from "@/lib/client/react-query/query-options";
 import {CommunityActivityList, CommunityActivityStats} from "@/lib/client/components/media/base/MediaCommunityActivity";
 
@@ -17,11 +17,10 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
             return result.data;
         },
     },
-    validateSearch: (search) => search as SearchType,
+    validateSearch: paginationSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: async ({ context: { queryClient }, params: { mediaType, mediaId }, deps: { search } }) => {
-        const page = search.page ?? 1;
-        await queryClient.ensureQueryData(mediaCommunityActivityOptions(mediaId, mediaType, { page, perPage: 24 }));
+        await queryClient.ensureQueryData(mediaCommunityActivityOptions(mediaId, mediaType, { page: search.page ?? 1, perPage: 24 }));
     },
     component: MediaCommunityActivityPage,
 });
@@ -53,9 +52,9 @@ function MediaCommunityActivityPage() {
                         mediaType={mediaType}
                     />
                     <CommunityActivityList
+                        variant="viewAll"
                         items={apiData.items}
                         mediaType={mediaType}
-                        variant="viewAll"
                     />
                     <Pagination
                         totalPages={apiData.pages}

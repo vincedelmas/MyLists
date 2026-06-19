@@ -1,12 +1,12 @@
-import {z} from "zod";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
+import {notificationIdSchema, notificationSchema} from "@/lib/schemas";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 
 
 export const getNotifications = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .validator(z.object({ type: z.enum(["media", "social"]) }))
+    .validator(notificationSchema)
     .handler(async ({ data: { type }, context: { currentUser } }) => {
         const container = await getContainer();
         const notificationsService = container.services.notifications;
@@ -25,7 +25,7 @@ export const getNotificationsCount = createServerFn({ method: "GET" })
 
 export const markAllNotifAsRead = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .validator(z.object({ type: z.enum(["media", "social"]) }))
+    .validator(notificationSchema)
     .handler(async ({ data: { type }, context: { currentUser } }) => {
         const container = await getContainer();
         const notificationsService = container.services.notifications;
@@ -35,7 +35,7 @@ export const markAllNotifAsRead = createServerFn({ method: "POST" })
 
 export const postDeleteSocialNotif = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .validator(z.object({ notificationId: z.coerce.number().int().positive() }))
+    .validator(notificationIdSchema)
     .handler(async ({ data: { notificationId }, context: { currentUser } }) => {
         const container = await getContainer();
         const notificationsService = container.services.notifications;

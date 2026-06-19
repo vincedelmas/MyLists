@@ -1,5 +1,5 @@
 import {queryOptions} from "@tanstack/react-query";
-import {HallOfFameSearch, SimpleSearch, StatsActiveTab} from "@/lib/schemas";
+import {HallOfFameSearch, highlightedMediaSearchSchema, SimpleSearch, StatsActiveTab} from "@/lib/schemas";
 import {getUserStats} from "@/lib/server/functions/user-stats";
 import {getHallOfFame} from "@/lib/server/functions/hall-of-fame";
 import {HighlightedMediaTab} from "@/lib/types/profile-custom.types";
@@ -27,12 +27,21 @@ export const profileCustomOptions = queryOptions({
 });
 
 
-export const profileCustomSearchOptions = (tab: HighlightedMediaTab, query: string) => queryOptions({
-    queryKey: ["settings", "profile-custom", "search", tab, query],
-    queryFn: () => getProfileCustomSearch({ data: { tab, query } }),
-    enabled: query.trim().length >= 2,
-    staleTime: 60 * 1000,
-});
+export const profileCustomSearchOptions = (tab: HighlightedMediaTab, query: string) => {
+    const parsedSearch = highlightedMediaSearchSchema.safeParse({ tab, query });
+
+    return queryOptions({
+        queryKey: ["settings", "profile-custom", "search", tab, query],
+        queryFn: () => {
+            if (!parsedSearch.success) {
+                return [];
+            }
+            return getProfileCustomSearch({ data: parsedSearch.data });
+        },
+        enabled: parsedSearch.success,
+        staleTime: 60 * 1000,
+    });
+};
 
 
 export const followersOptions = (username: string) => queryOptions({

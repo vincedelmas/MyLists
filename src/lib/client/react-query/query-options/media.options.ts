@@ -40,7 +40,7 @@ export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number) => qu
 });
 
 
-export const mediaCommunityActivityOptions = (mediaId: number, mediaType: MediaType, search: SearchType = { page: 1, perPage: 8 }) => queryOptions({
+export const mediaCommunityActivityOptions = (mediaId: number, mediaType: MediaType, search: Pagination = { page: 1, perPage: 8 }) => queryOptions({
     queryKey: ["details", "activity", "community", mediaType, mediaId, search] as const,
     queryFn: () => getMediaCommunityActivity({ data: { mediaId, mediaType, search } }),
 });

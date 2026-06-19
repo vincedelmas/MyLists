@@ -2,7 +2,7 @@ import {statsActiveTabSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
-import {getPlatformStatsData} from "@/lib/server/functions/platform-stats-data";
+import {getPlatformStatsData} from "@/lib/server/domain/stats/platform-stats-data";
 import {getPlatformStatsCacheKey, ONE_DAY_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 
 

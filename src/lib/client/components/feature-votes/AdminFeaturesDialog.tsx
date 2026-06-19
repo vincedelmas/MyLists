@@ -1,14 +1,17 @@
 import {useState} from "react";
 import {Settings2} from "lucide-react";
+import {useForm} from "react-hook-form";
 import {FeatureStatus} from "@/lib/utils/enums";
-import {Label} from "@/lib/client/components/ui/label";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Button} from "@/lib/client/components/ui/button";
-import {displayContainerError} from "@/lib/utils/error-display";
 import {Textarea} from "@/lib/client/components/ui/textarea";
+import {displayContainerError} from "@/lib/utils/error-display";
+import {PostFeatureStatus, postFeatureStatusSchema} from "@/lib/schemas";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {useAdminDeleteFeatureMutation, useAdminUpdateFeatureMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
-import {useAdminDeleteFeatureRequestMutation, useAdminUpdateFeatureStatusMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 
 
 interface AdminFeatureDialogProps {
@@ -20,13 +23,34 @@ interface AdminFeatureDialogProps {
 
 export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentComment }: AdminFeatureDialogProps) => {
     const [open, setOpen] = useState(false);
-    const [note, setNote] = useState(currentComment ?? "");
-    const [status, setStatus] = useState<FeatureStatus>(currentStatus);
-    const updateStatusMutation = useAdminUpdateFeatureStatusMutation({ noGlobalErrorToast: true });
-    const deleteFeatureMutation = useAdminDeleteFeatureRequestMutation({ noGlobalErrorToast: true });
+    const updateStatusMutation = useAdminUpdateFeatureMutation({ noGlobalErrorToast: true });
+    const deleteFeatureMutation = useAdminDeleteFeatureMutation({ noGlobalErrorToast: true });
+    const form = useForm<PostFeatureStatus>({
+        resolver: zodResolver(postFeatureStatusSchema),
+        defaultValues: {
+            featureId: featureId,
+            status: currentStatus,
+            adminComment: currentComment ?? "",
+        },
+    });
 
-    const handleSave = () => {
-        updateStatusMutation.mutate({ data: { featureId, status, adminComment: note } }, {
+    const mutationsPending = updateStatusMutation.isPending || deleteFeatureMutation.isPending;
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        setOpen(nextOpen);
+        if (nextOpen) {
+            updateStatusMutation.reset();
+            deleteFeatureMutation.reset();
+            form.reset({
+                featureId,
+                status: currentStatus,
+                adminComment: currentComment ?? "",
+            });
+        }
+    };
+
+    const handleOnSubmit = (submitted: PostFeatureStatus) => {
+        updateStatusMutation.mutate({ data: submitted }, {
             onSuccess: () => setOpen(false),
         });
     };
@@ -40,9 +64,9 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="outline" size="sm">
                     <Settings2 className="size-3"/>
                     Admin
                 </Button>
@@ -51,45 +75,57 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
                 <DialogHeader>
                     <DialogTitle>Admin Management</DialogTitle>
                     <DialogDescription>
-                        Update the status of this feature request and add internal or public
-                        commentary.
+                        Update the status of this feature request and add a public comment.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium leading-none">
-                            Feature Status
-                        </Label>
-                        <Select
-                            value={status}
-                            disabled={updateStatusMutation.isPending}
-                            onValueChange={(v) => setStatus(v as FeatureStatus)}
-                        >
-                            <SelectTrigger className="w-full">
-                                <SelectValue/>
-                            </SelectTrigger>
-                            <SelectContent>
-                                {Object.values(FeatureStatus).map((fs) =>
-                                    <SelectItem key={fs} value={fs}>
-                                        {fs}
-                                    </SelectItem>
-                                )}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium leading-none">
-                            Admin Note
-                        </Label>
-                        <Textarea
-                            rows={4}
-                            value={note}
-                            disabled={updateStatusMutation.isPending}
-                            onChange={(ev) => setNote(ev.target.value)}
-                            placeholder="Provide context on why this status was chosen..."
-                        />
-                    </div>
-                </div>
+                <Form {...form}>
+                    <form id={`feature-admin-form-${featureId}`} onSubmit={form.handleSubmit(handleOnSubmit)}>
+                        <fieldset className="space-y-4" disabled={mutationsPending}>
+                            <FormField
+                                name="status"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <FormItem>
+                                        <FormLabel>Feature Status</FormLabel>
+                                        <Select value={field.value} onValueChange={field.onChange}>
+                                            <FormControl>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue/>
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {Object.values(FeatureStatus).map((fs) =>
+                                                    <SelectItem key={fs} value={fs}>
+                                                        {fs}
+                                                    </SelectItem>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage/>
+                                    </FormItem>
+                                }
+                            />
+                            <FormField
+                                name="adminComment"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <FormItem>
+                                        <FormLabel>Admin Note</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                className="min-h-25"
+                                                value={field.value ?? ""}
+                                                onChange={field.onChange}
+                                                placeholder="Provide context on why this status was chosen..."
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                }
+                            />
+                        </fieldset>
+                    </form>
+                </Form>
 
                 {(deleteFeatureMutation.isError || updateStatusMutation.isError) &&
                     <InlineErrorContainer>
@@ -99,29 +135,14 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
 
                 <DialogFooter>
                     <div className="mr-auto">
-                        <Button
-                            size="sm"
-                            type="button"
-                            variant="destructive"
-                            onClick={handleDelete}
-                            disabled={deleteFeatureMutation.isPending}
-                        >
+                        <Button size="sm" type="button" variant="destructive" onClick={handleDelete} disabled={mutationsPending}>
                             Delete Request
                         </Button>
                     </div>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setOpen(false)}
-                        disabled={updateStatusMutation.isPending || deleteFeatureMutation.isPending}
-                    >
+                    <Button type="button" variant="ghost" disabled={mutationsPending} onClick={() => handleOpenChange(false)}>
                         Cancel
                     </Button>
-                    <Button
-                        type="button"
-                        onClick={handleSave}
-                        disabled={updateStatusMutation.isPending || deleteFeatureMutation.isPending}
-                    >
+                    <Button type="submit" form={`feature-admin-form-${featureId}`} disabled={mutationsPending}>
                         Save Changes
                     </Button>
                 </DialogFooter>

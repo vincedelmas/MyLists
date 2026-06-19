@@ -2,21 +2,15 @@ import {toast} from "sonner";
 import {useForm} from "react-hook-form";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
-import {FormZodError} from "@/lib/utils/error-classes";
 import {Button} from "@/lib/client/components/ui/button";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
+import {BulkHideActivity, BulkHideActivityInput, bulkHideActivitySchema} from "@/lib/schemas";
 import {useBulkHideActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-
-
-type FormValues = {
-    endDate: string;
-    startDate: string;
-    mediaType: MediaType | "all";
-}
 
 
 export function ActivityCleanupSettings() {
@@ -26,7 +20,8 @@ export function ActivityCleanupSettings() {
     const bulkMutation = useBulkHideActivityMutation();
     const accountCreatedAt = currentUser?.createdAt ? toDateInputValue(currentUser.createdAt) : today;
     const availableMediaTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? Object.values(MediaType);
-    const form = useForm<FormValues>({
+    const form = useForm<BulkHideActivityInput, unknown, BulkHideActivity>({
+        resolver: zodResolver(bulkHideActivitySchema),
         values: {
             mediaType,
             startDate: accountCreatedAt,
@@ -39,7 +34,7 @@ export function ActivityCleanupSettings() {
         form.setValue("endDate", shiftDateInputValue(accountCreatedAt, { days, max: today }), { shouldDirty: true });
     };
 
-    const handleSubmit = (values: FormValues) => {
+    const handleSubmit = (values: BulkHideActivity) => {
         const confirmed = window.confirm("Hide matching activity? This keeps the rows editable and reversible.");
         if (!confirmed) return;
 
@@ -47,16 +42,9 @@ export function ActivityCleanupSettings() {
             data: {
                 endDate: values.endDate,
                 startDate: values.startDate,
-                mediaType: values.mediaType === "all" ? undefined : values.mediaType,
+                mediaType: values.mediaType,
             },
         }, {
-            onError: (err) => {
-                if (err instanceof FormZodError) {
-                    err.issues.forEach((issue) => {
-                        form.setError(issue.path.join("."), { type: "server", message: issue.message });
-                    });
-                }
-            },
             onSuccess: (result) => {
                 toast.success(`Hidden ${result.count} Activit${result.count === 1 ? "y" : "ies"}`);
             },
@@ -65,7 +53,7 @@ export function ActivityCleanupSettings() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="w-90 max-sm:w-full">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="w-100 max-sm:w-full">
                 <div className="space-y-7">
                     <div className="font-medium text-lg">
                         Cleanup Activity
@@ -78,7 +66,7 @@ export function ActivityCleanupSettings() {
                         <div className="text-sm font-medium">
                             Quick ranges
                             <div className="text-xs font-normal text-muted-foreground">
-                                Days since account creation.
+                                Days since your account creation.
                             </div>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
@@ -97,7 +85,6 @@ export function ActivityCleanupSettings() {
                     <FormField
                         name="startDate"
                         control={form.control}
-                        rules={{ required: "Start date is required." }}
                         render={({ field }) =>
                             <FormItem>
                                 <FormLabel>Start date</FormLabel>
@@ -112,7 +99,6 @@ export function ActivityCleanupSettings() {
                     <FormField
                         name="endDate"
                         control={form.control}
-                        rules={{ required: "End date is required." }}
                         render={({ field }) =>
                             <FormItem>
                                 <FormLabel>End date</FormLabel>
@@ -130,9 +116,9 @@ export function ActivityCleanupSettings() {
                         render={({ field }) =>
                             <FormItem>
                                 <FormLabel>Media type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value ?? "all"}>
                                     <FormControl>
-                                        <SelectTrigger className="w-full">
+                                        <SelectTrigger className="w-full capitalize">
                                             <SelectValue/>
                                         </SelectTrigger>
                                     </FormControl>

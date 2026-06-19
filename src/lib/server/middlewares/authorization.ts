@@ -1,6 +1,5 @@
 import {notFound} from "@tanstack/react-router";
 import {baseUsernameSchema} from "@/lib/schemas";
-import {tryNotFound} from "@/lib/utils/try-not-found";
 import {createMiddleware} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {UnauthorizedError} from "@/lib/utils/error-classes";
@@ -10,7 +9,11 @@ import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
 
 export const resolveTargetUserMiddleware = createMiddleware({ type: "function" })
     .middleware([publicAuthMiddleware])
-    .validator(tryNotFound(baseUsernameSchema))
+    .validator((data) => {
+        const result = baseUsernameSchema.safeParse(data);
+        if (!result.success) throw notFound();
+        return result.data;
+    })
     .server(async ({ next, data: { username }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;

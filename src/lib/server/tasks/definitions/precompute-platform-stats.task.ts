@@ -2,7 +2,7 @@ import {z} from "zod";
 import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
-import {getPlatformStatsData} from "@/lib/server/functions/platform-stats-data";
+import {getPlatformStatsData} from "@/lib/server/domain/stats/platform-stats-data";
 import {getPlatformStatsCacheKey, ONE_DAY_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 
 

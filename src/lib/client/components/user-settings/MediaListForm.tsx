@@ -1,21 +1,22 @@
 import {toast} from "sonner";
 import React, {useState} from "react";
-import {ListSettings} from "@/lib/schemas";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {useForm, useWatch} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {FormZodError} from "@/lib/utils/error-classes";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {CircleHelp, Download, TriangleAlert} from "lucide-react";
 import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
+import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 
 
 const mediaTypeConfigs = [
@@ -45,8 +46,9 @@ export const MediaListForm = () => {
     const { currentUser, setCurrentUser } = useAuth();
     const listSettingsMutation = useListSettingsMutation();
     const downloadListAsCSVMutation = useDownloadListAsCSVMutation();
-    const [selectedListForExport, setSelectedListForExport] = useState<MediaType | "">("");
+    const [selectedListForExport, setSelectedListForExport] = useState<MediaType>(MediaType.SERIES);
     const form = useForm<ListSettings>({
+        resolver: zodResolver(mediaListSettingsSchema),
         values: {
             gridListView: currentUser?.gridListView ?? true,
             ratingSystem: currentUser?.ratingSystem ?? RatingSystemType.SCORE,
@@ -71,13 +73,6 @@ export const MediaListForm = () => {
 
     const onSubmit = (submittedData: ListSettings) => {
         listSettingsMutation.mutate({ data: submittedData }, {
-            onError: (err) => {
-                if (err instanceof FormZodError) {
-                    err.issues.forEach((issue) => {
-                        form.setError(issue.path.join("."), { type: "server", message: issue.message });
-                    });
-                }
-            },
             onSuccess: async () => {
                 await setCurrentUser();
             }
@@ -241,35 +236,38 @@ export const MediaListForm = () => {
                 </form>
             </Form>
             <Separator/>
-            <div className="w-[320px] max-sm:w-full space-y-4 rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-                <h3 className="text-base font-medium">Export Your List as CSV</h3>
+            <div className="w-90 max-sm:w-full space-y-4">
+                <div className="text-base font-medium mb-3">
+                    Export Your List as CSV
+                    <div className="text-xs font-normal text-muted-foreground">
+                        Export each activated list as a CSV file.
+                    </div>
+                </div>
                 <div className="flex flex-wrap items-end gap-3">
                     <div className="grow">
                         <Select onValueChange={(value) => setSelectedListForExport(value as MediaType)} value={selectedListForExport}>
-                            <SelectTrigger id="list-export-select">
-                                <SelectValue placeholder="Select a list..."/>
+                            <SelectTrigger id="list-export-select" className="w-40 max-sm:max-w-full">
+                                <SelectValue placeholder="Select a media list..."/>
                             </SelectTrigger>
                             <SelectContent>
                                 {mediaTypesForExport.map(({ label, value }) => (
                                     <SelectItem key={value} value={value}>
-                                        {label}
+                                        <MainThemeIcon type={value}/> {label}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button
-                        variant="outline"
-                        onClick={handleDownloadCSV}
-                        disabled={!selectedListForExport || downloadListAsCSVMutation.isPending}
-                    >
-                        <Download className="size-4"/>
-                        {downloadListAsCSVMutation.isPending ? "Exporting..." : "Download"}
+                    <Button variant="outline" onClick={handleDownloadCSV} disabled={!selectedListForExport || downloadListAsCSVMutation.isPending}>
+                        <Download className="size-4"/> Download
                     </Button>
                 </div>
-                {downloadListAsCSVMutation.isError && (
-                    <p className="text-sm text-destructive">Failed to export list. Please try again.</p>
-                )}
+                {downloadListAsCSVMutation.isError &&
+                    <InlineErrorContainer>
+                        Failed to export your list. Please try again later.
+                        If the error persists, contact me.
+                    </InlineErrorContainer>
+                }
             </div>
         </div>
     );

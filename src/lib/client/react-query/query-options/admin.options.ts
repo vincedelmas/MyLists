@@ -9,6 +9,7 @@ import {
     getAdminArchivedTasks,
     getAdminCollectionsOverview,
     getAdminErrorLogs,
+    getAdminInactiveAccountDeletions,
     getAdminMediadleStats,
     getAdminMediaOverview,
     getAdminMediaRefreshStats,
@@ -20,6 +21,12 @@ import {
 export const userAdminOptions = (search: SearchType) => queryOptions({
     queryKey: ["admin", "updateUsers", search],
     queryFn: () => getAdminAllUsers({ data: search }),
+});
+
+
+export const inactiveAccountDeletionsAdminOptions = (search: SearchType) => queryOptions({
+    queryKey: ["admin", "inactive-account-deletions", search],
+    queryFn: () => getAdminInactiveAccountDeletions({ data: search }),
 });
 
 

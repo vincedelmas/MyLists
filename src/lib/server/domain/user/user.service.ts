@@ -3,7 +3,9 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, SocialState} from "@/lib/utils/enums";
 import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {CacheManager} from "@/lib/server/core/cache-manager";
+import {withTransaction} from "@/lib/server/database/async-storage";
 import {UserRepository} from "@/lib/server/domain/user/user.repository";
+import {InactiveAccountService} from "@/lib/server/domain/user/inactive-account.service";
 
 
 const LAST_SEEN_CACHE_KEY = "lastSeen";
@@ -11,7 +13,10 @@ const UPDATE_THRESHOLD_MS = 5 * 60 * 1000;
 
 
 export class UserService {
-    constructor(private repository: typeof UserRepository) {
+    constructor(
+        private repository: typeof UserRepository,
+        private inactiveAccountService: InactiveAccountService,
+    ) {
     }
 
     // --- Admin functions --------------------------------------------
@@ -101,18 +106,20 @@ export class UserService {
         return this.repository.getFollowCount(userId);
     }
 
-    // ----------------------------------------------------------------
-
     async updateUserLastSeen(cacheManager: CacheManager, userId: number) {
         const cacheKey = `${LAST_SEEN_CACHE_KEY}:${userId}`;
         if (await cacheManager.get(cacheKey)) return;
         await cacheManager.set(cacheKey, true, UPDATE_THRESHOLD_MS);
 
-        return this.repository.updateUserLastSeen(userId);
+        await this.repository.updateUserLastSeen(userId);
+        await this.inactiveAccountService.markResurrectedForUser(userId);
     }
 
     async deleteUserAccount(userId: number) {
-        return this.repository.deleteUserAccount(userId);
+        return withTransaction(async () => {
+            await this.inactiveAccountService.deleteRowsForUser(userId);
+            await this.repository.deleteUserAccount(userId);
+        });
     }
 
     async getMinimalUserSettings(userId: number) {

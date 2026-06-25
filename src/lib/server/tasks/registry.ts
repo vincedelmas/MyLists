@@ -18,6 +18,7 @@ import {deleteNonActivatedUsersTask} from "@/lib/server/tasks/definitions/delete
 import {removeUnusedMediaCoversTask} from "@/lib/server/tasks/definitions/remove-unused-media-covers.task";
 import {createMediaNotificationsTask} from "@/lib/server/tasks/definitions/create-media-notifications.task";
 import {removeUnusedProfileImagesTask} from "@/lib/server/tasks/definitions/remove-unused-profile-images.task";
+import {inactiveAccountDeletionTask} from "@/lib/server/tasks/definitions/inactive-account-deletion.task";
 
 
 export const taskRegistry = {
@@ -33,6 +34,7 @@ export const taskRegistry = {
     [calculateAchievementsTask.name]: calculateAchievementsTask,
     [removeAllOrphansMediaTask.name]: removeAllOrphansMediaTask,
     [deleteNonActivatedUsersTask.name]: deleteNonActivatedUsersTask,
+    [inactiveAccountDeletionTask.name]: inactiveAccountDeletionTask,
     [removeUnusedMediaCoversTask.name]: removeUnusedMediaCoversTask,
     [precomputePlatformStatsTask.name]: precomputePlatformStatsTask,
     [createMediaNotificationsTask.name]: createMediaNotificationsTask,

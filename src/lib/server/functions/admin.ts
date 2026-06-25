@@ -88,6 +88,15 @@ export const getAdminAllUsers = createServerFn({ method: "GET" })
     });
 
 
+export const getAdminInactiveAccountDeletions = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(searchTypeSchema)
+    .handler(async ({ data }) => {
+        const inactiveAccountService = await getContainer().then((c) => c.services.inactiveAccount);
+        return inactiveAccountService.getAdminOverview(data);
+    });
+
+
 export const getAdminAchievements = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {

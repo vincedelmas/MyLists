@@ -13,6 +13,7 @@ import {removeUnusedMediaCoversTask} from "@/lib/server/tasks/definitions/remove
 import {deleteNonActivatedUsersTask} from "@/lib/server/tasks/definitions/delete-non-activated-users.task";
 import {createMediaNotificationsTask} from "@/lib/server/tasks/definitions/create-media-notifications.task";
 import {removeUnusedProfileImagesTask} from "@/lib/server/tasks/definitions/remove-unused-profile-images.task";
+import {inactiveAccountDeletionTask} from "@/lib/server/tasks/definitions/inactive-account-deletion.task";
 
 
 export const maintenanceTask = defineTask({
@@ -22,6 +23,7 @@ export const maintenanceTask = defineTask({
     inputSchema: z.object({}),
     handler: async (ctx, input) => {
         await ctx.step(deleteNonActivatedUsersTask.name, () => deleteNonActivatedUsersTask.handler(ctx, input));
+        await ctx.step(inactiveAccountDeletionTask.name, () => inactiveAccountDeletionTask.handler(ctx, input));
         await ctx.step(removeAllOrphansMediaTask.name, () => removeAllOrphansMediaTask.handler(ctx, input));
         await ctx.step(removeUnusedMediaCoversTask.name, () => removeUnusedMediaCoversTask.handler(ctx, input));
         await ctx.step(removeUnusedProfileImagesTask.name, () => removeUnusedProfileImagesTask.handler(ctx, input));
@@ -33,6 +35,6 @@ export const maintenanceTask = defineTask({
         await ctx.step(calculateAchievementsTask.name, () => calculateAchievementsTask.handler(ctx, input));
         await ctx.step(dbMaintenanceTask.name, () => dbMaintenanceTask.handler(ctx, input));
         await ctx.step(addGenresToBooksUsingLlmTask.name, () => addGenresToBooksUsingLlmTask.handler(ctx, input));
-        await ctx.step(flushApiMonitoringTask.name, () => flushApiMonitoringTask.handler(ctx, { olderThanSecs: 90 }));
+        await ctx.step(flushApiMonitoringTask.name, () => flushApiMonitoringTask.handler(ctx, input));
     },
 });

@@ -1,6 +1,6 @@
 import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Archive, Award, CircleX, Film, FolderKanban, History, Home, ListCheck, Play, Radio, RefreshCw, Settings, Users} from "lucide-react";
+import {Archive, Award, CircleX, Film, FolderKanban, History, Home, ListCheck, Play, Radio, RefreshCw, Settings, UserRoundX, Users} from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -64,6 +64,14 @@ export function AdminSidebar() {
                                     <Link to="/admin/users">
                                         <Users className="size-4"/>
                                         <span>Users Management</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild>
+                                    <Link to="/admin/inactive-accounts">
+                                        <UserRoundX className="size-4"/>
+                                        <span>Inactive Accounts</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

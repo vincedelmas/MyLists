@@ -34,6 +34,30 @@ export const taskHistory = sqliteTable("task_history", {
 ]);
 
 
+export const inactiveAccountDeletion = sqliteTable("inactive_account_deletion", {
+    id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
+    deletedAt: text("deleted_at"),
+    userId: integer("user_id").notNull(),
+    username: text("username").notNull(),
+    resurrectedAt: text("resurrected_at"),
+    warningSentAt: text("warning_sent_at"),
+    lastEmailError: text("last_email_error"),
+    lastSeenAt: text("last_seen_at").notNull(),
+    warningTokenHash: text("warning_token_hash"),
+    lastEmailAttemptAt: text("last_email_attempt_at"),
+    deletionScheduledAt: text("deletion_scheduled_at").notNull(),
+    status: text("status").$type<"warned" | "resurrected" | "deleted" | "mail_failed">().notNull(),
+    emailRetryCount: integer("email_retry_count").default(0).notNull(),
+    createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+    updatedAt: text("updated_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+    index("ix_inactive_account_deletion_user_id").on(table.userId),
+    index("ix_inactive_account_deletion_status").on(table.status),
+    index("ix_inactive_account_deletion_deletion_scheduled_at").on(table.deletionScheduledAt),
+    uniqueIndex("ux_inactive_account_deletion_warning_token_hash").on(table.warningTokenHash),
+]);
+
+
 export const taskHistoryRelations = relations(taskHistory, ({ one }) => ({
     user: one(user, {
         fields: [taskHistory.userId],

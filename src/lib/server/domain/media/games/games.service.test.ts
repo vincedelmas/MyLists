@@ -22,6 +22,7 @@ describe("GamesService", async () => {
         voteAverage: 8,
         voteCount: 100,
         steamApiId: null,
+        collectionId: null,
         igdbUrl: "test-game.com",
         gameEngine: "Unity",
         gameModes: "multiplayer",

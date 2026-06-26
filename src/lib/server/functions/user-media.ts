@@ -6,7 +6,7 @@ import {
     addMediaToListSchema,
     deleteUserUpdatesSchema,
     editUserTagSchema,
-    mediaActionSchema,
+    mediaTypeMediaIdSchema,
     updateUserCustomCoverSchema,
     updateUserMediaSchema,
     userTagNamesSchema
@@ -15,7 +15,7 @@ import {
 
 export const getUserMediaHistory = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .validator(mediaActionSchema)
+    .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const userUpdatesService = await getContainer().then(c => c.services.userUpdates);
         return userUpdatesService.getUserMediaHistory(currentUser.id, mediaType, mediaId);
@@ -57,7 +57,7 @@ export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
 
 export const postRemoveMediaFromList = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .validator(mediaActionSchema)
+    .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const userMediaService = await getContainer().then(c => c.services.userMedia);
         await userMediaService.removeMediaFromList({ mediaType, mediaId, userId: currentUser.id });

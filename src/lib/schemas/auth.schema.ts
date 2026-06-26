@@ -5,7 +5,6 @@ export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 export type ResetPassword = z.infer<typeof resetPasswordSchema>;
 export type ForgotPassword = z.infer<typeof forgotPasswordSchema>;
-export type AuthRedirectSearch = z.infer<typeof authRedirectSearchSchema>;
 
 
 export const tokenSchema = z.object({

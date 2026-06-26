@@ -9,10 +9,10 @@ import {
     editMediaDetailsSchema,
     externalMediaResolveSchema,
     jobDetailsSchema,
-    mediaActionSchema,
     mediaCommunityActivitySchema,
     mediaDetailsSchema,
     mediaDetailsToEditSchema,
+    mediaTypeMediaIdSchema,
     refreshMediaDetailsSchema,
     updateBookCoverSchema
 } from "@/lib/schemas";
@@ -102,7 +102,7 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
 
 export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .validator(mediaActionSchema)
+    .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();
         const gamesService = container.registries.mediaService.getService(MediaType.GAMES);

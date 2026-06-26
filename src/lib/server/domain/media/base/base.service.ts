@@ -199,16 +199,14 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
 
             if (payload.imageFile) {
                 imageName = await saveUploadedImage({
-                    file: payload.imageFile,
                     dirSaveName,
-                    resize: { width: 300, height: 450 },
+                    file: payload.imageFile,
                 });
             }
             else if (payload.imageUrl) {
                 imageName = await saveImageFromUrl({
-                    imageUrl: payload.imageUrl,
                     dirSaveName,
-                    resize: { width: 300, height: 450 },
+                    imageUrl: payload.imageUrl,
                 });
             }
 

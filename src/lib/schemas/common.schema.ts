@@ -8,40 +8,34 @@ export type SimpleSearch = z.infer<typeof simpleSearchSchema>;
 export type HallOfFameSearch = z.infer<typeof hallOfFameSearchSchema>;
 
 
+export const usernameFieldSchema = z.string();
 export const mediaTypeFieldSchema = z.enum(MediaType);
 export const positiveIntFieldSchema = z.number().int().positive();
+export const sortingFieldSchema = z.string().optional().catch(undefined);
 export const coercedPositiveIntFieldSchema = z.coerce.number().int().positive();
 export const optionalSearchFieldSchema = z.string().optional().catch(undefined);
 export const optionalTrimmedSearchFieldSchema = z.string().trim().optional().catch(undefined);
 export const optionalCoercedBooleanFieldSchema = z.coerce.boolean().optional().catch(undefined);
-export const optionalCoercedPositiveIntFieldSchema = coercedPositiveIntFieldSchema.optional().catch(undefined);
-export const pageFieldSchema = optionalCoercedPositiveIntFieldSchema;
-export const perPageFieldSchema = coercedPositiveIntFieldSchema.max(50).optional().catch(undefined);
-export const usernameFieldSchema = z.string();
-export const requiredUsernameFieldSchema = z.string().min(1);
-export const mediaIdFieldSchema = coercedPositiveIntFieldSchema;
-export const apiIdFieldSchema = z.string();
-export const sortingFieldSchema = z.string().optional().catch(undefined);
 
 
 export const mediaTypeApiIdSchema = z.object({
-    apiId: apiIdFieldSchema,
+    apiId: z.string(),
     mediaType: mediaTypeFieldSchema,
 })
 
 export const mediaTypeMediaIdSchema = z.object({
     mediaType: mediaTypeFieldSchema,
-    mediaId: mediaIdFieldSchema,
+    mediaId: coercedPositiveIntFieldSchema,
 })
 
 export const mediaTypeUsernameSchema = z.object({
     mediaType: mediaTypeFieldSchema,
-    username: requiredUsernameFieldSchema,
+    username: z.string().min(1),
 })
 
 export const paginationSchema = z.object({
-    page: pageFieldSchema,
-    perPage: perPageFieldSchema,
+    page: coercedPositiveIntFieldSchema.optional().catch(undefined),
+    perPage: coercedPositiveIntFieldSchema.max(50).optional().catch(undefined),
 });
 
 export const simpleSearchSchema = paginationSchema.extend({
@@ -57,16 +51,10 @@ export const simpleSearchUsernameSchema = simpleSearchSchema.extend({
 });
 
 export const searchTypeSchema = paginationSchema.extend({
-    sortDesc: z.boolean().optional().catch(true),
-    search: optionalSearchFieldSchema,
     sorting: sortingFieldSchema,
-    total: optionalCoercedPositiveIntFieldSchema,
-});
-
-export const mediaActionSchema = mediaTypeMediaIdSchema;
-
-export const baseUsernameSchema = z.looseObject({
-    username: usernameFieldSchema,
+    search: optionalSearchFieldSchema,
+    sortDesc: z.boolean().optional().catch(true),
+    total: coercedPositiveIntFieldSchema.optional().catch(undefined),
 });
 
 export const notificationSchema = z.object({
@@ -76,3 +64,7 @@ export const notificationSchema = z.object({
 export const notificationIdSchema = z.object({
     notificationId: coercedPositiveIntFieldSchema,
 })
+
+export const baseUsernameSchema = z.looseObject({
+    username: usernameFieldSchema,
+});

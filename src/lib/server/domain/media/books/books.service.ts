@@ -97,8 +97,8 @@ export class BooksService extends BaseService<MangaSchemaConfig, BooksRepository
 
         if (payload?.imageCover) {
             const imageName = await saveImageFromUrl({
-                imageUrl: payload.imageCover,
                 dirSaveName: "books-covers",
+                imageUrl: payload.imageCover,
             });
             fields.imageCover = imageName;
             delete payload.imageCover;
@@ -133,7 +133,6 @@ export class BooksService extends BaseService<MangaSchemaConfig, BooksRepository
             imageName = await saveUploadedImage({
                 file: payload.imageFile,
                 dirSaveName: "books-covers",
-                resize: { width: 300, height: 450 },
             });
         }
         else if (payload.imageUrl) {

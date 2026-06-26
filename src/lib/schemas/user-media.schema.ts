@@ -1,7 +1,7 @@
 import * as z from "zod";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {GamesPlatformsEnum, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {coercedPositiveIntFieldSchema, mediaIdFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 
 
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
@@ -24,9 +24,9 @@ const loggedActivityUpdateTypes = new Set<UpdateType>([
 
 
 export const updateUserCustomCoverSchema = z.object({
-    mediaId: mediaIdFieldSchema,
     mediaType: mediaTypeFieldSchema,
     imageUrl: z.url().trim().optional(),
+    mediaId: coercedPositiveIntFieldSchema,
     imageFile: z.instanceof(File).optional(),
     remove: z.coerce.boolean().optional().default(false),
 }).superRefine((data, ctx) => {
@@ -49,12 +49,12 @@ export const updateUserCustomCoverSchema = z.object({
 export const addMediaToListSchema = z.object({
     mediaType: mediaTypeFieldSchema,
     status: z.enum(Status).optional(),
-    mediaId: mediaIdFieldSchema,
+    mediaId: coercedPositiveIntFieldSchema,
 });
 
 export const updateUserMediaSchema = z.object({
     mediaType: mediaTypeFieldSchema,
-    mediaId: mediaIdFieldSchema,
+    mediaId: coercedPositiveIntFieldSchema,
     payload: z.object({
         type: z.enum(UpdateType),
         loggedAt: loggedAtSchema,

@@ -1,8 +1,10 @@
-import {getContainer} from "@/lib/server/core/container";
-import type {UserMediaWithTags} from "@/lib/types/user-media.types";
+import {describe, expect, it} from "vitest";
+import {UserMediaWithTags} from "@/lib/types/user-media.types";
+import {TvService} from "@/lib/server/domain/media/tv/tv.service";
+import {TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import type {TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
+import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
+import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
 
 const epsPerSeasonMock = [
@@ -15,18 +17,12 @@ const totalEpisodesMock = epsPerSeasonMock.reduce((acc, s) => acc + s.episodes, 
 
 describe("TvService", () => {
     [MediaType.ANIME, MediaType.SERIES].forEach((mediaType) => {
-        describe(`for ${mediaType}`, async () => {
-            const container = await getContainer();
-            const tvService = container.registries.mediaService.getService(mediaType);
-
-            beforeEach(() => {
-                // @ts-expect-error - "protected" repository attribute
-                vi.spyOn(tvService.repository, "getMediaEpsPerSeason").mockResolvedValue(epsPerSeasonMock);
-            });
-
-            afterEach(() => {
-                vi.restoreAllMocks();
-            });
+        describe(`for ${mediaType}`, () => {
+            const tvRepository = createRepoStub(
+                { listTable: createListTableStub() },
+                { getMediaEpsPerSeason: async () => epsPerSeasonMock },
+            ) as unknown as TvRepository;
+            const tvService = new TvService(tvRepository);
 
             const baseTv: TvType = {
                 id: 1,

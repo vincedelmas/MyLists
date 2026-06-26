@@ -1,13 +1,15 @@
 import {describe, expect, it} from "vitest";
 import type {Game, GamesList} from "./games.types";
-import {getContainer} from "@/lib/server/core/container";
+import {RatingSystemType, Status} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import {GamesService} from "@/lib/server/domain/media/games/games.service";
+import type {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
+import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
 
-describe("GamesService", async () => {
-    const container = await getContainer();
-    const gamesService = container.registries.mediaService.getService(MediaType.GAMES);
+describe("GamesService", () => {
+    const gamesRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as GamesRepository;
+    const gamesService = new GamesService(gamesRepository);
 
     const baseGame: Game = {
         id: 1,

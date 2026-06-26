@@ -1,13 +1,15 @@
 import {describe, expect, it} from "vitest";
 import type {Manga, MangaList} from "./manga.types";
-import {getContainer} from "@/lib/server/core/container";
+import {RatingSystemType, Status} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import {MangaService} from "@/lib/server/domain/media/manga/manga.service";
+import type {MangaRepository} from "@/lib/server/domain/media/manga/manga.repository";
+import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
 
-describe("MangaService", async () => {
-    const container = await getContainer();
-    const mangaService = container.registries.mediaService.getService(MediaType.MANGA);
+describe("MangaService", () => {
+    const mangaRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as MangaRepository;
+    const mangaService = new MangaService(mangaRepository);
     const TIME_PER_CHAPTER = 7;
 
     const baseManga: Manga = {

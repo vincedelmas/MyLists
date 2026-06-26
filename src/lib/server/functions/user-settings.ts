@@ -139,7 +139,7 @@ export const postDeleteUserAccount = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const userService = await getContainer().then((c) => c.services.user);
-        return userService.deleteUserAccount(currentUser.id);
+        return userService.deleteUserAccount({ userId: currentUser.id, type: "manual" });
     });
 
 

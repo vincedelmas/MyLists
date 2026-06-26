@@ -340,7 +340,7 @@ export class UserRepository {
     }
 
     static async adminUpdateGlobalFlag(payload: AdminUpdatePayload) {
-        const updateData: typeof user.$inferInsert = {} as typeof user.$inferInsert;
+        const updateData: Partial<typeof user.$inferInsert> = {};
 
         if (payload.showUpdateModal !== undefined) {
             updateData.showUpdateModal = payload.showUpdateModal;

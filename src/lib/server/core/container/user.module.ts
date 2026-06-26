@@ -41,10 +41,10 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
     const inactiveAccountRepository = InactiveAccountRepository;
 
     // User Services
-    const inactiveAccountService = new InactiveAccountService(inactiveAccountRepository, userRepository);
-    const userService = new UserService(userRepository, inactiveAccountService);
+    const inactiveAccountService = new InactiveAccountService(inactiveAccountRepository);
     const mediadleService = new MediadleService(mediadleRepository);
     const userUpdatesService = new UserUpdatesService(userUpdatesRepository);
+    const userService = new UserService(userRepository, inactiveAccountService);
     const achievementsService = new AchievementsService(achievementsRepository);
     const notificationsService = new NotificationsService(notificationsRepository);
     const userProfileService = new UserProfileService(userProfileRepository, mediaServiceRegistry);

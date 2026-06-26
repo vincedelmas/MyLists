@@ -1,60 +1,43 @@
 import {SearchType} from "@/lib/schemas";
-import {withTransaction} from "@/lib/server/database/async-storage";
-import {UserRepository} from "@/lib/server/domain/user/user.repository";
+import {WarningFailedPayload, WarningSentPayload} from "@/lib/types/inactive.types";
 import {InactiveAccountRepository} from "@/lib/server/domain/user/inactive-account.repository";
-import {InactiveAccountWarningFailedPayload, InactiveAccountWarningSentPayload} from "@/lib/types/inactive.types";
 
 
 export class InactiveAccountService {
-    constructor(
-        private repository: typeof InactiveAccountRepository,
-        private userRepository: typeof UserRepository,
-    ) {
+    constructor(private repository: typeof InactiveAccountRepository) {
     }
 
     async getAdminOverview(data: SearchType) {
-        return this.repository.getInactiveAccountDeletionAdminOverview(data);
+        return this.repository.getAdminOverview(data);
     }
 
     async getWarningTargets(limit: number, maxRetries: number) {
         return this.repository.getWarningTargets(limit, maxRetries);
     }
 
-    async warningSent(payload: InactiveAccountWarningSentPayload) {
-        return this.repository.inactiveAccountWarningSent(payload);
+    async warningSent(payload: WarningSentPayload) {
+        return this.repository.warningSent(payload);
     }
 
-    async warningFailed(payload: InactiveAccountWarningFailedPayload) {
-        return this.repository.recordInactiveAccountWarningFailed(payload);
+    async warningFailed(payload: WarningFailedPayload) {
+        return this.repository.warningFailed(payload);
     }
 
-    async markResurrectedForSeenUsers() {
-        return this.repository.markResurrectedForSeenUsers();
+    async markResurrectedUsers() {
+        return this.repository.markResurrectedUsers();
     }
 
-    async markResurrectedForUser(userId: number) {
-        return this.repository.markResurrectedForUser(userId);
-    }
-
-    async reactivateByTokenHash(warningTokenHash: string) {
-        const row = await this.repository.findUserIdByWarningTokenHash(warningTokenHash);
-        if (!row) return false;
-
-        await this.userRepository.updateUserLastSeen(row.userId);
-        await this.repository.markResurrectedForUser(row.userId);
-
-        return true;
+    async findUserIdByTokenHash(warningTokenHash: string) {
+        const row = await this.repository.findUserIdByTokenHash(warningTokenHash);
+        return row?.userId;
     }
 
     async getDeletionTargets(maxRetries: number) {
-        return this.repository.getInactiveAccountDeletionTargets(maxRetries);
+        return this.repository.getDeletionTargets(maxRetries);
     }
 
-    async deleteInactiveAccount(lifecycleId: number, userId: number, username: string) {
-        return withTransaction(async () => {
-            await this.repository.markDeleted(lifecycleId, username);
-            await this.userRepository.deleteUserAccount(userId);
-        });
+    async markAsDeleted(lifecycleId: number, userId: number, username: string) {
+        return this.repository.markAsDeleted(lifecycleId, userId, username);
     }
 
     async deleteRowsForUser(userId: number) {

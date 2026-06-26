@@ -14,19 +14,20 @@ export const inactiveAccountDeletionTask = defineTask({
     visibility: "admin",
     description: "Warn and delete accounts inactive for 2 years",
     inputSchema: z.object({
-        maxEmailRetries: z.coerce.number().int().positive().max(3).default(3),
         maxEmailsPerRun: z.coerce.number().int().positive().max(500).default(100),
     }),
     handler: async (ctx, input) => {
-        const inactiveAccountService = await getContainer().then((c) => c.services.inactiveAccount);
+        const container = await getContainer();
+        const userService = container.services.user;
+        const inactiveAccountService = container.services.inactiveAccount;
 
         await ctx.step("mark-resurrected-users", async () => {
-            const resurrectedCount = await inactiveAccountService.markResurrectedForSeenUsers();
+            const resurrectedCount = await inactiveAccountService.markResurrectedUsers();
             ctx.metric("accounts.resurrected", resurrectedCount);
         });
 
         await ctx.step("send-warning-emails", async () => {
-            const targets = await inactiveAccountService.getWarningTargets(input.maxEmailsPerRun, input.maxEmailRetries);
+            const targets = await inactiveAccountService.getWarningTargets(input.maxEmailsPerRun, 3);
             ctx.metric("accounts.warning.targets", targets.length);
 
             for (const target of targets) {
@@ -77,12 +78,18 @@ export const inactiveAccountDeletionTask = defineTask({
         });
 
         await ctx.step("delete-due-accounts", async () => {
-            const targets = await inactiveAccountService.getDeletionTargets(input.maxEmailRetries);
+            const targets = await inactiveAccountService.getDeletionTargets(3);
             ctx.metric("accounts.deletion.targets", targets.length);
 
             for (const target of targets) {
-                await inactiveAccountService.deleteInactiveAccount(target.lifecycleId, target.userId, target.username);
-                ctx.increment("accounts.deleted");
+                const deleted = await userService.deleteUserAccount({
+                    type: "inactive",
+                    userId: target.userId,
+                    username: target.username,
+                    lifecycleId: target.lifecycleId,
+                });
+
+                if (deleted) ctx.increment("accounts.deleted");
             }
         });
     },

@@ -2,7 +2,7 @@ import {SearchType} from "@/lib/schemas";
 import {paginate} from "@/lib/server/database/pagination";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {inactiveAccountDeletion, user} from "@/lib/server/database/schema";
-import {InactiveAccountWarningFailedPayload, InactiveAccountWarningSentPayload} from "@/lib/types/inactive.types";
+import {WarningFailedPayload, WarningSentPayload} from "@/lib/types/inactive.types";
 import {and, asc, count, eq, exists, gt, gte, inArray, isNull, like, lt, lte, notExists, or, sql} from "drizzle-orm";
 
 
@@ -71,7 +71,7 @@ export class InactiveAccountRepository {
             .slice(0, limit);
     }
 
-    static async inactiveAccountWarningSent(payload: InactiveAccountWarningSentPayload) {
+    static async warningSent(payload: WarningSentPayload) {
         const values = {
             lastEmailError: null,
             status: "warned" as const,
@@ -101,7 +101,7 @@ export class InactiveAccountRepository {
             });
     }
 
-    static async recordInactiveAccountWarningFailed(payload: InactiveAccountWarningFailedPayload) {
+    static async warningFailed(payload: WarningFailedPayload) {
         const safeMessage = payload.errorMessage.slice(0, 500);
 
         if (payload.lifecycleId) {
@@ -132,7 +132,7 @@ export class InactiveAccountRepository {
             });
     }
 
-    static async markResurrectedForSeenUsers() {
+    static async markResurrectedUsers() {
         const db = getDbClient();
 
         const rows = await db
@@ -159,26 +159,7 @@ export class InactiveAccountRepository {
         return rows.length;
     }
 
-    static async markResurrectedForUser(userId: number) {
-        const rows = await getDbClient()
-            .update(inactiveAccountDeletion)
-            .set({
-                status: "resurrected",
-                warningTokenHash: null,
-                updatedAt: sql`datetime('now')`,
-                resurrectedAt: sql`datetime('now')`,
-            })
-            .where(and(
-                isNull(inactiveAccountDeletion.deletedAt),
-                eq(inactiveAccountDeletion.userId, userId),
-                isNull(inactiveAccountDeletion.resurrectedAt),
-                inArray(inactiveAccountDeletion.status, ["warned", "mail_failed"]),
-            )).returning({ id: inactiveAccountDeletion.id });
-
-        return rows.length;
-    }
-
-    static async findUserIdByWarningTokenHash(warningTokenHash: string) {
+    static async findUserIdByTokenHash(warningTokenHash: string) {
         return getDbClient()
             .select({ userId: inactiveAccountDeletion.userId })
             .from(inactiveAccountDeletion)
@@ -188,7 +169,7 @@ export class InactiveAccountRepository {
             )).get();
     }
 
-    static async getInactiveAccountDeletionTargets(maxRetries: number) {
+    static async getDeletionTargets(maxRetries: number) {
         return getDbClient()
             .select({
                 userId: user.id,
@@ -210,8 +191,10 @@ export class InactiveAccountRepository {
             .orderBy(asc(inactiveAccountDeletion.deletionScheduledAt));
     }
 
-    static async markDeleted(lifecycleId: number, username: string) {
-        await getDbClient()
+    static async markAsDeleted(lifecycleId: number, userId: number, username: string) {
+        const db = getDbClient();
+
+        const rows = await db
             .update(inactiveAccountDeletion)
             .set({
                 username,
@@ -221,7 +204,24 @@ export class InactiveAccountRepository {
                 deletedAt: sql`datetime('now')`,
                 updatedAt: sql`datetime('now')`,
             })
-            .where(eq(inactiveAccountDeletion.id, lifecycleId));
+            .where(and(
+                isNull(inactiveAccountDeletion.deletedAt),
+                eq(inactiveAccountDeletion.userId, userId),
+                eq(inactiveAccountDeletion.id, lifecycleId),
+                isNull(inactiveAccountDeletion.resurrectedAt),
+                inArray(inactiveAccountDeletion.status, ["warned", "mail_failed"]),
+                lte(inactiveAccountDeletion.deletionScheduledAt, sql<string>`datetime('now')`),
+                exists(db
+                    .select({ one: sql`1` })
+                    .from(user)
+                    .where(and(
+                        eq(user.id, userId),
+                        lte(user.updatedAt, inactiveAccountDeletion.lastSeenAt),
+                    ))),
+            ))
+            .returning({ id: inactiveAccountDeletion.id });
+
+        return rows.length > 0;
     }
 
     static async deleteRowsForUser(userId: number) {
@@ -230,7 +230,7 @@ export class InactiveAccountRepository {
             .where(eq(inactiveAccountDeletion.userId, userId));
     }
 
-    static async getInactiveAccountDeletionAdminOverview(data: SearchType) {
+    static async getAdminOverview(data: SearchType) {
         const search = data.search ?? "";
         const searchCondition = search ? like(inactiveAccountDeletion.username, `%${search}%`) : undefined;
 

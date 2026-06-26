@@ -11,6 +11,10 @@ import {InactiveAccountService} from "@/lib/server/domain/user/inactive-account.
 const LAST_SEEN_CACHE_KEY = "lastSeen";
 const UPDATE_THRESHOLD_MS = 5 * 60 * 1000;
 
+type DeleteUserAccountPayload =
+    | { type: "manual"; userId: number }
+    | { type: "inactive"; userId: number; lifecycleId: number; username: string };
+
 
 export class UserService {
     constructor(
@@ -40,24 +44,26 @@ export class UserService {
     }
 
     async updateUserForAdmin(userId: number | undefined, payload: AdminUpdatePayload) {
-        if (!userId && (payload.showUpdateModal !== undefined || payload.showOnboarding !== undefined)) {
-            return this.repository.adminUpdateGlobalFlag(payload);
+        const { deleteUser, ...updatePayload } = payload;
+
+        if (!userId && (updatePayload.showUpdateModal !== undefined || updatePayload.showOnboarding !== undefined)) {
+            return this.repository.adminUpdateGlobalFlag(updatePayload);
         }
 
         if (!userId) return;
 
-        if (payload.deleteUser) {
-            return this.deleteUserAccount(userId);
+        if (deleteUser) {
+            return this.deleteUserAccount({ userId, type: "manual" });
         }
 
-        const allowedKeys = new Set<keyof AdminUpdatePayload>(["emailVerified", "role", "privacy", "showOnboarding", "showUpdateModal"]);
-        const isValidPayload = Object.keys(payload).every((k) => allowedKeys.has(k as keyof AdminUpdatePayload) || k === "deleteUser");
+        const allowedKeys = new Set<keyof typeof updatePayload>(["emailVerified", "role", "privacy", "showOnboarding", "showUpdateModal"]);
+        const isValidPayload = Object.keys(updatePayload).every((k) => allowedKeys.has(k as keyof typeof updatePayload));
 
         if (!isValidPayload) {
             throw new FormattedError("Invalid payload");
         }
 
-        await this.repository.adminUpdateUser(userId, payload);
+        await this.repository.adminUpdateUser(userId, updatePayload);
     }
 
     // --- Follower/Follows functions ---------------------------------
@@ -111,14 +117,22 @@ export class UserService {
         if (await cacheManager.get(cacheKey)) return;
         await cacheManager.set(cacheKey, true, UPDATE_THRESHOLD_MS);
 
-        await this.repository.updateUserLastSeen(userId);
-        await this.inactiveAccountService.markResurrectedForUser(userId);
+        return this.repository.updateUserLastSeen(userId);
     }
 
-    async deleteUserAccount(userId: number) {
+    async deleteUserAccount(payload: DeleteUserAccountPayload) {
         return withTransaction(async () => {
-            await this.inactiveAccountService.deleteRowsForUser(userId);
-            await this.repository.deleteUserAccount(userId);
+            if (payload.type === "manual") {
+                await this.inactiveAccountService.deleteRowsForUser(payload.userId);
+            }
+
+            if (payload.type === "inactive") {
+                const markedDeleted = await this.inactiveAccountService.markAsDeleted(payload.lifecycleId, payload.userId, payload.username);
+                if (!markedDeleted) return false;
+            }
+
+            await this.repository.deleteUserAccount(payload.userId);
+            return true;
         });
     }
 

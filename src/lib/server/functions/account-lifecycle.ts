@@ -8,9 +8,15 @@ import {signCookieValue} from "@/lib/utils/signed-cookies";
 export const getReactivateInactiveAccount = createServerFn({ method: "GET" })
     .validator(tokenSchema)
     .handler(async ({ data: { token } }) => {
-        const inactiveAccountService = await getContainer().then((c) => c.services.inactiveAccount);
+        const container = await getContainer();
+        const userService = container.services.user;
+        const inactiveAccountService = container.services.inactiveAccount;
         const warningTokenHash = await signCookieValue(token, serverEnv.BETTER_AUTH_SECRET);
-        const success = await inactiveAccountService.reactivateByTokenHash(warningTokenHash);
 
-        return { success };
+        const userId = await inactiveAccountService.findUserIdByTokenHash(warningTokenHash);
+        if (!userId) return { success: false };
+
+        await userService.updateUserLastSeen(container.cacheManager, userId);
+
+        return { success: true };
     });

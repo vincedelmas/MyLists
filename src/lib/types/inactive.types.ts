@@ -7,5 +7,5 @@ interface InactiveAccountEmailResult {
 }
 
 
-export type InactiveAccountWarningFailedPayload = InactiveAccountEmailResult & { errorMessage: string };
-export type InactiveAccountWarningSentPayload = InactiveAccountEmailResult & { warningTokenHash: string };
+export type WarningFailedPayload = InactiveAccountEmailResult & { errorMessage: string };
+export type WarningSentPayload = InactiveAccountEmailResult & { warningTokenHash: string };

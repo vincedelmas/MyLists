@@ -4,20 +4,9 @@ import {mkdir} from "fs/promises";
 import {serverEnv} from "@/env/server";
 import {CoverType} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {createServerOnlyFn} from "@tanstack/react-start";
 
 
-interface ResizeOptions {
-    width?: number;
-    height?: number;
-}
-
-
-interface ProcessAndSaveImageOptions {
-    buffer: Buffer;
-    dirSaveName: CoverType;
-    resize?: ResizeOptions;
-}
+type ResizeOptions = { width?: number; height: number };
 
 
 interface SaveImageFromUrlOptions {
@@ -28,14 +17,7 @@ interface SaveImageFromUrlOptions {
 }
 
 
-interface SaveUploadedImageOptions {
-    file: File;
-    resize?: ResizeOptions;
-    dirSaveName: CoverType;
-}
-
-
-export const saveImageFromUrl = createServerOnlyFn(() => async ({ imageUrl, dirSaveName, resize, defaultName = "default.jpg" }: SaveImageFromUrlOptions) => {
+export const saveImageFromUrl = async ({ imageUrl, dirSaveName, resize, defaultName = "default.jpg" }: SaveImageFromUrlOptions) => {
     if (!resize) {
         resize = { width: 300, height: 450 };
     }
@@ -46,18 +28,27 @@ export const saveImageFromUrl = createServerOnlyFn(() => async ({ imageUrl, dirS
             return defaultName;
         }
 
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
+        const buffer = Buffer.from(await response.arrayBuffer());
         return processAndSaveImage({ buffer, dirSaveName, resize });
     }
     catch {
         return defaultName;
     }
-})();
+};
 
 
-export const saveUploadedImage = createServerOnlyFn(() => async ({ file, dirSaveName, resize }: SaveUploadedImageOptions) => {
+interface SaveUploadedImageOptions {
+    file: File;
+    resize?: ResizeOptions;
+    dirSaveName: CoverType;
+}
+
+
+export const saveUploadedImage = async ({ file, dirSaveName, resize }: SaveUploadedImageOptions) => {
+    if (!resize) {
+        resize = { width: 300, height: 450 };
+    }
+
     try {
         const buffer = Buffer.from(await file.arrayBuffer());
         return processAndSaveImage({ buffer, dirSaveName, resize });
@@ -65,10 +56,17 @@ export const saveUploadedImage = createServerOnlyFn(() => async ({ file, dirSave
     catch {
         throw new FormattedError("This image could not be processed");
     }
-})();
+};
 
 
-const processAndSaveImage = createServerOnlyFn(() => async ({ buffer, dirSaveName, resize }: ProcessAndSaveImageOptions) => {
+interface ProcessAndSaveImageOptions {
+    buffer: Buffer;
+    resize: ResizeOptions;
+    dirSaveName: CoverType;
+}
+
+
+const processAndSaveImage = async ({ buffer, dirSaveName, resize }: ProcessAndSaveImageOptions) => {
     const randomHex = crypto.randomBytes(16).toString("hex");
     const fileName = `${randomHex}.jpg`;
 
@@ -81,16 +79,20 @@ const processAndSaveImage = createServerOnlyFn(() => async ({ buffer, dirSaveNam
     const filePath = path.join(saveLocation, fileName);
 
     try {
-        const sharp = (await import("sharp")).default;
-        const sharpInstance = sharp(buffer);
-        if (resize) {
-            sharpInstance.resize(resize.width ?? null, resize.height);
+        const image = new Bun.Image(buffer);
+
+        let width = resize.width;
+        if (!width) {
+            const metadata = await image.metadata();
+            width = Math.max(1, Math.round((metadata.width / metadata.height) * resize.height));
         }
-        await sharpInstance.jpeg({ quality: 90 }).toFile(filePath);
+
+        image.resize(width, resize.height);
+        await image.jpeg({ quality: 90 }).write(filePath);
     }
     catch {
         throw new FormattedError("This image could not be processed");
     }
 
     return fileName;
-})();
+};

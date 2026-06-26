@@ -1,45 +1,37 @@
 import path from "path";
-import fs from "fs/promises";
 import {clientEnv} from "@/env/client";
 import {serverEnv} from "@/env/server";
-import {createServerOnlyFn} from "@tanstack/react-start";
 
 
-export const pixelateImage = createServerOnlyFn(() => async (url: string, level: number) => {
+export const pixelateImage = async (url: string, level: number) => {
     // Derive disk path from URL
-    const uploadsBasePath = `${clientEnv.VITE_BASE_URL}/${serverEnv.UPLOADS_DIR_NAME}/`;
-    const relativeImagePath = url.substring(uploadsBasePath.length);
+    const relativeImagePath = url.substring(`${clientEnv.VITE_BASE_URL}/${serverEnv.UPLOADS_DIR_NAME}/`.length);
     const absPath = path.join(serverEnv.BASE_UPLOADS_LOCATION, relativeImagePath);
 
     // Scale lookup (1 = heavy pix, 5 = light pix)
-    const scaleFactors: Record<number, number> = { 5: 6, 4: 7, 3: 8, 2: 10, 1: 12 };
-    const factor = scaleFactors[level];
+    const factor = { 5: 6, 4: 7, 3: 8, 2: 10, 1: 12 }[level] ?? 12;
 
-    let inputBuffer;
+    let image, metadata;
     try {
-        inputBuffer = await fs.readFile(absPath);
+        image = new Bun.Image(absPath);
+        metadata = await image.metadata();
     }
     catch {
-        return "";
+        const defaultImagePath = path.join(serverEnv.BASE_UPLOADS_LOCATION, path.dirname(relativeImagePath), "default.jpg");
+        image = new Bun.Image(defaultImagePath);
+        metadata = await image.metadata();
     }
 
-    const sharp = (await import("sharp")).default;
-    const meta = await sharp(inputBuffer).metadata();
-    const w = meta.width!;
-    const h = meta.height!;
+    const tinyW = Math.max(1, Math.floor(metadata.width / factor));
+    const tinyH = Math.max(1, Math.floor(metadata.height / factor));
 
-    const tinyW = Math.max(1, Math.floor(w / factor));
-    const tinyH = Math.max(1, Math.floor(h / factor));
-
-    const smallBuffer = await sharp(inputBuffer)
-        .resize(tinyW, tinyH, { kernel: sharp.kernel.nearest })
+    const smallBuffer = await image
+        .resize(tinyW, tinyH, { filter: "nearest" })
         .png()
-        .toBuffer();
+        .buffer();
 
-    const pixelatedBuffer = await sharp(smallBuffer)
-        .resize(w, h, { kernel: sharp.kernel.nearest })
+    return new Bun.Image(smallBuffer)
+        .resize(metadata.width, metadata.height, { filter: "nearest" })
         .png()
-        .toBuffer();
-
-    return pixelatedBuffer.toString("base64");
-})();
+        .toBase64();
+};

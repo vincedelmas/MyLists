@@ -68,7 +68,7 @@ export const highlightedMediaSettingsSchema = z.object(highlightedMediaSettingsS
 export const generalSettingsSchema = z.object({
     privacy: z.enum(PrivacyType),
     profileImage: z.instanceof(File).optional()
-        .refine((file) => !file || file.size <= 0.1 * 1024 * 1000, "Image must be less than 10MB."),
+        .refine((file) => !file || file.size <= 10 * 1024 * 1000, "Image must be less than 10MB."),
     backgroundImage: z.instanceof(File).optional()
         .refine((file) => !file || file.size <= 10 * 1024 * 1000, "Image must be less than 10MB."),
     username: z.string().trim()

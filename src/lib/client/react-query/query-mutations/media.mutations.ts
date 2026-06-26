@@ -1,10 +1,10 @@
 import {MediaType} from "@/lib/utils/enums";
-import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
-import {getMediaDetails, postEditMediaDetails, postUpdateBookCover, refreshMediaDetails} from "@/lib/server/functions/media-details";
+import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
+import {postEditMediaDetails, postUpdateBookCover, refreshMediaDetails, resolveExternalMedia} from "@/lib/server/functions/media-details";
 
 
-export const useRefreshMediaMutation = (mediaType: MediaType, mediaOrApiId: number | string, external: boolean) => {
+export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -14,7 +14,7 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaOrApiId: numb
             successToastMessage: "Metadata refreshed successfully!",
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaOrApiId.toString(), external).queryKey });
+            await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey });
         },
     });
 };
@@ -28,14 +28,14 @@ export const useEditMediaMutation = () => {
 };
 
 
-export const useUpdateBookCoverMutation = (mediaOrApiId: number | string, external: boolean, meta?: MutationMeta) => {
+export const useUpdateBookCoverMutation = (mediaId: number, meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postUpdateBookCover,
         meta: { ...meta },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(MediaType.BOOKS, mediaOrApiId.toString(), external).queryKey });
+            await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(MediaType.BOOKS, mediaId).queryKey });
         },
     });
 };
@@ -43,7 +43,7 @@ export const useUpdateBookCoverMutation = (mediaOrApiId: number | string, extern
 
 export const useAddMediaToCollectionMutation = () => {
     return useMutation({
-        mutationFn: getMediaDetails,
+        mutationFn: resolveExternalMedia,
         meta: { errorToastMessage: "Failed to add media to collection." },
     });
 };

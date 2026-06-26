@@ -1,12 +1,13 @@
+import {StatsActiveTab} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {AdvancedMediaStats} from "@/lib/types/stats.types";
 import {MediaType, RatingSystemType} from "@/lib/utils/enums";
 
 
-export const getPlatformStatsData = async (mediaType?: MediaType) => {
+export const getPlatformStatsData = async (activeTab: StatsActiveTab) => {
     const userStatsService = await getContainer().then(c => c.services.userStats);
 
-    if (!mediaType) {
+    if (activeTab === "overview") {
         const platformStats = await userStatsService.platformAdvancedStatsSummary();
         return {
             ...platformStats,
@@ -16,10 +17,10 @@ export const getPlatformStatsData = async (mediaType?: MediaType) => {
         };
     }
 
-    const mediaStats = await userStatsService.platformMediaAdvancedStats(mediaType);
+    const mediaStats = await userStatsService.platformMediaAdvancedStats(activeTab);
     return {
         ...mediaStats,
-        mediaType,
+        mediaType: activeTab,
         ratingSystem: RatingSystemType.SCORE,
         activatedMediaTypes: Object.values(MediaType),
     } as AdvancedMediaStats;

@@ -49,11 +49,15 @@ export const gamesConfig: GamesSchemaConfig = {
             "IGDB Rating +": [desc(games.voteAverage), asc(games.name)],
             "IGDB Rating -": [asc(games.voteAverage), asc(games.name)],
             "Recently Added": [desc(gamesList.addedAt), asc(games.name)],
+            "Recently Modified": [desc(gamesList.lastUpdated), asc(games.name)],
             "Rating +": [desc(gamesList.rating), asc(games.name)],
             "Rating -": [asc(gamesList.rating), asc(games.name)],
             "Playtime +": [desc(gamesList.playtime), asc(games.name)],
             "Playtime -": [asc(gamesList.playtime), asc(games.name)],
         },
+    },
+    communityActivityStats: {
+        totalPlaytime: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0)`,
     },
     apiProvider: {
         maxGenres: 5,

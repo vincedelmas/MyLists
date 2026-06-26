@@ -1,5 +1,5 @@
-import {useState, useRef} from "react";
-import {MediaListArgs} from "@/lib/schemas";
+import {useState} from "react";
+import {MediaListArgs, mediaListSearchSchema} from "@/lib/schemas";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -16,7 +16,7 @@ import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/")({
-    validateSearch: (search) => search as MediaListArgs & { view?: "grid" | "list" },
+    validateSearch: mediaListSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: async ({ context: { queryClient }, params: { mediaType, username }, deps: { search } }) => {
         return queryClient.ensureQueryData(mediaListOptions(mediaType, username, search));

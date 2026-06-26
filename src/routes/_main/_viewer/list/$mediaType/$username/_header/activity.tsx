@@ -1,11 +1,11 @@
+import {activitySearchSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
-import {ActivitySearch} from "@/lib/types/activity.types";
 import {MonthlyActivityContent} from "@/lib/client/components/activity/MonthlyActivityContent";
 import {monthlyActivityOptions, monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/activity")({
-    validateSearch: (search) => search as ActivitySearch,
+    validateSearch: activitySearchSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: async ({ context: { queryClient }, params: { mediaType, username }, deps: { search } }) => {
         await Promise.all([

@@ -46,9 +46,9 @@ export const CollectionSearch = ({ mediaType, onAdd, disabled }: CollectionSearc
 
         setResolvingId(item.id)
 
-        mutation.mutate({ data: { mediaType, external: true, mediaId: item.id } }, {
-            onSuccess: ({ media }) => {
-                onAdd({ mediaId: media.id, mediaName: media.name, mediaCover: media.imageCover });
+        mutation.mutate({ data: { mediaType, apiId: item.id } }, {
+            onSuccess: ({ mediaId }) => {
+                onAdd({ mediaId, mediaName: item.name, mediaCover: item.image });
                 reset();
             },
             onSettled: () => setResolvingId(null),

@@ -1,6 +1,5 @@
-import {getUserStatsSchema} from "@/lib/schemas";
+import {userStatsInputSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
-import {tryNotFound} from "@/lib/utils/try-not-found";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {AdvancedMediaStats} from "@/lib/types/stats.types";
@@ -10,15 +9,17 @@ import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cac
 
 export const getUserStats = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .inputValidator(tryNotFound(getUserStatsSchema))
-    .handler(async ({ data: { mediaType }, context: { user } }) => {
+    .validator(userStatsInputSchema)
+    .handler(async ({ data: { activeTab }, context: { user } }) => {
         const container = await getContainer();
         const userStatsService = container.services.userStats;
-        const activatedMediaTypes = user.userMediaSettings.filter(s => s.active).map(s => s.mediaType);
+        const activatedMediaTypes = user.userMediaSettings
+            .filter(s => s.active)
+            .map(s => s.mediaType);
 
         return container.cacheManager.wrap(
-            getUserStatsCacheKey(user.id, { mediaType }), async () => {
-                if (!mediaType) {
+            getUserStatsCacheKey(user.id, activeTab), async () => {
+                if (activeTab === "overview") {
                     const userStats = await userStatsService.userAdvancedSummaryStats(user.id);
                     return {
                         ...userStats,
@@ -28,15 +29,15 @@ export const getUserStats = createServerFn({ method: "GET" })
                     };
                 }
 
-                if (user.userMediaSettings.find((s) => s.mediaType === mediaType)?.active === false) {
+                if (user.userMediaSettings.find((s) => s.mediaType === activeTab)?.active === false) {
                     throw new FormattedError("MediaType not activated");
                 }
 
-                const mediaStats = await userStatsService.userAdvancedMediaStats(user.id, mediaType);
+                const mediaStats = await userStatsService.userAdvancedMediaStats(user.id, activeTab);
                 return {
                     ...mediaStats,
-                    mediaType,
                     activatedMediaTypes,
+                    mediaType: activeTab,
                     ratingSystem: user.ratingSystem,
                 } as AdvancedMediaStats;
             },

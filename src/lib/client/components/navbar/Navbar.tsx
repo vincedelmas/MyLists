@@ -1,17 +1,17 @@
 import {useState} from "react";
 import {cva} from "class-variance-authority";
-import {capitalize} from "@/lib/utils/text-formatting";
 import authClient from "@/lib/utils/auth-client";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useQueryClient} from "@tanstack/react-query";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
 import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
+import {authOptions} from "@/lib/client/react-query/query-options";
 import {Link, useLocation, useNavigate} from "@tanstack/react-router";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
-import {authOptions} from "@/lib/client/react-query/query-options";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {useFeatureFlagMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {
@@ -151,7 +151,7 @@ export const Navbar = () => {
                                         MyMedia
                                         <ChevronDown className="ml-2 size-3 opacity-70"/>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-90 p-0" align="end">
+                                    <DropdownMenuContent className="w-92 p-0" align="end">
                                         <div className="grid grid-cols-2">
                                             <div className="bg-muted/30 pt-1 pb-2 px-3">
                                                 <DropdownMenuLabel className="mb-2 text-[10px] uppercase tracking-wide text-muted-foreground">

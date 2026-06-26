@@ -81,6 +81,13 @@ export type IgdbTrendGamesResponse = {
 }
 
 
+// TODO: to remove after backfilling
+export type IgdbGameCollectionIds = {
+    id: number;
+    collections?: number[];
+}
+
+
 export interface IgdbGameDetails {
     id: number;
     url: string;
@@ -89,6 +96,7 @@ export interface IgdbGameDetails {
     total_rating?: number;
     genres?: IdNamePair[];
     themes?: IdNamePair[];
+    collections?: number[];
     platforms?: IdNamePair[];
     game_modes?: IdNamePair[];
     first_release_date?: number;

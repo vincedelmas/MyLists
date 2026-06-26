@@ -360,20 +360,4 @@ input[type="search"]::-webkit-search-cancel-button:hover {
         scrollbar-width: thin;
         scrollbar-color: #3f3f46 transparent;
     }
-
-
-    /* --- Use for follow cards --- */
-    .item {
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .item:empty {
-        display: none;
-    }
-
-    .item:not(:empty) ~ .item:not(:empty)::before {
-        content: "•";
-        margin: 0 0.5rem;
-    }
 }

@@ -1,22 +1,25 @@
 import {useMemo, useState} from "react";
+import {useForm} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {useSuspenseQuery} from "@tanstack/react-query";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
-import {displayPageFormError} from "@/lib/utils/error-display";
+import {useSuspenseQuery} from "@tanstack/react-query";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
+import {formatDateTime} from "@/lib/utils/date-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Textarea} from "@/lib/client/components/ui/textarea";
-import {capitalize} from "@/lib/utils/text-formatting";
-import {formatDateTime} from "@/lib/utils/date-formatting";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {FeatureStatus, isAtLeastRole, RoleType,} from "@/lib/utils/enums";
+import {featureVotesOptions} from "@/lib/client/react-query/query-options";
+import {PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
-import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 
@@ -47,14 +50,19 @@ const STATUS_STYLES: Record<FeatureStatus, string> = {
 
 function FeatureVotesPage() {
     const { currentUser, isAnonymous } = useAuth();
-    const [newTitle, setNewTitle] = useState("");
     const toggleVoteMutation = useToggleFeatureVoteMutation();
     const apiData = useSuspenseQuery(featureVotesOptions).data;
     const [searchQuery, setSearchQuery] = useState("");
     const createFeatureMutation = useCreateFeatureRequestMutation();
-    const [newDescription, setNewDescription] = useState("");
     const isAdmin = isAtLeastRole(currentUser?.role ?? null, RoleType.ADMIN);
     const [statusTab, setStatusTab] = useState<FeatureStatus | "active">("active");
+    const form = useForm<PostFeatureRequest>({
+        resolver: zodResolver(postFeatureRequestSchema),
+        defaultValues: {
+            title: "",
+            description: "",
+        },
+    });
 
     const filteredRequests = useMemo(() => {
         return apiData.items
@@ -71,11 +79,10 @@ function FeatureVotesPage() {
             .sort((a, b) => b.totalVotes - a.totalVotes);
     }, [apiData.items, statusTab, searchQuery]);
 
-    const handleAddNewFeature = () => {
-        createFeatureMutation.mutate({ data: { title: newTitle.trim(), description: newDescription.trim() } }, {
+    const handleAddNewFeature = (submitted: PostFeatureRequest) => {
+        createFeatureMutation.mutate({ data: submitted }, {
             onSuccess: () => {
-                setNewTitle("");
-                setNewDescription("");
+                form.reset();
             },
         });
     };
@@ -149,29 +156,50 @@ function FeatureVotesPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <Input
-                                value={newTitle}
-                                disabled={isAnonymous}
-                                placeholder="Feature title"
-                                onChange={(ev) => setNewTitle(ev.target.value)}
-                            />
-                            <Textarea
-                                rows={3}
-                                disabled={isAnonymous}
-                                value={newDescription}
-                                placeholder="Optional: add a short context or use-case."
-                                onChange={(ev) => setNewDescription(ev.target.value)}
-                            />
-                            {createFeatureMutation.isError &&
-                                <p className="text-xs text-destructive -mt-2">
-                                    {displayPageFormError(createFeatureMutation.error)}
-                                </p>
-                            }
-                            <div className="flex items-center justify-center">
-                                <Button onClick={handleAddNewFeature} disabled={createFeatureMutation.isPending || isAnonymous}>
-                                    Add Feature for Voting
-                                </Button>
-                            </div>
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(handleAddNewFeature)} className="space-y-4">
+                                    <fieldset disabled={createFeatureMutation.isPending || isAnonymous} className="space-y-4">
+                                        <FormField
+                                            name="title"
+                                            control={form.control}
+                                            render={({ field }) =>
+                                                <FormItem>
+                                                    <FormLabel>Title</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            {...field}
+                                                            placeholder="Feature title"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage/>
+                                                </FormItem>
+                                            }
+                                        />
+                                        <FormField
+                                            name="description"
+                                            control={form.control}
+                                            render={({ field }) =>
+                                                <FormItem>
+                                                    <FormLabel>Description</FormLabel>
+                                                    <FormControl>
+                                                        <Textarea
+                                                            {...field}
+                                                            rows={3}
+                                                            placeholder="Optional: add a short context or use-case."
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage/>
+                                                </FormItem>
+                                            }
+                                        />
+                                    </fieldset>
+                                    <div className="flex items-center justify-center">
+                                        <Button type="submit" disabled={createFeatureMutation.isPending || isAnonymous}>
+                                            Add Feature for Voting
+                                        </Button>
+                                    </div>
+                                </form>
+                            </Form>
                         </CardContent>
                     </Card>
                 </div>

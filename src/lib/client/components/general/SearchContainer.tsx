@@ -1,6 +1,6 @@
 import {ReactNode} from "react";
-import {Loader2, SearchX} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
+import {Loader2, SearchX} from "lucide-react";
 import {displayContainerError} from "@/lib/utils/error-display";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 
@@ -15,6 +15,7 @@ interface SearchContainerProps {
     error?: Error | null;
     emptyMessage?: string;
     debouncedSearch: string;
+    minSearchLength?: number;
     position?: "top" | "bottom";
 }
 
@@ -22,10 +23,10 @@ interface SearchContainerProps {
 export const SearchContainer = (props: SearchContainerProps) => {
     const {
         search, isOpen, isPending, hasResults, debouncedSearch,
-        children, className, error, emptyMessage, position = "bottom"
+        children, className, error, emptyMessage, position = "bottom", minSearchLength = 2
     } = props;
 
-    if (!isOpen || search.length === 0 || debouncedSearch.length < 2) {
+    if (!isOpen || search.trim().length === 0 || debouncedSearch.trim().length < minSearchLength) {
         return null;
     }
 

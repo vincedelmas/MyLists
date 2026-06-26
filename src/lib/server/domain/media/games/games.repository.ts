@@ -1,7 +1,8 @@
-import {AddedMediaDetails} from "@/lib/types/media-common.types";
+import {getImageUrl} from "@/lib/utils/image-url";
 import {Achievement} from "@/lib/types/achievements.types";
 import {GamesPlatformsEnum, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {normalizeGamePlatforms} from "@/lib/utils/game-platforms";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {Game, UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
@@ -267,6 +268,29 @@ export class GamesRepository extends BaseRepository<GamesSchemaConfig> {
                 genres: sql`json_group_array(DISTINCT json_object('id', ${gamesGenre.id}, 'name', ${gamesGenre.name}))`.mapWith(JSON.parse),
                 companies: sql`json_group_array(DISTINCT json_object('id', ${gamesCompanies.id}, 'name', ${gamesCompanies.name}, 'developer', ${gamesCompanies.developer}, 'publisher', ${gamesCompanies.publisher}))`.mapWith(JSON.parse),
                 platforms: sql`json_group_array(DISTINCT json_object('id', ${gamesPlatforms.id}, 'name', ${gamesPlatforms.name}))`.mapWith(JSON.parse),
+                collection: sql`
+                    CASE 
+                        WHEN ${games.collectionId} IS NULL 
+                        THEN json_array()
+                        ELSE (
+                            SELECT COALESCE(json_group_array(json_object(
+                                'mediaId', x.id, 
+                                'mediaName', x.name, 
+                                'mediaCover', x.image_cover
+                            )), json_array())
+                            FROM (
+                                SELECT
+                                    g2.id,
+                                    g2.name,
+                                    g2.image_cover,
+                                    g2.release_date
+                                FROM games g2
+                                WHERE g2.collection_id = ${games.collectionId} AND g2.id != ${games.id}
+                                ORDER BY g2.release_date ASC, g2.id ASC
+                            ) AS x
+                        )
+                    END
+                `.mapWith(JSON.parse),
             })
             .from(games)
             .leftJoin(gamesCompanies, eq(gamesCompanies.mediaId, games.id))
@@ -278,6 +302,11 @@ export class GamesRepository extends BaseRepository<GamesSchemaConfig> {
 
         if (!details) return;
 
+        const collection = details.collection.map((item: { mediaId: number, mediaName: string, mediaCover: string }) => ({
+            ...item,
+            mediaCover: getImageUrl("games-covers", item.mediaCover),
+        }));
+
         const result: Game & AddedMediaDetails = {
             ...details,
             providerData: {
@@ -285,6 +314,7 @@ export class GamesRepository extends BaseRepository<GamesSchemaConfig> {
                 url: details.igdbUrl ?? "#",
             },
             genres: details.genres || [],
+            collection: collection || [],
             companies: details.companies || [],
             platforms: details.platforms || [],
         };

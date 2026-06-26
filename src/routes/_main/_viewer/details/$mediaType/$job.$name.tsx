@@ -1,11 +1,10 @@
-import {SearchType} from "@/lib/schemas";
-import {JobType, MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
+import {mediaDetailsJobSchema, paginationSchema} from "@/lib/schemas";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {jobDetailsOptions} from "@/lib/client/react-query/query-options";
 import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
@@ -14,14 +13,12 @@ import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerC
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$name")({
     params: {
         parse: (params) => {
-            return {
-                job: params.job as JobType,
-                name: params.name as string,
-                mediaType: params.mediaType as MediaType,
-            }
-        }
+            const result = mediaDetailsJobSchema.safeParse(params);
+            if (!result.success) return false;
+            return result.data;
+        },
     },
-    validateSearch: (search) => search as SearchType,
+    validateSearch: paginationSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: ({ context: { queryClient }, params: { mediaType, job, name }, deps: { search } }) => {
         return queryClient.ensureQueryData(jobDetailsOptions(mediaType, job, name, search));
@@ -30,15 +27,12 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$na
 });
 
 
-const DEFAULT = { page: 1 } satisfies SearchType;
-
-
 function JobInfoPage() {
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
     const { mediaType, job, name } = Route.useParams();
     const apiData = useSuspenseQuery(jobDetailsOptions(mediaType, job, name, filters)).data;
-    const { page = DEFAULT.page } = filters;
+    const { page = 1 } = filters;
 
     const onPageChange = async (page: number) => {
         await navigate({ search: { page } });

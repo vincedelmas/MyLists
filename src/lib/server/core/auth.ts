@@ -3,10 +3,10 @@ import crypto from "crypto";
 import {eq} from "drizzle-orm";
 import {clientEnv} from "@/env/client";
 import {serverEnv} from "@/env/server";
-import {betterAuth} from "better-auth";
 import {db} from "@/lib/server/database/db";
-import {statusUtils} from "@/lib/utils/media-mapping";
+import {betterAuth} from "better-auth/minimal";
 import {sendEmail} from "@/lib/utils/mail-sender";
+import {statusUtils} from "@/lib/utils/media-mapping";
 import {createServerOnlyFn} from "@tanstack/react-start";
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -146,7 +146,7 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         enabled: true,
         autoSignIn: false,
         minPasswordLength: 8,
-        maxPasswordLength: 50,
+        maxPasswordLength: 128,
         requireEmailVerification: true,
         resetPasswordTokenExpiresIn: 3600,
         sendResetPassword: async ({ user, url }) => {

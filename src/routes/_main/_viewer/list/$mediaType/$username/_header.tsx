@@ -1,6 +1,6 @@
-import {MediaType} from "@/lib/utils/enums";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {mediaTypeUsernameSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {MediaLevel} from "@/lib/client/components/general/MediaLevel";
@@ -13,11 +13,10 @@ import {Award, ChartNoAxesColumn, Library, ListOrdered, Tags, User, Zap} from "l
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header")({
     params: {
         parse: (params) => {
-            return {
-                username: params.username,
-                mediaType: params.mediaType as MediaType,
-            }
-        }
+            const result = mediaTypeUsernameSchema.safeParse(params);
+            if (!result.success) return false;
+            return result.data;
+        },
     },
     loader: async ({ context: { queryClient }, params: { mediaType, username } }) => {
         return queryClient.ensureQueryData(userListHeaderOption(mediaType, username));

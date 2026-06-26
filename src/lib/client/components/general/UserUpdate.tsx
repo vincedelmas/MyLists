@@ -40,7 +40,6 @@ export function UserUpdate({ update, username, onDelete, canDelete, isPending, m
                     <p className="text-sm">
                         <Link
                             disabled={isPending}
-                            search={{ external: false }}
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: update.mediaType, mediaId: update.mediaId }}
                         >

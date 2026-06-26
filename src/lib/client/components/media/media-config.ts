@@ -50,6 +50,7 @@ import {getMangaActiveFilters} from "@/lib/client/components/media/manga/MangaAc
 import {getBooksActiveFilters} from "@/lib/client/components/media/books/BooksActiveFilters";
 import {getGamesActiveFilters} from "@/lib/client/components/media/games/GamesActiveFilters";
 import {getMoviesActiveFilters} from "@/lib/client/components/media/movies/MoviesActiveFilters";
+import {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
 import {UpdateUserMediaMutationOptions, UserMediaQueryOption} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {ExtractFollowByType, ExtractListByType, ExtractMediaDetailsByType, ExtractUserMediaByType} from "@/lib/types/query.options.types";
 
@@ -84,9 +85,15 @@ export type MediaConfig = {
             mutationOptions?: UpdateUserMediaMutationOptions;
         }>;
         mediaFollowCard: React.FC<{
+            showComment?: boolean,
             rating: React.ReactNode,
             followData: ExtractFollowByType<T>,
         }>;
+        communityActivity: {
+            countLabel: string;
+            extraLabel: string;
+            extraMetric: keyof Pick<MediaCommunityActivityStats, "totalRedo" | "totalPlaytime" | "totalSpecific">;
+        };
         mediaListCard: React.FC<{
             mediaType: T,
             isCurrent: boolean,
@@ -111,6 +118,11 @@ export const mediaConfig: MediaConfig = {
         extraSections: TvExtraSections,
         mediaFollowCard: TvFollowCard,
         mediaUserDetails: TvUserDetails,
+        communityActivity: {
+            countLabel: "Watched",
+            extraMetric: "totalRedo",
+            extraLabel: "Rewatched seasons",
+        },
 
         mediaListCard: TvListItem,
         mediaListColumns: getTvColumns,
@@ -125,6 +137,11 @@ export const mediaConfig: MediaConfig = {
 
         mediaUserDetails: TvUserDetails,
         mediaFollowCard: TvFollowCard,
+        communityActivity: {
+            countLabel: "Watched",
+            extraMetric: "totalRedo",
+            extraLabel: "Rewatched seasons",
+        },
         mediaListCard: TvListItem,
         mediaListColumns: getTvColumns,
         sheetFilters: getTvActiveFilters,
@@ -138,6 +155,11 @@ export const mediaConfig: MediaConfig = {
 
         mediaUserDetails: MoviesUserDetails,
         mediaFollowCard: MovieFollowCard,
+        communityActivity: {
+            countLabel: "Watched",
+            extraLabel: "Rewatches",
+            extraMetric: "totalRedo",
+        },
         mediaListCard: MovieListItem,
         mediaListColumns: getMoviesColumns,
         sheetFilters: getMoviesActiveFilters,
@@ -151,6 +173,11 @@ export const mediaConfig: MediaConfig = {
 
         mediaUserDetails: GamesUserDetails,
         mediaFollowCard: GameFollowCard,
+        communityActivity: {
+            countLabel: "Played",
+            extraLabel: "Playtime",
+            extraMetric: "totalPlaytime",
+        },
         mediaListCard: GameListItem,
         mediaListColumns: getGamesColumns,
         sheetFilters: getGamesActiveFilters,
@@ -162,6 +189,11 @@ export const mediaConfig: MediaConfig = {
 
         mediaUserDetails: BooksUserDetails,
         mediaFollowCard: BookFollowCard,
+        communityActivity: {
+            countLabel: "Read",
+            extraLabel: "Rereads",
+            extraMetric: "totalRedo",
+        },
         mediaListCard: BookListItem,
         mediaListColumns: getBooksColumns,
         sheetFilters: getBooksActiveFilters,
@@ -173,6 +205,11 @@ export const mediaConfig: MediaConfig = {
 
         mediaUserDetails: MangaUserDetails,
         mediaFollowCard: MangaFollowCard,
+        communityActivity: {
+            countLabel: "Read",
+            extraLabel: "Rereads",
+            extraMetric: "totalRedo",
+        },
         mediaListCard: MangaListItem,
         mediaListColumns: getMangaColumns,
         sheetFilters: getMangaActiveFilters,

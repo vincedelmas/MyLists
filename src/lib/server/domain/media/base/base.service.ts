@@ -8,7 +8,7 @@ import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {BaseProviderService} from "@/lib/server/domain/media/base/provider.service";
 import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {MediaListArgs, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
+import {MediaListArgs, Pagination, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 
 
@@ -120,12 +120,19 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return this.repository.getSearchListFilters(userId, query, job);
     }
 
-    async getMediaJobDetails(job: JobType, name: string, search: SearchType, userId?: number) {
-        const page = search.page ?? 1;
-        const perPage = search.perPage ?? 24;
+    async getMediaJobDetails(job: JobType, name: string, pagination: Pagination, userId?: number) {
+        const page = pagination.page ?? 1;
+        const perPage = pagination.perPage ?? 24;
         const offset = (page - 1) * perPage;
 
         return this.repository.getMediaJobDetails(job, name, offset, perPage, userId);
+    }
+
+    async getMediaCommunityActivity(userId: number | undefined, mediaId: number, search: SearchType) {
+        const media = await this.repository.findById(mediaId);
+        if (!media) throw notFound();
+
+        return this.repository.getMediaCommunityActivity(userId, mediaId, search);
     }
 
     async editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {
@@ -179,11 +186,11 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return { media, delta, newState, logPayload };
     }
 
-    async updateUserCustomCover(userId: number, mediaId: number, payload: UpdateUserCustomCover) {
-        const media = await this.repository.findById(mediaId);
+    async updateUserCustomCover(userId: number, payload: UpdateUserCustomCover) {
+        const media = await this.repository.findById(payload.mediaId);
         if (!media) throw notFound();
 
-        const userMedia = await this.repository.findUserMedia(userId, mediaId);
+        const userMedia = await this.repository.findUserMedia(userId, payload.mediaId);
         if (!userMedia) throw new FormattedError("Media not in your list");
 
         let imageName: string | null = null;
@@ -192,16 +199,14 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
 
             if (payload.imageFile) {
                 imageName = await saveUploadedImage({
-                    file: payload.imageFile,
                     dirSaveName,
-                    resize: { width: 300, height: 450 },
+                    file: payload.imageFile,
                 });
             }
             else if (payload.imageUrl) {
                 imageName = await saveImageFromUrl({
-                    imageUrl: payload.imageUrl,
                     dirSaveName,
-                    resize: { width: 300, height: 450 },
+                    imageUrl: payload.imageUrl,
                 });
             }
 
@@ -210,7 +215,7 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
             }
         }
 
-        return this.repository.updateUserMediaDetails(userId, mediaId, { customCover: imageName });
+        return this.repository.updateUserMediaDetails(userId, payload.mediaId, { customCover: imageName });
     }
 
     async removeMediaFromUserList(userId: number, mediaId: number) {
@@ -226,33 +231,30 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return delta;
     }
 
-    async getMediaAndUserDetails(userId: number | undefined, mediaId: string, external: boolean, providerService: BaseProviderService<any, any, any>) {
-        const media = external ? await this.repository.findByApiId(mediaId) : await this.repository.findById(Number(mediaId));
+    async resolveExternalMedia(apiId: number | string, providerService: BaseProviderService<any, any, any>) {
+        const media = await this.repository.findByApiId(apiId);
+        if (media) return media.id;
 
-        let internalMediaId = media?.id;
-        if (external && !internalMediaId) {
-            internalMediaId = await providerService.fetchAndStoreMediaDetails(mediaId);
-        }
+        return providerService.fetchAndStoreMediaDetails(apiId);
+    }
 
-        if (internalMediaId) {
-            const mediaWithDetails = await this.repository.findAllAssociatedDetails(internalMediaId);
-            if (!mediaWithDetails) {
-                throw notFound();
-            }
+    async getMediaAndUserDetails(userId: number | undefined, mediaId: number) {
+        const media = await this.repository.findById(mediaId);
+        if (!media) throw notFound();
 
-            const similarMedia = await this.repository.findSimilarMedia(mediaWithDetails.id);
-            const userMedia = await this.repository.findUserMedia(userId, mediaWithDetails.id);
-            const followsData = await this.repository.getUserFollowsMediaData(userId, mediaWithDetails.id);
+        const mediaWithDetails = await this.repository.findAllAssociatedDetails(media.id);
+        if (!mediaWithDetails) throw notFound();
 
-            return {
-                userMedia,
-                followsData,
-                similarMedia,
-                media: mediaWithDetails,
-            };
-        }
+        const similarMedia = await this.repository.findSimilarMedia(mediaWithDetails.id);
+        const userMedia = await this.repository.findUserMedia(userId, mediaWithDetails.id);
+        const followsData = await this.repository.getUserFollowsMediaData(userId, mediaWithDetails.id);
 
-        throw notFound();
+        return {
+            userMedia,
+            followsData,
+            similarMedia,
+            media: mediaWithDetails,
+        };
     }
 
     getAchievementCte(achievement: Achievement, userId?: number) {

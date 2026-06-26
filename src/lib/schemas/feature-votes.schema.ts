@@ -1,5 +1,10 @@
 import * as z from "zod";
 import {FeatureStatus} from "@/lib/utils/enums";
+import {coercedPositiveIntFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
+
+
+export type PostFeatureStatus = z.infer<typeof postFeatureStatusSchema>;
+export type PostFeatureRequest = z.infer<typeof postFeatureRequestSchema>;
 
 
 export const postFeatureRequestSchema = z.object({
@@ -12,15 +17,15 @@ export const postFeatureRequestSchema = z.object({
 });
 
 export const postFeatureVoteSchema = z.object({
-    featureId: z.coerce.number().int().positive(),
+    featureId: coercedPositiveIntFieldSchema,
 });
 
 export const postFeatureStatusSchema = z.object({
     status: z.enum(FeatureStatus),
-    featureId: z.coerce.number().int().positive(),
-    adminComment: z.string().trim().optional().nullable(),
+    featureId: positiveIntFieldSchema,
+    adminComment: z.string().trim().max(1000, "Comment cannot exceed 1000 chars.").optional().nullable(),
 });
 
 export const postFeatureDeleteSchema = z.object({
-    featureId: z.coerce.number().int().positive(),
+    featureId: coercedPositiveIntFieldSchema,
 });

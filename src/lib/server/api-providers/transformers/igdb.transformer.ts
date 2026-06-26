@@ -38,6 +38,7 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails) => {
         voteAverage: rawData?.total_rating ?? 0,
         voteCount: rawData?.total_rating_count ?? 0,
         gameEngine: rawData?.game_engines?.[0]?.name,
+        collectionId: rawData?.collections?.[0] ?? null,
         releaseDate: formatDateForDb(rawData.first_release_date),
         playerPerspective: rawData?.player_perspectives?.[0]?.name,
         gameModes: rawData?.game_modes?.map((mode) => mode?.name).join(","),

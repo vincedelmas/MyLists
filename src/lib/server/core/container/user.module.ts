@@ -10,6 +10,8 @@ import {AchievementsRepository} from "@/lib/server/domain/achievements/achieveme
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {
+    InactiveAccountRepository,
+    InactiveAccountService,
     UserActivityRepository,
     UserActivityService,
     UserMediaService,
@@ -36,11 +38,13 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
     const achievementsRepository = AchievementsRepository;
     const featureVotesRepository = FeatureVotesRepository;
     const notificationsRepository = NotificationsRepository;
+    const inactiveAccountRepository = InactiveAccountRepository;
 
     // User Services
-    const userService = new UserService(userRepository);
+    const inactiveAccountService = new InactiveAccountService(inactiveAccountRepository);
     const mediadleService = new MediadleService(mediadleRepository);
     const userUpdatesService = new UserUpdatesService(userUpdatesRepository);
+    const userService = new UserService(userRepository, inactiveAccountService);
     const achievementsService = new AchievementsService(achievementsRepository);
     const notificationsService = new NotificationsService(notificationsRepository);
     const userProfileService = new UserProfileService(userProfileRepository, mediaServiceRegistry);
@@ -62,6 +66,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
             userActivity: userActivityRepository,
             featureVotes: featureVotesRepository,
             notifications: notificationsRepository,
+            inactiveAccount: inactiveAccountRepository,
         },
         services: {
             user: userService,
@@ -75,6 +80,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
             achievements: achievementsService,
             featureVotes: featureVotesService,
             notifications: notificationsService,
+            inactiveAccount: inactiveAccountService,
         },
     };
 }

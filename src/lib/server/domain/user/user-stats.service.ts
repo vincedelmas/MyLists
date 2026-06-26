@@ -1,7 +1,7 @@
-import {SearchType} from "@/lib/schemas";
-import {statusUtils} from "@/lib/utils/media-mapping";
+import {HallOfFameSearch} from "@/lib/schemas";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {MediaType, Status} from "@/lib/utils/enums";
+import {statusUtils} from "@/lib/utils/media-mapping";
 import {UserMediaStats} from "@/lib/types/user-media.types";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {UserStatsRepository} from "@/lib/server/domain/user/user-stats.repository";
@@ -32,7 +32,7 @@ export class UserStatsService {
         await this.repository.updateAllUsersPreComputedStats(mediaType, userStats);
     }
 
-    async userHallofFameData(filters: SearchType, userId?: number) {
+    async userHalloFameData(filters: HallOfFameSearch, userId?: number) {
         const {
             mediaTypes,
             currentUserRankData,
@@ -42,7 +42,7 @@ export class UserStatsService {
             userSettingsMap,
             rankSelectionColName,
             page, pages, total,
-        } = await this.repository.userHallofFameData(filters, userId);
+        } = await this.repository.userHalloFameData(filters, userId);
 
         // Calculate Current User's Percentile Ranks
         const userRanks = [];

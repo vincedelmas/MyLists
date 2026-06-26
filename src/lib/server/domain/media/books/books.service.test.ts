@@ -1,13 +1,15 @@
 import {describe, expect, it} from "vitest";
 import type {Book, BooksList} from "./books.types";
-import {getContainer} from "@/lib/server/core/container";
+import {RatingSystemType, Status} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import {BooksService} from "@/lib/server/domain/media/books/books.service";
+import type {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
+import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
 
-describe("BooksService", async () => {
-    const container = await getContainer();
-    const booksService = container.registries.mediaService.getService(MediaType.BOOKS);
+describe("BooksService", () => {
+    const booksRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as BooksRepository;
+    const booksService = new BooksService(booksRepository);
 
     const TIME_PER_PAGE = 1.7;
 

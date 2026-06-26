@@ -1,10 +1,10 @@
 import {Suspense} from "react";
-import {MediaType} from "@/lib/utils/enums";
 import {ExternalLink, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Card} from "@/lib/client/components/ui/card";
-import {useSuspenseQuery} from "@tanstack/react-query";
+import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
@@ -16,25 +16,24 @@ import {RefreshAndEdit} from "@/lib/client/components/media/base/RefreshAndEdit"
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {CollectionsLists} from "@/lib/client/components/media/base/CollectionsLists";
 import {MediaFollowsSection} from "@/lib/client/components/media/base/MediaFollowsSection";
+import {MediaCommunityActivity} from "@/lib/client/components/media/base/MediaCommunityActivity";
 import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
 import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 
 
-export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId")({
+export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId/")({
     params: {
         parse: (params) => {
-            return {
-                mediaType: params.mediaType as MediaType,
-                mediaId: params.mediaId as string | number,
-            }
-        }
+            const result = mediaTypeMediaIdSchema.safeParse(params);
+            if (!result.success) return false;
+            return result.data;
+        },
     },
-    validateSearch: (search) => ({ external: Boolean(search?.external ?? false) }),
-    loaderDeps: ({ search: { external } }) => ({ external }),
-    loader: async ({ context: { queryClient }, params: { mediaType, mediaId }, deps: { external } }) => {
-        const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId, external));
+    loader: async ({ context: { queryClient }, params: { mediaType, mediaId } }) => {
+        const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId));
         void queryClient.prefetchQuery(mediaCommunityCollectionsOptions(details.media.id, mediaType));
+        void queryClient.prefetchQuery(mediaCommunityActivityOptions(details.media.id, mediaType, { page: 1, perPage: 8 }));
     },
     component: MediaDetailsPage,
 });
@@ -42,10 +41,9 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
 
 function MediaDetailsPage() {
     const { isAnonymous } = useAuth();
-    const { external } = Route.useSearch();
     const { mediaType, mediaId } = Route.useParams();
-    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsOptions(mediaType, mediaId, external));
-    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsOptions(mediaType, mediaId, external)).data;
+    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsOptions(mediaType, mediaId));
+    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsOptions(mediaType, mediaId)).data;
 
     const handleAddMediaToUser = () => {
         addMediaToListMutation.mutate({ data: { mediaType, mediaId: media.id } });
@@ -55,7 +53,6 @@ function MediaDetailsPage() {
         <PageTitle title={media.name} onlyHelmet>
             <MediaHero
                 media={media}
-                external={external}
                 mediaType={mediaType}
             />
             <div className="grid grid-cols-12 gap-8 mx-auto px-4 py-2 max-sm:py-0 max-lg:grid-cols-1">
@@ -84,6 +81,13 @@ function MediaDetailsPage() {
                     />
 
                     <Suspense>
+                        <MediaCommunityActivity
+                            mediaId={media.id}
+                            mediaType={mediaType}
+                        />
+                    </Suspense>
+
+                    <Suspense>
                         <MediaCommunityCollections
                             mediaId={media.id}
                             mediaType={mediaType}
@@ -96,8 +100,6 @@ function MediaDetailsPage() {
                             {!isAnonymous &&
                                 <RefreshAndEdit
                                     mediaId={media.id}
-                                    apiId={media.apiId}
-                                    external={external}
                                     mediaType={mediaType}
                                     lastUpdate={media.lastApiUpdate}
                                 />
@@ -120,7 +122,7 @@ function MediaDetailsPage() {
                                 <UserMediaDetails
                                     mediaType={mediaType}
                                     userMedia={userMedia}
-                                    queryOption={mediaDetailsOptions(mediaType, mediaId, external)}
+                                    queryOption={mediaDetailsOptions(mediaType, mediaId)}
                                 />
                                 :
                                 isAnonymous ?

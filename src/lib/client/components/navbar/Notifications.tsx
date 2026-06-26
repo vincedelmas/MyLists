@@ -172,7 +172,6 @@ const MediaNotificationItem = ({ notif }: { notif: MediaNotif }) => {
                 <div className="flex justify-between items-start">
                     <p className="text-sm">
                         <Link
-                            search={{ external: false }}
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: notif.mediaType, mediaId: notif.mediaId }}
                         >

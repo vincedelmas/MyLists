@@ -34,8 +34,7 @@ function AdminTasksPage() {
             <DashboardHeader heading="Admin Tasks" description="Manage and execute maintenance and background tasks."/>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {tasksList.map((task) => {
-                    const isRunning = taskTriggerMutation.isPending
-                        && taskTriggerMutation.variables.data.taskName === task.name;
+                    const isRunning = taskTriggerMutation.isPending && taskTriggerMutation.variables.data.taskName === task.name;
 
                     return (
                         <Card key={task.name}>

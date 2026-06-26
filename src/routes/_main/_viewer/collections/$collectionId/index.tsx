@@ -1,3 +1,4 @@
+import {collectionIdSchema} from "@/lib/schemas";
 import {Copy, Heart, Pencil} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
@@ -17,7 +18,13 @@ import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/")({
-    params: { parse: (params) => ({ collectionId: Number(params.collectionId) }) },
+    params: {
+        parse: (params) => {
+            const result = collectionIdSchema.safeParse(params);
+            if (!result.success) return false;
+            return result.data;
+        }
+    },
     loader: ({ context: { queryClient }, params: { collectionId } }) => {
         return queryClient.ensureQueryData(collectionDetailsReadOptions(collectionId));
     },

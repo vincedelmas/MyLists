@@ -7,32 +7,24 @@ import {Input} from "@/lib/client/components/ui/input";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {GlobalSearch, globalSearchSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
-import {BookImage, Cat, Gamepad2, Library, LoaderCircle, Monitor, Popcorn, Search, User, X} from "lucide-react";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-
-
-type GlobalSearch = {
-    query?: string,
-    apiProvider?: ApiProviderType,
-};
+import {BookImage, Cat, Gamepad2, Library, LoaderCircle, Monitor, Popcorn, Search, User, X} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_private/search")({
-    validateSearch: (search) => search as GlobalSearch,
+    validateSearch: globalSearchSchema,
     component: SearchPage,
 });
-
-
-const DEFAULT = { query: "", apiProvider: ApiProviderType.TMDB } satisfies GlobalSearch;
 
 
 function SearchPage() {
     const { currentUser } = useAuth();
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
-    const { query = DEFAULT.query, apiProvider = DEFAULT.apiProvider } = filters;
+    const { query = "", apiProvider = ApiProviderType.TMDB } = filters;
 
     const [selectDrop, setSelectDrop] = useState(apiProvider);
     const [currentSearch, setCurrentSearch] = useState(query);
@@ -46,7 +38,7 @@ function SearchPage() {
         if (ev.key !== "Enter") return;
 
         if (currentSearch === "") {
-            setCurrentSearch(DEFAULT.query);
+            setCurrentSearch("");
         }
 
         setCurrentSearch(currentSearch);
@@ -121,9 +113,8 @@ function SearchPage() {
                                         </Link>
                                         :
                                         <Link
-                                            search={{ external: true }}
-                                            to="/details/$mediaType/$mediaId"
-                                            params={{ mediaType: item.itemType as MediaType, mediaId: item.id }}
+                                            to="/details/$mediaType/external/$apiId"
+                                            params={{ mediaType: item.itemType as MediaType, apiId: item.id.toString() }}
                                         >
                                             <img
                                                 alt={item.name}

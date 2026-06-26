@@ -9,6 +9,7 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {postImpersonateUser} from "@/lib/server/functions/admin";
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
+import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
@@ -29,7 +30,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/lib/client/components/ui/dropdown-menu";
-import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 
 
 export const Route = createFileRoute("/_admin/admin/users")({
@@ -72,7 +72,7 @@ function UserManagementPage() {
         updateUserMutation.mutate({ data: { userId, payload } });
     }, [updateUserMutation]);
 
-    const impersonateUser = (userId: number, username: string) => {
+    const impersonateUser = useCallback((userId: number, username: string) => {
         impersonateMutation.mutate({ data: { userId } }, {
             onError: (error) => toast.error(error.message),
             onSuccess: async () => {
@@ -80,7 +80,7 @@ function UserManagementPage() {
                 await navigate({ to: "/profile/$username", params: { username } });
             },
         });
-    }
+    }, [impersonateMutation, setCurrentUser, navigate]);
 
     const usersColumns: ColumnDef<typeof apiData.items[0]>[] = useMemo(() => [
         {
@@ -336,7 +336,7 @@ function UserManagementPage() {
                 </DropdownMenu>
             ),
         }
-    ], []);
+    ], [impersonateUser, updateUser]);
 
     const table = useReactTable({
         enableSorting: true,

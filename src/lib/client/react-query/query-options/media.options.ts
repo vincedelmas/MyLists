@@ -1,10 +1,17 @@
-import {SearchType} from "@/lib/schemas";
+import {Pagination, SearchType} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
 import {getComingNextMedia} from "@/lib/server/functions/coming-next";
 import {getAdminAllUpdatesHistory} from "@/lib/server/functions/admin";
-import {getGameCompatiblePlatforms, getJobDetails, getMediaDetails, getMediaDetailsToEdit} from "@/lib/server/functions/media-details";
+import {
+    getGameCompatiblePlatforms,
+    getJobDetails,
+    getMediaCommunityActivity,
+    getMediaDetails,
+    getMediaDetailsToEdit,
+    resolveExternalMedia
+} from "@/lib/server/functions/media-details";
 
 
 export const upcomingOptions = queryOptions({
@@ -20,10 +27,22 @@ export const trendsOptions = queryOptions({
 });
 
 
-export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number | string, external: boolean) => queryOptions({
-    queryKey: ["details", mediaType, mediaId, external] as const,
-    queryFn: () => getMediaDetails({ data: { mediaType, mediaId, external } }),
+export const mediaExternalOptions = (mediaType: MediaType, apiId: string) => queryOptions({
+    queryKey: ["media-details", "external", mediaType, apiId] as const,
+    queryFn: () => resolveExternalMedia({ data: { mediaType, apiId } }),
+})
+
+
+export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number) => queryOptions({
+    queryKey: ["details", mediaType, mediaId] as const,
+    queryFn: () => getMediaDetails({ data: { mediaType, mediaId } }),
     staleTime: 3 * 1000,
+});
+
+
+export const mediaCommunityActivityOptions = (mediaId: number, mediaType: MediaType, search: Pagination = { page: 1, perPage: 8 }) => queryOptions({
+    queryKey: ["details", "activity", "community", mediaType, mediaId, search] as const,
+    queryFn: () => getMediaCommunityActivity({ data: { mediaId, mediaType, search } }),
 });
 
 
@@ -49,9 +68,9 @@ export const editMediaDetailsOptions = (mediaType: MediaType, mediaId: number) =
 });
 
 
-export const jobDetailsOptions = (mediaType: MediaType, job: JobType, name: string, search: SearchType) => queryOptions({
-    queryKey: ["jobDetails", mediaType, job, name, search],
-    queryFn: () => getJobDetails({ data: { mediaType, job, name, search } }),
+export const jobDetailsOptions = (mediaType: MediaType, job: JobType, name: string, pagination: Pagination) => queryOptions({
+    queryKey: ["jobDetails", mediaType, job, name, pagination],
+    queryFn: () => getJobDetails({ data: { mediaType, job, name, pagination } }),
 });
 
 

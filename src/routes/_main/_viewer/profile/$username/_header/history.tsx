@@ -1,25 +1,25 @@
-import {SearchType} from "@/lib/schemas";
 import React, {useMemo, useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {SimpleSearch, simpleSearchSchema} from "@/lib/schemas";
 import {Payload} from "@/lib/client/components/general/Payload";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {allUpdatesOptions} from "@/lib/client/react-query/query-options";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {allUpdatesOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteAllUpdatesMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/history")({
-    validateSearch: (search) => search as SearchType,
+    validateSearch: simpleSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: ({ context: { queryClient }, params: { username }, deps: { search } }) => {
         return queryClient.ensureQueryData(allUpdatesOptions(username, search));
@@ -28,21 +28,18 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/h
 });
 
 
-const DEFAULT = { search: "", page: 1 } satisfies SearchType;
-
-
 function AllUpdates() {
-    const { currentUser } = useAuth();
     const filters = Route.useSearch();
+    const { currentUser } = useAuth();
     const { username } = Route.useParams();
     const isCurrent = (currentUser?.name === username);
     const [rowSelected, setRowSelected] = useState({});
     const deleteUpdateMutation = useDeleteAllUpdatesMutation(username, filters);
     const apiData = useSuspenseQuery(allUpdatesOptions(username, filters)).data;
-    const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: 25 };
-
-    const { search = DEFAULT.search } = filters;
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search, options: { resetScroll: false } });
+    const paginationState = { pageIndex: (filters?.page ?? 1) - 1, pageSize: 25 };
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SimpleSearch>({
+        search: filters.search ?? "", options: { resetScroll: false }
+    });
 
     const onPaginationChange: OnChangeFn<PaginationState> = async (updaterOrValue) => {
         const newPagination = typeof updaterOrValue === "function" ? updaterOrValue(paginationState) : updaterOrValue;
@@ -92,7 +89,6 @@ function AllUpdates() {
                             type={original.mediaType}
                         />
                         <Link
-                            search={{ external: false }}
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: original.mediaType, mediaId: original.mediaId }}
                         >
@@ -112,7 +108,7 @@ function AllUpdates() {
             header: "Date",
             cell: ({ row }) => <RelativeTime date={row.original.timestamp}/>,
         },
-    ], []);
+    ], [isCurrent]);
 
     const table = useReactTable({
         manualFiltering: true,

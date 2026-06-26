@@ -1,21 +1,23 @@
 import {useForm} from "react-hook-form";
-import {CreateCollection} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {FormZodError} from "@/lib/utils/error-classes";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options";
+import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
+import {collectionIdSchema, CreateCollection, createCollectionSchema} from "@/lib/schemas";
 import {useDeleteCollectionMutation, useUpdateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 
 export const Route = createFileRoute("/_main/_private/collections/$collectionId/edit")({
     params: {
         parse: (params) => {
-            return { collectionId: Number(params.collectionId) }
-        }
+            const result = collectionIdSchema.safeParse(params);
+            if (!result.success) return false;
+            return result.data;
+        },
     },
     loader: async ({ context: { queryClient }, params: { collectionId } }) => {
         return queryClient.ensureQueryData(collectionDetailsEditOptions(collectionId));
@@ -32,6 +34,7 @@ function CollectionEditPage() {
     const deleteMutation = useDeleteCollectionMutation(collectionId);
     const apiData = useSuspenseQuery(collectionDetailsEditOptions(collectionId)).data;
     const form = useForm<CreateCollection>({
+        resolver: zodResolver(createCollectionSchema),
         defaultValues: {
             items: apiData.items ?? [],
             title: apiData.collection.title,
@@ -49,22 +52,16 @@ function CollectionEditPage() {
         deleteMutation.mutate({ data: { collectionId } }, {
             onSuccess: async () => {
                 const redirectUsername = currentUser?.id === apiData.collection.ownerId
-                    ? currentUser?.name : apiData.collection.ownerName;
-                return navigate({ to: "/collections/user/$username", params: { username: redirectUsername } });
+                    ? currentUser?.name
+                    : apiData.collection.ownerName;
+
+                await navigate({ to: "/collections/user/$username", params: { username: redirectUsername } });
             }
         });
     };
 
     const handleSubmit = async (payload: CreateCollection) => {
         updateMutation.mutate({ data: { collectionId, ...payload } }, {
-            onError: (err) => {
-                if (err instanceof FormZodError) {
-                    err.issues.forEach((issue) => {
-                        const fieldPath = issue.path[0] === "items" ? "items" : issue.path.join(".");
-                        form.setError(fieldPath, { message: issue.message });
-                    });
-                }
-            },
             onSuccess: () => {
                 form.reset(payload);
             }

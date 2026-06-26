@@ -75,10 +75,15 @@ export const animeConfig: AnimeSchemaConfig = {
             "TMDB Rating +": [desc(anime.voteAverage), asc(anime.name)],
             "TMDB Rating -": [asc(anime.voteAverage), asc(anime.name)],
             "Recently Added": [desc(animeList.addedAt), asc(anime.name)],
+            "Recently Modified": [desc(animeList.lastUpdated), asc(anime.name)],
             "Rating +": [desc(animeList.rating), asc(anime.name)],
             "Rating -": [asc(animeList.rating), asc(anime.name)],
             "Re-watched": [desc(animeList.redo), asc(anime.name)],
         },
+    },
+    communityActivityStats: {
+        totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${animeList.redo2}))), 0)`,
+        totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
     },
     apiProvider: {
         maxGenres: 5,

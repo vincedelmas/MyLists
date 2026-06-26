@@ -6,15 +6,17 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {ComingNextItem} from "@/lib/types/query.options.types";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {upcomingOptions} from "@/lib/client/react-query/query-options";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
-import {upcomingOptions} from "@/lib/client/react-query/query-options";
 import {ComingNextSection} from "@/lib/client/components/coming-next/ComingNextSection";
 import {compareCalendarDates, formatCalendarRelativeDate} from "@/lib/utils/date-formatting";
 
 
 export const Route = createFileRoute("/_main/_private/coming-next")({
-    loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(upcomingOptions),
+    loader: ({ context: { queryClient } }) => {
+        return queryClient.ensureQueryData(upcomingOptions);
+    },
     component: ComingNextPage,
 });
 
@@ -22,7 +24,7 @@ export const Route = createFileRoute("/_main/_private/coming-next")({
 function ComingNextPage() {
     const apiData = useSuspenseQuery(upcomingOptions).data;
     const mediaTypes = apiData.map((next) => next.mediaType);
-    const [activeTab, setActiveTab] = useState<MediaType | "all">("all");
+    const [activeTab, setActiveTab] = useState<"all" | MediaType>("all");
     const allItems = apiData.flatMap(g => g.items.map(item => ({ ...item, mediaType: g.mediaType })));
 
     const processedData = useMemo(() => {

@@ -8,13 +8,21 @@ export type TaskDefinition<TName extends string, TInputSchema extends z.ZodType>
     description: string;
     inputSchema: TInputSchema;
     visibility: TaskVisibility;
-    handler: (ctx: TaskContext, input: z.infer<TInputSchema>) => Promise<void>;
+    handler: (ctx: TaskContext, input: z.input<TInputSchema>) => Promise<void>;
 };
+
+type TaskDefinitionConfig<TName extends string, TInputSchema extends z.ZodType> =
+    Omit<TaskDefinition<TName, TInputSchema>, "handler"> & {
+        handler: (ctx: TaskContext, input: z.output<TInputSchema>) => Promise<void>;
+    };
 
 
 export const defineTask = <
     TName extends string,
     TInputSchema extends z.ZodType,
->(def: TaskDefinition<TName, TInputSchema>): TaskDefinition<TName, TInputSchema> => {
-    return def;
+>(def: TaskDefinitionConfig<TName, TInputSchema>): TaskDefinition<TName, TInputSchema> => {
+    return {
+        ...def,
+        handler: (ctx, input) => def.handler(ctx, def.inputSchema.parse(input)),
+    };
 }

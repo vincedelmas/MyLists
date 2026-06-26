@@ -4,9 +4,9 @@ import {createRouter} from "@tanstack/react-router";
 import {NotFound} from "@/lib/client/components/general/NotFound";
 import {NavLoader} from "./lib/client/components/general/NavLoader";
 import {FormattedError, FormZodError} from "@/lib/utils/error-classes";
-import {MutationCache, QueryCache, QueryClient} from "@tanstack/react-query";
-import {setupRouterSsrQueryIntegration} from "@tanstack/react-router-ssr-query";
+import {setupCoreRouterSsrQueryIntegration} from "@tanstack/router-ssr-query-core";
 import {ErrorCatchBoundary} from "@/lib/client/components/general/ErrorCatchBoundary";
+import {MutationCache, QueryCache, QueryClient, QueryClientProvider} from "@tanstack/react-query";
 
 
 export function getRouter() {
@@ -63,14 +63,24 @@ export function getRouter() {
         scrollRestoration: true,
         defaultStructuralSharing: true,
         notFoundMode: "root",
+        Wrap: ({ children }) => {
+            return (
+                <QueryClientProvider client={queryClient}>
+                    {children}
+                </QueryClientProvider>
+            )
+        },
     });
 
-    setupRouterSsrQueryIntegration({
-        router,
-        queryClient,
-        handleRedirects: true,
-        wrapQueryClient: true,
-    });
+    // TanStack Start dev still do SSR on first load even when the app is
+    // configured as SPA. Without this, queries filled on the server
+    // are not hydrated into the client QueryClient, so route
+    // guards don't work (like _public.tsx) in dev compared to prod.
+    // In prod we are full SPA, so the SSR query stream is unnecessary
+    // and can trigger stream lifetime cleanup warnings.
+    if (import.meta.env.DEV) {
+        setupCoreRouterSsrQueryIntegration({ router, queryClient });
+    }
 
     return router;
 }

@@ -1,33 +1,36 @@
 import * as z from "zod";
-import {JobType, MediaType} from "@/lib/utils/enums";
-import {searchTypeSchema} from "@/lib/schemas/common.schema";
+import {JobType} from "@/lib/utils/enums";
+import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas/common.schema";
 
 
-export const mediaDetailsSchema = z.object({
-    external: z.boolean(),
-    mediaId: z.coerce.string(),
-    mediaType: z.enum(MediaType),
+export type UpdateBookCoverInput = z.input<typeof updateBookCoverSchema>;
+export type EditMediaDetailsPayload = z.infer<typeof editMediaDetailsPayloadSchema>;
+
+
+export const mediaDetailsSchema = mediaTypeMediaIdSchema;
+
+export const mediaCommunityActivitySchema = mediaDetailsSchema.extend({
+    search: paginationSchema,
 });
 
-export const refreshMediaDetailsSchema = z.object({
+export const externalMediaResolveSchema = z.object({
     apiId: z.coerce.string(),
-    mediaType: z.enum(MediaType),
+    mediaType: mediaTypeFieldSchema,
 });
 
-export const mediaDetailsToEditSchema = z.object({
-    mediaType: z.enum(MediaType),
-    mediaId: z.coerce.number().int().positive(),
-});
+export const refreshMediaDetailsSchema = mediaTypeMediaIdSchema;
 
-export const editMediaDetailsSchema = z.object({
-    mediaType: z.enum(MediaType),
-    payload: z.record(z.any(), z.any()),
-    mediaId: z.coerce.number().int().positive(),
+export const mediaDetailsToEditSchema = mediaTypeMediaIdSchema;
+
+export const editMediaDetailsPayloadSchema = z.record(z.string(), z.any());
+
+export const editMediaDetailsSchema = mediaTypeMediaIdSchema.extend({
+    payload: editMediaDetailsPayloadSchema,
 });
 
 export const updateBookCoverSchema = z.object({
-    apiId: z.coerce.string(),
     imageUrl: z.url().trim().optional(),
+    mediaId: coercedPositiveIntFieldSchema,
     imageFile: z.instanceof(File).optional(),
 }).superRefine((data, ctx) => {
     const addFieldIssues = (message: string) => {
@@ -38,15 +41,19 @@ export const updateBookCoverSchema = z.object({
     if (!data.imageUrl && !data.imageFile) {
         addFieldIssues("Provide an image link or upload a file.");
     }
-
     if (data.imageUrl && data.imageFile) {
         addFieldIssues("Please, choose only one cover option.");
     }
 });
 
-export const jobDetailsSchema = z.object({
+
+export const mediaDetailsJobSchema = z.object({
     name: z.string(),
     job: z.enum(JobType),
-    search: searchTypeSchema,
-    mediaType: z.enum(MediaType),
+    mediaType: mediaTypeFieldSchema,
+})
+
+
+export const jobDetailsSchema = mediaDetailsJobSchema.extend({
+    pagination: paginationSchema,
 });

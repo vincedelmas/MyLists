@@ -1,7 +1,7 @@
 import {alias} from "drizzle-orm/sqlite-core";
+import {CommunitySearch} from "@/lib/schemas";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {paginate} from "@/lib/server/database/pagination";
-import {CommunitySearch} from "@/lib/types/collections.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
 import {and, asc, count, desc, eq, getTableColumns, inArray, like, max, or, sql} from "drizzle-orm";

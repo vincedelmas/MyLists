@@ -93,9 +93,7 @@ export class TvService extends BaseService<AnimeSchemaConfig | SeriesSchemaConfi
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
         const media = await this.repository.findById(mediaId);
-        if (!media) {
-            throw notFound();
-        }
+        if (!media) throw notFound();
 
         const editableFields = this.repository.config.editableFields;
         type FieldsType = typeof editableFields[number];

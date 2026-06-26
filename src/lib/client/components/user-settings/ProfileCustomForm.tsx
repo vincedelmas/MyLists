@@ -1,11 +1,12 @@
 import {toast} from "sonner";
 import {useMemo, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {useForm, useWatch} from "react-hook-form";
 import {toItemKey} from "@/lib/utils/media-mapping";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Form} from "@/lib/client/components/ui/form";
-import {FormZodError} from "@/lib/utils/error-classes";
+import {highlightedMediaSettingsSchema} from "@/lib/schemas";
 import {Skeleton} from "@/lib/client/components/ui/skeleton";
+import {FieldErrors, useForm, useWatch} from "react-hook-form";
 import {profileCustomOptions} from "@/lib/client/react-query/query-options";
 import {useProfileCustomMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {TabCustomContent} from "@/lib/client/components/user-settings/profile-custom/TabCustomContent";
@@ -19,7 +20,10 @@ export const ProfileCustomForm = () => {
     const [rootError, setRootError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<HighlightedMediaTab>("overview");
     const [localPreviewCache, setLocalPreviewCache] = useState<Record<string, HighlightedMediaSearchItem>>({});
-    const form = useForm<HighlightedMediaSettings>({ values: data?.settings ? cloneSettings(data.settings) : undefined });
+    const form = useForm<HighlightedMediaSettings, unknown, HighlightedMediaSettings>({
+        resolver: zodResolver<HighlightedMediaSettings, unknown, HighlightedMediaSettings>(highlightedMediaSettingsSchema),
+        values: data?.settings ? cloneSettings(data.settings) : undefined,
+    });
 
     const combinedPreviewCache = useMemo(() => {
         const remoteCache = data?.previews ? buildPreviewCache(data.previews) : {};
@@ -33,15 +37,6 @@ export const ProfileCustomForm = () => {
 
         mutation.mutate({ data: formData }, {
             onError: (err) => {
-                if (err instanceof FormZodError && err.issues.length > 0) {
-                    const issue = err.issues[0];
-                    const issueTab = issue?.path?.[0];
-                    if (typeof issueTab === "string" && HIGHLIGHTED_MEDIA_TABS.includes(issueTab as any)) {
-                        setActiveTab(issueTab as HighlightedMediaTab);
-                    }
-                    setRootError(issue?.message ?? "Customization could not be saved.");
-                    return;
-                }
                 setRootError(err?.message ?? "Customization could not be saved.");
             },
             onSuccess: () => {
@@ -49,6 +44,14 @@ export const ProfileCustomForm = () => {
                 toast.success("Customization updated");
             },
         });
+    };
+
+    const onInvalid = (errors: FieldErrors<HighlightedMediaSettings>) => {
+        const invalidTab = HIGHLIGHTED_MEDIA_TABS.find((tab) => errors[tab]);
+        if (invalidTab) {
+            setActiveTab(invalidTab);
+        }
+        setRootError(getFirstErrorMessage(errors) ?? "Customization could not be saved.");
     };
 
     if (isPending || !allFormValues || Object.keys(allFormValues).length === 0) {
@@ -71,7 +74,7 @@ export const ProfileCustomForm = () => {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
                 <div>
                     <h2 className="text-lg font-semibold text-primary">
                         Profile Customization
@@ -116,4 +119,22 @@ const buildPreviewCache = (previews: Record<string, { items: HighlightedMediaSea
             });
             return acc;
         }, {});
+};
+
+
+const getFirstErrorMessage = (error: unknown): string | undefined => {
+    if (!error || typeof error !== "object") {
+        return undefined;
+    }
+
+    if ("message" in error && typeof error.message === "string") {
+        return error.message;
+    }
+
+    for (const value of Object.values(error)) {
+        const message = getFirstErrorMessage(value);
+        if (message) {
+            return message;
+        }
+    }
 };

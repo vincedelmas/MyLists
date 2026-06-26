@@ -58,8 +58,6 @@ export type OverviewStats = Awaited<ReturnType<UserStatsService["userAdvancedSum
 
 export type UserStatsResult = OverviewStats | AdvancedMediaStats;
 
-export type TabValue = MediaType | "overview";
-
 export type NamedValue = { name: number | string; value: number };
 
 export type MediaNaming = {

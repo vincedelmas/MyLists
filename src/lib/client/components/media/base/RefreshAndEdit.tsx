@@ -11,19 +11,17 @@ import {useRefreshMediaMutation} from "@/lib/client/react-query/query-mutations/
 
 interface RefreshAndEditProps {
     mediaId: number;
-    external: boolean;
     mediaType: MediaType;
-    apiId: number | string;
     lastUpdate: string | null;
 }
 
 
-export const RefreshAndEdit = ({ mediaType, mediaId, apiId, external, lastUpdate }: RefreshAndEditProps) => {
+export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEditProps) => {
     const { currentUser } = useAuth();
     const isBook = (mediaType === MediaType.BOOKS);
+    const refreshMutation = useRefreshMediaMutation(mediaType, mediaId);
     const lastUpdateDate = lastUpdate ? dateFromUTCInput(lastUpdate) : null;
     const isManagerOrAbove = isAtLeastRole(currentUser?.role, RoleType.MANAGER);
-    const refreshMutation = useRefreshMediaMutation(mediaType, external ? apiId : mediaId, external);
 
     if (!isManagerOrAbove && isBook) return null;
 
@@ -41,7 +39,7 @@ export const RefreshAndEdit = ({ mediaType, mediaId, apiId, external, lastUpdate
     const refreshDisabled = refreshMutation.isPending || !currentUser || isRefreshCooldown;
 
     const handleRefresh = () => {
-        refreshMutation.mutate({ data: { apiId, mediaType } });
+        refreshMutation.mutate({ data: { mediaId, mediaType } });
     };
 
     return (

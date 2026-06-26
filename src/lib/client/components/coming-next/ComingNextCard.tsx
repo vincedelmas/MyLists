@@ -14,7 +14,7 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
     const isTvShow = (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME);
 
     return (
-        <Link search={{ external: false }} to="/details/$mediaType/$mediaId" params={{ mediaType, mediaId: item.mediaId }}>
+        <Link to="/details/$mediaType/$mediaId" params={{ mediaType, mediaId: item.mediaId }}>
             <div className="flex flex-row h-32 border rounded-lg overflow-hidden hover:bg-popover/50 max-sm:h-full max-sm:flex-col">
                 <div className="relative h-full shrink-0 max-sm:h-32 max-sm:w-full">
                     <img

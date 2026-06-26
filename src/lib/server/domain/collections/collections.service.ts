@@ -1,11 +1,12 @@
+import {CommunitySearch} from "@/lib/schemas";
 import {notFound} from "@tanstack/react-router";
 import {UserService} from "@/lib/server/domain/user";
 import {MediaInfo} from "@/lib/types/activity.types";
 import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import {AssertCollection, CollectionItemInput} from "@/lib/types/collections.types";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {isAtLeastRole, MediaType, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
-import {AssertCollection, CollectionItemInput, CommunitySearch} from "@/lib/types/collections.types";
 
 
 export class CollectionsService {

@@ -1,52 +1,49 @@
 import {useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
 import {useMutation} from "@tanstack/react-query";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
-import {FormZodError} from "@/lib/utils/error-classes";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {PasswordSettingsForm, passwordSettingsFormSchema} from "@/lib/schemas";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {usePasswordSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
-type FormValues = {
-    newPassword: string;
-    currentPassword: string;
-    confirmNewPassword: string;
-}
-
-
 export const EmailAndPasswordForm = () => {
     const passwordMutation = usePasswordSettingsMutation();
-    const emailForm = useForm({ defaultValues: { email: "" } });
-    const passwordForm = useForm<FormValues>({ defaultValues: { newPassword: "", currentPassword: "", confirmNewPassword: "" } });
+    const passwordForm = useForm<PasswordSettingsForm>({
+        resolver: zodResolver(passwordSettingsFormSchema),
+        defaultValues: {
+            newPassword: "",
+            currentPassword: "",
+            confirmNewPassword: ""
+        },
+    });
+    const emailForm = useForm({
+        defaultValues: {
+            email: "",
+        }
+    });
 
     const emailMutation = useMutation({
         mutationFn: async (email: string) => {
-            const { error } = await authClient.changeEmail({ newEmail: email });
+            const { error } = await authClient.changeEmail({ newEmail: email.trim() });
             if (error) throw error;
         },
-        onError: (err) => {
-            emailForm.setError("email", { type: "server", message: err.message || "Failed to update email." });
+        onSuccess: () => {
+            emailForm.reset();
         },
-        onSuccess: () => emailForm.reset(),
     });
 
-    const onPasswordSubmit = (values: FormValues) => {
-        passwordMutation.mutate({ data: { newPassword: values.newPassword, currentPassword: values.currentPassword } }, {
-            onError: (err) => {
-                if (err instanceof FormZodError) {
-                    err.issues.forEach((issue) => {
-                        passwordForm.setError(issue.path.join("."), { message: issue.message });
-                    });
-                }
-                else if (err?.message?.toLowerCase().includes("current password")) {
-                    passwordForm.setError("currentPassword", { message: err.message || "Failed to update password." });
-                }
-                else {
-                    passwordForm.setError("root", { message: err.message || "An unexpected error occurred." });
-                }
+    const onPasswordSubmit = (values: PasswordSettingsForm) => {
+        passwordMutation.mutate({
+            data: {
+                newPassword: values.newPassword,
+                currentPassword: values.currentPassword,
             },
+        }, {
             onSuccess: () => {
                 passwordForm.reset();
             },
@@ -75,15 +72,18 @@ export const EmailAndPasswordForm = () => {
                             </FormItem>
                         )}
                     />
-
                     {emailMutation.isSuccess &&
                         <p className="text-xs text-green-600 font-medium">
-                            Check your inbox to confirm the change of email address.
+                            Check your inbox to confirm your change of email address.
                         </p>
                     }
-
+                    {emailMutation.isError &&
+                        <InlineErrorContainer>
+                            {emailMutation.error.message || "Failed to update your email"}
+                        </InlineErrorContainer>
+                    }
                     <Button type="submit" disabled={emailMutation.isPending || !emailForm.formState.isDirty}>
-                        {emailMutation.isPending ? "Sending..." : "Change Email"}
+                        Change Email
                     </Button>
                 </form>
             </Form>
@@ -91,74 +91,53 @@ export const EmailAndPasswordForm = () => {
             <Separator className="max-w-sm"/>
 
             <Form {...passwordForm}>
-                <form
-                    onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
-                    className="w-full max-w-sm space-y-4"
-                >
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="w-full max-w-sm space-y-4">
                     <FormField
-                        control={passwordForm.control}
                         name="currentPassword"
-                        rules={{ required: "Current password is required" }}
+                        control={passwordForm.control}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Current Password</FormLabel>
                                 <FormControl>
-                                    <Input type="password" placeholder="********" {...field} />
+                                    <Input type="password" placeholder="********" {...field}/>
                                 </FormControl>
                                 <FormMessage/>
                             </FormItem>
                         )}
                     />
-
                     <FormField
-                        control={passwordForm.control}
                         name="newPassword"
-                        rules={{
-                            required: "New password is required",
-                            minLength: { value: 8, message: "The Password is too short (8 min)." },
-                            maxLength: { value: 50, message: "The Password is too long (50 max)." },
-                        }}
+                        control={passwordForm.control}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>New Password</FormLabel>
                                 <FormControl>
-                                    <Input type="password" placeholder="********" {...field} />
+                                    <Input type="password" placeholder="********" {...field}/>
                                 </FormControl>
                                 <FormMessage/>
                             </FormItem>
                         )}
                     />
-
                     <FormField
-                        control={passwordForm.control}
                         name="confirmNewPassword"
-                        rules={{
-                            required: "Please confirm your password",
-                            validate: (val) => {
-                                if (passwordForm.watch("newPassword") !== val) {
-                                    return "Passwords do not match";
-                                }
-                            },
-                        }}
+                        control={passwordForm.control}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Confirm New Password</FormLabel>
                                 <FormControl>
-                                    <Input type="password" placeholder="********" {...field} />
+                                    <Input type="password" placeholder="********" {...field}/>
                                 </FormControl>
                                 <FormMessage/>
                             </FormItem>
                         )}
                     />
-
-                    {passwordForm.formState.errors.root &&
-                        <p className="text-sm font-medium text-destructive">
-                            {passwordForm.formState.errors.root.message}
-                        </p>
+                    {passwordMutation.isError &&
+                        <InlineErrorContainer>
+                            {passwordMutation.error.message}
+                        </InlineErrorContainer>
                     }
-
                     <Button type="submit" disabled={passwordMutation.isPending || !passwordForm.formState.isDirty}>
-                        {passwordMutation.isPending ? "Updating..." : "Update Password"}
+                        Update Password
                     </Button>
                 </form>
             </Form>

@@ -8,7 +8,7 @@ import {RateLimiterAbstract} from "rate-limiter-flexible";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {createRateLimiter} from "@/lib/server/core/rate-limiter";
 import {BaseApi} from "@/lib/server/api-providers/api/base.api";
-import {IgdbGameDetails, IgdbSearchResponse, IgdbSearchResultItem, IgdbTokenResponse, IgdbTrendGamesResponse, SearchData} from "@/lib/types/provider.types";
+import {IgdbGameCollectionIds, IgdbGameDetails, IgdbSearchResponse, IgdbSearchResultItem, IgdbTokenResponse, IgdbTrendGamesResponse, SearchData} from "@/lib/types/provider.types";
 
 
 export class IgdbApi extends BaseApi {
@@ -85,7 +85,7 @@ export class IgdbApi extends BaseApi {
             fields name, cover.image_id, game_engines.name, game_modes.name, platforms.name, genres.name, 
             player_perspectives.name, total_rating, total_rating_count, first_release_date, 
             involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
-            summary, themes.name, url, external_games.uid, external_games.external_game_source;
+            summary, themes.name, collections, url, external_games.uid, external_games.external_game_source;
             where id = ${apiId};
         `;
 
@@ -105,7 +105,7 @@ export class IgdbApi extends BaseApi {
             fields name, cover.image_id, game_engines.name, game_modes.name, platforms.name, genres.name, 
             player_perspectives.name, total_rating, total_rating_count, first_release_date, 
             involved_companies.company.name, involved_companies.developer, involved_companies.publisher,
-            summary, themes.name, url, external_games.uid, external_games.external_game_source;
+            summary, themes.name, collections, url, external_games.uid, external_games.external_game_source;
             where id = (${apiIds.join(",")});
             limit ${apiIds.length};
         `;
@@ -113,6 +113,18 @@ export class IgdbApi extends BaseApi {
         const headers = await this._getHeaders();
         const response = await this.call(this.baseUrl, "post", { headers, body });
         return await response.json() as Promise<IgdbGameDetails[]>;
+    }
+
+    // TODO: to remove after backfilling
+    async getGamesCollectionIds(apiIds: number[]): Promise<IgdbGameCollectionIds[]> {
+        if (apiIds.length === 0) return [];
+
+        const body = `fields id, collections; where id = (${apiIds.join(",")}); limit ${apiIds.length};`;
+
+        const headers = await this._getHeaders();
+        const response = await this.call(this.baseUrl, "post", { headers, body });
+
+        return await response.json() as IgdbGameCollectionIds[];
     }
 
     async getTrendingGames(): Promise<IgdbTrendGamesResponse[]> {

@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {StatsActiveTab} from "@/lib/schemas";
 
 
 export const ONE_HOUR_CACHE_TTL_MS = 60 * 60 * 1000;
@@ -12,12 +12,12 @@ export const TRENDS_CACHE_KEY = "$trends:v2:null";
 export const PENDING_ROLLUPS_KEY = "api-monitor:rollups:pending";
 
 
-export const getPlatformStatsCacheKey = (data?: { mediaType?: MediaType } | null) => {
-    return `platformStats:v2:${JSON.stringify(data ?? null)}`;
+export const getPlatformStatsCacheKey = (data: StatsActiveTab) => {
+    return `platformStats:v2:${JSON.stringify(data)}`;
 };
 
-export const getUserStatsCacheKey = (userId: number, data?: { mediaType?: MediaType } | null) => {
-    return `userStats:v2:${userId}:${JSON.stringify(data ?? null)}`;
+export const getUserStatsCacheKey = (userId: number, data: StatsActiveTab) => {
+    return `userStats:v2:${userId}:${JSON.stringify(data)}`;
 };
 
 export const getRollupKey = (bucketStartMs: number, provider: string, opts: { statuses?: boolean, seconds?: boolean } = {}) => {

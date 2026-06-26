@@ -7,11 +7,12 @@ import {BaseMediaFollowCard} from "@/lib/client/components/media/base/BaseMediaF
 type GameFollowCardProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaFollowCard"]>[number];
 
 
-export const GameFollowCard = ({ followData, rating }: GameFollowCardProps<typeof MediaType.GAMES>) => {
+export const GameFollowCard = ({ followData, rating, showComment }: GameFollowCardProps<typeof MediaType.GAMES>) => {
     return (
         <BaseMediaFollowCard
             rating={rating}
             followData={followData}
+            showComment={showComment}
             mediaDetailsDisplay={
                 <DisplayPlaytime
                     status={followData.userMedia.status}

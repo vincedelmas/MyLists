@@ -1,62 +1,72 @@
 import {toast} from "sonner";
 import {useState} from "react";
+import {useForm} from "react-hook-form";
 import {useQuery} from "@tanstack/react-query";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
-import {Label} from "@/lib/client/components/ui/label";
 import {Button} from "@/lib/client/components/ui/button";
 import {displayContainerError} from "@/lib/utils/error-display";
-import {Link2, LoaderCircle, PencilLine, UploadCloud} from "lucide-react";
+import {UpdateBookCoverInput, updateBookCoverSchema} from "@/lib/schemas";
+import {Link2, Loader2, LoaderCircle, PencilLine, UploadCloud} from "lucide-react";
 import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options";
 import {useUpdateBookCoverMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 
 
 interface BookCoverEditDialogProps {
     mediaId: number;
-    external: boolean;
     mediaName: string;
-    apiId: number | string;
 }
 
 
-export const BookCoverEditDialog = ({ mediaId, apiId, external, mediaName }: BookCoverEditDialogProps) => {
+export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogProps) => {
     const [open, setOpen] = useState(false);
-    const [imageUrl, setImageUrl] = useState("");
     const [fileInputKey, setFileInputKey] = useState(0);
     const [mode, setMode] = useState<"link" | "upload">("link");
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const updateCoverMutation = useUpdateBookCoverMutation(external ? apiId : mediaId, external, { noGlobalErrorToast: true });
-
-    // Using simple suggestion system using openLibrary
-    const suggestedCoverUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(mediaName.trim())}-L.jpg?default=false`;
-    const suggestedCoverQuery = useQuery(suggestBookCoverOptions(mediaName, suggestedCoverUrl, open));
+    const updateCoverMutation = useUpdateBookCoverMutation(mediaId, { noGlobalErrorToast: true });
+    const form = useForm<UpdateBookCoverInput>({
+        resolver: zodResolver(updateBookCoverSchema),
+        defaultValues: {
+            mediaId: mediaId,
+            imageUrl: undefined,
+            imageFile: undefined,
+        },
+    });
 
     const resetForm = () => {
-        setImageUrl("");
         setMode("link");
-        setImageFile(null);
         setFileInputKey((prev) => prev + 1);
+        form.reset({ mediaId, imageUrl: undefined, imageFile: undefined });
     };
 
-    const handleSubmit = () => {
-        const formData = new FormData();
-        formData.append("apiId", apiId.toString());
+    const setImageLinkMode = () => {
+        setMode("link");
+        form.clearErrors(["imageFile", "imageUrl"]);
+        setFileInputKey((prev) => prev + 1);
+        form.setValue("imageFile", undefined);
+    };
 
-        if (mode === "link") {
-            const value = imageUrl.trim();
-            if (!value) {
-                toast.error("Please provide an image link.");
-                return;
-            }
-            formData.append("imageUrl", value);
-        }
-        else {
-            if (!imageFile) {
-                toast.error("Please select an image to upload.");
-                return;
-            }
-            formData.append("imageFile", imageFile);
-        }
+    const setImageUploadMode = () => {
+        setMode("upload");
+        form.clearErrors(["imageUrl", "imageFile"]);
+        form.setValue("imageUrl", undefined);
+    };
+
+    const useSuggestedCover = (suggestedCoverUrl: string) => {
+        setMode("link");
+        form.clearErrors(["imageFile", "imageUrl"]);
+        setFileInputKey((prev) => prev + 1);
+        form.setValue("imageFile", undefined);
+        form.setValue("imageUrl", suggestedCoverUrl, { shouldDirty: true, shouldValidate: true });
+    };
+
+    const handleSubmit = (data: UpdateBookCoverInput) => {
+        const formData = new FormData();
+        formData.append("mediaId", String(data.mediaId));
+
+        if (data.imageUrl) formData.append("imageUrl", data.imageUrl);
+        if (data.imageFile) formData.append("imageFile", data.imageFile);
 
         updateCoverMutation.mutate({ data: formData }, {
             onSuccess: () => {
@@ -81,97 +91,121 @@ export const BookCoverEditDialog = ({ mediaId, apiId, external, mediaName }: Boo
                         Share a real cover by adding a link or uploading a file.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <Button
-                            variant={mode === "link" ? "default" : "outline"}
-                            onClick={() => {
-                                setMode("link");
-                                setImageFile(null);
-                                setFileInputKey((prev) => prev + 1);
-                            }}
-                        >
-                            <Link2 className="size-4"/> Image link
-                        </Button>
-                        <Button
-                            variant={mode === "upload" ? "default" : "outline"}
-                            onClick={() => {
-                                setImageUrl("");
-                                setMode("upload");
-                            }}
-                        >
-                            <UploadCloud className="size-4"/> Upload image
-                        </Button>
-                    </div>
-                    {mode === "link" ?
-                        <div className="space-y-2">
-                            <Label htmlFor="book-cover-url">Image URL</Label>
-                            <Input
-                                value={imageUrl}
-                                id="book-cover-url"
-                                placeholder="https://example.com/cover.jpg"
-                                onChange={(ev) => setImageUrl(ev.target.value)}
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button type="button" onClick={setImageLinkMode} variant={mode === "link" ? "default" : "outline"}>
+                                <Link2 className="size-4"/> Image link
+                            </Button>
+                            <Button type="button" variant={mode === "upload" ? "default" : "outline"} onClick={setImageUploadMode}>
+                                <UploadCloud className="size-4"/> Upload image
+                            </Button>
+                        </div>
+                        {mode === "link" ?
+                            <FormField
+                                name="imageUrl"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <FormItem>
+                                        <FormLabel>Image URL</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                placeholder="https://example.com/cover.jpg"
+                                                onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                }
                             />
-                        </div>
-                        :
-                        <div className="space-y-2">
-                            <Label htmlFor="book-cover-file">Upload image</Label>
-                            <Input
-                                type="file"
-                                accept="image/*"
-                                key={fileInputKey}
-                                id="book-cover-file"
-                                onChange={(ev) => setImageFile(ev.target.files?.[0] ?? null)}
+                            :
+                            <FormField
+                                name="imageFile"
+                                control={form.control}
+                                render={({ field: { onChange, onBlur, name, ref } }) => (
+                                    <FormItem>
+                                        <FormLabel>Upload image</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                ref={ref}
+                                                type="file"
+                                                name={name}
+                                                onBlur={onBlur}
+                                                accept="image/*"
+                                                key={fileInputKey}
+                                                onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                )}
                             />
-                        </div>
-                    }
-
-                    {updateCoverMutation.isError &&
-                        <div className="text-sm text-destructive">
-                            {displayContainerError({ error: updateCoverMutation.error })}
-                        </div>
-                    }
-
-                    <div className="space-y-2">
-                        <Label>Suggested cover</Label>
-                        {suggestedCoverQuery.data === "available" &&
-                            <div className="flex items-center gap-3">
-                                <img
-                                    alt="Suggested cover"
-                                    src={suggestedCoverUrl}
-                                    className="h-30 rounded object-cover border"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        setMode("link");
-                                        setImageFile(null);
-                                        setImageUrl(suggestedCoverUrl);
-                                        setFileInputKey((prev) => prev + 1);
-                                    }}
-                                >
-                                    Use suggested cover
-                                </Button>
+                        }
+                        {updateCoverMutation.isError &&
+                            <div className="text-sm text-destructive">
+                                {displayContainerError({ error: updateCoverMutation.error })}
                             </div>
                         }
-                    </div>
-                    {suggestedCoverQuery.isLoading &&
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                            <LoaderCircle className="size-4 animate-spin"/>
-                            Looking for a suggested cover...
-                        </div>
-                    }
-                    {(suggestedCoverQuery.data === "missing" || suggestedCoverQuery.isError) &&
-                        <div className="text-sm text-muted-foreground -mt-3">
-                            No suggestion found.
-                        </div>
-                    }
-                    <Button type="submit" onClick={handleSubmit} disabled={updateCoverMutation.isPending}>
-                        {updateCoverMutation.isPending ? "Saving..." : "Save cover"}
-                    </Button>
-                </div>
+                        <SuggestedBookCover
+                            open={open}
+                            mediaName={mediaName}
+                            onUseCover={useSuggestedCover}
+                        />
+                        <Button type="submit" disabled={updateCoverMutation.isPending}>
+                            {updateCoverMutation.isPending && <Loader2 className="animate-spin"/>} Save cover
+                        </Button>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
+    );
+};
+
+
+interface SuggestedBookCoverProps {
+    open: boolean;
+    mediaName: string;
+    onUseCover: (coverUrl: string) => void;
+}
+
+
+const SuggestedBookCover = ({ open, mediaName, onUseCover }: SuggestedBookCoverProps) => {
+    // Using simple suggestion system using openLibrary
+    const suggestedCoverUrl = `https://covers.openlibrary.org/b/title/${encodeURIComponent(mediaName.trim())}-L.jpg?default=false`;
+    const { data, isLoading, isError } = useQuery(suggestBookCoverOptions(mediaName, suggestedCoverUrl, open));
+
+    return (
+        <>
+            <div className="space-y-2">
+                <div className="text-sm font-medium">
+                    Suggested cover
+                </div>
+                {data === "available" &&
+                    <div className="flex items-center gap-3">
+                        <img
+                            alt="Suggested cover"
+                            src={suggestedCoverUrl}
+                            className="h-30 rounded object-cover border"
+                        />
+                        <Button type="button" variant="outline" onClick={() => onUseCover(suggestedCoverUrl)}>
+                            Use suggested cover
+                        </Button>
+                    </div>
+                }
+            </div>
+            {isLoading &&
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <LoaderCircle className="size-4 animate-spin"/>
+                    Looking for a suggested cover...
+                </div>
+            }
+            {(data === "missing" || isError) &&
+                <div className="text-sm text-muted-foreground -mt-3">
+                    No suggestion found.
+                </div>
+            }
+        </>
     );
 };

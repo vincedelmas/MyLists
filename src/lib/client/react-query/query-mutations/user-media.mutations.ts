@@ -1,4 +1,4 @@
-import {SearchType} from "@/lib/schemas";
+import {SimpleSearch} from "@/lib/schemas";
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {FormattedError} from "@/lib/utils/error-classes";
@@ -43,7 +43,7 @@ export const useDeleteProfileUpdateMutation = (username: string) => {
 };
 
 
-export const useDeleteAllUpdatesMutation = (username: string, filters: SearchType) => {
+export const useDeleteAllUpdatesMutation = (username: string, filters: SimpleSearch) => {
     const queryClient = useQueryClient();
 
     return useMutation({

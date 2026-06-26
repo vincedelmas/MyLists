@@ -61,6 +61,23 @@ function PrivacyPolicyPage() {
                 When you register for an account, we will ask for an username and your email address.
             </p>
 
+            <h5 className="text-lg mt-5 font-semibold">Account inactivity and deletion</h5>
+            <p>
+                If your account is inactive for almost 2 years, we send a warning email 30 days before the
+                scheduled deletion date. You can keep the account by logging in or by using the reactivation link
+                in that email before the scheduled deletion date.
+            </p>
+            <p>
+                If there is no activity or reactivation before the deadline, the account and associated personal
+                data are deleted. Deleted account data may remain in rolling backups for up to 3 days.
+            </p>
+            <p>
+                For accounts deleted automatically because of inactivity, we keep a minimal deletion log containing
+                the internal user ID, username, warning date, deletion date, and inactivity-deletion status for
+                operational statistics. We do not keep the email address or profile/list data in this log. This
+                minimal log does not apply when you delete your own account directly.
+            </p>
+
             <h5 className="text-lg mt-5 font-semibold">How we use your information</h5>
             <p>
                 We use the information we collect in various ways, including to:

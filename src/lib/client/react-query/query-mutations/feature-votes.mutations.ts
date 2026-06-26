@@ -32,7 +32,7 @@ export const useToggleFeatureVoteMutation = () => {
 };
 
 
-export const useAdminUpdateFeatureStatusMutation = (meta?: MutationMeta) => {
+export const useAdminUpdateFeatureMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -45,7 +45,7 @@ export const useAdminUpdateFeatureStatusMutation = (meta?: MutationMeta) => {
 };
 
 
-export const useAdminDeleteFeatureRequestMutation = (meta?: MutationMeta) => {
+export const useAdminDeleteFeatureMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({

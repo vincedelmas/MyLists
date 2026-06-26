@@ -7,16 +7,13 @@
     "tags": [
         "-lintignore"
     ],
-    "ignoreDependencies": [
-        "@radix-ui/react-tabs"
-    ],
     "entry": [
         "server.ts",
-        "src/client.tsx",
-        "src/router.ts",
-        "src/routeTree.gen.ts",
         "src/start.ts",
+        "src/router.ts",
+        "src/client.tsx",
         "src/styles.css",
+        "src/routeTree.gen.ts",
         "src/routes/**/*.{ts,tsx}"
     ],
     "project": [
@@ -34,8 +31,7 @@
             "exports"
         ],
         "src/lib/client/components/ui/**": [
-            "exports",
-            "files"
+            "exports"
         ]
     }
 }

@@ -22,7 +22,7 @@ export const getBaseColumns = <T extends UserMediaItem>({ isCurrent, isConnected
         id: "name",
         header: "Name",
         cell: ({ row: { original } }) => (
-            <Link to="/details/$mediaType/$mediaId" params={{ mediaType, mediaId: original.mediaId }} search={{ external: false }}>
+            <Link to="/details/$mediaType/$mediaId" params={{ mediaType, mediaId: original.mediaId }}>
                 <div className="flex items-center gap-3">
                     {original.mediaName}
                     {!isCurrent && original.common && <CircleCheck className="h-4 w-4 text-green-500"/>}

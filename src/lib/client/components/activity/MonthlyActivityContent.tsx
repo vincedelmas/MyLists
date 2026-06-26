@@ -1,12 +1,15 @@
 import React, {useState} from "react";
-import {MediaType} from "@/lib/utils/enums";
+import {ActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {formatMinutes} from "@/lib/utils/number-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {LayoutGrid, Plus, Settings2} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
+import {ActivityKind, MediaType} from "@/lib/utils/enums";
+import {ActivityEditor} from "@/lib/types/activity.types";
+import {formatMinutes} from "@/lib/utils/number-formatting";
+import {Separator} from "@/lib/client/components/ui/separator";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
@@ -14,15 +17,13 @@ import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
 import {ActivityAddDialog} from "@/lib/client/components/activity/ActivityAddDialog";
 import {ActivityEditDialog} from "@/lib/client/components/activity/ActivityEditDialog";
 import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
 import {ActivityStatusIcon} from "@/lib/client/components/activity/ActivityStatusIcon";
-import {ActivityEditor, ActivityKind, ActivitySearch} from "@/lib/types/activity.types";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
-import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {Separator} from "@/lib/client/components/ui/separator";
 
 
 interface MonthlyActivityContentProps {
@@ -33,10 +34,10 @@ interface MonthlyActivityContentProps {
 
 
 const activityKindFilters: { label: string, value: ActivityKind }[] = [
-    { label: "All Activities", value: "all" },
-    { label: "Completed", value: "completed" },
-    { label: "In progress", value: "progressed" },
-    { label: "Re-experience", value: "redo" },
+    { label: "All Activities", value: ActivityKind.ALL },
+    { label: "Completed", value: ActivityKind.COMPLETED },
+    { label: "In progress", value: ActivityKind.PROGRESSED },
+    { label: "Re-experience", value: ActivityKind.REDO },
 ];
 
 
@@ -48,7 +49,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
     const activeFilters = fixedMediaType ? { ...filters, activeTab: fixedMediaType } : filters;
 
     const apiData = useSuspenseQuery(monthlyActivityOptions(username, activeFilters)).data;
-    const { activeTab = "all", activityKind = "all", hiddenOnly = false, search = "", page = 1, ...dateFilters } = activeFilters;
+    const { activeTab = "all", activityKind = ActivityKind.ALL, hiddenOnly = false, search = "", page = 1, ...dateFilters } = activeFilters;
 
     const {
         localSearch,

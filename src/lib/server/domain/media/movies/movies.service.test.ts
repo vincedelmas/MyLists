@@ -1,13 +1,15 @@
 import {describe, expect, it} from "vitest";
 import type {Movie, MoviesList} from "./movies.types";
-import {getContainer} from "@/lib/server/core/container";
+import {RatingSystemType, Status} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
+import type {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
+import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
 
-describe("MoviesService", async () => {
-    const container = await getContainer();
-    const moviesService = container.registries.mediaService.getService(MediaType.MOVIES);
+describe("MoviesService", () => {
+    const moviesRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as MoviesRepository;
+    const moviesService = new MoviesService(moviesRepository);
 
     const baseMovie: Movie = {
         id: 1,

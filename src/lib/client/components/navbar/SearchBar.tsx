@@ -174,9 +174,8 @@ const SearchComponent = ({ item, resetSearch, setMobileMenu }: SearchComponentPr
             return { to: "/profile/$username", params: { username: item.name } };
         }
         return {
-            search: { external: true },
-            to: "/details/$mediaType/$mediaId",
-            params: { mediaType: item.itemType as MediaType, mediaId: item.id },
+            to: "/details/$mediaType/external/$apiId",
+            params: { mediaType: item.itemType as MediaType, apiId: item.id.toString() },
         };
     }
 

@@ -4,7 +4,6 @@ import {createServerFn} from "@tanstack/react-start";
 import {user} from "@/lib/server/database/schema/index";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {tryFormZodError} from "@/lib/utils/try-not-found";
 import {saveUploadedImage} from "@/lib/utils/image-saver";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
@@ -20,7 +19,7 @@ import {
 
 export const postGeneralSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(generalSettingsSchema))
+    .validator((data) => generalSettingsSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
     .handler(async ({ data, context: { currentUser } }) => {
         const userService = await getContainer().then((c) => c.services.user);
         const updatesToApply: Partial<typeof user.$inferInsert> = { privacy: data.privacy };
@@ -54,7 +53,7 @@ export const postGeneralSettings = createServerFn({ method: "POST" })
 
 export const postMediaListSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(mediaListSettingsSchema))
+    .validator(mediaListSettingsSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const userService = await getContainer().then(c => c.services.user);
         const userStatsService = await getContainer().then(c => c.services.userStats);
@@ -93,7 +92,7 @@ export const getProfileCustomSettings = createServerFn({ method: "GET" })
 
 export const getProfileCustomSearch = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryFormZodError(highlightedMediaSearchSchema))
+    .validator(highlightedMediaSearchSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const userProfileService = await getContainer().then((c) => c.services.userProfile);
         return userProfileService.searchHighlightedMedia(currentUser.id, data.tab, data.query);
@@ -102,7 +101,7 @@ export const getProfileCustomSearch = createServerFn({ method: "GET" })
 
 export const postProfileCustomSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
-    .inputValidator(tryFormZodError(highlightedMediaSettingsSchema))
+    .validator(highlightedMediaSettingsSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const userProfileService = await getContainer().then((c) => c.services.userProfile);
         return userProfileService.saveHighlightedMediaSettings(currentUser.id, data);
@@ -111,7 +110,7 @@ export const postProfileCustomSettings = createServerFn({ method: "POST" })
 
 export const getDownloadListAsCSV = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryFormZodError(downloadListAsCsvSchema))
+    .validator(downloadListAsCsvSchema)
     .handler(async ({ data: { selectedList }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(selectedList);
@@ -121,7 +120,7 @@ export const getDownloadListAsCSV = createServerFn({ method: "GET" })
 
 export const postPasswordSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .inputValidator(tryFormZodError(passwordSettingsSchema))
+    .validator(passwordSettingsSchema)
     .handler(async ({ data: { newPassword, currentPassword }, context: { currentUser } }) => {
         const ctx = await auth.$context;
         const userAccount = await ctx.internalAdapter.findAccount(currentUser.id.toString());
@@ -140,7 +139,7 @@ export const postDeleteUserAccount = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const userService = await getContainer().then((c) => c.services.user);
-        return userService.deleteUserAccount(currentUser.id);
+        return userService.deleteUserAccount({ userId: currentUser.id, type: "manual" });
     });
 
 

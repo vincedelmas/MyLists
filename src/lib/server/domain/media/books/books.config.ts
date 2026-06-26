@@ -50,10 +50,15 @@ export const booksConfig: MangaSchemaConfig = {
             "Published Date +": [desc(books.releaseDate), asc(books.name)],
             "Published Date -": [sql`${books.releaseDate} ASC NULLS LAST`, asc(books.name)],
             "Recently Added": [desc(booksList.addedAt), asc(books.name)],
+            "Recently Modified": [desc(booksList.lastUpdated), asc(books.name)],
             "Re-Read": [desc(booksList.redo), asc(books.name)],
             "Pages +": [desc(books.pages), asc(books.name)],
             "Pages -": [asc(books.pages), asc(books.name)],
         },
+    },
+    communityActivityStats: {
+        totalRedo: sql<number>`COALESCE(SUM(${booksList.redo}), 0)`,
+        totalSpecific: sql<number>`COALESCE(SUM(${booksList.total}), 0)`,
     },
     apiProvider: {
         maxGenres: 5,

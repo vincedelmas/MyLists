@@ -1,17 +1,25 @@
 import * as z from "zod";
+import {mediaTypeFieldSchema, mediaTypeMediaIdSchema} from "@/lib/schemas/common.schema";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType} from "@/lib/utils/enums";
-import {createDefaultHighlightedMediaSettings, HIGHLIGHTED_MEDIA_DEFAULT_TITLE, HIGHLIGHTED_MEDIA_TABS, PROFILE_MAX_HIGHLIGHTED_MEDIA} from "@/lib/types/profile-custom.types";
+import {
+    createDefaultHighlightedMediaSettings,
+    HIGHLIGHTED_MEDIA_DEFAULT_TITLE,
+    HIGHLIGHTED_MEDIA_TABS,
+    HighlightedMediaRef,
+    HighlightedMediaSettings,
+    HighlightedMediaTabConfig,
+    PROFILE_MAX_HIGHLIGHTED_MEDIA
+} from "@/lib/types/profile-custom.types";
 
 
 export type ListSettings = z.infer<typeof mediaListSettingsSchema>;
+export type GeneralSettings = z.infer<typeof generalSettingsSchema>;
+export type PasswordSettingsForm = z.infer<typeof passwordSettingsFormSchema>;
 
 
-const highlightedMediaRefSchema = z.object({
-    mediaType: z.enum(MediaType),
-    mediaId: z.coerce.number().int().positive(),
-});
+const highlightedMediaRefSchema: z.ZodType<HighlightedMediaRef> = mediaTypeMediaIdSchema;
 
-const highlightedMediaTabConfigSchema = z.object({
+const highlightedMediaTabConfigSchema: z.ZodType<HighlightedMediaTabConfig> = z.object({
     mode: z.enum(["random", "curated", "disabled"]),
     items: z.array(highlightedMediaRefSchema).max(PROFILE_MAX_HIGHLIGHTED_MEDIA).default([]),
     title: z.string().trim().max(50)
@@ -26,7 +34,7 @@ const highlightedMediaSettingsShape = HIGHLIGHTED_MEDIA_TABS.reduce((acc, tab) =
         title: HIGHLIGHTED_MEDIA_DEFAULT_TITLE,
     });
     return acc;
-}, {} as Record<(typeof HIGHLIGHTED_MEDIA_TABS)[number], any>);
+}, {} as Record<(typeof HIGHLIGHTED_MEDIA_TABS)[number], z.ZodDefault<typeof highlightedMediaTabConfigSchema>>);
 
 
 export const highlightedMediaSettingsSchema = z.object(highlightedMediaSettingsShape)
@@ -55,15 +63,17 @@ export const highlightedMediaSettingsSchema = z.object(highlightedMediaSettingsS
                 });
             }
         }
-    });
+    }) as z.ZodType<HighlightedMediaSettings, HighlightedMediaSettings>;
 
 export const generalSettingsSchema = z.object({
-    profileImage: z.instanceof(File).optional(),
-    backgroundImage: z.instanceof(File).optional(),
     privacy: z.enum(PrivacyType),
+    profileImage: z.instanceof(File).optional()
+        .refine((file) => !file || file.size <= 10 * 1024 * 1000, "Image must be less than 10MB."),
+    backgroundImage: z.instanceof(File).optional()
+        .refine((file) => !file || file.size <= 10 * 1024 * 1000, "Image must be less than 10MB."),
     username: z.string().trim()
-        .min(3, "Username too short (3 min)")
-        .max(15, "Username too long (15 max)"),
+        .min(3, "Username too short (3 min).")
+        .max(15, "Username too long (15 max)."),
 });
 
 export const mediaListSettingsSchema = z.object({
@@ -82,12 +92,19 @@ export const highlightedMediaSearchSchema = z.object({
 });
 
 export const passwordSettingsSchema = z.object({
-    currentPassword: z.string(),
+    currentPassword: z.string().min(1, "Current password is required."),
     newPassword: z.string()
         .min(8, "The Password is too short (8 min.)")
         .max(50, "The Password is too long (50 max)."),
 });
 
+export const passwordSettingsFormSchema = passwordSettingsSchema.extend({
+    confirmNewPassword: z.string().min(1, "Please confirm your password."),
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmNewPassword"],
+});
+
 export const downloadListAsCsvSchema = z.object({
-    selectedList: z.enum(MediaType),
+    selectedList: mediaTypeFieldSchema,
 });

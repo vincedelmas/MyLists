@@ -1,12 +1,12 @@
 import {useState} from "react";
 import {useForm} from "react-hook-form";
-import {CreateCollection} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {FormZodError} from "@/lib/utils/error-classes";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {createFileRoute} from "@tanstack/react-router";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {CreateCollection, createCollectionSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 import {useCreateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
@@ -25,6 +25,7 @@ function CollectionCreatePage() {
     const [step, setStep] = useState<"mediaType" | "editor">("mediaType");
     const activeTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? [];
     const form = useForm<CreateCollection>({
+        resolver: zodResolver(createCollectionSchema),
         defaultValues: {
             title: "",
             items: [],
@@ -42,14 +43,6 @@ function CollectionCreatePage() {
 
     const handleSubmit = async (payload: CreateCollection) => {
         createMutation.mutate({ data: payload }, {
-            onError: (err) => {
-                if (err instanceof FormZodError) {
-                    err.issues.forEach((issue) => {
-                        const fieldPath = issue.path[0] === "items" ? "items" : issue.path.join(".");
-                        form.setError(fieldPath, { message: issue.message });
-                    });
-                }
-            },
             onSuccess: async (newCollection) => {
                 form.reset(payload);
                 return navigate({ to: "/collections/$collectionId", params: { collectionId: newCollection.id } });

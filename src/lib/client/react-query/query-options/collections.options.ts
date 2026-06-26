@@ -1,6 +1,6 @@
-import {queryOptions} from "@tanstack/react-query";
-import {CommunitySearch} from "@/lib/types/collections.types";
 import {MediaType} from "@/lib/utils/enums";
+import {CommunitySearch} from "@/lib/schemas";
+import {queryOptions} from "@tanstack/react-query";
 import {
     getCommunityCollections,
     getEditCollectionDetails,

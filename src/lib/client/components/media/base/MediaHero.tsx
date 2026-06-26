@@ -5,13 +5,12 @@ import {BookCoverEditDialog} from "@/lib/client/components/media/base/BookCoverE
 
 
 interface MediaHeroProps {
-    external: boolean;
     media: MediaDetails;
     mediaType: MediaType;
 }
 
 
-export function MediaHero({ media, mediaType, external }: MediaHeroProps) {
+export function MediaHero({ media, mediaType }: MediaHeroProps) {
     const backdropStyle = {
         filter: "blur(20px)",
         backgroundSize: "cover",
@@ -37,8 +36,6 @@ export function MediaHero({ media, mediaType, external }: MediaHeroProps) {
                         {mediaType === MediaType.BOOKS && media.imageCover.endsWith("default.jpg") &&
                             <BookCoverEditDialog
                                 mediaId={media.id}
-                                apiId={media.apiId}
-                                external={external}
                                 mediaName={media.name}
                             />
                         }

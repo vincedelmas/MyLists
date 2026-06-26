@@ -1,24 +1,24 @@
 import {UserX} from "lucide-react";
-import {SearchType} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {HofCard} from "@/lib/client/components/hall-of-fame/HofCard";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {HallOfFameSearch, hallOfFameSearchSchema} from "@/lib/schemas";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {hallOfFameOptions} from "@/lib/client/react-query/query-options";
 import {HofRanking} from "@/lib/client/components/hall-of-fame/HofRanking";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
-import {hallOfFameOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_viewer/hall-of-fame")({
-    validateSearch: (search) => search as SearchType,
+    validateSearch: hallOfFameSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: ({ context: { queryClient }, deps: { search } }) => {
         return queryClient.ensureQueryData(hallOfFameOptions(search));
@@ -27,15 +27,12 @@ export const Route = createFileRoute("/_main/_viewer/hall-of-fame")({
 });
 
 
-const DEFAULT = { page: 1, search: "", sorting: "normalized" } satisfies SearchType;
-
-
 function HallOfFamePage() {
     const { isAnonymous } = useAuth();
     const filters = Route.useSearch();
     const apiData = useSuspenseQuery(hallOfFameOptions(filters)).data;
-    const { page = DEFAULT.page, sorting = DEFAULT.sorting, search = DEFAULT.search } = filters;
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search });
+    const { page = 1, sorting = "normalized", search = "" } = filters;
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<HallOfFameSearch>({ search });
 
     return (
         <PageTitle title="Hall of Fame" subtitle="Showcase of all the active profiles ranked">

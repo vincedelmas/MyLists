@@ -3,9 +3,11 @@ import {useState} from "react";
 import {useForm} from "react-hook-form";
 import {LoaderCircle} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {ForgotPassword, forgotPasswordSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
@@ -18,13 +20,14 @@ export const Route = createFileRoute("/_main/_public/forgot-password")({
 function ForgotPasswordPage() {
     const navigate = Route.useNavigate();
     const [emailSent, setEmailSent] = useState(false);
-    const form = useForm<{ email: string }>({
+    const form = useForm<ForgotPassword>({
+        resolver: zodResolver(forgotPasswordSchema),
         defaultValues: {
             email: "",
         },
     });
 
-    const onSubmit = async (submitted: { email: string }) => {
+    const onSubmit = async (submitted: ForgotPassword) => {
         await authClient.requestPasswordReset({
             email: submitted.email,
             redirectTo: "/reset-password",
@@ -34,9 +37,9 @@ function ForgotPasswordPage() {
             },
             onSuccess: async () => {
                 setEmailSent(true);
-                toast.success(`You will be redirected in 5 seconds to the main page.`, { duration: 5 * 1000 });
+                toast.success(`You will be redirected to the login page in 5 seconds.`, { duration: 5 * 1000 });
                 setTimeout(async () => {
-                    await navigate({ to: "/", replace: true });
+                    await navigate({ to: "/login", replace: true });
                 }, 5 * 1000);
             },
         });
@@ -47,25 +50,25 @@ function ForgotPasswordPage() {
             <div className="mt-4 max-w-75">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            name="email"
-                            control={form.control}
-                            rules={{ required: "Email is required" }}
-                            render={({ field }) =>
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            type="email"
-                                            placeholder="john.doe@example.com"
-                                            disabled={form.formState.isSubmitting}
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            }
-                        />
+                        <fieldset disabled={form.formState.isSubmitting}>
+                            <FormField
+                                name="email"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="email"
+                                                placeholder="john.doe@example.com"
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                }
+                            />
+                        </fieldset>
                         {emailSent &&
                             <p className="text-sm text-center font-medium text-green-600">
                                 An email has been sent to reset your password. Please check your inbox.

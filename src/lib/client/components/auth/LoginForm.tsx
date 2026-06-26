@@ -1,20 +1,17 @@
 import {toast} from "sonner";
 import {useForm} from "react-hook-form";
+import {LoaderCircle} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
+import {Login, loginSchema} from "@/lib/schemas";
 import {FaGithub, FaGoogle} from "react-icons/fa";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {useQueryClient} from "@tanstack/react-query";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {Link, useLocation, useNavigate, useRouter} from "@tanstack/react-router";
 import {authOptions} from "@/lib/client/react-query/query-options";
+import {Link, useLocation, useNavigate, useRouter} from "@tanstack/react-router";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-
-
-type FormValues = {
-    email: string;
-    password: string;
-};
 
 
 interface LoginFormProps {
@@ -28,7 +25,8 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
-    const form = useForm<FormValues>({
+    const form = useForm<Login>({
+        resolver: zodResolver(loginSchema),
         shouldFocusError: false,
         defaultValues: {
             email: "",
@@ -45,7 +43,7 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
         await queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== authOptions.queryKey[0] });
     };
 
-    const onSubmit = async (submitted: FormValues) => {
+    const onSubmit = async (submitted: Login) => {
         await authClient.signIn.email({
             rememberMe: true,
             email: submitted.email,
@@ -59,7 +57,7 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
                     }, { shouldFocus: false });
                 }
                 else {
-                    form.setError("root", { type: "value", message: ctx.error.message });
+                    form.setError("root", { type: "value", message: ctx.error.message }, { shouldFocus: false });
                 }
             },
             onSuccess: async () => {
@@ -85,60 +83,63 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
         <>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            rules={{ required: "This field is required" }}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            type="email"
-                                            placeholder="Email"
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            rules={{ required: "This field is required" }}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center justify-between">
-                                        <FormLabel>Password</FormLabel>
-                                        <Link
-                                            to="/forgot-password"
-                                            className="text-sm underline"
-                                            tabIndex={-1}
-                                            onClick={() => onOpenChange?.(false)}
-                                        >
-                                            Forgot password?
-                                        </Link>
-                                    </div>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            type="password"
-                                            placeholder="********"
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                    {form.formState.errors.root && (
+                    <fieldset disabled={form.formState.isSubmitting}>
+                        <div className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="email"
+                                                placeholder="Email"
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <div className="flex items-center justify-between">
+                                            <FormLabel>Password</FormLabel>
+                                            <Link
+                                                to="/forgot-password"
+                                                className="text-sm underline"
+                                                tabIndex={-1}
+                                                onClick={() => onOpenChange?.(false)}
+                                            >
+                                                Forgot password?
+                                            </Link>
+                                        </div>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                placeholder="********"
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </fieldset>
+                    {form.formState.errors.root &&
                         <FormMessage className="text-center">
                             {form.formState.errors.root.message}
                         </FormMessage>
-                    )}
-                    <Button className="w-full">Login</Button>
+                    }
+                    <Button className="w-full" disabled={form.formState.isSubmitting}>
+                        {form.formState.isSubmitting && <LoaderCircle className="size-4 animate-spin"/>}{" "}
+                        Login
+                    </Button>
                 </form>
             </Form>
             <Separator className="mt-3"/>

@@ -2,32 +2,32 @@ import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {compareDateInputs} from "@/lib/utils/date-formatting";
+import {TrendsActiveTab, trendsSearchSchema} from "@/lib/schemas";
 import {TrendGrid} from "@/lib/client/components/trends/TrendGrid";
 import {TrendHero} from "@/lib/client/components/trends/TrendHero";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {trendsOptions} from "@/lib/client/react-query/query-options";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
-import {trendsOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/trends")({
-    validateSearch: (search) => search as { activeTab?: ActiveTab },
+    validateSearch: trendsSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(trendsOptions),
+    loader: ({ context: { queryClient } }) => {
+        return queryClient.ensureQueryData(trendsOptions);
+    },
     component: TrendsPage,
 });
 
 
-type ActiveTab = "all" | typeof MediaType.SERIES | typeof MediaType.MOVIES | typeof MediaType.GAMES;
-
-
 function TrendsPage() {
     const navigate = Route.useNavigate();
-    const { activeTab = "all" } = Route.useSearch();
+    const { activeTab } = Route.useSearch();
     const { seriesTrends, moviesTrends, gamesTrends } = useSuspenseQuery(trendsOptions).data;
 
-    const setActiveTab = (newTab: ActiveTab) => {
-        void navigate({ search: (prev) => ({ ...prev, activeTab: newTab }) });
+    const setActiveTab = (newTab: TrendsActiveTab) => {
+        void navigate({ search: (prev) => ({ ...prev, activeTab: newTab === "all" ? undefined : newTab }) });
     };
 
     const allTrends = [...seriesTrends, ...moviesTrends, ...gamesTrends]
@@ -49,7 +49,7 @@ function TrendsPage() {
     const heroMedia = getHeroMedia();
     const filteredTrends = getFilteredData();
 
-    const mediaTabs: TabItem<ActiveTab>[] = [
+    const mediaTabs: TabItem<TrendsActiveTab>[] = [
         {
             id: "all",
             label: "All",

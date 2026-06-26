@@ -75,10 +75,15 @@ export const seriesConfig: SeriesSchemaConfig = {
             "TMDB Rating +": [desc(series.voteAverage), asc(series.name)],
             "TMDB Rating -": [asc(series.voteAverage), asc(series.name)],
             "Recently Added": [desc(seriesList.addedAt), asc(series.name)],
+            "Recently Modified": [desc(seriesList.lastUpdated), asc(series.name)],
             "Rating +": [desc(seriesList.rating), asc(series.name)],
             "Rating -": [asc(seriesList.rating), asc(series.name)],
             "Re-watched": [desc(seriesList.redo), asc(series.name)],
         },
+    },
+    communityActivityStats: {
+        totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${seriesList.redo2}))), 0)`,
+        totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
     },
     apiProvider: {
         maxGenres: 5,

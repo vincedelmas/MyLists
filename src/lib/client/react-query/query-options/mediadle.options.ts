@@ -8,9 +8,13 @@ export const dailyMediadleOptions = queryOptions({
 });
 
 
-export const mediadleSuggestionsOptions = (query: string) => queryOptions({
-    queryKey: ["mediadleSuggestions", query],
-    queryFn: () => getMediadleSuggestions({ data: { query } }),
-    staleTime: 2 * 60 * 1000,
-    enabled: query.length >= 2,
-});
+export const mediadleSuggestionsOptions = (query: string) => {
+    const trimmedQuery = query.trim();
+
+    return queryOptions({
+        queryKey: ["mediadleSuggestions", trimmedQuery],
+        queryFn: () => getMediadleSuggestions({ data: { query: trimmedQuery } }),
+        staleTime: 2 * 60 * 1000,
+        enabled: trimmedQuery.length >= 1,
+    });
+}

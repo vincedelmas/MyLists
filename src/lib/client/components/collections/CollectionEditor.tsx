@@ -53,15 +53,12 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
             return;
         }
 
-        append(
-            {
-                annotation: "",
-                mediaId: item.mediaId,
-                mediaName: item.mediaName,
-                mediaCover: item.mediaCover,
-            },
-            { shouldFocus: false },
-        );
+        append({
+            annotation: "",
+            mediaId: item.mediaId,
+            mediaName: item.mediaName,
+            mediaCover: item.mediaCover,
+        }, { shouldFocus: false });
     };
 
     return (
@@ -94,11 +91,6 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                         <FormField
                             name="title"
                             control={form.control}
-                            rules={{
-                                required: "This field is required",
-                                minLength: { value: 3, message: "The title is too short (3 min)." },
-                                maxLength: { value: 100, message: "The title is too long (100 max)." },
-                            }}
                             render={({ field }) =>
                                 <FormItem>
                                     <FormLabel>Title</FormLabel>
@@ -115,7 +107,6 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                         <FormField
                             name="description"
                             control={form.control}
-                            rules={{ maxLength: { value: 400, message: "The description is too long (400 max)." } }}
                             render={({ field }) =>
                                 <FormItem>
                                     <FormLabel>Description</FormLabel>
@@ -139,7 +130,6 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                         <FormField
                             name="items"
                             control={form.control}
-                            rules={{ validate: val => val && val.length > 0 || "The collection cannot be empty." }}
                             render={() => (
                                 <FormItem>
                                     <FormLabel>Items ({fields.length})</FormLabel>

@@ -47,9 +47,5 @@ export const serverEnv = createEnv({
         LLM_BASE_URL: z.string(),
     },
     runtimeEnv: process.env,
+    skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
-
-
-if (process.env.NODE_ENV === "production" && !serverEnv.REDIS_ENABLED) {
-    throw new Error("REDIS_ENABLED must be enabled in production");
-}

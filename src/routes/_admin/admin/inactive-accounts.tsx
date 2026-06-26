@@ -3,7 +3,6 @@ import {SearchType} from "@/lib/schemas";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
 import {formatPercent} from "@/lib/utils/number-formatting";
 import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
@@ -12,7 +11,7 @@ import {formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {Activity, CheckCircle2, Clock, MailWarning, Trash2, UsersRound} from "lucide-react";
+import {Activity, CheckCircle2, MailWarning, Trash2, UsersRound} from "lucide-react";
 import {inactiveAccountDeletionsAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
@@ -38,13 +37,13 @@ function StatusBadge({ status, retryCount }: { status: string, retryCount: numbe
 
     switch (status) {
         case "warned":
-            return <Badge variant="outline" className="text-blue-600">Warned</Badge>;
+            return <Badge variant="outline" className="text-cyan-500">Warned</Badge>;
         case "resurrected":
             return <Badge variant="outline" className="text-green-600">Resurrected</Badge>;
         case "deleted":
             return <Badge variant="outline" className="text-red-600">Deleted</Badge>;
         case "mail_failed":
-            return <Badge variant="outline" className="text-red-600">Mail failed</Badge>;
+            return <Badge variant="outline" className="text-orange-600">Mail failed</Badge>;
         default:
             return <Badge variant="outline">{status}</Badge>;
     }
@@ -85,19 +84,35 @@ function InactiveAccountsPage() {
             cell: ({ row: { original } }) => (
                 <div>
                     <div>{formatDate(original.lastSeenAt)}</div>
-                    <div className="text-xs text-muted-foreground">{formatRelativeTime(original.lastSeenAt)}</div>
+                    <div className="text-xs text-muted-foreground">
+                        {formatRelativeTime(original.lastSeenAt)}
+                    </div>
                 </div>
             ),
         },
         {
             accessorKey: "warningSentAt",
             header: () => <span className="text-xs">Warning</span>,
-            cell: ({ row: { original } }) => original.warningSentAt ? formatDate(original.warningSentAt) : "-",
+            cell: ({ row: { original } }) => (
+                <div>
+                    <div>{formatDate(original.warningSentAt)}</div>
+                    <div className="text-xs text-muted-foreground">
+                        {formatRelativeTime(original.warningSentAt)}
+                    </div>
+                </div>
+            ),
         },
         {
             accessorKey: "deletionScheduledAt",
             header: () => <span className="text-xs">Scheduled Deletion</span>,
-            cell: ({ row: { original } }) => formatDate(original.deletionScheduledAt),
+            cell: ({ row: { original } }) => (
+                <div>
+                    <div>{formatDate(original.deletionScheduledAt)}</div>
+                    <div className="text-xs text-muted-foreground">
+                        {formatRelativeTime(original.deletionScheduledAt)}
+                    </div>
+                </div>
+            ),
         },
         {
             accessorKey: "emailRetryCount",
@@ -146,13 +161,13 @@ function InactiveAccountsPage() {
                     title="Warned"
                     icon={UsersRound}
                     value={apiData.stats.warned}
-                    description="Currently pending deletion"
+                    description="Pending deletion"
                 />
                 <UserStats
                     title="Retrying"
                     icon={MailWarning}
                     value={apiData.stats.retrying}
-                    description="Warning email not accepted yet"
+                    description="Retrying warning"
                 />
                 <UserStats
                     icon={MailWarning}
@@ -163,19 +178,19 @@ function InactiveAccountsPage() {
                 <UserStats
                     icon={CheckCircle2}
                     title="Resurrected"
-                    description="Timer refreshed"
+                    description="Account refreshed"
                     value={apiData.stats.resurrected}
                 />
                 <UserStats
                     icon={Trash2}
                     title="Deleted"
                     value={apiData.stats.deleted}
-                    description="Deleted by inactivity policy"
+                    description="Deleted by inactivity"
                 />
                 <UserStats
                     icon={Activity}
                     title="Resurrection"
-                    description="Among completed/warned rows"
+                    description="Among warned"
                     value={formatPercent(apiData.stats.resurrectionRate * 100)}
                 />
             </div>
@@ -187,10 +202,6 @@ function InactiveAccountsPage() {
                     className="w-70 max-sm:w-full"
                     placeholder="Search by username..."
                 />
-                <Button variant="outline" disabled>
-                    <Clock className="size-4"/>
-                    Daily maintenance
-                </Button>
             </div>
 
             <div className="mt-3 rounded-md border p-3 pt-0 overflow-x-auto">

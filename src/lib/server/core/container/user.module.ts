@@ -19,6 +19,8 @@ import {
     UserProfileService,
     UserRepository,
     UserService,
+    UserSimilarityRepository,
+    UserSimilarityService,
     UserStatsRepository,
     UserStatsService,
     UserUpdatesRepository,
@@ -38,6 +40,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
     const achievementsRepository = AchievementsRepository;
     const featureVotesRepository = FeatureVotesRepository;
     const notificationsRepository = NotificationsRepository;
+    const userSimilarityRepository = UserSimilarityRepository;
     const inactiveAccountRepository = InactiveAccountRepository;
 
     // User Services
@@ -47,6 +50,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
     const userService = new UserService(userRepository, inactiveAccountService);
     const achievementsService = new AchievementsService(achievementsRepository);
     const notificationsService = new NotificationsService(notificationsRepository);
+    const userSimilarityService = new UserSimilarityService(userSimilarityRepository);
     const userProfileService = new UserProfileService(userProfileRepository, mediaServiceRegistry);
     const featureVotesService = new FeatureVotesService(featureVotesRepository, notificationsService);
     const userActivityService = new UserActivityService(userActivityRepository, mediaServiceRegistry);
@@ -66,6 +70,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
             userActivity: userActivityRepository,
             featureVotes: featureVotesRepository,
             notifications: notificationsRepository,
+            userSimilarity: userSimilarityRepository,
             inactiveAccount: inactiveAccountRepository,
         },
         services: {
@@ -80,6 +85,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
             achievements: achievementsService,
             featureVotes: featureVotesService,
             notifications: notificationsService,
+            userSimilarity: userSimilarityService,
             inactiveAccount: inactiveAccountService,
         },
     };

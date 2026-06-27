@@ -2,7 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {integer, sqliteTable, text} from "drizzle-orm/sqlite-core";
-import {commonGenericCols, commonMediaCols, commonMediaListCols, commonMediaTagsCols} from "@/lib/server/database/schema/media/_helper";
+import {commonGenericCols, commonMediaCols, commonMediaListCols, commonMediaListIndexes, commonMediaTagsCols} from "@/lib/server/database/schema/media/_helper";
 
 
 export const books = sqliteTable("books", {
@@ -19,7 +19,7 @@ export const booksList = sqliteTable("books_list", {
     redo: integer().default(0).notNull(),
     total: integer("total").default(0).notNull(),
     ...commonMediaListCols(books.id, MediaType.BOOKS),
-});
+}, (table) => commonMediaListIndexes(table, MediaType.BOOKS));
 
 
 export const booksGenre = sqliteTable("books_genre", {

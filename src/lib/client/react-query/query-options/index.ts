@@ -6,5 +6,6 @@ export * from "./media.options";
 export * from "./mediadle.options";
 export * from "./notifications.options";
 export * from "./search.options";
+export * from "./taste-matches.options";
 export * from "./user-media.options";
 export * from "./user.options";

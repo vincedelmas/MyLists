@@ -2,7 +2,7 @@ import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";
 import {integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
-import {commonGenericCols, commonMediaCols, commonMediaListCols, commonMediaTagsCols} from "@/lib/server/database/schema/media/_helper";
+import {commonGenericCols, commonMediaCols, commonMediaListCols, commonMediaListIndexes, commonMediaTagsCols} from "@/lib/server/database/schema/media/_helper";
 
 
 export const games = sqliteTable("games", {
@@ -26,7 +26,7 @@ export const gamesList = sqliteTable("games_list", {
     playtime: integer().default(0),
     platform: text().$type<GamesPlatformsEnum>(),
     ...commonMediaListCols(games.id, MediaType.GAMES),
-});
+}, (table) => commonMediaListIndexes(table, MediaType.GAMES));
 
 
 export const gamesGenre = sqliteTable("games_genre", {

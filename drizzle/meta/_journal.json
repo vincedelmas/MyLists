@@ -218,6 +218,13 @@
       "when": 1782400000000,
       "tag": "0030_inactive_account_deletion",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1782565334267,
+      "tag": "0031_taste_match_indexes",
+      "breakpoints": true
     }
   ]
 }

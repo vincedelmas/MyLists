@@ -9,6 +9,7 @@ import {
     mediaListOptions,
     profileHeaderOptions,
     profileOptions,
+    tasteMatchesOptions,
     upcomingOptions,
 } from "@/lib/client/react-query/query-options";
 
@@ -24,6 +25,7 @@ export type AchCard = Awaited<ReturnType<NonNullable<ReturnType<typeof achieveme
 export type AchSummary = Awaited<ReturnType<NonNullable<ReturnType<typeof achievementOptions>["queryFn"]>>>["summary"][MediaType];
 export type HofUserData = Awaited<ReturnType<NonNullable<ReturnType<typeof hallOfFameOptions>["queryFn"]>>>["items"][number];
 export type HofUserRank = Awaited<ReturnType<NonNullable<ReturnType<typeof hallOfFameOptions>["queryFn"]>>>["userRanks"];
+export type TasteMatch = NonNullable<Awaited<ReturnType<NonNullable<ReturnType<typeof tasteMatchesOptions>["queryFn"]>>>["featuredMatch"]>;
 export type ComingNextItem = Awaited<ReturnType<NonNullable<typeof upcomingOptions.queryFn>>>[number]["items"][number];
 export type AdminUserOverview = Awaited<ReturnType<NonNullable<typeof adminOverviewOptions.queryFn>>>["recentUsers"];
 

@@ -7,8 +7,12 @@ import {useFollowMutation, useUnfollowMutation} from "@/lib/client/react-query/q
 
 
 interface FollowButtonProps {
+    className?: string;
     profileUsername: string;
-    social: ProfileHeaderOptionsType["social"];
+    social: {
+        followId: ProfileHeaderOptionsType["social"]["followId"];
+        followStatus?: Pick<NonNullable<ProfileHeaderOptionsType["social"]["followStatus"]>, "status"> | null;
+    };
 }
 
 
@@ -51,7 +55,7 @@ const getButtonConfig = (status?: SocialState) => {
 };
 
 
-export const FollowButton = ({ profileUsername, social }: FollowButtonProps) => {
+export const FollowButton = ({ profileUsername, social, className }: FollowButtonProps) => {
     const followMutation = useFollowMutation(profileUsername);
     const config = getButtonConfig(social.followStatus?.status);
     const unfollowMutation = useUnfollowMutation(profileUsername);
@@ -67,12 +71,11 @@ export const FollowButton = ({ profileUsername, social }: FollowButtonProps) => 
             disabled={isPending}
             onClick={handleClick}
             variant={config.variant}
-            className={cn("group w-30 font-bold transition-all", config.className)}
+            className={cn("group w-30 font-bold transition-all", config.className, className)}
         >
-            {isPending ?
-                <Loader2 className="size-3.5 animate-spin"/>
-                :
-                <>
+            {isPending
+                ? <Loader2 className="size-3.5 animate-spin"/>
+                : <>
                     <span className={cn("flex items-center gap-2", config.hoverLabel && "group-hover:hidden")}>
                         <config.Icon className="size-3.5"/>
                         {config.label}

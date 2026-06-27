@@ -39,6 +39,7 @@ import {
     TrendingUp,
     Trophy,
     User,
+    UsersRound,
     X,
     Zap
 } from "lucide-react";
@@ -121,6 +122,13 @@ export const Navbar = () => {
                                             <Trophy className="size-3.5"/> Hall of Fame
                                         </Link>
                                     </DropdownMenuItem>
+                                    {!isAnonymous &&
+                                        <DropdownMenuItem asChild>
+                                            <Link to="/taste-matches">
+                                                <UsersRound className="size-3.5"/> Taste Matches
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    }
                                 </DropdownMenuGroup>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -320,6 +328,14 @@ export const Navbar = () => {
 
                         <div className="p-2 max-h-[70vh] overflow-y-auto scrollbar-thin mt-3">
                             <div className="flex flex-wrap justify-around items-center gap-2 px-2">
+                                {!isAnonymous &&
+                                    <Link to="/taste-matches" onClick={() => setIsMobileMenuOpen(false)}>
+                                        <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                            <UsersRound className="size-4"/>
+                                            <span className="text-[10px]">Matches</span>
+                                        </button>
+                                    </Link>
+                                }
                                 <Link to="/moviedle" onClick={() => setIsMobileMenuOpen(false)}>
                                     <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
                                         <Clapperboard className="size-4"/>

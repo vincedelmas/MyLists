@@ -10,5 +10,6 @@ export * from "./media-lists.schema";
 export * from "./search.schema";
 export * from "./social.schema";
 export * from "./stats.schema";
+export * from "./taste-matches.schema";
 export * from "./user-media.schema";
 export * from "./user-settings.schema";

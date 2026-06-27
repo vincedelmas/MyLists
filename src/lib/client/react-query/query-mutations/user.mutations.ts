@@ -1,6 +1,7 @@
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {postUpdateShowOnboarding} from "@/lib/server/functions/user-profile";
 import {QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
+import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/notifications";
 import {postFollow, postRemoveFollower, postRespondToFollowRequest, postUnfollow} from "@/lib/server/functions/social";
 import {
     followersOptions,
@@ -20,11 +21,11 @@ import {
     postProfileCustomSettings,
     postUpdateFeatureFlag
 } from "@/lib/server/functions/user-settings";
-import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/notifications";
 
 
 const invalidateSocialQueries = async (queryClient: QueryClient, username: string) => {
     await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["tasteMatches"] }),
         queryClient.invalidateQueries({ queryKey: followsOptions(username).queryKey }),
         queryClient.invalidateQueries({ queryKey: followersOptions(username).queryKey }),
         queryClient.invalidateQueries({ queryKey: profileHeaderOptions(username).queryKey }),

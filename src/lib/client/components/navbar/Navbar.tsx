@@ -9,6 +9,7 @@ import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
 import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
 import {authOptions} from "@/lib/client/react-query/query-options";
+import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {Link, useLocation, useNavigate} from "@tanstack/react-router";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
@@ -54,10 +55,12 @@ export const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
+    const currentDate = useCurrentDate();
     const { currentUser, isAnonymous } = useAuth();
     const { openLogin, openRegister } = useAuthModal();
     const featureFlagMutation = useFeatureFlagMutation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [currentYear, currentMonth] = currentDate?.split("-") ?? [];
 
     const logoutUser = async () => {
         await authClient.signOut();
@@ -191,15 +194,17 @@ export const Navbar = () => {
                                                             <ChartNoAxesColumn className="size-4"/> My Stats
                                                         </Link>
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem asChild>
-                                                        <Link
-                                                            to="/activity/$username"
-                                                            params={{ username: currentUser.name }}
-                                                            search={{ year: String(new Date().getFullYear()), month: String(new Date().getMonth() + 1) }}
-                                                        >
-                                                            <Zap className="size-4"/> My Activity
-                                                        </Link>
-                                                    </DropdownMenuItem>
+                                                    {currentYear && currentMonth &&
+                                                        <DropdownMenuItem asChild>
+                                                            <Link
+                                                                to="/activity/$username"
+                                                                params={{ username: currentUser.name }}
+                                                                search={{ year: currentYear, month: String(Number(currentMonth)) }}
+                                                            >
+                                                                <Zap className="size-4"/> My Activity
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    }
                                                     <DropdownMenuItem asChild>
                                                         <Link to="/coming-next">
                                                             <Calendar className="size-4"/> Coming Next

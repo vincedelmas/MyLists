@@ -8,9 +8,9 @@ import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
-import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {displayContainerError} from "@/lib/utils/error-display";
+import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {AddActivity, AddActivityInput, addActivitySchema} from "@/lib/schemas";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
@@ -33,6 +33,7 @@ interface ActivityAddDialogProps {
 
 
 export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange }: ActivityAddDialogProps) => {
+    const currentDate = useCurrentDate();
     const addMutation = useAddActivityMutation({ noGlobalErrorToast: true });
     const [selectedMedia, setSelectedMedia] = useState<{ id: number; name: string; imageCover: string } | null>(null);
     const { search, setSearch, debouncedSearch, isOpen, reset: resetSearch, containerRef } = useSearchContainer({
@@ -259,7 +260,7 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                                             <Input
                                                 {...field}
                                                 type="date"
-                                                max={toDateInputValue(new Date())}
+                                                max={currentDate}
                                             />
                                         </FormControl>
                                         <FormMessage/>

@@ -6,6 +6,7 @@ import {ActivityEditor} from "@/lib/types/activity.types";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {displayContainerError} from "@/lib/utils/error-display";
+import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {UpdateActivity, UpdateActivityInput, updateActivityPayloadSchema} from "@/lib/schemas";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
@@ -22,6 +23,7 @@ interface ActivityEditDialogProps {
 
 
 export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEditDialogProps) => {
+    const currentDate = useCurrentDate();
     const updateMutation = useUpdateActivityMutation({ noGlobalErrorToast: true });
     const deleteMutation = useDeleteActivityMutation({ noGlobalErrorToast: true });
     const form = useForm<UpdateActivityInput, unknown, UpdateActivity>({
@@ -112,8 +114,8 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                                         <Input
                                             {...field}
                                             type="date"
+                                            max={currentDate}
                                             value={field.value ?? ""}
-                                            max={toDateInputValue(new Date())}
                                         />
                                     </FormControl>
                                     <FormMessage/>

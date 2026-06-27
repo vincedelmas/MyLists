@@ -10,7 +10,7 @@
     "entry": [
         "server.ts",
         "src/start.ts",
-        "src/router.ts",
+        "src/router.tsx",
         "src/client.tsx",
         "src/styles.css",
         "src/routeTree.gen.ts",

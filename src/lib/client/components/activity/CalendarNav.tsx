@@ -1,4 +1,3 @@
-import {useMemo} from "react";
 import {cn} from "@/lib/utils/classnames";
 
 
@@ -17,14 +16,7 @@ export function CalendarNav({ onDateChange, activeMonth, activeYear }: CalendarN
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
-
-    const yearsList = useMemo(() => {
-        const yrs = [];
-        for (let y = START_YEAR; y <= currentYear; y += 1) {
-            yrs.push(y);
-        }
-        return yrs;
-    }, [currentYear]);
+    const yearsList = Array.from({ length: currentYear - START_YEAR + 1 }, (_, i) => START_YEAR + i);
 
     const handleSelect = (year: number, month: number) => {
         onDateChange(String(year), String(month));

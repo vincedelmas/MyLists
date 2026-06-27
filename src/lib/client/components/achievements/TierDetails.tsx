@@ -6,7 +6,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {diffColors} from "@/lib/utils/theme-utils";
+import {getDifficultyColors} from "@/lib/utils/theme-utils";
 import {formatPercent} from "@/lib/utils/number-formatting";
 
 
@@ -35,7 +35,7 @@ export const TiersDetails = ({ achievement }: TierDetailsProps) => {
                     </TableHeader>
                     <TableBody>
                         {achievement.tiers.map((tier) => {
-                            const iconColorClass = diffColors(tier.difficulty);
+                            const iconColorClass = getDifficultyColors(tier.difficulty);
 
                             return (
                                 <TableRow key={tier.id}>

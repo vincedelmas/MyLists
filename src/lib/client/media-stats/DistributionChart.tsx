@@ -1,4 +1,3 @@
-import {useMemo} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {NamedValue} from "@/lib/types/stats.types";
 import {getThemeColor} from "@/lib/utils/theme-utils";
@@ -43,14 +42,12 @@ export function DistributionChart({ title, mediaType, data, unit, enableBinning 
         };
     });
 
-    const bottomMargin = useMemo(() => {
-        if (!chartData.length || !enableBinning) return 0;
-
+    let bottomMargin = 0;
+    if (chartData.length > 0 && enableBinning) {
         const longestLabel = chartData.reduce((max, d) => (d.name.length > max.length ? d.name : max), "");
-        const estimatedHeight = 12 * 1.4 + (longestLabel.length * 0.1);
-
-        return Math.max(15, Math.min(40, estimatedHeight + 10));
-    }, [chartData, enableBinning]);
+        const estimatedHeight = 12 * 1.4 + longestLabel.length * 0.1;
+        bottomMargin = Math.max(15, Math.min(40, estimatedHeight + 10));
+    }
 
     return (
         <Card>

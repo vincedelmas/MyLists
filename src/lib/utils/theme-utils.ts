@@ -59,7 +59,7 @@ export const getThemeColor = (type: MediaType | Status | string | undefined) => 
 };
 
 
-export const diffColors = (difficulty: AchievementDifficulty | "total" | undefined, variant: "text" | "border" | "bg" = "text") => {
+export const getDifficultyColors = (difficulty: AchievementDifficulty | "total" | undefined, variant: "text" | "border" | "bg" = "text") => {
     if (!difficulty) return "";
     return DIFFICULTY_COLORS[`${variant}-${difficulty}`];
 };

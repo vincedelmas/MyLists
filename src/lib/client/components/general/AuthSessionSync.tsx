@@ -1,7 +1,7 @@
+import {useEffect, useRef} from "react";
 import {useRouter} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useQueryClient} from "@tanstack/react-query";
-import {useCallback, useEffect, useRef} from "react";
 import {authOptions} from "@/lib/client/react-query/query-options";
 
 
@@ -25,12 +25,12 @@ export function AuthSessionSync() {
         }
     };
 
-    const refreshAuthenticatedRouteData = useCallback(async () => {
-        await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
-        await router.invalidate();
-    }, [queryClient, router]);
-
     useEffect(() => {
+        const refreshAuthenticatedRouteData = async () => {
+            await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
+            await router.invalidate();
+        };
+
         const previousUserId = previousUserIdRef.current;
         const isInitialSync = previousUserId === undefined;
 
@@ -55,7 +55,7 @@ export function AuthSessionSync() {
         }
 
         broadcastAuthChange(currentUserId);
-    }, [currentUserId, refreshAuthenticatedRouteData]);
+    }, [currentUserId, queryClient, router]);
 
     useEffect(() => {
         const onStorage = (event: StorageEvent) => {

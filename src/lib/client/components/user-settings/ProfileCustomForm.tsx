@@ -1,5 +1,5 @@
 import {toast} from "sonner";
-import {useMemo, useState} from "react";
+import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {toItemKey} from "@/lib/utils/media-mapping";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -25,12 +25,8 @@ export const ProfileCustomForm = () => {
         values: data?.settings ? cloneSettings(data.settings) : undefined,
     });
 
-    const combinedPreviewCache = useMemo(() => {
-        const remoteCache = data?.previews ? buildPreviewCache(data.previews) : {};
-        return { ...remoteCache, ...localPreviewCache };
-    }, [data?.previews, localPreviewCache]);
-
     const allFormValues = useWatch({ control: form.control });
+    const combinedPreviewCache = { ...(data?.previews ? buildPreviewCache(data.previews) : {}), ...localPreviewCache };
 
     const onSubmit = (formData: HighlightedMediaSettings) => {
         setRootError(null);

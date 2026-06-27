@@ -1,7 +1,7 @@
 import {Award} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
-import {diffColors} from "@/lib/utils/theme-utils";
+import {getDifficultyColors} from "@/lib/utils/theme-utils";
 import {Button} from "@/lib/client/components/ui/button";
 import {AchievementsType} from "@/lib/types/query.options.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -32,10 +32,10 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                         />
                         :
                         achievements.map((ach) =>
-                            <div key={`${ach.id}-${ach.difficulty}`} className={`p-2 rounded-lg border ${diffColors(ach.difficulty, "border")}`}>
+                            <div key={`${ach.id}-${ach.difficulty}`} className={`p-2 rounded-lg border ${getDifficultyColors(ach.difficulty, "border")}`}>
                                 <div className="flex justify-between">
                                     <div className="flex gap-2 items-center mb-1">
-                                        <Award className={cn("size-4", diffColors(ach.difficulty, "text"))}/>
+                                        <Award className={cn("size-4", getDifficultyColors(ach.difficulty, "text"))}/>
                                         <div className="font-bold text-sm text-primary">
                                             {ach.name}
                                         </div>

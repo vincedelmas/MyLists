@@ -1,5 +1,6 @@
-import {useMemo} from "react";
 import {useQuery} from "@tanstack/react-query";
+import {Dispatch, SetStateAction} from "react";
+import {toItemKey} from "@/lib/utils/media-mapping";
 import {Label} from "@/lib/client/components/ui/label";
 import {Input} from "@/lib/client/components/ui/input";
 import {ArrowDown, ArrowUp, Trash2} from "lucide-react";
@@ -9,25 +10,24 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {profileCustomSearchOptions} from "@/lib/client/react-query/query-options";
 import {HighlightedMediaRef, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab, PROFILE_MAX_HIGHLIGHTED_MEDIA} from "@/lib/types/profile-custom.types";
-import {toItemKey} from "@/lib/utils/media-mapping";
 
 
 interface CuratedMediaManagerProps {
     activeTab: HighlightedMediaTab;
     setRootError: (error: string | null) => void;
     previewCache: Record<string, HighlightedMediaSearchItem>;
-    setPreviewCache: React.Dispatch<React.SetStateAction<Record<string, HighlightedMediaSearchItem>>>;
+    setPreviewCache: Dispatch<SetStateAction<Record<string, HighlightedMediaSearchItem>>>;
 }
 
 
 export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache, setRootError }: CuratedMediaManagerProps) => {
     const { control } = useFormContext<HighlightedMediaSettings>();
     const { fields, append, remove, swap } = useFieldArray({ control, name: `${activeTab}.items` });
-    const selectedKeys = useMemo(() => new Set(fields.map((f: any) => toItemKey(f))), [fields]);
     const { containerRef, search, setSearch, isOpen, debouncedSearch, reset } = useSearchContainer({
         onReset: () => setRootError(null),
     });
-
+    
+    const selectedKeys = new Set(fields.map((f) => toItemKey(f)));
     const { data: searchResults, isFetching, error } = useQuery(profileCustomSearchOptions(activeTab, debouncedSearch));
 
     const handleAddItem = (item: HighlightedMediaSearchItem) => {

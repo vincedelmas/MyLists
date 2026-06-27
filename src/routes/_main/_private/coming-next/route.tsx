@@ -1,5 +1,5 @@
+import {useState} from "react";
 import {List} from "lucide-react";
-import {useMemo, useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -26,36 +26,41 @@ function ComingNextPage() {
     const mediaTypes = apiData.map((next) => next.mediaType);
     const [activeTab, setActiveTab] = useState<"all" | MediaType>("all");
     const allItems = apiData.flatMap(g => g.items.map(item => ({ ...item, mediaType: g.mediaType })));
+    const filteredByTab = activeTab === "all" ? allItems : allItems.filter((item) => item.mediaType === activeTab);
 
-    const processedData = useMemo(() => {
-        let filtered = activeTab === "all" ? allItems : allItems.filter((item) => item.mediaType === activeTab);
+    const processedData = filteredByTab.filter((item) => {
+        if (!item.date) return true;
+        const days = formatCalendarRelativeDate(item.date).diffDays;
+        return days === null || days >= -7;
+    }).sort((a, b) => compareCalendarDates(a.date, b.date));
 
-        filtered = filtered.filter((item) => {
-            if (!item.date) return true;
-            const days = formatCalendarRelativeDate(item.date).diffDays;
-            return days === null || days >= -7;
-        });
+    const sections: Record<string, (ComingNextItem & { mediaType: MediaType })[]> = {
+        tba: [],
+        today: [],
+        later: [],
+        thisWeek: [],
+        next30Days: [],
+    };
 
-        return filtered.sort((a, b) => compareCalendarDates(a.date, b.date));
-    }, [allItems, activeTab]);
+    processedData.forEach((item) => {
+        const days = formatCalendarRelativeDate(item.date).diffDays;
 
-    const sections = useMemo(() => {
-        const groups: Record<string, (ComingNextItem & { mediaType: MediaType })[]> = {
-            today: [], thisWeek: [], next30Days: [], later: [], tba: [],
-        };
-
-        processedData.forEach((item) => {
-            const days = formatCalendarRelativeDate(item.date).diffDays;
-
-            if (item.date === null || days === null) groups.tba.push(item);
-            else if (days <= 0) groups.today.push(item);
-            else if (days <= 7) groups.thisWeek.push(item);
-            else if (days <= 30) groups.next30Days.push(item);
-            else groups.later.push(item);
-        });
-
-        return groups;
-    }, [processedData]);
+        if (item.date === null || days === null) {
+            sections.tba.push(item);
+        }
+        else if (days <= 0) {
+            sections.today.push(item);
+        }
+        else if (days <= 7) {
+            sections.thisWeek.push(item);
+        }
+        else if (days <= 30) {
+            sections.next30Days.push(item);
+        }
+        else {
+            sections.later.push(item);
+        }
+    });
 
     const mediaTabs: TabItem<"all" | MediaType>[] = [
         {

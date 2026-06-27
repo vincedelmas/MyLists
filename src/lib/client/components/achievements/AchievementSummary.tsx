@@ -1,7 +1,7 @@
 import {Award} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {diffColors} from "@/lib/utils/theme-utils";
+import {getDifficultyColors} from "@/lib/utils/theme-utils";
 import {AchSummary} from "@/lib/types/query.options.types";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
 
@@ -19,8 +19,8 @@ export const AchievementSummary = ({ summary }: AchievementSummaryProps) => {
                     key={diff.tier}
                     value={diff.count}
                     title={capitalize(diff.tier)!}
-                    icon={<Award className={cn("mt-1 size-6", diffColors(diff.tier))}/>}
-                    className={diffColors(diff.tier, "border") ?? "border-muted-foreground"}
+                    icon={<Award className={cn("mt-1 size-6", getDifficultyColors(diff.tier))}/>}
+                    className={getDifficultyColors(diff.tier, "border") ?? "border-muted-foreground"}
                 />
             )}
         </div>

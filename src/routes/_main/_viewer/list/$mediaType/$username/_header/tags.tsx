@@ -1,6 +1,6 @@
-import {useMemo, useState} from "react";
-import {UserTag} from "@/lib/types/media-list.types";
+import React, {useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {UserTag} from "@/lib/types/media-list.types";
 import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {MediaType, TagAction} from "@/lib/utils/enums";
@@ -30,9 +30,8 @@ function TagsView() {
     const isOwner = !!currentUser && currentUser?.name === username;
     const { data: tags } = useSuspenseQuery(tagsViewOptions(mediaType, username),);
 
-    const filteredTags = useMemo(() => {
-        return tags.filter((c) => c.tagName.toLowerCase().includes(searchQuery.toLowerCase()));
-    }, [tags, searchQuery]);
+    const search = searchQuery.toLowerCase();
+    const filteredTags = tags.filter((c) => c.tagName.toLowerCase().includes(search));
 
     const showCreateButton = isOwner && searchQuery.trim().length > 0
         && !tags.some((c) => c.tagName.toLowerCase() === searchQuery.trim().toLowerCase(),);

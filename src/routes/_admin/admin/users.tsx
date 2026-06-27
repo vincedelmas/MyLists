@@ -1,5 +1,5 @@
 import {toast} from "sonner";
-import React, {useCallback, useMemo} from "react";
+import React from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
@@ -67,12 +67,12 @@ function UserManagementPage() {
         updateFilters({ sorting: newSorting[0]?.id ?? "updatedAt", sortDesc: newSorting[0]?.desc ?? true, page: 1 });
     };
 
-    const updateUser = useCallback((userId: number | undefined, payload: AdminUpdatePayload) => {
+    const updateUser = (userId: number | undefined, payload: AdminUpdatePayload) => {
         if (payload.deleteUser && !window.confirm("Are you sure you want to delete this user?")) return;
         updateUserMutation.mutate({ data: { userId, payload } });
-    }, [updateUserMutation]);
+    };
 
-    const impersonateUser = useCallback((userId: number, username: string) => {
+    const impersonateUser = (userId: number, username: string) => {
         impersonateMutation.mutate({ data: { userId } }, {
             onError: (error) => toast.error(error.message),
             onSuccess: async () => {
@@ -80,9 +80,9 @@ function UserManagementPage() {
                 await navigate({ to: "/profile/$username", params: { username } });
             },
         });
-    }, [impersonateMutation, setCurrentUser, navigate]);
+    };
 
-    const usersColumns: ColumnDef<typeof apiData.items[0]>[] = useMemo(() => [
+    const usersColumns: ColumnDef<typeof apiData.items[0]>[] = [
         {
             accessorKey: "id",
             header: ({ column }) => {
@@ -336,7 +336,7 @@ function UserManagementPage() {
                 </DropdownMenu>
             ),
         }
-    ], [impersonateUser, updateUser]);
+    ];
 
     const table = useReactTable({
         enableSorting: true,

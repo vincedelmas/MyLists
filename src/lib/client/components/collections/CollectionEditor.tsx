@@ -1,5 +1,5 @@
 import {toast} from "sonner";
-import {useMemo, useState} from "react";
+import {useState} from "react";
 import {CreateCollection} from "@/lib/schemas";
 import {useBlocker} from "@tanstack/react-router";
 import {Badge} from "@/lib/client/components/ui/badge";
@@ -30,9 +30,9 @@ interface CollectionEditorProps {
 export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSubmitting }: CollectionEditorProps) => {
     const { isDirty } = form.formState;
     const ordered = form.watch("ordered");
+    const orderedLabel = ordered ? "Ranked" : "Unranked";
     const [dragIndex, setDragIndex] = useState<number | null>(null);
     const { fields, append, remove, move } = useFieldArray({ control: form.control, name: "items" });
-    const orderedLabel = useMemo(() => (ordered ? "Ranked" : "Unranked"), [ordered]);
 
     useBlocker({
         shouldBlockFn: () => {

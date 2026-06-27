@@ -1,9 +1,8 @@
-import {useMemo} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {Award, Check} from "lucide-react";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {AchCard} from "@/lib/types/query.options.types";
-import {diffColors} from "@/lib/utils/theme-utils";
+import {getDifficultyColors} from "@/lib/utils/theme-utils";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {TiersDetails} from "@/lib/client/components/achievements/TierDetails";
@@ -18,21 +17,14 @@ interface AchievementCardProps {
 export const AchievementCard = ({ achievement }: AchievementCardProps) => {
     const { name, mediaType, description, tiers } = achievement;
 
-    const fullyCompleted = useMemo(() => tiers.length > 0 && tiers.every((tier) => tier.completed), [tiers]);
-
-    const highestCompletedTier = useMemo(() => {
-        const completed = tiers.filter((tier) => tier.completed);
-        return completed.length > 0 ? completed[completed.length - 1] : undefined;
-    }, [tiers]);
-
-    const nextTier = useMemo(() => {
-        if (fullyCompleted) return undefined;
-        return tiers.find((tier) => !tier.completed);
-    }, [tiers, fullyCompleted]);
+    const completedTiers = tiers.filter((tier) => tier.completed);
+    const fullyCompleted = tiers.length > 0 && tiers.every((tier) => tier.completed);
+    const nextTier = fullyCompleted ? undefined : tiers.find((tier) => !tier.completed);
+    const highestCompletedTier = completedTiers.length > 0 ? completedTiers[completedTiers.length - 1] : undefined;
 
     const displayDifficulty = highestCompletedTier?.difficulty;
-    const iconColorClass = diffColors(displayDifficulty);
-    const borderColorClass = diffColors(displayDifficulty, "border");
+    const iconColorClass = getDifficultyColors(displayDifficulty);
+    const borderColorClass = getDifficultyColors(displayDifficulty, "border");
 
     const tierForProgressDisplay = nextTier ?? tiers[tiers.length - 1];
     const currentCount = tierForProgressDisplay?.count ?? 0;
@@ -70,7 +62,7 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
                             {nextTier?.difficulty ?
                                 <div>
                                     Next: {nextTier.difficulty}{" "}
-                                    <Award className={cn("size-3.5 inline-block", diffColors(nextTier.difficulty))}/>
+                                    <Award className={cn("size-3.5 inline-block", getDifficultyColors(nextTier.difficulty))}/>
                                 </div>
                                 :
                                 <div className="text-app-accent">

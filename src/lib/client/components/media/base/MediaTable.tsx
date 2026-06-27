@@ -1,4 +1,4 @@
-import {useMemo, useState} from "react";
+import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {MediaListArgs} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -41,10 +41,7 @@ export const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption
         setDialogOpen(true);
     };
 
-    const listColumns = useMemo(() => {
-        const columnGenerator = mediaConfig[mediaType].mediaListColumns;
-        return columnGenerator({ isCurrent, isConnected, mediaType, queryOption, onEdit: handleEdit });
-    }, [isCurrent, isConnected, mediaType, queryOption]);
+    const listColumns = mediaConfig[mediaType].mediaListColumns({ isCurrent, isConnected, mediaType, queryOption, onEdit: handleEdit });
 
     const table = useReactTable({
         manualFiltering: true,

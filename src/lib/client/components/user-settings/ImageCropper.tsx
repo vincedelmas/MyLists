@@ -1,5 +1,5 @@
 import Cropper, {Area} from "react-easy-crop";
-import React, {useCallback, useState} from "react";
+import React, {useState} from "react";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {FormDescription} from "@/lib/client/components/ui/form";
@@ -109,9 +109,9 @@ export const ImageCropper = ({ aspect, fileName, sliceHeight, cropShape, onCropA
         }
     };
 
-    const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    const onCropComplete = (_: Area, croppedAreaPixels: Area) => {
         setState((prev) => ({ ...prev, croppedAreaPixels }));
-    }, []);
+    };
 
     const handleApplyCrop = async (ev: React.MouseEvent<HTMLButtonElement>) => {
         ev.preventDefault();

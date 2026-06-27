@@ -1,4 +1,4 @@
-import {useMemo, useState} from "react";
+import {useState} from "react";
 import {useForm} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -65,20 +65,14 @@ function FeatureVotesPage() {
         },
     });
 
-    const filteredRequests = useMemo(() => {
-        return apiData.items
-            .filter((item) => {
-                if (searchQuery.trim()) {
-                    const search = searchQuery.toLowerCase();
-                    return item.title.toLowerCase().includes(search) || item.description?.toLowerCase().includes(search);
-                }
+    const filteredRequests = apiData.items.filter((item) => {
+        if (searchQuery.trim()) {
+            const search = searchQuery.toLowerCase();
+            return item.title.toLowerCase().includes(search) || item.description?.toLowerCase().includes(search);
+        }
 
-                return activeTab === "active"
-                    ? ACTIVE_STATUSES.includes(item.status)
-                    : item.status === activeTab;
-            })
-            .sort((a, b) => b.totalVotes - a.totalVotes);
-    }, [apiData.items, activeTab, searchQuery]);
+        return activeTab === "active" ? ACTIVE_STATUSES.includes(item.status) : item.status === activeTab;
+    }).sort((a, b) => b.totalVotes - a.totalVotes);
 
     const handleAddNewFeature = (submitted: PostFeatureRequest) => {
         createFeatureMutation.mutate({ data: submitted }, {

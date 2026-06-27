@@ -1,4 +1,4 @@
-import {useMemo, useState} from "react";
+import {useState} from "react";
 import {Link} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
 import {Tag} from "@/lib/types/media-common.types";
@@ -30,7 +30,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
     const mutation = useEditTagMutation(mediaType, mediaId, { noGlobalErrorToast: true });
     const { data: allTags = [], isLoading } = useQuery(tagNamesOptions(mediaType, isOpen));
 
-    const activeIds = useMemo(() => new Set(tags.map((c) => c.name)), [tags]);
+    const activeIds = new Set(tags.map((c) => c.name));
     const filteredTags = allTags.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const showCreateButton = searchQuery.trim().length > 0

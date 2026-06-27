@@ -1,5 +1,5 @@
+import React, {useState} from "react";
 import {UpdateType} from "@/lib/utils/enums";
-import React, {useEffect, useState} from "react";
 import {Input} from "@/lib/client/components/ui/input";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
@@ -15,10 +15,6 @@ interface UpdateInputProps {
 
 export const UpdateInput = ({ total, initValue, updateInput, payloadName, updateType }: UpdateInputProps) => {
     const [currentValue, setCurrentValue] = useState(initValue?.toString() ?? "0");
-
-    useEffect(() => {
-        setCurrentValue(initValue?.toString() ?? "0");
-    }, [initValue]);
 
     const validateAndMutate = () => {
         if (currentValue.trim() === "") {
@@ -56,7 +52,6 @@ export const UpdateInput = ({ total, initValue, updateInput, payloadName, update
         if (ev.key === "Enter") {
             ev.preventDefault();
             ev.currentTarget.blur();
-            validateAndMutate();
         }
     };
 

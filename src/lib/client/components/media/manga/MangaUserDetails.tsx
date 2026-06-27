@@ -48,6 +48,7 @@ export const MangaUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
                             updateType={UpdateType.CHAPTER}
                             initValue={userMedia.currentChapter}
                             updateInput={updateUserMediaMutation}
+                            key={userMedia.currentChapter ?? "null"}
                         />
                     </div>
                     <div className="flex justify-between items-center">

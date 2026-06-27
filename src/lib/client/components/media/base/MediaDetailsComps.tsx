@@ -105,7 +105,7 @@ export const MediaUnderRating = ({ voteAverage, voteCount, divisor = 1 }: MediaU
                     locale: "en",
                 })}
             </span>
-            {voteCount &&
+            {!!voteCount &&
                 <span className="text-xs text-muted-foreground">
                     ({formatNumber(voteCount)})
                 </span>

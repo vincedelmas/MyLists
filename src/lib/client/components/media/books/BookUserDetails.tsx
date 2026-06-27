@@ -46,6 +46,7 @@ export const BooksUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
                             payloadName={"actualPage"}
                             updateType={UpdateType.PAGE}
                             initValue={userMedia.actualPage}
+                            key={userMedia.actualPage ?? "null"}
                             updateInput={updateUserMediaMutation}
                         />
                     </div>

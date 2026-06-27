@@ -2,13 +2,14 @@ import React, {useState} from "react";
 import {Settings2} from "lucide-react";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {Button} from "@/lib/client/components/ui/button";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorite";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 
@@ -35,9 +36,9 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
             <MediaCard item={userMedia} mediaType={mediaType}>
                 <div className="absolute right-2 top-2 z-10">
                     {isCurrent &&
-                        <div role="button" onClick={() => setDialogOpen(true)}>
+                        <Button type="button" size="iconBare" variant="invisible" onClick={() => setDialogOpen(true)}>
                             <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
-                        </div>
+                        </Button>
                     }
                     {!isCurrent && !userMedia.common && isConnected &&
                         <div className="absolute right-0 -top-0.5 z-10">

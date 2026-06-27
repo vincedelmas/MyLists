@@ -3,6 +3,7 @@ import {Fragment} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {MediaListArgs} from "@/lib/schemas";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {Button} from "@/lib/client/components/ui/button";
 import {capitalize, formatLocaleName} from "@/lib/utils/text-formatting";
 
 
@@ -73,13 +74,15 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                                                 )
                                                 : item
                                             }
-                                            <div
-                                                role="button"
+                                            <Button
+                                                type="button"
+                                                size="iconBare"
+                                                variant="invisible"
                                                 className="hover:opacity-80 -mr-1"
                                                 onClick={() => removeFilter(key as keyof MediaListArgs, item)}
                                             >
                                                 <X className="size-4"/>
-                                            </div>
+                                            </Button>
                                         </Badge>
                                         {i < value.length - 1 &&
                                             <span className="text-muted-foreground text-xs font-medium px-1.5">
@@ -95,13 +98,15 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                                         hover:bg-secondary/90 transition"
                                 >
                                     {String(value)}
-                                    <div
-                                        role="button"
+                                    <Button
+                                        type="button"
+                                        size="iconBare"
+                                        variant="invisible"
                                         className="hover:opacity-80 -mr-1"
                                         onClick={() => removeFilter(key as keyof MediaListArgs, value)}
                                     >
                                         <X className="size-4"/>
-                                    </div>
+                                    </Button>
                                 </Badge>
                             }
                         </div>
@@ -128,13 +133,15 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                                         hover:bg-secondary/90 transition"
                                     >
                                         {keyName}
-                                        <div
-                                            role="button"
+                                        <Button
+                                            type="button"
+                                            size="iconBare"
+                                            variant="invisible"
                                             className="hover:opacity-80 -mr-1"
                                             onClick={() => removeFilter(key as keyof MediaListArgs, value)}
                                         >
                                             <X className="size-4"/>
-                                        </div>
+                                        </Button>
                                     </Badge>
                                 );
                             })}
@@ -142,11 +149,9 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                     </div>
                 }
                 {Object.keys(localFilters).length > 0 &&
-                    <div role="button" className="ml-2" onClick={() => removeAllFilters()}>
-                        <div className="text-muted-foreground">
-                            Clear All
-                        </div>
-                    </div>
+                    <Button type="button" size="bare" variant="invisible" onClick={removeAllFilters} className="ml-2 text-muted-foreground">
+                        Clear All
+                    </Button>
                 }
             </>
         </div>

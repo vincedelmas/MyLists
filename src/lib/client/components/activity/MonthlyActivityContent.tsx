@@ -177,9 +177,15 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                 <>
                                     <MediaCornerCommon/>
                                     <div className="absolute right-2 top-2 z-10 flex gap-1">
-                                        <div role="button" onClick={() => setEditActivity(row)}>
+                                        <Button
+                                            type="button"
+                                            size="iconBare"
+                                            variant="invisible"
+                                            onClick={() => setEditActivity(row)}
+                                            title={`Edit activity for ${row.mediaName}`}
+                                        >
                                             <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
-                                        </div>
+                                        </Button>
                                     </div>
                                 </>
                             }

@@ -363,9 +363,15 @@ const SearchFilter = ({ mediaType, username, filterKey, job, title, dataList, re
                 {selectedData.map(item =>
                     <Badge key={item} className="mt-2 bg-neutral-800 h-8 px-4 text-sm gap-2" variant="outline">
                         {item}
-                        <div role="button" className="hover:opacity-80 -mr-1" onClick={() => handleRemoveData(item)}>
+                        <Button
+                            type="button"
+                            size="iconBare"
+                            variant="invisible"
+                            className="hover:opacity-80 -mr-1"
+                            onClick={() => handleRemoveData(item)}
+                        >
                             <X className="h-4 w-4"/>
-                        </div>
+                        </Button>
                     </Badge>
                 )}
             </div>

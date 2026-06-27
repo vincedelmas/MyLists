@@ -40,8 +40,10 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
 
     return (
         <>
-            <div
-                role="button"
+            <Button
+                size="bare"
+                type="button"
+                variant="invisible"
                 onClick={() => onOpenChange(true)}
                 className="w-34 text-start flex items-center justify-between bg-accent/30 h-8 rounded-md border px-3"
             >
@@ -49,7 +51,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                     {totalRedo} Seasons
                 </div>
                 <Pencil className="size-4 text-muted-foreground"/>
-            </div>
+            </Button>
             <Credenza open={open} onOpenChange={onOpenChange}>
                 <CredenzaContent className="w-100 max-sm:w-full max-sm:pb-5">
                     <CredenzaHeader>

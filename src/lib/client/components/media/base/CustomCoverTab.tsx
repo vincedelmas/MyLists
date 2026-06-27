@@ -93,14 +93,16 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
                             src={userMedia.customCover}
                             className="h-52 rounded-md border object-cover"
                         />
-                        <div
-                            role="button"
+                        <Button
+                            type="button"
+                            size="iconBare"
+                            variant="invisible"
                             onClick={handleRemove}
                             title="Remove custom cover"
                             className="absolute -top-2 -right-2.5 rounded-full bg-destructive p-1"
                         >
                             <X className="size-4"/>
-                        </div>
+                        </Button>
                     </div>
                     :
                     <div className="h-52 w-35 flex flex-col gap-2 px-2 justify-center text-center items-center rounded-md border

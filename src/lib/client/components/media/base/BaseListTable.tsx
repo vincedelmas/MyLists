@@ -1,11 +1,12 @@
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {ColumnDef} from "@tanstack/react-table";
-import {statusUtils} from "@/lib/utils/media-mapping";
 import {CircleCheck, Settings2} from "lucide-react";
+import {statusUtils} from "@/lib/utils/media-mapping";
+import {Button} from "@/lib/client/components/ui/button";
 import {UserMediaItem} from "@/lib/types/query.options.types";
-import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 
 
 export type ColumnConfigProps = {
@@ -40,9 +41,15 @@ export const getBaseColumns = <T extends UserMediaItem>({ isCurrent, isConnected
             if (!isConnected) return null;
             if (isCurrent) {
                 return (
-                    <div role="button" className="flex items-center justify-center" onClick={() => onEdit(original.mediaId)}>
+                    <Button
+                        type="button"
+                        size="iconBare"
+                        variant="invisible"
+                        onClick={() => onEdit(original.mediaId)}
+                        className="flex w-full items-center justify-center"
+                    >
                         <Settings2 className="w-4 h-4 opacity-70"/>
-                    </div>
+                    </Button>
                 );
             }
             if (!original.common) {

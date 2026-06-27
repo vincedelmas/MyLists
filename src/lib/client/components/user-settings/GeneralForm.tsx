@@ -18,7 +18,7 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/l
 export const GeneralForm = () => {
     const { currentUser, setCurrentUser } = useAuth();
     const generalSettingsMutation = useGeneralSettingsMutation();
-    const [imageCropperKey, setImageCropperKey] = useState(Date.now());
+    const [imageCropperResetKey, setImageCropperResetKey] = useState(0);
     const form = useForm<GeneralSettings>({
         resolver: zodResolver(generalSettingsSchema),
         values: {
@@ -39,9 +39,9 @@ export const GeneralForm = () => {
         generalSettingsMutation.mutate({ data: formData }, {
             onSuccess: async () => {
                 await setCurrentUser();
-                setImageCropperKey(Date.now());
                 form.resetField("profileImage");
                 form.resetField("backgroundImage");
+                setImageCropperResetKey((key) => key + 1);
                 toast.success("Settings successfully updated");
             },
         });
@@ -102,8 +102,8 @@ export const GeneralForm = () => {
                                         aspect={1}
                                         cropShape="round"
                                         fileName={field.name}
-                                        key={imageCropperKey}
                                         onCropApplied={field.onChange}
+                                        key={`profile-${imageCropperResetKey}`}
                                         resultClassName="h-[150px] rounded-full"
                                     />
                                 </FormControl>
@@ -122,8 +122,8 @@ export const GeneralForm = () => {
                                         cropShape="rect"
                                         sliceHeight={256}
                                         fileName={field.name}
-                                        key={imageCropperKey + 1}
                                         onCropApplied={field.onChange}
+                                        key={`background-${imageCropperResetKey}`}
                                         resultClassName="w-full h-16 object-cover rounded"
                                     />
                                 </FormControl>

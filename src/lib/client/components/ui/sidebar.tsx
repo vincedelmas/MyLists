@@ -6,7 +6,6 @@ import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {cva, VariantProps} from "class-variance-authority";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
-import {Skeleton} from "@/lib/client/components/ui/skeleton";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
 import {Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle} from "@/lib/client/components/ui/sheet";
@@ -193,8 +192,8 @@ function Sidebar({ side = "left", variant = "sidebar", collapsible = "offcanvas"
                 className={cn(
                     "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
                     side === "left"
-                        ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-                        : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+                        ? "left-0 group-data-[collapsible=offcanvas]:-left-(--sidebar-width)"
+                        : "right-0 group-data-[collapsible=offcanvas]:-right-(--sidebar-width)",
                     // Adjust the padding for floating and inset variants.
                     variant === "floating" || variant === "inset"
                         ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
@@ -563,41 +562,6 @@ function SidebarMenuBadge({ className, ...props }: React.ComponentProps<"div">) 
 }
 
 
-function SidebarMenuSkeleton({ className, showIcon = false, ...props }: React.ComponentProps<"div"> & {
-    showIcon?: boolean
-}) {
-    // Random width between 50 to 90%.
-    const width = React.useMemo(() => {
-        return `${Math.floor(Math.random() * 40) + 50}%`
-    }, [])
-
-    return (
-        <div
-            data-slot="sidebar-menu-skeleton"
-            data-sidebar="menu-skeleton"
-            className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
-            {...props}
-        >
-            {showIcon && (
-                <Skeleton
-                    className="size-4 rounded-md"
-                    data-sidebar="menu-skeleton-icon"
-                />
-            )}
-            <Skeleton
-                className="h-4 max-w-(--skeleton-width) flex-1"
-                data-sidebar="menu-skeleton-text"
-                style={
-                    {
-                        "--skeleton-width": width,
-                    } as React.CSSProperties
-                }
-            />
-        </div>
-    )
-}
-
-
 function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
     return (
         <ul
@@ -675,7 +639,6 @@ export {
     SidebarMenuBadge,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarMenuSkeleton,
     SidebarMenuSub,
     SidebarMenuSubButton,
     SidebarMenuSubItem,

@@ -1,4 +1,5 @@
 import {cn} from "@/lib/utils/classnames";
+import {useEffect, useState} from "react";
 import {Link} from "@tanstack/react-router";
 import {Pencil, RefreshCw} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -18,10 +19,16 @@ interface RefreshAndEditProps {
 
 export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEditProps) => {
     const { currentUser } = useAuth();
+    const [now, setNow] = useState(Date.now());
     const isBook = (mediaType === MediaType.BOOKS);
     const refreshMutation = useRefreshMediaMutation(mediaType, mediaId);
     const lastUpdateDate = lastUpdate ? dateFromUTCInput(lastUpdate) : null;
     const isManagerOrAbove = isAtLeastRole(currentUser?.role, RoleType.MANAGER);
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(Date.now()), 10_000);
+        return () => clearInterval(interval);
+    }, []);
 
     if (!isManagerOrAbove && isBook) return null;
 
@@ -33,7 +40,7 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
     const canRefreshThisType = isManagerOrAbove || !isBook;
 
     // Cooldown only applies to users below MANAGER
-    const isRefreshCooldown = !isManagerOrAbove && !!nextRefreshAt && Date.now() < nextRefreshAt.getTime();
+    const isRefreshCooldown = !isManagerOrAbove && !!nextRefreshAt && now < nextRefreshAt.getTime();
 
     // Check availability of refresh
     const refreshDisabled = refreshMutation.isPending || !currentUser || isRefreshCooldown;

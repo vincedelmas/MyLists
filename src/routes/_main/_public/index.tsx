@@ -96,6 +96,8 @@ const features = [
     },
 ];
 
+const floatingTileDelays = Array.from({ length: 32 }, (_, idx) => -((idx * 7) % 32) / 8);
+
 
 function HomePage() {
     return (
@@ -104,10 +106,10 @@ function HomePage() {
                 <div className="absolute inset-0 bg-linear-to-br from-background via-background/90 to-background/80">
                     <div className="absolute inset-0 opacity-20">
                         <div className="grid grid-cols-8 gap-1 h-full">
-                            {Array.from({ length: 32 }).map((_, i) =>
+                            {floatingTileDelays.map((delay, idx) =>
                                 <div
-                                    key={i}
-                                    style={{ animationDelay: `${i * Math.random()}s` }}
+                                    key={idx}
+                                    style={{ animationDelay: `${delay}s` }}
                                     className="bg-linear-to-br from-primary/20 to-accent/20 rounded-lg float-animation"
                                 />
                             )}

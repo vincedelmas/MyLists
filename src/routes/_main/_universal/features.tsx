@@ -15,7 +15,6 @@ import {
     ClockCheck,
     ClockPlus,
     Edit3,
-    EyeOff,
     Gamepad2,
     GraduationCap,
     Highlighter,
@@ -26,10 +25,8 @@ import {
     Monitor,
     Repeat,
     Search,
-    Settings2,
     Shield,
     SlidersHorizontal,
-    Trash2,
     Trophy,
     Users,
     Wrench,
@@ -161,74 +158,45 @@ const AREA_DESCRIPTIONS: Record<FeatureArea, string> = {
 
 
 const LATEST_RELEASE: ReleaseData = {
-    icon: Activity,
-    type: "Revamped",
-    date: "May 2026",
-    title: "Activity System Revamp",
+    icon: Users,
+    type: "New",
+    date: "June 2026",
+    title: "Taste Matches",
     summary: (
         <span>
-            I reworked the activity system. It still logs what you update (status, episodes, playtime, etc...) automatically,
-            but you now have much more control over what stays visible.
+            Find users whose ratings line up with yours across the media types you use.
+            Matches are based on titles you have both rated, with stronger confidence when there is more shared history.
         </span>
     ),
     items: [
         {
-            icon: Settings2,
-            type: "Revamped",
-            area: "Lists & Tracking",
-            name: "Cleaner Automatic Activity",
-            description: (
-                <span>
-                    When you change a status, an episode, a season, playtime, or progress,
-                    MyLists creates a cleaner activity entry around that change.
-                </span>
-            )
-        },
-        {
             type: "New",
-            icon: Trash2,
-            area: "Lists & Tracking",
-            name: "Bulk Activity Cleanup",
-            description: (
-                <span>
-                    If you arrive and add years of old movies, shows, games, or books,
-                    you can clean those setup updates in bulk instead of deleting them one by one.
-                </span>
-            )
-        },
-        {
-            type: "New",
-            icon: EyeOff,
-            area: "Lists & Tracking",
-            name: "Hide Activity",
-            description: (
-                <span>
-                    Hide an activity entry without deleting the real progress from your list.
-                    Useful when the update is either not correct or not interesting.
-                </span>
-            )
-        },
-        {
-            type: "New",
-            icon: Activity,
-            area: "Lists & Tracking",
-            name: "Add Activity Yourself",
-            description: (
-                <span>
-                    Add an activity manually when the automatic one is not exactly what you wanted to show.
-                    To split the time spent on a media over several months for example.
-                </span>
-            )
-        },
-        {
             icon: BarChart3,
-            type: "Improved",
-            area: "Stats & Insights",
-            name: "Activity in Stats",
+            area: "Social & Notifications",
+            name: "Ratings-Based Matching",
+            description: <span>Compare rating patterns and rating differences on shared titles to find the closest matches</span>
+        },
+        {
+            type: "New",
+            icon: Highlighter,
+            name: "Why You Match",
+            area: "Social & Notifications",
             description: (
                 <span>
-                    Activity is now used in the user stats and platform stats pages,
-                    so recent progress is not hidden behind only big list totals.
+                    See the match percentage, shared-rating count, per-media scores,
+                    and a selection of titles you both rated highly.
+                </span>
+            )
+        },
+        {
+            type: "New",
+            icon: SlidersHorizontal,
+            area: "Social & Notifications",
+            name: "Useful Discovery Controls",
+            description: (
+                <span>
+                    Filter by an active media list, search by username, sort by match strength or overlap,
+                    and optionally hide people you already follow.
                 </span>
             )
         },
@@ -241,18 +209,18 @@ const FEATURES_DATA: FeatureData[] = [
         icon: Activity,
         type: "Existing",
         area: "Lists & Tracking",
-        name: "Activity You Can Clean",
+        name: "Activity Tracking & Cleanup",
         description: (
             <span>
-                MyLists logs your changes automatically, but you can still hide entries,
-                add one yourself, or clean a big batch when it gets messy.
+                MyLists logs progress changes automatically and uses them in stats.
+                You can also add entries yourself, hide unwanted activity, or clean imported history in bulk.
             </span>
         )
     },
     {
         type: "Existing",
-        area: "Lists & Tracking",
         icon: ClockCheck,
+        area: "Lists & Tracking",
         name: "Backlog and Monthly Progress",
         description: (
             <span>

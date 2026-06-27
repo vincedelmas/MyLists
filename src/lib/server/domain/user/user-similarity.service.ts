@@ -13,9 +13,23 @@ export class UserSimilarityService {
     constructor(private repository: typeof UserSimilarityRepository) {
     }
 
-    async getTasteMatches(currentUserId: number, filters: TasteMatchesSearch) {
+    async getTasteMatches(currentUserId: number, filters: TasteMatchesSearch, activeMediaTypes: MediaType[] = Object.values(MediaType)) {
         const search = filters.search?.toLocaleLowerCase() ?? "";
-        const aggregates = await this.repository.findCandidateAggregates(currentUserId, filters.activeTab);
+        const activeTab = filters.activeTab !== "all" && activeMediaTypes.includes(filters.activeTab) ? filters.activeTab : "all";
+        const selectedMediaTypes = activeTab === "all" ? activeMediaTypes : [activeTab];
+
+        if (selectedMediaTypes.length === 0) {
+            return {
+                page: 1,
+                pages: 1,
+                total: 0,
+                items: [],
+                featuredMatch: null,
+                minimumSharedRatings: MINIMUM_SHARED_RATINGS,
+            };
+        }
+
+        const aggregates = await this.repository.findCandidateAggregates(currentUserId, selectedMediaTypes);
         const candidateAggregates = new Map<number, { overall: RatingAggregate; perMedia: Partial<Record<MediaType, RatingAggregate>> }>();
 
         for (const row of aggregates) {
@@ -86,18 +100,18 @@ export class UserSimilarityService {
         const items = listedMatches.slice((page - 1) * MATCHES_PER_PAGE, page * MATCHES_PER_PAGE);
         const visibleMatches = featuredMatch ? [featuredMatch, ...items] : items;
 
-        const lovedMedia = await this.repository.getSharedFavMedia(currentUserId, visibleMatches.map(({ id }) => id), filters.activeTab);
-        const lovedMediaByCandidate = new Map<number, typeof lovedMedia>();
+        const favMedia = await this.repository.getSharedFavMedia(currentUserId, visibleMatches.map(({ id }) => id), selectedMediaTypes);
+        const favMediaByCandidate = new Map<number, typeof favMedia>();
 
-        for (const media of lovedMedia) {
-            const candidateMedia = lovedMediaByCandidate.get(media.candidateId) ?? [];
+        for (const media of favMedia) {
+            const candidateMedia = favMediaByCandidate.get(media.candidateId) ?? [];
             candidateMedia.push(media);
-            lovedMediaByCandidate.set(media.candidateId, candidateMedia);
+            favMediaByCandidate.set(media.candidateId, candidateMedia);
         }
 
         const withLovedMedia = <T extends (typeof visibleMatches)[number]>(match: T) => ({
             ...match,
-            lovedMedia: lovedMediaByCandidate.get(match.id)?.map(({ candidateId: _, ...media }) => media) ?? [],
+            lovedMedia: favMediaByCandidate.get(match.id)?.map(({ candidateId: _, ...media }) => media) ?? [],
         });
 
         return {

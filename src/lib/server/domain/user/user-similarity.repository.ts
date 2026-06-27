@@ -26,9 +26,8 @@ type CandidateAggregateRow = {
 
 
 export class UserSimilarityRepository {
-    static async findCandidateAggregates(currentUserId: number, mediaType: MediaType | "all") {
-        const resolvedMediaTypes = mediaType === "all" ? Object.values(MediaType) : [mediaType];
-        const sharedRatings = resolvedMediaTypes.map((mt) => this._sharedRatingsBranch(mt, currentUserId));
+    static async findCandidateAggregates(currentUserId: number, mediaTypes: MediaType[]) {
+        const sharedRatings = mediaTypes.map((mediaType) => this._sharedRatingsBranch(mediaType, currentUserId));
 
         return getDbClient().all<CandidateAggregateRow>(sql`
             WITH shared_ratings AS (
@@ -76,11 +75,10 @@ export class UserSimilarityRepository {
             .groupBy(user.id);
     }
 
-    static async getSharedFavMedia(currentUserId: number, candidateIds: number[], mediaType: "all" | MediaType) {
+    static async getSharedFavMedia(currentUserId: number, candidateIds: number[], mediaTypes: MediaType[]) {
         if (candidateIds.length === 0) return [];
 
-        const resolvedMediaTypes = mediaType === "all" ? Object.values(MediaType) : [mediaType];
-        const sharedLovedMedia = resolvedMediaTypes.map((mt) => this._sharedLovedMediaBranch(mt, currentUserId, candidateIds));
+        const sharedLovedMedia = mediaTypes.map((mediaType) => this._sharedLovedMediaBranch(mediaType, currentUserId, candidateIds));
 
         return getDbClient().all<SharedLovedMediaRow>(sql`
             WITH shared_loved_media AS (

@@ -108,4 +108,23 @@ describe("UserSimilarityService.getTasteMatches", () => {
         expect(result.total).toBe(1);
         expect(result.featuredMatch?.name).toBe("RestrictedUser");
     });
+
+    it("only queries active media types and falls back from an inactive tab", async () => {
+        const repository = {
+            findCandidateAggregates: vi.fn().mockResolvedValue([]),
+            getCandidateProfiles: vi.fn().mockResolvedValue([]),
+            getSharedFavMedia: vi.fn().mockResolvedValue([]),
+        } as unknown as typeof UserSimilarityRepository;
+
+        await new UserSimilarityService(repository).getTasteMatches(99, {
+            activeTab: MediaType.MANGA,
+            hideFollowed: false,
+            sorting: "match",
+        }, [MediaType.MOVIES, MediaType.GAMES]);
+
+        expect(repository.findCandidateAggregates).toHaveBeenCalledWith(99, [
+            MediaType.MOVIES,
+            MediaType.GAMES,
+        ]);
+    });
 });

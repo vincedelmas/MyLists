@@ -8,6 +8,9 @@ export const getTasteMatches = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(tasteMatchesSearchSchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const userSimilarityService = await getContainer().then((container) => container.services.userSimilarity);
-        return userSimilarityService.getTasteMatches(currentUser.id, data);
+        const container = await getContainer();
+        const settings = await container.services.user.getMinimalUserSettings(currentUser.id);
+        const activeMediaTypes = settings.filter(({ active }) => active).map(({ mediaType }) => mediaType);
+
+        return container.services.userSimilarity.getTasteMatches(currentUser.id, data, activeMediaTypes);
     });

@@ -1,5 +1,6 @@
 import {UsersRound} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Switch} from "@/lib/client/components/ui/switch";
@@ -28,11 +29,15 @@ export const Route = createFileRoute("/_main/_private/taste-matches")({
 
 
 function TasteMatchesPage() {
+    const { currentUser } = useAuth();
     const filters = Route.useSearch();
     const { page = 1, search = "", activeTab = "all", hideFollowed = false, sorting = "match" } = filters;
 
     const apiData = useSuspenseQuery(tasteMatchesOptions(filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<TasteMatchesSearch>({ search });
+
+    const activeMediaTypes = currentUser?.settings.filter(({ active }) => active).map(({ mediaType }) => mediaType) ?? [];
+    const currentActiveTab = activeTab !== "all" && activeMediaTypes.includes(activeTab) ? activeTab : "all";
 
     const handleSortChange = (value: TasteMatchesSearch["sorting"]) => {
         void updateFilters({ page: 1, sorting: value as TasteMatchesSearch["sorting"] });
@@ -49,7 +54,7 @@ function TasteMatchesPage() {
             isAccent: true,
             icon: <MainThemeIcon size={15} type="all"/>,
         },
-        ...Object.values(MediaType).map((mediaType) => ({
+        ...activeMediaTypes.map((mediaType) => ({
             id: mediaType,
             label: mediaType,
             icon: <MainThemeIcon size={15} type={mediaType}/>,
@@ -61,7 +66,7 @@ function TasteMatchesPage() {
             <div className="space-y-6">
                 <TabHeader
                     tabs={mediaTabs}
-                    activeTab={activeTab}
+                    activeTab={currentActiveTab}
                     setActiveTab={handleTabChange}
                 />
                 <div className="space-y-4 -mt-2">
@@ -73,23 +78,20 @@ function TasteMatchesPage() {
                             placeholder="Search by username..."
                         />
                         <div className="flex flex-wrap items-center gap-4">
-                            <label
-                                htmlFor="hide-followed"
-                                className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground"
-                            >
+                            <label htmlFor="hide-followed" className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+                                Hide follows
                                 <Switch
                                     id="hide-followed"
                                     checked={hideFollowed}
                                     className="data-[state=checked]:bg-app-accent"
                                     onCheckedChange={(checked) => updateFilters({ page: 1, hideFollowed: checked })}
                                 />
-                                Hide followed users
                             </label>
                             <span className="text-sm text-muted-foreground">
                                 Sort by
                             </span>
                             <Select value={sorting} onValueChange={handleSortChange}>
-                                <SelectTrigger className="w-40">
+                                <SelectTrigger className="w-40 max-sm:w-fit">
                                     <SelectValue/>
                                 </SelectTrigger>
                                 <SelectContent>
@@ -103,7 +105,7 @@ function TasteMatchesPage() {
 
                 {apiData.featuredMatch &&
                     <FeaturedTasteMatch
-                        activeTab={activeTab}
+                        activeTab={currentActiveTab}
                         match={apiData.featuredMatch}
                     />
                 }
@@ -130,7 +132,7 @@ function TasteMatchesPage() {
                             <TasteMatchCard
                                 match={match}
                                 key={match.id}
-                                activeTab={activeTab}
+                                activeTab={currentActiveTab}
                             />
                         )}
                     </div>

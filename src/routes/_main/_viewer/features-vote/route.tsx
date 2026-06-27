@@ -5,26 +5,26 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatDateTime} from "@/lib/utils/date-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Textarea} from "@/lib/client/components/ui/textarea";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {FeatureStatus, isAtLeastRole, RoleType,} from "@/lib/utils/enums";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
-import {PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
+import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
+import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 
 
 export const Route = createFileRoute("/_main/_viewer/features-vote")({
+    validateSearch: featureVotesSearchSchema,
     loader: ({ context: { queryClient } }) => {
         return queryClient.ensureQueryData(featureVotesOptions);
     },
@@ -49,13 +49,14 @@ const STATUS_STYLES: Record<FeatureStatus, string> = {
 
 
 function FeatureVotesPage() {
+    const navigate = Route.useNavigate();
+    const { activeTab } = Route.useSearch();
     const { currentUser, isAnonymous } = useAuth();
     const toggleVoteMutation = useToggleFeatureVoteMutation();
     const apiData = useSuspenseQuery(featureVotesOptions).data;
     const [searchQuery, setSearchQuery] = useState("");
     const createFeatureMutation = useCreateFeatureRequestMutation();
     const isAdmin = isAtLeastRole(currentUser?.role ?? null, RoleType.ADMIN);
-    const [statusTab, setStatusTab] = useState<FeatureStatus | "active">("active");
     const form = useForm<PostFeatureRequest>({
         resolver: zodResolver(postFeatureRequestSchema),
         defaultValues: {
@@ -72,12 +73,12 @@ function FeatureVotesPage() {
                     return item.title.toLowerCase().includes(search) || item.description?.toLowerCase().includes(search);
                 }
 
-                return statusTab === "active"
+                return activeTab === "active"
                     ? ACTIVE_STATUSES.includes(item.status)
-                    : item.status.toLowerCase() === statusTab.toLowerCase();
+                    : item.status === activeTab;
             })
             .sort((a, b) => b.totalVotes - a.totalVotes);
-    }, [apiData.items, statusTab, searchQuery]);
+    }, [apiData.items, activeTab, searchQuery]);
 
     const handleAddNewFeature = (submitted: PostFeatureRequest) => {
         createFeatureMutation.mutate({ data: submitted }, {
@@ -91,16 +92,20 @@ function FeatureVotesPage() {
         toggleVoteMutation.mutate({ data: { featureId } });
     };
 
-    const statusTabs = [
+    const setActiveTab = (newTab: FeatureVotesActiveTab) => {
+        void navigate({ search: { activeTab: newTab === "active" ? undefined : newTab }, resetScroll: false });
+    };
+
+    const statusTabs: TabItem<FeatureVotesActiveTab>[] = [
         {
             id: "active",
             isAccent: true,
             label: "Active",
         },
-        ...Object.keys(FeatureStatus).map((status) => ({
+        ...Object.values(FeatureStatus).map((status) => ({
+            id: status,
+            label: status,
             isAccent: true,
-            id: capitalize(status.toLowerCase().replace("_", " ")),
-            label: capitalize(status.toLowerCase().replace("_", " ")),
         }))
     ];
 
@@ -235,8 +240,8 @@ function FeatureVotesPage() {
 
                 <TabHeader
                     tabs={statusTabs}
-                    activeTab={statusTab}
-                    setActiveTab={setStatusTab as any}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
                 />
 
                 <div className="grid gap-6">

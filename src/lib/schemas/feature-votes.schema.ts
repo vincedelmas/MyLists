@@ -5,6 +5,17 @@ import {coercedPositiveIntFieldSchema, positiveIntFieldSchema} from "@/lib/schem
 
 export type PostFeatureStatus = z.infer<typeof postFeatureStatusSchema>;
 export type PostFeatureRequest = z.infer<typeof postFeatureRequestSchema>;
+export type FeatureVotesActiveTab = z.infer<typeof featureVotesActiveTabSchema>;
+
+
+const featureVotesActiveTabSchema = z.union([
+    z.literal("active"),
+    z.enum(FeatureStatus),
+]);
+
+export const featureVotesSearchSchema = z.object({
+    activeTab: featureVotesActiveTabSchema.optional().default("active").catch("active"),
+});
 
 
 export const postFeatureRequestSchema = z.object({

@@ -1,4 +1,5 @@
 import {Status} from "@/lib/utils/enums";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 interface DisplayPagesProps {
@@ -15,7 +16,7 @@ export const DisplayPages = ({ currentPage, total, status }: DisplayPagesProps) 
 
     return (
         <div className="flex gap-x-1 items-center">
-            p. {currentPage ? currentPage : "-"}{total ? "/" + total : ""}
+            p. {currentPage ? currentPage : DEFAULT_DASH_FALLBACK}{total ? "/" + total : ""}
         </div>
     );
 }

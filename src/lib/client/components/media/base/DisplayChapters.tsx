@@ -1,4 +1,5 @@
 import {Status} from "@/lib/utils/enums";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 interface DisplayChaptersProps {
@@ -15,7 +16,7 @@ export const DisplayChapters = ({ currentChapter, total, status }: DisplayChapte
 
     return (
         <div className="flex gap-x-1 items-center">
-            ch. {currentChapter ? currentChapter : "-"}{total ? "/" + total : ""}
+            ch. {currentChapter ? currentChapter : DEFAULT_DASH_FALLBACK}{total ? "/" + total : ""}
         </div>
     );
 }

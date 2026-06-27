@@ -2,6 +2,7 @@ import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/date-formatting";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatCurrency} from "@/lib/utils/number-formatting";
 import {formatLocaleName} from "@/lib/utils/text-formatting";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
@@ -19,7 +20,7 @@ export const MoviesInfoGrid = ({ mediaType, media }: MoviesDetailsProps<typeof M
                     <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: media.directorName }}>
                         {media.directorName}
                     </Link>
-                    : "-"
+                    : DEFAULT_DASH_FALLBACK
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Composed By">
@@ -27,7 +28,7 @@ export const MoviesInfoGrid = ({ mediaType, media }: MoviesDetailsProps<typeof M
                     <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "compositor", name: media.compositorName }}>
                         {media.compositorName}
                     </Link>
-                    : "-"
+                    : DEFAULT_DASH_FALLBACK
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Release Date">
@@ -37,7 +38,7 @@ export const MoviesInfoGrid = ({ mediaType, media }: MoviesDetailsProps<typeof M
                 {formatLocaleName(media.originalLanguage, "language")}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Runtime">
-                {media.duration ?? "-"} min
+                {media.duration ?? DEFAULT_DASH_FALLBACK} min
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Total Budget">
                 {formatCurrency(media.budget)}

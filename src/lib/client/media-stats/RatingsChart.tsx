@@ -6,6 +6,7 @@ import {transformRatingToFeeling} from "@/lib/utils/stats-utils";
 import {CustomTooltip} from "@/lib/client/media-stats/DistributionChart";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Bar, BarChart, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 interface RatingsChartProps {
@@ -84,7 +85,7 @@ const FeelingTickXAxis = (props: any) => {
         const feelings = getFeelingList({ size: 18 });
         const feeling = feelings.find((item) => item.label === value.toString());
 
-        return feeling ? feeling.value : "-";
+        return feeling ? feeling.value : DEFAULT_DASH_FALLBACK;
     };
 
     return (

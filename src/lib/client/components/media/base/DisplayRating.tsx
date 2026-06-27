@@ -1,5 +1,6 @@
 import React from "react";
 import {Star} from "lucide-react";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 interface DisplayRatingProps {
@@ -9,7 +10,7 @@ interface DisplayRatingProps {
 
 
 export const DisplayRating = ({ rating, size = 15 }: DisplayRatingProps) => {
-    if (rating === "-") return null;
+    if (rating === DEFAULT_DASH_FALLBACK) return null;
 
     return (
         <div className="flex items-center gap-x-1">

@@ -11,19 +11,17 @@ import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
-const SCORE_CIRCUMFERENCE = 2 * Math.PI * 42;
-
-
-export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; activeTab: MediaType | "all" }) => {
+export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; activeTab: "all" | MediaType }) => {
     return (
-        <Card className="border-app-accent/40 bg-linear-to-br from-app-accent/8 via-card to-card p-6 md:p-8">
+        <Card className="border-app-rating/40 bg-linear-to-br from-app-rating/8 via-card to-card p-6 md:p-8">
             <div className="grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-center">
                 <div className="space-y-6">
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-app-accent/40
-                    px-3 py-1.5 text-sm font-medium text-app-accent">
-                        <Crown className="size-4"/>{" "}
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-app-rating/40
+                    px-3 py-1.5 text-sm font-medium">
+                        <Crown className="size-4 text-app-rating"/>{" "}
                         Your closest taste match
                     </div>
 
@@ -32,7 +30,7 @@ export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; ac
                         featured={true}
                     />
 
-                    <SharedLovedMedia
+                    <SharedFavMedia
                         match={match}
                     />
 
@@ -88,8 +86,8 @@ export const TasteMatchCard = ({ match, activeTab }: { match: TasteMatch; active
                     match={match}
                     activeTab={activeTab}
                 />
-                
-                <SharedLovedMedia
+
+                <SharedFavMedia
                     match={match}
                 />
             </div>
@@ -125,8 +123,8 @@ const MatchScore = ({ score, featured = false }: { score: number; featured?: boo
                     strokeWidth="8"
                     strokeLinecap="round"
                     stroke="var(--app-accent)"
-                    strokeDasharray={SCORE_CIRCUMFERENCE}
-                    strokeDashoffset={SCORE_CIRCUMFERENCE * (1 - score / 100)}
+                    strokeDasharray={2 * Math.PI * 42}
+                    strokeDashoffset={(2 * Math.PI * 42) * (1 - score / 100)}
                 />
             </svg>
             <span className={cn("absolute inset-0 flex items-center justify-center font-bold text-primary", featured ? "text-2xl" : "text-base")}>
@@ -155,7 +153,12 @@ const MediaScores = ({ match, activeTab }: { match: TasteMatch; activeTab: Media
                         <div>
                             <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                 <span>{capitalize(type)}</span>
-                                <span>{score ? formatPercent(score.similarity, { fractionDigits: 0 }) : "—"}</span>
+                                <span>
+                                    {score
+                                        ? formatPercent(score.similarity, { fractionDigits: 0 })
+                                        : DEFAULT_DASH_FALLBACK
+                                    }
+                                </span>
                             </div>
                             <Progress
                                 color="var(--app-accent)"
@@ -171,7 +174,7 @@ const MediaScores = ({ match, activeTab }: { match: TasteMatch; activeTab: Media
 };
 
 
-const SharedLovedMedia = ({ match }: { match: TasteMatch }) => {
+const SharedFavMedia = ({ match }: { match: TasteMatch }) => {
     if (match.lovedMedia.length === 0) return null;
 
     return (

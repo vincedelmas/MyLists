@@ -4,6 +4,7 @@ import {GamesPlatformsEnum, UpdateType} from "@/lib/utils/enums";
 import {gameCompatiblePlatformsOptions} from "@/lib/client/react-query/query-options";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 interface UpdatePlatformProps {
@@ -22,11 +23,11 @@ export const UpdatePlatform = ({ platform, mediaId, updatePlatform, disabled = f
     const availablePlatforms = compatiblePlatforms.length > 0 ? compatiblePlatforms : isLoading ? [] : Object.values(GamesPlatformsEnum);
 
     const selectedPlatformIsMissing = platform && !availablePlatforms.includes(platform);
-    const allPlatforms = ["-", ...(selectedPlatformIsMissing ? [platform] : []), ...availablePlatforms];
+    const allPlatforms = [DEFAULT_DASH_FALLBACK, ...(selectedPlatformIsMissing ? [platform] : []), ...availablePlatforms];
 
     const handleSelect = (value: string) => {
         if (disabled) return;
-        const valueToSend = value === "-" ? null : value as GamesPlatformsEnum;
+        const valueToSend = value === DEFAULT_DASH_FALLBACK ? null : value as GamesPlatformsEnum;
         updatePlatform.mutate({ payload: { platform: valueToSend, type: UpdateType.PLATFORM } });
     };
 
@@ -37,8 +38,8 @@ export const UpdatePlatform = ({ platform, mediaId, updatePlatform, disabled = f
                 open={open}
                 onOpenChange={setOpen}
                 onValueChange={handleSelect}
-                value={platform?.toString() ?? "-"}
                 disabled={updatePlatform.isPending || disabled}
+                value={platform?.toString() ?? DEFAULT_DASH_FALLBACK}
             >
                 <SelectTrigger size="sm" className="w-34">
                     <SelectValue/>

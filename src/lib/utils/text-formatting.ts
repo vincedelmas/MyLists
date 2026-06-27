@@ -1,4 +1,4 @@
-const DEFAULT_FALLBACK = "-";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 export const isLatin1 = (input: string) => {
@@ -14,7 +14,7 @@ export const capitalize = (input: string | null | undefined) => {
 
 
 export const formatLocaleName = (code: string | undefined | null, type: "language" | "region") => {
-    if (!code?.trim()) return DEFAULT_FALLBACK;
+    if (!code?.trim()) return DEFAULT_DASH_FALLBACK;
 
     if (type === "language" && code.toLowerCase() === "cn") return "Chinese";
 

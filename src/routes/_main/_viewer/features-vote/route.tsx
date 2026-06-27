@@ -18,7 +18,7 @@ import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 
@@ -270,15 +270,12 @@ function FeatureVotesPage() {
                                                 </span>
                                             </Link>
                                         }
-                                        {req.author && "-"}
+                                        {req.author && <span>&bull;</span>}
                                         <span className="inline-flex items-center gap-1">
                                             <CalendarClock className="size-3"/>
                                             Created {formatDateTime(req.createdAt)}
                                         </span>
                                     </CardDescription>
-                                    <CardAction>
-
-                                    </CardAction>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div className="flex gap-3">

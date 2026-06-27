@@ -1,4 +1,5 @@
-const DEFAULT_FALLBACK = "-";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const CALENDAR_DATE = /^(\d{4})-(\d{2})-(\d{2})$/; // YYYY-MM-DD
 
@@ -71,14 +72,14 @@ export const formatDateForDb = (value: number | string | null | undefined) => {
 };
 
 
-/** entry format is 'YYYY-MM-DD', returns an object with year, month and day strings */
+/** Entry format is 'YYYY-MM-DD', returns an object with year, month, and day strings */
 export const extractDate = (input?: string | null) => {
-    const [year = DEFAULT_FALLBACK, month = DEFAULT_FALLBACK, day = DEFAULT_FALLBACK] = input?.split("-", 3) ?? [];
+    const [year = DEFAULT_DASH_FALLBACK, month = DEFAULT_DASH_FALLBACK, day = DEFAULT_DASH_FALLBACK] = input?.split("-", 3) ?? [];
     return { year, month, day };
 };
 
 
-/** entry format is 'YYYY-MM-DD', returns a year string or DEFAULT_FALLBACK */
+/** Entry format is 'YYYY-MM-DD', returns a year string or DEFAULT_FALLBACK */
 export const extractYear = (date?: string | null) => {
     return extractDate(date).year;
 };
@@ -86,10 +87,10 @@ export const extractYear = (date?: string | null) => {
 
 /** returns a plain date string in the format: "Jan 1, 2024" or DEFAULT_FALLBACK */
 export const formatDate = (value: string | number | null | undefined) => {
-    if (!value) return DEFAULT_FALLBACK;
+    if (!value) return DEFAULT_DASH_FALLBACK;
 
     const date = dateFromUTCInput(value);
-    if (isNaN(date.getTime())) return DEFAULT_FALLBACK;
+    if (isNaN(date.getTime())) return DEFAULT_DASH_FALLBACK;
 
     return shortDateFormatter.format(date);
 };
@@ -198,12 +199,12 @@ export const toDateTimeAttribute = (value: string | number | null | undefined) =
 };
 
 
-/** @returns a date string human formatted or DEFAULT_FALLBACK */
+/** @returns a date string human formatted or DEFAULT_DASH_FALLBACK */
 export const formatDateTime = (value: string | number | null | undefined, opts: { seconds?: boolean } = {}) => {
-    if (!value) return DEFAULT_FALLBACK;
+    if (!value) return DEFAULT_DASH_FALLBACK;
 
     const date = dateFromUTCInput(value);
-    if (isNaN(date.getTime())) return DEFAULT_FALLBACK;
+    if (isNaN(date.getTime())) return DEFAULT_DASH_FALLBACK;
 
     const { seconds = false } = opts;
     let formatter = dateTimeFormatters.get(`${seconds}`);

@@ -1,4 +1,6 @@
+import React from "react";
 import {cn} from "@/lib/utils/classnames";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 interface StatCardProps {
@@ -23,7 +25,7 @@ export const SimpleStatCard = ({ title, value, icon, className, children }: Stat
                 {icon}
                 {children ||
                     <span className="text-3xl font-bold text-primary">
-                        {value ?? "-"}
+                        {value ?? DEFAULT_DASH_FALLBACK}
                     </span>
                 }
             </div>

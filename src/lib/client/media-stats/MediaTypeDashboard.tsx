@@ -1,15 +1,16 @@
 import {MediaType} from "@/lib/utils/enums";
-import {formatAvgRating} from "@/lib/utils/ratings-formatting";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {getMediaNaming} from "@/lib/utils/stats-utils";
 import {ExtractStatsByType} from "@/lib/types/stats.types";
 import {StatCard} from "@/lib/client/media-stats/StatCard";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {formatAvgRating} from "@/lib/utils/ratings-formatting";
 import {RatingsChart} from "@/lib/client/media-stats/RatingsChart";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {TopAffinityCard} from "@/lib/client/media-stats/TopAffinityCard";
 import {DistributionChart} from "@/lib/client/media-stats/DistributionChart";
 import {StatusDistribution} from "@/lib/client/media-stats/StatusDistribution";
 import {ActivityByMonthChart} from "@/lib/client/media-stats/ActivityByMonthChart";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {formatCurrency, formatHours, formatNumber} from "@/lib/utils/number-formatting";
 import {ChartColumn, Clock, DollarSign, Heart, Play, SquareStack, Star, Tags, XLineTop} from "lucide-react";
 
@@ -137,7 +138,7 @@ function MediaSpecificStats({ stats }: { stats: ExtractStatsByType<MediaType> })
                             fractionDigits: 1,
                             locale: "en",
                         })} hours`
-                        : "-"
+                        : DEFAULT_DASH_FALLBACK
                     }
                 />
                 <StatCard

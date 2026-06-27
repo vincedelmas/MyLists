@@ -3,6 +3,7 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
@@ -23,7 +24,7 @@ export const MangaInfoGrid = ({ mediaType, media }: MangaDetailsProps<typeof Med
                             <div>{author.name}</div>
                         </Link>
                     )
-                    : "-"
+                    : DEFAULT_DASH_FALLBACK
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Published By">
@@ -31,7 +32,7 @@ export const MangaInfoGrid = ({ mediaType, media }: MangaDetailsProps<typeof Med
                     <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "publisher", name: media.publishers }}>
                         {media.publishers}
                     </Link>
-                    : "-"
+                    : DEFAULT_DASH_FALLBACK
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Releasing Dates">
@@ -40,10 +41,10 @@ export const MangaInfoGrid = ({ mediaType, media }: MangaDetailsProps<typeof Med
                 {formatDate(media.endDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Total Chapters">
-                {media.chapters ?? "?"} chapters
+                {media.chapters ?? DEFAULT_DASH_FALLBACK} chapters
             </MediaInfoGridItem>
             <MediaInfoGridItem label=" Total Volumes">
-                {media.volumes ?? "?"} volumes
+                {media.volumes ?? DEFAULT_DASH_FALLBACK} volumes
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Completion">
                 {formatMinutes(media.chapters ? media.chapters * 7 : null)}

@@ -1,3 +1,6 @@
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+
+
 type NumericValue = number | null | undefined;
 
 type FormatNumberOptions = Intl.NumberFormatOptions & {
@@ -6,7 +9,6 @@ type FormatNumberOptions = Intl.NumberFormatOptions & {
     fractionDigits?: number;
 };
 
-const DEFAULT_FALLBACK = "-";
 const numberFormatters = new Map<string, Intl.NumberFormat>();
 
 
@@ -30,7 +32,7 @@ export const zeroPad = (value: number | string | null | undefined) => {
 
 
 export const formatNumber = (value: NumericValue, opts: FormatNumberOptions = {}) => {
-    const { locale = "fr", fractionDigits, fallback = DEFAULT_FALLBACK, ...formatOptions } = opts;
+    const { locale = "fr", fractionDigits, fallback = DEFAULT_DASH_FALLBACK, ...formatOptions } = opts;
 
     if (value === null || value === undefined || !Number.isFinite(value)) {
         return fallback;
@@ -45,7 +47,7 @@ export const formatNumber = (value: NumericValue, opts: FormatNumberOptions = {}
 
 export const formatCurrency = (value: NumericValue, opts: Intl.NumberFormatOptions = {}) => {
     if (value === null || value === undefined || !Number.isFinite(value) || value === 0) {
-        return `$ ${DEFAULT_FALLBACK}`;
+        return `$ ${DEFAULT_DASH_FALLBACK}`;
     }
 
     return formatNumber(value, {
@@ -60,7 +62,7 @@ export const formatCurrency = (value: NumericValue, opts: Intl.NumberFormatOptio
 
 
 export const formatPercent = (value: NumericValue, opts: FormatNumberOptions = {}) => {
-    const { locale = "en", fractionDigits = 1, fallback = DEFAULT_FALLBACK, ...formatOptions } = opts;
+    const { locale = "en", fractionDigits = 1, fallback = DEFAULT_DASH_FALLBACK, ...formatOptions } = opts;
 
     const formattedValue = formatNumber(value, { fallback, fractionDigits, locale, ...formatOptions });
 
@@ -69,7 +71,7 @@ export const formatPercent = (value: NumericValue, opts: FormatNumberOptions = {
 
 
 export const formatHours = (hours: number) => {
-    if (!Number.isFinite(hours) || hours < 0) return DEFAULT_FALLBACK;
+    if (!Number.isFinite(hours) || hours < 0) return DEFAULT_DASH_FALLBACK;
 
     if (hours < 24) return `${formatNumber(hours, { fractionDigits: 1, locale: "en" })}h`;
 
@@ -85,7 +87,7 @@ export const formatHours = (hours: number) => {
 
 export const formatMinutes = (minutes: number | string | null | undefined, options: { onlyHours?: boolean; compact?: boolean } = {}) => {
     const totalMinutes = Number(minutes ?? 0);
-    if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return DEFAULT_FALLBACK;
+    if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return DEFAULT_DASH_FALLBACK;
 
     const hours = Math.floor(totalMinutes / 60);
     const remainingMinutes = Math.floor(totalMinutes % 60);
@@ -98,7 +100,7 @@ export const formatMinutes = (minutes: number | string | null | undefined, optio
 
 
 export const formatMs = (ms: number) => {
-    if (!Number.isFinite(ms) || ms < 0) return DEFAULT_FALLBACK;
+    if (!Number.isFinite(ms) || ms < 0) return DEFAULT_DASH_FALLBACK;
     if (ms < 1000) return `${Math.round(ms)}ms`;
     if (ms < 60000) return `${formatNumber(ms / 1000, { fractionDigits: 1, locale: "en" })}s`;
 

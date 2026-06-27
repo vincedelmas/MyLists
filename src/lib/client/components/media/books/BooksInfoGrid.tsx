@@ -1,12 +1,12 @@
 import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
+import {extractYear} from "@/lib/utils/date-formatting";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {formatMinutes} from "@/lib/utils/number-formatting";
+import {formatLocaleName} from "@/lib/utils/text-formatting";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
-
-import {formatLocaleName} from "@/lib/utils/text-formatting";
-import {formatMinutes} from "@/lib/utils/number-formatting";
-import {extractYear} from "@/lib/utils/date-formatting";
 
 
 type BooksDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]>[number];
@@ -22,11 +22,11 @@ export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps<typeof Med
                             <div>{author.name}</div>
                         </Link>
                     )
-                    : "-"
+                    : DEFAULT_DASH_FALLBACK
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Published By">
-                {media.publishers ?? "-"}
+                {media.publishers ?? DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Release Date">
                 {extractYear(media.releaseDate)}
@@ -35,7 +35,7 @@ export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps<typeof Med
                 {formatLocaleName(media.language, "language")}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Total Pages">
-                {media.pages ?? "-"} p.
+                {media.pages ?? DEFAULT_DASH_FALLBACK} p.
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Completion">
                 {formatMinutes(media.pages * 1.7)}

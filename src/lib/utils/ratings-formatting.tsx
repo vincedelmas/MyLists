@@ -1,5 +1,6 @@
 import {RatingSystemType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/number-formatting";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {FaAngry, FaFrown, FaGrinAlt, FaGrinStars, FaPoop, FaSmile} from "react-icons/fa";
 
 
@@ -24,7 +25,7 @@ export const getScoreList = () => {
     const scores = Array.from({ length: (MAX_SCORE - MIN_SCORE) / STEP + 1 }, (_, i) => MIN_SCORE + i * STEP);
 
     return [
-        { label: null, value: "-" },
+        { label: null, value: DEFAULT_DASH_FALLBACK },
         ...scores.map((label) => ({
             label: label.toString(),
             value: label === MAX_SCORE ? label.toString() : formatNumber(label, { fractionDigits: 1, locale: "en" })
@@ -63,7 +64,7 @@ interface GetFeelingIcon {
 
 
 export const getFeelingIcon = (value: number | null, { className, size, labelOnly }: GetFeelingIcon = {}) => {
-    if (value === null || !Number.isFinite(value) || value < 0 || value > 10) return "-";
+    if (value === null || !Number.isFinite(value) || value < 0 || value > 10) return DEFAULT_DASH_FALLBACK;
 
     const feelingList = getFeelingList({ className, size }).slice(1);
 

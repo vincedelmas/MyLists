@@ -15,6 +15,7 @@ import {Activity, CheckCircle2, MailWarning, Trash2, UsersRound} from "lucide-re
 import {inactiveAccountDeletionsAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 export const Route = createFileRoute("/_admin/admin/inactive-accounts")({
@@ -125,7 +126,7 @@ function InactiveAccountsPage() {
             cell: ({ row: { original } }) => {
                 if (original.deletedAt) return formatDate(original.deletedAt);
                 if (original.resurrectedAt) return formatDate(original.resurrectedAt);
-                return "-";
+                return DEFAULT_DASH_FALLBACK;
             },
         },
         {
@@ -133,7 +134,7 @@ function InactiveAccountsPage() {
             header: () => <span className="text-xs">Mail Error</span>,
             cell: ({ row: { original } }) => (
                 <span className="block max-w-90 truncate text-xs text-muted-foreground" title={original.lastEmailError ?? undefined}>
-                    {original.lastEmailError ?? "-"}
+                    {original.lastEmailError ?? DEFAULT_DASH_FALLBACK}
                 </span>
             ),
         },

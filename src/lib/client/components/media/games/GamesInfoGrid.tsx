@@ -3,6 +3,7 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
@@ -23,7 +24,7 @@ export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps<typeof Med
                             <div>{dev.name}</div>
                         </Link>
                     )
-                    : "-"
+                    : DEFAULT_DASH_FALLBACK
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Published By">
@@ -33,17 +34,17 @@ export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps<typeof Med
                             <div>{pub.name}</div>
                         </Link>
                     )
-                    : "-"
+                    : DEFAULT_DASH_FALLBACK
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Release Date">
                 {formatDate(media.releaseDate)}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Perspective">
-                {media.playerPerspective ?? "-"}
+                {media.playerPerspective ?? DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Engine">
-                {media.gameEngine ?? "-"}
+                {media.gameEngine ?? DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="HLTB Main">
                 {formatMinutes(media.hltbMainTime ? media.hltbMainTime * 60 : null, { onlyHours: true })}

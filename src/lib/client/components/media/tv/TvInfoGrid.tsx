@@ -3,6 +3,7 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatLocaleName} from "@/lib/utils/text-formatting";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
@@ -28,7 +29,7 @@ export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps<typeof MediaType
                             </div>
                         </Link>
                     )
-                    : "-"
+                    : DEFAULT_DASH_FALLBACK
                 }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Airing Dates">
@@ -40,13 +41,13 @@ export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps<typeof MediaType
                 {formatLocaleName(media.originCountry, "region")}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Eps. Duration">
-                {media.duration ?? "-"} min
+                {media.duration ?? DEFAULT_DASH_FALLBACK} min
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Total Seasons">
-                {media.totalSeasons ?? "-"}
+                {media.totalSeasons ?? DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Total Episodes">
-                {media.totalEpisodes ?? "-"}
+                {media.totalEpisodes ?? DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Completion">
                 {formatMinutes(media.totalEpisodes * media.duration)}

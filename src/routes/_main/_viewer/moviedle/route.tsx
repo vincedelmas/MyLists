@@ -155,9 +155,9 @@ function MediadlePage() {
                                                     hasResults={!!suggestions?.length}
                                                 >
                                                     <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-60">
-                                                        {suggestions?.map((item, idx) =>
+                                                        {suggestions?.map((item) =>
                                                             <button
-                                                                key={idx}
+                                                                key={item.id}
                                                                 type="button"
                                                                 onClick={() => handleSearchClick(item.name)}
                                                                 className="flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors"

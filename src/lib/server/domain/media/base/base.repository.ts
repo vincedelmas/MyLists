@@ -142,7 +142,10 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         const { mediaTable } = this.config;
 
         return getDbClient()
-            .select({ name: sql<string>`${mediaTable.name}` })
+            .select({
+                id: mediaTable.id,
+                name: sql<string>`${mediaTable.name}`,
+            })
             .from(mediaTable)
             .where(like(mediaTable.name, `%${query.toLowerCase()}%`))
             .orderBy(mediaTable.name)

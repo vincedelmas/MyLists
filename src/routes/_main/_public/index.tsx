@@ -253,8 +253,8 @@ function HomePage() {
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-                        {features.map((feature, idx) =>
-                            <div key={idx} className="flex items-start gap-4 p-6 rounded-xl hover:bg-card transition-colors">
+                        {features.map((feature) =>
+                            <div key={feature.title} className="flex items-start gap-4 p-6 rounded-xl hover:bg-card transition-colors">
                                 <div className="size-12 bg-app-accent/30 rounded-lg flex items-center justify-center shrink-0">
                                     {feature.icon}
                                 </div>

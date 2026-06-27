@@ -18,10 +18,10 @@ export const StepsList = ({ steps }: { steps: TaskStep[] }) => {
         <div>
             <h4 className="text-sm font-medium mb-2">Steps</h4>
             <div className="border rounded-md divide-y max-h-200 overflow-auto scrollbar-thin">
-                {steps.map((step, i) =>
+                {steps.map((step) =>
                     <StepItem
-                        key={i}
                         step={step}
+                        key={`${step.startedAt}-${step.name}`}
                     />
                 )}
             </div>
@@ -97,9 +97,9 @@ const StepItem = ({ step, depth = 0, defaultExpanded = false }: StepItemProps) =
             </div>
             {hasChildren && isExpanded &&
                 <div className="ml-4">
-                    {step.children!.map((child, i) =>
+                    {step.children!.map((child) =>
                         <StepItem
-                            key={i}
+                            key={`${child.startedAt}-${child.name}`}
                             step={child}
                             depth={depth + 1}
                         />

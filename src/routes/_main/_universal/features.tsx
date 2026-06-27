@@ -101,10 +101,10 @@ function FeaturesPage() {
                                 description={AREA_DESCRIPTIONS[category]}
                             />
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                {groupedFeatures[category]?.map((feature, idx) =>
+                                {groupedFeatures[category]?.map((feature) =>
                                     <FeatureCard
                                         feature={feature}
-                                        key={`${category}-${idx}`}
+                                        key={feature.name}
                                     />
                                 )}
                             </div>

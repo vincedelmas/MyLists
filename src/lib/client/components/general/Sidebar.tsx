@@ -14,9 +14,9 @@ export interface SidebarItem {
 export const Sidebar = ({ items }: { items: SidebarItem[] }) => {
     return (
         <nav className="flex flex-wrap text-muted-foreground justify-center md:flex-col md:gap-3 md:justify-start">
-            {items.map((item, idx) => {
+            {items.map((item) => {
                 if (item.type === "separator") {
-                    return <Separator key={idx} className="my-3"/>;
+                    return <Separator key={item.id} className="my-3"/>;
                 }
 
                 return (

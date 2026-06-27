@@ -60,9 +60,9 @@ function OverviewPage() {
                         value={apiData.feelingRatingUsers.count}
                         description="Users using the feeling rating system"
                     />
-                    {apiData.usersPerPrivacy.map((privacyValue, idx) =>
+                    {apiData.usersPerPrivacy.map((privacyValue) =>
                         <UserStats
-                            key={idx}
+                            key={privacyValue.privacy}
                             value={privacyValue.count}
                             title={capitalize(privacyValue.privacy) + " Users"}
                             description={"Users with privacy set to " + privacyValue.privacy}

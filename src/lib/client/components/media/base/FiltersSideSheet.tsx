@@ -340,9 +340,9 @@ const SearchFilter = ({ mediaType, username, filterKey, job, title, dataList, re
                     hasResults={!!filterResults?.length}
                 >
                     <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-60">
-                        {filterResults?.map((item, idx) =>
+                        {filterResults?.map((item) =>
                             <button
-                                key={idx}
+                                key={item.name}
                                 onClick={() => handleSearchClick(item.name!)}
                                 className="flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors"
                             >

@@ -21,9 +21,9 @@ export const LinkSidebar = ({ items }: { items: LinkSidebarItem[] }) => {
                 "border-b md:border-none bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60",
             )}
         >
-            {items.map((item, idx) => {
+            {items.map((item) => {
                 if (item.type === "separator") {
-                    return <Separator key={idx} className="my-3 hidden md:block"/>;
+                    return <Separator key={item.id} className="my-3 hidden md:block"/>;
                 }
 
                 return (

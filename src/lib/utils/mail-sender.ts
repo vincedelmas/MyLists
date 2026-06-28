@@ -1,6 +1,26 @@
 import {serverEnv} from "@/env/server";
+import type {Transporter} from "nodemailer";
 import type {Options} from "nodemailer/lib/mailer";
 import {createServerOnlyFn} from "@tanstack/react-start";
+
+
+let transporterPromise: Promise<Transporter> | undefined;
+
+
+const getTransporter = () => {
+    transporterPromise ??= import("nodemailer").then(({ default: nodemailer }) => nodemailer.createTransport({
+        pool: true,
+        service: "gmail",
+        maxMessages: 100,
+        maxConnections: 1,
+        auth: {
+            user: serverEnv.ADMIN_MAIL_USERNAME,
+            pass: serverEnv.ADMIN_MAIL_PASSWORD,
+        },
+    }));
+
+    return transporterPromise;
+};
 
 
 interface EmailOptions {
@@ -14,19 +34,11 @@ interface EmailOptions {
 
 
 export const sendEmail = createServerOnlyFn(() => async (options: EmailOptions) => {
-    const [{ default: nodemailer }, { render }, { InactiveAccountDeletionEmail, PasswordResetEmail, RegisterEmail }] = await Promise.all([
-        import("nodemailer"),
+    const [transporter, { render }, { InactiveAccountDeletionEmail, PasswordResetEmail, RegisterEmail }] = await Promise.all([
+        getTransporter(),
         import("@react-email/render"),
         import("@/lib/client/components/emails"),
     ]);
-
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: serverEnv.ADMIN_MAIL_USERNAME,
-            pass: serverEnv.ADMIN_MAIL_PASSWORD,
-        },
-    });
 
     let htmlContent: string;
     if (options.template === "register") {

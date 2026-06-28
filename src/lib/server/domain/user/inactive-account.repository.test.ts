@@ -93,6 +93,27 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
         expect(lifecycle?.status).toBe("warned");
     });
 
+    it("does not mark as deleted when the warning email was never sent", async () => {
+        const userId = await insertUser({ updatedAt: "2024-01-01 00:00:00" });
+        const lifecycleId = await insertLifecycle({
+            userId,
+            emailRetryCount: 3,
+            warningSentAt: null,
+            status: "mail_failed",
+            lastSeenAt: "2024-01-01 00:00:00",
+            deletionScheduledAt: "2024-02-01 00:00:00",
+        });
+
+        const marked = await InactiveAccountRepository.markAsDeleted(lifecycleId, userId, "unwarned-user");
+        const deletionTargets = await InactiveAccountRepository.getDeletionTargets(3);
+        const lifecycle = await getLifecycle(lifecycleId);
+
+        expect(marked).toBe(false);
+        expect(deletionTargets).toEqual([]);
+        expect(lifecycle?.deletedAt).toBeNull();
+        expect(lifecycle?.status).toBe("mail_failed");
+    });
+
     it("does not mark resurrected lifecycle rows as deleted", async () => {
         const userId = await insertUser({ updatedAt: "2024-01-01 00:00:00" });
         const lifecycleId = await insertLifecycle({
@@ -194,6 +215,8 @@ async function insertLifecycle(values: {
     lastSeenAt: string;
     deletedAt?: string;
     resurrectedAt?: string;
+    emailRetryCount?: number;
+    warningSentAt?: string | null;
     deletionScheduledAt: string;
     status: "warned" | "resurrected" | "deleted" | "mail_failed";
 }) {
@@ -202,12 +225,13 @@ async function insertLifecycle(values: {
         .values({
             userId: values.userId,
             status: values.status,
+            emailRetryCount: values.emailRetryCount,
             username: "test-user",
             deletedAt: values.deletedAt,
             lastSeenAt: values.lastSeenAt,
             lastEmailError: "previous-error",
             resurrectedAt: values.resurrectedAt,
-            warningSentAt: "2024-01-01 00:00:00",
+            warningSentAt: values.warningSentAt === undefined ? "2024-01-01 00:00:00" : values.warningSentAt,
             warningTokenHash: `token-hash-${values.userId}`,
             deletionScheduledAt: values.deletionScheduledAt,
         })

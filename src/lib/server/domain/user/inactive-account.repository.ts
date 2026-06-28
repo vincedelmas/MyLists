@@ -3,7 +3,7 @@ import {paginate} from "@/lib/server/database/pagination";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {inactiveAccountDeletion, user} from "@/lib/server/database/schema";
 import {WarningFailedPayload, WarningSentPayload} from "@/lib/types/inactive.types";
-import {and, asc, count, eq, exists, gt, gte, inArray, isNull, like, lt, lte, notExists, or, sql} from "drizzle-orm";
+import {and, asc, count, eq, exists, gt, gte, inArray, isNotNull, isNull, like, lt, lte, notExists, or, sql} from "drizzle-orm";
 
 
 export class InactiveAccountRepository {
@@ -185,6 +185,7 @@ export class InactiveAccountRepository {
                 ),
                 isNull(inactiveAccountDeletion.deletedAt),
                 isNull(inactiveAccountDeletion.resurrectedAt),
+                isNotNull(inactiveAccountDeletion.warningSentAt),
                 lte(user.updatedAt, inactiveAccountDeletion.lastSeenAt),
                 lte(inactiveAccountDeletion.deletionScheduledAt, sql<string>`datetime('now')`),
             ))
@@ -209,6 +210,7 @@ export class InactiveAccountRepository {
                 eq(inactiveAccountDeletion.userId, userId),
                 eq(inactiveAccountDeletion.id, lifecycleId),
                 isNull(inactiveAccountDeletion.resurrectedAt),
+                isNotNull(inactiveAccountDeletion.warningSentAt),
                 inArray(inactiveAccountDeletion.status, ["warned", "mail_failed"]),
                 lte(inactiveAccountDeletion.deletionScheduledAt, sql<string>`datetime('now')`),
                 exists(db

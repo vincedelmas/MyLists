@@ -64,9 +64,11 @@ export class CollectionsService {
         };
     }
 
-    async getUserCollections(targetUserId: number, actorId?: number, mediaType?: MediaType) {
+    async getUserCollections(targetUserId: number, actorId?: number, mediaType?: MediaType, actorRole?: RoleType | null) {
         const isOwner = (actorId === targetUserId);
-        const collections = await this.repository.getUserCollections(targetUserId, isOwner, mediaType);
+        const canViewPrivate = isOwner || isAtLeastRole(actorRole, RoleType.ADMIN);
+        const collections = await this.repository.getUserCollections(targetUserId, canViewPrivate, mediaType);
+
         return this._enrichWithPreviews(collections);
     }
 

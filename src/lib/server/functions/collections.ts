@@ -52,7 +52,7 @@ export const getUserCollections = createServerFn({ method: "GET" })
     .handler(async ({ data: { mediaType }, context: { user, currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.getUserCollections(user.id, currentUser?.id, mediaType);
+        return collectionService.getUserCollections(user.id, currentUser?.id, mediaType, currentUser?.role as RoleType | null);
     });
 
 

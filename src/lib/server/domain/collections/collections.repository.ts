@@ -114,7 +114,7 @@ export class CollectionsRepository {
             .where(and(eq(collectionItems.collectionId, collectionId), eq(collectionItems.mediaId, mediaId)));
     }
 
-    static async getUserCollections(targetUserId: number, isOwner: boolean, mediaType?: MediaType) {
+    static async getUserCollections(targetUserId: number, canViewPrivate: boolean, mediaType?: MediaType) {
         return getDbClient()
             .select({
                 ownerName: user.name,
@@ -141,7 +141,7 @@ export class CollectionsRepository {
             .where(and(
                 eq(collections.ownerId, targetUserId),
                 mediaType ? eq(collections.mediaType, mediaType) : undefined,
-                isOwner ? undefined : inArray(collections.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]),
+                canViewPrivate ? undefined : inArray(collections.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]),
             ))
             .orderBy(desc(collections.likeCount));
     }

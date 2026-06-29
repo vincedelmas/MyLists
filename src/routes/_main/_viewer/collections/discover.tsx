@@ -14,6 +14,8 @@ import {communityCollectionsSchema, CommunitySearch} from "@/lib/schemas";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {communityCollectionsOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import React from "react";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/discover")({
@@ -54,13 +56,19 @@ function CollectionsDiscoverPage() {
                                 return updateFilters({ page: 1, mediaType: val === "all" ? undefined : (val as MediaType) })
                             }}
                         >
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger className="w-full capitalize">
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Types</SelectItem>
+                                <SelectItem value="all">
+                                    <div className="flex items-center gap-2">
+                                        <MainThemeIcon type="all"/>
+                                        <span>All Types</span>
+                                    </div>
+                                </SelectItem>
                                 {mediaTypes.map((mediaType) =>
                                     <SelectItem key={mediaType} value={mediaType} className="capitalize">
+                                        <MainThemeIcon type={mediaType} className="size-3.5"/>
                                         {mediaType}
                                     </SelectItem>
                                 )}

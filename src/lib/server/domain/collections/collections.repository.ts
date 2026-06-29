@@ -155,6 +155,8 @@ export class CollectionsRepository {
         ) : undefined;
 
         return paginate({
+            perPage: 12,
+            maxPerPage: 12,
             page: params.page,
             getTotal: () => {
                 return getDbClient()

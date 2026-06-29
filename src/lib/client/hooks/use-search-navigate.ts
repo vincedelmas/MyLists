@@ -1,4 +1,4 @@
-import {useRef, useState} from "react";
+import React, {useRef, useState} from "react";
 import {useDebounceCallback} from "@/lib/client/hooks/use-debounce";
 import {NavigateOptions, useNavigate} from "@tanstack/react-router";
 
@@ -42,5 +42,5 @@ export const useSearchNavigate = <T extends BaseSearchParams>({ search, delay = 
         }
     });
 
-    return { localSearch, handleInputChange, updateFilters };
+    return { localSearch, setLocalSearch, handleInputChange, updateFilters };
 };

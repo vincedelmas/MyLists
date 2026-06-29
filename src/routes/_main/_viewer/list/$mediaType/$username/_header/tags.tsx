@@ -7,116 +7,135 @@ import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
 import {DropdownMenu} from "@radix-ui/react-dropdown-menu";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {SimpleSearch, simpleSearchSchema} from "@/lib/schemas";
 import {Layers, MoreVertical, Pen, Tags, Trash2} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {Pagination} from "@/lib/client/components/general/Pagination";
 import {tagsViewOptions} from "@/lib/client/react-query/query-options";
+import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/tags")({
-    loader: async ({ context: { queryClient }, params: { mediaType, username } }) => {
-        return queryClient.ensureQueryData(tagsViewOptions(mediaType, username));
+    validateSearch: simpleSearchSchema,
+    loaderDeps: ({ search }) => ({ search }),
+    loader: async ({ context: { queryClient }, params: { mediaType, username }, deps: { search } }) => {
+        return queryClient.ensureQueryData(tagsViewOptions(mediaType, username, search));
     },
     component: TagsView,
 });
 
 
 function TagsView() {
+    const filters = Route.useSearch();
     const { currentUser } = useAuth();
     const { username, mediaType } = Route.useParams();
     const editMutation = useEditTagMutation(mediaType);
-    const [searchQuery, setSearchQuery] = useState("");
     const isOwner = !!currentUser && currentUser?.name === username;
-    const { data: tags } = useSuspenseQuery(tagsViewOptions(mediaType, username),);
+    const { data } = useSuspenseQuery(tagsViewOptions(mediaType, username, filters));
+    const { localSearch, setLocalSearch, handleInputChange, updateFilters } = useSearchNavigate<SimpleSearch>({
+        search: filters.search ?? "",
+        options: { resetScroll: false },
+    });
 
-    const search = searchQuery.toLowerCase();
-    const filteredTags = tags.filter((c) => c.tagName.toLowerCase().includes(search));
+    const trimLowSearch = localSearch.trim().toLowerCase();
+    const searchIsSynced = trimLowSearch === (filters.search ?? "").trim().toLowerCase();
+    const showCreateButton = isOwner && trimLowSearch.length > 0 && searchIsSynced && !data.exactMatch;
 
-    const showCreateButton = isOwner && searchQuery.trim().length > 0
-        && !tags.some((c) => c.tagName.toLowerCase() === searchQuery.trim().toLowerCase(),);
+    const clearSearch = () => {
+        setLocalSearch("");
+        updateFilters({ search: undefined, page: 1 });
+    };
 
-    const handleCreate = () => {
-        const trimmed = searchQuery.trim();
+    const handleCreateTag = () => {
+        const trimmed = localSearch.trim();
         if (!trimmed || editMutation.isPending) return;
 
         editMutation.mutate({ tag: { name: trimmed }, action: TagAction.ADD }, {
-            onSuccess: () => setSearchQuery(""),
+            onSuccess: () => {
+                clearSearch();
+            },
         });
     };
 
+    const handleDeleteTag = (name: string) => {
+        editMutation.mutate({ tag: { name }, action: TagAction.DELETE_ALL });
+    }
+
+    const handleRenameTag = (oldName: string, newName: string) => {
+        editMutation.mutate({ tag: { name: newName, oldName }, action: TagAction.RENAME })
+    }
+
     return (
         <>
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h2 className="text-xl font-semibold tracking-tight">
-                            {isOwner ? "Your" : `${username}`} Tags
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                            All the tags from {isOwner ? "your" : `${username}`} list
-                        </p>
-                    </div>
-
-                    <div className="relative w-72 max-sm:w-full">
-                        <Input
-                            value={searchQuery}
-                            className="h-10 bg-popover/50"
-                            placeholder="Find or create tag..."
-                            onChange={(ev) => setSearchQuery(ev.target.value)}
-                            onKeyDown={(ev) => {
-                                if (ev.key === "Enter" && showCreateButton) handleCreate();
-                                if (ev.key === "Escape") setSearchQuery("");
-                            }}
-                        />
-                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 flex items-center">
-                            {showCreateButton ?
-                                <Button
-                                    size="sm"
-                                    onClick={handleCreate}
-                                    disabled={editMutation.isPending}
-                                    className="h-7 bg-app-accent/80 hover:bg-app-accent text-[10px] font-bold px-2.5
-                                    rounded shadow-sm transition-all text-primary/90"
-                                >
-                                    {editMutation.isPending ? "..." : "CREATE"}
-                                </Button>
-                                :
-                                <div className="px-2 py-1 rounded bg-popover/50 border text-[10px] text-muted-foreground
-                                font-mono tracking-tighter">
-                                    ESC
-                                </div>
-                            }
-                        </div>
-                    </div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 className="text-xl font-semibold tracking-tight">
+                        {isOwner ? "Your" : `${username}`} Tags
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                        All the tags from {isOwner ? "your" : `${username}`} list
+                    </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
-                    {filteredTags.length === 0 ?
-                        <EmptyState
-                            icon={Tags}
-                            className="col-span-full py-20"
-                            message={searchQuery
-                                ? `No tags found matching "${searchQuery}". Create it?`
-                                : "No tags created yet."
-                            }
-                        />
-                        :
-                        filteredTags.map((col) =>
-                            <TagCard
-                                tag={col}
-                                key={col.tagId}
-                                isOwner={isOwner}
-                                username={username}
-                                mediaType={mediaType}
-                                onDelete={(name) => editMutation.mutate({ tag: { name }, action: TagAction.DELETE_ALL })}
-                                onRename={(oldName, newName) => {
-                                    editMutation.mutate({ tag: { name: newName, oldName }, action: TagAction.RENAME })
-                                }}
-                            />
-                        )
-                    }
+                <div className="relative w-72 max-sm:w-full">
+                    <Input
+                        value={localSearch}
+                        onChange={handleInputChange}
+                        className="h-10 bg-popover/50"
+                        placeholder="Find or create tag..."
+                        onKeyDown={(ev) => {
+                            if (ev.key === "Enter" && showCreateButton) handleCreateTag();
+                            if (ev.key === "Escape") clearSearch();
+                        }}
+                    />
+                    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 flex items-center">
+                        {showCreateButton ?
+                            <Button
+                                size="sm"
+                                onClick={handleCreateTag}
+                                disabled={editMutation.isPending}
+                                className="h-7 bg-app-accent/80 hover:bg-app-accent text-[10px] font-bold px-2.5
+                                    rounded shadow-sm transition-all text-primary/90"
+                            >
+                                CREATE
+                            </Button>
+                            :
+                            <div className="px-2 py-1 rounded bg-popover/50 border text-[10px] text-muted-foreground font-mono tracking-tighter">
+                                ESC
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
+                {data.items.length === 0 ?
+                    <EmptyState
+                        icon={Tags}
+                        className="col-span-full py-20"
+                        message={filters.search ? `No tags found matching "${filters.search}". Create it?` : "No tags created yet."}
+                    />
+                    :
+                    data.items.map((col) =>
+                        <TagCard
+                            tag={col}
+                            key={col.tagId}
+                            isOwner={isOwner}
+                            username={username}
+                            mediaType={mediaType}
+                            onDelete={handleDeleteTag}
+                            onRename={handleRenameTag}
+                        />
+                    )
+                }
+            </div>
+            <Pagination
+                currentPage={data.page}
+                totalPages={data.pages}
+                onChangePage={(page) => updateFilters({ page })}
+            />
         </>
     );
 }

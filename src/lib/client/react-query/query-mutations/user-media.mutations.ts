@@ -3,8 +3,9 @@ import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {UpdatePayload} from "@/lib/types/user-media.types";
-import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
+import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
+import {allUpdatesOptions, historyOptions, mediaDetailsOptions, mediaListOptions, profileOptions, tagNamesOptions} from "@/lib/client/react-query/query-options";
 import {
     postAddMediaToList,
     postDeleteUserUpdates,
@@ -13,7 +14,6 @@ import {
     postUpdateUserCustomCover,
     postUpdateUserMedia
 } from "@/lib/server/functions/user-media";
-import {allUpdatesOptions, historyOptions, mediaDetailsOptions, mediaListOptions, profileOptions, tagNamesOptions, tagsViewOptions} from "@/lib/client/react-query/query-options";
 
 
 export type UserMediaQueryOption = ReturnType<typeof mediaDetailsOptions> | ReturnType<typeof mediaListOptions>;
@@ -226,7 +226,7 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
         },
         meta: { ...meta },
         onSuccess: async (data) => {
-            await queryClient.invalidateQueries({ queryKey: tagsViewOptions(mediaType, currentUser!.name).queryKey });
+            await queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name] });
 
             queryClient.setQueryData(tagNamesOptions(mediaType, false).queryKey, (oldData) => {
                 if (!oldData || !data) return;

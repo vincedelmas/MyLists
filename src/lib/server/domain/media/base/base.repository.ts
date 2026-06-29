@@ -1,4 +1,3 @@
-import {MediaListArgs, SearchType} from "@/lib/schemas";
 import {notFound} from "@tanstack/react-router";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {MediaInfo} from "@/lib/types/activity.types";
@@ -10,11 +9,12 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {MediaSchemaConfig} from "@/lib/types/media.config.types";
 import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
+import {MediaListArgs, SearchType, SimpleSearch} from "@/lib/schemas";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user} from "@/lib/server/database/schema";
-import {ExpandedListFilters, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData, UserTag} from "@/lib/types/media-list.types";
+import {ExpandedListFilters, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData} from "@/lib/types/media-list.types";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
 
 
@@ -616,8 +616,11 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         };
     }
 
-    async getTagsView(userId: number): Promise<UserTag[]> {
+    async getTagsView(userId: number, search: SimpleSearch) {
         const { listTable, mediaTable, tagTable } = this.config;
+
+        const pagination = resolvePagination({ page: search.page, perPage: 16, maxPerPage: 16 });
+        const searchCondition = search.search ? like(tagTable.name, `%${search.search}%`) : undefined;
 
         const rankedSq = getDbClient()
             .$with("ranked_data")
@@ -642,32 +645,55 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
                 .from(tagTable)
                 .leftJoin(mediaTable, eq(tagTable.mediaId, mediaTable.id))
                 .leftJoin(listTable, and(eq(tagTable.mediaId, listTable.mediaId), eq(listTable.userId, userId)))
-                .where(eq(tagTable.userId, userId))
+                .where(and(eq(tagTable.userId, userId), searchCondition))
             );
 
-        return getDbClient()
-            .with(rankedSq)
-            .select({
-                tagId: rankedSq.tagId,
-                tagName: rankedSq.tagName,
-                totalCount: rankedSq.totalCount,
-                medias: sql<{ mediaId: number; mediaName: string; mediaCover: string }[]>`
-                    json_group_array(json_object(
-                        'mediaId', ${rankedSq.mediaId}, 
-                        'mediaName', ${rankedSq.mediaName}, 
-                        'mediaCover', ${rankedSq.mediaCover}
-                    ))`.mapWith((rawString) => {
-                    const parsedArray = JSON.parse(rawString);
-                    return parsedArray.filter((item: any) => item.mediaId !== null).map((item: any) => ({
-                        ...item,
-                        mediaCover: mediaTable.imageCover.mapFromDriverValue(item.mediaCover),
-                    }))
-                }),
-            })
-            .from(rankedSq)
-            .where(lte(rankedSq.rowNumber, 3))
-            .groupBy(sql`${rankedSq.tagName}`)
-            .orderBy(desc(rankedSq.tagLastActivity));
+        const [{ total, exactMatch }, items] = await Promise.all([
+            getDbClient()
+                .select({
+                    total: countDistinct(tagTable.name),
+                    exactMatch: search.search
+                        ? sql<number>`max(case when lower(${tagTable.name}) = lower(${search.search}) then 1 else 0 end)`
+                        : sql<number>`0`,
+                })
+                .from(tagTable)
+                .where(and(eq(tagTable.userId, userId), searchCondition))
+                .then(([result]) => result),
+            getDbClient()
+                .with(rankedSq)
+                .select({
+                    tagId: rankedSq.tagId,
+                    tagName: rankedSq.tagName,
+                    totalCount: rankedSq.totalCount,
+                    medias: sql<{ mediaId: number; mediaName: string; mediaCover: string }[]>`
+                        json_group_array(json_object(
+                            'mediaId', ${rankedSq.mediaId},
+                            'mediaName', ${rankedSq.mediaName},
+                            'mediaCover', ${rankedSq.mediaCover}
+                        ))`.mapWith((rawString) => {
+                        const parsedArray = JSON.parse(rawString);
+                        return parsedArray.filter((item: any) => item.mediaId !== null).map((item: any) => ({
+                            ...item,
+                            mediaCover: mediaTable.imageCover.mapFromDriverValue(item.mediaCover),
+                        }))
+                    }),
+                })
+                .from(rankedSq)
+                .where(lte(rankedSq.rowNumber, 3))
+                .groupBy(sql`${rankedSq.tagName}`)
+                .orderBy(desc(rankedSq.tagLastActivity))
+                .limit(pagination.limit)
+                .offset(pagination.offset),
+        ]);
+
+        return {
+            total,
+            items: items,
+            page: pagination.page,
+            exactMatch: !!exactMatch,
+            perPage: pagination.perPage,
+            pages: Math.ceil(total / pagination.perPage),
+        };
     }
 
     async getUpcomingMedia(userId?: number, maxAWeek?: boolean): Promise<UpComingMedia[]> {

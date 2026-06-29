@@ -1,11 +1,9 @@
-import {z} from "zod";
-import {MediaType} from "@/lib/utils/enums";
 import {notFound} from "@tanstack/react-router";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {MediaListDataByType} from "@/lib/server/domain/media/base/base.repository";
 import {authorizationMiddleware, resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
-import {mediaListFiltersSchema, mediaListSchema, mediaListSearchFiltersSchema, mediaTypeUsernameSchema} from "@/lib/schemas";
+import {mediaListFiltersSchema, mediaListSchema, mediaListSearchFiltersSchema, mediaTypeUsernameSchema, simpleSearchSchema} from "@/lib/schemas";
 
 
 export const getUserListHeaderSF = createServerFn({ method: "GET" })
@@ -57,13 +55,13 @@ export const getMediaListSF = createServerFn({ method: "GET" })
 
 export const getTagsViewFn = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .validator(z.object({ username: z.string(), mediaType: z.enum(MediaType) }))
-    .handler(async ({ data: { mediaType }, context: { user } }) => {
+    .validator(mediaTypeUsernameSchema.extend({ search: simpleSearchSchema }))
+    .handler(async ({ data: { mediaType, search }, context: { user } }) => {
         const targetUserId = user.id;
         const container = await getContainer();
         const mediaService = container.registries.mediaService.getService(mediaType);
 
-        return mediaService.getTagsView(targetUserId);
+        return mediaService.getTagsView(targetUserId, search);
     });
 
 

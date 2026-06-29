@@ -8,8 +8,8 @@ import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {BaseProviderService} from "@/lib/server/domain/media/base/provider.service";
 import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {MediaListArgs, Pagination, SearchType, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
+import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
 export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends BaseRepository<TConfig>> {
@@ -143,8 +143,8 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return this.repository.getMediaList(currentUserId, userId, args);
     }
 
-    async getTagsView(userId: number) {
-        return this.repository.getTagsView(userId);
+    async getTagsView(userId: number, search: SimpleSearch) {
+        return this.repository.getTagsView(userId, search);
     }
 
     async addMediaToUserList(userId: number, mediaId: number, status?: Status) {

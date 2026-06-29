@@ -12,7 +12,6 @@ import {
     createCollectionSchema,
     mediaCommunityCollectionsSchema,
     updateCollectionSchema,
-    userCollectionsSchema,
     userCollectionsSearchSchema
 } from "@/lib/schemas";
 
@@ -44,16 +43,6 @@ export const getReadCollectionDetails = createServerFn({ method: "GET" })
         const container = await getContainer();
         const collectionService = container.services.collections;
         return collectionService.getCollectionDetails(collectionId, "read", currentUser?.id, currentUser?.role as RoleType | null);
-    });
-
-
-export const getUserCollections = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
-    .validator(userCollectionsSchema)
-    .handler(async ({ data: { mediaType }, context: { user, currentUser } }) => {
-        const container = await getContainer();
-        const collectionService = container.services.collections;
-        return collectionService.getUserCollections(user.id, currentUser?.id, mediaType, currentUser?.role as RoleType | null);
     });
 
 

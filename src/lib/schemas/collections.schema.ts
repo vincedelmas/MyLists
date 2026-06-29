@@ -45,11 +45,6 @@ export const collectionIdSchema = z.object({
     collectionId: coercedPositiveIntFieldSchema,
 });
 
-export const userCollectionsSchema = z.object({
-    username: usernameFieldSchema,
-    mediaType: mediaTypeFieldSchema.optional(),
-});
-
 export const userCollectionsFiltersSchema = paginationSchema.extend({
     search: optionalSearchFieldSchema,
     mediaType: mediaTypeFieldSchema.optional().catch(undefined),

@@ -7,15 +7,9 @@ import {
     getMediaCommunityCollections,
     getPaginatedUserCollections,
     getReadCollectionDetails,
-    getUserCollectionMemberships,
-    getUserCollections
+    getUserCollectionMemberships
 } from "@/lib/server/functions/collections";
 
-
-export const userCollectionsOptions = (username: string, mediaType?: MediaType) => queryOptions({
-    queryKey: ["collections", "user", username, mediaType] as const,
-    queryFn: () => getUserCollections({ data: { username, mediaType } }),
-});
 
 export const paginatedUserCollectionsOptions = (search: UserCollectionsSearch) => queryOptions({
     queryKey: ["collections", "user", "paginated", search] as const,

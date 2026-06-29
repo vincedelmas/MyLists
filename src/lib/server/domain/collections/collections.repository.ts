@@ -1,8 +1,8 @@
 import {alias} from "drizzle-orm/sqlite-core";
-import {CommunitySearch} from "@/lib/schemas";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {paginate} from "@/lib/server/database/pagination";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
 import {and, asc, count, desc, eq, getTableColumns, inArray, like, max, or, sql} from "drizzle-orm";
 
@@ -144,6 +144,63 @@ export class CollectionsRepository {
                 canViewPrivate ? undefined : inArray(collections.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]),
             ))
             .orderBy(desc(collections.likeCount));
+    }
+
+    static async getPaginatedUserCollections(targetUserId: number, canViewPrivate: boolean, params: Omit<UserCollectionsSearch, "username">) {
+        const searchFilter = params.search?.trim();
+        const searchCondition = searchFilter ? like(collections.title, `%${searchFilter}%`) : undefined;
+        const visibilityCondition = canViewPrivate ? undefined : inArray(collections.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]);
+
+        return paginate({
+            perPage: 12,
+            maxPerPage: 12,
+            page: params.page,
+            getTotal: () => {
+                return getDbClient()
+                    .select({ count: count() })
+                    .from(collections)
+                    .where(and(
+                        searchCondition,
+                        visibilityCondition,
+                        eq(collections.ownerId, targetUserId),
+                        params.mediaType ? eq(collections.mediaType, params.mediaType) : undefined,
+                    )).get()?.count ?? 0;
+            },
+            getItems: ({ limit, offset }) => {
+                return getDbClient()
+                    .select({
+                        ownerName: user.name,
+                        ownerImage: user.image,
+                        itemsCount: sql<number>`(
+                            SELECT COUNT(*)
+                            FROM ${collectionItems} ci
+                            WHERE ci.collection_id = ${collections.id}
+                        )`.as("itemsCount"),
+                        previewItems: sql`(
+                            SELECT json_group_array(media_id)
+                            FROM (
+                                SELECT ${collectionItems.mediaId} as media_id
+                                FROM ${collectionItems}
+                                WHERE ${collectionItems.collectionId} = ${collections.id}
+                                ORDER BY ${collectionItems.orderIndex} ASC
+                                LIMIT 4
+                            )
+                        )`.mapWith((val) => JSON.parse(val) as number[]).as("previewItems"),
+                        ...getTableColumns(collections),
+                    })
+                    .from(collections)
+                    .innerJoin(user, eq(collections.ownerId, user.id))
+                    .where(and(
+                        searchCondition,
+                        visibilityCondition,
+                        eq(collections.ownerId, targetUserId),
+                        params.mediaType ? eq(collections.mediaType, params.mediaType) : undefined,
+                    ))
+                    .orderBy(desc(collections.likeCount))
+                    .limit(limit)
+                    .offset(offset);
+            },
+        });
     }
 
     static async getPublicCollections(params: CommunitySearch) {

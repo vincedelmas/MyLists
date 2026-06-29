@@ -13,6 +13,7 @@ import {
 
 export type CreateCollection = z.infer<typeof createCollectionSchema>;
 export type CommunitySearch = z.infer<typeof communityCollectionsSchema>;
+export type UserCollectionsSearch = z.infer<typeof userCollectionsSearchSchema>;
 
 
 const collectionItemSchema = z.object({
@@ -47,6 +48,15 @@ export const collectionIdSchema = z.object({
 export const userCollectionsSchema = z.object({
     username: usernameFieldSchema,
     mediaType: mediaTypeFieldSchema.optional(),
+});
+
+export const userCollectionsFiltersSchema = paginationSchema.extend({
+    search: optionalSearchFieldSchema,
+    mediaType: mediaTypeFieldSchema.optional().catch(undefined),
+});
+
+export const userCollectionsSearchSchema = userCollectionsFiltersSchema.extend({
+    username: usernameFieldSchema,
 });
 
 export const communityCollectionsSchema = paginationSchema.extend({

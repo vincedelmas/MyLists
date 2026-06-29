@@ -9,6 +9,13 @@ import {CollectionsRepository} from "@/lib/server/domain/collections/collections
 const createService = () => {
     const repository = {
         getUserCollections: vi.fn().mockResolvedValue([]),
+        getPaginatedUserCollections: vi.fn().mockResolvedValue({
+            page: 1,
+            pages: 0,
+            total: 0,
+            items: [],
+            perPage: 12,
+        }),
     } as unknown as typeof CollectionsRepository;
 
     const service = new CollectionsService({} as UserService, repository, {} as typeof MediaServiceRegistry);
@@ -40,5 +47,26 @@ describe("CollectionsService.getUserCollections", () => {
         await service.getUserCollections(10, 20, undefined, RoleType.USER);
 
         expect(repository.getUserCollections).toHaveBeenCalledWith(10, false, undefined);
+    });
+});
+
+
+describe("CollectionsService.getPaginatedUserCollections", () => {
+    it("passes filters through while keeping private collections hidden from regular viewers", async () => {
+        const { repository, service } = createService();
+        const filters = { search: "favorites", page: 2, mediaType: MediaType.MOVIES };
+
+        await service.getPaginatedUserCollections(10, filters, 20, RoleType.USER);
+
+        expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, false, filters);
+    });
+
+    it("includes private collections for the collection owner", async () => {
+        const { repository, service } = createService();
+        const filters = { search: undefined, page: 1, mediaType: undefined };
+
+        await service.getPaginatedUserCollections(10, filters, 10, RoleType.USER);
+
+        expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, true, filters);
     });
 });

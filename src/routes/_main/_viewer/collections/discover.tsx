@@ -77,7 +77,7 @@ function CollectionsDiscoverPage() {
                     </div>
 
                     {!isAnonymous &&
-                        <Button asChild className="col-span-1 justify-center whitespace-nowrap sm:w-auto">
+                        <Button asChild className="col-span-1 justify-center whitespace-nowrap sm:w-auto" size="sm" variant="emeraldy">
                             <Link to="/collections/create">
                                 <Plus className="size-4 shrink-0"/> New collection
                             </Link>

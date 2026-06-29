@@ -1,10 +1,11 @@
 import {MediaType} from "@/lib/utils/enums";
-import {CommunitySearch} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
+import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import {
     getCommunityCollections,
     getEditCollectionDetails,
     getMediaCommunityCollections,
+    getPaginatedUserCollections,
     getReadCollectionDetails,
     getUserCollectionMemberships,
     getUserCollections
@@ -14,6 +15,11 @@ import {
 export const userCollectionsOptions = (username: string, mediaType?: MediaType) => queryOptions({
     queryKey: ["collections", "user", username, mediaType] as const,
     queryFn: () => getUserCollections({ data: { username, mediaType } }),
+});
+
+export const paginatedUserCollectionsOptions = (search: UserCollectionsSearch) => queryOptions({
+    queryKey: ["collections", "user", "paginated", search] as const,
+    queryFn: () => getPaginatedUserCollections({ data: search }),
 });
 
 

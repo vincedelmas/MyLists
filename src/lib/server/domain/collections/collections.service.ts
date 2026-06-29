@@ -1,7 +1,7 @@
-import {CommunitySearch} from "@/lib/schemas";
 import {notFound} from "@tanstack/react-router";
 import {UserService} from "@/lib/server/domain/user";
 import {MediaInfo} from "@/lib/types/activity.types";
+import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {AssertCollection, CollectionItemInput} from "@/lib/types/collections.types";
@@ -70,6 +70,19 @@ export class CollectionsService {
         const collections = await this.repository.getUserCollections(targetUserId, canViewPrivate, mediaType);
 
         return this._enrichWithPreviews(collections);
+    }
+
+    async getPaginatedUserCollections(targetUserId: number, params: Omit<UserCollectionsSearch, "username">, actorId?: number, actorRole?: RoleType | null) {
+        const isOwner = (actorId === targetUserId);
+        const canViewPrivate = isOwner || isAtLeastRole(actorRole, RoleType.ADMIN);
+
+        const paginatedCollections = await this.repository.getPaginatedUserCollections(targetUserId, canViewPrivate, params);
+        const results = await this._enrichWithPreviews(paginatedCollections.items);
+
+        return {
+            ...paginatedCollections,
+            items: results,
+        };
     }
 
     async getPublicCollections(params: CommunitySearch) {

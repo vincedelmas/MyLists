@@ -157,15 +157,8 @@ function FeatureVotesPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <form.AppForm>
-                                <form
-                                    className="space-y-4"
-                                    onSubmit={(ev) => {
-                                        ev.preventDefault();
-                                        ev.stopPropagation();
-                                        void form.handleSubmit();
-                                    }}
-                                >
-                                    <fieldset disabled={createFeatureMutation.isPending || isAnonymous}>
+                                <form.FormRoot className="space-y-4">
+                                    <form.FormFieldset disabled={createFeatureMutation.isPending || isAnonymous}>
                                         <FieldGroup className="gap-6">
                                             <form.AppField name="title">
                                                 {(field) =>
@@ -186,14 +179,14 @@ function FeatureVotesPage() {
                                                 }
                                             </form.AppField>
                                         </FieldGroup>
-                                    </fieldset>
+                                    </form.FormFieldset>
                                     <div className="flex items-center justify-center">
                                         <form.SubmitButton
                                             label="Add Feature for Voting"
                                             disabled={createFeatureMutation.isPending || isAnonymous}
                                         />
                                     </div>
-                                </form>
+                                </form.FormRoot>
                             </form.AppForm>
                         </CardContent>
                     </Card>

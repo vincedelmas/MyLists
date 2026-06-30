@@ -1,13 +1,11 @@
 import {toast} from "sonner";
-import {useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
+import {FieldGroup} from "@/lib/client/components/ui/field";
+import {useAppForm} from "@/lib/client/components/forms/form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ResetPassword, resetPasswordSchema, tokenSchema} from "@/lib/schemas";
 import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
 export const Route = createFileRoute("/_main/_public/reset-password")({
@@ -33,78 +31,69 @@ export const Route = createFileRoute("/_main/_public/reset-password")({
 });
 
 
+const formDefaultValues: ResetPassword = {
+    newPassword: "",
+    confirmPassword: "",
+};
+
+
 function ResetPasswordPage() {
     const { token } = Route.useSearch();
     const navigate = Route.useNavigate();
-    const form = useForm<ResetPassword>({
-        resolver: zodResolver(resetPasswordSchema),
-        defaultValues: {
-            newPassword: "",
-            confirmPassword: "",
-        }
+    const form = useAppForm({
+        defaultValues: formDefaultValues,
+        validators: {
+            onSubmit: resetPasswordSchema,
+        },
+        onSubmit: async ({ value }) => {
+            await authClient.resetPassword({ token, newPassword: value.newPassword }, {
+                onError: (ctx) => {
+                    toast.error(ctx.error.message ?? "An unexpected error occurred. Please try again later.");
+                },
+                onSuccess: async () => {
+                    form.reset();
+                    await navigate({ to: "/login", replace: true });
+                    toast.success("Your password was modified successfully!");
+                },
+            });
+        },
     });
-
-    const onSubmit = async (submitted: ResetPassword) => {
-        await authClient.resetPassword({ token, newPassword: submitted.newPassword }, {
-            onError: (ctx) => {
-                toast.error(ctx.error.message ?? "An unexpected error occurred. Please try again later.");
-            },
-            onSuccess: async () => {
-                form.reset();
-                await navigate({ to: "/login", replace: true });
-                toast.success("Your password was modified successfully!");
-            },
-        });
-    };
 
     return (
         <PageTitle title="Reset Your Password" subtitle="You can now change your password to a new one">
             <div className="mt-4 w-75 max-sm:w-full">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <fieldset disabled={form.formState.isSubmitting}>
-                            <div className="space-y-4">
-                                <FormField
-                                    name="newPassword"
-                                    control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem>
-                                            <FormLabel>Password</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    type="password"
-                                                    placeholder="********"
-                                                />
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
+                <form.AppForm>
+                    <form.FormRoot className="space-y-4">
+                        <form.FormFieldset>
+                            <FieldGroup className="gap-4">
+                                <form.AppField name="newPassword">
+                                    {(field) =>
+                                        <field.TextField
+                                            type="password"
+                                            label="Password"
+                                            placeholder="********"
+                                            autoComplete="new-password"
+                                        />
                                     }
-                                />
-                                <FormField
-                                    name="confirmPassword"
-                                    control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem>
-                                            <FormLabel>Confirm Password</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    type="password"
-                                                    placeholder="********"
-                                                />
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
+                                </form.AppField>
+                                <form.AppField name="confirmPassword">
+                                    {(field) =>
+                                        <field.TextField
+                                            type="password"
+                                            placeholder="********"
+                                            label="Confirm Password"
+                                            autoComplete="new-password"
+                                        />
                                     }
-                                />
-                            </div>
-                        </fieldset>
-                        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                            Submit
-                        </Button>
-                    </form>
-                </Form>
+                                </form.AppField>
+                            </FieldGroup>
+                        </form.FormFieldset>
+                        <form.SubmitButton
+                            label="Submit"
+                            className="w-full"
+                        />
+                    </form.FormRoot>
+                </form.AppForm>
             </div>
         </PageTitle>
     );

@@ -8,6 +8,42 @@ import {useFieldContext, useFormContext} from "@/lib/client/components/forms/for
 import {Field, FieldDescription, FieldError, FieldLabel} from "@/lib/client/components/ui/field";
 
 
+type FormRootProps = Omit<React.ComponentProps<"form">, "onSubmit">;
+
+
+export function FormRoot({ children, ...props }: FormRootProps) {
+    const form = useFormContext();
+
+    return (
+        <form
+            {...props}
+            onSubmit={(ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                void form.handleSubmit();
+            }}
+        >
+            {children}
+        </form>
+    );
+}
+
+
+export function FormFieldset({ children, disabled, ...props }: React.ComponentProps<"fieldset">) {
+    const form = useFormContext();
+
+    return (
+        <form.Subscribe selector={(state) => state.isSubmitting}>
+            {(isSubmitting) =>
+                <fieldset {...props} disabled={disabled || isSubmitting}>
+                    {children}
+                </fieldset>
+            }
+        </form.Subscribe>
+    );
+}
+
+
 type TextFieldProps = Omit<React.ComponentProps<typeof Input>, "id" | "name" | "value" | "onBlur" | "onChange"> & {
     label: string;
     description?: string;

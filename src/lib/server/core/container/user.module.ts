@@ -1,6 +1,8 @@
 import {MediadleService} from "@/lib/server/domain/mediadle/mediadle.service";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
+import {WcfService} from "@/lib/server/domain/which-came-first/wcf.service";
+import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
 import {CollectionsService} from "@/lib/server/domain/collections/collections.service";
 import {AchievementsService} from "@/lib/server/domain/achievements/achievements.service";
 import {FeatureVotesService} from "@/lib/server/domain/feature-votes/feature-votes.service";
@@ -32,6 +34,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
     // User Repositories
     const userRepository = UserRepository;
     const mediadleRepository = MediadleRepository;
+    const whichCameFirstRepository = WcfRepository;
     const userStatsRepository = UserStatsRepository;
     const userUpdatesRepository = UserUpdatesRepository;
     const userProfileRepository = UserProfileRepository;
@@ -51,6 +54,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
     const achievementsService = new AchievementsService(achievementsRepository);
     const notificationsService = new NotificationsService(notificationsRepository);
     const userSimilarityService = new UserSimilarityService(userSimilarityRepository);
+    const whichCameFirstService = new WcfService(whichCameFirstRepository, mediaServiceRegistry);
     const userProfileService = new UserProfileService(userProfileRepository, mediaServiceRegistry);
     const featureVotesService = new FeatureVotesService(featureVotesRepository, notificationsService);
     const userActivityService = new UserActivityService(userActivityRepository, mediaServiceRegistry);
@@ -70,6 +74,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
             userActivity: userActivityRepository,
             featureVotes: featureVotesRepository,
             notifications: notificationsRepository,
+            whichCameFirst: whichCameFirstRepository,
             userSimilarity: userSimilarityRepository,
             inactiveAccount: inactiveAccountRepository,
         },
@@ -86,6 +91,7 @@ export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistr
             featureVotes: featureVotesService,
             notifications: notificationsService,
             userSimilarity: userSimilarityService,
+            whichCameFirst: whichCameFirstService,
             inactiveAccount: inactiveAccountService,
         },
     };

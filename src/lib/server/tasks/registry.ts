@@ -19,6 +19,7 @@ import {removeUnusedMediaCoversTask} from "@/lib/server/tasks/definitions/remove
 import {createMediaNotificationsTask} from "@/lib/server/tasks/definitions/create-media-notifications.task";
 import {removeUnusedProfileImagesTask} from "@/lib/server/tasks/definitions/remove-unused-profile-images.task";
 import {inactiveAccountDeletionTask} from "@/lib/server/tasks/definitions/inactive-account-deletion.task";
+import {curateWCFTask} from "@/lib/server/tasks/definitions/curate-wcf.task";
 
 
 export const taskRegistry = {
@@ -41,6 +42,7 @@ export const taskRegistry = {
     [addGenresToBooksUsingLlmTask.name]: addGenresToBooksUsingLlmTask,
     [backfillGameCollectionIdsTask.name]: backfillGameCollectionIdsTask,
     [removeUnusedProfileImagesTask.name]: removeUnusedProfileImagesTask,
+    [curateWCFTask.name]: curateWCFTask,
 };
 
 

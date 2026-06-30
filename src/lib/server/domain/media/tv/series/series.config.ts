@@ -26,6 +26,9 @@ export const seriesConfig: SeriesSchemaConfig = {
     networkTable: seriesNetwork,
     epsPerSeasonTable: seriesEpisodesPerSeason,
     mediaType: MediaType.SERIES,
+    popularity: {
+        eligibility: sql`${series.voteCount} >= 300`,
+    },
     mediaList: {
         baseSelection: {
             mediaName: series.name,

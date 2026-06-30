@@ -14,6 +14,7 @@ import {deleteNonActivatedUsersTask} from "@/lib/server/tasks/definitions/delete
 import {createMediaNotificationsTask} from "@/lib/server/tasks/definitions/create-media-notifications.task";
 import {removeUnusedProfileImagesTask} from "@/lib/server/tasks/definitions/remove-unused-profile-images.task";
 import {inactiveAccountDeletionTask} from "@/lib/server/tasks/definitions/inactive-account-deletion.task";
+import {curateWCFTask} from "@/lib/server/tasks/definitions/curate-wcf.task";
 
 
 export const maintenanceTask = defineTask({
@@ -28,6 +29,7 @@ export const maintenanceTask = defineTask({
         await ctx.step(removeUnusedMediaCoversTask.name, () => removeUnusedMediaCoversTask.handler(ctx, input));
         await ctx.step(removeUnusedProfileImagesTask.name, () => removeUnusedProfileImagesTask.handler(ctx, input));
         await ctx.step(bulkMediaRefreshTask.name, () => bulkMediaRefreshTask.handler(ctx, input));
+        await ctx.step(curateWCFTask.name, () => curateWCFTask.handler(ctx, input));
         await ctx.step(createMediaNotificationsTask.name, () => createMediaNotificationsTask.handler(ctx, input));
         await ctx.step(lockOldMoviesTask.name, () => lockOldMoviesTask.handler(ctx, input));
         await ctx.step(computeAllUsersStatsTask.name, () => computeAllUsersStatsTask.handler(ctx, input));

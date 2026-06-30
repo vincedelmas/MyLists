@@ -33,6 +33,10 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return coverFilenames.map(({ imageCover }) => imageCover.split("/").pop() as string);
     }
 
+    async getPopularMediaRefs() {
+        return this.repository.getPopularMediaRefs();
+    }
+
     async getCustomCoverFilenames() {
         const coverFilenames = await this.repository.getCustomCoverFilenames();
         return coverFilenames

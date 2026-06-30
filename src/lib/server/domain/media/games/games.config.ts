@@ -20,6 +20,9 @@ export const gamesConfig: GamesSchemaConfig = {
     genreTable: gamesGenre,
     tagTable: gamesTags,
     mediaType: MediaType.GAMES,
+    popularity: {
+        eligibility: sql`${games.voteCount} >= 100`,
+    },
     mediaList: {
         baseSelection: {
             mediaName: games.name,

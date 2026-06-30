@@ -1,6 +1,6 @@
 import {notFound} from "@tanstack/react-router";
-import {statusUtils} from "@/lib/utils/media-mapping";
 import {MediaInfo} from "@/lib/types/activity.types";
+import {statusUtils} from "@/lib/utils/media-mapping";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {TopAffinityConfig} from "@/lib/types/stats.types";
 import {Achievement} from "@/lib/types/achievements.types";
@@ -8,13 +8,13 @@ import {UpComingMedia} from "@/lib/types/notifications.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {MediaSchemaConfig} from "@/lib/types/media.config.types";
-import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {MediaListArgs, SearchType, SimpleSearch} from "@/lib/schemas";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
+import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user} from "@/lib/server/database/schema";
 import {ExpandedListFilters, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData} from "@/lib/types/media-list.types";
+import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user} from "@/lib/server/database/schema";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
 
 
@@ -82,6 +82,29 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         return getDbClient()
             .select({ imageCover: mediaTable.imageCover })
             .from(mediaTable);
+    }
+
+    async getPopularMediaRefs() {
+        const { mediaTable, popularity } = this.config;
+        if (!popularity) return [];
+
+        return getDbClient()
+            .select({
+                id: mediaTable.id,
+                releaseDate: mediaTable.releaseDate,
+            })
+            .from(mediaTable)
+            .where(and(
+                popularity.eligibility,
+                isNotNull(mediaTable.releaseDate),
+                ne(mediaTable.imageCover, ""),
+                ne(mediaTable.releaseDate, ""),
+                lte(mediaTable.releaseDate, sql`date('now')`),
+            ))
+            .then((rows) => rows.map((row) => ({
+                id: row.id as number,
+                releaseDate: row.releaseDate! as string,
+            })));
     }
 
     async getCustomCoverFilenames() {

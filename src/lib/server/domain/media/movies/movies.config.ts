@@ -20,6 +20,9 @@ export const moviesConfig: MovieSchemaConfig = {
     listTable: moviesList,
     genreTable: moviesGenre,
     mediaType: MediaType.MOVIES,
+    popularity: {
+        eligibility: sql`${movies.voteCount} >= 1000`,
+    },
     mediaList: {
         baseSelection: {
             mediaName: movies.name,

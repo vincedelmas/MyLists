@@ -8,6 +8,7 @@ export * from "./media/games.schema";
 export * from "./media/books.schema";
 export * from "./media/manga.schema";
 export * from "./mediadle.schema";
+export * from "./wcf.schema";
 export * from "./achievements.schema";
 export * from "./notifications.schema";
 export * from "./admin.schema";

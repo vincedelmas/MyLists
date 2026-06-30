@@ -26,6 +26,9 @@ export const animeConfig: AnimeSchemaConfig = {
     networkTable: animeNetwork,
     epsPerSeasonTable: animeEpisodesPerSeason,
     mediaType: MediaType.ANIME,
+    popularity: {
+        eligibility: sql`${anime.voteCount} >= 50`,
+    },
     mediaList: {
         baseSelection: {
             mediaName: anime.name,

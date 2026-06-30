@@ -6,10 +6,10 @@ import {useQueryClient} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
+import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
 import {authOptions} from "@/lib/client/react-query/query-options";
-import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {Link, useLocation, useNavigate} from "@tanstack/react-router";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
@@ -32,6 +32,7 @@ import {
     ChartNoAxesColumn,
     ChevronDown,
     Clapperboard,
+    GitCompareArrows,
     ListOrdered,
     LogOut,
     Menu,
@@ -108,13 +109,19 @@ export const Navbar = () => {
                                 Community
                                 <ChevronDown className="ml-2 size-3 opacity-70"/>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-36" align="end">
+                            <DropdownMenuContent className="w-fit" align="end">
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem asChild>
                                         <Link to="/moviedle">
                                             <Clapperboard className="size-3.5"/> Moviedle
                                         </Link>
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link to="/which-came-first">
+                                            <GitCompareArrows className="size-3.5"/> Which Came First?
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator className="mx-1"/>
                                     <DropdownMenuItem asChild>
                                         <Link to="/collections/discover">
                                             <ListOrdered className="size-3.5"/> Collections
@@ -332,19 +339,17 @@ export const Navbar = () => {
                         </div>
 
                         <div className="p-2 max-h-[70vh] overflow-y-auto scrollbar-thin mt-3">
-                            <div className="flex flex-wrap justify-around items-center gap-2 px-2">
-                                {!isAnonymous &&
-                                    <Link to="/taste-matches" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
-                                            <UsersRound className="size-4"/>
-                                            <span className="text-[10px]">Matches</span>
-                                        </button>
-                                    </Link>
-                                }
+                            <div className="flex flex-wrap justify-around items-center gap-x-4 gap-y-4 px-2">
                                 <Link to="/moviedle" onClick={() => setIsMobileMenuOpen(false)}>
                                     <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
                                         <Clapperboard className="size-4"/>
                                         <span className="text-[10px]">Moviedle</span>
+                                    </button>
+                                </Link>
+                                <Link to="/which-came-first" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                        <GitCompareArrows className="size-4"/>
+                                        <span className="text-[10px]">WCF?</span>
                                     </button>
                                 </Link>
                                 <Link to="/collections/discover" onClick={() => setIsMobileMenuOpen(false)}>
@@ -371,6 +376,14 @@ export const Navbar = () => {
                                         <span className="text-[10px]">Trends</span>
                                     </button>
                                 </Link>
+                                {!isAnonymous &&
+                                    <Link to="/taste-matches" onClick={() => setIsMobileMenuOpen(false)}>
+                                        <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                            <UsersRound className="size-4"/>
+                                            <span className="text-[10px]">Matches</span>
+                                        </button>
+                                    </Link>
+                                }
                             </div>
                         </div>
                     </div>

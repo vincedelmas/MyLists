@@ -20,6 +20,9 @@ export const mangaConfig: MangaSchemaConfig = {
     genreTable: mangaGenre,
     tagTable: mangaTags,
     mediaType: MediaType.MANGA,
+    popularity: {
+        eligibility: sql`${manga.voteCount} >= 5000`,
+    },
     mediaList: {
         baseSelection: {
             mediaName: manga.name,

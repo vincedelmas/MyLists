@@ -83,6 +83,9 @@ export interface MediaSchemaConfig<
     genreTable: TGenreTable,
     tagTable: TTagTable,
     mediaType: MediaType,
+    popularity?: {
+        eligibility: SQL,
+    },
     mediaList: {
         defaultStatus: Status;
         defaultSortName: string;

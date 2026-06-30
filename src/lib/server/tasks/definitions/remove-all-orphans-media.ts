@@ -28,6 +28,7 @@ export const removeAllOrphansMediaTask = defineTask({
                     // Remove in other services
                     await userUpdatesService.deleteMediaUpdates(mediaType, mediaIdsToRemove);
                     await notificationsService.deleteMediaNotifications(mediaType, mediaIdsToRemove);
+                    await container.services.whichCameFirst.deletePoolMedia(mediaType, mediaIdsToRemove);
 
                     // Remove main media and associated tables: actors, genres, companies, authors...
                     await mediaService.removeMediaByIds(mediaIdsToRemove);

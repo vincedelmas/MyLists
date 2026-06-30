@@ -5,6 +5,7 @@ export * from "./collections.schema";
 export * from "./common.schema";
 export * from "./feature-votes.schema";
 export * from "./mediadle.schema";
+export * from "./wcf.schema";
 export * from "./media-details.schema";
 export * from "./media-lists.schema";
 export * from "./search.schema";

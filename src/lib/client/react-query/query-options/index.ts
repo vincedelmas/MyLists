@@ -4,6 +4,7 @@ export * from "./collections.options";
 export * from "./feature-votes.options";
 export * from "./media.options";
 export * from "./mediadle.options";
+export * from "./wcf.options";
 export * from "./notifications.options";
 export * from "./search.options";
 export * from "./taste-matches.options";

@@ -1,14 +1,13 @@
-import {useState} from "react";
-import {useForm} from "react-hook-form";
+import React, {useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {zodResolver} from "@hookform/resolvers/zod";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatDateTime} from "@/lib/utils/date-formatting";
+import {FieldGroup} from "@/lib/client/components/ui/field";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {Textarea} from "@/lib/client/components/ui/textarea";
+import {useAppForm} from "@/lib/client/components/forms/form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {FeatureStatus, isAtLeastRole, RoleType,} from "@/lib/utils/enums";
@@ -17,7 +16,6 @@ import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
@@ -48,6 +46,12 @@ const STATUS_STYLES: Record<FeatureStatus, string> = {
 };
 
 
+const formDefaultValues: PostFeatureRequest = {
+    title: "",
+    description: "",
+};
+
+
 function FeatureVotesPage() {
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
@@ -57,30 +61,27 @@ function FeatureVotesPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const createFeatureMutation = useCreateFeatureRequestMutation();
     const isAdmin = isAtLeastRole(currentUser?.role ?? null, RoleType.ADMIN);
-    const form = useForm<PostFeatureRequest>({
-        resolver: zodResolver(postFeatureRequestSchema),
-        defaultValues: {
-            title: "",
-            description: "",
+    const form = useAppForm({
+        defaultValues: formDefaultValues,
+        validators: {
+            onSubmit: postFeatureRequestSchema,
+        },
+        onSubmit: async ({ value }) => {
+            await createFeatureMutation.mutateAsync({ data: value });
+            form.reset();
         },
     });
 
-    const filteredRequests = apiData.items.filter((item) => {
-        if (searchQuery.trim()) {
-            const search = searchQuery.toLowerCase();
-            return item.title.toLowerCase().includes(search) || item.description?.toLowerCase().includes(search);
-        }
+    const filteredRequests = apiData.items
+        .filter((item) => {
+            if (searchQuery.trim()) {
+                const search = searchQuery.toLowerCase();
+                return item.title.toLowerCase().includes(search) || item.description?.toLowerCase().includes(search);
+            }
 
-        return activeTab === "active" ? ACTIVE_STATUSES.includes(item.status) : item.status === activeTab;
-    }).sort((a, b) => b.totalVotes - a.totalVotes);
-
-    const handleAddNewFeature = (submitted: PostFeatureRequest) => {
-        createFeatureMutation.mutate({ data: submitted }, {
-            onSuccess: () => {
-                form.reset();
-            },
-        });
-    };
+            return activeTab === "active" ? ACTIVE_STATUSES.includes(item.status) : item.status === activeTab;
+        })
+        .sort((a, b) => b.totalVotes - a.totalVotes);
 
     const handleVote = (featureId: number) => {
         toggleVoteMutation.mutate({ data: { featureId } });
@@ -149,56 +150,51 @@ function FeatureVotesPage() {
                             description="Log-in or register to submit your proposal and join the community in voting for our next features."
                         />
                         <CardHeader>
-                            <CardTitle>Propose a new feature</CardTitle>
+                            <CardTitle>Propose a New Feature</CardTitle>
                             <CardDescription>
                                 Share a short title and optional description.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(handleAddNewFeature)} className="space-y-4">
-                                    <fieldset disabled={createFeatureMutation.isPending || isAnonymous} className="space-y-4">
-                                        <FormField
-                                            name="title"
-                                            control={form.control}
-                                            render={({ field }) =>
-                                                <FormItem>
-                                                    <FormLabel>Title</FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            {...field}
-                                                            placeholder="Feature title"
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage/>
-                                                </FormItem>
-                                            }
-                                        />
-                                        <FormField
-                                            name="description"
-                                            control={form.control}
-                                            render={({ field }) =>
-                                                <FormItem>
-                                                    <FormLabel>Description</FormLabel>
-                                                    <FormControl>
-                                                        <Textarea
-                                                            {...field}
-                                                            rows={3}
-                                                            placeholder="Optional: add a short context or use-case."
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage/>
-                                                </FormItem>
-                                            }
-                                        />
+                            <form.AppForm>
+                                <form
+                                    className="space-y-4"
+                                    onSubmit={(ev) => {
+                                        ev.preventDefault();
+                                        ev.stopPropagation();
+                                        void form.handleSubmit();
+                                    }}
+                                >
+                                    <fieldset disabled={createFeatureMutation.isPending || isAnonymous}>
+                                        <FieldGroup className="gap-6">
+                                            <form.AppField name="title">
+                                                {(field) =>
+                                                    <field.TextField
+                                                        label="Title"
+                                                        autoComplete="off"
+                                                        placeholder="Feature title"
+                                                    />
+                                                }
+                                            </form.AppField>
+                                            <form.AppField name="description">
+                                                {(field) =>
+                                                    <field.TextareaField
+                                                        rows={3}
+                                                        label="Description"
+                                                        placeholder="Optional: add a short context or use-case."
+                                                    />
+                                                }
+                                            </form.AppField>
+                                        </FieldGroup>
                                     </fieldset>
                                     <div className="flex items-center justify-center">
-                                        <Button type="submit" disabled={createFeatureMutation.isPending || isAnonymous}>
-                                            Add Feature for Voting
-                                        </Button>
+                                        <form.SubmitButton
+                                            label="Add Feature for Voting"
+                                            disabled={createFeatureMutation.isPending || isAnonymous}
+                                        />
                                     </div>
                                 </form>
-                            </Form>
+                            </form.AppForm>
                         </CardContent>
                     </Card>
                 </div>

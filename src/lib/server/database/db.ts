@@ -11,7 +11,7 @@ const sqlite = new Database(serverEnv.DATABASE_URL, { create: true });
 sqlite.run("PRAGMA foreign_keys = ON;");
 sqlite.run("PRAGMA foreign_keys = ON");
 sqlite.run("PRAGMA synchronous = NORMAL");
-sqlite.run("PRAGMA checkpoint(FULL)");
+sqlite.run("PRAGMA wal_checkpoint(FULL)");
 sqlite.run("PRAGMA busy_timeout = 10000");
 
 

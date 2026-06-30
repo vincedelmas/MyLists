@@ -14,7 +14,7 @@ export const dbMaintenanceTask = defineTask({
         await ctx.step("run-pragmas", async () => {
             db.run("PRAGMA foreign_keys = ON");
             db.run("PRAGMA synchronous = NORMAL");
-            db.run("PRAGMA checkpoint(FULL)");
+            db.run("PRAGMA wal_checkpoint(FULL)");
             db.run("PRAGMA busy_timeout = 10000");
         });
 

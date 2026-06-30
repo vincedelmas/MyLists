@@ -6,6 +6,7 @@ import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
+import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
@@ -15,7 +16,12 @@ import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
-export const GeneralForm = () => {
+export const Route = createFileRoute("/_main/_private/settings/_layout/general")({
+    component: GeneralSettingsPage,
+});
+
+
+function GeneralSettingsPage() {
     const { currentUser, setCurrentUser } = useAuth();
     const generalSettingsMutation = useGeneralSettingsMutation();
     const [imageCropperResetKey, setImageCropperResetKey] = useState(0);
@@ -138,7 +144,7 @@ export const GeneralForm = () => {
             </form>
         </Form>
     );
-};
+}
 
 
 const PrivacyPopover = () => {

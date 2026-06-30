@@ -1,9 +1,14 @@
 import React from "react";
-import {Link} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {createFileRoute, Link} from "@tanstack/react-router";
 
 
-export const FeaturesWalkthrough = () => {
+export const Route = createFileRoute("/_main/_private/settings/_layout/features-walkthrough")({
+    component: FeaturesWalkthroughPage,
+});
+
+
+function FeaturesWalkthroughPage() {
     return (
         <div className="flex flex-col h-fit max-w-125 gap-5 rounded-xl bg-popover/50 border p-6">
             <div>
@@ -23,4 +28,4 @@ export const FeaturesWalkthrough = () => {
             </Button>
         </div>
     );
-};
+}

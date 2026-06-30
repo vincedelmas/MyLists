@@ -5,7 +5,7 @@ import {Controller, useFormContext, useFormState, useWatch} from "react-hook-for
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {CuratedMediaManager} from "@/lib/client/components/user-settings/profile-custom/CuratedMediaManager";
+import {CuratedMediaManager} from "@/lib/client/components/user-settings/CuratedMediaManager";
 import {HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab} from "@/lib/types/profile-custom.types";
 
 
@@ -31,7 +31,7 @@ export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache, roo
 
     const { isDirty } = useFormState({ control });
     const activeMode = useWatch({ control, name: `${activeTab}.mode` });
-    
+
     return (
         <Card>
             <CardHeader>

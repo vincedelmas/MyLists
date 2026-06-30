@@ -4,6 +4,7 @@ import {useForm, useWatch} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {capitalize} from "@/lib/utils/text-formatting";
+import {createFileRoute} from "@tanstack/react-router";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
@@ -12,11 +13,16 @@ import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+
+
+export const Route = createFileRoute("/_main/_private/settings/_layout/content-lists")({
+    component: MediaListFormPage,
+});
 
 
 const mediaTypeConfigs = [
@@ -42,7 +48,7 @@ const mediaTypeConfigs = [
 ];
 
 
-export const MediaListForm = () => {
+function MediaListFormPage() {
     const { currentUser, setCurrentUser } = useAuth();
     const listSettingsMutation = useListSettingsMutation();
     const downloadListAsCSVMutation = useDownloadListAsCSVMutation();
@@ -271,7 +277,7 @@ export const MediaListForm = () => {
             </div>
         </div>
     );
-};
+}
 
 
 const SearchPopover = () => {

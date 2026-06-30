@@ -26,7 +26,7 @@ export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache, 
     const { containerRef, search, setSearch, isOpen, debouncedSearch, reset } = useSearchContainer({
         onReset: () => setRootError(null),
     });
-    
+
     const selectedKeys = new Set(fields.map((f) => toItemKey(f)));
     const { data: searchResults, isFetching, error } = useQuery(profileCustomSearchOptions(activeTab, debouncedSearch));
 
@@ -108,7 +108,7 @@ export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache, 
             <div className="space-y-3">
                 <div>
                     <Label>Curated Items</Label>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-1">
                         Up to {PROFILE_MAX_HIGHLIGHTED_MEDIA} items. Use arrows to control order.
                     </p>
                 </div>

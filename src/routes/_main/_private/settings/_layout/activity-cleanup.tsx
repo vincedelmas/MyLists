@@ -4,6 +4,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
+import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
@@ -13,7 +14,12 @@ import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
-export function ActivityCleanupSettings() {
+export const Route = createFileRoute("/_main/_private/settings/_layout/activity-cleanup")({
+    component: ActivityCleanupSettings,
+});
+
+
+function ActivityCleanupSettings() {
     const mediaType = "all";
     const { currentUser } = useAuth();
     const today = toDateInputValue(new Date());

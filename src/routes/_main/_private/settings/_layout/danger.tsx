@@ -1,13 +1,18 @@
 import {Trash2} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
-import {useNavigate} from "@tanstack/react-router";
 import {useQueryClient} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {authOptions} from "@/lib/client/react-query/query-options";
+import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {useDeleteAccountMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
-export const DangerForm = () => {
+export const Route = createFileRoute("/_main/_private/settings/_layout/danger")({
+    component: DangerForm,
+});
+
+
+function DangerForm() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const deleteAccountMutation = useDeleteAccountMutation();
@@ -48,4 +53,4 @@ export const DangerForm = () => {
             </div>
         </div>
     );
-};
+}

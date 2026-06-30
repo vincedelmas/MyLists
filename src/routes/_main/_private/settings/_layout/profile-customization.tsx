@@ -1,32 +1,40 @@
 import {toast} from "sonner";
 import {useState} from "react";
-import {useQuery} from "@tanstack/react-query";
 import {toItemKey} from "@/lib/utils/media-mapping";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Form} from "@/lib/client/components/ui/form";
+import {createFileRoute} from "@tanstack/react-router";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {highlightedMediaSettingsSchema} from "@/lib/schemas";
-import {Skeleton} from "@/lib/client/components/ui/skeleton";
 import {FieldErrors, useForm, useWatch} from "react-hook-form";
 import {profileCustomOptions} from "@/lib/client/react-query/query-options";
 import {useProfileCustomMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {TabCustomContent} from "@/lib/client/components/user-settings/profile-custom/TabCustomContent";
-import {ProfileSidebarTabs} from "@/lib/client/components/user-settings/profile-custom/ProfileSidebarTabs";
+import {TabCustomContent} from "@/lib/client/components/user-settings/TabCustomContent";
+import {ProfileSidebarTabs} from "@/lib/client/components/user-settings/ProfileSidebarTabs";
 import {HIGHLIGHTED_MEDIA_TABS, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab,} from "@/lib/types/profile-custom.types";
 
 
-export const ProfileCustomForm = () => {
+export const Route = createFileRoute("/_main/_private/settings/_layout/profile-customization")({
+    loader: ({ context: { queryClient } }) => {
+        return queryClient.ensureQueryData(profileCustomOptions);
+    },
+    component: ProfileCustomForm,
+});
+
+
+function ProfileCustomForm() {
     const mutation = useProfileCustomMutation();
-    const { data, isPending, error } = useQuery(profileCustomOptions);
+    const apiData = useSuspenseQuery(profileCustomOptions).data;
     const [rootError, setRootError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<HighlightedMediaTab>("overview");
     const [localPreviewCache, setLocalPreviewCache] = useState<Record<string, HighlightedMediaSearchItem>>({});
     const form = useForm<HighlightedMediaSettings, unknown, HighlightedMediaSettings>({
         resolver: zodResolver<HighlightedMediaSettings, unknown, HighlightedMediaSettings>(highlightedMediaSettingsSchema),
-        values: data?.settings ? cloneSettings(data.settings) : undefined,
+        values: cloneSettings(apiData.settings),
     });
 
     const allFormValues = useWatch({ control: form.control });
-    const combinedPreviewCache = { ...(data?.previews ? buildPreviewCache(data.previews) : {}), ...localPreviewCache };
+    const combinedPreviewCache = { ...buildPreviewCache(apiData.previews), ...localPreviewCache };
 
     const onSubmit = (formData: HighlightedMediaSettings) => {
         setRootError(null);
@@ -49,24 +57,6 @@ export const ProfileCustomForm = () => {
         }
         setRootError(getFirstErrorMessage(errors) ?? "Customization could not be saved.");
     };
-
-    if (isPending || !allFormValues || Object.keys(allFormValues).length === 0) {
-        return (
-            <div className="space-y-4">
-                <Skeleton className="h-7 w-56"/>
-                <Skeleton className="h-24 w-full"/>
-                <Skeleton className="h-80 w-full"/>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <p className="text-sm text-destructive">
-                Failed to load customization settings.
-            </p>
-        );
-    }
 
     return (
         <Form {...form}>
@@ -99,7 +89,7 @@ export const ProfileCustomForm = () => {
             </form>
         </Form>
     );
-};
+}
 
 
 const cloneSettings = (settings: HighlightedMediaSettings) => {

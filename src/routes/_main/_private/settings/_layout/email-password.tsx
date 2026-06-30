@@ -3,6 +3,7 @@ import authClient from "@/lib/utils/auth-client";
 import {useMutation} from "@tanstack/react-query";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
+import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {PasswordSettingsForm, passwordSettingsFormSchema} from "@/lib/schemas";
@@ -11,7 +12,12 @@ import {usePasswordSettingsMutation} from "@/lib/client/react-query/query-mutati
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
-export const EmailAndPasswordForm = () => {
+export const Route = createFileRoute("/_main/_private/settings/_layout/email-password")({
+    component: EmailAndPasswordPage,
+});
+
+
+function EmailAndPasswordPage() {
     const passwordMutation = usePasswordSettingsMutation();
     const passwordForm = useForm<PasswordSettingsForm>({
         resolver: zodResolver(passwordSettingsFormSchema),
@@ -143,4 +149,4 @@ export const EmailAndPasswordForm = () => {
             </Form>
         </div>
     );
-};
+}

@@ -17,12 +17,11 @@ interface CommentaryProps {
 
 
 export const UpdateComment = ({ content, updateComment, disabled = false }: CommentaryProps) => {
-    const [comment, setComment] = useState(content);
-    const readableDialogComment = comment ?? content;
     const [isEditing, setIsEditing] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [isDialogEditing, setIsDialogEditing] = useState(false);
     const shouldShowExpandedReader = !!content && content.trim().length >= 280;
+    const [comment, setComment] = useState<string | null | undefined>(undefined);
 
     const handleEditToggle = () => {
         if (disabled) return;
@@ -143,10 +142,10 @@ export const UpdateComment = ({ content, updateComment, disabled = false }: Comm
                         </>
                         :
                         <div className="max-h-[70vh] overflow-y-auto pr-4 text-sm leading-relaxed scrollbar-thin sm:text-base -mr-3">
-                            {readableDialogComment &&
+                            {content &&
                                 <StructuredComment
+                                    content={content}
                                     className="wrap-break-word"
-                                    content={readableDialogComment}
                                 />
                             }
                         </div>

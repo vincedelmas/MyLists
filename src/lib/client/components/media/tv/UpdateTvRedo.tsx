@@ -15,7 +15,7 @@ interface UpdateTvRedoProps {
 
 export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps) => {
     const [open, setOpen] = useState(false);
-    const [draftRedo, setDraftRedo] = useState(redoValues);
+    const [draftRedo, setDraftRedo] = useState<number[]>([]);
     const totalRedo = redoValues.reduce((a, b) => a + b, 0);
 
     const onOpenChange = (open: boolean) => {

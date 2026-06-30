@@ -157,7 +157,6 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
             if (options.backlogMode && !activityUpdate) {
                 throw new FormattedError("Progress only can be edited in backlog mode.");
             }
-
             if (options.backlogMode && activityUpdate && !options.loggedAt) {
                 throw new FormattedError("Please choose a backlog date.");
             }

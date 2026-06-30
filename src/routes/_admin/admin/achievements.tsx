@@ -1,9 +1,9 @@
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {AchievementTier} from "@/lib/schemas";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {Label} from "@/lib/client/components/ui/label";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
@@ -28,43 +28,29 @@ export const Route = createFileRoute("/_admin/admin/achievements")({
 function AchievementPage() {
     const updateTiersMutation = useAdminUpdateTiersMutation();
     const [editedName, setEditedName] = useState("");
+    const [editedDesc, setEditedDesc] = useState("");
     const apiData = useSuspenseQuery(adminAchievementsOptions).data;
     const updateAchievementMutation = useAdminUpdateAchievementMutation();
-    const [editedDescription, setEditedDescription] = useState("");
-    const [editedMediaType, setEditedMediaType] = useState<any>("");
     const [editableTiers, setEditableTiers] = useState<AchievementTier[]>([]);
     const [isTierDialogOpen, setIsTierDialogOpen] = useState(false);
     const [editAchievementDialogOpen, setEditAchievementDialogOpen] = useState(false);
     const [editingAchievement, setEditingAchievement] = useState<Achievement | null>(null);
 
-    useEffect(() => {
-        if (editAchievementDialogOpen && editingAchievement) {
-            setEditedName(editingAchievement.name);
-            setEditedMediaType(editingAchievement.mediaType);
-            setEditedDescription(editingAchievement.description);
-        }
-    }, [editAchievementDialogOpen, editingAchievement]);
-
-    useEffect(() => {
-        if (isTierDialogOpen && editingAchievement) {
-            setEditableTiers(JSON.parse(JSON.stringify(editingAchievement.tiers || [])));
-        }
-    }, [isTierDialogOpen, editingAchievement]);
-
     const editAchievement = (achievement: Achievement) => {
+        setEditedName(achievement.name);
         setEditingAchievement(achievement);
+        setEditedDesc(achievement.description);
         setEditAchievementDialogOpen(true);
     };
 
-    const handleSaveAchievementChanges = async () => {
+    const handleSaveChanges = async () => {
         if (!editingAchievement) return;
 
         setEditAchievementDialogOpen(false);
-
         updateAchievementMutation.mutate({
             data: {
                 name: editedName,
-                description: editedDescription,
+                description: editedDesc,
                 achievementId: editingAchievement.id,
             }
         });
@@ -77,6 +63,7 @@ function AchievementPage() {
     const editTier = (achievement: Achievement) => {
         setIsTierDialogOpen(true);
         setEditingAchievement(achievement);
+        setEditableTiers(achievement.tiers.map(tier => ({ ...tier, criteria: { ...tier.criteria } })));
     };
 
     const handleTierCountChange = (tierId: number, value: string) => {
@@ -171,10 +158,10 @@ function AchievementPage() {
                                 <Label htmlFor="description" className="text-right">Description</Label>
                                 <Textarea
                                     id="description"
+                                    value={editedDesc}
                                     className="col-span-3"
-                                    value={editedDescription}
                                     disabled={updateAchievementMutation.isPending}
-                                    onChange={(ev) => setEditedDescription(ev.target.value)}
+                                    onChange={(ev) => setEditedDesc(ev.target.value)}
                                 />
                             </div>
                         </div>
@@ -187,10 +174,7 @@ function AchievementPage() {
                         >
                             Cancel
                         </Button>
-                        <Button
-                            onClick={handleSaveAchievementChanges}
-                            disabled={updateAchievementMutation.isPending || !editedName || !editedDescription || !editedMediaType}
-                        >
+                        <Button onClick={handleSaveChanges} disabled={updateAchievementMutation.isPending || !editedName || !editedDesc}>
                             Save Changes
                         </Button>
                     </DialogFooter>

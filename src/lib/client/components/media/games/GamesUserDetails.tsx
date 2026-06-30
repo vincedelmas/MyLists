@@ -30,7 +30,8 @@ export const GamesUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
             {userMedia.status !== Status.PLAN_TO_PLAY &&
                 <>
                     <UpdatePlaytime
-                        playtime={userMedia.playtime ?? 0}
+                        key={userMedia.playtime ?? 0}
+                        playtimeInMin={userMedia.playtime ?? 0}
                         updatePlaytime={updateUserMediaMutation}
                     />
                     <div className="flex justify-between items-center">

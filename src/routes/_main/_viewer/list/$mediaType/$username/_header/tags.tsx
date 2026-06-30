@@ -152,8 +152,8 @@ interface TagCardProps {
 
 
 const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagCardProps) => {
+    const [editName, setEditName] = useState("");
     const [isEditing, setIsEditing] = useState(false);
-    const [editName, setEditName] = useState(tag.tagName);
 
     const handleRename = () => {
         if (editName.trim() && editName !== tag.tagName) {
@@ -233,7 +233,10 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                                    <DropdownMenuItem onClick={() => {
+                                        setEditName(tag.tagName);
+                                        setIsEditing(true);
+                                    }}>
                                         <Pen className="size-4"/> Rename
                                     </DropdownMenuItem>
                                     <DropdownMenuItem className="focus:bg-red-500/10" onClick={handleDelete}>

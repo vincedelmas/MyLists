@@ -41,6 +41,8 @@
         "@react-email/components": "1.0.12",
         "@react-email/render": "^2.0.8",
         "@t3-oss/env-core": "^0.13.11",
+        "@tanstack/react-form": "^1.33.0",
+        "@tanstack/react-form-start": "^1.33.0",
         "@tanstack/react-query": "^5.100.14",
         "@tanstack/react-router": "^1.170.9",
         "@tanstack/react-start": "^1.168.16",

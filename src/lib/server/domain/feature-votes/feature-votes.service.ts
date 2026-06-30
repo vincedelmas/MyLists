@@ -50,7 +50,7 @@ export class FeatureVotesService {
         });
 
         if (duplicate) {
-            throw new FormattedError("That feature already exists. Please vote for it instead.");
+            throw new FormattedError("That feature request already exists. Please vote for it instead.");
         }
 
         const admins = await this.repository.getAdminUserIds();

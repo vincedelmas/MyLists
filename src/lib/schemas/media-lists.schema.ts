@@ -13,7 +13,7 @@ import {
 export type MediaListArgs = z.infer<typeof mediaListArgsSchema>;
 
 
-export const mediaListArgsSchema = paginationSchema.extend({
+const mediaListArgsSchema = paginationSchema.extend({
     sorting: sortingFieldSchema,
     search: optionalSearchFieldSchema,
     comment: optionalCoercedBooleanFieldSchema,

@@ -147,11 +147,8 @@ export const formatMonth = (month: string | number, opts: Intl.DateTimeFormatOpt
     const value = Number(month);
     if (!Number.isInteger(value) || value < 1 || value > 12) return String(month);
 
-    return new Intl.DateTimeFormat("en-US", {
-        month: "long",
-        ...opts,
-        timeZone: "UTC",
-    }).format(new Date(Date.UTC(2000, value - 1, 1, 12)));
+    return new Intl.DateTimeFormat("en-US", { month: "long", ...opts, timeZone: "UTC" })
+        .format(new Date(Date.UTC(2000, value - 1, 1, 12)));
 };
 
 

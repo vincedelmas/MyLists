@@ -135,9 +135,9 @@ function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
         <p
             data-slot="field-description"
             className={cn(
-                "text-muted-foreground text-sm font-normal leading-normal " +
+                "text-muted-foreground text-xs font-normal leading-normal " +
                 "group-has-data-[orientation=horizontal]/field:text-balance",
-                "nth-last-2:-mt-1 last:mt-0 [[data-variant=legend]+&]:-mt-1.5",
+                "nth-last-2:-mt-1 last:mt-0.5 [[data-variant=legend]+&]:-mt-1.5",
                 "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
                 className
             )}
@@ -166,18 +166,28 @@ function FieldSeparator({ children, className, ...props }: React.ComponentProps<
 }
 
 
-function FieldError({ className, children, errors, ...props }: React.ComponentProps<"div"> & { errors?: Array<{ message?: string } | undefined> }) {
+function getErrorMessages(error: unknown): string[] {
+    if (typeof error === "string") return [error];
+    if (Array.isArray(error)) return error.flatMap(getErrorMessages);
+    if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+        return [error.message];
+    }
+    return [];
+}
+
+
+function FieldError({ className, children, errors, ...props }: React.ComponentProps<"div"> & { errors?: unknown[] }) {
     const content = useMemo(() => {
-        if (!errors) return null;
         if (children) return children;
-        if (errors.length === 1 && errors[0]?.message) return errors[0].message;
+        if (!errors) return null;
+
+        const messages = errors.flatMap(getErrorMessages);
+        if (messages.length === 1) return messages[0];
 
         return (
             <ul className="ml-4 flex list-disc flex-col gap-1">
-                {errors.map((error, index) => error?.message &&
-                    <li key={index}>
-                        {error.message}
-                    </li>
+                {messages.map((message, index) =>
+                    <li key={`${message}-${index}`}>{message}</li>
                 )}
             </ul>
         );

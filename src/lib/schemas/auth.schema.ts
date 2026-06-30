@@ -57,11 +57,19 @@ export const forgotPasswordSchema = z.object({
 });
 
 
+export const usernameSchema = z.string().trim()
+    .min(1, "Username is required.")
+    .min(3, "The username is too short (3 min).")
+    .max(15, "The username is too long (15 max).");
+
+
+export const usernameAvailabilitySchema = z.object({
+    username: usernameSchema,
+});
+
+
 export const registerSchema = z.object({
-    username: z.string()
-        .min(1, "Username is required.")
-        .min(3, "The username is too short (3 min).")
-        .max(15, "The username is too long (15 max)."),
+    username: usernameSchema,
     email: z.email().min(1, "Email is required."),
     password: z.string()
         .min(1, "Password is required.")

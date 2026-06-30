@@ -2,7 +2,17 @@ import {auth} from "@/lib/server/core/auth";
 import {createServerFn} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
+import {usernameAvailabilitySchema} from "@/lib/schemas";
 import {ApiProviderType, PrivacyType, RatingSystemType, RoleType} from "@/lib/utils/enums";
+
+
+export const getUsernameAvailability = createServerFn({ method: "GET" })
+    .validator(usernameAvailabilitySchema)
+    .handler(async ({ data: { username } }) => {
+        const userService = await getContainer().then((c) => c.services.user);
+        const available = await userService.isUsernameAvailable(username);
+        return { available };
+    });
 
 
 export const getCurrentUser = createServerFn({ method: "GET" })

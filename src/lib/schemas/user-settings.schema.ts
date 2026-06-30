@@ -1,4 +1,5 @@
 import * as z from "zod";
+import {usernameSchema} from "@/lib/schemas/auth.schema";
 import {mediaTypeFieldSchema, mediaTypeMediaIdSchema} from "@/lib/schemas/common.schema";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType} from "@/lib/utils/enums";
 import {
@@ -71,9 +72,7 @@ export const generalSettingsSchema = z.object({
         .refine((file) => !file || file.size <= 10 * 1024 * 1000, "Image must be less than 10MB."),
     backgroundImage: z.instanceof(File).optional()
         .refine((file) => !file || file.size <= 10 * 1024 * 1000, "Image must be less than 10MB."),
-    username: z.string().trim()
-        .min(3, "Username too short (3 min).")
-        .max(15, "Username too long (15 max)."),
+    username: usernameSchema,
 });
 
 export const mediaListSettingsSchema = z.object({

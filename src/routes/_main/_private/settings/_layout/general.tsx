@@ -1,19 +1,16 @@
 import {toast} from "sonner";
 import {useState} from "react";
 import {CircleHelp} from "lucide-react";
-import {useForm} from "react-hook-form";
 import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
-import {Button} from "@/lib/client/components/ui/button";
-import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
+import {useAppForm} from "@/lib/client/components/forms/form";
+import {getUsernameAvailability} from "@/lib/server/functions/auth";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
+import {GeneralSettings, generalSettingsSchema, usernameSchema} from "@/lib/schemas";
+import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/general")({
@@ -25,124 +22,134 @@ function GeneralSettingsPage() {
     const { currentUser, setCurrentUser } = useAuth();
     const generalSettingsMutation = useGeneralSettingsMutation();
     const [imageCropperResetKey, setImageCropperResetKey] = useState(0);
-    const form = useForm<GeneralSettings>({
-        resolver: zodResolver(generalSettingsSchema),
-        values: {
+    const form = useAppForm({
+        defaultValues: {
             username: currentUser?.name ?? "",
             privacy: currentUser?.privacy ?? PrivacyType.RESTRICTED,
+        } as GeneralSettings,
+        validators: {
+            onSubmit: generalSettingsSchema,
+        },
+        onSubmit: async ({ value }) => {
+            const submittedData = generalSettingsSchema.parse(value);
+            const formData = new FormData();
+
+            Object.entries(submittedData).forEach(([key, fieldValue]) => {
+                if (fieldValue !== undefined && fieldValue !== null) {
+                    formData.append(key, fieldValue);
+                }
+            });
+
+            await generalSettingsMutation.mutateAsync({ data: formData });
+            await setCurrentUser();
+
+            form.reset({
+                privacy: submittedData.privacy,
+                username: submittedData.username,
+            });
+
+            setImageCropperResetKey((key) => key + 1);
+            toast.success("Settings successfully updated");
         },
     });
 
-    const onSubmit = async (submittedData: GeneralSettings) => {
-        const formData = new FormData();
-
-        Object.entries(submittedData).forEach(([key, value]) => {
-            if (value !== undefined && value !== null) {
-                formData.append(key, value);
-            }
-        });
-
-        generalSettingsMutation.mutate({ data: formData }, {
-            onSuccess: async () => {
-                await setCurrentUser();
-                form.resetField("profileImage");
-                form.resetField("backgroundImage");
-                setImageCropperResetKey((key) => key + 1);
-                toast.success("Settings successfully updated");
-            },
-        });
-    };
-
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="w-90 max-sm:w-full">
-                <div className="space-y-7">
-                    <FormField
-                        name="username"
-                        control={form.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Username</FormLabel>
-                                <FormControl>
-                                    <Input {...field}/>
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        name="privacy"
-                        control={form.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>
-                                    <div className="flex items-center gap-2">
-                                        Privacy
-                                        <PrivacyPopover/>
-                                    </div>
-                                </FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select a privacy mode"/>
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value={PrivacyType.PUBLIC}>Public</SelectItem>
-                                        <SelectItem value={PrivacyType.RESTRICTED}>Restricted</SelectItem>
-                                        <SelectItem value={PrivacyType.PRIVATE}>Private</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        name="profileImage"
-                        control={form.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Profile image</FormLabel>
-                                <FormControl>
-                                    <ImageCropper
-                                        aspect={1}
-                                        cropShape="round"
-                                        fileName={field.name}
-                                        onCropApplied={field.onChange}
-                                        key={`profile-${imageCropperResetKey}`}
-                                        resultClassName="h-[150px] rounded-full"
-                                    />
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        name="backgroundImage"
-                        control={form.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Background Image</FormLabel>
-                                <FormControl>
-                                    <ImageCropper
-                                        cropShape="rect"
-                                        sliceHeight={256}
-                                        fileName={field.name}
-                                        onCropApplied={field.onChange}
-                                        key={`background-${imageCropperResetKey}`}
-                                        resultClassName="w-full h-16 object-cover rounded"
-                                    />
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                <Button type="submit" className="mt-5" disabled={!form.formState.isDirty || generalSettingsMutation.isPending}>
-                    Update
-                </Button>
-            </form>
-        </Form>
+        <form.AppForm>
+            <form.FormRoot className="w-90 max-sm:w-full">
+                <form.FormFieldset>
+                    <FieldGroup className="gap-6">
+                        <form.AppField
+                            name="username"
+                            validators={{
+                                onChange: usernameSchema,
+                                onChangeAsyncDebounceMs: 400,
+                                onChangeAsync: async ({ value }) => {
+                                    if (value.trim() === currentUser?.name) return;
+
+                                    try {
+                                        const { available } = await getUsernameAvailability({ data: { username: value } });
+                                        return available ? undefined : "Username not available.";
+                                    }
+                                    catch {
+                                        return {
+                                            validationStatus: "unavailable" as const,
+                                            message: "Check Unavailable. Please try again.",
+                                        };
+                                    }
+                                },
+                            }}
+                        >
+                            {(field) =>
+                                <field.TextField
+                                    label="Username"
+                                    showValStatus={true}
+                                    autoComplete="username"
+                                />
+                            }
+                        </form.AppField>
+                        <form.AppField name="privacy">
+                            {(field) =>
+                                <field.SelectField
+                                    label="Privacy"
+                                    labelAccessory={<PrivacyPopover/>}
+                                    placeholder="Select a privacy mode"
+                                    options={[
+                                        { value: PrivacyType.PUBLIC, label: "Public" },
+                                        { value: PrivacyType.RESTRICTED, label: "Restricted" },
+                                        { value: PrivacyType.PRIVATE, label: "Private" },
+                                    ]}
+                                />
+                            }
+                        </form.AppField>
+                        <form.AppField name="profileImage">
+                            {(field) => {
+                                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+                                return (
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldLabel htmlFor={`${field.name}-input`}>Profile image</FieldLabel>
+                                        <ImageCropper
+                                            aspect={1}
+                                            cropShape="round"
+                                            fileName={field.name}
+                                            onCropApplied={field.handleChange}
+                                            key={`profile-${imageCropperResetKey}`}
+                                            resultClassName="h-[150px] rounded-full"
+                                        />
+                                        {isInvalid && <FieldError errors={field.state.meta.errors}/>}
+                                    </Field>
+                                );
+                            }}
+                        </form.AppField>
+                        <form.AppField name="backgroundImage">
+                            {(field) => {
+                                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+                                return (
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldLabel htmlFor={`${field.name}-input`}>Background Image</FieldLabel>
+                                        <ImageCropper
+                                            cropShape="rect"
+                                            sliceHeight={256}
+                                            fileName={field.name}
+                                            onCropApplied={field.handleChange}
+                                            key={`background-${imageCropperResetKey}`}
+                                            resultClassName="w-full h-16 object-cover rounded"
+                                        />
+                                        {isInvalid && <FieldError errors={field.state.meta.errors}/>}
+                                    </Field>
+                                );
+                            }}
+                        </form.AppField>
+                    </FieldGroup>
+                </form.FormFieldset>
+                <form.SubmitButton
+                    label="Update Settings"
+                    className="mt-5"
+                    requireDirty={true}
+                />
+            </form.FormRoot>
+        </form.AppForm>
     );
 }
 
@@ -150,7 +157,7 @@ function GeneralSettingsPage() {
 const PrivacyPopover = () => {
     return (
         <Popover>
-            <PopoverTrigger className="opacity-50 hover:opacity-80">
+            <PopoverTrigger type="button" className="opacity-50 hover:opacity-80">
                 <CircleHelp className="w-4 h-4"/>
             </PopoverTrigger>
             <PopoverContent className="p-5 w-80">

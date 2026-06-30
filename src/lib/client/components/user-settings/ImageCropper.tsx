@@ -2,7 +2,7 @@ import React, {useState} from "react";
 import Cropper, {Area} from "react-easy-crop";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
-import {FormDescription} from "@/lib/client/components/ui/form";
+import {FieldDescription} from "@/lib/client/components/ui/field";
 
 
 interface ImageCropperProps {
@@ -134,11 +134,12 @@ export const ImageCropper = ({ aspect, fileName, sliceHeight, cropShape, onCropA
                 type="file"
                 accept="image/*"
                 onChange={onFileChange}
+                id={`${fileName}-input`}
                 className="file:text-muted-foreground cursor-pointer"
             />
-            <FormDescription>
+            <FieldDescription>
                 Choose an image to crop and resize.
-            </FormDescription>
+            </FieldDescription>
             {(state.imageSrc && state.open) &&
                 <div className="space-y-4 mt-6 bg-popover rounded-lg p-3">
                     <div>
@@ -166,7 +167,7 @@ export const ImageCropper = ({ aspect, fileName, sliceHeight, cropShape, onCropA
                             }
                         />
                     </div>
-                    <Button onClick={handleApplyCrop}>
+                    <Button type="button" onClick={handleApplyCrop}>
                         Apply Crop
                     </Button>
                 </div>
@@ -181,7 +182,7 @@ export const ImageCropper = ({ aspect, fileName, sliceHeight, cropShape, onCropA
                         className={resultClassName}
                         src={URL.createObjectURL(state.croppedImage)}
                     />
-                    <Button onClick={handleEditCrop}>
+                    <Button type="button" onClick={handleEditCrop}>
                         Edit Crop
                     </Button>
                 </div>

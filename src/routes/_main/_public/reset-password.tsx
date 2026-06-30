@@ -3,8 +3,8 @@ import authClient from "@/lib/utils/auth-client";
 import {Button} from "@/lib/client/components/ui/button";
 import {FieldGroup} from "@/lib/client/components/ui/field";
 import {useAppForm} from "@/lib/client/components/forms/form";
+import {resetPasswordSchema, tokenSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {ResetPassword, resetPasswordSchema, tokenSchema} from "@/lib/schemas";
 import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
 
 
@@ -31,17 +31,14 @@ export const Route = createFileRoute("/_main/_public/reset-password")({
 });
 
 
-const formDefaultValues: ResetPassword = {
-    newPassword: "",
-    confirmPassword: "",
-};
-
-
 function ResetPasswordPage() {
     const { token } = Route.useSearch();
     const navigate = Route.useNavigate();
     const form = useAppForm({
-        defaultValues: formDefaultValues,
+        defaultValues: {
+            newPassword: "",
+            confirmPassword: "",
+        },
         validators: {
             onSubmit: resetPasswordSchema,
         },

@@ -1,5 +1,5 @@
 import {toast} from "sonner";
-import {useState} from "react";
+import {useRef} from "react";
 import {CreateCollection} from "@/lib/schemas";
 import {useBlocker} from "@tanstack/react-router";
 import {Badge} from "@/lib/client/components/ui/badge";
@@ -31,7 +31,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
     const { isDirty } = form.formState;
     const ordered = form.watch("ordered");
     const orderedLabel = ordered ? "Ranked" : "Unranked";
-    const [dragIndex, setDragIndex] = useState<number | null>(null);
+    const dragIndex = useRef<number | null>(null);
     const { fields, append, remove, move } = useFieldArray({ control: form.control, name: "items" });
 
     useBlocker({
@@ -42,9 +42,9 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
     })
 
     const handleDrop = (index: number) => {
-        if (dragIndex === null || dragIndex === index) return;
-        move(dragIndex, index);
-        setDragIndex(null);
+        if (dragIndex.current === null || dragIndex.current === index) return;
+        move(dragIndex.current, index);
+        dragIndex.current = null;
     };
 
     const handleAddItem = (item: DraftItem) => {
@@ -153,10 +153,12 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                     key={field.id}
                                                     draggable={ordered}
                                                     onDrop={() => handleDrop(idx)}
-                                                    onDragEnd={() => setDragIndex(null)}
-                                                    onDragStart={() => ordered && setDragIndex(idx)}
+                                                    onDragEnd={() => dragIndex.current = null}
                                                     onDragOver={(ev) => ordered && ev.preventDefault()}
                                                     className="flex items-center gap-3 rounded-lg border bg-background p-3"
+                                                    onDragStart={() => {
+                                                        if (ordered) dragIndex.current = idx;
+                                                    }}
                                                 >
                                                     {ordered &&
                                                         <div className="flex items-center gap-2 text-muted-foreground">

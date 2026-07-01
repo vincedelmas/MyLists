@@ -1,5 +1,4 @@
 import {toast} from "sonner";
-import {useState} from "react";
 import authClient from "@/lib/utils/auth-client";
 import {FaGithub, FaGoogle} from "react-icons/fa";
 import {useLocation} from "@tanstack/react-router";
@@ -9,7 +8,6 @@ import {registerSchema, usernameSchema} from "@/lib/schemas";
 import {useAppForm} from "@/lib/client/components/forms/form";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {validateUsernameAvailability} from "@/lib/client/validators/username";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 
 
 interface RegisterFormProps {
@@ -20,7 +18,6 @@ interface RegisterFormProps {
 
 export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) => {
     const location = useLocation();
-    const [submitError, setSubmitError] = useState<string>();
     const form = useAppForm({
         defaultValues: {
             email: "",
@@ -30,26 +27,21 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
         },
         validators: {
             onSubmit: registerSchema,
-        },
-        onSubmit: async ({ value }) => {
-            setSubmitError(undefined);
-            const submitted = registerSchema.parse(value);
+            onSubmitAsync: async ({ value }) => {
+                const { error } = await authClient.signUp.email({
+                    email: value.email,
+                    password: value.password,
+                    name: value.username.trim(),
+                    callbackURL: getRedirectTarget(),
+                })
 
-            await authClient.signUp.email({
-                email: submitted.email,
-                name: submitted.username,
-                password: submitted.password,
-                callbackURL: getRedirectTarget(),
-            }, {
-                onError: (ctx) => {
-                    setSubmitError(ctx.error.message);
-                },
-                onSuccess: () => {
-                    form.reset();
-                    onOpenChange?.(false);
-                    toast.success("Your account has been created. Check your email to activate your account.");
-                },
-            });
+                if (error) return error.message || "Unable to create your account.";
+            }
+        },
+        onSubmit: () => {
+            form.reset();
+            onOpenChange?.(false);
+            toast.success("Your account has been created. Check your email to activate your account.");
         },
     });
 
@@ -75,7 +67,7 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                                 name="username"
                                 validators={{
                                     onChange: usernameSchema,
-                                    onChangeAsyncDebounceMs: 400,
+                                    onChangeAsyncDebounceMs: 500,
                                     onChangeAsync: ({ value }) => {
                                         return validateUsernameAvailability(value);
                                     }
@@ -122,11 +114,7 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                             </form.AppField>
                         </FieldGroup>
                     </form.FormFieldset>
-                    {submitError &&
-                        <InlineErrorContainer>
-                            {submitError}
-                        </InlineErrorContainer>
-                    }
+                    <form.FormError/>
                     <form.SubmitButton
                         className="w-full mb-4"
                         label="Create an Account"

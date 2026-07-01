@@ -1,4 +1,3 @@
-import {toast} from "sonner";
 import {useState} from "react";
 import authClient from "@/lib/utils/auth-client";
 import {createFileRoute} from "@tanstack/react-router";
@@ -53,15 +52,12 @@ function EmailAndPasswordPage() {
         },
         validators: {
             onSubmit: emailSettingsSchema,
-        },
-        onSubmit: async ({ value }) => {
-            setEmailSent(false);
-
-            const { error } = await authClient.changeEmail({ newEmail: value.email.trim() });
-            if (error) {
-                return toast.error(error.message ?? "An unexpected error occurred. Please try again later.");
+            onSubmitAsync: async ({ value }) => {
+                const { error } = await authClient.changeEmail({ newEmail: value.email.trim() });
+                if (error) return error.message;
             }
-
+        },
+        onSubmit: async () => {
             emailForm.reset();
             setEmailSent(true);
         },
@@ -85,6 +81,7 @@ function EmailAndPasswordPage() {
                             </emailForm.AppField>
                         </FieldGroup>
                     </emailForm.FormFieldset>
+                    <emailForm.FormError/>
                     {emailSent &&
                         <p role="status" className="text-xs text-green-600 font-medium">
                             Check your inbox to confirm your change of email address.

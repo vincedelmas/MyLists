@@ -1,5 +1,4 @@
 import {toast} from "sonner";
-import {useState} from "react";
 import authClient from "@/lib/utils/auth-client";
 import {Button} from "@/lib/client/components/ui/button";
 import {FieldGroup} from "@/lib/client/components/ui/field";
@@ -7,7 +6,6 @@ import {useAppForm} from "@/lib/client/components/forms/form";
 import {resetPasswordSchema, tokenSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 
 
 export const Route = createFileRoute("/_main/_public/reset-password")({
@@ -36,7 +34,6 @@ export const Route = createFileRoute("/_main/_public/reset-password")({
 function ResetPasswordPage() {
     const { token } = Route.useSearch();
     const navigate = Route.useNavigate();
-    const [invalidToken, setInvalidToken] = useState(false);
     const form = useAppForm({
         defaultValues: {
             newPassword: "",
@@ -44,16 +41,12 @@ function ResetPasswordPage() {
         },
         validators: {
             onSubmit: resetPasswordSchema,
+            onSubmitAsync: async ({ value }) => {
+                const { error } = await authClient.resetPassword({ token, newPassword: value.newPassword });
+                if (error) return error.message;
+            },
         },
-        onSubmit: async ({ value }) => {
-            setInvalidToken(false);
-
-            const { error } = await authClient.resetPassword({ token, newPassword: value.newPassword });
-
-            if (error) {
-                return setInvalidToken(true);
-            }
-
+        onSubmit: async () => {
             form.reset();
             await navigate({ to: "/login", replace: true });
             toast.success("Your password was modified successfully!");
@@ -89,16 +82,7 @@ function ResetPasswordPage() {
                                 </form.AppField>
                             </FieldGroup>
                         </form.FormFieldset>
-                        {invalidToken &&
-                            <InlineErrorContainer>
-                                <div>
-                                    <div>This is an Invalid or Expired Token:</div>
-                                    <Link to="/forgot-password" className="text-app-accent underline">
-                                        Request a new reset link
-                                    </Link>
-                                </div>
-                            </InlineErrorContainer>
-                        }
+                        <form.FormError/>
                         <form.SubmitButton
                             label="Submit"
                             className="w-full"

@@ -33,10 +33,7 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                     name: value.username.trim(),
                     callbackURL: getRedirectTarget(),
                 })
-
-                if (error) {
-                    toast.error(error.message ?? "An unexpected error occurred, please try again later.");
-                }
+                if (error) return error.message;
             }
         },
         onSubmit: () => {
@@ -105,6 +102,7 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                             </form.AppField>
                         </FieldGroup>
                     </form.FormFieldset>
+                    <form.FormError/>
                     <form.SubmitButton
                         className="w-full mb-4"
                         label="Create an Account"

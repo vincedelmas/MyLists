@@ -42,11 +42,7 @@ function GeneralSettingsPage() {
                 }
                 catch (err) {
                     if (err instanceof ValidationError) {
-                        return {
-                            fields: {
-                                [err.field]: err.message,
-                            }
-                        }
+                        return { fields: { [err.field]: err.message } }
                     }
                 }
             },

@@ -22,15 +22,12 @@ function ForgotPasswordPage() {
         },
         validators: {
             onSubmit: forgotPasswordSchema,
+            onSubmitAsync: async ({ value }) => {
+                const { error } = await authClient.requestPasswordReset({ email: value.email, redirectTo: "/reset-password" })
+                if (error) return error.message;
+            },
         },
-        onSubmit: async ({ value }) => {
-            setEmailSent(false);
-
-            const { error } = await authClient.requestPasswordReset({ email: value.email, redirectTo: "/reset-password" })
-            if (error) {
-                return toast.error(error.message ?? "An unexpected error occurred. Please try again later.");
-            }
-
+        onSubmit: async () => {
             setEmailSent(true);
             toast.success("You will be redirected to the login page in 5 seconds.", { duration: 5000 });
             setTimeout(async () => {
@@ -63,6 +60,7 @@ function ForgotPasswordPage() {
                                 An email has been sent to reset your password. Please check your inbox.
                             </p>
                         }
+                        <form.FormError/>
                         <form.SubmitButton
                             label="Submit"
                         />

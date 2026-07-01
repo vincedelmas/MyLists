@@ -1,12 +1,6 @@
 import * as z from "zod";
 
 
-export type Login = z.infer<typeof loginSchema>;
-export type Register = z.infer<typeof registerSchema>;
-export type ResetPassword = z.infer<typeof resetPasswordSchema>;
-export type ForgotPassword = z.infer<typeof forgotPasswordSchema>;
-
-
 export const tokenSchema = z.object({
     token: z.string().min(1),
 });

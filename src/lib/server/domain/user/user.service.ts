@@ -171,11 +171,6 @@ export class UserService {
         }
     }
 
-    async isUsernameAvailable(name: string) {
-        const user = await this.repository.findUserByName(name);
-        return !user;
-    }
-
     async incrementProfileView(userId: number) {
         return this.repository.incrementProfileView(userId);
     }

@@ -1,3 +1,4 @@
+import authClient from "@/lib/utils/auth-client";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {postUpdateShowOnboarding} from "@/lib/server/functions/user-profile";
 import {QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
@@ -191,3 +192,13 @@ export const useUpdateOnboardingMutation = () => {
         onSuccess: () => setCurrentUser(),
     });
 };
+
+
+export const useUpdateEmailMutation = () => {
+    return useMutation({
+        mutationFn: async (email: string) => {
+            const { error } = await authClient.changeEmail({ newEmail: email.trim() });
+            if (error) throw error;
+        },
+    });
+}

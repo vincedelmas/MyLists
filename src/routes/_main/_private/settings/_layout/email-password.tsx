@@ -1,15 +1,10 @@
-import {useForm} from "react-hook-form";
-import authClient from "@/lib/utils/auth-client";
-import {useMutation} from "@tanstack/react-query";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
-import {Button} from "@/lib/client/components/ui/button";
+import {FieldGroup} from "@/lib/client/components/ui/field";
+import {useAppForm} from "@/lib/client/components/forms/form";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {PasswordSettingsForm, passwordSettingsFormSchema} from "@/lib/schemas";
+import {emailSettingsSchema, passwordSettingsFormSchema} from "@/lib/schemas";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
-import {usePasswordSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {usePasswordSettingsMutation, useUpdateEmailMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/email-password")({
@@ -18,68 +13,56 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/email-pas
 
 
 function EmailAndPasswordPage() {
+    const emailMutation = useUpdateEmailMutation();
     const passwordMutation = usePasswordSettingsMutation();
-    const passwordForm = useForm<PasswordSettingsForm>({
-        resolver: zodResolver(passwordSettingsFormSchema),
+    const passwordForm = useAppForm({
         defaultValues: {
             newPassword: "",
             currentPassword: "",
-            confirmNewPassword: ""
+            confirmNewPassword: "",
         },
-    });
-    const emailForm = useForm({
-        defaultValues: {
-            email: "",
-        }
+        validators: {
+            onSubmit: passwordSettingsFormSchema,
+        },
+        onSubmit: async ({ value }) => {
+            await passwordMutation.mutateAsync({ data: { newPassword: value.newPassword, currentPassword: value.currentPassword } });
+            passwordForm.reset();
+        },
     });
 
-    const emailMutation = useMutation({
-        mutationFn: async (email: string) => {
-            const { error } = await authClient.changeEmail({ newEmail: email.trim() });
-            if (error) throw error;
+    const emailForm = useAppForm({
+        defaultValues: {
+            email: "",
         },
-        onSuccess: () => {
+        validators: {
+            onSubmit: emailSettingsSchema,
+        },
+        onSubmit: async ({ value }) => {
+            await emailMutation.mutateAsync(value.email);
             emailForm.reset();
         },
     });
 
-    const onPasswordSubmit = (values: PasswordSettingsForm) => {
-        passwordMutation.mutate({
-            data: {
-                newPassword: values.newPassword,
-                currentPassword: values.currentPassword,
-            },
-        }, {
-            onSuccess: () => {
-                passwordForm.reset();
-            },
-        });
-    };
-
     return (
         <div className="space-y-8">
-            <Form {...emailForm}>
-                <form onSubmit={emailForm.handleSubmit((data) => emailMutation.mutate(data.email))} className="w-full max-w-sm space-y-3">
-                    <FormField
-                        name="email"
-                        control={emailForm.control}
-                        rules={{ required: "Email is required" }}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Change Your Email</FormLabel>
-                                <FormControl>
-                                    <Input
+            <emailForm.AppForm>
+                <emailForm.FormRoot className="w-full max-w-sm space-y-3">
+                    <emailForm.FormFieldset>
+                        <FieldGroup>
+                            <emailForm.AppField name="email">
+                                {(field) =>
+                                    <field.TextField
                                         type="email"
+                                        autoComplete="email"
+                                        label="Change Your Email"
                                         placeholder="new-email@example.com"
-                                        {...field}
                                     />
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
+                                }
+                            </emailForm.AppField>
+                        </FieldGroup>
+                    </emailForm.FormFieldset>
                     {emailMutation.isSuccess &&
-                        <p className="text-xs text-green-600 font-medium">
+                        <p role="status" className="text-xs text-green-600 font-medium">
                             Check your inbox to confirm your change of email address.
                         </p>
                     }
@@ -88,65 +71,62 @@ function EmailAndPasswordPage() {
                             {emailMutation.error.message || "Failed to update your email"}
                         </InlineErrorContainer>
                     }
-                    <Button type="submit" disabled={emailMutation.isPending || !emailForm.formState.isDirty}>
-                        Change Email
-                    </Button>
-                </form>
-            </Form>
+                    <emailForm.SubmitButton
+                        requireDirty={true}
+                        label="Change Email"
+                    />
+                </emailForm.FormRoot>
+            </emailForm.AppForm>
 
             <Separator className="max-w-sm"/>
 
-            <Form {...passwordForm}>
-                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="w-full max-w-sm space-y-4">
-                    <FormField
-                        name="currentPassword"
-                        control={passwordForm.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Current Password</FormLabel>
-                                <FormControl>
-                                    <Input type="password" placeholder="********" {...field}/>
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        name="newPassword"
-                        control={passwordForm.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>New Password</FormLabel>
-                                <FormControl>
-                                    <Input type="password" placeholder="********" {...field}/>
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        name="confirmNewPassword"
-                        control={passwordForm.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Confirm New Password</FormLabel>
-                                <FormControl>
-                                    <Input type="password" placeholder="********" {...field}/>
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
+            <passwordForm.AppForm>
+                <passwordForm.FormRoot className="w-full max-w-sm space-y-4">
+                    <passwordForm.FormFieldset>
+                        <FieldGroup className="gap-4">
+                            <passwordForm.AppField name="currentPassword">
+                                {(field) =>
+                                    <field.TextField
+                                        type="password"
+                                        placeholder="********"
+                                        label="Current Password"
+                                        autoComplete="current-password"
+                                    />
+                                }
+                            </passwordForm.AppField>
+                            <passwordForm.AppField name="newPassword">
+                                {(field) =>
+                                    <field.TextField
+                                        type="password"
+                                        label="New Password"
+                                        placeholder="********"
+                                        autoComplete="new-password"
+                                    />
+                                }
+                            </passwordForm.AppField>
+                            <passwordForm.AppField name="confirmNewPassword">
+                                {(field) =>
+                                    <field.TextField
+                                        type="password"
+                                        placeholder="********"
+                                        autoComplete="new-password"
+                                        label="Confirm New Password"
+                                    />
+                                }
+                            </passwordForm.AppField>
+                        </FieldGroup>
+                    </passwordForm.FormFieldset>
                     {passwordMutation.isError &&
                         <InlineErrorContainer>
                             {passwordMutation.error.message}
                         </InlineErrorContainer>
                     }
-                    <Button type="submit" disabled={passwordMutation.isPending || !passwordForm.formState.isDirty}>
-                        Update Password
-                    </Button>
-                </form>
-            </Form>
+                    <passwordForm.SubmitButton
+                        requireDirty={true}
+                        label="Update Password"
+                    />
+                </passwordForm.FormRoot>
+            </passwordForm.AppForm>
         </div>
     );
 }

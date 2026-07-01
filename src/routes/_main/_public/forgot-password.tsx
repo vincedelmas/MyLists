@@ -24,18 +24,17 @@ function ForgotPasswordPage() {
             onSubmit: forgotPasswordSchema,
         },
         onSubmit: async ({ value }) => {
-            await authClient.requestPasswordReset({ email: value.email, redirectTo: "/reset-password" }, {
-                onError: (ctx) => {
-                    toast.error(ctx.error.message ?? "An unexpected error occurred. Please try again later.");
-                },
-                onSuccess: async () => {
-                    setEmailSent(true);
-                    toast.success("You will be redirected to the login page in 5 seconds.", { duration: 5000 });
-                    setTimeout(async () => {
-                        await navigate({ to: "/login", replace: true });
-                    }, 5000);
-                },
-            });
+            const { error } = await authClient.requestPasswordReset({ email: value.email, redirectTo: "/reset-password" })
+
+            if (error) {
+                return toast.error(error.message ?? "An unexpected error occurred. Please try again later.");
+            }
+
+            setEmailSent(true);
+            toast.success("You will be redirected to the login page in 5 seconds.", { duration: 5000 });
+            setTimeout(async () => {
+                await navigate({ to: "/login", replace: true });
+            }, 5000);
         },
     });
 
@@ -63,7 +62,9 @@ function ForgotPasswordPage() {
                                 An email has been sent to reset your password. Please check your inbox.
                             </p>
                         }
-                        <form.SubmitButton label="Submit"/>
+                        <form.SubmitButton
+                            label="Submit"
+                        />
                     </form.FormRoot>
                 </form.AppForm>
             </div>

@@ -1,4 +1,6 @@
 import {toast} from "sonner";
+import {useState} from "react";
+import {BASE_ERROR_CODES} from "better-auth";
 import authClient from "@/lib/utils/auth-client";
 import {Button} from "@/lib/client/components/ui/button";
 import {FieldGroup} from "@/lib/client/components/ui/field";
@@ -6,6 +8,7 @@ import {useAppForm} from "@/lib/client/components/forms/form";
 import {resetPasswordSchema, tokenSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 
 
 export const Route = createFileRoute("/_main/_public/reset-password")({
@@ -34,6 +37,7 @@ export const Route = createFileRoute("/_main/_public/reset-password")({
 function ResetPasswordPage() {
     const { token } = Route.useSearch();
     const navigate = Route.useNavigate();
+    const [invalidToken, setInvalidToken] = useState(false);
     const form = useAppForm({
         defaultValues: {
             newPassword: "",
@@ -43,16 +47,20 @@ function ResetPasswordPage() {
             onSubmit: resetPasswordSchema,
         },
         onSubmit: async ({ value }) => {
-            await authClient.resetPassword({ token, newPassword: value.newPassword }, {
-                onError: (ctx) => {
-                    toast.error(ctx.error.message ?? "An unexpected error occurred. Please try again later.");
-                },
-                onSuccess: async () => {
-                    form.reset();
-                    await navigate({ to: "/login", replace: true });
-                    toast.success("Your password was modified successfully!");
-                },
-            });
+            setInvalidToken(false);
+
+            const { error } = await authClient.resetPassword({ token, newPassword: value.newPassword });
+
+            if (error) {
+                if (error.code === BASE_ERROR_CODES.INVALID_TOKEN.code) {
+                    return setInvalidToken(true);
+                }
+                return toast.error(error.message);
+            }
+
+            form.reset();
+            await navigate({ to: "/login", replace: true });
+            toast.success("Your password was modified successfully!");
         },
     });
 
@@ -85,6 +93,14 @@ function ResetPasswordPage() {
                                 </form.AppField>
                             </FieldGroup>
                         </form.FormFieldset>
+                        {invalidToken &&
+                            <InlineErrorContainer>
+                                Invalid Token:{" "}
+                                <Link to="/forgot-password" className="text-app-accent underline">
+                                    Request a new reset link
+                                </Link>
+                            </InlineErrorContainer>
+                        }
                         <form.SubmitButton
                             label="Submit"
                             className="w-full"

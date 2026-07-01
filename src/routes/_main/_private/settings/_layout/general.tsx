@@ -5,7 +5,7 @@ import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useAppForm} from "@/lib/client/components/forms/form";
-import {getUsernameAvailability} from "@/lib/server/functions/auth";
+import {validateUsernameAvailability} from "@/lib/client/validators/username";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
 import {GeneralSettings, generalSettingsSchema, usernameSchema} from "@/lib/schemas";
 import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
@@ -65,17 +65,7 @@ function GeneralSettingsPage() {
                                 onChangeAsyncDebounceMs: 400,
                                 onChangeAsync: async ({ value }) => {
                                     if (value.trim() === currentUser?.name) return;
-
-                                    try {
-                                        const { available } = await getUsernameAvailability({ data: { username: value } });
-                                        return available ? undefined : "Username not available.";
-                                    }
-                                    catch {
-                                        return {
-                                            validationStatus: "unavailable" as const,
-                                            message: "Check Unavailable. Please try again.",
-                                        };
-                                    }
+                                    return validateUsernameAvailability(value);
                                 },
                             }}
                         >

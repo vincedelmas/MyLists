@@ -1,15 +1,15 @@
 import {toast} from "sonner";
-import {useForm} from "react-hook-form";
-import {LoaderCircle} from "lucide-react";
+import {useState} from "react";
 import authClient from "@/lib/utils/auth-client";
 import {FaGithub, FaGoogle} from "react-icons/fa";
-import {zodResolver} from "@hookform/resolvers/zod";
 import {useLocation} from "@tanstack/react-router";
-import {Register, registerSchema} from "@/lib/schemas";
-import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
+import {FieldGroup} from "@/lib/client/components/ui/field";
+import {registerSchema, usernameSchema} from "@/lib/schemas";
+import {useAppForm} from "@/lib/client/components/forms/form";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {validateUsernameAvailability} from "@/lib/client/validators/username";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 
 
 interface RegisterFormProps {
@@ -20,37 +20,41 @@ interface RegisterFormProps {
 
 export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) => {
     const location = useLocation();
-    const form = useForm<Register>({
-        resolver: zodResolver(registerSchema),
-        shouldFocusError: false,
+    const [submitError, setSubmitError] = useState<string>();
+    const form = useAppForm({
         defaultValues: {
             email: "",
             username: "",
             password: "",
             confirmPassword: "",
         },
+        validators: {
+            onSubmit: registerSchema,
+        },
+        onSubmit: async ({ value }) => {
+            setSubmitError(undefined);
+            const submitted = registerSchema.parse(value);
+
+            await authClient.signUp.email({
+                email: submitted.email,
+                name: submitted.username,
+                password: submitted.password,
+                callbackURL: getRedirectTarget(),
+            }, {
+                onError: (ctx) => {
+                    setSubmitError(ctx.error.message);
+                },
+                onSuccess: () => {
+                    form.reset();
+                    onOpenChange?.(false);
+                    toast.success("Your account has been created. Check your email to activate your account.");
+                },
+            });
+        },
     });
 
     const getRedirectTarget = () => {
         return redirectTo || location.href || "/";
-    };
-
-    const onSubmit = async (submitted: Register) => {
-        await authClient.signUp.email({
-            email: submitted.email,
-            name: submitted.username,
-            password: submitted.password,
-            callbackURL: getRedirectTarget(),
-        }, {
-            onError: (ctx) => {
-                form.setError("root", { type: "value", message: ctx.error.message }, { shouldFocus: false });
-            },
-            onSuccess: () => {
-                form.reset();
-                onOpenChange?.(false);
-                toast.success("Your account has been created. Check your email to activate your account.");
-            },
-        });
     };
 
     const withProvider = async (provider: "google" | "github") => {
@@ -63,90 +67,72 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
 
     return (
         <>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-2">
-                    <fieldset disabled={form.formState.isSubmitting}>
-                        <div className="space-y-4">
-                            <FormField
+            <form.AppForm>
+                <form.FormRoot className="space-y-6 mt-2">
+                    <form.FormFieldset>
+                        <FieldGroup className="gap-4">
+                            <form.AppField
                                 name="username"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Username</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="Username"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                                validators={{
+                                    onChange: usernameSchema,
+                                    onChangeAsyncDebounceMs: 400,
+                                    onChangeAsync: ({ value }) => {
+                                        return validateUsernameAvailability(value);
+                                    }
+                                }}
+                            >
+                                {(field) =>
+                                    <field.TextField
+                                        label="Username"
+                                        showValStatus={true}
+                                        placeholder="Username"
+                                        autoComplete="username"
+                                    />
                                 }
-                            />
-                            <FormField
-                                name="email"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="email"
-                                                placeholder="john.doe@example.com"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                            </form.AppField>
+                            <form.AppField name="email">
+                                {(field) =>
+                                    <field.TextField
+                                        type="email"
+                                        label="Email"
+                                        autoComplete="email"
+                                        placeholder="john.doe@example.com"
+                                    />
                                 }
-                            />
-                            <FormField
-                                name="password"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Password</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="password"
-                                                placeholder="********"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                            </form.AppField>
+                            <form.AppField name="password">
+                                {(field) =>
+                                    <field.TextField
+                                        type="password"
+                                        label="Password"
+                                        placeholder="********"
+                                        autoComplete="new-password"
+                                    />
                                 }
-                            />
-                            <FormField
-                                name="confirmPassword"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Confirm Password</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="password"
-                                                placeholder="********"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                            </form.AppField>
+                            <form.AppField name="confirmPassword">
+                                {(field) =>
+                                    <field.TextField
+                                        type="password"
+                                        placeholder="********"
+                                        label="Confirm Password"
+                                        autoComplete="new-password"
+                                    />
                                 }
-                            />
-                        </div>
-                    </fieldset>
-                    {form.formState.errors.root &&
-                        <FormMessage className="text-center -mt-1.5">
-                            {form.formState.errors.root.message}
-                        </FormMessage>
+                            </form.AppField>
+                        </FieldGroup>
+                    </form.FormFieldset>
+                    {submitError &&
+                        <InlineErrorContainer>
+                            {submitError}
+                        </InlineErrorContainer>
                     }
-                    <Button className="flex text-center w-full mb-4" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting && <LoaderCircle className="size-4 animate-spin"/>}{" "}
-                        Create an Account
-                    </Button>
-                </form>
-            </Form>
+                    <form.SubmitButton
+                        className="w-full mb-4"
+                        label="Create an Account"
+                    />
+                </form.FormRoot>
+            </form.AppForm>
             <Separator className="mt-3"/>
             <div className="mt-3 flex-col space-y-2">
                 <Button variant="secondary" className="w-full" onClick={() => withProvider("google")}>

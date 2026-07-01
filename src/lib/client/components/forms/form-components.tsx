@@ -1,11 +1,12 @@
 import React from "react";
-import {Check, CircleAlert, LoaderCircle, X} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Textarea} from "@/lib/client/components/ui/textarea";
+import {Check, CircleAlert, LoaderCircle, X} from "lucide-react";
 import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
 import {useFieldContext, useFormContext} from "@/lib/client/components/forms/form";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Field, FieldDescription, FieldError, FieldLabel} from "@/lib/client/components/ui/field";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
@@ -46,14 +47,38 @@ export function FormFieldset({ children, disabled, ...props }: React.ComponentPr
 }
 
 
+export function FormError() {
+    const form = useFormContext();
+
+    const getFormErrorMessage = (error: unknown) => {
+        if (typeof error === "string") return error;
+        if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+            return error.message;
+        }
+        return undefined;
+    };
+
+    return (
+        <form.Subscribe selector={(state) => state.errorMap}>
+            {(errorMap) => {
+                const error = (errorMap as { onSubmit?: unknown }).onSubmit;
+                const message = getFormErrorMessage(error);
+                return message ? <InlineErrorContainer>{message}</InlineErrorContainer> : null;
+            }}
+        </form.Subscribe>
+    );
+}
+
+
 type TextFieldProps = Omit<React.ComponentProps<typeof Input>, "id" | "name" | "value" | "onBlur" | "onChange"> & {
-    label: string;
+    label: React.ReactNode;
     description?: string;
     showValStatus?: boolean;
+    labelAccessory?: React.ReactNode;
 };
 
 
-export function TextField({ label, description, showValStatus = false, className, ...props }: TextFieldProps) {
+export function TextField({ label, labelAccessory, description, showValStatus = false, className, ...props }: TextFieldProps) {
     const field = useFieldContext<string>();
     const isValidationInvalid = !field.state.meta.isValid;
     const isChecking = showValStatus && field.state.meta.isValidating;
@@ -68,9 +93,12 @@ export function TextField({ label, description, showValStatus = false, className
 
     return (
         <Field data-invalid={isInvalid}>
-            <FieldLabel htmlFor={field.name}>
-                {label}
-            </FieldLabel>
+            <div className="flex items-center justify-between gap-2">
+                <FieldLabel htmlFor={field.name}>
+                    {label}
+                </FieldLabel>
+                {labelAccessory}
+            </div>
             <div className="relative">
                 <Input
                     id={field.name}

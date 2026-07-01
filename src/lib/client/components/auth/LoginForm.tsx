@@ -1,17 +1,14 @@
 import {toast} from "sonner";
-import {useForm} from "react-hook-form";
-import {LoaderCircle} from "lucide-react";
+import {loginSchema} from "@/lib/schemas";
 import authClient from "@/lib/utils/auth-client";
-import {Login, loginSchema} from "@/lib/schemas";
 import {FaGithub, FaGoogle} from "react-icons/fa";
-import {zodResolver} from "@hookform/resolvers/zod";
 import {useQueryClient} from "@tanstack/react-query";
-import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
+import {FieldGroup} from "@/lib/client/components/ui/field";
+import {useAppForm} from "@/lib/client/components/forms/form";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {authOptions} from "@/lib/client/react-query/query-options";
 import {Link, useLocation, useNavigate, useRouter} from "@tanstack/react-router";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
 interface LoginFormProps {
@@ -25,50 +22,40 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
-    const form = useForm<Login>({
-        resolver: zodResolver(loginSchema),
-        shouldFocusError: false,
+    const form = useAppForm({
         defaultValues: {
             email: "",
             password: "",
+        },
+        validators: {
+            onSubmit: loginSchema,
+            onSubmitAsync: async ({ value }) => {
+                const { error } = await authClient.signIn.email({
+                    rememberMe: true,
+                    email: value.email,
+                    password: value.password,
+                });
+
+                if (!error) return undefined;
+
+                return error.status === 403
+                    ? "Please validate your email. A validation link has been sent."
+                    : error.message;
+            },
+        },
+        onSubmit: async () => {
+            const currentUser = await queryClient.fetchQuery({ ...authOptions, staleTime: 0 });
+            onOpenChange?.(false);
+            if (currentUser) {
+                await navigate({ href: getRedirectTarget(), replace: true });
+                await router.invalidate();
+                await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
+            }
         },
     });
 
     const getRedirectTarget = () => {
         return redirectTo || location.href || "/";
-    };
-
-    const refreshAuthenticatedRouteData = async () => {
-        await router.invalidate();
-        await queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== authOptions.queryKey[0] });
-    };
-
-    const onSubmit = async (submitted: Login) => {
-        await authClient.signIn.email({
-            rememberMe: true,
-            email: submitted.email,
-            password: submitted.password,
-        }, {
-            onError: (ctx) => {
-                if (ctx.error.status === 403) {
-                    form.setError("root", {
-                        type: "value",
-                        message: "Please validate your email. A validation link has been sent.",
-                    }, { shouldFocus: false });
-                }
-                else {
-                    form.setError("root", { type: "value", message: ctx.error.message }, { shouldFocus: false });
-                }
-            },
-            onSuccess: async () => {
-                const currentUser = await queryClient.fetchQuery({ ...authOptions, staleTime: 0 });
-                onOpenChange?.(false);
-                if (currentUser) {
-                    await navigate({ href: getRedirectTarget(), replace: true });
-                    await refreshAuthenticatedRouteData();
-                }
-            },
-        });
     };
 
     const withProvider = async (provider: "google" | "github") => {
@@ -81,67 +68,48 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
 
     return (
         <>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <fieldset disabled={form.formState.isSubmitting}>
-                        <div className="space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="email"
-                                                placeholder="Email"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="password"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <div className="flex items-center justify-between">
-                                            <FormLabel>Password</FormLabel>
+            <form.AppForm>
+                <form.FormRoot className="space-y-4">
+                    <form.FormFieldset>
+                        <FieldGroup className="gap-4">
+                            <form.AppField name="email">
+                                {(field) =>
+                                    <field.TextField
+                                        type="email"
+                                        label="Email"
+                                        placeholder="Email"
+                                        autoComplete="email"
+                                    />
+                                }
+                            </form.AppField>
+                            <form.AppField name="password">
+                                {(field) =>
+                                    <field.TextField
+                                        type="password"
+                                        label="Password"
+                                        placeholder="********"
+                                        autoComplete="current-password"
+                                        labelAccessory={
                                             <Link
                                                 to="/forgot-password"
                                                 className="text-sm underline"
-                                                tabIndex={-1}
                                                 onClick={() => onOpenChange?.(false)}
                                             >
                                                 Forgot password?
                                             </Link>
-                                        </div>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="password"
-                                                placeholder="********"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    </fieldset>
-                    {form.formState.errors.root &&
-                        <FormMessage className="text-center">
-                            {form.formState.errors.root.message}
-                        </FormMessage>
-                    }
-                    <Button className="w-full" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting && <LoaderCircle className="size-4 animate-spin"/>}{" "}
-                        Login
-                    </Button>
-                </form>
-            </Form>
+                                        }
+                                    />
+                                }
+                            </form.AppField>
+                        </FieldGroup>
+                    </form.FormFieldset>
+                    <form.FormError/>
+                    <form.SubmitButton
+                        label="Login"
+                        className="w-full"
+                    />
+                </form.FormRoot>
+            </form.AppForm>
             <Separator className="mt-3"/>
             <div className="mt-3 flex-col space-y-2">
                 <Button variant="secondary" className="w-full" onClick={() => withProvider("google")}>

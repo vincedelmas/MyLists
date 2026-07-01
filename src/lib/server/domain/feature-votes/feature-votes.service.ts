@@ -1,5 +1,6 @@
-import {FormattedError} from "@/lib/utils/error-classes";
+import {PostFeatureRequest} from "@/lib/schemas";
 import {FeatureStatus, SocialNotifType} from "@/lib/utils/enums";
+import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
 import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 
@@ -41,7 +42,7 @@ export class FeatureVotesService {
         return { items };
     }
 
-    async createFeatureRequest(userId: number, params: { title: string; description?: string | null }) {
+    async createFeatureRequest(userId: number, params: PostFeatureRequest) {
         const { duplicate, featureId } = await this.repository.createFeatureRequest({
             createdBy: userId,
             title: params.title,
@@ -50,7 +51,7 @@ export class FeatureVotesService {
         });
 
         if (duplicate) {
-            throw new FormattedError("That feature request already exists. Please vote for it instead.");
+            throw new ValidationError<PostFeatureRequest>("title", "This feature request already exists. Vote for it instead.");
         }
 
         const admins = await this.repository.getAdminUserIds();

@@ -23,9 +23,12 @@ function EmailAndPasswordPage() {
         },
         validators: {
             onSubmit: passwordSettingsFormSchema,
+            onSubmitAsync: async ({ value }) => {
+                await passwordMutation.mutateAsync({ data: { newPassword: value.newPassword, currentPassword: value.currentPassword } });
+                if (passwordMutation.isError) return passwordMutation.error.message;
+            },
         },
-        onSubmit: async ({ value }) => {
-            await passwordMutation.mutateAsync({ data: { newPassword: value.newPassword, currentPassword: value.currentPassword } });
+        onSubmit: () => {
             passwordForm.reset();
         },
     });
@@ -116,11 +119,7 @@ function EmailAndPasswordPage() {
                             </passwordForm.AppField>
                         </FieldGroup>
                     </passwordForm.FormFieldset>
-                    {passwordMutation.isError &&
-                        <InlineErrorContainer>
-                            {passwordMutation.error.message}
-                        </InlineErrorContainer>
-                    }
+                    <passwordForm.FormError/>
                     <passwordForm.SubmitButton
                         requireDirty={true}
                         label="Update Password"

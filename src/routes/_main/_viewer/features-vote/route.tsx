@@ -4,6 +4,7 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
+import {ValidationError} from "@/lib/utils/error-classes";
 import {formatDateTime} from "@/lib/utils/date-formatting";
 import {FieldGroup} from "@/lib/client/components/ui/field";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -65,9 +66,22 @@ function FeatureVotesPage() {
         defaultValues: formDefaultValues,
         validators: {
             onSubmit: postFeatureRequestSchema,
+            onSubmitAsync: async ({ value }) => {
+                try {
+                    await createFeatureMutation.mutateAsync({ data: value });
+                }
+                catch (err) {
+                    if (err instanceof ValidationError) {
+                        return {
+                            fields: {
+                                [err.field]: err.message,
+                            }
+                        };
+                    }
+                }
+            },
         },
-        onSubmit: async ({ value }) => {
-            await createFeatureMutation.mutateAsync({ data: value });
+        onSubmit: () => {
             form.reset();
         },
     });

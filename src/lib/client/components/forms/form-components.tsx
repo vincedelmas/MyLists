@@ -1,5 +1,6 @@
 import React from "react";
 import {LoaderCircle} from "lucide-react";
+import {cn} from "@/lib/utils/classnames";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Textarea} from "@/lib/client/components/ui/textarea";
@@ -160,6 +161,7 @@ export function TextareaField({ label, description, ...props }: TextareaFieldPro
 
 
 interface SelectFieldProps {
+    className?: string;
     placeholder?: string;
     label: React.ReactNode;
     labelAccessory?: React.ReactNode;
@@ -171,7 +173,7 @@ interface SelectFieldProps {
 }
 
 
-export function SelectField({ label, labelAccessory, options, placeholder }: SelectFieldProps) {
+export function SelectField({ label, labelAccessory, options, placeholder, className }: SelectFieldProps) {
     const field = useFieldContext<string>();
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
@@ -185,7 +187,7 @@ export function SelectField({ label, labelAccessory, options, placeholder }: Sel
             </div>
 
             <Select name={field.name} value={field.state.value} onValueChange={field.handleChange}>
-                <SelectTrigger id={field.name} className="w-full" onBlur={field.handleBlur} aria-invalid={isInvalid}>
+                <SelectTrigger id={field.name} className={cn("w-full", className)} onBlur={field.handleBlur} aria-invalid={isInvalid}>
                     <SelectValue placeholder={placeholder}/>
                 </SelectTrigger>
                 <SelectContent>

@@ -7,7 +7,6 @@ import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, optionalSearchField
 export type AddActivity = z.infer<typeof addActivitySchema>;
 export type AddActivityInput = z.input<typeof addActivitySchema>;
 export type ActivitySearch = z.infer<typeof activitySearchSchema>;
-export type BulkHideActivity = z.infer<typeof bulkHideActivitySchema>;
 export type UpdateActivity = z.infer<typeof updateActivityPayloadSchema>;
 export type MonthlyActivityFilters = z.infer<typeof monthlyActivitySchema>;
 export type BulkHideActivityInput = z.input<typeof bulkHideActivitySchema>;
@@ -83,7 +82,7 @@ export const addActivitySchema = z.object({
 export const bulkHideActivitySchema = z.object({
     endDate: z.string().trim().pipe(z.iso.date()),
     startDate: z.string().trim().pipe(z.iso.date()),
-    mediaType: z.union([mediaTypeFieldSchema, z.literal("all")]).optional()
+    mediaType: z.union([z.literal("all"), mediaTypeFieldSchema]).optional()
         .transform((mediaType) => mediaType === "all" ? undefined : mediaType),
 }).refine((data) => calendarDateRangeToISOString(data.startDate, data.endDate) !== null, {
     message: "Start date must be before end date.", path: ["endDate"],

@@ -153,8 +153,8 @@ export class UserActivityService {
 
         return this.repository.bulkHideActivity(userId, {
             endDate: range.endDate,
-            mediaType: filters.mediaType,
             startDate: range.startDate,
+            mediaType: filters.mediaType,
         });
     }
 

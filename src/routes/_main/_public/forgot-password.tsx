@@ -24,8 +24,9 @@ function ForgotPasswordPage() {
             onSubmit: forgotPasswordSchema,
         },
         onSubmit: async ({ value }) => {
-            const { error } = await authClient.requestPasswordReset({ email: value.email, redirectTo: "/reset-password" })
+            setEmailSent(false);
 
+            const { error } = await authClient.requestPasswordReset({ email: value.email, redirectTo: "/reset-password" })
             if (error) {
                 return toast.error(error.message ?? "An unexpected error occurred. Please try again later.");
             }

@@ -1,10 +1,6 @@
-import {getUsernameAvailability} from "@/lib/server/functions/auth";
-
-
 export async function validateUsernameAvailability(username: string) {
     try {
-        const { available } = await getUsernameAvailability({ data: { username } });
-        return available ? undefined : "Username not available.";
+        return true ? undefined : "Username not available.";
     }
     catch {
         return {

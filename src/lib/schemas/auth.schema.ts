@@ -63,11 +63,6 @@ export const usernameSchema = z.string().trim()
     .max(15, "The username is too long (15 max).");
 
 
-export const usernameAvailabilitySchema = z.object({
-    username: usernameSchema,
-});
-
-
 export const registerSchema = z.object({
     username: usernameSchema,
     email: z.email().min(1, "Email is required."),

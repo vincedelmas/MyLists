@@ -3,8 +3,8 @@ import {MediaType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {user} from "@/lib/server/database/schema/index";
 import {getContainer} from "@/lib/server/core/container";
-import {FormattedError} from "@/lib/utils/error-classes";
 import {saveUploadedImage} from "@/lib/utils/image-saver";
+import {ValidationError} from "@/lib/utils/error-classes";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
@@ -13,6 +13,7 @@ import {
     highlightedMediaSearchSchema,
     highlightedMediaSettingsSchema,
     mediaListSettingsSchema,
+    PasswordSettingsForm,
     passwordSettingsSchema
 } from "@/lib/schemas";
 
@@ -127,7 +128,7 @@ export const postPasswordSettings = createServerFn({ method: "POST" })
 
         const isValid = await ctx.password.verify({ hash: userAccount?.password ?? "", password: currentPassword });
         if (!isValid) {
-            throw new FormattedError("Current password incorrect");
+            throw new ValidationError<PasswordSettingsForm>("currentPassword", "The current password is incorrect");
         }
 
         const hash = await ctx.password.hash(newPassword);

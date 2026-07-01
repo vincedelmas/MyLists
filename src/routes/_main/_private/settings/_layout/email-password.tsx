@@ -1,10 +1,13 @@
+import {toast} from "sonner";
+import {useState} from "react";
+import authClient from "@/lib/utils/auth-client";
 import {createFileRoute} from "@tanstack/react-router";
+import {ValidationError} from "@/lib/utils/error-classes";
 import {FieldGroup} from "@/lib/client/components/ui/field";
 import {useAppForm} from "@/lib/client/components/forms/form";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {emailSettingsSchema, passwordSettingsFormSchema} from "@/lib/schemas";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
-import {usePasswordSettingsMutation, useUpdateEmailMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {usePasswordSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/email-password")({
@@ -13,8 +16,8 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/email-pas
 
 
 function EmailAndPasswordPage() {
-    const emailMutation = useUpdateEmailMutation();
     const passwordMutation = usePasswordSettingsMutation();
+    const [emailSent, setEmailSent] = useState(false);
     const passwordForm = useAppForm({
         defaultValues: {
             newPassword: "",
@@ -24,8 +27,19 @@ function EmailAndPasswordPage() {
         validators: {
             onSubmit: passwordSettingsFormSchema,
             onSubmitAsync: async ({ value }) => {
-                await passwordMutation.mutateAsync({ data: { newPassword: value.newPassword, currentPassword: value.currentPassword } });
-                if (passwordMutation.isError) return passwordMutation.error.message;
+                try {
+                    await passwordMutation.mutateAsync({
+                        data: {
+                            newPassword: value.newPassword,
+                            currentPassword: value.currentPassword,
+                        }
+                    });
+                }
+                catch (err) {
+                    if (err instanceof ValidationError) {
+                        return { fields: { [err.field]: err.message } };
+                    }
+                }
             },
         },
         onSubmit: () => {
@@ -41,8 +55,15 @@ function EmailAndPasswordPage() {
             onSubmit: emailSettingsSchema,
         },
         onSubmit: async ({ value }) => {
-            await emailMutation.mutateAsync(value.email);
+            setEmailSent(false);
+
+            const { error } = await authClient.changeEmail({ newEmail: value.email.trim() });
+            if (error) {
+                return toast.error(error.message ?? "An unexpected error occurred. Please try again later.");
+            }
+
             emailForm.reset();
+            setEmailSent(true);
         },
     });
 
@@ -64,15 +85,10 @@ function EmailAndPasswordPage() {
                             </emailForm.AppField>
                         </FieldGroup>
                     </emailForm.FormFieldset>
-                    {emailMutation.isSuccess &&
+                    {emailSent &&
                         <p role="status" className="text-xs text-green-600 font-medium">
                             Check your inbox to confirm your change of email address.
                         </p>
-                    }
-                    {emailMutation.isError &&
-                        <InlineErrorContainer>
-                            {emailMutation.error.message || "Failed to update your email"}
-                        </InlineErrorContainer>
                     }
                     <emailForm.SubmitButton
                         requireDirty={true}
@@ -119,7 +135,6 @@ function EmailAndPasswordPage() {
                             </passwordForm.AppField>
                         </FieldGroup>
                     </passwordForm.FormFieldset>
-                    <passwordForm.FormError/>
                     <passwordForm.SubmitButton
                         requireDirty={true}
                         label="Update Password"

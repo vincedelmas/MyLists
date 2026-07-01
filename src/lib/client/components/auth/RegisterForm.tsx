@@ -1,13 +1,12 @@
 import {toast} from "sonner";
+import {registerSchema} from "@/lib/schemas";
 import authClient from "@/lib/utils/auth-client";
 import {FaGithub, FaGoogle} from "react-icons/fa";
 import {useLocation} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {FieldGroup} from "@/lib/client/components/ui/field";
-import {registerSchema, usernameSchema} from "@/lib/schemas";
 import {useAppForm} from "@/lib/client/components/forms/form";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {validateUsernameAvailability} from "@/lib/client/validators/username";
 
 
 interface RegisterFormProps {
@@ -35,7 +34,9 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                     callbackURL: getRedirectTarget(),
                 })
 
-                if (error) return error.message || "Unable to create your account.";
+                if (error) {
+                    toast.error(error.message ?? "An unexpected error occurred, please try again later.");
+                }
             }
         },
         onSubmit: () => {
@@ -63,20 +64,10 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                 <form.FormRoot className="space-y-6 mt-2">
                     <form.FormFieldset>
                         <FieldGroup className="gap-4">
-                            <form.AppField
-                                name="username"
-                                validators={{
-                                    onChange: usernameSchema,
-                                    onChangeAsyncDebounceMs: 500,
-                                    onChangeAsync: ({ value }) => {
-                                        return validateUsernameAvailability(value);
-                                    }
-                                }}
-                            >
+                            <form.AppField name="username">
                                 {(field) =>
                                     <field.TextField
                                         label="Username"
-                                        showValStatus={true}
                                         placeholder="Username"
                                         autoComplete="username"
                                     />
@@ -114,7 +105,6 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                             </form.AppField>
                         </FieldGroup>
                     </form.FormFieldset>
-                    <form.FormError/>
                     <form.SubmitButton
                         className="w-full mb-4"
                         label="Create an Account"

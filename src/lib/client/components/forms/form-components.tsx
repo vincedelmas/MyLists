@@ -1,9 +1,8 @@
 import React from "react";
-import {cn} from "@/lib/utils/classnames";
+import {LoaderCircle} from "lucide-react";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Textarea} from "@/lib/client/components/ui/textarea";
-import {Check, CircleAlert, LoaderCircle, X} from "lucide-react";
 import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
 import {useFieldContext, useFormContext} from "@/lib/client/components/forms/form";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
@@ -73,23 +72,13 @@ export function FormError() {
 type TextFieldProps = Omit<React.ComponentProps<typeof Input>, "id" | "name" | "value" | "onBlur" | "onChange"> & {
     label: React.ReactNode;
     description?: string;
-    showValStatus?: boolean;
     labelAccessory?: React.ReactNode;
 };
 
 
-export function TextField({ label, labelAccessory, description, showValStatus = false, className, ...props }: TextFieldProps) {
+export function TextField({ label, labelAccessory, description, className, ...props }: TextFieldProps) {
     const field = useFieldContext<string>();
-    const isValidationInvalid = !field.state.meta.isValid;
-    const isChecking = showValStatus && field.state.meta.isValidating;
-    const isValUnavailable = isStatusUnavailable(field.state.meta.errors);
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-    const showValidationResult = showValStatus && field.state.meta.isDirty && !isChecking;
-
-    function isStatusUnavailable(error: unknown): boolean {
-        if (Array.isArray(error)) return error.some((item) => isStatusUnavailable(item));
-        return !!error && typeof error === "object" && "validationStatus" in error && error.validationStatus === "unavailable";
-    }
 
     return (
         <Field data-invalid={isInvalid}>
@@ -103,37 +92,13 @@ export function TextField({ label, labelAccessory, description, showValStatus = 
                 <Input
                     id={field.name}
                     name={field.name}
+                    className={className}
                     aria-invalid={isInvalid}
                     value={field.state.value}
                     onBlur={field.handleBlur}
-                    aria-busy={isChecking || undefined}
-                    className={cn(showValStatus && "pr-9", className)}
                     onChange={(ev) => field.handleChange(ev.target.value)}
                     {...props}
                 />
-                {(isChecking || showValidationResult) &&
-                    <span
-                        role="status"
-                        aria-label={isChecking
-                            ? "Validating" : isValUnavailable
-                                ? "Validation unavailable" : isValidationInvalid
-                                    ? "Invalid" : "Valid"
-                        }
-                        className={cn(
-                            "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2",
-                            isChecking && "text-muted-foreground",
-                            showValidationResult && isValUnavailable && "text-amber-500",
-                            showValidationResult && isValidationInvalid && !isValUnavailable && "text-destructive",
-                            showValidationResult && !isValidationInvalid && "text-emerald-500"
-                        )}
-                    >
-                        {isChecking
-                            ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin"/> : isValUnavailable
-                                ? <CircleAlert aria-hidden="true" className="size-4"/> : isValidationInvalid
-                                    ? <X aria-hidden="true" className="size-4"/> : <Check aria-hidden="true" className="size-4"/>
-                        }
-                    </span>
-                }
             </div>
 
             {description &&

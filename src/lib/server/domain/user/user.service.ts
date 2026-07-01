@@ -1,10 +1,10 @@
 import {user} from "@/lib/server/database/schema";
-import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, SocialState} from "@/lib/utils/enums";
-import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {CacheManager} from "@/lib/server/core/cache-manager";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {UserRepository} from "@/lib/server/domain/user/user.repository";
+import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
+import {AdminUpdatePayload, GeneralSettings, SearchType} from "@/lib/schemas";
 import {InactiveAccountService} from "@/lib/server/domain/user/inactive-account.service";
 
 
@@ -167,7 +167,7 @@ export class UserService {
     async findUserByName(name: string) {
         const isUsernameTaken = await this.repository.findUserByName(name);
         if (isUsernameTaken) {
-            throw new FormattedError("Invalid username. Please select another one.");
+            throw new ValidationError<GeneralSettings>("username", "Invalid username. Please select another one.");
         }
     }
 

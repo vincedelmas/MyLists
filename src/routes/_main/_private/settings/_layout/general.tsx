@@ -4,12 +4,12 @@ import {CircleHelp} from "lucide-react";
 import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
+import {ValidationError} from "@/lib/utils/error-classes";
 import {useAppForm} from "@/lib/client/components/forms/form";
-import {validateUsernameAvailability} from "@/lib/client/validators/username";
+import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
-import {GeneralSettings, generalSettingsSchema, usernameSchema} from "@/lib/schemas";
-import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
+import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
@@ -29,27 +29,33 @@ function GeneralSettingsPage() {
         } as GeneralSettings,
         validators: {
             onSubmit: generalSettingsSchema,
+            onSubmitAsync: async ({ value }) => {
+                const formData = new FormData();
+                Object.entries(value).forEach(([key, fieldValue]) => {
+                    if (fieldValue !== undefined && fieldValue !== null) {
+                        formData.append(key, fieldValue);
+                    }
+                });
+
+                try {
+                    await generalSettingsMutation.mutateAsync({ data: formData });
+                }
+                catch (err) {
+                    if (err instanceof ValidationError) {
+                        return {
+                            fields: {
+                                [err.field]: err.message,
+                            }
+                        }
+                    }
+                }
+            },
         },
         onSubmit: async ({ value }) => {
-            const submittedData = generalSettingsSchema.parse(value);
-            const formData = new FormData();
-
-            Object.entries(submittedData).forEach(([key, fieldValue]) => {
-                if (fieldValue !== undefined && fieldValue !== null) {
-                    formData.append(key, fieldValue);
-                }
-            });
-
-            await generalSettingsMutation.mutateAsync({ data: formData });
             await setCurrentUser();
-
-            form.reset({
-                privacy: submittedData.privacy,
-                username: submittedData.username,
-            });
-
             setImageCropperResetKey((key) => key + 1);
-            toast.success("Settings successfully updated");
+            toast.success("Settings Updated Successfully!");
+            form.reset({ privacy: value.privacy, username: value.username });
         },
     });
 
@@ -58,21 +64,10 @@ function GeneralSettingsPage() {
             <form.FormRoot className="w-90 max-sm:w-full">
                 <form.FormFieldset>
                     <FieldGroup className="gap-6">
-                        <form.AppField
-                            name="username"
-                            validators={{
-                                onChange: usernameSchema,
-                                onChangeAsyncDebounceMs: 400,
-                                onChangeAsync: async ({ value }) => {
-                                    if (value.trim() === currentUser?.name) return;
-                                    return validateUsernameAvailability(value);
-                                },
-                            }}
-                        >
+                        <form.AppField name="username">
                             {(field) =>
                                 <field.TextField
                                     label="Username"
-                                    showValStatus={true}
                                     autoComplete="username"
                                 />
                             }
@@ -134,9 +129,9 @@ function GeneralSettingsPage() {
                     </FieldGroup>
                 </form.FormFieldset>
                 <form.SubmitButton
-                    label="Update Settings"
-                    className="mt-5"
+                    className="mt-6"
                     requireDirty={true}
+                    label="Update Settings"
                 />
             </form.FormRoot>
         </form.AppForm>

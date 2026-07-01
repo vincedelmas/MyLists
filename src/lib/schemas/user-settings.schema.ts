@@ -67,12 +67,12 @@ export const highlightedMediaSettingsSchema = z.object(highlightedMediaSettingsS
     }) as z.ZodType<HighlightedMediaSettings, HighlightedMediaSettings>;
 
 export const generalSettingsSchema = z.object({
+    username: usernameSchema,
     privacy: z.enum(PrivacyType),
     profileImage: z.instanceof(File).optional()
         .refine((file) => !file || file.size <= 10 * 1024 * 1000, "Image must be less than 10MB."),
     backgroundImage: z.instanceof(File).optional()
         .refine((file) => !file || file.size <= 10 * 1024 * 1000, "Image must be less than 10MB."),
-    username: usernameSchema,
 });
 
 export const mediaListSettingsSchema = z.object({

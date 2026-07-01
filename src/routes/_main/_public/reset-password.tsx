@@ -1,6 +1,5 @@
 import {toast} from "sonner";
 import {useState} from "react";
-import {BASE_ERROR_CODES} from "better-auth";
 import authClient from "@/lib/utils/auth-client";
 import {Button} from "@/lib/client/components/ui/button";
 import {FieldGroup} from "@/lib/client/components/ui/field";
@@ -52,10 +51,7 @@ function ResetPasswordPage() {
             const { error } = await authClient.resetPassword({ token, newPassword: value.newPassword });
 
             if (error) {
-                if (error.code === BASE_ERROR_CODES.INVALID_TOKEN.code) {
-                    return setInvalidToken(true);
-                }
-                return toast.error(error.message);
+                return setInvalidToken(true);
             }
 
             form.reset();
@@ -95,10 +91,12 @@ function ResetPasswordPage() {
                         </form.FormFieldset>
                         {invalidToken &&
                             <InlineErrorContainer>
-                                Invalid Token:{" "}
-                                <Link to="/forgot-password" className="text-app-accent underline">
-                                    Request a new reset link
-                                </Link>
+                                <div>
+                                    <div>This is an Invalid or Expired Token:</div>
+                                    <Link to="/forgot-password" className="text-app-accent underline">
+                                        Request a new reset link
+                                    </Link>
+                                </div>
                             </InlineErrorContainer>
                         }
                         <form.SubmitButton

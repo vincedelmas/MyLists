@@ -37,10 +37,7 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
                 });
 
                 if (!error) return undefined;
-
-                return error.status === 403
-                    ? "Please validate your email. A validation link has been sent."
-                    : error.message;
+                return error.status !== 403 ? "Please validate your email. A validation link has been sent." : error.message;
             },
         },
         onSubmit: async () => {

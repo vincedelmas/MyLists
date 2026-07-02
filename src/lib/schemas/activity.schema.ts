@@ -74,9 +74,15 @@ export const addActivitySchema = z.object({
     hidden: z.boolean().optional().default(false),
     isRedo: z.boolean().optional().default(false),
     isCompleted: z.boolean().optional().default(false),
-    mediaId: z.coerce.number().int().positive("Choose a media first."),
+    mediaId: z.number().int().positive("Choose a media first."),
     lastUpdate: z.string().min(1, "Progress date is required."),
     specificGained: z.number().positive("Progress must be greater than 0."),
+});
+
+export const addActivityFormSchema = addActivitySchema.extend({
+    hidden: z.boolean(),
+    isRedo: z.boolean(),
+    isCompleted: z.boolean(),
 });
 
 export const bulkHideActivitySchema = z.object({

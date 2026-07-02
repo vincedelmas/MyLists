@@ -4,6 +4,7 @@ import {cn} from "@/lib/utils/classnames";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Switch} from "@/lib/client/components/ui/switch";
+import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
 import {useFieldContext, useFormContext} from "@/lib/client/components/forms/form";
@@ -72,8 +73,8 @@ export function FormError() {
 
 
 type TextFieldProps = Omit<React.ComponentProps<typeof Input>, "id" | "name" | "value" | "onBlur" | "onChange"> & {
-    label: React.ReactNode;
     description?: string;
+    label: React.ReactNode;
     labelAccessory?: React.ReactNode;
 };
 
@@ -85,9 +86,7 @@ export function TextField({ label, labelAccessory, description, className, ...pr
     return (
         <Field data-invalid={isInvalid}>
             <div className="flex items-center justify-between gap-2">
-                <FieldLabel htmlFor={field.name}>
-                    {label}
-                </FieldLabel>
+                <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
                 {labelAccessory}
             </div>
             <div className="relative">
@@ -102,6 +101,46 @@ export function TextField({ label, labelAccessory, description, className, ...pr
                     {...props}
                 />
             </div>
+
+            {description &&
+                <FieldDescription>
+                    {description}
+                </FieldDescription>
+            }
+
+            {isInvalid &&
+                <FieldError
+                    errors={field.state.meta.errors}
+                />
+            }
+        </Field>
+    );
+}
+
+
+type NumberFieldProps = Omit<React.ComponentProps<typeof Input>, "id" | "name" | "type" | "value" | "onBlur" | "onChange"> & {
+    description?: string;
+    label: React.ReactNode;
+};
+
+
+export function NumberField({ label, description, ...props }: NumberFieldProps) {
+    const field = useFieldContext<number>();
+    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+    return (
+        <Field data-invalid={isInvalid}>
+            <FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+            <Input
+                {...props}
+                type="number"
+                id={field.name}
+                name={field.name}
+                aria-invalid={isInvalid}
+                onBlur={field.handleBlur}
+                value={Number.isNaN(field.state.value) ? "" : field.state.value}
+                onChange={(ev) => field.handleChange(ev.target.valueAsNumber)}
+            />
 
             {description &&
                 <FieldDescription>
@@ -166,6 +205,7 @@ interface SelectFieldProps {
     placeholder?: string;
     label: React.ReactNode;
     labelAccessory?: React.ReactNode;
+    onValueChange?: (value: string) => void;
     options: {
         value: string;
         disabled?: boolean;
@@ -174,7 +214,7 @@ interface SelectFieldProps {
 }
 
 
-export function SelectField({ label, labelAccessory, options, placeholder, className }: SelectFieldProps) {
+export function SelectField({ label, labelAccessory, options, placeholder, className, onValueChange }: SelectFieldProps) {
     const field = useFieldContext<string>();
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
@@ -187,7 +227,14 @@ export function SelectField({ label, labelAccessory, options, placeholder, class
                 {labelAccessory}
             </div>
 
-            <Select name={field.name} value={field.state.value} onValueChange={field.handleChange}>
+            <Select
+                name={field.name}
+                value={field.state.value}
+                onValueChange={(value) => {
+                    field.handleChange(value);
+                    onValueChange?.(value);
+                }}
+            >
                 <SelectTrigger id={field.name} className={cn("w-full", className)} onBlur={field.handleBlur} aria-invalid={isInvalid}>
                     <SelectValue placeholder={placeholder}/>
                 </SelectTrigger>
@@ -199,6 +246,49 @@ export function SelectField({ label, labelAccessory, options, placeholder, class
                     )}
                 </SelectContent>
             </Select>
+
+            {isInvalid &&
+                <FieldError
+                    errors={field.state.meta.errors}
+                />
+            }
+        </Field>
+    );
+}
+
+
+type CheckboxFieldProps = Omit<React.ComponentProps<typeof Checkbox>, "id" | "name" | "checked" | "onBlur" | "onCheckedChange"> & {
+    className?: string;
+    label: React.ReactNode;
+    labelClassName?: string;
+    onCheckedChange?: (checked: boolean) => void;
+};
+
+
+export function CheckboxField({ label, className, labelClassName, onCheckedChange, ...props }: CheckboxFieldProps) {
+    const field = useFieldContext<boolean>();
+    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+    return (
+        <Field className={className} data-invalid={isInvalid}>
+            <div className="flex items-center gap-2">
+                <Checkbox
+                    {...props}
+                    id={field.name}
+                    name={field.name}
+                    aria-invalid={isInvalid}
+                    onBlur={field.handleBlur}
+                    checked={field.state.value}
+                    onCheckedChange={(checked) => {
+                        const value = checked === true;
+                        field.handleChange(value);
+                        onCheckedChange?.(value);
+                    }}
+                />
+                <FieldLabel htmlFor={field.name} className={labelClassName}>
+                    {label}
+                </FieldLabel>
+            </div>
 
             {isInvalid &&
                 <FieldError

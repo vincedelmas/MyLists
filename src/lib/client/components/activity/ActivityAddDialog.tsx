@@ -1,24 +1,22 @@
 import {useState} from "react";
 import {Search} from "lucide-react";
-import {useForm} from "react-hook-form";
 import {MediaType} from "@/lib/utils/enums";
 import {useQuery} from "@tanstack/react-query";
-import {zodResolver} from "@hookform/resolvers/zod";
+import {useSelector} from "@tanstack/react-store";
+import {addActivityFormSchema} from "@/lib/schemas";
 import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
-import {Checkbox} from "@/lib/client/components/ui/checkbox";
-import {Separator} from "@/lib/client/components/ui/separator";
-import {displayContainerError} from "@/lib/utils/error-display";
+import {ValidationError} from "@/lib/utils/error-classes";
 import {useCurrentDate} from "@/lib/client/hooks/use-dates";
+import {useAppForm} from "@/lib/client/components/forms/form";
+import {Separator} from "@/lib/client/components/ui/separator";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
-import {AddActivity, AddActivityInput, addActivitySchema} from "@/lib/schemas";
+import {Field, FieldError, FieldLabel} from "@/lib/client/components/ui/field";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {activityMediaAddSearchOptions} from "@/lib/client/react-query/query-options";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {useAddActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {getActivityInputStep, getActivityUnitLabel, getDefaultActivityDate, toActivityStoredValue} from "@/lib/utils/activity-utils";
 
@@ -39,8 +37,7 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
     const { search, setSearch, debouncedSearch, isOpen, reset: resetSearch, containerRef } = useSearchContainer({
         onReset: () => undefined,
     });
-    const form = useForm<AddActivityInput, unknown, AddActivity>({
-        resolver: zodResolver(addActivitySchema),
+    const form = useAppForm({
         defaultValues: {
             mediaId: 0,
             isRedo: false,
@@ -50,17 +47,48 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
             mediaType: mediaTypes[0] ?? MediaType.SERIES,
             lastUpdate: getDefaultActivityDate(year, month),
         },
+        validators: {
+            onSubmit: addActivityFormSchema,
+            onSubmitAsync: async ({ value }) => {
+                try {
+                    await addMutation.mutateAsync({
+                        data: {
+                            ...value,
+                            lastUpdate: `${value.lastUpdate}T12:00:00.000Z`,
+                            specificGained: toActivityStoredValue(value.mediaType, value.specificGained),
+                        },
+                    });
+                }
+                catch (err) {
+                    if (err instanceof ValidationError) {
+                        return { fields: { [err.field]: err.message } };
+                    }
+                }
+            },
+        },
+        onSubmit: () => {
+            onOpenChange(false);
+        },
     });
 
-    const selectedType = form.watch("mediaType");
+    const selectedType = useSelector(form.store, (state) => state.values.mediaType);
     const { data: searchResults = [], isFetching, error } = useQuery(activityMediaAddSearchOptions(selectedType, debouncedSearch));
 
-    const handleTypeChange = (value: MediaType) => {
+    const handleTypeChange = () => {
         resetSearch();
         setSelectedMedia(null);
-        form.clearErrors("mediaId");
-        form.setValue("mediaId", 0, { shouldDirty: true });
-        form.setValue("mediaType", value, { shouldDirty: true, shouldValidate: true });
+        form.setFieldValue("mediaId", 0);
+        clearMediaIdError();
+    };
+
+    const clearMediaIdError = () => {
+        form.setFieldMeta("mediaId", (meta) => ({
+            ...meta,
+            errorMap: {
+                ...meta.errorMap,
+                onSubmit: undefined,
+            },
+        }));
     };
 
     const handleSelectedMedia = (item: typeof searchResults[number]) => {
@@ -69,24 +97,9 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
             name: item.mediaName,
             imageCover: item.customCover ?? item.mediaCover,
         });
-        form.setValue("mediaId", item.mediaId, { shouldDirty: true, shouldValidate: true });
+        form.setFieldValue("mediaId", item.mediaId);
+        clearMediaIdError();
         resetSearch();
-    };
-
-    const handleSubmit = (values: AddActivity) => {
-        addMutation.mutate({
-            data: {
-                ...values,
-                isRedo: values.isRedo,
-                isCompleted: values.isCompleted,
-                lastUpdate: `${values.lastUpdate}T12:00:00.000Z`,
-                specificGained: toActivityStoredValue(values.mediaType, values.specificGained),
-            },
-        }, {
-            onSuccess: () => {
-                onOpenChange(false);
-            },
-        });
     };
 
     return (
@@ -99,40 +112,37 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                     </DialogDescription>
                 </DialogHeader>
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 mt-2">
-                        <FormField
-                            name="mediaType"
-                            control={form.control}
-                            render={({ field }) =>
-                                <FormItem className="w-36">
-                                    <FormLabel>MediaType</FormLabel>
-                                    <Select value={field.value} onValueChange={handleTypeChange}>
-                                        <FormControl>
-                                            <SelectTrigger className="w-36 capitalize">
-                                                <SelectValue/>
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {mediaTypes.map((mediaType) =>
-                                                <SelectItem key={mediaType} value={mediaType} className="capitalize">
-                                                    {mediaType}
-                                                </SelectItem>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage/>
-                                </FormItem>
-                            }
-                        />
-                        <FormField
-                            name="mediaId"
-                            control={form.control}
-                            render={() =>
-                                <FormItem>
-                                    <FormLabel>Media</FormLabel>
-                                    <FormControl>
-                                        <div>
+                <form.AppForm>
+                    <form.FormRoot className="space-y-6 mt-2">
+                        <form.FormFieldset className="space-y-6">
+                            <div className="w-40">
+                                <form.AppField name="mediaType">
+                                    {(field) =>
+                                        <field.SelectField
+                                            label="Media type"
+                                            className="w-36 capitalize"
+                                            onValueChange={handleTypeChange}
+                                            options={mediaTypes.map((mediaType) => ({
+                                                value: mediaType,
+                                                label: (
+                                                    <span className="capitalize flex gap-2 items-center">
+                                                        <MainThemeIcon type={mediaType} className="size-3.5"/>
+                                                        {mediaType}
+                                                    </span>
+                                                ),
+                                            }))}
+                                        />
+                                    }
+                                </form.AppField>
+                            </div>
+
+                            <form.AppField name="mediaId">
+                                {(field) => {
+                                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={`${field.name}-search`}>Media</FieldLabel>
                                             {selectedMedia ?
                                                 <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
                                                     <div className="flex min-w-0 items-center gap-3">
@@ -156,8 +166,8 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                                                         variant="outline"
                                                         onClick={() => {
                                                             setSelectedMedia(null);
-                                                            form.clearErrors("mediaId");
-                                                            form.setValue("mediaId", 0, { shouldDirty: true });
+                                                            form.setFieldValue("mediaId", 0);
+                                                            clearMediaIdError();
                                                         }}
                                                     >
                                                         Change
@@ -166,13 +176,16 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                                                 :
                                                 <div ref={containerRef} className="relative">
                                                     <div className="flex items-center overflow-hidden rounded-md border border-border
-                                                    focus-within:border-app-accent focus-within:ring-2 focus-within:ring-app-accent/50">
+                                                    focus-within:border-app-accent focus-within:ring-app-accent/50">
                                                         <div className="px-3 text-muted-foreground">
                                                             <Search className="size-4"/>
                                                         </div>
                                                         <Input
                                                             value={search}
                                                             inputMode="search"
+                                                            aria-invalid={isInvalid}
+                                                            onBlur={field.handleBlur}
+                                                            id={`${field.name}-search`}
                                                             className="border-none focus-visible:ring-0"
                                                             onChange={(ev) => setSearch(ev.target.value)}
                                                             placeholder={`Search your ${capitalize(selectedType)} list...`}
@@ -219,114 +232,69 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                                                     </SearchContainer>
                                                 </div>
                                             }
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            }
-                        />
+                                            {isInvalid &&
+                                                <FieldError
+                                                    errors={field.state.meta.errors}
+                                                />
+                                            }
+                                        </Field>
+                                    );
+                                }}
+                            </form.AppField>
 
-                        <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-                            <FormField
-                                name="specificGained"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>
-                                            {getActivityUnitLabel(selectedType, "long") ?? "Units gained"}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                ref={field.ref}
-                                                name={field.name}
-                                                value={field.value}
-                                                onBlur={field.onBlur}
-                                                step={getActivityInputStep(selectedType)}
-                                                onChange={(ev) => field.onChange(ev.target.valueAsNumber)}
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                            <FormField
-                                name="lastUpdate"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Progress date</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="date"
-                                                max={currentDate}
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                        </div>
+                            <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+                                <form.AppField name="specificGained">
+                                    {(field) =>
+                                        <field.NumberField
+                                            step={getActivityInputStep(selectedType)}
+                                            label={getActivityUnitLabel(selectedType, "long") ?? "Units gained"}
+                                        />
+                                    }
+                                </form.AppField>
+                                <form.AppField name="lastUpdate">
+                                    {(field) =>
+                                        <field.TextField
+                                            type="date"
+                                            max={currentDate}
+                                            label="Progress date"
+                                        />
+                                    }
+                                </form.AppField>
+                            </div>
 
-                        <div className="flex flex-wrap gap-4">
-                            <FormField
-                                name="isCompleted"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value}
-                                                onCheckedChange={(value) => {
-                                                    field.onChange(!!value);
-                                                    if (value) {
-                                                        form.setValue("isRedo", false, { shouldDirty: true, shouldValidate: true });
-                                                    }
-                                                }}
-                                            />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Completed</FormLabel>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                            <FormField
-                                name="isRedo"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value}
-                                                onCheckedChange={(value) => {
-                                                    field.onChange(!!value);
-                                                    if (value) {
-                                                        form.setValue("isCompleted", false, { shouldDirty: true, shouldValidate: true });
-                                                    }
-                                                }}
-                                            />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Re-experience</FormLabel>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                        </div>
-
-                        {addMutation.isError &&
-                            <InlineErrorContainer>
-                                {displayContainerError({ error: addMutation.error })}
-                            </InlineErrorContainer>
-                        }
-
+                            <div className="space-y-2">
+                                <form.AppField name="isCompleted">
+                                    {(field) =>
+                                        <field.CheckboxField
+                                            label="Completed"
+                                            labelClassName="font-normal"
+                                            onCheckedChange={(checked) => {
+                                                if (checked) form.setFieldValue("isRedo", false);
+                                            }}
+                                        />
+                                    }
+                                </form.AppField>
+                                <form.AppField name="isRedo">
+                                    {(field) =>
+                                        <field.CheckboxField
+                                            label="Re-experienced"
+                                            labelClassName="font-normal"
+                                            onCheckedChange={(checked) => {
+                                                if (checked) form.setFieldValue("isCompleted", false);
+                                            }}
+                                        />
+                                    }
+                                </form.AppField>
+                            </div>
+                        </form.FormFieldset>
+                        <form.FormError/>
                         <DialogFooter>
-                            <Button type="submit" disabled={addMutation.isPending}>
-                                Add New Activity
-                            </Button>
+                            <form.SubmitButton
+                                label="Add New Activity"
+                            />
                         </DialogFooter>
-                    </form>
-                </Form>
+                    </form.FormRoot>
+                </form.AppForm>
             </DialogContent>
         </Dialog>
     );

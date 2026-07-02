@@ -1,7 +1,7 @@
 import {MediaType, Status} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
-import {FormattedError} from "@/lib/utils/error-classes";
 import {calculateActivityTime} from "@/lib/utils/activity-utils";
+import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {UserActivityRepository} from "@/lib/server/domain/user/user-activity.repository";
 import {calendarDateRangeToISOString, compareDateInputs} from "@/lib/utils/date-formatting";
@@ -125,17 +125,17 @@ export class UserActivityService {
         const mediaService = this.mediaServiceRegistry.getService(payload.mediaType);
 
         const media = await mediaService.findById(payload.mediaId);
-        if (!media) throw new FormattedError("Media not found");
+        if (!media) throw new ValidationError<AddActivity>("mediaId", "Media not found");
 
         const inUserList = await mediaService.hasUserMedia(userId, payload.mediaId);
-        if (!inUserList) throw new FormattedError("Media not in your list");
+        if (!inUserList) throw new ValidationError<AddActivity>("mediaId", "Media not in your list");
 
         await this.repository.logActivity({
             ...payload,
             userId,
             isRedo: payload.isRedo ?? false,
-            isCompleted: payload.isCompleted ?? false,
             hidden: payload.hidden ?? false,
+            isCompleted: payload.isCompleted ?? false,
         });
     }
 

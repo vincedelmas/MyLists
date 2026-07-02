@@ -24,7 +24,6 @@ export const useCreateCollectionMutation = (meta?: MutationMeta) => {
         mutationFn: postCreateCollection,
         meta: {
             successToastMessage: "New collection created!",
-            errorToastMessage: "Failed to create a new collection.",
             ...meta,
         },
         onSuccess: async () => {
@@ -41,7 +40,6 @@ export const useUpdateCollectionMutation = (collectionId: number) => {
     return useMutation({
         mutationFn: postUpdateCollection,
         meta: {
-            errorToastMessage: "Failed to update this collection.",
             successToastMessage: "Collection updated successfully!",
         },
         onSuccess: async () => {
@@ -59,7 +57,6 @@ export const useDeleteCollectionMutation = (collectionId: number) => {
     return useMutation({
         mutationFn: postDeleteCollection,
         meta: {
-            errorToastMessage: "Failed to delete this collection.",
             successToastMessage: "Collection deleted successfully!",
         },
         onSuccess: async () => {
@@ -76,7 +73,6 @@ export const useToggleCollectionLikeMutation = (collectionId: number) => {
 
     return useMutation({
         mutationFn: postToggleCollectionLike,
-        meta: { errorToastMessage: "Failed to toggle like on the collection." },
         onSuccess: async () => {
             queryClient.setQueryData(collectionDetailsReadOptions(collectionId).queryKey, (oldData) => {
                 if (!oldData) return;
@@ -102,7 +98,6 @@ export const useCopyCollectionMutation = (collectionId: number) => {
     return useMutation({
         mutationFn: postCopyCollection,
         meta: {
-            errorToastMessage: "Failed to copy the collection.",
             successToastMessage: "Collection copied successfully!",
         },
         onSuccess: async () => {

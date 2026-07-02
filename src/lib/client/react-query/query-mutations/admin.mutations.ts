@@ -17,7 +17,6 @@ export const useAdminUpdateUserMutation = (filters: SearchType) => {
 
     return useMutation({
         mutationFn: postAdminUpdateUser,
-        meta: { errorToastMessage: "Failed to update this user." },
         onSuccess: async (_data, variables) => {
             if (variables.data.userId) {
                 if (variables.data.payload.deleteUser) toast.success("User deleted successfully");
@@ -38,7 +37,6 @@ export const useAdminUpdateAchievementMutation = () => {
 
     return useMutation({
         mutationFn: postAdminUpdateAchievement,
-        meta: { errorToastMessage: "Failed to update this achievement." },
         onSuccess: () => {
             return queryClient.invalidateQueries({ queryKey: adminAchievementsOptions.queryKey })
         },
@@ -51,7 +49,6 @@ export const useAdminUpdateTiersMutation = () => {
 
     return useMutation({
         mutationFn: postAdminUpdateTiers,
-        meta: { errorToastMessage: "Failed to update this achievement tier." },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: adminAchievementsOptions.queryKey }),
     });
 };
@@ -69,7 +66,6 @@ export const useAdminDeleteTaskMutation = () => {
 
     return useMutation({
         mutationFn: postAdminDeleteArchivedTask,
-        meta: { errorToastMessage: "Failed to delete this task." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: adminArchivedTasksOptions.queryKey });
         },
@@ -82,7 +78,6 @@ export const useAdminDeleteErrorLogsMutation = (search: SearchType) => {
 
     return useMutation({
         mutationFn: postAdminDeleteErrorLog,
-        meta: { errorToastMessage: "Failed to delete this error log." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: adminErrorLogsOptions(search).queryKey });
         },

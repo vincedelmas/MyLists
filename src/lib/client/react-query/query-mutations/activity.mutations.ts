@@ -1,5 +1,6 @@
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {postAddActivity, postBulkHideActivity, postDeleteActivity, postUpdateActivity} from "@/lib/server/functions/user-activity";
+import {toast} from "sonner";
 
 
 export const useAddActivityMutation = (meta?: MutationMeta) => {
@@ -52,15 +53,16 @@ export const useDeleteActivityMutation = (meta?: MutationMeta) => {
 };
 
 
-export const useBulkHideActivityMutation = () => {
+export const useBulkHideActivityMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postBulkHideActivity,
-        meta: { errorToastMessage: "Failed to bulk hide activity." },
-        onSuccess: async () => {
+        meta: { ...meta },
+        onSuccess: async (data) => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
             await queryClient.invalidateQueries({ queryKey: ["specific-activity"] });
+            toast.success(`Hidden ${data.count} Activit${data.count === 1 ? "y" : "ies"}`);
         },
     });
 };

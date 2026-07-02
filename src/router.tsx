@@ -1,11 +1,12 @@
 import {toast} from "sonner";
 import {routeTree} from "@/routeTree.gen";
 import {createRouter} from "@tanstack/react-router";
+import {DEFAULT_ERROR_MESSAGE} from "@/lib/utils/constants";
 import {NotFound} from "@/lib/client/components/general/NotFound";
 import {NavLoader} from "./lib/client/components/general/NavLoader";
+import {FormZodError, ValidationError} from "@/lib/utils/error-classes";
 import {setupCoreRouterSsrQueryIntegration} from "@tanstack/router-ssr-query-core";
 import {ErrorCatchBoundary} from "@/lib/client/components/general/ErrorCatchBoundary";
-import {FormattedError, FormZodError, ValidationError} from "@/lib/utils/error-classes";
 import {MutationCache, QueryCache, QueryClient, QueryClientProvider} from "@tanstack/react-query";
 
 
@@ -20,21 +21,8 @@ export function getRouter() {
         }),
         mutationCache: new MutationCache({
             onError: async (error, _variables, _context, mutation) => {
-                if (error instanceof ValidationError || error instanceof FormZodError) return;
-
-                const noGlobalErrorToast = mutation.meta?.noGlobalErrorToast;
-                if (error instanceof FormattedError) {
-                    if (!noGlobalErrorToast) toast.warning(error.message);
-                    return;
-                }
-
-                if ("isNotFound" in error && error.isNotFound) {
-                    if (!noGlobalErrorToast) toast.error("The requested resource was not found.");
-                    return;
-                }
-
-                // Always display toast for unexpected errors
-                toast.error(mutation.meta?.errorToastMessage || error.message);
+                if (mutation.meta?.noErrorToast || error instanceof ValidationError || error instanceof FormZodError) return;
+                return toast.error(error.message || DEFAULT_ERROR_MESSAGE);
             },
             onSuccess: (_data, _variables, _context, mutation) => {
                 if (mutation?.meta?.successToastMessage) {
@@ -93,9 +81,8 @@ declare module "@tanstack/react-query" {
             errorToastMessage?: string,
         },
         mutationMeta: {
-            errorToastMessage?: string,
+            noErrorToast?: boolean,
             successToastMessage?: string,
-            noGlobalErrorToast?: boolean,
         }
     }
 }

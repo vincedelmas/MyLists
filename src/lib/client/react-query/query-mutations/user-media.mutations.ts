@@ -29,7 +29,6 @@ export const useDeleteProfileUpdateMutation = (username: string) => {
 
     return useMutation({
         mutationFn: postDeleteUserUpdates,
-        meta: { errorToastMessage: "Failed to delete this update." },
         onSuccess: (data, variables) => {
             queryClient.setQueryData(profileOptions(username).queryKey, (oldData) => {
                 if (!oldData || !data) return;
@@ -48,7 +47,6 @@ export const useDeleteAllUpdatesMutation = (username: string, filters: SimpleSea
 
     return useMutation({
         mutationFn: postDeleteUserUpdates,
-        meta: { errorToastMessage: "Failed to delete all updates." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: allUpdatesOptions(username, filters).queryKey });
         },
@@ -61,7 +59,6 @@ export const useDeleteHistoryUpdatesMutation = (mediaType: MediaType, mediaId: n
 
     return useMutation({
         mutationFn: postDeleteUserUpdates,
-        meta: { errorToastMessage: "Failed to delete this history update." },
         onSuccess: async (_data, variables) => {
             return queryClient.setQueryData(historyOptions(mediaType, mediaId).queryKey, (oldData) => {
                 if (!oldData) return;
@@ -79,7 +76,6 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
         mutationFn: postAddMediaToList,
         meta: {
             successToastMessage: "Media added to your list!",
-            errorToastMessage: "Failed to add this media to your list",
         },
         onSuccess: (data, variables) => {
             if (queryOption.queryKey[0] === "details") {
@@ -113,7 +109,6 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
         mutationFn: postRemoveMediaFromList,
         meta: {
             successToastMessage: "Media removed from your list!",
-            errorToastMessage: "Failed to remove this media from your list.",
         },
         onSuccess: (_data, variables) => {
             if (queryOption.queryKey[0] === "details") {
@@ -165,7 +160,6 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
 
             return postUpdateUserMedia({ data: { payload: payloadWithDate, mediaType, mediaId } });
         },
-        meta: { errorToastMessage: "Failed to update this media." },
         onSuccess: async (data, variables) => {
             const activityUpdate = activityUpdateTypes.has(variables.payload.type);
 
@@ -206,7 +200,6 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption) 
         mutationFn: postUpdateUserCustomCover,
         meta: {
             successToastMessage: "Custom cover updated!",
-            errorToastMessage: "Failed to update this custom cover."
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: queryOption.queryKey });

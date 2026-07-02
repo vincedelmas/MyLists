@@ -1,16 +1,16 @@
-import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
+import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {postAdminDeleteFeatureRequest, postAdminUpdateFeatureStatus, postCreateFeatureRequest, postToggleFeatureVote} from "@/lib/server/functions/feature-votes";
 
 
-export const useCreateFeatureRequestMutation = () => {
+export const useCreateFeatureRequestMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postCreateFeatureRequest,
         meta: {
-            errorToastMessage: "Failed to submit feature request.",
             successToastMessage: "Feature request submitted successfully!",
+            ...meta,
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
@@ -24,7 +24,6 @@ export const useToggleFeatureVoteMutation = () => {
 
     return useMutation({
         mutationFn: postToggleFeatureVote,
-        meta: { errorToastMessage: "Failed to toggle feature vote." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
         },

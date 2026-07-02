@@ -23,8 +23,8 @@ interface AdminFeatureDialogProps {
 
 export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentComment }: AdminFeatureDialogProps) => {
     const [open, setOpen] = useState(false);
-    const updateStatusMutation = useAdminUpdateFeatureMutation({ noGlobalErrorToast: true });
-    const deleteFeatureMutation = useAdminDeleteFeatureMutation({ noGlobalErrorToast: true });
+    const updateStatusMutation = useAdminUpdateFeatureMutation({ noErrorToast: true });
+    const deleteFeatureMutation = useAdminDeleteFeatureMutation({ noErrorToast: true });
     const form = useForm<PostFeatureStatus>({
         resolver: zodResolver(postFeatureStatusSchema),
         defaultValues: {

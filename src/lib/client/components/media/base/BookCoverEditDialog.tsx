@@ -24,7 +24,7 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
     const [open, setOpen] = useState(false);
     const [fileInputKey, setFileInputKey] = useState(0);
     const [mode, setMode] = useState<"link" | "upload">("link");
-    const updateCoverMutation = useUpdateBookCoverMutation(mediaId, { noGlobalErrorToast: true });
+    const updateCoverMutation = useUpdateBookCoverMutation(mediaId, { noErrorToast: true });
     const form = useForm<UpdateBookCoverInput>({
         resolver: zodResolver(updateBookCoverSchema),
         defaultValues: {

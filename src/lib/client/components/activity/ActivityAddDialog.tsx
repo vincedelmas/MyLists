@@ -7,10 +7,10 @@ import {addActivityFormSchema} from "@/lib/schemas";
 import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
-import {ValidationError} from "@/lib/utils/error-classes";
 import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {useAppForm} from "@/lib/client/components/forms/form";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {handleFormSubmit} from "@/lib/utils/form-error-handler";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {Field, FieldError, FieldLabel} from "@/lib/client/components/ui/field";
@@ -32,7 +32,7 @@ interface ActivityAddDialogProps {
 
 export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange }: ActivityAddDialogProps) => {
     const currentDate = useCurrentDate();
-    const addMutation = useAddActivityMutation({ noGlobalErrorToast: true });
+    const addMutation = useAddActivityMutation({ noErrorToast: true });
     const [selectedMedia, setSelectedMedia] = useState<{ id: number; name: string; imageCover: string } | null>(null);
     const { search, setSearch, debouncedSearch, isOpen, reset: resetSearch, containerRef } = useSearchContainer({
         onReset: () => undefined,
@@ -49,26 +49,19 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
         },
         validators: {
             onSubmit: addActivityFormSchema,
-            onSubmitAsync: async ({ value }) => {
-                try {
-                    await addMutation.mutateAsync({
-                        data: {
-                            ...value,
-                            lastUpdate: `${value.lastUpdate}T12:00:00.000Z`,
-                            specificGained: toActivityStoredValue(value.mediaType, value.specificGained),
-                        },
-                    });
-                }
-                catch (err) {
-                    if (err instanceof ValidationError) {
-                        return { fields: { [err.field]: err.message } };
-                    }
-                    throw err;
-                }
-            },
         },
-        onSubmit: () => {
-            onOpenChange(false);
+        onSubmit: async ({ value, formApi }) => {
+            const success = await handleFormSubmit(formApi, () => addMutation.mutateAsync({
+                data: {
+                    ...value,
+                    lastUpdate: `${value.lastUpdate}T12:00:00.000Z`,
+                    specificGained: toActivityStoredValue(value.mediaType, value.specificGained),
+                },
+            }));
+
+            if (success) {
+                onOpenChange(false);
+            }
         },
     });
 

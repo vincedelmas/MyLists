@@ -6,7 +6,7 @@ import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {useAppForm} from "@/lib/client/components/forms/form";
-import {displayContainerError} from "@/lib/utils/error-display";
+import {handleFormSubmit} from "@/lib/utils/form-error-handler";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {useDeleteActivityMutation, useUpdateActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
@@ -22,8 +22,8 @@ interface ActivityEditDialogProps {
 
 export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEditDialogProps) => {
     const currentDate = useCurrentDate();
-    const updateMutation = useUpdateActivityMutation({ noGlobalErrorToast: true });
-    const deleteMutation = useDeleteActivityMutation({ noGlobalErrorToast: true });
+    const updateMutation = useUpdateActivityMutation({ noErrorToast: true });
+    const deleteMutation = useDeleteActivityMutation({ noErrorToast: true });
     const form = useAppForm({
         defaultValues: {
             isRedo: activity.isRedo ?? false,
@@ -35,8 +35,8 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
         validators: {
             onSubmit: updateActivityFormSchema,
         },
-        onSubmit: async ({ value }) => {
-            await updateMutation.mutateAsync({
+        onSubmit: async ({ value, formApi }) => {
+            const success = await handleFormSubmit(formApi, () => updateMutation.mutateAsync({
                 data: {
                     activityId: activity.id,
                     payload: {
@@ -45,19 +45,25 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                         specificGained: toActivityStoredValue(activity.mediaType, value.specificGained),
                     },
                 },
-            });
-            onOpenChange(false);
+            }));
+
+            if (success) {
+                onOpenChange(false);
+            }
         },
     });
 
     const isRedo = useSelector(form.store, (state) => state.values.isRedo);
     const isCompleted = useSelector(form.store, (state) => state.values.isCompleted);
 
-    const handleOnDelete = async () => {
+    const handleOnDelete = () => {
         if (!window.confirm("Delete this activity event?")) return;
 
-        await deleteMutation.mutateAsync({ data: { activityId: activity.id } });
-        onOpenChange(false);
+        deleteMutation.mutate({ data: { activityId: activity.id } }, {
+            onSuccess: () => {
+                onOpenChange(false);
+            },
+        });
     };
 
     return (
@@ -138,11 +144,14 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                             </form.AppField>
                         </form.FormFieldset>
 
-                        {(updateMutation.isError || deleteMutation.isError) &&
+                        <form.FormError/>
+
+                        {deleteMutation.isError &&
                             <InlineErrorContainer>
-                                {displayContainerError({ error: updateMutation.error ?? deleteMutation.error })}
+                                {deleteMutation.error.message}
                             </InlineErrorContainer>
                         }
+
                         <DialogFooter className="pt-2 mx-auto gap-3">
                             <form.Subscribe selector={(state) => state.isSubmitting}>
                                 {(isSubmitting) =>

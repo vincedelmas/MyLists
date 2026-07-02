@@ -1,10 +1,10 @@
-import {toast} from "sonner";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {FieldGroup} from "@/lib/client/components/ui/field";
 import {useAppForm} from "@/lib/client/components/forms/form";
+import {handleFormSubmit} from "@/lib/utils/form-error-handler";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {BulkHideActivityInput, bulkHideActivitySchema} from "@/lib/schemas";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
@@ -20,7 +20,7 @@ function ActivityCleanupSettings() {
     const mediaType = "all";
     const { currentUser } = useAuth();
     const today = toDateInputValue(new Date());
-    const bulkMutation = useBulkHideActivityMutation();
+    const bulkMutation = useBulkHideActivityMutation({ noErrorToast: true });
     const accountCreatedAt = currentUser?.createdAt ? toDateInputValue(currentUser.createdAt) : today;
     const availableMediaTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? Object.values(MediaType);
     const form = useAppForm({
@@ -32,13 +32,12 @@ function ActivityCleanupSettings() {
         validators: {
             onSubmit: bulkHideActivitySchema,
         },
-        onSubmit: async ({ value }) => {
+        onSubmit: async ({ value, formApi }) => {
             const confirmed = window.confirm("Hide matching activity? This keeps the rows editable and reversible.");
             if (!confirmed) return;
 
             const submittedData = bulkHideActivitySchema.parse(value);
-            const result = await bulkMutation.mutateAsync({ data: submittedData });
-            toast.success(`Hidden ${result.count} Activit${result.count === 1 ? "y" : "ies"}`);
+            await handleFormSubmit(formApi, () => bulkMutation.mutateAsync({ data: submittedData }));
         },
     });
 
@@ -49,7 +48,7 @@ function ActivityCleanupSettings() {
 
     return (
         <form.AppForm>
-            <form.FormRoot className="w-100 max-sm:w-full">
+            <form.FormRoot className="w-100 max-sm:w-full space-y-4">
                 <form.FormFieldset>
                     <div className="space-y-7">
                         <div className="font-medium text-lg">
@@ -117,14 +116,13 @@ function ActivityCleanupSettings() {
                                 }
                             </form.AppField>
                         </FieldGroup>
-
                         <div className="rounded-md border p-3 text-sm border-app-accent bg-app-accent/10">
                             This is not month-specific. It applies to all activities with a progress date inside the selected range.
                         </div>
                     </div>
                 </form.FormFieldset>
+                <form.FormError/>
                 <form.SubmitButton
-                    className="mt-5"
                     label="Hide Matching Activity"
                 />
             </form.FormRoot>

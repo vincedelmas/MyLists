@@ -4,11 +4,11 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
-import {ValidationError} from "@/lib/utils/error-classes";
 import {formatDateTime} from "@/lib/utils/date-formatting";
 import {FieldGroup} from "@/lib/client/components/ui/field";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useAppForm} from "@/lib/client/components/forms/form";
+import {handleFormSubmit} from "@/lib/utils/form-error-handler";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {FeatureStatus, isAtLeastRole, RoleType,} from "@/lib/utils/enums";
@@ -47,12 +47,6 @@ const STATUS_STYLES: Record<FeatureStatus, string> = {
 };
 
 
-const formDefaultValues: PostFeatureRequest = {
-    title: "",
-    description: "",
-};
-
-
 function FeatureVotesPage() {
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
@@ -60,25 +54,18 @@ function FeatureVotesPage() {
     const toggleVoteMutation = useToggleFeatureVoteMutation();
     const apiData = useSuspenseQuery(featureVotesOptions).data;
     const [searchQuery, setSearchQuery] = useState("");
-    const createFeatureMutation = useCreateFeatureRequestMutation();
     const isAdmin = isAtLeastRole(currentUser?.role ?? null, RoleType.ADMIN);
+    const createFeatureMutation = useCreateFeatureRequestMutation({ noErrorToast: true });
     const form = useAppForm({
-        defaultValues: formDefaultValues,
+        defaultValues: {
+            title: "",
+            description: "",
+        } as PostFeatureRequest,
         validators: {
             onSubmit: postFeatureRequestSchema,
-            onSubmitAsync: async ({ value }) => {
-                try {
-                    await createFeatureMutation.mutateAsync({ data: value });
-                }
-                catch (err) {
-                    if (err instanceof ValidationError) {
-                        return { fields: { [err.field]: err.message } };
-                    }
-                }
-            },
         },
-        onSubmit: () => {
-            form.reset();
+        onSubmit: async ({ value, formApi }) => {
+            await handleFormSubmit(formApi, () => createFeatureMutation.mutateAsync({ data: value }));
         },
     });
 
@@ -190,6 +177,7 @@ function FeatureVotesPage() {
                                             </form.AppField>
                                         </FieldGroup>
                                     </form.FormFieldset>
+                                    <form.FormError/>
                                     <div className="flex items-center justify-center">
                                         <form.SubmitButton
                                             label="Add Feature for Voting"

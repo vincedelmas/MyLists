@@ -4,8 +4,8 @@ import {CircleHelp} from "lucide-react";
 import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
-import {ValidationError} from "@/lib/utils/error-classes";
 import {useAppForm} from "@/lib/client/components/forms/form";
+import {handleFormSubmit} from "@/lib/utils/form-error-handler";
 import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
@@ -20,8 +20,8 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/general")
 
 function GeneralSettingsPage() {
     const { currentUser, setCurrentUser } = useAuth();
-    const generalSettingsMutation = useGeneralSettingsMutation();
     const [imageCropperResetKey, setImageCropperResetKey] = useState(0);
+    const generalSettingsMutation = useGeneralSettingsMutation({ noErrorToast: true });
     const form = useAppForm({
         defaultValues: {
             username: currentUser?.name ?? "",
@@ -29,35 +29,29 @@ function GeneralSettingsPage() {
         } as GeneralSettings,
         validators: {
             onSubmit: generalSettingsSchema,
-            onSubmitAsync: async ({ value }) => {
-                const formData = new FormData();
-                Object.entries(value).forEach(([key, fieldValue]) => {
-                    if (fieldValue !== undefined && fieldValue !== null) {
-                        formData.append(key, fieldValue);
-                    }
-                });
-
-                try {
-                    await generalSettingsMutation.mutateAsync({ data: formData });
-                }
-                catch (err) {
-                    if (err instanceof ValidationError) {
-                        return { fields: { [err.field]: err.message } }
-                    }
-                }
-            },
         },
-        onSubmit: async ({ value }) => {
-            await setCurrentUser();
-            setImageCropperResetKey((key) => key + 1);
-            toast.success("Settings Updated Successfully!");
-            form.reset({ privacy: value.privacy, username: value.username });
+        onSubmit: async ({ value, formApi }) => {
+            const formData = new FormData();
+            Object.entries(value).forEach(([key, fieldValue]) => {
+                if (fieldValue !== undefined && fieldValue !== null) {
+                    formData.append(key, fieldValue);
+                }
+            });
+
+            const success = await handleFormSubmit(formApi, () => generalSettingsMutation.mutateAsync({ data: formData }));
+
+            if (success) {
+                await setCurrentUser();
+                setImageCropperResetKey((key) => key + 1);
+                toast.success("Settings Updated Successfully!");
+                form.reset({ privacy: value.privacy, username: value.username });
+            }
         },
     });
 
     return (
         <form.AppForm>
-            <form.FormRoot className="w-90 max-sm:w-full">
+            <form.FormRoot className="w-90 max-sm:w-full space-y-6">
                 <form.FormFieldset>
                     <FieldGroup className="gap-6">
                         <form.AppField name="username">
@@ -124,8 +118,8 @@ function GeneralSettingsPage() {
                         </form.AppField>
                     </FieldGroup>
                 </form.FormFieldset>
+                <form.FormError/>
                 <form.SubmitButton
-                    className="mt-6"
                     requireDirty={true}
                     label="Update Settings"
                 />

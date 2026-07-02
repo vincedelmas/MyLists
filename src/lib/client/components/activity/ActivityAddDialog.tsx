@@ -107,7 +107,7 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                 </DialogHeader>
 
                 <form.AppForm>
-                    <form.FormRoot className="space-y-6 mt-2">
+                    <form.FormRoot className="mt-2 space-y-6">
                         <form.FormFieldset className="space-y-6">
                             <div className="w-40">
                                 <form.AppField name="mediaType">

@@ -5,8 +5,10 @@ import {mediaListSettingsSchema} from "@/lib/schemas";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {DEFAULT_ERROR_MESSAGE} from "@/lib/utils/constants";
 import {useAppForm} from "@/lib/client/components/forms/form";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {handleFormSubmit} from "@/lib/utils/form-error-handler";
 import {CircleHelp, Download, TriangleAlert} from "lucide-react";
 import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -48,8 +50,8 @@ const mediaTypeConfigs = [
 
 function MediaListFormPage() {
     const { currentUser, setCurrentUser } = useAuth();
-    const listSettingsMutation = useListSettingsMutation();
-    const downloadListAsCSVMutation = useDownloadListAsCSVMutation();
+    const listSettingsMutation = useListSettingsMutation({ noErrorToast: true });
+    const downloadListAsCSVMutation = useDownloadListAsCSVMutation({ noErrorToast: true });
     const [selectedListForExport, setSelectedListForExport] = useState<MediaType>(MediaType.SERIES);
     const form = useAppForm({
         defaultValues: {
@@ -64,10 +66,13 @@ function MediaListFormPage() {
         validators: {
             onSubmit: mediaListSettingsSchema,
         },
-        onSubmit: async ({ value }) => {
-            await listSettingsMutation.mutateAsync({ data: value });
-            await setCurrentUser();
-            form.reset(value);
+        onSubmit: async ({ value, formApi }) => {
+            const success = await handleFormSubmit(formApi, () => listSettingsMutation.mutateAsync({ data: value }));
+
+            if (success) {
+                await setCurrentUser();
+                form.reset(value);
+            }
         },
     });
 
@@ -222,6 +227,7 @@ function MediaListFormPage() {
                             }}
                         </form.AppField>
                     </form.FormFieldset>
+                    <form.FormError/>
                     <form.SubmitButton
                         requireDirty={true}
                         label="Update Settings"
@@ -243,22 +249,25 @@ function MediaListFormPage() {
                                 <SelectValue placeholder="Select a media list..."/>
                             </SelectTrigger>
                             <SelectContent>
-                                {mediaTypesForExport.map(({ label, value }) => (
+                                {mediaTypesForExport.map(({ label, value }) =>
                                     <SelectItem key={value} value={value}>
                                         <MainThemeIcon type={value}/> {label}
                                     </SelectItem>
-                                ))}
+                                )}
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button variant="outline" onClick={handleDownloadCSV} disabled={!selectedListForExport || downloadListAsCSVMutation.isPending}>
+                    <Button
+                        variant="outline"
+                        onClick={handleDownloadCSV}
+                        disabled={!selectedListForExport || downloadListAsCSVMutation.isPending}
+                    >
                         <Download className="size-4"/> Download
                     </Button>
                 </div>
                 {downloadListAsCSVMutation.isError &&
                     <InlineErrorContainer>
-                        Failed to export your list. Please try again later.
-                        If the error persists, contact me.
+                        {DEFAULT_ERROR_MESSAGE}
                     </InlineErrorContainer>
                 }
             </div>

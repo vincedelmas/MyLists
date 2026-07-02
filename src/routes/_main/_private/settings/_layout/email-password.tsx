@@ -1,12 +1,12 @@
 import {useState} from "react";
 import authClient from "@/lib/utils/auth-client";
 import {createFileRoute} from "@tanstack/react-router";
-import {ValidationError} from "@/lib/utils/error-classes";
 import {FieldGroup} from "@/lib/client/components/ui/field";
 import {useAppForm} from "@/lib/client/components/forms/form";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {emailSettingsSchema, passwordSettingsFormSchema} from "@/lib/schemas";
 import {usePasswordSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {handleFormSubmit} from "@/lib/utils/form-error-handler";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/email-password")({
@@ -15,8 +15,8 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/email-pas
 
 
 function EmailAndPasswordPage() {
-    const passwordMutation = usePasswordSettingsMutation();
     const [emailSent, setEmailSent] = useState(false);
+    const passwordMutation = usePasswordSettingsMutation({ noErrorToast: true });
     const passwordForm = useAppForm({
         defaultValues: {
             newPassword: "",
@@ -25,24 +25,18 @@ function EmailAndPasswordPage() {
         },
         validators: {
             onSubmit: passwordSettingsFormSchema,
-            onSubmitAsync: async ({ value }) => {
-                try {
-                    await passwordMutation.mutateAsync({
-                        data: {
-                            newPassword: value.newPassword,
-                            currentPassword: value.currentPassword,
-                        }
-                    });
-                }
-                catch (err) {
-                    if (err instanceof ValidationError) {
-                        return { fields: { [err.field]: err.message } };
-                    }
-                }
-            },
         },
-        onSubmit: () => {
-            passwordForm.reset();
+        onSubmit: async ({ value, formApi }) => {
+            const success = await handleFormSubmit(formApi, () => passwordMutation.mutateAsync({
+                data: {
+                    newPassword: value.newPassword,
+                    currentPassword: value.currentPassword,
+                }
+            }));
+
+            if (success) {
+                passwordForm.reset();
+            }
         },
     });
 
@@ -57,7 +51,7 @@ function EmailAndPasswordPage() {
                 if (error) return error.message;
             }
         },
-        onSubmit: async () => {
+        onSubmit: () => {
             emailForm.reset();
             setEmailSent(true);
         },
@@ -81,21 +75,19 @@ function EmailAndPasswordPage() {
                             </emailForm.AppField>
                         </FieldGroup>
                     </emailForm.FormFieldset>
-                    <emailForm.FormError/>
                     {emailSent &&
                         <p role="status" className="text-xs text-green-600 font-medium">
                             Check your inbox to confirm your change of email address.
                         </p>
                     }
+                    <emailForm.FormError/>
                     <emailForm.SubmitButton
                         requireDirty={true}
                         label="Change Email"
                     />
                 </emailForm.FormRoot>
             </emailForm.AppForm>
-
             <Separator className="max-w-sm"/>
-
             <passwordForm.AppForm>
                 <passwordForm.FormRoot className="w-full max-w-sm space-y-4">
                     <passwordForm.FormFieldset>
@@ -132,6 +124,7 @@ function EmailAndPasswordPage() {
                             </passwordForm.AppField>
                         </FieldGroup>
                     </passwordForm.FormFieldset>
+                    <passwordForm.FormError/>
                     <passwordForm.SubmitButton
                         requireDirty={true}
                         label="Update Password"

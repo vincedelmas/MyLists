@@ -1,6 +1,6 @@
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {postUpdateShowOnboarding} from "@/lib/server/functions/user-profile";
-import {QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
+import {MutationMeta, QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
 import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/notifications";
 import {postFollow, postRemoveFollower, postRespondToFollowRequest, postUnfollow} from "@/lib/server/functions/social";
 import {
@@ -99,18 +99,20 @@ export const useRemoveFollowerMutation = (profileUsername: string) => {
 };
 
 
-export const useGeneralSettingsMutation = () => {
+export const useGeneralSettingsMutation = (meta?: MutationMeta) => {
     return useMutation({
         mutationFn: ({ data }: { data: FormData }) => postGeneralSettings({ data }),
+        meta: { ...meta },
     });
 };
 
 
-export const useListSettingsMutation = () => {
+export const useListSettingsMutation = (meta?: MutationMeta) => {
     return useMutation({
         mutationFn: postMediaListSettings,
         meta: {
             successToastMessage: "Your list settings have been updated.",
+            ...meta,
         },
     });
 };
@@ -133,18 +135,20 @@ export const useProfileCustomMutation = () => {
 };
 
 
-export const useDownloadListAsCSVMutation = () => {
+export const useDownloadListAsCSVMutation = (meta?: MutationMeta) => {
     return useMutation({
         mutationFn: getDownloadListAsCSV,
+        meta: { ...meta },
     });
 };
 
 
-export const usePasswordSettingsMutation = () => {
+export const usePasswordSettingsMutation = (meta?: MutationMeta) => {
     return useMutation({
         mutationFn: postPasswordSettings,
         meta: {
             successToastMessage: "Your password has been updated.",
+            ...meta,
         },
     });
 };

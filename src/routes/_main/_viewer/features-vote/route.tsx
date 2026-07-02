@@ -155,7 +155,7 @@ function FeatureVotesPage() {
                         <CardContent className="space-y-4">
                             <form.AppForm>
                                 <form.FormRoot className="space-y-4">
-                                    <form.FormFieldset disabled={createFeatureMutation.isPending || isAnonymous}>
+                                    <form.FormFieldset disabled={isAnonymous}>
                                         <FieldGroup className="gap-6">
                                             <form.AppField name="title">
                                                 {(field) =>
@@ -180,8 +180,8 @@ function FeatureVotesPage() {
                                     <form.FormError/>
                                     <div className="flex items-center justify-center">
                                         <form.SubmitButton
+                                            disabled={isAnonymous}
                                             label="Add Feature for Voting"
-                                            disabled={createFeatureMutation.isPending || isAnonymous}
                                         />
                                     </div>
                                 </form.FormRoot>

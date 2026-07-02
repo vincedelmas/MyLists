@@ -260,18 +260,28 @@ export function SelectField({ label, labelAccessory, options, placeholder, class
 type CheckboxFieldProps = Omit<React.ComponentProps<typeof Checkbox>, "id" | "name" | "checked" | "onBlur" | "onCheckedChange"> & {
     className?: string;
     label: React.ReactNode;
+    description?: React.ReactNode;
     labelClassName?: string;
+    descriptionClassName?: string;
     onCheckedChange?: (checked: boolean) => void;
 };
 
 
-export function CheckboxField({ label, className, labelClassName, onCheckedChange, ...props }: CheckboxFieldProps) {
+export function CheckboxField({
+    label,
+    className,
+    description,
+    labelClassName,
+    onCheckedChange,
+    descriptionClassName,
+    ...props
+}: CheckboxFieldProps) {
     const field = useFieldContext<boolean>();
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
     return (
         <Field className={className} data-invalid={isInvalid}>
-            <div className="flex items-center gap-2">
+            <div className={cn("flex gap-2", description ? "items-start" : "items-center")}>
                 <Checkbox
                     {...props}
                     id={field.name}
@@ -285,9 +295,16 @@ export function CheckboxField({ label, className, labelClassName, onCheckedChang
                         onCheckedChange?.(value);
                     }}
                 />
-                <FieldLabel htmlFor={field.name} className={labelClassName}>
-                    {label}
-                </FieldLabel>
+                <div className={cn(description && "space-y-1")}>
+                    <FieldLabel htmlFor={field.name} className={labelClassName}>
+                        {label}
+                    </FieldLabel>
+                    {description &&
+                        <FieldDescription className={descriptionClassName}>
+                            {description}
+                        </FieldDescription>
+                    }
+                </div>
             </div>
 
             {isInvalid &&

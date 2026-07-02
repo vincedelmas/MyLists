@@ -63,6 +63,7 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                     if (err instanceof ValidationError) {
                         return { fields: { [err.field]: err.message } };
                     }
+                    throw err;
                 }
             },
         },

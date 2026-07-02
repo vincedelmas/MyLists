@@ -54,15 +54,18 @@ export const activityAddMediaSearchSchema = z.object({
     query: z.string().trim().min(2),
 });
 
-export const updateActivityPayloadSchema = z.object({
+export const updateActivityFormSchema = z.object({
     isRedo: z.boolean(),
     hidden: z.boolean(),
     lastUpdate: z.string(),
     isCompleted: z.boolean(),
     specificGained: z.number().min(0, "Progress must be 0 or more."),
-}).partial().refine((data) => Object.values(data).some((val) => val !== undefined), {
-    message: "Provide at least one field to update.", path: ["lastUpdate"],
 });
+
+export const updateActivityPayloadSchema = updateActivityFormSchema.partial()
+    .refine((data) => Object.values(data).some((val) => val !== undefined), {
+        message: "Provide at least one field to update.", path: ["lastUpdate"],
+    });
 
 export const updateActivitySchema = z.object({
     payload: updateActivityPayloadSchema,

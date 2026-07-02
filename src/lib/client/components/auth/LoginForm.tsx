@@ -64,7 +64,7 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
     return (
         <>
             <form.AppForm>
-                <form.FormRoot className="space-y-4">
+                <form.FormRoot>
                     <form.FormFieldset>
                         <FieldGroup className="gap-4">
                             <form.AppField name="email">
@@ -98,7 +98,6 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
                             </form.AppField>
                         </FieldGroup>
                     </form.FormFieldset>
-                    <form.FormError/>
                     <form.SubmitButton
                         label="Login"
                         className="w-full"

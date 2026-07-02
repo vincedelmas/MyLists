@@ -227,7 +227,6 @@ function MediaListFormPage() {
                             }}
                         </form.AppField>
                     </form.FormFieldset>
-                    <form.FormError/>
                     <form.SubmitButton
                         requireDirty={true}
                         label="Update Settings"

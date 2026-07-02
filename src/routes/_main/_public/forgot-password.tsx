@@ -40,7 +40,7 @@ function ForgotPasswordPage() {
         <PageTitle title="Forgot password" subtitle="Enter the email associated with your account to reset your password">
             <div className="mt-4 max-w-75">
                 <form.AppForm>
-                    <form.FormRoot className="space-y-4">
+                    <form.FormRoot>
                         <form.FormFieldset>
                             <FieldGroup>
                                 <form.AppField name="email">
@@ -60,7 +60,6 @@ function ForgotPasswordPage() {
                                 An email has been sent to reset your password. Please check your inbox.
                             </p>
                         }
-                        <form.FormError/>
                         <form.SubmitButton
                             label="Submit"
                         />

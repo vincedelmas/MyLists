@@ -80,7 +80,6 @@ function EmailAndPasswordPage() {
                             Check your inbox to confirm your change of email address.
                         </p>
                     }
-                    <emailForm.FormError/>
                     <emailForm.SubmitButton
                         requireDirty={true}
                         label="Change Email"
@@ -124,7 +123,6 @@ function EmailAndPasswordPage() {
                             </passwordForm.AppField>
                         </FieldGroup>
                     </passwordForm.FormFieldset>
-                    <passwordForm.FormError/>
                     <passwordForm.SubmitButton
                         requireDirty={true}
                         label="Update Password"

@@ -144,7 +144,6 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                             </form.AppField>
                         </form.FormFieldset>
 
-                        <form.FormError/>
 
                         {deleteMutation.isError &&
                             <InlineErrorContainer>

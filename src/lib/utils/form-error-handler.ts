@@ -13,7 +13,6 @@ export async function handleFormSubmit(formApi: AnyFormApi, operation: () => Pro
     }
     catch (error) {
         if (error instanceof ValidationError) {
-            console.log('oui', { error });
             formApi.setFieldMeta(error.field, (meta) => ({
                 ...meta,
                 isTouched: true,

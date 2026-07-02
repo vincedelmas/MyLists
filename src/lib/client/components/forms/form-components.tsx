@@ -16,12 +16,13 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/l
 type FormRootProps = Omit<React.ComponentProps<"form">, "onSubmit">;
 
 
-export function FormRoot({ children, ...props }: FormRootProps) {
+export function FormRoot({ children, className, ...props }: FormRootProps) {
     const form = useFormContext();
 
     return (
         <form
             {...props}
+            className={cn("space-y-4", className)}
             onSubmit={(ev) => {
                 ev.preventDefault();
                 ev.stopPropagation();
@@ -29,6 +30,7 @@ export function FormRoot({ children, ...props }: FormRootProps) {
             }}
         >
             {children}
+            <FormError/>
         </form>
     );
 }

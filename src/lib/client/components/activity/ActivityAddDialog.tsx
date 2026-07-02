@@ -281,7 +281,6 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                                 </form.AppField>
                             </div>
                         </form.FormFieldset>
-                        <form.FormError/>
                         <DialogFooter>
                             <form.SubmitButton
                                 label="Add New Activity"

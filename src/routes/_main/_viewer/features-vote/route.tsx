@@ -154,7 +154,7 @@ function FeatureVotesPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <form.AppForm>
-                                <form.FormRoot className="space-y-4">
+                                <form.FormRoot>
                                     <form.FormFieldset disabled={isAnonymous}>
                                         <FieldGroup className="gap-6">
                                             <form.AppField name="title">
@@ -177,7 +177,6 @@ function FeatureVotesPage() {
                                             </form.AppField>
                                         </FieldGroup>
                                     </form.FormFieldset>
-                                    <form.FormError/>
                                     <div className="flex items-center justify-center">
                                         <form.SubmitButton
                                             disabled={isAnonymous}

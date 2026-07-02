@@ -102,7 +102,6 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                             </form.AppField>
                         </FieldGroup>
                     </form.FormFieldset>
-                    <form.FormError/>
                     <form.SubmitButton
                         className="w-full mb-4"
                         label="Create an Account"

@@ -48,7 +48,7 @@ function ActivityCleanupSettings() {
 
     return (
         <form.AppForm>
-            <form.FormRoot className="w-100 max-sm:w-full space-y-4">
+            <form.FormRoot className="w-100 max-sm:w-full">
                 <form.FormFieldset>
                     <div className="space-y-7">
                         <div className="font-medium text-lg">
@@ -121,7 +121,6 @@ function ActivityCleanupSettings() {
                         </div>
                     </div>
                 </form.FormFieldset>
-                <form.FormError/>
                 <form.SubmitButton
                     label="Hide Matching Activity"
                 />

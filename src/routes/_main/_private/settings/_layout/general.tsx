@@ -118,7 +118,6 @@ function GeneralSettingsPage() {
                         </form.AppField>
                     </FieldGroup>
                 </form.FormFieldset>
-                <form.FormError/>
                 <form.SubmitButton
                     requireDirty={true}
                     label="Update Settings"

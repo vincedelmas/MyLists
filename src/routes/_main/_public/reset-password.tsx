@@ -57,7 +57,7 @@ function ResetPasswordPage() {
         <PageTitle title="Reset Your Password" subtitle="You can now change your password to a new one">
             <div className="mt-4 w-75 max-sm:w-full">
                 <form.AppForm>
-                    <form.FormRoot className="space-y-4">
+                    <form.FormRoot>
                         <form.FormFieldset>
                             <FieldGroup className="gap-4">
                                 <form.AppField name="newPassword">
@@ -82,7 +82,6 @@ function ResetPasswordPage() {
                                 </form.AppField>
                             </FieldGroup>
                         </form.FormFieldset>
-                        <form.FormError/>
                         <form.SubmitButton
                             label="Submit"
                             className="w-full"

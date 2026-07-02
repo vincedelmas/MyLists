@@ -3,6 +3,7 @@ import {LoaderCircle} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
+import {Switch} from "@/lib/client/components/ui/switch";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
 import {useFieldContext, useFormContext} from "@/lib/client/components/forms/form";
@@ -198,6 +199,48 @@ export function SelectField({ label, labelAccessory, options, placeholder, class
                     )}
                 </SelectContent>
             </Select>
+
+            {isInvalid &&
+                <FieldError
+                    errors={field.state.meta.errors}
+                />
+            }
+        </Field>
+    );
+}
+
+
+type SwitchFieldProps = Omit<React.ComponentProps<typeof Switch>, "id" | "name" | "checked" | "onBlur" | "onCheckedChange"> & {
+    className?: string;
+    label: React.ReactNode;
+    labelClassName?: string;
+    onCheckedChange?: (checked: boolean) => void;
+};
+
+
+export function SwitchField({ label, className, labelClassName, onCheckedChange, ...props }: SwitchFieldProps) {
+    const field = useFieldContext<boolean>();
+    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+    return (
+        <Field className={className} data-invalid={isInvalid}>
+            <div className="flex items-center justify-between gap-3">
+                <FieldLabel htmlFor={field.name} className={labelClassName}>
+                    {label}
+                </FieldLabel>
+                <Switch
+                    {...props}
+                    id={field.name}
+                    name={field.name}
+                    aria-invalid={isInvalid}
+                    onBlur={field.handleBlur}
+                    checked={field.state.value}
+                    onCheckedChange={(checked) => {
+                        field.handleChange(checked);
+                        onCheckedChange?.(checked);
+                    }}
+                />
+            </div>
 
             {isInvalid &&
                 <FieldError

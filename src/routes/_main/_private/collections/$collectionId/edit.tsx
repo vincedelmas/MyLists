@@ -1,9 +1,9 @@
-import {useForm} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {zodResolver} from "@hookform/resolvers/zod";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
+import {useAppForm} from "@/lib/client/components/forms/form";
+import {handleFormSubmit} from "@/lib/utils/form-error-handler";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
@@ -33,8 +33,7 @@ function CollectionEditPage() {
     const updateMutation = useUpdateCollectionMutation(collectionId);
     const deleteMutation = useDeleteCollectionMutation(collectionId);
     const apiData = useSuspenseQuery(collectionDetailsEditOptions(collectionId)).data;
-    const form = useForm<CreateCollection>({
-        resolver: zodResolver(createCollectionSchema),
+    const form = useAppForm({
         defaultValues: {
             items: apiData.items ?? [],
             title: apiData.collection.title,
@@ -42,7 +41,17 @@ function CollectionEditPage() {
             privacy: apiData.collection.privacy,
             mediaType: apiData.collection.mediaType,
             description: apiData.collection.description ?? "",
+        } as CreateCollection,
+        validators: {
+            onSubmit: createCollectionSchema,
         },
+        onSubmit: async ({ value, formApi }) => {
+            const success = await handleFormSubmit(formApi, () => updateMutation.mutateAsync({ data: { collectionId, ...value } }));
+
+            if (success) {
+                form.reset(value);
+            }
+        }
     });
 
     const handleDelete = async () => {
@@ -60,14 +69,6 @@ function CollectionEditPage() {
         });
     };
 
-    const handleSubmit = async (payload: CreateCollection) => {
-        updateMutation.mutate({ data: { collectionId, ...payload } }, {
-            onSuccess: () => {
-                form.reset(payload);
-            }
-        });
-    };
-
     return (
         <PageTitle title={`Edit - ${apiData.collection.title}`} subtitle="Refine your collection, descriptions, and annotations.">
             <div className="flex items-center justify-start pb-4">
@@ -81,9 +82,7 @@ function CollectionEditPage() {
             </div>
             <CollectionEditor
                 form={form}
-                onSubmit={handleSubmit}
                 submitLabel="Update Collection"
-                isSubmitting={updateMutation.isPending}
                 mediaType={apiData.collection.mediaType}
             />
         </PageTitle>

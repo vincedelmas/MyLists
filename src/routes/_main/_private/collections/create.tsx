@@ -1,15 +1,15 @@
 import {useState} from "react";
-import {useForm} from "react-hook-form";
+import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {zodResolver} from "@hookform/resolvers/zod";
+import {createCollectionSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
-import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
+import {useAppForm} from "@/lib/client/components/forms/form";
+import {handleFormSubmit} from "@/lib/utils/form-error-handler";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {CreateCollection, createCollectionSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 import {useCreateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
+import {collectionDefaultValues, CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 
 
 export const Route = createFileRoute("/_main/_private/collections/create")({
@@ -20,34 +20,38 @@ export const Route = createFileRoute("/_main/_private/collections/create")({
 function CollectionCreatePage() {
     const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
-    const createMutation = useCreateCollectionMutation();
+    const createMutation = useCreateCollectionMutation({ noErrorToast: true });
     const [mediaType, setMediaType] = useState<MediaType | null>(null);
     const [step, setStep] = useState<"mediaType" | "editor">("mediaType");
     const activeTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? [];
-    const form = useForm<CreateCollection>({
-        resolver: zodResolver(createCollectionSchema),
-        defaultValues: {
-            title: "",
-            items: [],
-            ordered: false,
-            description: "",
-            privacy: PrivacyType.PRIVATE,
+    const form = useAppForm({
+        defaultValues: collectionDefaultValues,
+        validators: {
+            onSubmit: createCollectionSchema,
         },
+        onSubmit: async ({ value, formApi }) => {
+            let newCollectionId: number | undefined;
+            const success = await handleFormSubmit(formApi, async () => {
+                const newCollection = await createMutation.mutateAsync({ data: value });
+                newCollectionId = newCollection.id;
+            });
+
+            if (!success || newCollectionId === undefined) return;
+
+            form.reset(value);
+            await navigate({ to: "/collections/$collectionId", params: { collectionId: newCollectionId } });
+        }
     });
 
-    const selectMediaType = (mediaType: MediaType) => {
-        setMediaType(mediaType);
-        setStep("editor");
-        form.setValue("mediaType", mediaType);
-    };
+    const selectMediaType = (selectedMediaType: MediaType) => {
+        const isMediaTypeChange = mediaType !== null && mediaType !== selectedMediaType;
+        if (isMediaTypeChange) {
+            form.clearFieldValues("items");
+        }
 
-    const handleSubmit = async (payload: CreateCollection) => {
-        createMutation.mutate({ data: payload }, {
-            onSuccess: async (newCollection) => {
-                form.reset(payload);
-                return navigate({ to: "/collections/$collectionId", params: { collectionId: newCollection.id } });
-            }
-        });
+        setStep("editor");
+        setMediaType(selectedMediaType);
+        form.setFieldValue("mediaType", selectedMediaType, { dontUpdateMeta: !isMediaTypeChange });
     };
 
     return (
@@ -60,7 +64,7 @@ function CollectionCreatePage() {
                                 1. Choose a media type
                             </h2>
                             <p className="text-sm text-muted-foreground">
-                                Collections are made of a single media type.
+                                Collections are made of a single media type. Changing it clears the current items.
                             </p>
                         </div>
                         <span className="text-xs text-muted-foreground">
@@ -92,9 +96,7 @@ function CollectionCreatePage() {
                     <CollectionEditor
                         form={form}
                         mediaType={mediaType}
-                        onSubmit={handleSubmit}
                         submitLabel="Create Collection"
-                        isSubmitting={createMutation.isPending}
                     />
                 </div>
             }

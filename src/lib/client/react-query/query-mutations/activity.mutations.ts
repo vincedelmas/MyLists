@@ -52,11 +52,12 @@ export const useDeleteActivityMutation = (meta?: MutationMeta) => {
 };
 
 
-export const useBulkHideActivityMutation = () => {
+export const useBulkHideActivityMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postBulkHideActivity,
+        meta: { ...meta },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
             await queryClient.invalidateQueries({ queryKey: ["specific-activity"] });

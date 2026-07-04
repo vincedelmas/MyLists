@@ -1,6 +1,5 @@
 import {toast} from "sonner";
 import {useForm} from "react-hook-form";
-import {LoaderCircle} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
 import {FaGithub, FaGoogle} from "react-icons/fa";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -9,6 +8,9 @@ import {Register, registerSchema} from "@/lib/schemas";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {FormError} from "@/lib/client/components/forms/FormError";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
@@ -43,7 +45,7 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
             callbackURL: getRedirectTarget(),
         }, {
             onError: (ctx) => {
-                form.setError("root", { type: "value", message: ctx.error.message }, { shouldFocus: false });
+                handleServerFormErrors(form, ctx.error);
             },
             onSuccess: () => {
                 form.reset();
@@ -64,87 +66,80 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
     return (
         <>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-2">
-                    <fieldset disabled={form.formState.isSubmitting}>
-                        <div className="space-y-4">
-                            <FormField
-                                name="username"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Username</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="Username"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                            <FormField
-                                name="email"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="email"
-                                                placeholder="john.doe@example.com"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                            <FormField
-                                name="password"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Password</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="password"
-                                                placeholder="********"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                            <FormField
-                                name="confirmPassword"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Confirm Password</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="password"
-                                                placeholder="********"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                        </div>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
+                    <fieldset disabled={form.formState.isSubmitting} className="space-y-4">
+                        <FormField
+                            name="username"
+                            control={form.control}
+                            render={({ field }) =>
+                                <FormItem>
+                                    <FormLabel>Username</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            placeholder="Username"
+                                        />
+                                    </FormControl>
+                                    <FormMessage/>
+                                </FormItem>
+                            }
+                        />
+                        <FormField
+                            name="email"
+                            control={form.control}
+                            render={({ field }) =>
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            type="email"
+                                            placeholder="john.doe@example.com"
+                                        />
+                                    </FormControl>
+                                    <FormMessage/>
+                                </FormItem>
+                            }
+                        />
+                        <FormField
+                            name="password"
+                            control={form.control}
+                            render={({ field }) =>
+                                <FormItem>
+                                    <FormLabel>Password</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            type="password"
+                                            placeholder="********"
+                                        />
+                                    </FormControl>
+                                    <FormMessage/>
+                                </FormItem>
+                            }
+                        />
+                        <FormField
+                            name="confirmPassword"
+                            control={form.control}
+                            render={({ field }) =>
+                                <FormItem>
+                                    <FormLabel>Confirm Password</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            type="password"
+                                            placeholder="********"
+                                        />
+                                    </FormControl>
+                                    <FormMessage/>
+                                </FormItem>
+                            }
+                        />
                     </fieldset>
-                    {form.formState.errors.root &&
-                        <FormMessage className="text-center -mt-1.5">
-                            {form.formState.errors.root.message}
-                        </FormMessage>
-                    }
-                    <Button className="flex text-center w-full mb-4" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting && <LoaderCircle className="size-4 animate-spin"/>}{" "}
+                    <FormError/>
+                    <FormSubmitButton className="flex text-center w-full mb-4" isLoading={form.formState.isSubmitting}>
                         Create an Account
-                    </Button>
+                    </FormSubmitButton>
                 </form>
             </Form>
             <Separator className="mt-3"/>

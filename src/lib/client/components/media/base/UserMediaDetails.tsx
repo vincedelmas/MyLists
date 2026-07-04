@@ -33,8 +33,8 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMedi
     const [backlogDate, setBacklogDate] = useState("");
     const [backlogMode, setBacklogMode] = useState(false);
     const history = useQuery(historyOptions(mediaType, userMedia.mediaId)).data;
-    const updateCustomCoverMutation = useUpdateCustomCoverMutation(queryOption);
     const removeMediaFromListMutation = useRemoveMediaFromListMutation(queryOption);
+    const updateCustomCoverMutation = useUpdateCustomCoverMutation(queryOption, { noErrorToast: true });
     const [activeTab, setActiveTab] = useState<"progress" | "history" | "custom">("progress");
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, {
         backlogMode,

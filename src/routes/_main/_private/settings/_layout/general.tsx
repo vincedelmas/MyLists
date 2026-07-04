@@ -1,4 +1,3 @@
-import {toast} from "sonner";
 import {useState} from "react";
 import {CircleHelp} from "lucide-react";
 import {useForm} from "react-hook-form";
@@ -7,9 +6,11 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
-import {Button} from "@/lib/client/components/ui/button";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
@@ -23,8 +24,8 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/general")
 
 function GeneralSettingsPage() {
     const { currentUser, setCurrentUser } = useAuth();
-    const generalSettingsMutation = useGeneralSettingsMutation();
     const [imageCropperResetKey, setImageCropperResetKey] = useState(0);
+    const generalSettingsMutation = useGeneralSettingsMutation({ noErrorToast: true });
     const form = useForm<GeneralSettings>({
         resolver: zodResolver(generalSettingsSchema),
         values: {
@@ -43,20 +44,22 @@ function GeneralSettingsPage() {
         });
 
         generalSettingsMutation.mutate({ data: formData }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: async () => {
                 await setCurrentUser();
                 form.resetField("profileImage");
                 form.resetField("backgroundImage");
                 setImageCropperResetKey((key) => key + 1);
-                toast.success("Settings successfully updated");
             },
         });
     };
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="w-90 max-sm:w-full">
-                <div className="space-y-7">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="w-90 max-sm:w-full space-y-6">
+                <fieldset disabled={generalSettingsMutation.isPending} className="space-y-6">
                     <FormField
                         name="username"
                         control={form.control}
@@ -137,10 +140,11 @@ function GeneralSettingsPage() {
                             </FormItem>
                         )}
                     />
-                </div>
-                <Button type="submit" className="mt-5" disabled={!form.formState.isDirty || generalSettingsMutation.isPending}>
+                </fieldset>
+                <FormError/>
+                <FormSubmitButton isLoading={generalSettingsMutation.isPending}>
                     Update
-                </Button>
+                </FormSubmitButton>
             </form>
         </Form>
     );

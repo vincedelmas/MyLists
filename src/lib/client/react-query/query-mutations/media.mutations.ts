@@ -19,9 +19,10 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) =
 };
 
 
-export const useEditMediaMutation = () => {
+export const useEditMediaMutation = (meta?: MutationMeta) => {
     return useMutation({
         mutationFn: postEditMediaDetails,
+        meta: { ...meta },
     });
 };
 

@@ -5,7 +5,10 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {ImageOff, Link2, UploadCloud, X} from "lucide-react";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {UpdateUserCustomCoverInput, updateUserCustomCoverSchema} from "@/lib/schemas";
 import {useUpdateCustomCoverMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
@@ -66,6 +69,9 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
         if (data.imageFile) formData.append("imageFile", data.imageFile);
 
         onUpdateMutation.mutate({ data: formData }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: () => resetForm(),
         });
     };
@@ -77,6 +83,9 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
         formData.append("mediaId", userMedia.mediaId.toString());
 
         onUpdateMutation.mutate({ data: formData }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: () => {
                 resetForm();
             },
@@ -124,52 +133,54 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
 
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pb-6 border-b">
-                    {mode === "link" ?
-                        <FormField
-                            name="imageUrl"
-                            control={form.control}
-                            render={({ field }) =>
-                                <FormItem>
-                                    <FormLabel>Cover URL</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            value={field.value ?? ""}
-                                            placeholder="https://example.com/cover.jpg"
-                                            onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            }
-                        />
-                        :
-                        <FormField
-                            name="imageFile"
-                            control={form.control}
-                            render={({ field: { onChange, onBlur, name, ref } }) =>
-                                <FormItem>
-                                    <FormLabel>Upload Cover</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            ref={ref}
-                                            type="file"
-                                            name={name}
-                                            onBlur={onBlur}
-                                            accept="image/*"
-                                            key={fileInputKey}
-                                            onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            }
-                        />
-                    }
-
-                    <Button type="submit" disabled={onUpdateMutation.isPending}>
+                    <fieldset disabled={onUpdateMutation.isPending} className="space-y-4">
+                        {mode === "link" ?
+                            <FormField
+                                name="imageUrl"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <FormItem>
+                                        <FormLabel>Cover URL</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                placeholder="https://example.com/cover.jpg"
+                                                onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                }
+                            />
+                            :
+                            <FormField
+                                name="imageFile"
+                                control={form.control}
+                                render={({ field: { onChange, onBlur, name, ref } }) =>
+                                    <FormItem>
+                                        <FormLabel>Upload Cover</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                ref={ref}
+                                                type="file"
+                                                name={name}
+                                                onBlur={onBlur}
+                                                accept="image/*"
+                                                key={fileInputKey}
+                                                onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                }
+                            />
+                        }
+                    </fieldset>
+                    <FormError/>
+                    <FormSubmitButton className="w-full" isLoading={onUpdateMutation.isPending}>
                         Save Custom Cover
-                    </Button>
+                    </FormSubmitButton>
                 </form>
             </Form>
         </div>

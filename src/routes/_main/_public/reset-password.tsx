@@ -4,9 +4,12 @@ import authClient from "@/lib/utils/auth-client";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {ResetPassword, resetPasswordSchema, tokenSchema} from "@/lib/schemas";
 import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
@@ -47,7 +50,7 @@ function ResetPasswordPage() {
     const onSubmit = async (submitted: ResetPassword) => {
         await authClient.resetPassword({ token, newPassword: submitted.newPassword }, {
             onError: (ctx) => {
-                toast.error(ctx.error.message ?? "An unexpected error occurred. Please try again later.");
+                handleServerFormErrors(form, ctx.error);
             },
             onSuccess: async () => {
                 form.reset();
@@ -61,48 +64,47 @@ function ResetPasswordPage() {
         <PageTitle title="Reset Your Password" subtitle="You can now change your password to a new one">
             <div className="mt-4 w-75 max-sm:w-full">
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <fieldset disabled={form.formState.isSubmitting}>
-                            <div className="space-y-4">
-                                <FormField
-                                    name="newPassword"
-                                    control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem>
-                                            <FormLabel>Password</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    type="password"
-                                                    placeholder="********"
-                                                />
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
-                                    }
-                                />
-                                <FormField
-                                    name="confirmPassword"
-                                    control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem>
-                                            <FormLabel>Confirm Password</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    type="password"
-                                                    placeholder="********"
-                                                />
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
-                                    }
-                                />
-                            </div>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <fieldset disabled={form.formState.isSubmitting} className="space-y-4">
+                            <FormField
+                                name="newPassword"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <FormItem>
+                                        <FormLabel>Password</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                placeholder="********"
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                }
+                            />
+                            <FormField
+                                name="confirmPassword"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <FormItem>
+                                        <FormLabel>Confirm Password</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                placeholder="********"
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                }
+                            />
                         </fieldset>
-                        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                        <FormError/>
+                        <FormSubmitButton className="w-full" isLoading={form.formState.isSubmitting}>
                             Submit
-                        </Button>
+                        </FormSubmitButton>
                     </form>
                 </Form>
             </div>

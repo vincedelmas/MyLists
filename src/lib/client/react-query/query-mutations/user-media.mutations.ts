@@ -193,13 +193,14 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
 };
 
 
-export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption) => {
+export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postUpdateUserCustomCover,
         meta: {
             successToastMessage: "Custom cover updated!",
+            ...meta,
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: queryOption.queryKey });

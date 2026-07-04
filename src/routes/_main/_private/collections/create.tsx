@@ -8,6 +8,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {CreateCollection, createCollectionSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 import {useCreateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_main/_private/collections/create")({
 function CollectionCreatePage() {
     const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
-    const createMutation = useCreateCollectionMutation();
+    const createMutation = useCreateCollectionMutation({ noErrorToast: true });
     const [mediaType, setMediaType] = useState<MediaType | null>(null);
     const [step, setStep] = useState<"mediaType" | "editor">("mediaType");
     const activeTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? [];
@@ -43,6 +44,9 @@ function CollectionCreatePage() {
 
     const handleSubmit = async (payload: CreateCollection) => {
         createMutation.mutate({ data: payload }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: async (newCollection) => {
                 form.reset(payload);
                 return navigate({ to: "/collections/$collectionId", params: { collectionId: newCollection.id } });

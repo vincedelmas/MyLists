@@ -1,26 +1,26 @@
 import {toast} from "sonner";
 import {SubmitEvent, useState} from "react";
+import {Loader2, Settings2} from "lucide-react";
 import {TaskMetadata} from "@/lib/types/tasks.types";
-import {Loader2, Play, Settings2} from "lucide-react";
 import {Label} from "@/lib/client/components/ui/label";
 import {FormZodError} from "@/lib/utils/error-classes";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {useAdminTriggerTaskMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 
 
 interface TaskFormDialogProps {
-    isRunning: boolean;
     task: TaskMetadata;
-    mutation: ReturnType<typeof useAdminTriggerTaskMutation>;
 }
 
 
-export function TaskFormDialog({ task, isRunning, mutation }: TaskFormDialogProps) {
+export function TaskFormDialog({ task }: TaskFormDialogProps) {
     const [open, setOpen] = useState(false);
+    const triggerTaskMutation = useAdminTriggerTaskMutation({ noErrorToast: true });
     const [errors, setErrors] = useState<{ field: string, message: string }[] | null>(null);
     const [formData, setFormData] = useState<Record<string, any>>(() => getDefaultValues(task.inputSchema!));
 
@@ -29,7 +29,7 @@ export function TaskFormDialog({ task, isRunning, mutation }: TaskFormDialogProp
 
         setErrors(null);
 
-        mutation.mutate({ data: { taskName: task.name, input: formData } }, {
+        triggerTaskMutation.mutate({ data: { taskName: task.name, input: formData } }, {
             onError: (err) => {
                 if (err instanceof FormZodError) {
                     err.issues.forEach((issue) => {
@@ -37,6 +37,9 @@ export function TaskFormDialog({ task, isRunning, mutation }: TaskFormDialogProp
                             ...(prev || []), { field: issue.path?.[1] ?? issue.path[0], message: issue.message },
                         ]);
                     });
+                }
+                else {
+                    setErrors([{ field: "Form", message: err.message }]);
                 }
             },
             onSuccess: () => {
@@ -49,6 +52,8 @@ export function TaskFormDialog({ task, isRunning, mutation }: TaskFormDialogProp
 
     const handleOpenChange = (newOpen: boolean) => {
         if (newOpen) {
+            triggerTaskMutation.reset();
+            setErrors(null);
             setFormData(getDefaultValues(task.inputSchema!));
         }
         setOpen(newOpen);
@@ -57,42 +62,43 @@ export function TaskFormDialog({ task, isRunning, mutation }: TaskFormDialogProp
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button size="sm" disabled={isRunning}>
-                    {isRunning ? <Loader2 className="size-4 animate-spin"/> : <Settings2 className="size-4"/>}
-                    {isRunning ? "Running" : "Configure"}
+                <Button size="sm" disabled={triggerTaskMutation.isPending}>
+                    {triggerTaskMutation.isPending ? <Loader2 className="size-4 animate-spin"/> : <Settings2 className="size-4"/>}
+                    {triggerTaskMutation.isPending ? "Running" : "Configure"}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
-                <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>{task.name}</DialogTitle>
-                        <DialogDescription>{task.description}</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        {Object.entries(task.inputSchema!.properties).map(([key, prop]) =>
-                            <TaskFormField
-                                key={key}
-                                name={key}
-                                property={prop}
-                                value={formData[key]}
-                                isRunning={isRunning}
-                                onChange={(value) => setFormData((prev) => ({ ...prev, [key]: value }))}
-                            />
-                        )}
-                    </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <fieldset disabled={triggerTaskMutation.isPending} className="space-y-4">
+                        <DialogHeader>
+                            <DialogTitle>{task.name}</DialogTitle>
+                            <DialogDescription>{task.description}</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            {Object.entries(task.inputSchema!.properties).map(([key, prop]) =>
+                                <TaskFormField
+                                    key={key}
+                                    name={key}
+                                    property={prop}
+                                    value={formData[key]}
+                                    isRunning={triggerTaskMutation.isPending}
+                                    onChange={(value) => setFormData((prev) => ({ ...prev, [key]: value }))}
+                                />
+                            )}
+                        </div>
+                    </fieldset>
                     {errors && errors.map((error, idx) =>
                         <p key={idx} className="text-destructive text-sm">
                             {error.field}: {error.message}
                         </p>
                     )}
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isRunning}>
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={triggerTaskMutation.isPending}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isRunning}>
-                            {isRunning ? <Loader2 className="size-4 animate-spin"/> : <Play className="size-4"/>}
+                        <FormSubmitButton isLoading={triggerTaskMutation.isPending}>
                             Run Task
-                        </Button>
+                        </FormSubmitButton>
                     </DialogFooter>
                 </form>
             </DialogContent>

@@ -14,17 +14,16 @@ import {HighlightedMediaRef, HighlightedMediaSearchItem, HighlightedMediaSetting
 
 interface CuratedMediaManagerProps {
     activeTab: HighlightedMediaTab;
-    setRootError: (error: string | null) => void;
     previewCache: Record<string, HighlightedMediaSearchItem>;
     setPreviewCache: Dispatch<SetStateAction<Record<string, HighlightedMediaSearchItem>>>;
 }
 
 
-export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache, setRootError }: CuratedMediaManagerProps) => {
-    const { control } = useFormContext<HighlightedMediaSettings>();
+export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache }: CuratedMediaManagerProps) => {
+    const { clearErrors, control } = useFormContext<HighlightedMediaSettings>();
     const { fields, append, remove, swap } = useFieldArray({ control, name: `${activeTab}.items` });
     const { containerRef, search, setSearch, isOpen, debouncedSearch, reset } = useSearchContainer({
-        onReset: () => setRootError(null),
+        onReset: () => clearErrors("root"),
     });
 
     const selectedKeys = new Set(fields.map((f) => toItemKey(f)));

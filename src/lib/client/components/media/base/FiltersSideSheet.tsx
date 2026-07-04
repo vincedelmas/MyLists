@@ -10,6 +10,7 @@ import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {GamesPlatformsEnum, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {ChevronDown, ChevronUp, CircleHelp, LoaderCircle, X} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
@@ -83,114 +84,116 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
                     </SheetDescription>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto">
-                    <form id="filters-form" onSubmit={handleOnSubmit}>
-                        {error ?
-                            <div className="flex items-center justify-center h-[70vh]">
-                                <EmptyState
-                                    icon={X}
-                                    message={error.message}
-                                    className="text-destructive"
-                                />
-                            </div>
-                            :
-                            isPending ?
+                    <form id="filters-form" onSubmit={handleOnSubmit} className="space-y-6">
+                        <fieldset disabled={isPending} className="space-y-6">
+                            {error ?
                                 <div className="flex items-center justify-center h-[70vh]">
-                                    <LoaderCircle className="size-10 animate-spin"/>
+                                    <EmptyState
+                                        icon={X}
+                                        message={error.message}
+                                        className="text-destructive"
+                                    />
                                 </div>
                                 :
-                                <div className="pl-4 space-y-6">
-                                    <CheckboxGroup
-                                        title="Genres"
-                                        items={listFilters?.genres ?? []}
-                                        onChange={(genre) => handleRegisterChange("genres", [genre])}
-                                        defaultChecked={(genre) => filters.genres?.includes(genre) ?? false}
-                                    />
-                                    {activeFiltersConfig.map((filter) => {
-                                        if (filter.type === "checkbox" && filter.getItems) {
-                                            const items = filter.getItems(listFilters || {} as any);
-                                            if (!items || items.length === 0) return null;
-                                            return (
-                                                <React.Fragment key={filter.key}>
-                                                    <CheckboxGroup
-                                                        items={items}
-                                                        title={filter.title}
-                                                        onChange={(val) => handleRegisterChange(filter.key, [val])}
-                                                        render={(name) => filter.render ? filter.render(name, mediaType) : name}
-                                                        defaultChecked={(val) => (filters as any)?.[filter.key]?.includes(val) ?? false}
-                                                    />
-                                                </React.Fragment>
-                                            );
-                                        }
-                                        if (filter.type === "search") {
-                                            return (
-                                                <div key={filter.key} className="mb-4">
-                                                    <SearchFilter
-                                                        job={filter.job!}
-                                                        username={username}
-                                                        title={filter.title}
-                                                        mediaType={mediaType}
-                                                        filterKey={filter.key}
-                                                        dataList={(filters as any)?.[filter.key] ?? []}
-                                                        registerChange={(key, val) => handleRegisterChange(key, val)}
-                                                    />
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    })}
-                                    <div className="space-y-2">
-                                        <h3 className="font-medium">
-                                            Miscellaneous
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="favoriteCheck"
-                                                    defaultChecked={filters.favorite}
-                                                    onCheckedChange={(checked) => handleRegisterChange("favorite", !!checked)}
-                                                />
-                                                <label htmlFor="favoriteCheck" className="text-sm cursor-pointer">
-                                                    Favorites
-                                                </label>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox
-                                                    id="commentCheck"
-                                                    defaultChecked={filters.comment}
-                                                    onCheckedChange={(checked) => handleRegisterChange("comment", !!checked)}
-                                                />
-                                                <label htmlFor="commentCheck" className="text-sm cursor-pointer">
-                                                    Comments
-                                                </label>
-                                            </div>
-                                            {!isCurrent &&
+                                isPending ?
+                                    <div className="flex items-center justify-center h-[70vh]">
+                                        <LoaderCircle className="size-10 animate-spin"/>
+                                    </div>
+                                    :
+                                    <div className="pl-4 space-y-6">
+                                        <CheckboxGroup
+                                            title="Genres"
+                                            items={listFilters?.genres ?? []}
+                                            onChange={(genre) => handleRegisterChange("genres", [genre])}
+                                            defaultChecked={(genre) => filters.genres?.includes(genre) ?? false}
+                                        />
+                                        {activeFiltersConfig.map((filter) => {
+                                            if (filter.type === "checkbox" && filter.getItems) {
+                                                const items = filter.getItems(listFilters || {} as any);
+                                                if (!items || items.length === 0) return null;
+                                                return (
+                                                    <React.Fragment key={filter.key}>
+                                                        <CheckboxGroup
+                                                            items={items}
+                                                            title={filter.title}
+                                                            onChange={(val) => handleRegisterChange(filter.key, [val])}
+                                                            render={(name) => filter.render ? filter.render(name, mediaType) : name}
+                                                            defaultChecked={(val) => (filters as any)?.[filter.key]?.includes(val) ?? false}
+                                                        />
+                                                    </React.Fragment>
+                                                );
+                                            }
+                                            if (filter.type === "search") {
+                                                return (
+                                                    <div key={filter.key} className="mb-4">
+                                                        <SearchFilter
+                                                            job={filter.job!}
+                                                            username={username}
+                                                            title={filter.title}
+                                                            mediaType={mediaType}
+                                                            filterKey={filter.key}
+                                                            dataList={(filters as any)?.[filter.key] ?? []}
+                                                            registerChange={(key, val) => handleRegisterChange(key, val)}
+                                                        />
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                        <div className="space-y-2">
+                                            <h3 className="font-medium">
+                                                Miscellaneous
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-2">
                                                 <div className="flex items-center space-x-2">
                                                     <Checkbox
-                                                        id="commonCheck"
-                                                        defaultChecked={filters?.hideCommon ?? false}
-                                                        onCheckedChange={(checked) => handleRegisterChange("hideCommon", !!checked)}
+                                                        id="favoriteCheck"
+                                                        defaultChecked={filters.favorite}
+                                                        onCheckedChange={(checked) => handleRegisterChange("favorite", !!checked)}
                                                     />
-                                                    <label htmlFor="commonCheck" className="text-sm cursor-pointer">
-                                                        Hide Common
+                                                    <label htmlFor="favoriteCheck" className="text-sm cursor-pointer">
+                                                        Favorites
                                                     </label>
                                                 </div>
-                                            }
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id="commentCheck"
+                                                        defaultChecked={filters.comment}
+                                                        onCheckedChange={(checked) => handleRegisterChange("comment", !!checked)}
+                                                    />
+                                                    <label htmlFor="commentCheck" className="text-sm cursor-pointer">
+                                                        Comments
+                                                    </label>
+                                                </div>
+                                                {!isCurrent &&
+                                                    <div className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id="commonCheck"
+                                                            defaultChecked={filters?.hideCommon ?? false}
+                                                            onCheckedChange={(checked) => handleRegisterChange("hideCommon", !!checked)}
+                                                        />
+                                                        <label htmlFor="commonCheck" className="text-sm cursor-pointer">
+                                                            Hide Common
+                                                        </label>
+                                                    </div>
+                                                }
+                                            </div>
                                         </div>
+                                        <CheckboxGroup
+                                            title="Tags"
+                                            items={listFilters?.tags ?? []}
+                                            onChange={(col) => handleRegisterChange("tags", [col])}
+                                            defaultChecked={(col) => filters.tags?.includes(col) ?? false}
+                                        />
                                     </div>
-                                    <CheckboxGroup
-                                        title="Tags"
-                                        items={listFilters?.tags ?? []}
-                                        onChange={(col) => handleRegisterChange("tags", [col])}
-                                        defaultChecked={(col) => filters.tags?.includes(col) ?? false}
-                                    />
-                                </div>
-                        }
+                            }
+                        </fieldset>
                     </form>
                 </div>
                 <SheetFooter>
-                    <Button type="submit" form="filters-form" className="w-full">
+                    <FormSubmitButton form="filters-form" className="w-full" disabled={!!error} isLoading={isPending}>
                         Apply Filters
-                    </Button>
+                    </FormSubmitButton>
                 </SheetFooter>
             </SheetContent>
         </Sheet>

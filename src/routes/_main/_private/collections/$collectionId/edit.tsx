@@ -5,6 +5,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 import {collectionIdSchema, CreateCollection, createCollectionSchema} from "@/lib/schemas";
@@ -30,9 +31,9 @@ function CollectionEditPage() {
     const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
     const { collectionId } = Route.useParams();
-    const updateMutation = useUpdateCollectionMutation(collectionId);
-    const deleteMutation = useDeleteCollectionMutation(collectionId);
     const apiData = useSuspenseQuery(collectionDetailsEditOptions(collectionId)).data;
+    const updateMutation = useUpdateCollectionMutation(collectionId, { noErrorToast: true });
+    const deleteMutation = useDeleteCollectionMutation(collectionId, { noErrorToast: true });
     const form = useForm<CreateCollection>({
         resolver: zodResolver(createCollectionSchema),
         defaultValues: {
@@ -50,6 +51,9 @@ function CollectionEditPage() {
         if (!window.confirm("This collection will be permanently deleted. Are you sure?")) return;
 
         deleteMutation.mutate({ data: { collectionId } }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: async () => {
                 const redirectUsername = currentUser?.id === apiData.collection.ownerId
                     ? currentUser?.name
@@ -62,6 +66,9 @@ function CollectionEditPage() {
 
     const handleSubmit = async (payload: CreateCollection) => {
         updateMutation.mutate({ data: { collectionId, ...payload } }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: () => {
                 form.reset(payload);
             }

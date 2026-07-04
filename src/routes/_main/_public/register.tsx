@@ -17,7 +17,7 @@ function RegisterPage() {
     return (
         <PageTitle title="Register" onlyHelmet>
             <div className="mt-20 mx-auto w-full max-w-100 border border-neutral-800 rounded-lg p-6 bg-neutral-950 my-10">
-                <h1 className="text-2xl font-semibold tracking-tight text-center text-white mb-2">
+                <h1 className="text-2xl font-semibold tracking-tight text-center text-white mb-5">
                     Register to MyLists
                 </h1>
 

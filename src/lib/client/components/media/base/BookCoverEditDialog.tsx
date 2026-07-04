@@ -5,10 +5,12 @@ import {useQuery} from "@tanstack/react-query";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
-import {displayContainerError} from "@/lib/utils/error-display";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {UpdateBookCoverInput, updateBookCoverSchema} from "@/lib/schemas";
-import {Link2, Loader2, LoaderCircle, PencilLine, UploadCloud} from "lucide-react";
+import {Link2, LoaderCircle, PencilLine, UploadCloud} from "lucide-react";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {useUpdateBookCoverMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
@@ -69,6 +71,9 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
         if (data.imageFile) formData.append("imageFile", data.imageFile);
 
         updateCoverMutation.mutate({ data: formData }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: () => {
                 resetForm();
                 setOpen(false);
@@ -92,70 +97,70 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-4">
-                        <div className="grid grid-cols-2 gap-3">
-                            <Button type="button" onClick={setImageLinkMode} variant={mode === "link" ? "default" : "outline"}>
-                                <Link2 className="size-4"/> Image link
-                            </Button>
-                            <Button type="button" variant={mode === "upload" ? "default" : "outline"} onClick={setImageUploadMode}>
-                                <UploadCloud className="size-4"/> Upload image
-                            </Button>
-                        </div>
-                        {mode === "link" ?
-                            <FormField
-                                name="imageUrl"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Image URL</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                value={field.value ?? ""}
-                                                placeholder="https://example.com/cover.jpg"
-                                                onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                            :
-                            <FormField
-                                name="imageFile"
-                                control={form.control}
-                                render={({ field: { onChange, onBlur, name, ref } }) => (
-                                    <FormItem>
-                                        <FormLabel>Upload image</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                ref={ref}
-                                                type="file"
-                                                name={name}
-                                                onBlur={onBlur}
-                                                accept="image/*"
-                                                key={fileInputKey}
-                                                onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
-                        }
-                        {updateCoverMutation.isError &&
-                            <div className="text-sm text-destructive">
-                                {displayContainerError({ error: updateCoverMutation.error })}
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                        <fieldset disabled={updateCoverMutation.isPending} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <Button type="button" onClick={setImageLinkMode} variant={mode === "link" ? "emeraldy" : "outline"}>
+                                    <Link2 className="size-4"/>{" "}
+                                    Image link
+                                </Button>
+                                <Button type="button" variant={mode === "upload" ? "emeraldy" : "outline"} onClick={setImageUploadMode}>
+                                    <UploadCloud className="size-4"/>{" "}
+                                    Upload image
+                                </Button>
                             </div>
-                        }
-                        <SuggestedBookCover
-                            open={open}
-                            mediaName={mediaName}
-                            onUseCover={useSuggestedCover}
-                        />
-                        <Button type="submit" disabled={updateCoverMutation.isPending}>
-                            {updateCoverMutation.isPending && <Loader2 className="animate-spin"/>} Save cover
-                        </Button>
+                            {mode === "link" ?
+                                <FormField
+                                    name="imageUrl"
+                                    control={form.control}
+                                    render={({ field }) =>
+                                        <FormItem>
+                                            <FormLabel>Image URL</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    value={field.value ?? ""}
+                                                    placeholder="https://example.com/cover.jpg"
+                                                    onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
+                                                />
+                                            </FormControl>
+                                            <FormMessage/>
+                                        </FormItem>
+                                    }
+                                />
+                                :
+                                <FormField
+                                    name="imageFile"
+                                    control={form.control}
+                                    render={({ field: { onChange, onBlur, name, ref } }) => (
+                                        <FormItem>
+                                            <FormLabel>Upload image</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    ref={ref}
+                                                    type="file"
+                                                    name={name}
+                                                    onBlur={onBlur}
+                                                    accept="image/*"
+                                                    key={fileInputKey}
+                                                    onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
+                                                />
+                                            </FormControl>
+                                            <FormMessage/>
+                                        </FormItem>
+                                    )}
+                                />
+                            }
+                            <SuggestedBookCover
+                                open={open}
+                                mediaName={mediaName}
+                                onUseCover={useSuggestedCover}
+                            />
+                        </fieldset>
+                        <FormError/>
+                        <FormSubmitButton className="w-full" isLoading={updateCoverMutation.isPending}>
+                            Save New Cover
+                        </FormSubmitButton>
                     </form>
                 </Form>
             </DialogContent>

@@ -9,6 +9,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {formatDateTime} from "@/lib/utils/date-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Textarea} from "@/lib/client/components/ui/textarea";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {FeatureStatus, isAtLeastRole, RoleType,} from "@/lib/utils/enums";
@@ -17,12 +18,12 @@ import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
-import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 
 
 export const Route = createFileRoute("/_main/_viewer/features-vote")({
@@ -197,8 +198,9 @@ function FeatureVotesPage() {
                                             }
                                         />
                                     </fieldset>
+                                    <FormError/>
                                     <div className="flex items-center justify-center">
-                                        <FormSubmitButton disabled={createFeatureMutation.isPending || isAnonymous}>
+                                        <FormSubmitButton disabled={isAnonymous} isLoading={createFeatureMutation.isPending}>
                                             Add Feature for Voting
                                         </FormSubmitButton>
                                     </div>

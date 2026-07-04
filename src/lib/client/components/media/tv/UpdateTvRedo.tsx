@@ -93,7 +93,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                         </div>
                     </div>
                     <CredenzaFooter>
-                        <Button type="submit" className="w-full" onClick={onUpdateRedoValues} disabled={onUpdateMutation.isPending}>
+                        <Button type="button" className="w-full" onClick={onUpdateRedoValues} disabled={onUpdateMutation.isPending}>
                             Update
                         </Button>
                     </CredenzaFooter>

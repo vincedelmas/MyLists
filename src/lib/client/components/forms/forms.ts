@@ -7,5 +7,7 @@ export const handleServerFormErrors = (form: UseFormReturn<any>, error: Error) =
     if (error instanceof ValidationError) {
         form.setError(error.field, { message: error.message });
     }
-    form.setError("root", { message: error.message || DEFAULT_ERROR_MESSAGE });
+    else {
+        form.setError("root", { message: error.message || DEFAULT_ERROR_MESSAGE });
+    }
 };

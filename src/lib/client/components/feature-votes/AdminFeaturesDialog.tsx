@@ -5,9 +5,10 @@ import {FeatureStatus} from "@/lib/utils/enums";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Button} from "@/lib/client/components/ui/button";
 import {Textarea} from "@/lib/client/components/ui/textarea";
-import {displayContainerError} from "@/lib/utils/error-display";
 import {PostFeatureStatus, postFeatureStatusSchema} from "@/lib/schemas";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
+import {FormError} from "@/lib/client/components/forms/FormError";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useAdminDeleteFeatureMutation, useAdminUpdateFeatureMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
@@ -51,6 +52,9 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
 
     const handleOnSubmit = (submitted: PostFeatureStatus) => {
         updateStatusMutation.mutate({ data: submitted }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: () => setOpen(false),
         });
     };
@@ -59,6 +63,9 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
         if (!window.confirm("Delete this feature request and all its votes?")) return;
 
         deleteFeatureMutation.mutate({ data: { featureId } }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: () => setOpen(false),
         });
     };
@@ -79,7 +86,7 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form id={`feature-admin-form-${featureId}`} onSubmit={form.handleSubmit(handleOnSubmit)}>
+                    <form onSubmit={form.handleSubmit(handleOnSubmit)} className="space-y-4">
                         <fieldset className="space-y-4" disabled={mutationsPending}>
                             <FormField
                                 name="status"
@@ -124,28 +131,25 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
                                 }
                             />
                         </fieldset>
+                        <FormError/>
+                        <DialogFooter>
+                            <div className="mr-auto">
+                                <Button size="sm" type="button" variant="destructive" onClick={handleDelete} disabled={mutationsPending}>
+                                    Delete Request
+                                </Button>
+                            </div>
+                            <Button type="button" variant="ghost" disabled={mutationsPending} onClick={() => handleOpenChange(false)}>
+                                Cancel
+                            </Button>
+                            <FormSubmitButton
+                                disabled={deleteFeatureMutation.isPending}
+                                isLoading={updateStatusMutation.isPending}
+                            >
+                                Save Changes
+                            </FormSubmitButton>
+                        </DialogFooter>
                     </form>
                 </Form>
-
-                {(deleteFeatureMutation.isError || updateStatusMutation.isError) &&
-                    <InlineErrorContainer>
-                        {displayContainerError({ error: deleteFeatureMutation.error ?? updateStatusMutation.error })}
-                    </InlineErrorContainer>
-                }
-
-                <DialogFooter>
-                    <div className="mr-auto">
-                        <Button size="sm" type="button" variant="destructive" onClick={handleDelete} disabled={mutationsPending}>
-                            Delete Request
-                        </Button>
-                    </div>
-                    <Button type="button" variant="ghost" disabled={mutationsPending} onClick={() => handleOpenChange(false)}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" form={`feature-admin-form-${featureId}`} disabled={mutationsPending}>
-                        Save Changes
-                    </Button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

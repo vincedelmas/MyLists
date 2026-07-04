@@ -6,7 +6,10 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
 import {BulkHideActivity, BulkHideActivityInput, bulkHideActivitySchema} from "@/lib/schemas";
 import {useBulkHideActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
@@ -23,7 +26,7 @@ function ActivityCleanupSettings() {
     const mediaType = "all";
     const { currentUser } = useAuth();
     const today = toDateInputValue(new Date());
-    const bulkMutation = useBulkHideActivityMutation();
+    const bulkMutation = useBulkHideActivityMutation({ noErrorToast: true });
     const accountCreatedAt = currentUser?.createdAt ? toDateInputValue(currentUser.createdAt) : today;
     const availableMediaTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? Object.values(MediaType);
     const form = useForm<BulkHideActivityInput, unknown, BulkHideActivity>({
@@ -51,6 +54,9 @@ function ActivityCleanupSettings() {
                 mediaType: values.mediaType,
             },
         }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: (result) => {
                 toast.success(`Hidden ${result.count} Activit${result.count === 1 ? "y" : "ies"}`);
             },
@@ -59,8 +65,8 @@ function ActivityCleanupSettings() {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="w-100 max-sm:w-full">
-                <div className="space-y-7">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="w-100 max-sm:w-full space-y-6">
+                <fieldset disabled={bulkMutation.isPending} className="space-y-6">
                     <div className="font-medium text-lg">
                         Cleanup Activity
                         <div className="text-sm font-normal text-muted-foreground">
@@ -87,7 +93,6 @@ function ActivityCleanupSettings() {
                             </Button>
                         </div>
                     </div>
-
                     <FormField
                         name="startDate"
                         control={form.control}
@@ -101,7 +106,6 @@ function ActivityCleanupSettings() {
                             </FormItem>
                         }
                     />
-
                     <FormField
                         name="endDate"
                         control={form.control}
@@ -115,7 +119,6 @@ function ActivityCleanupSettings() {
                             </FormItem>
                         }
                     />
-
                     <FormField
                         name="mediaType"
                         control={form.control}
@@ -141,15 +144,14 @@ function ActivityCleanupSettings() {
                             </FormItem>
                         }
                     />
-
                     <div className="rounded-md border p-3 text-sm border-app-accent bg-app-accent/10">
                         This is not month-specific. It applies to all activities with a progress date inside the selected range.
                     </div>
-                </div>
-
-                <Button type="submit" className="mt-5" disabled={bulkMutation.isPending}>
+                </fieldset>
+                <FormError/>
+                <FormSubmitButton isLoading={bulkMutation.isPending}>
                     Hide Matching Activity
-                </Button>
+                </FormSubmitButton>
             </form>
         </Form>
     );

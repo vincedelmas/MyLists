@@ -1,9 +1,11 @@
 import {useForm} from "react-hook-form";
 import {useMutation} from "@tanstack/react-query";
 import {Input} from "@/lib/client/components/ui/input";
-import {Button} from "@/lib/client/components/ui/button";
-import {adminAuth, checkAdminAuth} from "@/lib/server/functions/admin";
 import {createFileRoute, redirect} from "@tanstack/react-router";
+import {FormError} from "@/lib/client/components/forms/FormError";
+import {adminAuth, checkAdminAuth} from "@/lib/server/functions/admin";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
@@ -28,7 +30,7 @@ type AdminAuthForm = {
 
 function AdminStepUpPage() {
     const navigate = Route.useNavigate();
-    const adminAuthMutation = useMutation({ mutationFn: adminAuth });
+    const adminAuthMutation = useMutation({ mutationFn: adminAuth, meta: { noErrorToast: true } });
     const form = useForm<AdminAuthForm>({
         defaultValues: {
             password: "",
@@ -37,6 +39,9 @@ function AdminStepUpPage() {
 
     const onSubmit = async (data: AdminAuthForm) => {
         adminAuthMutation.mutate({ data: { password: data.password } }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: async (response) => {
                 if (response?.success) {
                     await navigate({ to: "/admin/overview" });
@@ -44,11 +49,6 @@ function AdminStepUpPage() {
                 else if (response?.message) {
                     form.setError("password", { message: response.message });
                 }
-            },
-            onError: (error) => {
-                form.setError("password", {
-                    message: error instanceof Error ? error.message : "Authentication failed",
-                });
             }
         });
     }
@@ -61,31 +61,31 @@ function AdminStepUpPage() {
                     <CardDescription>Enter your admin password to access elevated privileges.</CardDescription>
                 </CardHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
-                        <CardContent className="space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="password"
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Password</FormLabel>
-                                        <FormControl>
-                                            <Input type="password" placeholder="Enter admin password" {...field} />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                            {adminAuthMutation.error &&
-                                <p className="text-sm text-red-600">
-                                    {adminAuthMutation.error.message}
-                                </p>
-                            }
-                        </CardContent>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <fieldset disabled={adminAuthMutation.isPending} className="space-y-4">
+                            <CardContent className="space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) =>
+                                        <FormItem>
+                                            <FormLabel>Password</FormLabel>
+                                            <FormControl>
+                                                <Input type="password" placeholder="Enter admin password" {...field} />
+                                            </FormControl>
+                                            <FormMessage/>
+                                        </FormItem>
+                                    }
+                                />
+                            </CardContent>
+                        </fieldset>
+                        <div className="px-6">
+                            <FormError/>
+                        </div>
                         <CardFooter className="mt-4">
-                            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || adminAuthMutation.isPending}>
-                                {adminAuthMutation.isPending ? "Authenticating..." : "Step Up to Admin"}
-                            </Button>
+                            <FormSubmitButton className="w-full" isLoading={adminAuthMutation.isPending}>
+                                Step Up to Admin
+                            </FormSubmitButton>
                         </CardFooter>
                     </form>
                 </Form>

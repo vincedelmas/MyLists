@@ -46,8 +46,6 @@ function AdminTasksPage() {
                                 {Object.values(task.inputSchema.properties).length > 0 ?
                                     <TaskFormDialog
                                         task={task}
-                                        isRunning={isRunning}
-                                        mutation={taskTriggerMutation}
                                     />
                                     :
                                     <Button

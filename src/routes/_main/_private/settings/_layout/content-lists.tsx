@@ -9,10 +9,13 @@ import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {CircleHelp, Download, TriangleAlert} from "lucide-react";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
@@ -50,8 +53,8 @@ const mediaTypeConfigs = [
 
 function MediaListFormPage() {
     const { currentUser, setCurrentUser } = useAuth();
-    const listSettingsMutation = useListSettingsMutation();
     const downloadListAsCSVMutation = useDownloadListAsCSVMutation();
+    const listSettingsMutation = useListSettingsMutation({ noErrorToast: true });
     const [selectedListForExport, setSelectedListForExport] = useState<MediaType>(MediaType.SERIES);
     const form = useForm<ListSettings>({
         resolver: zodResolver(mediaListSettingsSchema),
@@ -79,6 +82,9 @@ function MediaListFormPage() {
 
     const onSubmit = (submittedData: ListSettings) => {
         listSettingsMutation.mutate({ data: submittedData }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: async () => {
                 await setCurrentUser();
             }
@@ -112,133 +118,136 @@ function MediaListFormPage() {
         <div className="space-y-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="w-90 max-sm:w-full space-y-8">
-                    <div className="space-y-3">
-                        <div className="text-sm font-medium mb-2">
-                            Active Content
-                            <div className="text-xs font-normal text-muted-foreground">
-                                Customize which media types you track. Disabling a list hides it from your profile navigation.
+                    <fieldset disabled={listSettingsMutation.isPending} className="space-y-8">
+                        <div className="space-y-3">
+                            <div className="text-sm font-medium mb-2">
+                                Active Content
+                                <div className="text-xs font-normal text-muted-foreground">
+                                    Customize which media types you track. Disabling a list hides it from your profile navigation.
+                                </div>
                             </div>
+                            {mediaTypeConfigs.map((config) => (
+                                <FormField
+                                    key={config.name}
+                                    name={config.name}
+                                    control={form.control}
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between space-x-3 rounded-md border p-3">
+                                            <FormLabel className="font-normal">
+                                                <MainThemeIcon
+                                                    size={15}
+                                                    type={config.name}
+                                                />
+                                                {config.label} List
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={(checked) => handleCheckedChange(field, checked, config.apiProvider)}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            ))}
                         </div>
-                        {mediaTypeConfigs.map((config) => (
+                        <div>
                             <FormField
-                                key={config.name}
-                                name={config.name}
+                                name="searchSelector"
                                 control={form.control}
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between space-x-3 rounded-md border p-3">
-                                        <FormLabel className="font-normal">
-                                            <MainThemeIcon
-                                                size={15}
-                                                type={config.name}
-                                            />
-                                            {config.label} List
+                                    <FormItem>
+                                        <FormLabel>
+                                            Navbar Search Selector
+                                            <SearchPopover/>
                                         </FormLabel>
-                                        <FormControl>
-                                            <Switch
-                                                checked={field.value}
-                                                onCheckedChange={(checked) => handleCheckedChange(field, checked, config.apiProvider)}
-                                            />
-                                        </FormControl>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select a search selector"/>
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value={ApiProviderType.TMDB}>
+                                                    Media
+                                                </SelectItem>
+                                                <SelectItem value={ApiProviderType.BOOKS} disabled={!isBooksActive}>
+                                                    {!isBooksActive && <TriangleAlert className="text-amber-600"/>} Books
+                                                </SelectItem>
+                                                <SelectItem value={ApiProviderType.IGDB} disabled={!isGamesActive}>
+                                                    {!isGamesActive && <TriangleAlert className="text-amber-600"/>} Games
+                                                </SelectItem>
+                                                <SelectItem value={ApiProviderType.MANGA} disabled={!isMangaActive}>
+                                                    {!isMangaActive && <TriangleAlert className="text-amber-600"/>} Manga
+                                                </SelectItem>
+                                                <SelectItem value={ApiProviderType.USERS}>
+                                                    Users
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage/>
                                     </FormItem>
                                 )}
                             />
-                        ))}
-                    </div>
-                    <div>
-                        <FormField
-                            name="searchSelector"
-                            control={form.control}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        Navbar Search Selector
-                                        <SearchPopover/>
-                                    </FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select a search selector"/>
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value={ApiProviderType.TMDB}>
-                                                Media
-                                            </SelectItem>
-                                            <SelectItem value={ApiProviderType.BOOKS} disabled={!isBooksActive}>
-                                                {!isBooksActive && <TriangleAlert className="text-amber-600"/>} Books
-                                            </SelectItem>
-                                            <SelectItem value={ApiProviderType.IGDB} disabled={!isGamesActive}>
-                                                {!isGamesActive && <TriangleAlert className="text-amber-600"/>} Games
-                                            </SelectItem>
-                                            <SelectItem value={ApiProviderType.MANGA} disabled={!isMangaActive}>
-                                                {!isMangaActive && <TriangleAlert className="text-amber-600"/>} Manga
-                                            </SelectItem>
-                                            <SelectItem value={ApiProviderType.USERS}>
-                                                Users
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                    <div>
-                        <FormField
-                            name="ratingSystem"
-                            control={form.control}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        Rating System
-                                        <RatingSystemPopover/>
-                                    </FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select a rating system"/>
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value={RatingSystemType.SCORE}>
-                                                Score (numeric)
-                                            </SelectItem>
-                                            <SelectItem value={RatingSystemType.FEELING}>
-                                                Feeling (emoticons)
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                    <div>
-                        <FormField
-                            name="gridListView"
-                            control={form.control}
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Default List View Mode</FormLabel>
-                                    <Select onValueChange={(v) => field.onChange(v === "grid")} value={field.value ? "grid" : "table"}>
-                                        <FormControl>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select a view mode"/>
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="grid">Grid</SelectItem>
-                                            <SelectItem value="table">Table</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                    <Button type="submit" disabled={!form.formState.isDirty || listSettingsMutation.isPending}>
-                        {listSettingsMutation.isPending ? "Updating..." : "Update Settings"}
-                    </Button>
+                        </div>
+                        <div>
+                            <FormField
+                                name="ratingSystem"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>
+                                            Rating System
+                                            <RatingSystemPopover/>
+                                        </FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select a rating system"/>
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value={RatingSystemType.SCORE}>
+                                                    Score (numeric)
+                                                </SelectItem>
+                                                <SelectItem value={RatingSystemType.FEELING}>
+                                                    Feeling (emoticons)
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage/>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div>
+                            <FormField
+                                name="gridListView"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Default List View Mode</FormLabel>
+                                        <Select onValueChange={(v) => field.onChange(v === "grid")} value={field.value ? "grid" : "table"}>
+                                            <FormControl>
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select a view mode"/>
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="grid">Grid</SelectItem>
+                                                <SelectItem value="table">Table</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage/>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </fieldset>
+                    <FormError/>
+                    <FormSubmitButton disabled={!form.formState.isDirty} isLoading={listSettingsMutation.isPending}>
+                        Update Settings
+                    </FormSubmitButton>
                 </form>
             </Form>
             <Separator/>

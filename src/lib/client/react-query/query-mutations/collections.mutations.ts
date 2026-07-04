@@ -34,13 +34,14 @@ export const useCreateCollectionMutation = (meta?: MutationMeta) => {
 };
 
 
-export const useUpdateCollectionMutation = (collectionId: number) => {
+export const useUpdateCollectionMutation = (collectionId: number, meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postUpdateCollection,
         meta: {
             successToastMessage: "Collection updated successfully!",
+            ...meta,
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
@@ -51,13 +52,14 @@ export const useUpdateCollectionMutation = (collectionId: number) => {
 };
 
 
-export const useDeleteCollectionMutation = (collectionId: number) => {
+export const useDeleteCollectionMutation = (collectionId: number, meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postDeleteCollection,
         meta: {
             successToastMessage: "Collection deleted successfully!",
+            ...meta,
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });

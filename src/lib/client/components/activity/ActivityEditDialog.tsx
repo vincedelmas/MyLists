@@ -5,10 +5,11 @@ import {Button} from "@/lib/client/components/ui/button";
 import {ActivityEditor} from "@/lib/types/activity.types";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {toDateInputValue} from "@/lib/utils/date-formatting";
-import {displayContainerError} from "@/lib/utils/error-display";
 import {useCurrentDate} from "@/lib/client/hooks/use-dates";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {UpdateActivity, UpdateActivityInput, updateActivityPayloadSchema} from "@/lib/schemas";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
+import {FormError} from "@/lib/client/components/forms/FormError";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {useDeleteActivityMutation, useUpdateActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
@@ -55,6 +56,9 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                 }
             }
         }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: () => {
                 onOpenChange(false);
             }
@@ -65,6 +69,9 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
         if (!window.confirm("Delete this activity event?")) return;
 
         deleteMutation.mutate({ data: { activityId: activity.id } }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: () => {
                 onOpenChange(false);
             }
@@ -81,139 +88,142 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleOnSave)} className="space-y-5 mt-2">
-                        <FormField
-                            name="specificGained"
-                            control={form.control}
-                            render={({ field }) =>
-                                <FormItem>
-                                    <FormLabel>
-                                        {getActivityUnitLabel(activity.mediaType, "long") ?? "Units gained"}
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            ref={field.ref}
-                                            name={field.name}
-                                            value={field.value ?? 0}
-                                            onBlur={field.onBlur}
-                                            step={getActivityInputStep(activity.mediaType)}
-                                            onChange={(ev) => field.onChange(ev.target.valueAsNumber)}
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            }
-                        />
-                        <FormField
-                            name="lastUpdate"
-                            control={form.control}
-                            render={({ field }) =>
-                                <FormItem>
-                                    <FormLabel>Progress date</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            type="date"
-                                            max={currentDate}
-                                            value={field.value ?? ""}
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            }
-                        />
-
-                        <div className="flex flex-wrap gap-4">
-                            <div className="flex items-center gap-2 text-sm">
-                                <Checkbox
-                                    id="activity-progress"
-                                    checked={!isCompleted && !isRedo}
-                                    onCheckedChange={() => {
-                                        form.setValue("isRedo", false, { shouldDirty: true, shouldValidate: true });
-                                        form.setValue("isCompleted", false, { shouldDirty: true, shouldValidate: true });
-                                    }}
-                                />
-                                <label htmlFor="activity-progress">Progress</label>
-                            </div>
+                        <fieldset disabled={updateMutation.isPending || deleteMutation.isPending} className="space-y-5">
                             <FormField
-                                name="isCompleted"
+                                name="specificGained"
                                 control={form.control}
                                 render={({ field }) =>
-                                    <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value ?? false}
-                                                onCheckedChange={(value) => {
-                                                    field.onChange(!!value);
-                                                    if (value) {
-                                                        form.setValue("isRedo", false, { shouldDirty: true, shouldValidate: true });
-                                                    }
-                                                }}
-                                            />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Completed</FormLabel>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                            <FormField
-                                name="isRedo"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value ?? false}
-                                                onCheckedChange={(value) => {
-                                                    field.onChange(!!value);
-                                                    if (value) {
-                                                        form.setValue("isCompleted", false, { shouldDirty: true, shouldValidate: true });
-                                                    }
-                                                }}
-                                            />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Re-experience</FormLabel>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                        </div>
-
-                        <FormField
-                            name="hidden"
-                            control={form.control}
-                            render={({ field }) =>
-                                <FormItem className="flex flex-row items-start gap-2 space-y-0 rounded-md border border-border p-3">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value ?? false}
-                                            onCheckedChange={(value) => field.onChange(!!value)}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1">
-                                        <FormLabel className="font-medium">
-                                            Hidden
+                                    <FormItem>
+                                        <FormLabel>
+                                            {getActivityUnitLabel(activity.mediaType, "long") ?? "Units gained"}
                                         </FormLabel>
-                                        <FormDescription className="text-xs">
-                                            Keep this activity editable, but hide it from monthly activity and yearly recap.
-                                        </FormDescription>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                ref={field.ref}
+                                                name={field.name}
+                                                value={field.value ?? 0}
+                                                onBlur={field.onBlur}
+                                                step={getActivityInputStep(activity.mediaType)}
+                                                onChange={(ev) => field.onChange(ev.target.valueAsNumber)}
+                                            />
+                                        </FormControl>
                                         <FormMessage/>
-                                    </div>
-                                </FormItem>
-                            }
-                        />
-                        {(updateMutation.isError || deleteMutation.isError) &&
-                            <InlineErrorContainer>
-                                {displayContainerError({ error: updateMutation.error ?? deleteMutation.error })}
-                            </InlineErrorContainer>
-                        }
+                                    </FormItem>
+                                }
+                            />
+                            <FormField
+                                name="lastUpdate"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <FormItem>
+                                        <FormLabel>Progress date</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="date"
+                                                max={currentDate}
+                                                value={field.value ?? ""}
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                }
+                            />
+
+                            <div className="flex flex-wrap gap-4">
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Checkbox
+                                        id="activity-progress"
+                                        checked={!isCompleted && !isRedo}
+                                        onCheckedChange={() => {
+                                            form.setValue("isRedo", false, { shouldDirty: true, shouldValidate: true });
+                                            form.setValue("isCompleted", false, { shouldDirty: true, shouldValidate: true });
+                                        }}
+                                    />
+                                    <label htmlFor="activity-progress">Progress</label>
+                                </div>
+                                <FormField
+                                    name="isCompleted"
+                                    control={form.control}
+                                    render={({ field }) =>
+                                        <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value ?? false}
+                                                    onCheckedChange={(value) => {
+                                                        field.onChange(!!value);
+                                                        if (value) {
+                                                            form.setValue("isRedo", false, { shouldDirty: true, shouldValidate: true });
+                                                        }
+                                                    }}
+                                                />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">Completed</FormLabel>
+                                            <FormMessage/>
+                                        </FormItem>
+                                    }
+                                />
+                                <FormField
+                                    name="isRedo"
+                                    control={form.control}
+                                    render={({ field }) =>
+                                        <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value ?? false}
+                                                    onCheckedChange={(value) => {
+                                                        field.onChange(!!value);
+                                                        if (value) {
+                                                            form.setValue("isCompleted", false, { shouldDirty: true, shouldValidate: true });
+                                                        }
+                                                    }}
+                                                />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">Re-experience</FormLabel>
+                                            <FormMessage/>
+                                        </FormItem>
+                                    }
+                                />
+                            </div>
+
+                            <FormField
+                                name="hidden"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <FormItem className="flex flex-row items-start gap-2 space-y-0 rounded-md border border-border p-3">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value ?? false}
+                                                onCheckedChange={(value) => field.onChange(!!value)}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1">
+                                            <FormLabel className="font-medium">
+                                                Hidden
+                                            </FormLabel>
+                                            <FormDescription className="text-xs">
+                                                Keep this activity editable, but hide it from monthly activity and yearly recap.
+                                            </FormDescription>
+                                            <FormMessage/>
+                                        </div>
+                                    </FormItem>
+                                }
+                            />
+                        </fieldset>
+                        <FormError/>
                         <DialogFooter className="pt-2 mx-auto gap-3">
-                            <Button type="button" variant="destructive" onClick={handleOnDelete} disabled={deleteMutation.isPending}>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={handleOnDelete}
+                                disabled={updateMutation.isPending || deleteMutation.isPending}
+                            >
                                 Delete
                             </Button>
-                            <Button type="submit" disabled={updateMutation.isPending}>
+                            <FormSubmitButton disabled={deleteMutation.isPending} isLoading={updateMutation.isPending}>
                                 Save changes
-                            </Button>
+                            </FormSubmitButton>
                         </DialogFooter>
                     </form>
                 </Form>

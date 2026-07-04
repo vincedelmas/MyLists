@@ -1,6 +1,6 @@
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {postUpdateShowOnboarding} from "@/lib/server/functions/user-profile";
-import {QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
+import {MutationMeta, QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
 import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/notifications";
 import {postFollow, postRemoveFollower, postRespondToFollowRequest, postUnfollow} from "@/lib/server/functions/social";
 import {
@@ -99,29 +99,35 @@ export const useRemoveFollowerMutation = (profileUsername: string) => {
 };
 
 
-export const useGeneralSettingsMutation = () => {
+export const useGeneralSettingsMutation = (meta?: MutationMeta) => {
     return useMutation({
         mutationFn: ({ data }: { data: FormData }) => postGeneralSettings({ data }),
-    });
-};
-
-
-export const useListSettingsMutation = () => {
-    return useMutation({
-        mutationFn: postMediaListSettings,
         meta: {
-            successToastMessage: "Your list settings have been updated.",
+            successToastMessage: "Your settings have been updated.",
+            ...meta,
         },
     });
 };
 
 
-export const useProfileCustomMutation = () => {
+export const useListSettingsMutation = (meta?: MutationMeta) => {
+    return useMutation({
+        mutationFn: postMediaListSettings,
+        meta: {
+            successToastMessage: "Your list settings have been updated.",
+            ...meta,
+        },
+    });
+};
+
+
+export const useProfileCustomMutation = (meta?: MutationMeta) => {
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postProfileCustomSettings,
+        meta: { ...meta },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: profileCustomOptions.queryKey });
             if (currentUser) {
@@ -140,11 +146,12 @@ export const useDownloadListAsCSVMutation = () => {
 };
 
 
-export const usePasswordSettingsMutation = () => {
+export const usePasswordSettingsMutation = (meta?: MutationMeta) => {
     return useMutation({
         mutationFn: postPasswordSettings,
         meta: {
             successToastMessage: "Your password has been updated.",
+            ...meta,
         },
     });
 };

@@ -1,19 +1,16 @@
+import React from "react";
 import {Input} from "@/lib/client/components/ui/input";
 import {Label} from "@/lib/client/components/ui/label";
-import {Button} from "@/lib/client/components/ui/button";
-import {Controller, useFormContext, useFormState, useWatch} from "react-hook-form";
+import {Controller, useFormContext, useWatch} from "react-hook-form";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {CuratedMediaManager} from "@/lib/client/components/user-settings/CuratedMediaManager";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab} from "@/lib/types/profile-custom.types";
 
 
 interface TabCustomContentProps {
-    isPending: boolean;
-    rootError: string | null;
     activeTab: HighlightedMediaTab;
-    setRootError: (error: string | null) => void;
     previewCache: Record<string, HighlightedMediaSearchItem>;
     setPreviewCache: React.Dispatch<React.SetStateAction<Record<string, HighlightedMediaSearchItem>>>;
 }
@@ -26,10 +23,8 @@ const modeOptions = [
 ] as const;
 
 
-export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache, rootError, setRootError, isPending }: TabCustomContentProps) => {
+export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache }: TabCustomContentProps) => {
     const { register, control } = useFormContext<HighlightedMediaSettings>();
-
-    const { isDirty } = useFormState({ control });
     const activeMode = useWatch({ control, name: `${activeTab}.mode` });
 
     return (
@@ -89,20 +84,9 @@ export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache, roo
                     <CuratedMediaManager
                         activeTab={activeTab}
                         previewCache={previewCache}
-                        setRootError={setRootError}
                         setPreviewCache={setPreviewCache}
                     />
                 }
-
-                {rootError &&
-                    <p className="text-sm font-medium text-destructive">
-                        {rootError}
-                    </p>
-                }
-
-                <Button type="submit" disabled={!isDirty || isPending}>
-                    Save Customization
-                </Button>
             </CardContent>
         </Card>
     );

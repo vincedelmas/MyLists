@@ -1,14 +1,15 @@
 import {toast} from "sonner";
 import {useState} from "react";
 import {useForm} from "react-hook-form";
-import {LoaderCircle} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
-import {Button} from "@/lib/client/components/ui/button";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {ForgotPassword, forgotPasswordSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
@@ -33,7 +34,7 @@ function ForgotPasswordPage() {
             redirectTo: "/reset-password",
         }, {
             onError: (ctx) => {
-                toast.error(ctx.error.message);
+                handleServerFormErrors(form, ctx.error);
             },
             onSuccess: async () => {
                 setEmailSent(true);
@@ -50,7 +51,7 @@ function ForgotPasswordPage() {
             <div className="mt-4 max-w-75">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <fieldset disabled={form.formState.isSubmitting}>
+                        <fieldset disabled={form.formState.isSubmitting} className="space-y-4">
                             <FormField
                                 name="email"
                                 control={form.control}
@@ -74,9 +75,10 @@ function ForgotPasswordPage() {
                                 An email has been sent to reset your password. Please check your inbox.
                             </p>
                         }
-                        <Button type="submit" disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting && <LoaderCircle className="size-4 animate-spin"/>} Submit
-                        </Button>
+                        <FormError/>
+                        <FormSubmitButton isLoading={form.formState.isSubmitting}>
+                            Submit
+                        </FormSubmitButton>
                     </form>
                 </Form>
             </div>

@@ -7,10 +7,13 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {highlightedMediaSettingsSchema} from "@/lib/schemas";
 import {FieldErrors, useForm, useWatch} from "react-hook-form";
+import {FormError} from "@/lib/client/components/forms/FormError";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {profileCustomOptions} from "@/lib/client/react-query/query-options";
-import {useProfileCustomMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {TabCustomContent} from "@/lib/client/components/user-settings/TabCustomContent";
 import {ProfileSidebarTabs} from "@/lib/client/components/user-settings/ProfileSidebarTabs";
+import {useProfileCustomMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {HIGHLIGHTED_MEDIA_TABS, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab,} from "@/lib/types/profile-custom.types";
 
 
@@ -23,9 +26,8 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/profile-c
 
 
 function ProfileCustomForm() {
-    const mutation = useProfileCustomMutation();
     const apiData = useSuspenseQuery(profileCustomOptions).data;
-    const [rootError, setRootError] = useState<string | null>(null);
+    const mutation = useProfileCustomMutation({ noErrorToast: true });
     const [activeTab, setActiveTab] = useState<HighlightedMediaTab>("overview");
     const [localPreviewCache, setLocalPreviewCache] = useState<Record<string, HighlightedMediaSearchItem>>({});
     const form = useForm<HighlightedMediaSettings, unknown, HighlightedMediaSettings>({
@@ -37,11 +39,9 @@ function ProfileCustomForm() {
     const combinedPreviewCache = { ...buildPreviewCache(apiData.previews), ...localPreviewCache };
 
     const onSubmit = (formData: HighlightedMediaSettings) => {
-        setRootError(null);
-
         mutation.mutate({ data: formData }, {
-            onError: (err) => {
-                setRootError(err?.message ?? "Customization could not be saved.");
+            onError: (error) => {
+                handleServerFormErrors(form, error);
             },
             onSuccess: () => {
                 setLocalPreviewCache({});
@@ -55,37 +55,42 @@ function ProfileCustomForm() {
         if (invalidTab) {
             setActiveTab(invalidTab);
         }
-        setRootError(getFirstErrorMessage(errors) ?? "Customization could not be saved.");
+        form.setError("root", {
+            message: getFirstErrorMessage(errors) ?? "Customization could not be saved.",
+        });
     };
 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
-                <div>
-                    <h2 className="text-lg font-semibold text-primary">
-                        Profile Customization
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                        Configure the Highlighted Media block independently for each profile tab.
-                    </p>
-                </div>
-                <div className="grid gap-6 grid-cols-[200px_0.8fr] max-lg:grid-cols-1">
-                    <ProfileSidebarTabs
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        allFormValues={allFormValues}
-                    />
+                <fieldset disabled={mutation.isPending} className="space-y-6">
+                    <div>
+                        <h2 className="text-lg font-semibold text-primary">
+                            Profile Customization
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Configure the Highlighted Media block independently for each profile tab.
+                        </p>
+                    </div>
+                    <div className="grid gap-6 grid-cols-[200px_0.8fr] max-lg:grid-cols-1">
+                        <ProfileSidebarTabs
+                            activeTab={activeTab}
+                            setActiveTab={setActiveTab}
+                            allFormValues={allFormValues}
+                        />
 
-                    <TabCustomContent
-                        key={activeTab}
-                        rootError={rootError}
-                        activeTab={activeTab}
-                        setRootError={setRootError}
-                        isPending={mutation.isPending}
-                        previewCache={combinedPreviewCache}
-                        setPreviewCache={setLocalPreviewCache}
-                    />
-                </div>
+                        <TabCustomContent
+                            key={activeTab}
+                            activeTab={activeTab}
+                            previewCache={combinedPreviewCache}
+                            setPreviewCache={setLocalPreviewCache}
+                        />
+                    </div>
+                </fieldset>
+                <FormError/>
+                <FormSubmitButton disabled={!form.formState.isDirty} isLoading={mutation.isPending}>
+                    Save Customization
+                </FormSubmitButton>
             </form>
         </Form>
     );

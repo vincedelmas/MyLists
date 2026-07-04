@@ -1,6 +1,5 @@
 import {toast} from "sonner";
 import {useForm} from "react-hook-form";
-import {LoaderCircle} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
 import {Login, loginSchema} from "@/lib/schemas";
 import {FaGithub, FaGoogle} from "react-icons/fa";
@@ -9,7 +8,10 @@ import {useQueryClient} from "@tanstack/react-query";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {authOptions} from "@/lib/client/react-query/query-options";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Link, useLocation, useNavigate, useRouter} from "@tanstack/react-router";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
@@ -50,15 +52,7 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
             password: submitted.password,
         }, {
             onError: (ctx) => {
-                if (ctx.error.status === 403) {
-                    form.setError("root", {
-                        type: "value",
-                        message: "Please validate your email. A validation link has been sent.",
-                    }, { shouldFocus: false });
-                }
-                else {
-                    form.setError("root", { type: "value", message: ctx.error.message }, { shouldFocus: false });
-                }
+                handleServerFormErrors(form, ctx.error);
             },
             onSuccess: async () => {
                 const currentUser = await queryClient.fetchQuery({ ...authOptions, staleTime: 0 });
@@ -83,63 +77,56 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
         <>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <fieldset disabled={form.formState.isSubmitting}>
-                        <div className="space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="email"
-                                                placeholder="Email"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="password"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <div className="flex items-center justify-between">
-                                            <FormLabel>Password</FormLabel>
-                                            <Link
-                                                to="/forgot-password"
-                                                className="text-sm underline"
-                                                tabIndex={-1}
-                                                onClick={() => onOpenChange?.(false)}
-                                            >
-                                                Forgot password?
-                                            </Link>
-                                        </div>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="password"
-                                                placeholder="********"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                    <fieldset disabled={form.formState.isSubmitting} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            type="email"
+                                            placeholder="Email"
+                                        />
+                                    </FormControl>
+                                    <FormMessage/>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center justify-between">
+                                        <FormLabel>Password</FormLabel>
+                                        <Link
+                                            to="/forgot-password"
+                                            className="text-sm underline"
+                                            tabIndex={-1}
+                                            onClick={() => onOpenChange?.(false)}
+                                        >
+                                            Forgot password?
+                                        </Link>
+                                    </div>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            type="password"
+                                            placeholder="********"
+                                        />
+                                    </FormControl>
+                                    <FormMessage/>
+                                </FormItem>
+                            )}
+                        />
                     </fieldset>
-                    {form.formState.errors.root &&
-                        <FormMessage className="text-center">
-                            {form.formState.errors.root.message}
-                        </FormMessage>
-                    }
-                    <Button className="w-full" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting && <LoaderCircle className="size-4 animate-spin"/>}{" "}
+                    <FormError/>
+                    <FormSubmitButton className="w-full" isLoading={form.formState.isSubmitting}>
                         Login
-                    </Button>
+                    </FormSubmitButton>
                 </form>
             </Form>
             <Separator className="mt-3"/>

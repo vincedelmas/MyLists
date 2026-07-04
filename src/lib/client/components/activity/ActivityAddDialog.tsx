@@ -34,7 +34,7 @@ interface ActivityAddDialogProps {
 
 export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange }: ActivityAddDialogProps) => {
     const currentDate = useCurrentDate();
-    const addMutation = useAddActivityMutation({ noGlobalErrorToast: true });
+    const addMutation = useAddActivityMutation({ noErrorToast: true });
     const [selectedMedia, setSelectedMedia] = useState<{ id: number; name: string; imageCover: string } | null>(null);
     const { search, setSearch, debouncedSearch, isOpen, reset: resetSearch, containerRef } = useSearchContainer({
         onReset: () => undefined,

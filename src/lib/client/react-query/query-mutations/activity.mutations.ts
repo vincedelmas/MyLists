@@ -57,7 +57,6 @@ export const useBulkHideActivityMutation = () => {
 
     return useMutation({
         mutationFn: postBulkHideActivity,
-        meta: { errorToastMessage: "Failed to bulk hide activity." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
             await queryClient.invalidateQueries({ queryKey: ["specific-activity"] });

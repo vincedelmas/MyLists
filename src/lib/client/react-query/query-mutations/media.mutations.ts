@@ -10,7 +10,6 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) =
     return useMutation({
         mutationFn: refreshMediaDetails,
         meta: {
-            errorToastMessage: "Failed to refresh media details.",
             successToastMessage: "Metadata refreshed successfully!",
         },
         onSuccess: async () => {
@@ -23,7 +22,6 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) =
 export const useEditMediaMutation = () => {
     return useMutation({
         mutationFn: postEditMediaDetails,
-        meta: { errorToastMessage: "Failed to edit this media." },
     });
 };
 
@@ -44,6 +42,5 @@ export const useUpdateBookCoverMutation = (mediaId: number, meta?: MutationMeta)
 export const useAddMediaToCollectionMutation = () => {
     return useMutation({
         mutationFn: resolveExternalMedia,
-        meta: { errorToastMessage: "Failed to add media to collection." },
     });
 };

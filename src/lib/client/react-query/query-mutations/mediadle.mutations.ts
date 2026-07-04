@@ -8,7 +8,6 @@ export const useMoviedleGuessMutation = () => {
 
     return useMutation({
         mutationFn: postAddMediadleGuess,
-        meta: { errorToastMessage: "Failed to add your guess." },
         onSuccess: () => {
             return queryClient.invalidateQueries({ queryKey: dailyMediadleOptions.queryKey });
         },

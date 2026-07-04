@@ -24,8 +24,8 @@ interface ActivityEditDialogProps {
 
 export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEditDialogProps) => {
     const currentDate = useCurrentDate();
-    const updateMutation = useUpdateActivityMutation({ noGlobalErrorToast: true });
-    const deleteMutation = useDeleteActivityMutation({ noGlobalErrorToast: true });
+    const updateMutation = useUpdateActivityMutation({ noErrorToast: true });
+    const deleteMutation = useDeleteActivityMutation({ noErrorToast: true });
     const form = useForm<UpdateActivityInput, unknown, UpdateActivity>({
         resolver: zodResolver(updateActivityPayloadSchema),
         values: {

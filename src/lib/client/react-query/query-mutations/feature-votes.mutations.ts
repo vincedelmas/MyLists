@@ -9,7 +9,6 @@ export const useCreateFeatureRequestMutation = () => {
     return useMutation({
         mutationFn: postCreateFeatureRequest,
         meta: {
-            errorToastMessage: "Failed to submit feature request.",
             successToastMessage: "Feature request submitted successfully!",
         },
         onSuccess: async () => {
@@ -24,7 +23,6 @@ export const useToggleFeatureVoteMutation = () => {
 
     return useMutation({
         mutationFn: postToggleFeatureVote,
-        meta: { errorToastMessage: "Failed to toggle feature vote." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
         },

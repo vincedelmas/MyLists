@@ -38,7 +38,6 @@ export const useFollowMutation = (profileUsername: string) => {
 
     return useMutation({
         mutationFn: postFollow,
-        meta: { errorToastMessage: "Failed to follow this user." },
         onSuccess: () => invalidateSocialQueries(queryClient, profileUsername),
     });
 };
@@ -49,7 +48,6 @@ export const useUnfollowMutation = (profileUsername: string) => {
 
     return useMutation({
         mutationFn: postUnfollow,
-        meta: { errorToastMessage: "Failed to unfollow this user." },
         onSuccess: () => invalidateSocialQueries(queryClient, profileUsername),
     });
 };
@@ -60,7 +58,6 @@ export const useRespondFollowRequest = () => {
 
     return useMutation({
         mutationFn: postRespondToFollowRequest,
-        meta: { errorToastMessage: "This follow request was canceled." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: notificationsCountOptions.queryKey });
             await queryClient.invalidateQueries({ queryKey: notificationsOptions(false, "social").queryKey });
@@ -74,7 +71,6 @@ export const useDeleteSocialNotif = () => {
 
     return useMutation({
         mutationFn: postDeleteSocialNotif,
-        meta: { errorToastMessage: "Failed to delete this notification." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: notificationsOptions(false, "social").queryKey });
         }
@@ -87,7 +83,6 @@ export const useMarkAllNotifAsRead = () => {
 
     return useMutation({
         mutationFn: markAllNotifAsRead,
-        meta: { errorToastMessage: "Failed to mark all notifications as read." },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: notificationsCountOptions.queryKey });
         }
@@ -99,7 +94,6 @@ export const useRemoveFollowerMutation = (profileUsername: string) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: postRemoveFollower,
-        meta: { errorToastMessage: "Failed to remove this user as a follower." },
         onSuccess: () => invalidateSocialQueries(queryClient, profileUsername),
     });
 };
@@ -108,7 +102,6 @@ export const useRemoveFollowerMutation = (profileUsername: string) => {
 export const useGeneralSettingsMutation = () => {
     return useMutation({
         mutationFn: ({ data }: { data: FormData }) => postGeneralSettings({ data }),
-        meta: { errorToastMessage: "Failed to update your settings." }
     });
 };
 
@@ -117,7 +110,6 @@ export const useListSettingsMutation = () => {
     return useMutation({
         mutationFn: postMediaListSettings,
         meta: {
-            errorToastMessage: "Failed to update your list settings.",
             successToastMessage: "Your list settings have been updated.",
         },
     });
@@ -144,7 +136,6 @@ export const useProfileCustomMutation = () => {
 export const useDownloadListAsCSVMutation = () => {
     return useMutation({
         mutationFn: getDownloadListAsCSV,
-        meta: { errorToastMessage: "Failed to download the list as CSV." },
     });
 };
 
@@ -153,7 +144,6 @@ export const usePasswordSettingsMutation = () => {
     return useMutation({
         mutationFn: postPasswordSettings,
         meta: {
-            errorToastMessage: "Failed to update your password.",
             successToastMessage: "Your password has been updated.",
         },
     });
@@ -164,7 +154,6 @@ export const useDeleteAccountMutation = () => {
     return useMutation({
         mutationFn: postDeleteUserAccount,
         meta: {
-            errorToastMessage: "Failed to delete your account.",
             successToastMessage: "Your account has been deleted.",
         },
     });
@@ -176,7 +165,6 @@ export const useFeatureFlagMutation = () => {
 
     return useMutation({
         mutationFn: postUpdateFeatureFlag,
-        meta: { errorToastMessage: "Failed to update the feature flag." },
         onSuccess: () => setCurrentUser(),
     });
 };
@@ -187,7 +175,6 @@ export const useUpdateOnboardingMutation = () => {
 
     return useMutation({
         mutationFn: postUpdateShowOnboarding,
-        meta: { errorToastMessage: "Failed to update the onboarding status." },
         onSuccess: () => setCurrentUser(),
     });
 };

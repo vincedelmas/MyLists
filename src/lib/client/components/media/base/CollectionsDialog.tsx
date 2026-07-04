@@ -26,9 +26,9 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const createMutation = useCreateCollectionMutation({ noGlobalErrorToast: true });
-    const addMutation = useAddMediaToCollectionMutation(mediaType, mediaId, { noGlobalErrorToast: true });
-    const removeMutation = useRemoveMediaFromCollectionMutation(mediaType, mediaId, { noGlobalErrorToast: true });
+    const createMutation = useCreateCollectionMutation({ noErrorToast: true });
+    const addMutation = useAddMediaToCollectionMutation(mediaType, mediaId, { noErrorToast: true });
+    const removeMutation = useRemoveMediaFromCollectionMutation(mediaType, mediaId, { noErrorToast: true });
 
     const isPending = addMutation.isPending || removeMutation.isPending || createMutation.isPending;
     const { data: collections = [], isLoading } = useQuery(userCollectionMembershipsOptions(mediaId, mediaType, isOpen));

@@ -27,7 +27,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
     const { currentUser } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const mutation = useEditTagMutation(mediaType, mediaId, { noGlobalErrorToast: true });
+    const mutation = useEditTagMutation(mediaType, mediaId, { noErrorToast: true });
     const { data: allTags = [], isLoading } = useQuery(tagNamesOptions(mediaType, isOpen));
 
     const activeIds = new Set(tags.map((c) => c.name));

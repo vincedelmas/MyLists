@@ -3,6 +3,7 @@ import {auth} from "@/lib/server/core/auth";
 import {createMiddleware} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
+import {DEFAULT_ERROR_MESSAGE} from "@/lib/utils/constants";
 import {isNotFound, isRedirect} from "@tanstack/react-router";
 import {FormattedError, FormZodError, UnauthorizedError} from "@/lib/utils/error-classes";
 
@@ -39,11 +40,8 @@ export const funcErrorMiddleware = createMiddleware({ type: "function" }).server
         if (err instanceof FormZodError) {
             throw err;
         }
-        else if (err instanceof z.ZodError) {
-            throw new Error("A Validation error occurred. Please try again later.", { cause: err });
-        }
         else {
-            throw new Error("An Unexpected error occurred. Please try again later.", { cause: err });
+            throw new Error(DEFAULT_ERROR_MESSAGE, { cause: err });
         }
     }
 });
@@ -61,7 +59,7 @@ export const reqErrorMiddleware = createMiddleware({ type: "request" }).server(a
 
         await saveErrorToDb(err).catch();
 
-        throw new Error("An Unexpected error occurred. Please try again later.", { cause: err });
+        throw new Error(DEFAULT_ERROR_MESSAGE, { cause: err });
     }
 });
 

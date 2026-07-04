@@ -3,7 +3,8 @@ import {routeTree} from "@/routeTree.gen";
 import {createRouter} from "@tanstack/react-router";
 import {NotFound} from "@/lib/client/components/general/NotFound";
 import {NavLoader} from "./lib/client/components/general/NavLoader";
-import {FormattedError, FormZodError} from "@/lib/utils/error-classes";
+import {FormZodError} from "@/lib/utils/error-classes";
+import {DEFAULT_ERROR_MESSAGE} from "@/lib/utils/constants";
 import {setupCoreRouterSsrQueryIntegration} from "@tanstack/router-ssr-query-core";
 import {ErrorCatchBoundary} from "@/lib/client/components/general/ErrorCatchBoundary";
 import {MutationCache, QueryCache, QueryClient, QueryClientProvider} from "@tanstack/react-query";
@@ -20,20 +21,8 @@ export function getRouter() {
         }),
         mutationCache: new MutationCache({
             onError: async (error, _variables, _context, mutation) => {
-                if (mutation.meta?.noGlobalErrorToast) return;
-
-                if (error instanceof FormattedError) {
-                    toast.warning(error.message);
-                }
-                else if (error instanceof FormZodError) {
-                    toast.error("Please check the form for errors.");
-                }
-                else if ("isNotFound" in error && error.isNotFound) {
-                    toast.error("The requested resource was not found.");
-                }
-                else {
-                    toast.error(mutation.meta?.errorToastMessage || error.message || "An unexpected error occurred.");
-                }
+                if (mutation.meta?.noErrorToast || error instanceof FormZodError) return;
+                toast.error(error.message || DEFAULT_ERROR_MESSAGE);
             },
             onSuccess: (_data, _variables, _context, mutation) => {
                 if (mutation?.meta?.successToastMessage) {
@@ -92,9 +81,8 @@ declare module "@tanstack/react-query" {
             errorToastMessage?: string,
         },
         mutationMeta: {
-            errorToastMessage?: string,
+            noErrorToast?: boolean,
             successToastMessage?: string,
-            noGlobalErrorToast?: boolean,
         }
     }
 }

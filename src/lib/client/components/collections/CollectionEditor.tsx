@@ -33,9 +33,9 @@ export const CollectionEditor = withForm({
     defaultValues: collectionDefaultValues,
     props: {
         submitLabel: "",
-        mediaType: MediaType.MOVIES,
+        mediaType: MediaType.MOVIES as MediaType,
     },
-    render: ({ form, mediaType, submitLabel }) => {
+    render: function CollectionEditorForm({ form, mediaType, submitLabel }) {
         const dragIndex = useRef<number | null>(null);
         const { isDirty, isSubmitting, ordered } = useSelector(form.store, (state) => ({
             isDirty: state.isDirty,

@@ -1,10 +1,9 @@
 import * as z from "zod";
 import {JobType} from "@/lib/utils/enums";
-import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {requiredCoverImageSchema} from "@/lib/schemas/cover.schema";
+import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas/common.schema";
 
 
-export type UpdateBookCoverInput = z.input<typeof updateBookCoverSchema>;
-export type UpdateBookCoverFormInput = z.input<typeof updateBookCoverFormSchema>;
 export type EditMediaDetailsPayload = z.infer<typeof editMediaDetailsPayloadSchema>;
 
 
@@ -29,26 +28,8 @@ export const editMediaDetailsSchema = mediaTypeMediaIdSchema.extend({
     payload: editMediaDetailsPayloadSchema,
 });
 
-export const updateBookCoverSchema = z.object({
-    imageUrl: z.url().trim().optional(),
+export const updateBookCoverSchema = requiredCoverImageSchema.safeExtend({
     mediaId: coercedPositiveIntFieldSchema,
-    imageFile: z.instanceof(File).optional(),
-}).superRefine((data, ctx) => {
-    const addFieldIssues = (message: string) => {
-        ctx.addIssue({ code: "custom", message, path: ["imageUrl"] });
-        ctx.addIssue({ code: "custom", message, path: ["imageFile"] });
-    };
-
-    if (!data.imageUrl && !data.imageFile) {
-        addFieldIssues("Provide an image link or upload a file.");
-    }
-    if (data.imageUrl && data.imageFile) {
-        addFieldIssues("Please, choose only one cover option.");
-    }
-});
-
-export const updateBookCoverFormSchema = updateBookCoverSchema.safeExtend({
-    mediaId: positiveIntFieldSchema,
 });
 
 

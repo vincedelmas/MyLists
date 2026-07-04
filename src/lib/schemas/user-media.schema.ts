@@ -1,12 +1,12 @@
 import * as z from "zod";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
+import {coverImageFieldsSchema} from "@/lib/schemas/cover.schema";
 import {GamesPlatformsEnum, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 
 
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
 export type UpdateUserCustomCover = z.infer<typeof updateUserCustomCoverSchema>;
-export type UpdateUserCustomCoverInput = z.input<typeof updateUserCustomCoverSchema>;
 
 
 const loggedAtSchema = z.string().trim().pipe(z.iso.date())
@@ -23,11 +23,9 @@ const loggedActivityUpdateTypes = new Set<UpdateType>([
 ]);
 
 
-export const updateUserCustomCoverSchema = z.object({
+export const updateUserCustomCoverSchema = coverImageFieldsSchema.extend({
     mediaType: mediaTypeFieldSchema,
-    imageUrl: z.url().trim().optional(),
     mediaId: coercedPositiveIntFieldSchema,
-    imageFile: z.instanceof(File).optional(),
     remove: z.coerce.boolean().optional().default(false),
 }).superRefine((data, ctx) => {
     const addFieldIssues = (message: string) => {

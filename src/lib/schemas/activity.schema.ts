@@ -5,12 +5,10 @@ import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, optionalSearchField
 
 
 export type AddActivity = z.infer<typeof addActivitySchema>;
-export type AddActivityInput = z.input<typeof addActivitySchema>;
 export type ActivitySearch = z.infer<typeof activitySearchSchema>;
 export type UpdateActivity = z.infer<typeof updateActivityPayloadSchema>;
 export type MonthlyActivityFilters = z.infer<typeof monthlyActivitySchema>;
 export type BulkHideActivityInput = z.input<typeof bulkHideActivitySchema>;
-export type UpdateActivityInput = z.input<typeof updateActivityPayloadSchema>;
 export type MonthlyActivityStatsFilters = z.infer<typeof monthlyActivityStatsSchema>;
 
 

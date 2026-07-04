@@ -1,14 +1,11 @@
 import {useState} from "react";
-import {useForm} from "react-hook-form";
+import {ImageOff, X} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
+import {CoverImageFormInput} from "@/lib/schemas";
 import {Button} from "@/lib/client/components/ui/button";
-import {ImageOff, Link2, UploadCloud, X} from "lucide-react";
 import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
-import {UpdateUserCustomCoverInput, updateUserCustomCoverSchema} from "@/lib/schemas";
+import {CoverImageForm} from "@/lib/client/components/media/base/CoverImageForm";
 import {useUpdateCustomCoverMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
 interface CustomCoverTabProps {
@@ -19,55 +16,17 @@ interface CustomCoverTabProps {
 
 
 export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }: CustomCoverTabProps) => {
-    const [fileInputKey, setFileInputKey] = useState(0);
-    const [mode, setMode] = useState<"link" | "upload">("link");
-    const form = useForm<UpdateUserCustomCoverInput>({
-        resolver: zodResolver(updateUserCustomCoverSchema),
-        defaultValues: {
-            mediaType,
-            remove: false,
-            imageUrl: undefined,
-            imageFile: undefined,
-            mediaId: userMedia.mediaId,
-        },
-    });
+    const [coverFormKey, setCoverFormKey] = useState(0);
 
-    const resetForm = () => {
-        setMode("link");
-        setFileInputKey((prev) => prev + 1);
-        form.reset({
-            mediaType,
-            remove: false,
-            imageUrl: undefined,
-            imageFile: undefined,
-            mediaId: userMedia.mediaId,
-        });
-    };
-
-    const setImageLinkMode = () => {
-        setMode("link");
-        form.clearErrors(["imageFile", "imageUrl"]);
-        setFileInputKey((prev) => prev + 1);
-        form.setValue("imageFile", undefined);
-    };
-
-    const setImageUploadMode = () => {
-        setMode("upload");
-        form.clearErrors(["imageUrl", "imageFile"]);
-        form.setValue("imageUrl", undefined);
-    };
-
-    const handleSubmit = (data: UpdateUserCustomCoverInput) => {
+    const updateCover = ({ imageUrl, imageFile }: CoverImageFormInput) => {
         const formData = new FormData();
-        formData.append("mediaType", data.mediaType);
-        formData.append("mediaId", String(data.mediaId));
+        formData.append("mediaType", mediaType);
+        formData.append("mediaId", String(userMedia.mediaId));
 
-        if (data.imageUrl) formData.append("imageUrl", data.imageUrl);
-        if (data.imageFile) formData.append("imageFile", data.imageFile);
+        if (imageUrl) formData.append("imageUrl", imageUrl);
+        if (imageFile) formData.append("imageFile", imageFile);
 
-        onUpdateMutation.mutate({ data: formData }, {
-            onSuccess: () => resetForm(),
-        });
+        return onUpdateMutation.mutateAsync({ data: formData });
     };
 
     const handleRemove = () => {
@@ -77,9 +36,7 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
         formData.append("mediaId", userMedia.mediaId.toString());
 
         onUpdateMutation.mutate({ data: formData }, {
-            onSuccess: () => {
-                resetForm();
-            },
+            onSuccess: () => setCoverFormKey((key) => key + 1),
         });
     };
 
@@ -113,65 +70,11 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
                 }
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-                <Button type="button" variant={mode === "link" ? "emeraldy" : "outline"} onClick={setImageLinkMode}>
-                    <Link2 className="size-4"/> Cover Link
-                </Button>
-                <Button type="button" variant={mode === "upload" ? "emeraldy" : "outline"} onClick={setImageUploadMode}>
-                    <UploadCloud className="size-4"/> Upload Cover
-                </Button>
-            </div>
-
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pb-6 border-b">
-                    {mode === "link" ?
-                        <FormField
-                            name="imageUrl"
-                            control={form.control}
-                            render={({ field }) =>
-                                <FormItem>
-                                    <FormLabel>Cover URL</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            value={field.value ?? ""}
-                                            placeholder="https://example.com/cover.jpg"
-                                            onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            }
-                        />
-                        :
-                        <FormField
-                            name="imageFile"
-                            control={form.control}
-                            render={({ field: { onChange, onBlur, name, ref } }) =>
-                                <FormItem>
-                                    <FormLabel>Upload Cover</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            ref={ref}
-                                            type="file"
-                                            name={name}
-                                            onBlur={onBlur}
-                                            accept="image/*"
-                                            key={fileInputKey}
-                                            onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
-                            }
-                        />
-                    }
-
-                    <Button type="submit" disabled={onUpdateMutation.isPending}>
-                        Save Custom Cover
-                    </Button>
-                </form>
-            </Form>
+            <CoverImageForm
+                key={coverFormKey}
+                onSubmit={updateCover}
+                className="pb-7 border-b"
+            />
         </div>
     );
 };

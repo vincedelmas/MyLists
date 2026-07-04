@@ -121,7 +121,7 @@ export class BooksService extends BaseService<MangaSchemaConfig, BooksRepository
 
     async updateDefaultCover(mediaId: number, payload: { imageUrl?: string; imageFile?: File }) {
         const media = await this.repository.findById(mediaId);
-        if (!media) throw notFound();
+        if (!media) throw new Error("Media could not be found on the database.");
 
         const currentCover = media.imageCover.split("/").pop();
         if (currentCover !== "default.jpg") {

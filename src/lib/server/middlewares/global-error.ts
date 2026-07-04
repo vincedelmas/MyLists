@@ -26,7 +26,7 @@ export const funcErrorMiddleware = createMiddleware({ type: "function" }).server
 
         return results;
     }
-    catch (err: any) {
+    catch (err) {
         if (process.env.NODE_ENV !== "production") {
             console.error("ServerFunc Error:", { err });
         }

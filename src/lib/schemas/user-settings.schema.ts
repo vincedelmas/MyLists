@@ -13,7 +13,6 @@ import {
 } from "@/lib/types/profile-custom.types";
 
 
-export type ListSettings = z.infer<typeof mediaListSettingsSchema>;
 export type GeneralSettings = z.infer<typeof generalSettingsSchema>;
 export type PasswordSettingsForm = z.infer<typeof passwordSettingsFormSchema>;
 

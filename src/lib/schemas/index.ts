@@ -3,6 +3,7 @@ export * from "./admin.schema";
 export * from "./auth.schema";
 export * from "./collections.schema";
 export * from "./common.schema";
+export * from "./cover.schema";
 export * from "./feature-votes.schema";
 export * from "./mediadle.schema";
 export * from "./wcf.schema";

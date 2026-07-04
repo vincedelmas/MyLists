@@ -1,10 +1,10 @@
 import {toast} from "sonner";
 import {routeTree} from "@/routeTree.gen";
 import {createRouter} from "@tanstack/react-router";
+import {DEFAULT_ERROR_MESSAGE} from "@/lib/utils/constants";
 import {NotFound} from "@/lib/client/components/general/NotFound";
 import {NavLoader} from "./lib/client/components/general/NavLoader";
-import {FormZodError} from "@/lib/utils/error-classes";
-import {DEFAULT_ERROR_MESSAGE} from "@/lib/utils/constants";
+import {FormZodError, ValidationError} from "@/lib/utils/error-classes";
 import {setupCoreRouterSsrQueryIntegration} from "@tanstack/router-ssr-query-core";
 import {ErrorCatchBoundary} from "@/lib/client/components/general/ErrorCatchBoundary";
 import {MutationCache, QueryCache, QueryClient, QueryClientProvider} from "@tanstack/react-query";
@@ -21,7 +21,7 @@ export function getRouter() {
         }),
         mutationCache: new MutationCache({
             onError: async (error, _variables, _context, mutation) => {
-                if (mutation.meta?.noErrorToast || error instanceof FormZodError) return;
+                if (mutation.meta?.noErrorToast || error instanceof FormZodError || error instanceof ValidationError) return;
                 toast.error(error.message || DEFAULT_ERROR_MESSAGE);
             },
             onSuccess: (_data, _variables, _context, mutation) => {

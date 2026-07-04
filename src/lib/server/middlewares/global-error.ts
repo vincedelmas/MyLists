@@ -5,7 +5,7 @@ import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
 import {DEFAULT_ERROR_MESSAGE} from "@/lib/utils/constants";
 import {isNotFound, isRedirect} from "@tanstack/react-router";
-import {FormattedError, FormZodError, UnauthorizedError} from "@/lib/utils/error-classes";
+import {FormattedError, FormZodError, UnauthorizedError, ValidationError} from "@/lib/utils/error-classes";
 
 
 /**
@@ -37,7 +37,7 @@ export const funcErrorMiddleware = createMiddleware({ type: "function" }).server
 
         await saveErrorToDb(err).catch();
 
-        if (err instanceof FormZodError) {
+        if (err instanceof ValidationError || err instanceof FormZodError) {
             throw err;
         }
         else {

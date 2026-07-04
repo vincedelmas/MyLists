@@ -13,14 +13,16 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {FeatureStatus, isAtLeastRole, RoleType,} from "@/lib/utils/enums";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 
 
 export const Route = createFileRoute("/_main/_viewer/features-vote")({
@@ -55,8 +57,8 @@ function FeatureVotesPage() {
     const toggleVoteMutation = useToggleFeatureVoteMutation();
     const apiData = useSuspenseQuery(featureVotesOptions).data;
     const [searchQuery, setSearchQuery] = useState("");
-    const createFeatureMutation = useCreateFeatureRequestMutation();
     const isAdmin = isAtLeastRole(currentUser?.role ?? null, RoleType.ADMIN);
+    const createFeatureMutation = useCreateFeatureRequestMutation({ noErrorToast: true });
     const form = useForm<PostFeatureRequest>({
         resolver: zodResolver(postFeatureRequestSchema),
         defaultValues: {
@@ -74,8 +76,11 @@ function FeatureVotesPage() {
         return activeTab === "active" ? ACTIVE_STATUSES.includes(item.status) : item.status === activeTab;
     }).sort((a, b) => b.totalVotes - a.totalVotes);
 
-    const handleAddNewFeature = (submitted: PostFeatureRequest) => {
+    const onSubmitAddNewFeature = (submitted: PostFeatureRequest) => {
         createFeatureMutation.mutate({ data: submitted }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: () => {
                 form.reset();
             },
@@ -156,7 +161,7 @@ function FeatureVotesPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(handleAddNewFeature)} className="space-y-4">
+                                <form onSubmit={form.handleSubmit(onSubmitAddNewFeature)} className="space-y-4">
                                     <fieldset disabled={createFeatureMutation.isPending || isAnonymous} className="space-y-4">
                                         <FormField
                                             name="title"
@@ -193,9 +198,9 @@ function FeatureVotesPage() {
                                         />
                                     </fieldset>
                                     <div className="flex items-center justify-center">
-                                        <Button type="submit" disabled={createFeatureMutation.isPending || isAnonymous}>
+                                        <FormSubmitButton disabled={createFeatureMutation.isPending || isAnonymous}>
                                             Add Feature for Voting
-                                        </Button>
+                                        </FormSubmitButton>
                                     </div>
                                 </form>
                             </Form>

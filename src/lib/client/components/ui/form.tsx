@@ -6,29 +6,16 @@ import * as LabelPrimitive from "@radix-ui/react-label";
 import {Controller, type ControllerProps, type FieldPath, type FieldValues, FormProvider, useFormContext, useFormState} from "react-hook-form";
 
 
-const Form = FormProvider;
-
-
-type FormFieldContextValue<
-    TFieldValues extends FieldValues = FieldValues,
-    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
-> = {
-    name: TName
-}
-
 type FormItemContextValue = { id: string };
 
+type FormFieldContextValue<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>> = {
+    name: TName
+};
 
-const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue)
 
-
-const FormField = <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({ ...props }: ControllerProps<TFieldValues, TName>) => {
-    return (
-        <FormFieldContext value={{ name: props.name }}>
-            <Controller {...props}/>
-        </FormFieldContext>
-    );
-}
+const Form = FormProvider;
+const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
+const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
 
 const useFormField = () => {
@@ -55,7 +42,13 @@ const useFormField = () => {
 }
 
 
-const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
+const FormField = <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({ ...props }: ControllerProps<TFieldValues, TName>) => {
+    return (
+        <FormFieldContext value={{ name: props.name }}>
+            <Controller {...props}/>
+        </FormFieldContext>
+    );
+}
 
 
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {

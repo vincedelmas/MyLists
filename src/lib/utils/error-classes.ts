@@ -63,3 +63,25 @@ export const unauthorizedErrorAdapter = createSerializationAdapter({
     toSerializable: ({ type }) => ({ type }),
     fromSerializable: ({ type }) => new UnauthorizedError(type),
 });
+
+
+export class ValidationError<T extends object> extends Error {
+    public readonly field: Extract<keyof T, string>;
+
+    constructor(field: Extract<keyof T, string>, message: string) {
+        super(message);
+
+        this.field = field;
+        this.name = "ValidationError";
+
+        Object.setPrototypeOf(this, new.target.prototype);
+    };
+}
+
+
+export const validationErrorAdapter = createSerializationAdapter({
+    key: "validation-error",
+    test: (v) => v instanceof ValidationError,
+    toSerializable: ({ field, message }) => ({ field, message }),
+    fromSerializable: ({ field, message }) => new ValidationError(field, message),
+});

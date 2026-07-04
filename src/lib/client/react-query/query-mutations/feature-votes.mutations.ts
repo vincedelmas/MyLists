@@ -3,13 +3,14 @@ import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {postAdminDeleteFeatureRequest, postAdminUpdateFeatureStatus, postCreateFeatureRequest, postToggleFeatureVote} from "@/lib/server/functions/feature-votes";
 
 
-export const useCreateFeatureRequestMutation = () => {
+export const useCreateFeatureRequestMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postCreateFeatureRequest,
         meta: {
             successToastMessage: "Feature request submitted successfully!",
+            ...meta,
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });

@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from "react";
 
 
-export const useDelayedLoading = (isLoading: boolean, delayMs: number, minimumDurationMs: number) => {
+export const useDelayedLoading = (isLoading: boolean, pendingMs = 200, pendingMinMs = 350) => {
     const visibleSinceRef = useRef(0);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -12,7 +12,7 @@ export const useDelayedLoading = (isLoading: boolean, delayMs: number, minimumDu
             const showTimeout = window.setTimeout(() => {
                 visibleSinceRef.current = Date.now();
                 setIsVisible(true);
-            }, delayMs);
+            }, pendingMs);
 
             return () => window.clearTimeout(showTimeout);
         }
@@ -22,11 +22,11 @@ export const useDelayedLoading = (isLoading: boolean, delayMs: number, minimumDu
         const elapsed = Date.now() - visibleSinceRef.current;
         const hideTimeout = window.setTimeout(
             () => setIsVisible(false),
-            Math.max(0, minimumDurationMs - elapsed)
+            Math.max(0, pendingMinMs - elapsed)
         );
 
         return () => window.clearTimeout(hideTimeout);
-    }, [delayMs, isLoading, isVisible, minimumDurationMs]);
+    }, [pendingMs, isLoading, isVisible, pendingMinMs]);
 
     return isVisible;
 };

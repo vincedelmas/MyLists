@@ -1,9 +1,10 @@
 import * as z from "zod";
 import {JobType} from "@/lib/utils/enums";
-import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas/common.schema";
+import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 
 
 export type UpdateBookCoverInput = z.input<typeof updateBookCoverSchema>;
+export type UpdateBookCoverFormInput = z.input<typeof updateBookCoverFormSchema>;
 export type EditMediaDetailsPayload = z.infer<typeof editMediaDetailsPayloadSchema>;
 
 
@@ -44,6 +45,10 @@ export const updateBookCoverSchema = z.object({
     if (data.imageUrl && data.imageFile) {
         addFieldIssues("Please, choose only one cover option.");
     }
+});
+
+export const updateBookCoverFormSchema = updateBookCoverSchema.safeExtend({
+    mediaId: positiveIntFieldSchema,
 });
 
 

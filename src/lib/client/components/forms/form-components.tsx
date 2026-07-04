@@ -65,7 +65,7 @@ export function FormError() {
     return (
         <form.Subscribe selector={(state) => state.errorMap}>
             {(errorMap) => {
-                const error = (errorMap as { onSubmit?: unknown }).onSubmit;
+                const error = errorMap.onSubmit;
                 const message = getFormErrorMessage(error);
                 return message ? <InlineErrorContainer>{message}</InlineErrorContainer> : null;
             }}
@@ -270,14 +270,14 @@ type CheckboxFieldProps = Omit<React.ComponentProps<typeof Checkbox>, "id" | "na
 
 
 export function CheckboxField({
-    label,
-    className,
-    description,
-    labelClassName,
-    onCheckedChange,
-    descriptionClassName,
-    ...props
-}: CheckboxFieldProps) {
+                                  label,
+                                  className,
+                                  description,
+                                  labelClassName,
+                                  onCheckedChange,
+                                  descriptionClassName,
+                                  ...props
+                              }: CheckboxFieldProps) {
     const field = useFieldContext<boolean>();
     const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 

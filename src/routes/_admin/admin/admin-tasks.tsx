@@ -48,12 +48,7 @@ function AdminTasksPage() {
                                         task={task}
                                     />
                                     :
-                                    <Button
-                                        size="sm"
-                                        variant="emeraldy"
-                                        disabled={isRunning}
-                                        onClick={() => executeTask(task.name)}
-                                    >
+                                    <Button size="sm" variant="emeraldy" disabled={isRunning} onClick={() => executeTask(task.name)}>
                                         {isRunning ? <Loader2 className="size-4 animate-spin"/> : <Play className="size-4"/>}
                                         {isRunning ? "Running" : "Run Task"}
                                     </Button>

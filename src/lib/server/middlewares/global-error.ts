@@ -5,7 +5,7 @@ import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
 import {DEFAULT_ERROR_MESSAGE} from "@/lib/utils/constants";
 import {isNotFound, isRedirect} from "@tanstack/react-router";
-import {FormattedError, FormZodError, UnauthorizedError, ValidationError} from "@/lib/utils/error-classes";
+import {FormattedError, UnauthorizedError, ValidationError} from "@/lib/utils/error-classes";
 
 
 /**
@@ -13,7 +13,6 @@ import {FormattedError, FormZodError, UnauthorizedError, ValidationError} from "
  * redirect: thrown in code but returned and handled frontend side by tanstack router.
  * notFound: thrown in code but returned and handled frontend side by tanstack router.
  * FormattedError: Expected Error with pre-formatted message for frontend side.
- * FormZodError: Error occurred during Form submission, return the Zod error.
  * ZodError: Unexpected Error on validation, return generic error message.
  * Error: Unexpected Error anywhere, return generic error message.
  **/
@@ -37,7 +36,7 @@ export const funcErrorMiddleware = createMiddleware({ type: "function" }).server
 
         await saveErrorToDb(err).catch();
 
-        if (err instanceof ValidationError || err instanceof FormZodError) {
+        if (err instanceof ValidationError) {
             throw err;
         }
         else {
@@ -70,7 +69,7 @@ const saveErrorToDb = async (err: any) => {
     const adminService = await getContainer().then((c) => c.services.admin);
 
     const addErrorExtra = (err: unknown) => {
-        if (err instanceof FormZodError || err instanceof z.ZodError) {
+        if (err instanceof z.ZodError) {
             return { issues: err.issues.map(({ input: _input, ...issue }) => issue) };
         }
         return null;

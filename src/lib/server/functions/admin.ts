@@ -4,9 +4,9 @@ import {auth} from "@/lib/server/core/auth";
 import {createServerFn} from "@tanstack/react-start";
 import {runTask} from "@/lib/server/tasks/task-runner";
 import {getContainer} from "@/lib/server/core/container";
-import {setSignedCookie} from "@/lib/utils/signed-cookies";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {deleteCookie} from "@tanstack/react-start/server";
-import {FormattedError, FormZodError} from "@/lib/utils/error-classes";
+import {setSignedCookie} from "@/lib/utils/signed-cookies";
 import {getAllTasksMetadata, getTask} from "@/lib/server/tasks/registry";
 import {ADMIN_COOKIE_NAME, isAdminAuthenticated, setAdminCookie} from "@/lib/utils/admin-token";
 import {requiredAuthAndAdminTokenMiddleware, requiredAuthAndManagerRoleMiddleware} from "@/lib/server/middlewares/authentication";
@@ -151,15 +151,14 @@ export const postAdminTriggerTask = createServerFn({ method: "POST" })
     .validator(adminTriggerTaskSchema)
     .handler(async ({ data: { taskName, input } }) => {
         const task = getTask(taskName);
-        if (!task) throw new Error(`Task ${taskName} not found`);
+        if (!task) throw new FormattedError(`Task ${taskName} not found.`);
 
-        const result = task.inputSchema.safeParse(input);
-        if (!result.success) throw new FormZodError(result.error);
+        const result = task.inputSchema.parse(input);
 
         await runTask({
             taskName: task.name,
+            input: result as any,
             triggeredBy: "dashboard",
-            input: result.data as any,
         });
     });
 

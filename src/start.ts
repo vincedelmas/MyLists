@@ -1,6 +1,6 @@
 import {createCsrfMiddleware, createStart} from "@tanstack/react-start";
 import {funcErrorMiddleware, reqErrorMiddleware} from "@/lib/server/middlewares/global-error";
-import {formattedErrorAdapter, formZodErrorAdapter, unauthorizedErrorAdapter, validationErrorAdapter} from "@/lib/utils/error-classes";
+import {formattedErrorAdapter, unauthorizedErrorAdapter, validationErrorAdapter} from "@/lib/utils/error-classes";
 
 
 const csrfMiddleware = createCsrfMiddleware({
@@ -55,7 +55,6 @@ export const startInstance = createStart(() => {
         requestMiddleware: [csrfMiddleware, reqErrorMiddleware],
         functionMiddleware: [funcErrorMiddleware],
         serializationAdapters: [
-            formZodErrorAdapter,
             formattedErrorAdapter,
             validationErrorAdapter,
             unauthorizedErrorAdapter,

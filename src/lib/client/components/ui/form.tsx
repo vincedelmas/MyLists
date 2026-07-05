@@ -112,7 +112,7 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
     const { error, formMessageId } = useFormField();
-    const body = error ? String(error?.message || (error as any)?.root?.message || "") : props.children;
+    const body = error ? getErrorMessage(error) : props.children;
 
     if (!body) {
         return null;
@@ -128,6 +128,22 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
             {body}
         </p>
     );
+}
+
+
+function getErrorMessage(error: unknown, seen = new WeakSet<object>()): string | undefined {
+    if (!error || typeof error !== "object") return;
+    if (seen.has(error)) return;
+    seen.add(error);
+
+    if ("message" in error && typeof error.message === "string") {
+        return error.message;
+    }
+
+    for (const nestedError of Object.values(error)) {
+        const message = getErrorMessage(nestedError, seen);
+        if (message) return message;
+    }
 }
 
 

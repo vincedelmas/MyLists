@@ -84,6 +84,30 @@ describe("ImportRepository", () => {
         });
     });
 
+    it("loads only queued items from a processing job in deterministic media and row order", async () => {
+        const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const waitingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+
+        await ImportRepository.insertParsedItems(processingJob.id, [
+            createItem(4, { mediaType: MediaType.MOVIES }),
+            createItem(2, { mediaType: MediaType.SERIES, status: ImportItemStatus.FAILED }),
+            createItem(3, { mediaType: MediaType.GAMES }),
+        ]);
+
+        await ImportRepository.insertParsedItems(waitingJob.id, [
+            createItem(2, { mediaType: MediaType.BOOKS }),
+        ]);
+
+        await ImportRepository.markJobQueued(processingJob.id, 3, 1);
+        await ImportRepository.markJobQueued(waitingJob.id, 1, 0);
+        await ImportRepository.claimNextQueuedJob();
+
+        const items = await ImportRepository.getQueuedItemsForProcessingJob(processingJob.id);
+
+        expect(items.map(item => [item.mediaType, item.rowNumber])).toEqual([[MediaType.GAMES, 3], [MediaType.MOVIES, 4]]);
+        await expect(ImportRepository.getQueuedItemsForProcessingJob(waitingJob.id)).resolves.toEqual([]);
+    });
+
     it("inserts parsed items in batches and queues the job with parsing counters", async () => {
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         const items = Array.from({ length: 51 }, (_, idx) => createItem(idx + 2, {

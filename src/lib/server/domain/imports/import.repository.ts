@@ -2,8 +2,8 @@ import {paginate} from "@/lib/server/database/pagination";
 import {ParsedImportItem} from "@/lib/types/imports.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {importItems, importJobs} from "@/lib/server/database/schema";
-import {and, asc, count, eq, inArray, lt, notExists, or, sql} from "drizzle-orm";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
+import {and, asc, count, eq, getTableColumns, inArray, lt, notExists, or, sql} from "drizzle-orm";
 
 
 const INSERT_BATCH_SIZE = 300;
@@ -72,6 +72,19 @@ export class ImportRepository {
             .returning({ id: importJobs.id });
 
         return deletedJob ?? null;
+    }
+
+    static async getQueuedItemsForProcessingJob(jobId: number) {
+        return getDbClient()
+            .select({ ...getTableColumns(importItems) })
+            .from(importItems)
+            .innerJoin(importJobs, eq(importJobs.id, importItems.jobId))
+            .where(and(
+                eq(importItems.jobId, jobId),
+                eq(importItems.status, ImportItemStatus.QUEUED),
+                eq(importJobs.status, ImportJobStatus.PROCESSING),
+            ))
+            .orderBy(asc(importItems.mediaType), asc(importItems.rowNumber));
     }
 
     static async findJobForUser(jobId: number, userId: number) {

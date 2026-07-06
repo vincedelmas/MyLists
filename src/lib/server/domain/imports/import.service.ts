@@ -1,8 +1,8 @@
 import {notFound} from "@tanstack/react-router";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {ImportParserRegistry} from "@/lib/types/imports.types";
-import {ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 
@@ -21,6 +21,23 @@ export class ImportService {
 
     async claimNextQueuedJob() {
         return this.repository.claimNextQueuedJob();
+    }
+
+    async getQueuedItemsByMediaType(jobId: number) {
+        const items = await this.repository.getQueuedItemsForProcessingJob(jobId);
+        const groups = new Map<MediaType, (typeof items)[number][]>();
+
+        for (const item of items) {
+            if (!item.mediaType) {
+                throw new Error(`Queued import item ${item.id} has no media type`);
+            }
+
+            const group = groups.get(item.mediaType) ?? [];
+            group.push(item);
+            groups.set(item.mediaType, group);
+        }
+
+        return groups;
     }
 
     async getImportJob(userId: number, jobId: number) {

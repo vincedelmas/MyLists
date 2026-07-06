@@ -25,6 +25,7 @@ describe("ImportService.createImportJob", () => {
         insertParsedItems: vi.fn(),
         deleteTerminalJob: vi.fn(),
         claimNextQueuedJob: vi.fn(),
+        getQueuedItemsForProcessingJob: vi.fn(),
     };
     const parser = vi.fn();
     const service = new ImportService(repository as any, {
@@ -46,6 +47,17 @@ describe("ImportService.createImportJob", () => {
         repository.claimNextQueuedJob.mockResolvedValue(job);
 
         await expect(service.claimNextQueuedJob()).resolves.toBe(job);
+    });
+
+    it("groups queued items by media type for matcher dispatch", async () => {
+        const game = { id: 1, mediaType: MediaType.GAMES };
+        const movie = { id: 2, mediaType: MediaType.MOVIES };
+        repository.getQueuedItemsForProcessingJob.mockResolvedValue([game, movie]);
+
+        const groups = await service.getQueuedItemsByMediaType(10);
+
+        expect(groups.get(MediaType.GAMES)).toEqual([game]);
+        expect(groups.get(MediaType.MOVIES)).toEqual([movie]);
     });
 
     it("persists parsed items and returns the queued job", async () => {

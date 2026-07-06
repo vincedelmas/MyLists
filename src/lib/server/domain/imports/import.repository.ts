@@ -5,7 +5,7 @@ import {importItems, importJobs} from "@/lib/server/database/schema";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 
 
-const INSERT_BATCH_SIZE = 50;
+const INSERT_BATCH_SIZE = 300;
 
 
 export class ImportRepository {

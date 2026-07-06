@@ -1,4 +1,8 @@
-import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, ImportItemStatus, ImportSource, MediaType} from "@/lib/utils/enums";
+
+
+type ImportParser = (contents: string) => ParsedImport;
+export type ImportParserRegistry = Partial<Record<ImportSource, ImportParser>>;
 
 
 export interface ParsedImportItem {

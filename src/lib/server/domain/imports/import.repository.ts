@@ -8,8 +8,17 @@ import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums
 
 const INSERT_BATCH_SIZE = 300;
 
+const TERMINAL_JOB_STATUSES = [
+    ImportJobStatus.FAILED,
+    ImportJobStatus.COMPLETED,
+    ImportJobStatus.CANCELLED,
+    ImportJobStatus.COMPLETED_WITH_ERRORS,
+] as const;
+
 
 export class ImportRepository {
+
+
     static async createJob(userId: number, source: ImportSource) {
         const [job] = await getDbClient()
             .insert(importJobs)
@@ -20,6 +29,19 @@ export class ImportRepository {
             }).returning();
 
         return job;
+    }
+
+    static async deleteTerminalJob(jobId: number, userId: number) {
+        const [deletedJob] = await getDbClient()
+            .delete(importJobs)
+            .where(and(
+                eq(importJobs.id, jobId),
+                eq(importJobs.userId, userId),
+                inArray(importJobs.status, TERMINAL_JOB_STATUSES),
+            ))
+            .returning({ id: importJobs.id });
+
+        return deletedJob ?? null;
     }
 
     static async findJobForUser(jobId: number, userId: number) {

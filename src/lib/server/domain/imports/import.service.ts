@@ -1,6 +1,7 @@
 import {notFound} from "@tanstack/react-router";
-import {ImportJobStatus, ImportSource} from "@/lib/utils/enums";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {ImportParserRegistry} from "@/lib/types/imports.types";
+import {ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
@@ -31,6 +32,16 @@ export class ImportService {
         }
 
         return { job, jobsAhead };
+    }
+
+    async deleteImportJob(userId: number, jobId: number) {
+        const deletedJob = await this.repository.deleteTerminalJob(jobId, userId);
+        if (deletedJob) return deletedJob;
+
+        const job = await this.repository.findJobForUser(jobId, userId);
+        if (!job) throw notFound();
+
+        throw new FormattedError("Only finished import jobs can be deleted.");
     }
 
     async createImportJob(userId: number, source: ImportSource, contents: string) {

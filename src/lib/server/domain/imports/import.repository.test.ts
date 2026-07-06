@@ -133,6 +133,23 @@ describe("ImportRepository", () => {
             }),
         ]);
     });
+
+    it("deletes only owned terminal jobs and cascades their items", async () => {
+        const finishedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const queuedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+
+        await ImportRepository.insertParsedItems(finishedJob.id, [createItem(2)]);
+        await ImportRepository.markJobFailed(finishedJob.id, "Invalid file");
+        await ImportRepository.markJobQueued(queuedJob.id, 0, 0);
+
+        await expect(ImportRepository.deleteTerminalJob(queuedJob.id, 42)).resolves.toBeNull();
+        await expect(ImportRepository.deleteTerminalJob(finishedJob.id, 999)).resolves.toBeNull();
+        await expect(ImportRepository.deleteTerminalJob(finishedJob.id, 42)).resolves.toEqual({ id: finishedJob.id });
+
+        expect(await db.select().from(importJobs).where(eq(importJobs.id, finishedJob.id))).toHaveLength(0);
+        expect(await db.select().from(importItems).where(eq(importItems.jobId, finishedJob.id))).toHaveLength(0);
+        expect(await db.select().from(importJobs).where(eq(importJobs.id, queuedJob.id))).toHaveLength(1);
+    });
 });
 
 

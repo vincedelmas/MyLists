@@ -1,4 +1,5 @@
 import {ParsedImport} from "@/lib/types/imports.types";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {MyListsCsvFileError} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
@@ -22,6 +23,7 @@ describe("ImportService.createImportJob", () => {
         findJobForUser: vi.fn(),
         countFailedItems: vi.fn(),
         insertParsedItems: vi.fn(),
+        deleteTerminalJob: vi.fn(),
     };
     const parser = vi.fn();
     const service = new ImportService(repository as any, {
@@ -129,6 +131,20 @@ describe("ImportService.createImportJob", () => {
             .resolves.toEqual({ items: [], total: 0 });
 
         expect(repository.getIssueItems).toHaveBeenCalledWith(10, 2, 25);
+    });
+
+    it("deletes an owned terminal import job", async () => {
+        repository.deleteTerminalJob.mockResolvedValue({ id: 10 });
+
+        await expect(service.deleteImportJob(42, 10)).resolves.toEqual({ id: 10 });
+        expect(repository.findJobForUser).not.toHaveBeenCalled();
+    });
+
+    it("rejects deletion of an active import job", async () => {
+        repository.deleteTerminalJob.mockResolvedValue(null);
+        repository.findJobForUser.mockResolvedValue({ id: 10, status: ImportJobStatus.QUEUED });
+
+        await expect(service.deleteImportJob(42, 10)).rejects.toThrow(FormattedError);
     });
 });
 

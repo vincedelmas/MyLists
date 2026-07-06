@@ -25,6 +25,16 @@ export const postCreateImportJob = createServerFn({ method: "POST" })
     });
 
 
+export const postDeleteImportJob = createServerFn({ method: "POST" })
+    .middleware([requiredAuthMiddleware])
+    .validator(importJobIdSchema)
+    .handler(async ({ data: { jobId }, context: { currentUser } }) => {
+        const container = await getContainer();
+        const importService = container.services.imports
+        return importService.deleteImportJob(currentUser.id, jobId);
+    });
+
+
 export const getImportJob = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(importJobIdSchema)

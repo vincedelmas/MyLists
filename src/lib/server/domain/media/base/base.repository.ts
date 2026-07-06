@@ -377,6 +377,29 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         return result;
     }
 
+    async findByApiIds(apiIds: (number | string)[]) {
+        if (apiIds.length === 0) return [];
+
+        const { mediaTable } = this.config;
+        const uniqueApiIds = [...new Set(apiIds)];
+        const matches: { id: number; apiId: number | string }[] = [];
+
+        for (let offset = 0; offset < uniqueApiIds.length; offset += 300) {
+            const chunk = uniqueApiIds.slice(offset, offset + 300);
+            const rows = await getDbClient()
+                .select({
+                    id: sql<number>`${mediaTable.id}`,
+                    apiId: sql<number | string>`${mediaTable.apiId}`,
+                })
+                .from(mediaTable)
+                .where(inArray(mediaTable.apiId, chunk));
+
+            matches.push(...rows);
+        }
+
+        return matches;
+    }
+
     async updateUserMediaDetails(userId: number, mediaId: number, updateData: TConfig["listTable"]["$inferSelect"]): Promise<TConfig["listTable"]["$inferSelect"]> {
         const { listTable } = this.config;
 

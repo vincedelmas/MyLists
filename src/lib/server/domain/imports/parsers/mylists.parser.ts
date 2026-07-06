@@ -226,7 +226,7 @@ const validateHeaders = (headers: string[]) => {
 
 
 const mapValidRow = (rowNumber: number, headers: string[], row: MyListsRow) => {
-    const payload: Record<string, unknown> = { status: row.status };
+    const payload: Record<string, any> = { status: row.status };
 
     addPayloadField(payload, headers, "redo", row.redo);
     addPayloadField(payload, headers, "total", row.total);
@@ -257,7 +257,7 @@ const mapValidRow = (rowNumber: number, headers: string[], row: MyListsRow) => {
 };
 
 
-const addPayloadField = (payload: Record<string, unknown>, headers: string[], header: string, value: unknown, payloadKey = header) => {
+const addPayloadField = (payload: Record<string, any>, headers: string[], header: string, value: any, payloadKey = header) => {
     if (headers.includes(header)) {
         payload[payloadKey] = value;
     }

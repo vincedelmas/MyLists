@@ -65,4 +65,11 @@ export class ImportService {
             throw error;
         }
     }
+
+    async getImportIssues(userId: number, jobId: number, page?: number, perPage?: number) {
+        const job = await this.repository.findJobForUser(jobId, userId);
+        if (!job) throw notFound();
+
+        return this.repository.getIssueItems(job.id, page, perPage);
+    }
 }

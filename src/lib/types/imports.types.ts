@@ -13,7 +13,7 @@ export interface ParsedImportItem {
     statusReason: string | null;
     mediaType: MediaType | null;
     externalApiId: string | null;
-    payload: Record<string, unknown>;
+    payload: Record<string, any>;
     externalApiSource: ApiProviderType | null;
 }
 

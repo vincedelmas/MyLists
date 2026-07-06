@@ -37,7 +37,7 @@ export const importItems = sqliteTable("import_items", {
     rowNumber: integer("row_number").notNull(),
     matchedMediaId: integer("matched_media_id"),
     mediaType: text("media_type").$type<MediaType>(),
-    payload: customJson<Record<string, unknown>>("payload_json").notNull(),
+    payload: customJson<Record<string, any>>("payload_json").notNull(),
     externalApiSource: text("external_api_source").$type<ApiProviderType>(),
     status: text("status").$type<ImportItemStatus>().default(ImportItemStatus.QUEUED).notNull(),
     createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),

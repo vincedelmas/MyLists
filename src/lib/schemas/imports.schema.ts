@@ -1,6 +1,6 @@
 import * as z from "zod";
 import {ImportSource} from "@/lib/utils/enums";
-import {coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {coercedPositiveIntFieldSchema, paginationSchema} from "@/lib/schemas/common.schema";
 
 
 export type ImportUpload = z.infer<typeof importUploadSchema>;
@@ -29,5 +29,10 @@ export const importUploadSchema = z.object({
 
 
 export const importJobIdSchema = z.object({
+    jobId: coercedPositiveIntFieldSchema,
+});
+
+
+export const importJobIssuesSchema = paginationSchema.extend({
     jobId: coercedPositiveIntFieldSchema,
 });

@@ -112,6 +112,26 @@ describe("ImportRepository", () => {
         await expect(ImportRepository.findJobForUser(targetJob.id, 999)).resolves.toBeUndefined();
         await expect(ImportRepository.countJobsAhead(queuedTarget)).resolves.toBe(2);
     });
+
+    it("returns only failed and skipped items ordered by CSV row with bounded pagination", async () => {
+        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await ImportRepository.insertParsedItems(job.id, [
+            createItem(4, { status: ImportItemStatus.SKIPPED, statusReason: "Ambiguous" }),
+            createItem(2, { status: ImportItemStatus.FAILED, statusReason: "Invalid date" }),
+            createItem(3, { status: ImportItemStatus.COMPLETED }),
+        ]);
+
+        const result = await ImportRepository.getIssueItems(job.id, 1, 1);
+
+        expect(result).toMatchObject({ page: 1, perPage: 1, pages: 2, total: 2 });
+        expect(result.items).toEqual([
+            expect.objectContaining({
+                rowNumber: 2,
+                statusReason: "Invalid date",
+                status: ImportItemStatus.FAILED,
+            }),
+        ]);
+    });
 });
 
 

@@ -1,7 +1,7 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {importJobIdSchema, importUploadSchema} from "@/lib/schemas";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {importJobIdSchema, importJobIssuesSchema, importUploadSchema} from "@/lib/schemas";
 
 
 export const postCreateImportJob = createServerFn({ method: "POST" })
@@ -49,4 +49,14 @@ export const getImportJob = createServerFn({ method: "GET" })
             completedCount: job.completedCount,
             processedCount: job.processedCount,
         };
+    });
+
+
+export const getImportJobIssues = createServerFn({ method: "GET" })
+    .middleware([requiredAuthMiddleware])
+    .validator(importJobIssuesSchema)
+    .handler(async ({ data: { jobId, page, perPage }, context: { currentUser } }) => {
+        const container = await getContainer();
+        const importService = container.services.imports;
+        return importService.getImportIssues(currentUser.id, jobId, page, perPage);
     });

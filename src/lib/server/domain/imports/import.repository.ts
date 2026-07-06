@@ -1,7 +1,8 @@
-import {and, count, eq, lt, or, sql} from "drizzle-orm";
+import {paginate} from "@/lib/server/database/pagination";
 import {ParsedImportItem} from "@/lib/types/imports.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {importItems, importJobs} from "@/lib/server/database/schema";
+import {and, asc, count, eq, inArray, lt, or, sql} from "drizzle-orm";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 
 
@@ -46,6 +47,48 @@ export class ImportRepository {
             )).get();
 
         return result?.count ?? 0;
+    }
+
+    static async getIssueItems(jobId: number, page?: number, perPage?: number) {
+        const issueCondition = and(
+            eq(importItems.jobId, jobId),
+            inArray(importItems.status, [ImportItemStatus.FAILED, ImportItemStatus.SKIPPED]),
+        );
+
+        return paginate({
+            page,
+            perPage,
+            maxPerPage: 25,
+            getTotal: async () => {
+                const result = await getDbClient()
+                    .select({ count: count() })
+                    .from(importItems)
+                    .where(issueCondition)
+                    .get();
+
+                return result?.count ?? 0;
+            },
+            getItems: ({ limit, offset }) => {
+                return getDbClient()
+                    .select({
+                        id: importItems.id,
+                        name: importItems.name,
+                        status: importItems.status,
+                        payload: importItems.payload,
+                        rowNumber: importItems.rowNumber,
+                        mediaType: importItems.mediaType,
+                        releaseDate: importItems.releaseDate,
+                        statusReason: importItems.statusReason,
+                        externalApiId: importItems.externalApiId,
+                        externalApiSource: importItems.externalApiSource,
+                    })
+                    .from(importItems)
+                    .where(issueCondition)
+                    .orderBy(asc(importItems.rowNumber))
+                    .limit(limit)
+                    .offset(offset);
+            },
+        });
     }
 
     static async insertParsedItems(jobId: number, items: ParsedImportItem[]) {

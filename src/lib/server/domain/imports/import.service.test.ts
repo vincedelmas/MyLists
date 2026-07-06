@@ -17,6 +17,7 @@ describe("ImportService.createImportJob", () => {
         createJob: vi.fn(),
         markJobFailed: vi.fn(),
         markJobQueued: vi.fn(),
+        getIssueItems: vi.fn(),
         countJobsAhead: vi.fn(),
         findJobForUser: vi.fn(),
         countFailedItems: vi.fn(),
@@ -118,6 +119,16 @@ describe("ImportService.createImportJob", () => {
 
         await expect(service.getImportJob(999, 10)).rejects.toBeDefined();
         expect(repository.countJobsAhead).not.toHaveBeenCalled();
+    });
+
+    it("returns paginated issues only after verifying job ownership", async () => {
+        repository.findJobForUser.mockResolvedValue({ id: 10, userId: 42 });
+        repository.getIssueItems.mockResolvedValue({ items: [], total: 0 });
+
+        await expect(service.getImportIssues(42, 10, 2, 25))
+            .resolves.toEqual({ items: [], total: 0 });
+
+        expect(repository.getIssueItems).toHaveBeenCalledWith(10, 2, 25);
     });
 });
 

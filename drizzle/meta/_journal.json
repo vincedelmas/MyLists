@@ -239,6 +239,13 @@
       "when": 1783335034242,
       "tag": "0033_import_list_idempotency",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1783335382934,
+      "tag": "0034_import_jobs_and_items",
+      "breakpoints": true
     }
   ]
 }

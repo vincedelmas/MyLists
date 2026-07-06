@@ -400,6 +400,31 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         return matches;
     }
 
+    async findByNames(names: string[]) {
+        if (names.length === 0) return [];
+
+        const { mediaTable } = this.config;
+        const uniqueNames = [...new Set(names.map(name => name.trim().toLowerCase()).filter(Boolean))];
+        const matches: { id: number; name: string; releaseDate: string | null }[] = [];
+        const lowerNames = sql<string>`lower(trim(${mediaTable.name}))`;
+
+        for (let offset = 0; offset < uniqueNames.length; offset += 300) {
+            const chunk = uniqueNames.slice(offset, offset + 300);
+            const rows = await getDbClient()
+                .select({
+                    id: sql<number>`${mediaTable.id}`,
+                    name: sql<string>`${mediaTable.name}`,
+                    releaseDate: sql<string | null>`${mediaTable.releaseDate}`,
+                })
+                .from(mediaTable)
+                .where(inArray(lowerNames, chunk));
+
+            matches.push(...rows);
+        }
+
+        return matches;
+    }
+
     async updateUserMediaDetails(userId: number, mediaId: number, updateData: TConfig["listTable"]["$inferSelect"]): Promise<TConfig["listTable"]["$inferSelect"]> {
         const { listTable } = this.config;
 

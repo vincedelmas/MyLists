@@ -108,6 +108,77 @@ describe("ImportRepository", () => {
         await expect(ImportRepository.getQueuedItemsForProcessingJob(waitingJob.id)).resolves.toEqual([]);
     });
 
+    it("transitions processing items to terminal outcomes and increments job counters", async () => {
+        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await ImportRepository.insertParsedItems(job.id, [createItem(2), createItem(3), createItem(4)]);
+        await ImportRepository.markJobQueued(job.id, 3, 0);
+        await ImportRepository.claimNextQueuedJob();
+
+        const queuedItems = await ImportRepository.getQueuedItemsForProcessingJob(job.id);
+        const claimedItems = await ImportRepository.markItemsProcessing(job.id, queuedItems.map(item => item.id));
+
+        expect(claimedItems).toHaveLength(3);
+
+        const settledItems = await ImportRepository.settleProcessingItems(job.id, [
+            {
+                matchedMediaId: 101,
+                itemId: queuedItems[0].id,
+                status: ImportItemStatus.COMPLETED,
+            },
+            {
+                itemId: queuedItems[1].id,
+                statusReason: "Ambiguous match",
+                status: ImportItemStatus.SKIPPED,
+            },
+            {
+                itemId: queuedItems[2].id,
+                statusReason: "Provider error",
+                status: ImportItemStatus.FAILED,
+            },
+        ]);
+
+        expect(settledItems).toEqual([
+            { id: queuedItems[0].id, status: ImportItemStatus.COMPLETED },
+            { id: queuedItems[1].id, status: ImportItemStatus.SKIPPED },
+            { id: queuedItems[2].id, status: ImportItemStatus.FAILED },
+        ]);
+
+        await ImportRepository.incrementJobCounters(job.id, {
+            failedCount: 1,
+            skippedCount: 1,
+            completedCount: 1,
+            processedCount: 3,
+        });
+
+        const storedItems = await db
+            .select()
+            .from(importItems)
+            .where(eq(importItems.jobId, job.id))
+            .orderBy(importItems.rowNumber);
+
+        const storedJob = db
+            .select()
+            .from(importJobs)
+            .where(eq(importJobs.id, job.id))
+            .get();
+
+        expect(storedItems.map(item => ({
+            status: item.status,
+            statusReason: item.statusReason,
+            matchedMediaId: item.matchedMediaId,
+        }))).toEqual([
+            { status: ImportItemStatus.COMPLETED, matchedMediaId: 101, statusReason: null },
+            { status: ImportItemStatus.SKIPPED, matchedMediaId: null, statusReason: "Ambiguous match" },
+            { status: ImportItemStatus.FAILED, matchedMediaId: null, statusReason: "Provider error" },
+        ]);
+        expect(storedJob).toMatchObject({
+            failedCount: 1,
+            skippedCount: 1,
+            completedCount: 1,
+            processedCount: 3,
+        });
+    });
+
     it("inserts parsed items in batches and queues the job with parsing counters", async () => {
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         const items = Array.from({ length: 51 }, (_, idx) => createItem(idx + 2, {
@@ -140,7 +211,11 @@ describe("ImportRepository", () => {
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
 
         const failedJob = await ImportRepository.markJobFailed(job.id, "x".repeat(2_100));
-        const storedJob = await db.select().from(importJobs).where(eq(importJobs.id, job.id)).get();
+        const storedJob = db
+            .select()
+            .from(importJobs)
+            .where(eq(importJobs.id, job.id))
+            .get();
 
         expect(failedJob).toMatchObject({ status: ImportJobStatus.FAILED });
         expect(storedJob?.error).toHaveLength(2_000);

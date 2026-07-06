@@ -1,11 +1,13 @@
 import {notFound} from "@tanstack/react-router";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {ImportParserRegistry} from "@/lib/types/imports.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
+import {ImportItemOutcome, ImportParserRegistry} from "@/lib/types/imports.types";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
+
+const OUTCOME_BATCH_SIZE = 200;
 
 const importParserRegistry: ImportParserRegistry = {
     [ImportSource.MYLISTS]: parseMyListsCsv,
@@ -21,6 +23,42 @@ export class ImportService {
 
     async claimNextQueuedJob() {
         return this.repository.claimNextQueuedJob();
+    }
+
+    async markItemsProcessing(jobId: number, itemIds: number[]) {
+        return this.repository.markItemsProcessing(jobId, itemIds);
+    }
+
+    async applyItemOutcomes(jobId: number, outcomes: ImportItemOutcome[]) {
+        const appliedItems: { id: number; status: ImportItemStatus }[] = [];
+
+        for (let offset = 0; offset < outcomes.length; offset += OUTCOME_BATCH_SIZE) {
+            const batch = outcomes.slice(offset, offset + OUTCOME_BATCH_SIZE);
+            const uniqueBatch = [...new Map(batch.map(outcome => [outcome.itemId, outcome])).values()];
+
+            const committedItems = await withTransaction(async () => {
+                const items = await this.repository.settleProcessingItems(jobId, uniqueBatch);
+                if (items.length === 0) return [];
+
+                const delta = {
+                    processedCount: items.length,
+                    failedCount: items.filter(item => item.status === ImportItemStatus.FAILED).length,
+                    skippedCount: items.filter(item => item.status === ImportItemStatus.SKIPPED).length,
+                    completedCount: items.filter(item => item.status === ImportItemStatus.COMPLETED).length,
+                };
+
+                const updatedJob = await this.repository.incrementJobCounters(jobId, delta);
+                if (!updatedJob) {
+                    throw new Error(`Import job ${jobId} is no longer in processing state`);
+                }
+
+                return items;
+            });
+
+            appliedItems.push(...committedItems);
+        }
+
+        return appliedItems;
     }
 
     async getQueuedItemsByMediaType(jobId: number) {

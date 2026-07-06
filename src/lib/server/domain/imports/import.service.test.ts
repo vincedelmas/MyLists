@@ -1,6 +1,6 @@
-import {ParsedImport} from "@/lib/types/imports.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {beforeEach, describe, expect, it, vi} from "vitest";
+import {ImportItemOutcome, ParsedImport} from "@/lib/types/imports.types";
 import {MyListsCsvFileError} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
@@ -25,6 +25,9 @@ describe("ImportService.createImportJob", () => {
         insertParsedItems: vi.fn(),
         deleteTerminalJob: vi.fn(),
         claimNextQueuedJob: vi.fn(),
+        markItemsProcessing: vi.fn(),
+        incrementJobCounters: vi.fn(),
+        settleProcessingItems: vi.fn(),
         getQueuedItemsForProcessingJob: vi.fn(),
     };
     const parser = vi.fn();
@@ -58,6 +61,60 @@ describe("ImportService.createImportJob", () => {
 
         expect(groups.get(MediaType.GAMES)).toEqual([game]);
         expect(groups.get(MediaType.MOVIES)).toEqual([movie]);
+    });
+
+    it("increments counters only for item outcomes that actually transition", async () => {
+        const outcomes = [
+            { itemId: 1, status: ImportItemStatus.COMPLETED, matchedMediaId: 101 },
+            { itemId: 2, status: ImportItemStatus.SKIPPED, statusReason: "Ambiguous" },
+            { itemId: 3, status: ImportItemStatus.FAILED, statusReason: "Provider error" },
+        ] as const;
+
+        repository.settleProcessingItems.mockResolvedValue([
+            { id: 1, status: ImportItemStatus.COMPLETED },
+            { id: 3, status: ImportItemStatus.FAILED },
+        ]);
+        repository.incrementJobCounters.mockResolvedValue({ id: 10 });
+
+        await expect(service.applyItemOutcomes(10, [...outcomes]))
+            .resolves.toEqual([
+                { id: 1, status: ImportItemStatus.COMPLETED },
+                { id: 3, status: ImportItemStatus.FAILED },
+            ]);
+
+        expect(repository.incrementJobCounters).toHaveBeenCalledWith(10, {
+            failedCount: 1,
+            skippedCount: 0,
+            completedCount: 1,
+            processedCount: 2,
+        });
+    });
+
+    it("commits large outcome sets in batches of 200", async () => {
+        const outcomes: ImportItemOutcome[] = Array.from({ length: 401 }, (_, idx) => ({
+            itemId: idx + 1,
+            matchedMediaId: idx + 100,
+            status: ImportItemStatus.COMPLETED,
+        }));
+
+        repository.settleProcessingItems.mockImplementation(async (_jobId: number, batch: ImportItemOutcome[]) => {
+            return batch.map(outcome => ({ id: outcome.itemId, status: outcome.status }));
+        });
+        repository.incrementJobCounters.mockResolvedValue({ id: 10 });
+
+        const applied = await service.applyItemOutcomes(10, outcomes);
+
+        expect(applied).toHaveLength(401);
+        expect(repository.settleProcessingItems).toHaveBeenCalledTimes(3);
+        expect(repository.settleProcessingItems.mock.calls.map(call => call[1].length)).toEqual([200, 200, 1]);
+        expect(repository.incrementJobCounters).toHaveBeenCalledTimes(3);
+    });
+
+    it("marks queued item IDs as processing", async () => {
+        repository.markItemsProcessing.mockResolvedValue([{ id: 1 }, { id: 2 }]);
+
+        await expect(service.markItemsProcessing(10, [1, 2]))
+            .resolves.toEqual([{ id: 1 }, { id: 2 }]);
     });
 
     it("persists parsed items and returns the queued job", async () => {
@@ -126,8 +183,8 @@ describe("ImportService.createImportJob", () => {
         const job = {
             id: 10,
             userId: 42,
-            createdAt: "2024-01-01 00:00:00",
             status: ImportJobStatus.QUEUED,
+            createdAt: "2024-01-01 00:00:00",
         };
         repository.findJobForUser.mockResolvedValue(job);
         repository.countJobsAhead.mockResolvedValue(2);

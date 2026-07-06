@@ -1,9 +1,9 @@
 import {paginate} from "@/lib/server/database/pagination";
-import {ParsedImportItem} from "@/lib/types/imports.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {importItems, importJobs} from "@/lib/server/database/schema";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
-import {and, asc, count, eq, getTableColumns, inArray, lt, notExists, or, sql} from "drizzle-orm";
+import {ImportItemOutcome, ImportJobCounterDelta, ParsedImportItem} from "@/lib/types/imports.types";
+import {and, asc, count, eq, exists, getTableColumns, inArray, lt, notExists, or, sql} from "drizzle-orm";
 
 
 const INSERT_BATCH_SIZE = 300;
@@ -17,6 +17,80 @@ const TERMINAL_JOB_STATUSES = [
 
 
 export class ImportRepository {
+    static async markItemsProcessing(jobId: number, itemIds: number[]) {
+        if (itemIds.length === 0) return [];
+
+        const db = getDbClient();
+
+        const activeJob = db
+            .select({ id: importJobs.id })
+            .from(importJobs)
+            .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)));
+
+        return db
+            .update(importItems)
+            .set({
+                updatedAt: sql`datetime('now')`,
+                status: ImportItemStatus.PROCESSING,
+            })
+            .where(and(
+                exists(activeJob),
+                eq(importItems.jobId, jobId),
+                inArray(importItems.id, itemIds),
+                eq(importItems.status, ImportItemStatus.QUEUED),
+            ))
+            .returning({ id: importItems.id });
+    }
+
+    static async settleProcessingItems(jobId: number, outcomes: ImportItemOutcome[]) {
+        if (outcomes.length === 0) return [];
+
+        const values = sql.join(outcomes.map(outcome => sql`(
+            ${outcome.itemId},
+            ${outcome.status},
+            ${outcome.matchedMediaId ?? null},
+            ${outcome.statusReason?.slice(0, 500) ?? null}
+        )`), sql.raw(", "));
+
+        return getDbClient().all<{ id: number; status: ImportItemStatus }>(sql`
+            WITH outcome_values(item_id, next_status, matched_media_id, status_reason) AS (
+                VALUES ${values}
+            )
+            UPDATE ${importItems}
+            SET
+                status = (SELECT next_status FROM outcome_values WHERE item_id = id),
+                matched_media_id = (SELECT matched_media_id FROM outcome_values WHERE item_id = id),
+                status_reason = (SELECT status_reason FROM outcome_values WHERE item_id = id),
+                updated_at = datetime('now')
+            WHERE job_id = ${jobId}
+              AND status = ${ImportItemStatus.PROCESSING}
+              AND id IN (SELECT item_id FROM outcome_values)
+              AND EXISTS (
+                  SELECT 1
+                  FROM ${importJobs}
+                  WHERE ${importJobs.id} = ${jobId}
+                    AND ${importJobs.status} = ${ImportJobStatus.PROCESSING}
+              )
+            RETURNING id, status
+        `);
+    }
+
+    static async incrementJobCounters(jobId: number, delta: ImportJobCounterDelta) {
+        const [job] = await getDbClient()
+            .update(importJobs)
+            .set({
+                updatedAt: sql`datetime('now')`,
+                failedCount: sql`${importJobs.failedCount} + ${delta.failedCount}`,
+                skippedCount: sql`${importJobs.skippedCount} + ${delta.skippedCount}`,
+                completedCount: sql`${importJobs.completedCount} + ${delta.completedCount}`,
+                processedCount: sql`${importJobs.processedCount} + ${delta.processedCount}`,
+            })
+            .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)))
+            .returning();
+
+        return job ?? null;
+    }
+
     static async claimNextQueuedJob() {
         const db = getDbClient();
 

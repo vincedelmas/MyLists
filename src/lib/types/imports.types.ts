@@ -23,3 +23,24 @@ export interface ParsedImport {
     failedCount: number;
     items: ParsedImportItem[];
 }
+
+
+export type ImportItemOutcome = {
+    itemId: number;
+    matchedMediaId: number;
+    statusReason?: string | null;
+    status: typeof ImportItemStatus.COMPLETED;
+} | {
+    itemId: number;
+    statusReason: string;
+    matchedMediaId?: null;
+    status: typeof ImportItemStatus.SKIPPED | typeof ImportItemStatus.FAILED;
+};
+
+
+export interface ImportJobCounterDelta {
+    failedCount: number;
+    skippedCount: number;
+    completedCount: number;
+    processedCount: number;
+}

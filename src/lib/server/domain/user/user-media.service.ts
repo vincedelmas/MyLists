@@ -24,20 +24,22 @@ export class UserMediaService {
     ) {
     }
 
-    async addMediaToList({ userId, mediaType, mediaId, status }: MediaAction & { status?: Status }) {
+    async addMediaToList({ userId, mediaType, mediaId, status, silent = false }: MediaAction & { status?: Status; silent?: boolean }) {
         const mediaService = this.mediaServiceRegistry.getService(mediaType);
 
         const { newState, media, delta, logPayload } = await mediaService.addMediaToUserList(userId, mediaId, status);
         await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
-        await this.userActivityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, newState });
 
-        await this.userUpdatesService.logUpdate({
-            media,
-            userId,
-            mediaType,
-            updateType: UpdateType.STATUS,
-            payload: { old_value: logPayload.oldValue, new_value: logPayload.newValue },
-        });
+        if (!silent) {
+            await this.userActivityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, newState });
+            await this.userUpdatesService.logUpdate({
+                media,
+                userId,
+                mediaType,
+                updateType: UpdateType.STATUS,
+                payload: { old_value: logPayload.oldValue, new_value: logPayload.newValue },
+            });
+        }
 
         return newState;
     }

@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {parse} from "csv-parse/sync";
+import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, GamesPlatformsEnum, ImportItemStatus, MediaType, Status,} from "@/lib/utils/enums";
 
 
@@ -142,17 +143,7 @@ const myListsRowSchema = z.object({
 type MyListsRow = z.output<typeof myListsRowSchema>;
 
 
-export interface ParsedMyListsItem {
-    rowNumber: number;
-    name: string | null;
-    status: ImportItemStatus;
-    releaseDate: string | null;
-    statusReason: string | null;
-    mediaType: MediaType | null;
-    externalApiId: string | null;
-    payload: Record<string, unknown>;
-    externalApiSource: ApiProviderType | null;
-}
+export type ParsedMyListsItem = ParsedImportItem;
 
 
 export class MyListsCsvFileError extends Error {
@@ -163,7 +154,7 @@ export class MyListsCsvFileError extends Error {
 }
 
 
-export const parseMyListsCsv = (csv: string) => {
+export const parseMyListsCsv = (csv: string): ParsedImport => {
     const records = parseCsvRecords(csv);
     if (records.length === 0) {
         throw new MyListsCsvFileError("The CSV file is empty");

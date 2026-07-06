@@ -28,6 +28,7 @@ describe("ImportService.createImportJob", () => {
         markItemsProcessing: vi.fn(),
         incrementJobCounters: vi.fn(),
         settleProcessingItems: vi.fn(),
+        finalizeProcessingJob: vi.fn(),
         getQueuedItemsForProcessingJob: vi.fn(),
     };
     const parser = vi.fn();
@@ -50,6 +51,13 @@ describe("ImportService.createImportJob", () => {
         repository.claimNextQueuedJob.mockResolvedValue(job);
 
         await expect(service.claimNextQueuedJob()).resolves.toBe(job);
+    });
+
+    it("finalizes an accounted processing job", async () => {
+        const job = { id: 10, status: ImportJobStatus.COMPLETED };
+        repository.finalizeProcessingJob.mockResolvedValue(job);
+
+        await expect(service.finalizeProcessingJob(10)).resolves.toBe(job);
     });
 
     it("groups queued items by media type for matcher dispatch", async () => {

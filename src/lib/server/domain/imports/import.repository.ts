@@ -17,6 +17,45 @@ const TERMINAL_JOB_STATUSES = [
 
 
 export class ImportRepository {
+    static async finalizeProcessingJob(jobId: number) {
+        const db = getDbClient();
+
+        const unfinishedItems = db
+            .select({ id: importItems.id })
+            .from(importItems)
+            .where(and(
+                eq(importItems.jobId, jobId),
+                inArray(importItems.status, [ImportItemStatus.QUEUED, ImportItemStatus.PROCESSING]),
+            ));
+
+        const [job] = await db
+            .update(importJobs)
+            .set({
+                updatedAt: sql`datetime('now')`,
+                finishedAt: sql`datetime('now')`,
+                status: sql`
+                    CASE
+                        WHEN ${importJobs.failedCount} > 0 OR ${importJobs.skippedCount} > 0
+                        THEN ${ImportJobStatus.COMPLETED_WITH_ERRORS}
+                        ELSE ${ImportJobStatus.COMPLETED}
+                    END
+                `,
+            })
+            .where(and(
+                eq(importJobs.id, jobId),
+                eq(importJobs.status, ImportJobStatus.PROCESSING),
+                eq(importJobs.processedCount, importJobs.totalCount),
+                notExists(unfinishedItems),
+                sql`
+                    ${importJobs.processedCount} =
+                    ${importJobs.completedCount} + ${importJobs.failedCount} + ${importJobs.skippedCount}
+                `,
+            ))
+            .returning();
+
+        return job ?? null;
+    }
+
     static async markItemsProcessing(jobId: number, itemIds: number[]) {
         if (itemIds.length === 0) return [];
 

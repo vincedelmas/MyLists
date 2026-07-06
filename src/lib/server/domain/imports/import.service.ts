@@ -25,6 +25,10 @@ export class ImportService {
         return this.repository.claimNextQueuedJob();
     }
 
+    async finalizeProcessingJob(jobId: number) {
+        return this.repository.finalizeProcessingJob(jobId);
+    }
+
     async markItemsProcessing(jobId: number, itemIds: number[]) {
         return this.repository.markItemsProcessing(jobId, itemIds);
     }

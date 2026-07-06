@@ -179,6 +179,71 @@ describe("ImportRepository", () => {
         });
     });
 
+    it("finalizes a fully accounted job without issues as completed", async () => {
+        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await ImportRepository.insertParsedItems(job.id, [createItem(2)]);
+        await ImportRepository.markJobQueued(job.id, 1, 0);
+        await ImportRepository.claimNextQueuedJob();
+
+        await expect(ImportRepository.finalizeProcessingJob(job.id)).resolves.toBeNull();
+
+        const [item] = await ImportRepository.getQueuedItemsForProcessingJob(job.id);
+        await ImportRepository.markItemsProcessing(job.id, [item.id]);
+        await ImportRepository.settleProcessingItems(job.id, [{
+            itemId: item.id,
+            matchedMediaId: 101,
+            status: ImportItemStatus.COMPLETED,
+        }]);
+        await ImportRepository.incrementJobCounters(job.id, {
+            failedCount: 0,
+            skippedCount: 0,
+            completedCount: 1,
+            processedCount: 1,
+        });
+
+        const finalizedJob = await ImportRepository.finalizeProcessingJob(job.id);
+
+        expect(finalizedJob).toMatchObject({
+            processedCount: 1,
+            completedCount: 1,
+            status: ImportJobStatus.COMPLETED,
+        });
+        expect(finalizedJob?.finishedAt).toBeTruthy();
+        await expect(ImportRepository.finalizeProcessingJob(job.id)).resolves.toBeNull();
+    });
+
+    it("finalizes a fully accounted job with issues as completed with errors", async () => {
+        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await ImportRepository.insertParsedItems(job.id, [
+            createItem(2, { status: ImportItemStatus.FAILED, statusReason: "Invalid row" }),
+            createItem(3),
+        ]);
+        await ImportRepository.markJobQueued(job.id, 2, 1);
+        await ImportRepository.claimNextQueuedJob();
+
+        const [item] = await ImportRepository.getQueuedItemsForProcessingJob(job.id);
+        await ImportRepository.markItemsProcessing(job.id, [item.id]);
+        await ImportRepository.settleProcessingItems(job.id, [{
+            itemId: item.id,
+            matchedMediaId: 102,
+            status: ImportItemStatus.COMPLETED,
+        }]);
+        await ImportRepository.incrementJobCounters(job.id, {
+            failedCount: 0,
+            skippedCount: 0,
+            completedCount: 1,
+            processedCount: 1,
+        });
+
+        await expect(ImportRepository.finalizeProcessingJob(job.id))
+            .resolves.toMatchObject({
+                status: ImportJobStatus.COMPLETED_WITH_ERRORS,
+                completedCount: 1,
+                failedCount: 1,
+                processedCount: 2,
+            });
+    });
+
     it("inserts parsed items in batches and queues the job with parsing counters", async () => {
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         const items = Array.from({ length: 51 }, (_, idx) => createItem(idx + 2, {

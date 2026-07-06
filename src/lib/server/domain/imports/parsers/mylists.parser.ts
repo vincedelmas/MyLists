@@ -1,4 +1,4 @@
-import {z} from "zod";
+import * as z from "zod";
 import {parse} from "csv-parse/sync";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, GamesPlatformsEnum, ImportItemStatus, MediaType, Status,} from "@/lib/utils/enums";

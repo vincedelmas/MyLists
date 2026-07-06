@@ -54,6 +54,7 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "commander": "^15.0.0",
+        "csv-parse": "^7.0.1",
         "dedent": "^1.7.2",
         "drizzle-orm": "^0.45.2",
         "ioredis": "^5.11.0",

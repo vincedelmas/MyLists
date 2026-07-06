@@ -2,7 +2,7 @@ import {paginate} from "@/lib/server/database/pagination";
 import {ParsedImportItem} from "@/lib/types/imports.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {importItems, importJobs} from "@/lib/server/database/schema";
-import {and, asc, count, eq, inArray, lt, or, sql} from "drizzle-orm";
+import {and, asc, count, eq, inArray, lt, notExists, or, sql} from "drizzle-orm";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 
 
@@ -17,7 +17,37 @@ const TERMINAL_JOB_STATUSES = [
 
 
 export class ImportRepository {
+    static async claimNextQueuedJob() {
+        const db = getDbClient();
 
+        const nextQueuedJob = db
+            .select({ id: importJobs.id })
+            .from(importJobs)
+            .where(eq(importJobs.status, ImportJobStatus.QUEUED))
+            .orderBy(asc(importJobs.createdAt), asc(importJobs.id))
+            .limit(1);
+
+        const processingJob = db
+            .select({ id: importJobs.id })
+            .from(importJobs)
+            .where(eq(importJobs.status, ImportJobStatus.PROCESSING));
+
+        const [claimedJob] = await db
+            .update(importJobs)
+            .set({
+                startedAt: sql`datetime('now')`,
+                updatedAt: sql`datetime('now')`,
+                status: ImportJobStatus.PROCESSING,
+            })
+            .where(and(
+                notExists(processingJob),
+                eq(importJobs.id, nextQueuedJob),
+                eq(importJobs.status, ImportJobStatus.QUEUED),
+            ))
+            .returning();
+
+        return claimedJob ?? null;
+    }
 
     static async createJob(userId: number, source: ImportSource) {
         const [job] = await getDbClient()

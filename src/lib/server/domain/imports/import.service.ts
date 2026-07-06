@@ -19,6 +19,10 @@ export class ImportService {
     ) {
     }
 
+    async claimNextQueuedJob() {
+        return this.repository.claimNextQueuedJob();
+    }
+
     async getImportJob(userId: number, jobId: number) {
         const job = await this.repository.findJobForUser(jobId, userId);
         if (!job) throw notFound();

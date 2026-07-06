@@ -24,6 +24,7 @@ describe("ImportService.createImportJob", () => {
         countFailedItems: vi.fn(),
         insertParsedItems: vi.fn(),
         deleteTerminalJob: vi.fn(),
+        claimNextQueuedJob: vi.fn(),
     };
     const parser = vi.fn();
     const service = new ImportService(repository as any, {
@@ -38,6 +39,13 @@ describe("ImportService.createImportJob", () => {
             source: ImportSource.MYLISTS,
             status: ImportJobStatus.PARSING,
         });
+    });
+
+    it("claims the next queued job for the drain worker", async () => {
+        const job = { id: 10, status: ImportJobStatus.PROCESSING };
+        repository.claimNextQueuedJob.mockResolvedValue(job);
+
+        await expect(service.claimNextQueuedJob()).resolves.toBe(job);
     });
 
     it("persists parsed items and returns the queued job", async () => {

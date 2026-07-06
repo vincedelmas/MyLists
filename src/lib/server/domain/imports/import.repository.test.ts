@@ -57,6 +57,33 @@ describe("ImportRepository", () => {
         });
     });
 
+    it("atomically claims only the oldest queued job while no job is processing", async () => {
+        const firstJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const secondJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await ImportRepository.markJobQueued(firstJob.id, 0, 0);
+        await ImportRepository.markJobQueued(secondJob.id, 0, 0);
+
+        const claimedJob = await ImportRepository.claimNextQueuedJob();
+
+        expect(claimedJob).toMatchObject({
+            id: firstJob.id,
+            status: ImportJobStatus.PROCESSING,
+        });
+
+        expect(claimedJob?.startedAt).toBeTruthy();
+        await expect(ImportRepository.claimNextQueuedJob()).resolves.toBeNull();
+
+        await db
+            .update(importJobs)
+            .set({ status: ImportJobStatus.COMPLETED })
+            .where(eq(importJobs.id, firstJob.id));
+
+        await expect(ImportRepository.claimNextQueuedJob()).resolves.toMatchObject({
+            id: secondJob.id,
+            status: ImportJobStatus.PROCESSING,
+        });
+    });
+
     it("inserts parsed items in batches and queues the job with parsing counters", async () => {
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         const items = Array.from({ length: 51 }, (_, idx) => createItem(idx + 2, {

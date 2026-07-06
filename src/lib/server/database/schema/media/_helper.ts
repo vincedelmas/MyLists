@@ -2,7 +2,7 @@ import {sql} from "drizzle-orm";
 import {user} from "@/lib/server/database/schema";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {imageUrl, nullableImageUrl} from "@/lib/server/database/custom-types";
-import {index, integer, real, SQLiteColumn, text} from "drizzle-orm/sqlite-core";
+import {index, integer, real, SQLiteColumn, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
 export const commonMediaCols = (mediaTypeName: MediaType) => {
@@ -37,6 +37,7 @@ export const commonMediaListCols = (modelMediaId: SQLiteColumn, mediaTypeName: M
 
 export const commonMediaListIndexes = (table: { userId: SQLiteColumn; mediaId: SQLiteColumn; rating: SQLiteColumn }, mediaTypeName: MediaType) => {
     return [
+        uniqueIndex(`ux_${mediaTypeName}_list_user_media`).on(table.userId, table.mediaId),
         index(`ix_${mediaTypeName}_list_user_media_rated`).on(table.userId, table.mediaId).where(sql`${table.rating} IS NOT NULL`),
         index(`ix_${mediaTypeName}_list_media_user_rated`).on(table.mediaId, table.userId).where(sql`${table.rating} IS NOT NULL`),
     ];

@@ -25,13 +25,15 @@ export class InternalApiIdMatcher {
 
         const uniqueApiIds = [...new Set(candidates.map((i) => i.externalApiId!))];
         const mediaRows = await this.mediaService.findByApiIds(uniqueApiIds);
-        const mediaIdByApiId = new Map(mediaRows.map((media) => [media.apiId, media.id]));
+        const mediaIdByApiId = new Map(mediaRows.map((media) => [String(media.apiId), media.id]));
 
         const matched: InternalApiIdMatch[] = [];
         const unresolved: ImportMatcherItem[] = [];
 
         for (const item of items) {
-            const mediaId = item.externalApiId ? mediaIdByApiId.get(item.externalApiId) : undefined;
+            const mediaId = item.externalApiSource === this.expectedProvider && item.externalApiId
+                ? mediaIdByApiId.get(item.externalApiId)
+                : undefined;
 
             if (mediaId) matched.push({ item, mediaId });
             else unresolved.push(item);

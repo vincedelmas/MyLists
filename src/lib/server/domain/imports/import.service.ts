@@ -1,4 +1,5 @@
-import {ImportSource} from "@/lib/utils/enums";
+import {notFound} from "@tanstack/react-router";
+import {ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 import {ImportParserRegistry} from "@/lib/types/imports.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
@@ -15,6 +16,21 @@ export class ImportService {
         private repository: typeof ImportRepository,
         private parsers: ImportParserRegistry = importParserRegistry,
     ) {
+    }
+
+    async getImportJob(userId: number, jobId: number) {
+        const job = await this.repository.findJobForUser(jobId, userId);
+        if (!job) throw notFound();
+
+        let jobsAhead: number | null = null;
+        if (job.status === ImportJobStatus.PROCESSING) {
+            jobsAhead = 0;
+        }
+        else if (job.status === ImportJobStatus.QUEUED) {
+            jobsAhead = await this.repository.countJobsAhead(job);
+        }
+
+        return { job, jobsAhead };
     }
 
     async createImportJob(userId: number, source: ImportSource, contents: string) {

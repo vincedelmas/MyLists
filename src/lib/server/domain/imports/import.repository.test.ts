@@ -94,6 +94,24 @@ describe("ImportRepository", () => {
         expect(storedJob?.error).toHaveLength(2_000);
         expect(storedJob?.finishedAt).toBeTruthy();
     });
+
+    it("finds jobs only for their owner and counts processing and earlier queued jobs", async () => {
+        const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const earlierQueuedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const targetJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+
+        await ImportRepository.markJobQueued(processingJob.id, 0, 0);
+        await ImportRepository.markJobQueued(earlierQueuedJob.id, 0, 0);
+
+        const queuedTarget = await ImportRepository.markJobQueued(targetJob.id, 0, 0);
+        await db.update(importJobs)
+            .set({ status: ImportJobStatus.PROCESSING })
+            .where(eq(importJobs.id, processingJob.id));
+
+        await expect(ImportRepository.findJobForUser(targetJob.id, 42)).resolves.toMatchObject({ id: targetJob.id });
+        await expect(ImportRepository.findJobForUser(targetJob.id, 999)).resolves.toBeUndefined();
+        await expect(ImportRepository.countJobsAhead(queuedTarget)).resolves.toBe(2);
+    });
 });
 
 

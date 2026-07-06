@@ -1,5 +1,6 @@
 import * as z from "zod";
 import {ImportSource} from "@/lib/utils/enums";
+import {coercedPositiveIntFieldSchema} from "@/lib/schemas/common.schema";
 
 
 export type ImportUpload = z.infer<typeof importUploadSchema>;
@@ -24,4 +25,9 @@ export const importUploadSchema = z.object({
         .refine((file) => file.size <= MAX_IMPORT_FILE_SIZE, `The CSV file must be ${MAX_IMPORT_FILE_SIZE / 1048576}MB or smaller.`)
         .refine((file) => file.name.toLowerCase().endsWith(".csv"), "The import file must use the .csv extension.")
         .refine((file) => acceptedCsvMimeTypes.has(file.type.toLowerCase()), "The import file must be a CSV file."),
+});
+
+
+export const importJobIdSchema = z.object({
+    jobId: coercedPositiveIntFieldSchema,
 });

@@ -1,4 +1,4 @@
-import {and, eq, sql} from "drizzle-orm";
+import {and, count, eq, lt, or, sql} from "drizzle-orm";
 import {ParsedImportItem} from "@/lib/types/imports.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {importItems, importJobs} from "@/lib/server/database/schema";
@@ -19,6 +19,33 @@ export class ImportRepository {
             }).returning();
 
         return job;
+    }
+
+    static async findJobForUser(jobId: number, userId: number) {
+        return getDbClient()
+            .select()
+            .from(importJobs)
+            .where(and(eq(importJobs.id, jobId), eq(importJobs.userId, userId)))
+            .get();
+    }
+
+    static async countJobsAhead(job: typeof importJobs.$inferSelect) {
+        // Await necessary otherwise LibSQL (used for tests return a promise whereas bun:sqlite in synchronous)
+        const result = await getDbClient()
+            .select({ count: count() })
+            .from(importJobs)
+            .where(or(
+                eq(importJobs.status, ImportJobStatus.PROCESSING),
+                and(
+                    eq(importJobs.status, ImportJobStatus.QUEUED),
+                    or(
+                        lt(importJobs.createdAt, job.createdAt),
+                        and(eq(importJobs.createdAt, job.createdAt), lt(importJobs.id, job.id)),
+                    ),
+                ),
+            )).get();
+
+        return result?.count ?? 0;
     }
 
     static async insertParsedItems(jobId: number, items: ParsedImportItem[]) {

@@ -17,6 +17,8 @@ describe("ImportService.createImportJob", () => {
         createJob: vi.fn(),
         markJobFailed: vi.fn(),
         markJobQueued: vi.fn(),
+        countJobsAhead: vi.fn(),
+        findJobForUser: vi.fn(),
         countFailedItems: vi.fn(),
         insertParsedItems: vi.fn(),
     };
@@ -95,6 +97,27 @@ describe("ImportService.createImportJob", () => {
 
         await expect(service.createImportJob(42, ImportSource.MYLISTS, "csv"))
             .rejects.toThrow("Import job 10 is no longer in parsing state");
+    });
+
+    it("returns the number of jobs ahead of a queued job owned by the user", async () => {
+        const job = {
+            id: 10,
+            userId: 42,
+            createdAt: "2024-01-01 00:00:00",
+            status: ImportJobStatus.QUEUED,
+        };
+        repository.findJobForUser.mockResolvedValue(job);
+        repository.countJobsAhead.mockResolvedValue(2);
+
+        await expect(service.getImportJob(42, 10)).resolves.toEqual({ job, jobsAhead: 2 });
+        expect(repository.countJobsAhead).toHaveBeenCalledWith(job);
+    });
+
+    it("does not expose another user's import job", async () => {
+        repository.findJobForUser.mockResolvedValue(undefined);
+
+        await expect(service.getImportJob(999, 10)).rejects.toBeDefined();
+        expect(repository.countJobsAhead).not.toHaveBeenCalled();
     });
 });
 

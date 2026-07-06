@@ -1,9 +1,9 @@
 import {eq} from "drizzle-orm";
-import {Client, createClient} from "@libsql/client";
-import {migrate} from "drizzle-orm/libsql/migrator";
+import Database from "bun:sqlite";
 import * as schema from "@/lib/server/database/schema";
 import {inactiveAccountDeletion, user} from "@/lib/server/database/schema";
-import {drizzle, LibSQLDatabase} from "drizzle-orm/libsql";
+import {migrate} from "drizzle-orm/bun-sqlite/migrator";
+import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 
@@ -23,19 +23,20 @@ const { InactiveAccountRepository } = await import("@/lib/server/domain/user/ina
 
 
 describe("InactiveAccountRepository.markAsDeleted", () => {
-    let client: Client;
-    let db: LibSQLDatabase<typeof schema>;
+    let sqlite: Database;
+    let db: BunSQLiteDatabase<typeof schema>;
 
     beforeEach(async () => {
-        client = createClient({ url: "file::memory:" });
-        db = drizzle(client, { schema, casing: "snake_case" });
+        sqlite = new Database(":memory:");
+        db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
 
-        await migrate(db, { migrationsFolder: "./drizzle" });
+        migrate(db, { migrationsFolder: "./drizzle" });
+        sqlite.run("PRAGMA foreign_keys = ON");
     });
 
-    afterEach(async () => {
-        client.close();
+    afterEach(() => {
+        sqlite.close();
         dbContext.db = undefined;
     });
 

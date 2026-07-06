@@ -1,10 +1,10 @@
 import {eq} from "drizzle-orm";
-import {migrate} from "drizzle-orm/libsql/migrator";
-import {Client, createClient} from "@libsql/client";
+import Database from "bun:sqlite";
 import * as schema from "@/lib/server/database/schema";
 import {importItems, importJobs, user} from "@/lib/server/database/schema";
-import {drizzle, LibSQLDatabase} from "drizzle-orm/libsql";
+import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {ParsedImportItem} from "@/lib/types/imports.types";
+import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
@@ -21,15 +21,16 @@ const { ImportRepository } = await import("@/lib/server/domain/imports/import.re
 
 
 describe("ImportRepository", () => {
-    let client: Client;
-    let db: LibSQLDatabase<typeof schema>;
+    let sqlite: Database;
+    let db: BunSQLiteDatabase<typeof schema>;
 
     beforeEach(async () => {
-        client = createClient({ url: "file::memory:" });
-        db = drizzle(client, { schema, casing: "snake_case" });
+        sqlite = new Database(":memory:");
+        db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
 
-        await migrate(db, { migrationsFolder: "./drizzle" });
+        migrate(db, { migrationsFolder: "./drizzle" });
+        sqlite.run("PRAGMA foreign_keys = ON");
         await db.insert(user).values({
             id: 42,
             emailVerified: true,
@@ -41,7 +42,7 @@ describe("ImportRepository", () => {
     });
 
     afterEach(() => {
-        client.close();
+        sqlite.close();
         dbContext.db = undefined;
     });
 

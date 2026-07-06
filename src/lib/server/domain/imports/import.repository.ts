@@ -31,8 +31,7 @@ export class ImportRepository {
     }
 
     static async countJobsAhead(job: typeof importJobs.$inferSelect) {
-        // Await necessary otherwise LibSQL (used for tests return a promise whereas bun:sqlite in synchronous)
-        const result = await getDbClient()
+        const result = getDbClient()
             .select({ count: count() })
             .from(importJobs)
             .where(or(
@@ -59,8 +58,8 @@ export class ImportRepository {
             page,
             perPage,
             maxPerPage: 25,
-            getTotal: async () => {
-                const result = await getDbClient()
+            getTotal: () => {
+                const result = getDbClient()
                     .select({ count: count() })
                     .from(importItems)
                     .where(issueCondition)

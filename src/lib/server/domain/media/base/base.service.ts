@@ -96,6 +96,10 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return this.repository.getMediaDetailsByIds(mediaIds, userId);
     }
 
+    async bulkInsertUserMedia(rows: TConfig["listTable"]["$inferInsert"][]) {
+        return this.repository.bulkInsertUserMedia(rows);
+    }
+
     async findById(mediaId: number) {
         return this.repository.findById(mediaId);
     }

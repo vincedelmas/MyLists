@@ -9,8 +9,8 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {MediaSchemaConfig} from "@/lib/types/media.config.types";
 import {MediaListArgs, SearchType, SimpleSearch} from "@/lib/schemas";
-import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
+import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {ExpandedListFilters, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData} from "@/lib/types/media-list.types";
@@ -19,6 +19,7 @@ import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray,
 
 
 const SIMILAR_MAX_GENRES = 10;
+const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 
 
 export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
@@ -74,6 +75,26 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
                 filterColumn: genreTable.name,
             }),
         };
+    }
+
+    async bulkInsertUserMedia(rows: TConfig["listTable"]["$inferInsert"][]) {
+        if (rows.length === 0) return [];
+
+        const { listTable } = this.config;
+        const insertedRows: TConfig["listTable"]["$inferSelect"][] = [];
+
+        for (let offset = 0; offset < rows.length; offset += USER_MEDIA_INSERT_BATCH_SIZE) {
+            const batch = rows.slice(offset, offset + USER_MEDIA_INSERT_BATCH_SIZE);
+            const inserted = await getDbClient()
+                .insert(listTable)
+                .values(batch)
+                .onConflictDoNothing({ target: [listTable.userId, listTable.mediaId] })
+                .returning();
+
+            insertedRows.push(...inserted);
+        }
+
+        return insertedRows;
     }
 
     async getCoverFilenames() {

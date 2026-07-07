@@ -24,6 +24,7 @@ describe("TmdbMovieExternalImportResolver", () => {
         expect(moviesProviderService.search).toHaveBeenCalledWith("Heat");
         expect(moviesService.resolveExternalMedia).toHaveBeenCalledWith(949, moviesProviderService);
         expect(result).toEqual({
+            failed: [],
             skipped: [],
             unresolved: [],
             matched: [{ item, mediaId: 101 }],
@@ -68,6 +69,7 @@ describe("TmdbMovieExternalImportResolver", () => {
         const [result] = await collect(resolver.resolve([item]));
 
         expect(result).toEqual({
+            failed: [],
             matched: [],
             unresolved: [],
             skipped: [{
@@ -92,6 +94,7 @@ describe("TmdbMovieExternalImportResolver", () => {
         const [result] = await collect(resolver.resolve([item]));
 
         expect(result).toEqual({
+            failed: [],
             matched: [],
             unresolved: [],
             skipped: [{
@@ -125,6 +128,7 @@ describe("TmdbMovieExternalImportResolver", () => {
 
         expect(results).toEqual([
             {
+                failed: [],
                 skipped: [],
                 unresolved: [],
                 matched: [
@@ -133,11 +137,43 @@ describe("TmdbMovieExternalImportResolver", () => {
                 ],
             },
             {
+                failed: [],
                 skipped: [],
                 unresolved: [],
                 matched: [{ item: thirdItem, mediaId: 103 }],
             },
         ]);
+    });
+
+    it("fails one item when TMDB resolution throws and continues with the next item", async () => {
+        const failedItem = createItem(1, { name: "Broken movie" });
+        const matchedItem = createItem(2, { name: "Working movie" });
+        const moviesService = {
+            resolveExternalMedia: vi.fn().mockResolvedValue(102),
+        };
+        const moviesProviderService = {
+            search: vi.fn()
+                .mockRejectedValueOnce(new Error("TMDB unavailable"))
+                .mockResolvedValueOnce({
+                    hasNextPage: false,
+                    data: [createSearchResult({ id: 2, name: "Working movie" })],
+                }),
+        };
+        const resolver = new TmdbMovieExternalImportResolver(moviesService as any, moviesProviderService as any);
+
+        const [result] = await collect(resolver.resolve([failedItem, matchedItem]));
+
+        expect(result).toEqual({
+            skipped: [],
+            unresolved: [],
+            matched: [{ item: matchedItem, mediaId: 102 }],
+            failed: [{
+                itemId: failedItem.id,
+                matchedMediaId: null,
+                status: ImportItemStatus.FAILED,
+                statusReason: "Movie API resolution failed: TMDB unavailable",
+            }],
+        });
     });
 });
 

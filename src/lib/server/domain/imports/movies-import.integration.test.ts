@@ -120,4 +120,80 @@ describe("movies import processing", () => {
             status: ImportJobStatus.COMPLETED,
         });
     });
+
+    it("settles external skipped and failed movie rows and completes the import job with errors", async () => {
+        const importService = new ImportService(ImportRepository);
+        const moviesService = new MoviesService(new MoviesRepository());
+        const moviesProviderService = {
+            search: vi.fn()
+                .mockResolvedValueOnce({ hasNextPage: false, data: [] })
+                .mockRejectedValueOnce(new Error("TMDB unavailable")),
+        };
+        const matcherRegistry = new MediaMatcherRegistry();
+        matcherRegistry.register(MediaType.MOVIES, MoviesMatcher.create(moviesService, moviesProviderService as any));
+        const processor = new ImportJobProcessor(importService, matcherRegistry);
+
+        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await ImportRepository.insertParsedItems(job.id, [
+            {
+                rowNumber: 2,
+                name: "Missing Movie",
+                releaseDate: "2024",
+                mediaType: MediaType.MOVIES,
+                statusReason: null,
+                externalApiId: null,
+                externalApiSource: null,
+                payload: { redo: 0, total: 1, status: Status.COMPLETED },
+                status: ImportItemStatus.QUEUED,
+            },
+            {
+                rowNumber: 3,
+                name: "Broken Movie",
+                releaseDate: "2025",
+                mediaType: MediaType.MOVIES,
+                statusReason: null,
+                externalApiId: null,
+                externalApiSource: null,
+                payload: { redo: 0, total: 1, status: Status.COMPLETED },
+                status: ImportItemStatus.QUEUED,
+            },
+        ]);
+        await ImportRepository.markJobQueued(job.id, 2, 0);
+
+        await expect(processor.processNextJob()).resolves.toMatchObject({
+            id: job.id,
+            status: ImportJobStatus.COMPLETED_WITH_ERRORS,
+            failedCount: 1,
+            skippedCount: 1,
+            completedCount: 0,
+            processedCount: 2,
+        });
+
+        const storedListItems = await db.select().from(moviesList).where(eq(moviesList.userId, 42));
+        const storedImportItems = await db.select().from(importItems).where(eq(importItems.jobId, job.id));
+        const [storedJob] = await db.select().from(importJobs).where(eq(importJobs.id, job.id));
+        const [skippedItem, failedItem] = storedImportItems.sort((a, b) => a.rowNumber - b.rowNumber);
+
+        expect(moviesProviderService.search).toHaveBeenCalledTimes(2);
+        expect(storedListItems).toEqual([]);
+        expect(skippedItem).toMatchObject({
+            rowNumber: 2,
+            matchedMediaId: null,
+            status: ImportItemStatus.SKIPPED,
+            statusReason: "Movie API match not found",
+        });
+        expect(failedItem).toMatchObject({
+            rowNumber: 3,
+            matchedMediaId: null,
+            status: ImportItemStatus.FAILED,
+            statusReason: "Movie API resolution failed: TMDB unavailable",
+        });
+        expect(storedJob).toMatchObject({
+            failedCount: 1,
+            skippedCount: 1,
+            completedCount: 0,
+            processedCount: 2,
+            status: ImportJobStatus.COMPLETED_WITH_ERRORS,
+        });
+    });
 });

@@ -7,6 +7,7 @@ import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-pro
 
 const MOVIE_API_MATCH_NOT_FOUND_REASON = "Movie API match not found";
 const MOVIE_API_MATCH_AMBIGUOUS_REASON = "Movie API match is ambiguous";
+const MOVIE_API_RESOLUTION_FAILED_PREFIX = "Movie API resolution failed";
 
 
 export interface MovieExternalImportResolver {
@@ -26,39 +27,44 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
         let batch = this._createEmptyBatch();
 
         for (const item of items) {
-            if (!item.name) {
-                batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_NOT_FOUND_REASON));
-                if (this._shouldFlush(batch)) {
-                    yield batch;
-                    batch = this._createEmptyBatch();
+            try {
+                if (!item.name) {
+                    batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_NOT_FOUND_REASON));
+                    if (this._shouldFlush(batch)) {
+                        yield batch;
+                        batch = this._createEmptyBatch();
+                    }
+                    continue;
                 }
-                continue;
-            }
 
-            const searchResults = await this.moviesProviderService.search(item.name);
-            const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
+                const searchResults = await this.moviesProviderService.search(item.name);
+                const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
 
-            if (candidates.length === 0) {
-                batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_NOT_FOUND_REASON));
-                if (this._shouldFlush(batch)) {
-                    yield batch;
-                    batch = this._createEmptyBatch();
+                if (candidates.length === 0) {
+                    batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_NOT_FOUND_REASON));
+                    if (this._shouldFlush(batch)) {
+                        yield batch;
+                        batch = this._createEmptyBatch();
+                    }
+                    continue;
                 }
-                continue;
-            }
 
-            if (candidates.length > 1) {
-                batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_AMBIGUOUS_REASON));
-                if (this._shouldFlush(batch)) {
-                    yield batch;
-                    batch = this._createEmptyBatch();
+                if (candidates.length > 1) {
+                    batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_AMBIGUOUS_REASON));
+                    if (this._shouldFlush(batch)) {
+                        yield batch;
+                        batch = this._createEmptyBatch();
+                    }
+                    continue;
                 }
-                continue;
-            }
 
-            const [candidate] = candidates;
-            const mediaId = await this.moviesService.resolveExternalMedia(candidate.id, this.moviesProviderService);
-            batch.matched.push({ item, mediaId });
+                const [candidate] = candidates;
+                const mediaId = await this.moviesService.resolveExternalMedia(candidate.id, this.moviesProviderService);
+                batch.matched.push({ item, mediaId });
+            }
+            catch (error) {
+                batch.failed.push(this._createFailedOutcome(item, error));
+            }
 
             if (this._shouldFlush(batch)) {
                 yield batch;
@@ -73,6 +79,7 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
 
     private _createEmptyBatch(): ExternalResolverResult {
         return {
+            failed: [],
             matched: [],
             skipped: [],
             unresolved: [],
@@ -80,11 +87,11 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
     }
 
     private _shouldFlush(batch: ExternalResolverResult) {
-        return batch.matched.length + batch.skipped.length + batch.unresolved.length >= this.resultBatchSize;
+        return batch.matched.length + batch.failed.length + batch.skipped.length + batch.unresolved.length >= this.resultBatchSize;
     }
 
     private _hasResults(batch: ExternalResolverResult) {
-        return batch.matched.length > 0 || batch.skipped.length > 0 || batch.unresolved.length > 0;
+        return batch.matched.length > 0 || batch.failed.length > 0 || batch.skipped.length > 0 || batch.unresolved.length > 0;
     }
 
     private _filterCandidates(candidates: ProviderSearchResult[], releaseDate: string | null) {
@@ -103,6 +110,17 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
             itemId: item.id,
             matchedMediaId: null,
             status: ImportItemStatus.SKIPPED,
+        };
+    }
+
+    private _createFailedOutcome(item: ImportMatcherItem, error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        return {
+            itemId: item.id,
+            matchedMediaId: null,
+            status: ImportItemStatus.FAILED,
+            statusReason: `${MOVIE_API_RESOLUTION_FAILED_PREFIX}: ${errorMessage}`,
         };
     }
 }

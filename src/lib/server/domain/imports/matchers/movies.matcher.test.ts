@@ -20,7 +20,7 @@ describe("MoviesMatcher", () => {
                 .mockResolvedValueOnce([]),
         };
         const externalResolver = {
-            resolve: vi.fn().mockReturnValue(asyncResults([{ skipped: [], matched: [], unresolved: [unresolvedItem] }])),
+            resolve: vi.fn().mockReturnValue(asyncResults([{ failed: [], skipped: [], matched: [], unresolved: [unresolvedItem] }])),
         };
         const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any, externalResolver);
 
@@ -48,6 +48,7 @@ describe("MoviesMatcher", () => {
         };
         const externalResolver = {
             resolve: vi.fn().mockReturnValue(asyncResults([{
+                failed: [],
                 skipped: [],
                 matched: [{ item: externalMatchedItem, mediaId: 201 }],
                 unresolved: [unresolvedItem],
@@ -87,7 +88,7 @@ describe("MoviesMatcher", () => {
             match: vi.fn().mockResolvedValue({ matched: [], unresolved: [skippedItem] }),
         };
         const externalResolver = {
-            resolve: vi.fn().mockReturnValue(asyncResults([{ matched: [], unresolved: [], skipped: [skippedOutcome] }])),
+            resolve: vi.fn().mockReturnValue(asyncResults([{ failed: [], matched: [], unresolved: [], skipped: [skippedOutcome] }])),
         };
         const listWriter = {
             addMatchedItems: vi.fn().mockResolvedValue([]),
@@ -97,6 +98,30 @@ describe("MoviesMatcher", () => {
         const outcomes = await collect(matcher.match({ jobId: 10, userId: 42 }, [skippedItem]));
 
         expect(outcomes).toEqual([[skippedOutcome]]);
+    });
+
+    it("yields failed outcomes returned by the external resolver", async () => {
+        const failedItem = createItem(1);
+        const failedOutcome = {
+            itemId: failedItem.id,
+            matchedMediaId: null,
+            status: ImportItemStatus.FAILED,
+            statusReason: "Movie API resolution failed: TMDB unavailable",
+        } as const;
+        const internalMatcher = {
+            match: vi.fn().mockResolvedValue({ matched: [], unresolved: [failedItem] }),
+        };
+        const externalResolver = {
+            resolve: vi.fn().mockReturnValue(asyncResults([{ failed: [failedOutcome], matched: [], unresolved: [], skipped: [] }])),
+        };
+        const listWriter = {
+            addMatchedItems: vi.fn().mockResolvedValue([]),
+        };
+        const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any, externalResolver);
+
+        const outcomes = await collect(matcher.match({ jobId: 10, userId: 42 }, [failedItem]));
+
+        expect(outcomes).toEqual([[failedOutcome]]);
     });
 
     it("does not yield empty batches", async () => {

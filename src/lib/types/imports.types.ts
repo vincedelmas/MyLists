@@ -55,6 +55,7 @@ export interface MatchedImportItem {
 
 
 export interface ExternalResolverResult {
+    failed: ImportItemOutcome[];
     matched: MatchedImportItem[];
     skipped: ImportItemOutcome[];
     unresolved: ImportMatcherItem[];

@@ -46,6 +46,10 @@ export class MoviesMatcher implements MediaMatcher {
                 yield externalResult.skipped;
             }
 
+            if (externalResult.failed.length > 0) {
+                yield externalResult.failed;
+            }
+
             if (externalResult.unresolved.length > 0) {
                 yield externalResult.unresolved.map((item) => ({
                     itemId: item.id,

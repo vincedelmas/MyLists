@@ -2,6 +2,7 @@ import {z} from "zod";
 import {Command} from "commander";
 import {runTask} from "@/lib/server/tasks/task-runner";
 import {getAllTasks} from "@/lib/server/tasks/registry";
+import {runImportDrainCommand} from "@/cli/import-drain-command";
 
 
 const program = new Command();
@@ -57,6 +58,21 @@ for (const task of tasks) {
         }
     });
 }
+
+
+program
+    .command("import-drain")
+    .description("Drain queued import jobs sequentially")
+    .action(async () => {
+        try {
+            await runImportDrainCommand();
+            process.exit(0);
+        }
+        catch (error) {
+            console.error("Failed to drain imports:", error);
+            process.exit(1);
+        }
+    });
 
 
 if (process.argv.slice(2).length) {

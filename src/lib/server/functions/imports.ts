@@ -1,3 +1,4 @@
+import {ImportJobStatus} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
@@ -11,6 +12,12 @@ export const postCreateImportJob = createServerFn({ method: "POST" })
         const container = await getContainer();
         const importService = container.services.imports;
         const job = await importService.createImportJob(currentUser.id, source, await file.text());
+
+        if (job.status === ImportJobStatus.QUEUED) {
+            void container.services.importDrainStarter
+                .start()
+                .catch((error) => console.error("Failed to start import drain:", error));
+        }
 
         return {
             jobId: job.id,

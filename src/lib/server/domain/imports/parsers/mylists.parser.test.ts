@@ -59,10 +59,9 @@ describe("parseMyListsCsv", () => {
             externalApiSource: ApiProviderType.TMDB,
             payload: {
                 redo: 2,
+                total: 3,
                 rating: 9,
-                redo2: null,
                 favorite: true,
-                currentSeason: null,
                 status: Status.COMPLETED,
             },
         });
@@ -75,6 +74,28 @@ describe("parseMyListsCsv", () => {
                 status: Status.WATCHING,
             },
         });
+    });
+
+    it("fails movie rows that contain non-empty fields from another media type", () => {
+        const headers = [...requiredHeaders, "current_season"];
+        const csv = toCsv(headers, [{
+            format_version: "1",
+            media_type: "movies",
+            external_api_source: "tmdb",
+            external_api_id: "1",
+            name: "Movie",
+            release_date: "2024",
+            status: "Completed",
+            current_season: "1",
+        }]);
+
+        const item = parseMyListsCsv(csv).items[0];
+
+        expect(item).toMatchObject({
+            status: ImportItemStatus.FAILED,
+            mediaType: MediaType.MOVIES,
+        });
+        expect(item.statusReason).toContain("current_season");
     });
 
     it("accepts year and year-month release dates", () => {

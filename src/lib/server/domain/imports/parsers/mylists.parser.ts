@@ -137,6 +137,10 @@ const myListsRowSchema = z.object({
             message: "Name is required when no external API identifier is provided",
         });
     }
+
+    if (row.media_type === MediaType.MOVIES) {
+        assertMoviePayloadShape(row, ctx);
+    }
 });
 
 
@@ -226,6 +230,44 @@ const validateHeaders = (headers: string[]) => {
 
 
 const mapValidRow = (rowNumber: number, headers: string[], row: MyListsRow) => {
+    const payload = row.media_type === MediaType.MOVIES
+        ? buildMoviePayload(headers, row)
+        : buildGenericPayload(headers, row);
+
+    return {
+        payload,
+        rowNumber,
+        name: row.name,
+        statusReason: null,
+        mediaType: row.media_type,
+        releaseDate: row.release_date,
+        status: ImportItemStatus.QUEUED,
+        externalApiId: row.external_api_id,
+        externalApiSource: row.external_api_source,
+    };
+};
+
+
+const buildMoviePayload = (headers: string[], row: MyListsRow) => {
+    const redo = row.redo ?? 0;
+    const total = row.total ?? (row.status === Status.COMPLETED ? 1 + redo : 0);
+    const payload: Record<string, any> = {
+        redo,
+        total,
+        status: row.status,
+    };
+
+    addPayloadField(payload, headers, "rating", row.rating, "rating", { skipNull: true });
+    addPayloadField(payload, headers, "comment", row.comment, "comment", { skipNull: true });
+    addPayloadField(payload, headers, "favorite", row.favorite, "favorite", { skipNull: true });
+    addPayloadField(payload, headers, "added_at", row.added_at, "addedAt", { skipNull: true });
+    addPayloadField(payload, headers, "last_updated", row.last_updated, "lastUpdated", { skipNull: true });
+
+    return payload;
+};
+
+
+const buildGenericPayload = (headers: string[], row: MyListsRow) => {
     const payload: Record<string, any> = { status: row.status };
 
     addPayloadField(payload, headers, "redo", row.redo);
@@ -243,22 +285,42 @@ const mapValidRow = (rowNumber: number, headers: string[], row: MyListsRow) => {
     addPayloadField(payload, headers, "current_episode", row.current_episode, "currentEpisode");
     addPayloadField(payload, headers, "current_chapter", row.current_chapter, "currentChapter");
 
-    return {
-        payload,
-        rowNumber,
-        name: row.name,
-        statusReason: null,
-        mediaType: row.media_type,
-        releaseDate: row.release_date,
-        status: ImportItemStatus.QUEUED,
-        externalApiId: row.external_api_id,
-        externalApiSource: row.external_api_source,
-    };
+    return payload;
 };
 
 
-const addPayloadField = (payload: Record<string, any>, headers: string[], header: string, value: any, payloadKey = header) => {
-    if (headers.includes(header)) {
+const assertMoviePayloadShape = (row: MyListsRow, ctx: z.RefinementCtx) => {
+    const unsupportedMovieFields = [
+        ["redo2", row.redo2],
+        ["platform", row.platform],
+        ["playtime", row.playtime],
+        ["actual_page", row.actual_page],
+        ["current_season", row.current_season],
+        ["current_episode", row.current_episode],
+        ["current_chapter", row.current_chapter],
+    ] as const;
+
+    for (const [field, value] of unsupportedMovieFields) {
+        if (value !== null && value !== undefined) {
+            ctx.addIssue({
+                code: "custom",
+                path: [field],
+                message: "Field is not supported for movies",
+            });
+        }
+    }
+};
+
+
+const addPayloadField = (
+    payload: Record<string, any>,
+    headers: string[],
+    header: string,
+    value: any,
+    payloadKey = header,
+    options: { skipNull?: boolean } = {},
+) => {
+    if (headers.includes(header) && (!options.skipNull || value !== null)) {
         payload[payloadKey] = value;
     }
 };

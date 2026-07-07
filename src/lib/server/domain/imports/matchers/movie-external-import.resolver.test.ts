@@ -1,11 +1,37 @@
 import {describe, expect, it, vi} from "vitest";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ImportMatcherItem} from "@/lib/types/imports.types";
-import {ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 import {TmdbMovieExternalImportResolver} from "@/lib/server/domain/imports/matchers/movie-external-import.resolver";
 
 
 describe("TmdbMovieExternalImportResolver", () => {
+    it("resolves a TMDB external id directly without searching", async () => {
+        const item = createItem(1, {
+            name: "Heat",
+            externalApiId: "949",
+            externalApiSource: ApiProviderType.TMDB,
+        });
+        const moviesService = {
+            resolveExternalMedia: vi.fn().mockResolvedValue(101),
+        };
+        const moviesProviderService = {
+            search: vi.fn(),
+        };
+        const resolver = new TmdbMovieExternalImportResolver(moviesService as any, moviesProviderService as any);
+
+        const [result] = await collect(resolver.resolve([item]));
+
+        expect(moviesProviderService.search).not.toHaveBeenCalled();
+        expect(moviesService.resolveExternalMedia).toHaveBeenCalledWith("949", moviesProviderService);
+        expect(result).toEqual({
+            failed: [],
+            skipped: [],
+            unresolved: [],
+            matched: [{ item, mediaId: 101 }],
+        });
+    });
+
     it("resolves a unique TMDB movie candidate into a matched import item", async () => {
         const item = createItem(1, { name: "Heat", releaseDate: "1995" });
         const moviesService = {

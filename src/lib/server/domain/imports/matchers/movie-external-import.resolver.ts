@@ -1,6 +1,6 @@
-import {ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
+import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportMatcherItem} from "@/lib/types/imports.types";
 import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-provider.service";
 
@@ -28,6 +28,16 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
 
         for (const item of items) {
             try {
+                if (this._hasTmdbExternalId(item)) {
+                    const mediaId = await this.moviesService.resolveExternalMedia(item.externalApiId, this.moviesProviderService);
+                    batch.matched.push({ item, mediaId });
+                    if (this._shouldFlush(batch)) {
+                        yield batch;
+                        batch = this._createEmptyBatch();
+                    }
+                    continue;
+                }
+
                 if (!item.name) {
                     batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_NOT_FOUND_REASON));
                     if (this._shouldFlush(batch)) {
@@ -92,6 +102,10 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
 
     private _hasResults(batch: ExternalResolverResult) {
         return batch.matched.length > 0 || batch.failed.length > 0 || batch.skipped.length > 0 || batch.unresolved.length > 0;
+    }
+
+    private _hasTmdbExternalId(item: ImportMatcherItem): item is ImportMatcherItem & { externalApiId: string } {
+        return item.externalApiSource === ApiProviderType.TMDB && !!item.externalApiId;
     }
 
     private _filterCandidates(candidates: ProviderSearchResult[], releaseDate: string | null) {

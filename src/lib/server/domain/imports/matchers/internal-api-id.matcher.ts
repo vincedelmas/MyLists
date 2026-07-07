@@ -1,12 +1,6 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
-import {ImportMatcherItem} from "@/lib/server/domain/imports/matchers/media-matcher";
-
-
-export interface InternalApiIdMatch {
-    mediaId: number;
-    item: ImportMatcherItem;
-}
+import {ImportMatcherItem, MatchedImportItem} from "@/lib/types/imports.types";
 
 
 export class InternalApiIdMatcher {
@@ -27,7 +21,7 @@ export class InternalApiIdMatcher {
         const mediaRows = await this.mediaService.findByApiIds(uniqueApiIds);
         const mediaIdByApiId = new Map(mediaRows.map((media) => [String(media.apiId), media.id]));
 
-        const matched: InternalApiIdMatch[] = [];
+        const matched: MatchedImportItem[] = [];
         const unresolved: ImportMatcherItem[] = [];
 
         for (const item of items) {

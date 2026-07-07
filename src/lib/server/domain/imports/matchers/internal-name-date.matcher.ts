@@ -1,11 +1,5 @@
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
-import {ImportMatcherItem} from "@/lib/server/domain/imports/matchers/media-matcher";
-
-
-export interface InternalNameDateMatch {
-    mediaId: number;
-    item: ImportMatcherItem;
-}
+import {ImportMatcherItem, MatchedImportItem} from "@/lib/types/imports.types";
 
 
 export class InternalNameDateMatcher {
@@ -30,8 +24,8 @@ export class InternalNameDateMatcher {
             mediaByName.set(trimmedName, nameMatches);
         }
 
+        const matched: MatchedImportItem[] = [];
         const unresolved: ImportMatcherItem[] = [];
-        const matched: InternalNameDateMatch[] = [];
 
         for (const item of items) {
             if (!item.name || !isSupportedReleaseDate(item.releaseDate)) {

@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
+import {ImportMatcherItem} from "@/lib/types/imports.types";
 import {ImportItemStatus, MediaType} from "@/lib/utils/enums";
-import {ImportMatcherItem} from "@/lib/server/domain/imports/matchers/media-matcher";
 import {InternalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 
 

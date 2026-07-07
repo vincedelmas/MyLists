@@ -1,6 +1,6 @@
 import {ApiProviderType} from "@/lib/utils/enums";
+import {ImportMatcherItem} from "@/lib/types/imports.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
-import {ImportMatcherItem} from "@/lib/server/domain/imports/matchers/media-matcher";
 import {InternalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {InternalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 

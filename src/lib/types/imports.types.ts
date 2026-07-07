@@ -1,8 +1,10 @@
+import {importItems} from "@/lib/server/database/schema";
 import {ApiProviderType, ImportItemStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
 
 type ImportParser = (contents: string) => ParsedImport;
 export type ImportParserRegistry = Partial<Record<ImportSource, ImportParser>>;
+export type ImportMatcherItem = Omit<typeof importItems.$inferSelect, "mediaType"> & { mediaType: MediaType };
 
 
 export interface ParsedImportItem {
@@ -43,4 +45,10 @@ export interface ImportJobCounterDelta {
     skippedCount: number;
     completedCount: number;
     processedCount: number;
+}
+
+
+export interface MatchedImportItem {
+    mediaId: number;
+    item: ImportMatcherItem;
 }

@@ -32,12 +32,12 @@ describe("runImportDrainCommand", () => {
         const importProcessor = {};
 
         getContainer.mockResolvedValue({ services: { importProcessor } });
-        drainImportJobs.mockResolvedValue({ processedJobs: 2 });
+        drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 2 });
 
-        await expect(runImportDrainCommand()).resolves.toEqual({ processedJobs: 2 });
+        await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
 
         expect(drainImportJobs).toHaveBeenCalledWith(importProcessor);
-        expect(console.log).toHaveBeenCalledWith("Import drain finished. Processed jobs: 2");
+        expect(console.log).toHaveBeenCalledWith("Import drain finished. Processed jobs: 2. Failed jobs: 0");
         expect(runTask).toHaveBeenCalledWith({
             input: {},
             taskName: "compute-all-users-stats",
@@ -49,10 +49,25 @@ describe("runImportDrainCommand", () => {
         const importProcessor = {};
 
         getContainer.mockResolvedValue({ services: { importProcessor } });
-        drainImportJobs.mockResolvedValue({ processedJobs: 0 });
+        drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 0 });
 
-        await expect(runImportDrainCommand()).resolves.toEqual({ processedJobs: 0 });
+        await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 0, processedJobs: 0 });
 
         expect(runTask).not.toHaveBeenCalled();
+    });
+
+    it("recomputes stats when a job failed during processing", async () => {
+        const importProcessor = {};
+
+        getContainer.mockResolvedValue({ services: { importProcessor } });
+        drainImportJobs.mockResolvedValue({ failedJobs: 1, processedJobs: 0 });
+
+        await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 1, processedJobs: 0 });
+
+        expect(runTask).toHaveBeenCalledWith({
+            input: {},
+            taskName: "compute-all-users-stats",
+            triggeredBy: "cron/cli",
+        });
     });
 });

@@ -2,19 +2,26 @@ import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.process
 
 
 export interface ImportDrainResult {
+    failedJobs: number;
     processedJobs: number;
 }
 
 
 export const drainImportJobs = async (processor: ImportJobProcessor): Promise<ImportDrainResult> => {
+    let failedJobs = 0;
     let processedJobs = 0;
 
     while (true) {
-        const job = await processor.processNextJob();
-        if (!job) break;
+        try {
+            const job = await processor.processNextJob();
+            if (!job) break;
 
-        processedJobs += 1;
+            processedJobs += 1;
+        }
+        catch {
+            failedJobs += 1;
+        }
     }
 
-    return { processedJobs };
+    return { failedJobs, processedJobs };
 };

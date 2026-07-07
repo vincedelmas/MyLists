@@ -12,7 +12,19 @@ describe("drainImportJobs", () => {
                 .mockResolvedValueOnce(null),
         };
 
-        await expect(drainImportJobs(processor as any)).resolves.toEqual({ processedJobs: 2 });
+        await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
+        expect(processor.processNextJob).toHaveBeenCalledTimes(3);
+    });
+
+    it("continues draining after a processor error and counts failed jobs", async () => {
+        const processor = {
+            processNextJob: vi.fn()
+                .mockRejectedValueOnce(new Error("matcher crashed"))
+                .mockResolvedValueOnce({ id: 2, status: ImportJobStatus.COMPLETED })
+                .mockResolvedValueOnce(null),
+        };
+
+        await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 1, processedJobs: 1 });
         expect(processor.processNextJob).toHaveBeenCalledTimes(3);
     });
 
@@ -21,7 +33,7 @@ describe("drainImportJobs", () => {
             processNextJob: vi.fn().mockResolvedValue(null),
         };
 
-        await expect(drainImportJobs(processor as any)).resolves.toEqual({ processedJobs: 0 });
+        await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 0, processedJobs: 0 });
         expect(processor.processNextJob).toHaveBeenCalledTimes(1);
     });
 });

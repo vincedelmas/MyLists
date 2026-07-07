@@ -1,0 +1,21 @@
+[Unit]
+Description=MyLists import drain worker
+After=network.target
+
+[Service]
+Type=exec
+WorkingDirectory=/home/vince/websites/mylists/current
+Environment=NODE_ENV=production
+EnvironmentFile=/home/vince/websites/mylists/current/.env
+ExecStart=/usr/bin/bun /home/vince/websites/mylists/current/dist/cli/index.js import-drain
+
+MemoryMax=512M
+CPUQuota=50%
+Nice=10
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+StandardOutput=journal
+StandardError=journal

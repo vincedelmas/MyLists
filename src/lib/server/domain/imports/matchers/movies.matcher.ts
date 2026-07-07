@@ -36,23 +36,24 @@ export class MoviesMatcher implements MediaMatcher {
             yield completedOutcomes;
         }
 
-        const externalResult = await this.externalResolver.resolve(unresolved);
-        const externalCompletedOutcomes = await this.listWriter.addMatchedItems(context.userId, externalResult.matched);
-        if (externalCompletedOutcomes.length > 0) {
-            yield externalCompletedOutcomes;
-        }
+        for await (const externalResult of this.externalResolver.resolve(unresolved)) {
+            const externalCompletedOutcomes = await this.listWriter.addMatchedItems(context.userId, externalResult.matched);
+            if (externalCompletedOutcomes.length > 0) {
+                yield externalCompletedOutcomes;
+            }
 
-        if (externalResult.skipped.length > 0) {
-            yield externalResult.skipped;
-        }
+            if (externalResult.skipped.length > 0) {
+                yield externalResult.skipped;
+            }
 
-        if (externalResult.unresolved.length > 0) {
-            yield externalResult.unresolved.map((item) => ({
-                itemId: item.id,
-                matchedMediaId: null,
-                status: ImportItemStatus.SKIPPED,
-                statusReason: MATCH_NOT_FOUND_REASON,
-            }));
+            if (externalResult.unresolved.length > 0) {
+                yield externalResult.unresolved.map((item) => ({
+                    itemId: item.id,
+                    matchedMediaId: null,
+                    status: ImportItemStatus.SKIPPED,
+                    statusReason: MATCH_NOT_FOUND_REASON,
+                }));
+            }
         }
     }
 }

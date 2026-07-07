@@ -20,7 +20,7 @@ describe("MoviesMatcher", () => {
                 .mockResolvedValueOnce([]),
         };
         const externalResolver = {
-            resolve: vi.fn().mockResolvedValue({ skipped: [], matched: [], unresolved: [unresolvedItem] }),
+            resolve: vi.fn().mockReturnValue(asyncResults([{ skipped: [], matched: [], unresolved: [unresolvedItem] }])),
         };
         const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any, externalResolver);
 
@@ -47,11 +47,11 @@ describe("MoviesMatcher", () => {
             match: vi.fn().mockResolvedValue({ matched: [], unresolved: [externalMatchedItem, unresolvedItem] }),
         };
         const externalResolver = {
-            resolve: vi.fn().mockResolvedValue({
+            resolve: vi.fn().mockReturnValue(asyncResults([{
                 skipped: [],
                 matched: [{ item: externalMatchedItem, mediaId: 201 }],
                 unresolved: [unresolvedItem],
-            }),
+            }])),
         };
         const listWriter = {
             addMatchedItems: vi.fn()
@@ -87,7 +87,7 @@ describe("MoviesMatcher", () => {
             match: vi.fn().mockResolvedValue({ matched: [], unresolved: [skippedItem] }),
         };
         const externalResolver = {
-            resolve: vi.fn().mockResolvedValue({ matched: [], unresolved: [], skipped: [skippedOutcome] }),
+            resolve: vi.fn().mockReturnValue(asyncResults([{ matched: [], unresolved: [], skipped: [skippedOutcome] }])),
         };
         const listWriter = {
             addMatchedItems: vi.fn().mockResolvedValue([]),
@@ -102,13 +102,15 @@ describe("MoviesMatcher", () => {
     it("does not yield empty batches", async () => {
         const listWriter = { addMatchedItems: vi.fn().mockResolvedValue([]) };
         const internalMatcher = { match: vi.fn().mockResolvedValue({ matched: [], unresolved: [] }) };
+        const externalResolver = { resolve: vi.fn().mockReturnValue(asyncResults([])) };
 
-        const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any);
+        const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any, externalResolver);
 
         await expect(collect(matcher.match({ jobId: 10, userId: 42 }, []))).resolves.toEqual([]);
 
         expect(internalMatcher.match).not.toHaveBeenCalled();
         expect(listWriter.addMatchedItems).not.toHaveBeenCalled();
+        expect(externalResolver.resolve).not.toHaveBeenCalled();
     });
 });
 
@@ -120,6 +122,13 @@ const collect = async <T>(iterable: AsyncIterable<T>) => {
     }
     return values;
 };
+
+
+async function* asyncResults<T>(values: T[]) {
+    for (const value of values) {
+        yield value;
+    }
+}
 
 
 const createItem = (id: number, overrides: Partial<ImportMatcherItem> = {}): ImportMatcherItem => ({

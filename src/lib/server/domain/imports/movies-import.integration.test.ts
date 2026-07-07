@@ -65,7 +65,7 @@ describe("movies import processing", () => {
         const importService = new ImportService(ImportRepository);
         const moviesService = new MoviesService(new MoviesRepository());
         const matcherRegistry = new MediaMatcherRegistry();
-        matcherRegistry.register(MediaType.MOVIES, MoviesMatcher.create(moviesService));
+        matcherRegistry.register(MediaType.MOVIES, MoviesMatcher.create(moviesService, { search: vi.fn() } as any));
         const processor = new ImportJobProcessor(importService, matcherRegistry);
 
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);

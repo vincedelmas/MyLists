@@ -19,7 +19,7 @@ describe("TmdbMovieExternalImportResolver", () => {
         };
         const resolver = new TmdbMovieExternalImportResolver(moviesService as any, moviesProviderService as any);
 
-        const result = await resolver.resolve([item]);
+        const [result] = await collect(resolver.resolve([item]));
 
         expect(moviesProviderService.search).toHaveBeenCalledWith("Heat");
         expect(moviesService.resolveExternalMedia).toHaveBeenCalledWith(949, moviesProviderService);
@@ -46,7 +46,7 @@ describe("TmdbMovieExternalImportResolver", () => {
         };
         const resolver = new TmdbMovieExternalImportResolver(moviesService as any, moviesProviderService as any);
 
-        const result = await resolver.resolve([item]);
+        const [result] = await collect(resolver.resolve([item]));
 
         expect(moviesService.resolveExternalMedia).toHaveBeenCalledWith(2, moviesProviderService);
         expect(result.matched).toEqual([{ item, mediaId: 202 }]);
@@ -65,7 +65,7 @@ describe("TmdbMovieExternalImportResolver", () => {
         };
         const resolver = new TmdbMovieExternalImportResolver({} as any, moviesProviderService as any);
 
-        const result = await resolver.resolve([item]);
+        const [result] = await collect(resolver.resolve([item]));
 
         expect(result).toEqual({
             matched: [],
@@ -89,7 +89,7 @@ describe("TmdbMovieExternalImportResolver", () => {
         };
         const resolver = new TmdbMovieExternalImportResolver({} as any, moviesProviderService as any);
 
-        const result = await resolver.resolve([item]);
+        const [result] = await collect(resolver.resolve([item]));
 
         expect(result).toEqual({
             matched: [],
@@ -102,6 +102,43 @@ describe("TmdbMovieExternalImportResolver", () => {
             }],
         });
     });
+
+    it("yields resolver results in configured batches", async () => {
+        const firstItem = createItem(1, { name: "Movie 1" });
+        const secondItem = createItem(2, { name: "Movie 2" });
+        const thirdItem = createItem(3, { name: "Movie 3" });
+        const moviesService = {
+            resolveExternalMedia: vi.fn()
+                .mockResolvedValueOnce(101)
+                .mockResolvedValueOnce(102)
+                .mockResolvedValueOnce(103),
+        };
+        const moviesProviderService = {
+            search: vi.fn()
+                .mockResolvedValueOnce({ hasNextPage: false, data: [createSearchResult({ id: 1, name: "Movie 1" })] })
+                .mockResolvedValueOnce({ hasNextPage: false, data: [createSearchResult({ id: 2, name: "Movie 2" })] })
+                .mockResolvedValueOnce({ hasNextPage: false, data: [createSearchResult({ id: 3, name: "Movie 3" })] }),
+        };
+        const resolver = new TmdbMovieExternalImportResolver(moviesService as any, moviesProviderService as any, 2);
+
+        const results = await collect(resolver.resolve([firstItem, secondItem, thirdItem]));
+
+        expect(results).toEqual([
+            {
+                skipped: [],
+                unresolved: [],
+                matched: [
+                    { item: firstItem, mediaId: 101 },
+                    { item: secondItem, mediaId: 102 },
+                ],
+            },
+            {
+                skipped: [],
+                unresolved: [],
+                matched: [{ item: thirdItem, mediaId: 103 }],
+            },
+        ]);
+    });
 });
 
 
@@ -113,6 +150,15 @@ const createSearchResult = (overrides: Partial<ProviderSearchResult> = {}): Prov
     itemType: MediaType.MOVIES,
     ...overrides,
 });
+
+
+const collect = async <T>(iterable: AsyncIterable<T>) => {
+    const values: T[] = [];
+    for await (const value of iterable) {
+        values.push(value);
+    }
+    return values;
+};
 
 
 const createItem = (id: number, overrides: Partial<ImportMatcherItem> = {}): ImportMatcherItem => ({

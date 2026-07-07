@@ -52,3 +52,10 @@ export interface MatchedImportItem {
     mediaId: number;
     item: ImportMatcherItem;
 }
+
+
+export interface ExternalResolverResult {
+    matched: MatchedImportItem[];
+    skipped: ImportItemOutcome[];
+    unresolved: ImportMatcherItem[];
+}

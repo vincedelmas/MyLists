@@ -1,7 +1,7 @@
 import {ImportItemOutcome, ImportMatcherItem} from "@/lib/types/imports.types";
 
 
-interface MediaMatcherContext {
+export interface MediaMatcherContext {
     jobId: number;
     userId: number;
 }

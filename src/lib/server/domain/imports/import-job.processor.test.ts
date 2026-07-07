@@ -46,12 +46,32 @@ describe("ImportJobProcessor", () => {
         ]);
         expect(importService.finalizeProcessingJob).toHaveBeenCalledWith(10);
     });
+
+    it("marks the claimed job failed and rethrows when processing crashes", async () => {
+        const movieItem = createItem(1, MediaType.MOVIES);
+        const error = new Error("Matcher missing");
+        const importService = createImportServiceStub();
+        const matcherRegistry = createMatcherRegistryStub();
+
+        importService.claimNextQueuedJob.mockResolvedValue({ id: 10, userId: 42 });
+        importService.getQueuedItemsByMediaType.mockResolvedValue(new Map([[MediaType.MOVIES, [movieItem]]]));
+        importService.markItemsProcessing.mockResolvedValue([{ id: movieItem.id }]);
+        matcherRegistry.get.mockImplementation(() => {
+            throw error;
+        });
+
+        const processor = new ImportJobProcessor(importService as any, matcherRegistry as any);
+
+        await expect(processor.processNextJob()).rejects.toBe(error);
+        expect(importService.markProcessingJobFailed).toHaveBeenCalledWith(10, "Matcher missing");
+    });
 });
 
 
 const createImportServiceStub = () => ({
     applyItemOutcomes: vi.fn(),
     claimNextQueuedJob: vi.fn(),
+    markProcessingJobFailed: vi.fn(),
     markItemsProcessing: vi.fn(),
     finalizeProcessingJob: vi.fn(),
     getQueuedItemsByMediaType: vi.fn(),

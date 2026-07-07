@@ -287,6 +287,23 @@ describe("ImportRepository", () => {
         expect(storedJob?.finishedAt).toBeTruthy();
     });
 
+    it("marks processing failures as terminal and only affects processing jobs", async () => {
+        const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const parsingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+
+        await ImportRepository.markJobQueued(processingJob.id, 0, 0);
+        await ImportRepository.claimNextQueuedJob();
+
+        await expect(ImportRepository.markProcessingJobFailed(parsingJob.id, "Wrong state"))
+            .resolves.toBeNull();
+
+        const failedJob = await ImportRepository.markProcessingJobFailed(processingJob.id, "x".repeat(2_100));
+
+        expect(failedJob).toMatchObject({ status: ImportJobStatus.FAILED });
+        expect(failedJob?.error).toHaveLength(2_000);
+        expect(failedJob?.finishedAt).toBeTruthy();
+    });
+
     it("finds jobs only for their owner and counts processing and earlier queued jobs", async () => {
         const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         const earlierQueuedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);

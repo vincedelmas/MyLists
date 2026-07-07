@@ -29,6 +29,10 @@ export class ImportService {
         return this.repository.finalizeProcessingJob(jobId);
     }
 
+    async markProcessingJobFailed(jobId: number, error: string) {
+        return this.repository.markProcessingJobFailed(jobId, error);
+    }
+
     async markItemsProcessing(jobId: number, itemIds: number[]) {
         return this.repository.markItemsProcessing(jobId, itemIds);
     }

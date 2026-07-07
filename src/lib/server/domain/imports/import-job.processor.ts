@@ -14,21 +14,27 @@ export class ImportJobProcessor {
         const job = await this.importService.claimNextQueuedJob();
         if (!job) return null;
 
-        const context = { jobId: job.id, userId: job.userId };
-        const groups = await this.importService.getQueuedItemsByMediaType(job.id);
+        try {
+            const context = { jobId: job.id, userId: job.userId };
+            const groups = await this.importService.getQueuedItemsByMediaType(job.id);
 
-        for (const [mediaType, queuedItems] of groups) {
-            const matcherItems = queuedItems.map((item) => ({ ...item, mediaType }));
-            const processingItems = await this._markGroupProcessing(job.id, matcherItems);
-            if (processingItems.length === 0) continue;
+            for (const [mediaType, queuedItems] of groups) {
+                const matcherItems = queuedItems.map((item) => ({ ...item, mediaType }));
+                const processingItems = await this._markGroupProcessing(job.id, matcherItems);
+                if (processingItems.length === 0) continue;
 
-            const matcher = this.matcherRegistry.get(mediaType);
-            for await (const outcomes of matcher.match(context, processingItems)) {
-                await this.importService.applyItemOutcomes(job.id, outcomes);
+                const matcher = this.matcherRegistry.get(mediaType);
+                for await (const outcomes of matcher.match(context, processingItems)) {
+                    await this.importService.applyItemOutcomes(job.id, outcomes);
+                }
             }
-        }
 
-        return this.importService.finalizeProcessingJob(job.id);
+            return this.importService.finalizeProcessingJob(job.id);
+        }
+        catch (error) {
+            await this.importService.markProcessingJobFailed(job.id, getErrorMessage(error));
+            throw error;
+        }
     }
 
     private async _markGroupProcessing(jobId: number, queuedItems: ImportMatcherItem[]) {
@@ -38,3 +44,8 @@ export class ImportJobProcessor {
         return queuedItems.filter(item => markedIds.has(item.id));
     }
 }
+
+
+const getErrorMessage = (error: unknown) => {
+    return error instanceof Error ? error.message : String(error);
+};

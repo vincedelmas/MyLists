@@ -17,6 +17,21 @@ const TERMINAL_JOB_STATUSES = [
 
 
 export class ImportRepository {
+    static async markProcessingJobFailed(jobId: number, error: string) {
+        const [job] = await getDbClient()
+            .update(importJobs)
+            .set({
+                error: error.slice(0, 2_000),
+                status: ImportJobStatus.FAILED,
+                updatedAt: sql`datetime('now')`,
+                finishedAt: sql`datetime('now')`,
+            })
+            .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)))
+            .returning();
+
+        return job ?? null;
+    }
+
     static async finalizeProcessingJob(jobId: number) {
         const db = getDbClient();
 

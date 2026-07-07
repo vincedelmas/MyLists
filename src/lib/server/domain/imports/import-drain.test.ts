@@ -1,0 +1,27 @@
+import {describe, expect, it, vi} from "vitest";
+import {ImportJobStatus} from "@/lib/utils/enums";
+import {drainImportJobs} from "@/lib/server/domain/imports/import-drain";
+
+
+describe("drainImportJobs", () => {
+    it("processes jobs sequentially until no queued job is claimed", async () => {
+        const processor = {
+            processNextJob: vi.fn()
+                .mockResolvedValueOnce({ id: 1, status: ImportJobStatus.COMPLETED })
+                .mockResolvedValueOnce({ id: 2, status: ImportJobStatus.COMPLETED_WITH_ERRORS })
+                .mockResolvedValueOnce(null),
+        };
+
+        await expect(drainImportJobs(processor as any)).resolves.toEqual({ processedJobs: 2 });
+        expect(processor.processNextJob).toHaveBeenCalledTimes(3);
+    });
+
+    it("returns zero when there is no queued job", async () => {
+        const processor = {
+            processNextJob: vi.fn().mockResolvedValue(null),
+        };
+
+        await expect(drainImportJobs(processor as any)).resolves.toEqual({ processedJobs: 0 });
+        expect(processor.processNextJob).toHaveBeenCalledTimes(1);
+    });
+});

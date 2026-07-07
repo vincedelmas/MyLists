@@ -33,7 +33,7 @@ async function initContainer(): Promise<AppContainer> {
     const adminService = setupAdminModule();
     const mediaModule = setupMediaModule(apiModule);
     const userModule = setupUserModule(mediaModule.mediaServiceRegistry);
-    const importModule = setupImportModule(mediaModule.mediaServiceRegistry);
+    const importModule = setupImportModule(mediaModule.mediaServiceRegistry, mediaModule.mediaProviderServiceRegistry);
 
     return {
         cacheManager,

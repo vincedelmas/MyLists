@@ -20,7 +20,7 @@ describe("MoviesMatcher", () => {
                 .mockResolvedValueOnce([]),
         };
         const externalResolver = {
-            resolve: vi.fn().mockResolvedValue({ matched: [], unresolved: [unresolvedItem] }),
+            resolve: vi.fn().mockResolvedValue({ skipped: [], matched: [], unresolved: [unresolvedItem] }),
         };
         const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any, externalResolver);
 
@@ -48,6 +48,7 @@ describe("MoviesMatcher", () => {
         };
         const externalResolver = {
             resolve: vi.fn().mockResolvedValue({
+                skipped: [],
                 matched: [{ item: externalMatchedItem, mediaId: 201 }],
                 unresolved: [unresolvedItem],
             }),
@@ -72,6 +73,30 @@ describe("MoviesMatcher", () => {
                 statusReason: "No movie match found",
             }],
         ]);
+    });
+
+    it("yields skipped outcomes returned by the external resolver", async () => {
+        const skippedItem = createItem(1);
+        const skippedOutcome = {
+            itemId: skippedItem.id,
+            matchedMediaId: null,
+            status: ImportItemStatus.SKIPPED,
+            statusReason: "Movie API match is ambiguous",
+        } as const;
+        const internalMatcher = {
+            match: vi.fn().mockResolvedValue({ matched: [], unresolved: [skippedItem] }),
+        };
+        const externalResolver = {
+            resolve: vi.fn().mockResolvedValue({ matched: [], unresolved: [], skipped: [skippedOutcome] }),
+        };
+        const listWriter = {
+            addMatchedItems: vi.fn().mockResolvedValue([]),
+        };
+        const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any, externalResolver);
+
+        const outcomes = await collect(matcher.match({ jobId: 10, userId: 42 }, [skippedItem]));
+
+        expect(outcomes).toEqual([[skippedOutcome]]);
     });
 
     it("does not yield empty batches", async () => {

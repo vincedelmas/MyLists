@@ -2,20 +2,24 @@ import {serverEnv} from "@/env/server";
 import {MediaType} from "@/lib/utils/enums";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
-import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {MoviesMatcher} from "@/lib/server/domain/imports/matchers/movies.matcher";
 import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
+import {MediaProviderServiceRegistry, MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {NoopImportDrainStarter, SystemdImportDrainStarter} from "@/lib/server/domain/imports/import-drain.starter";
 
 
-export function setupImportModule(mediaServiceRegistry: typeof MediaServiceRegistry) {
+export function setupImportModule(
+    mediaServiceRegistry: typeof MediaServiceRegistry,
+    mediaProviderServiceRegistry: typeof MediaProviderServiceRegistry,
+) {
     const importRepository = ImportRepository;
     const importService = new ImportService(importRepository);
 
     const importMatcherRegistry = new MediaMatcherRegistry();
     const moviesService = mediaServiceRegistry.getService(MediaType.MOVIES);
-    importMatcherRegistry.register(MediaType.MOVIES, MoviesMatcher.create(moviesService));
+    const moviesProviderService = mediaProviderServiceRegistry.getService(MediaType.MOVIES);
+    importMatcherRegistry.register(MediaType.MOVIES, MoviesMatcher.create(moviesService, moviesProviderService));
     const importProcessor = new ImportJobProcessor(importService, importMatcherRegistry);
     
     const importDrainStarter = serverEnv.IMPORT_DRAIN_AUTO_START

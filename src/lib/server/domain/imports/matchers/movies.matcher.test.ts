@@ -15,21 +15,61 @@ describe("MoviesMatcher", () => {
             }),
         };
         const listWriter = {
-            addMatchedItems: vi.fn().mockResolvedValue([{ itemId: 1, matchedMediaId: 101, status: ImportItemStatus.COMPLETED }]),
+            addMatchedItems: vi.fn()
+                .mockResolvedValueOnce([{ itemId: 1, matchedMediaId: 101, status: ImportItemStatus.COMPLETED }])
+                .mockResolvedValueOnce([]),
         };
-        const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any);
+        const externalResolver = {
+            resolve: vi.fn().mockResolvedValue({ matched: [], unresolved: [unresolvedItem] }),
+        };
+        const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any, externalResolver);
 
         const outcomes = await collect(matcher.match({ jobId: 10, userId: 42 }, [matchedItem, unresolvedItem]));
 
         expect(internalMatcher.match).toHaveBeenCalledWith([matchedItem, unresolvedItem]);
         expect(listWriter.addMatchedItems).toHaveBeenCalledWith(42, [{ item: matchedItem, mediaId: 101 }]);
+        expect(externalResolver.resolve).toHaveBeenCalledWith([unresolvedItem]);
         expect(outcomes).toEqual([
             [{ itemId: 1, matchedMediaId: 101, status: ImportItemStatus.COMPLETED }],
             [{
                 itemId: 2,
                 matchedMediaId: null,
                 status: ImportItemStatus.SKIPPED,
-                statusReason: "No internal movie match found",
+                statusReason: "No movie match found",
+            }],
+        ]);
+    });
+
+    it("adds externally resolved movies before skipping remaining unresolved items", async () => {
+        const externalMatchedItem = createItem(1);
+        const unresolvedItem = createItem(2);
+        const internalMatcher = {
+            match: vi.fn().mockResolvedValue({ matched: [], unresolved: [externalMatchedItem, unresolvedItem] }),
+        };
+        const externalResolver = {
+            resolve: vi.fn().mockResolvedValue({
+                matched: [{ item: externalMatchedItem, mediaId: 201 }],
+                unresolved: [unresolvedItem],
+            }),
+        };
+        const listWriter = {
+            addMatchedItems: vi.fn()
+                .mockResolvedValueOnce([])
+                .mockResolvedValueOnce([{ itemId: 1, matchedMediaId: 201, status: ImportItemStatus.COMPLETED }]),
+        };
+        const matcher = new MoviesMatcher(internalMatcher as any, listWriter as any, externalResolver);
+
+        const outcomes = await collect(matcher.match({ jobId: 10, userId: 42 }, [externalMatchedItem, unresolvedItem]));
+
+        expect(listWriter.addMatchedItems).toHaveBeenNthCalledWith(1, 42, []);
+        expect(listWriter.addMatchedItems).toHaveBeenNthCalledWith(2, 42, [{ item: externalMatchedItem, mediaId: 201 }]);
+        expect(outcomes).toEqual([
+            [{ itemId: 1, matchedMediaId: 201, status: ImportItemStatus.COMPLETED }],
+            [{
+                itemId: 2,
+                matchedMediaId: null,
+                status: ImportItemStatus.SKIPPED,
+                statusReason: "No movie match found",
             }],
         ]);
     });

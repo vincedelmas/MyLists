@@ -4,15 +4,17 @@ import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
 import {MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher";
 import {MoviesImportListWriter} from "@/lib/server/domain/imports/list-writers/movies-import-list.writer";
+import {MovieExternalImportResolver, NoopMovieExternalImportResolver} from "@/lib/server/domain/imports/matchers/movie-external-import.resolver";
 
 
-const INTERNAL_MATCH_NOT_FOUND_REASON = "No internal movie match found";
+const MATCH_NOT_FOUND_REASON = "No movie match found";
 
 
 export class MoviesMatcher implements MediaMatcher {
     constructor(
         private internalMatcher: InternalMediaMatcher,
         private listWriter: MoviesImportListWriter,
+        private externalResolver: MovieExternalImportResolver = new NoopMovieExternalImportResolver(),
     ) {
     }
 
@@ -32,12 +34,18 @@ export class MoviesMatcher implements MediaMatcher {
             yield completedOutcomes;
         }
 
-        if (unresolved.length > 0) {
-            yield unresolved.map((item) => ({
+        const externalResult = await this.externalResolver.resolve(unresolved);
+        const externalCompletedOutcomes = await this.listWriter.addMatchedItems(context.userId, externalResult.matched);
+        if (externalCompletedOutcomes.length > 0) {
+            yield externalCompletedOutcomes;
+        }
+
+        if (externalResult.unresolved.length > 0) {
+            yield externalResult.unresolved.map((item) => ({
                 itemId: item.id,
                 matchedMediaId: null,
                 status: ImportItemStatus.SKIPPED,
-                statusReason: INTERNAL_MATCH_NOT_FOUND_REASON,
+                statusReason: MATCH_NOT_FOUND_REASON,
             }));
         }
     }

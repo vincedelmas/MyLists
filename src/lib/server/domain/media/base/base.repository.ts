@@ -13,8 +13,8 @@ import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {ExpandedListFilters, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData} from "@/lib/types/media-list.types";
 import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user} from "@/lib/server/database/schema";
+import {ExpandedListFilters, ExportMediaList, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData} from "@/lib/types/media-list.types";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
 
 
@@ -496,20 +496,19 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         };
     }
 
-    async downloadMediaListAsCSV(userId: number): Promise<(TConfig["listTable"]["$inferSelect"] & { mediaName: string, apiId: string | number })[] | undefined> {
+    async downloadMediaListAsCSV(userId: number): Promise<(TConfig["listTable"]["$inferSelect"] & ExportMediaList)[] | undefined> {
         const { mediaTable, listTable } = this.config;
 
-        const data = await getDbClient()
+        return getDbClient()
             .select({
                 apiId: sql<string>`${mediaTable.apiId}`,
                 mediaName: sql<string>`${mediaTable.name}`,
+                releaseDate: sql<string | null>`${mediaTable.releaseDate}`,
                 ...getTableColumns(listTable),
             })
             .from(listTable)
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
             .where(eq(listTable.userId, userId));
-
-        return data;
     }
 
     async getUserFollowsMediaData(userId: number | undefined, mediaId: number): Promise<UserFollowsMediaData<TConfig["listTable"]["$inferSelect"]>[]> {

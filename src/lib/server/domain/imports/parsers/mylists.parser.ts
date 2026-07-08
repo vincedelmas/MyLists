@@ -312,14 +312,7 @@ const assertMoviePayloadShape = (row: MyListsRow, ctx: z.RefinementCtx) => {
 };
 
 
-const addPayloadField = (
-    payload: Record<string, any>,
-    headers: string[],
-    header: string,
-    value: any,
-    payloadKey = header,
-    options: { skipNull?: boolean } = {},
-) => {
+const addPayloadField = (payload: Record<string, any>, headers: string[], header: string, value: any, payloadKey = header, options: { skipNull?: boolean } = {}) => {
     if (headers.includes(header) && (!options.skipNull || value !== null)) {
         payload[payloadKey] = value;
     }

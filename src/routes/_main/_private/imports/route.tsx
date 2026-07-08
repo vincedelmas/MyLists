@@ -6,12 +6,14 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {Pagination} from "@/lib/client/components/general/Pagination";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {importJobIssuesOptions, importJobOptions} from "@/lib/client/react-query/query-options/imports.options";
 import {AlertTriangle, CheckCircle2, Clock3, FileSpreadsheet, ListRestart, RefreshCw, Trash2, UploadCloud} from "lucide-react";
 import {useCreateImportJobMutation, useDeleteImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
 export const Route = createFileRoute("/_main/_private/imports")({
@@ -164,6 +166,7 @@ function ActiveImportJobStatus({ jobId }: { jobId: number }) {
 
 
 function ActiveImportJob({ jobId, onDeleted }: { jobId: number; onDeleted: () => void }) {
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const deleteMutation = useDeleteImportJobMutation(jobId);
     const { data: job, refetch, isFetching } = useSuspenseQuery(importJobOptions(jobId));
 
@@ -177,7 +180,10 @@ function ActiveImportJob({ jobId, onDeleted }: { jobId: number; onDeleted: () =>
         if (deleteMutation.isPending) return;
 
         deleteMutation.mutate({ data: { jobId } }, {
-            onSuccess: onDeleted,
+            onSuccess: () => {
+                setConfirmDeleteOpen(false);
+                onDeleted();
+            },
         });
     };
 
@@ -200,7 +206,7 @@ function ActiveImportJob({ jobId, onDeleted }: { jobId: number; onDeleted: () =>
                         Refresh
                     </Button>
                     {isTerminal &&
-                        <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleteMutation.isPending}>
+                        <Button variant="destructive" size="sm" onClick={() => setConfirmDeleteOpen(true)} disabled={deleteMutation.isPending}>
                             <Trash2 className="size-4"/>
                             Delete
                         </Button>
@@ -232,6 +238,25 @@ function ActiveImportJob({ jobId, onDeleted }: { jobId: number; onDeleted: () =>
                     {job.error}
                 </div>
             }
+            <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete import job #{jobId}?</DialogTitle>
+                        <DialogDescription>
+                            This removes the finished job and every imported row attached to it. If there are skipped or failed rows,
+                            they will disappear from this review screen.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)} disabled={deleteMutation.isPending}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+                            {deleteMutation.isPending ? "Deleting..." : "Delete job"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
@@ -253,7 +278,18 @@ function ImportJobIssues({ jobId, page }: { jobId: number; page: number }) {
 
 
 function ImportJobIssuesTable({ jobId, page }: { jobId: number; page: number }) {
+    const navigate = Route.useNavigate();
     const issueQuery = useSuspenseQuery(importJobIssuesOptions(jobId, { page, perPage: 25 }));
+
+    const handlePageChange = (nextPage: number) => {
+        void navigate({
+            search: (current) => ({
+                ...current,
+                page: nextPage,
+                jobId,
+            }),
+        });
+    };
 
     return (
         <Card className="mt-6">
@@ -295,6 +331,11 @@ function ImportJobIssuesTable({ jobId, page }: { jobId: number; page: number }) 
                         ))}
                     </TableBody>
                 </Table>
+                <Pagination
+                    currentPage={issueQuery.data.page}
+                    totalPages={issueQuery.data.pages}
+                    onChangePage={handlePageChange}
+                />
             </CardContent>
         </Card>
     );

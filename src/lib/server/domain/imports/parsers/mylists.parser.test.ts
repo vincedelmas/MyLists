@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
-import {MYLISTS_CSV_REQUIRED_HEADERS, MyListsCsvFileError, parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {MYLISTS_CSV_MAX_ROWS, MYLISTS_CSV_REQUIRED_HEADERS, MyListsCsvFileError, parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 
 
 const requiredHeaders = [...MYLISTS_CSV_REQUIRED_HEADERS];
@@ -212,5 +212,20 @@ describe("parseMyListsCsv", () => {
     it("rejects malformed CSV as a file-level error", () => {
         expect(() => parseMyListsCsv(`${requiredHeaders.join(",")}\n"unterminated`))
             .toThrow(MyListsCsvFileError);
+    });
+
+    it("rejects CSV files above the row limit as a file-level error", () => {
+        const rows = Array.from({ length: MYLISTS_CSV_MAX_ROWS + 1 }, (_, idx) => ({
+            format_version: "1",
+            media_type: "movies",
+            external_api_source: "tmdb",
+            external_api_id: String(idx + 1),
+            name: `Movie ${idx + 1}`,
+            release_date: "2024",
+            status: "Completed",
+        }));
+
+        expect(() => parseMyListsCsv(toCsv(requiredHeaders, rows)))
+            .toThrow(`Maximum is ${MYLISTS_CSV_MAX_ROWS}`);
     });
 });

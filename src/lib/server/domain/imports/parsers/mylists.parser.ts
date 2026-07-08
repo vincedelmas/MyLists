@@ -5,6 +5,7 @@ import {ApiProviderType, GamesPlatformsEnum, ImportItemStatus, MediaType, Status
 
 
 export const MYLISTS_CSV_VERSION = "1";
+export const MYLISTS_CSV_MAX_ROWS = 3000;
 
 
 export const MYLISTS_CSV_REQUIRED_HEADERS = [
@@ -166,6 +167,10 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
 
     if (rows.length === 0) {
         throw new MyListsCsvFileError("The CSV file contains no import rows");
+    }
+
+    if (rows.length > MYLISTS_CSV_MAX_ROWS) {
+        throw new MyListsCsvFileError(`The CSV file contains too many import rows. Maximum is ${MYLISTS_CSV_MAX_ROWS}.`);
     }
 
     const items = rows.map((cells, idx) => {

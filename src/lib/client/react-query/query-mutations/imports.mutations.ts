@@ -3,15 +3,11 @@ import {postCreateImportJob, postDeleteImportJob} from "@/lib/server/functions/i
 import {finishedImportJobsOptions, importJobOptions} from "@/lib/client/react-query/query-options/imports.options";
 
 
-export const useCreateImportJobMutation = (meta?: MutationMeta) => {
+export const useCreateImportJobMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: ({ data }: { data: FormData }) => postCreateImportJob({ data }),
-        meta: {
-            successToastMessage: "Import job created.",
-            ...meta,
-        },
         onSuccess: async (job) => {
             await queryClient.invalidateQueries({ queryKey: importJobOptions(job.jobId).queryKey });
             await queryClient.invalidateQueries({ queryKey: finishedImportJobsOptions.queryKey });

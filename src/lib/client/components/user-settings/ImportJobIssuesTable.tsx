@@ -21,7 +21,7 @@ export function ImportJobIssuesTable({ jobId, page }: ImportJobIssuesTableProps)
     const issueQuery = useSuspenseQuery(importJobIssuesOptions(jobId, { page, perPage: 25 }));
 
     const handlePageChange = (nextPage: number) => {
-        void navigate({ search: prev => ({ ...prev, page: nextPage, jobId, resetScroll: false }) });
+        void navigate({ search: prev => ({ ...prev, page: nextPage, jobId }), resetScroll: false });
     };
 
     return (

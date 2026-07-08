@@ -36,3 +36,8 @@ export const importJobIdSchema = z.object({
 export const importJobIssuesSchema = paginationSchema.extend({
     jobId: coercedPositiveIntFieldSchema,
 });
+
+
+export const importSearchSchema = paginationSchema.extend({
+    jobId: coercedPositiveIntFieldSchema.optional(),
+});

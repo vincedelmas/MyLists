@@ -3,7 +3,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {importItems, importJobs} from "@/lib/server/database/schema";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 import {ImportItemOutcome, ImportJobCounterDelta, ParsedImportItem} from "@/lib/types/imports.types";
-import {and, asc, count, eq, exists, getTableColumns, inArray, lt, notExists, or, sql} from "drizzle-orm";
+import {and, asc, count, desc, eq, exists, getTableColumns, inArray, lt, notExists, or, sql} from "drizzle-orm";
 
 
 const INSERT_BATCH_SIZE = 300;
@@ -221,6 +221,31 @@ export class ImportRepository {
             .from(importJobs)
             .where(and(eq(importJobs.id, jobId), eq(importJobs.userId, userId)))
             .get();
+    }
+
+    static async getTerminalJobsForUser(userId: number) {
+        return getDbClient()
+            .select({
+                id: importJobs.id,
+                error: importJobs.error,
+                source: importJobs.source,
+                status: importJobs.status,
+                createdAt: importJobs.createdAt,
+                updatedAt: importJobs.updatedAt,
+                startedAt: importJobs.startedAt,
+                finishedAt: importJobs.finishedAt,
+                totalCount: importJobs.totalCount,
+                failedCount: importJobs.failedCount,
+                skippedCount: importJobs.skippedCount,
+                completedCount: importJobs.completedCount,
+                processedCount: importJobs.processedCount,
+            })
+            .from(importJobs)
+            .where(and(
+                eq(importJobs.userId, userId),
+                inArray(importJobs.status, TERMINAL_JOB_STATUSES),
+            ))
+            .orderBy(desc(importJobs.finishedAt), desc(importJobs.createdAt), desc(importJobs.id));
     }
 
     static async countJobsAhead(job: typeof importJobs.$inferSelect) {

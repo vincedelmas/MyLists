@@ -101,6 +101,10 @@ export class ImportService {
         return { job, jobsAhead };
     }
 
+    async getFinishedImportJobs(userId: number) {
+        return this.repository.getTerminalJobsForUser(userId);
+    }
+
     async deleteImportJob(userId: number, jobId: number) {
         const deletedJob = await this.repository.deleteTerminalJob(jobId, userId);
         if (deletedJob) return deletedJob;

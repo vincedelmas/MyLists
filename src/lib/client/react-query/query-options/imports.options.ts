@@ -1,6 +1,12 @@
 import {Pagination} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
-import {getImportJob, getImportJobIssues} from "@/lib/server/functions/imports";
+import {getFinishedImportJobs, getImportJob, getImportJobIssues} from "@/lib/server/functions/imports";
+
+
+export const finishedImportJobsOptions = queryOptions({
+    queryKey: ["imports", "jobs", "finished"] as const,
+    queryFn: () => getFinishedImportJobs(),
+});
 
 
 export const importJobOptions = (jobId: number, enabled = true) => queryOptions({

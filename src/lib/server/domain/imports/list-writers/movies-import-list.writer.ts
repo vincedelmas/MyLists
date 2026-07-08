@@ -1,7 +1,7 @@
 import {ImportItemStatus} from "@/lib/utils/enums";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
-import {MoviesListInsert} from "@/lib/server/domain/media/movies/movies.types";
+import {MoviesListImportInsert, MoviesListInsert} from "@/lib/server/domain/media/movies/movies.types";
 
 
 export class MoviesImportListWriter {
@@ -11,11 +11,15 @@ export class MoviesImportListWriter {
     async addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]> {
         if (matches.length === 0) return [];
 
-        const userMovies = matches.map(({ item, mediaId }) => ({
-            userId,
-            mediaId,
-            ...item.payload,
-        }) as MoviesListInsert);
+        const userMovies = matches.map(({ item, mediaId }) => {
+            const payload = item.payload as MoviesListImportInsert;
+
+            return ({
+                userId,
+                mediaId,
+                ...payload,
+            }) satisfies MoviesListInsert;
+        });
 
         await this.moviesService.bulkInsertUserMedia(userMovies);
 

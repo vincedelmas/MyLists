@@ -7,6 +7,7 @@ export type Movie = typeof movies.$inferSelect;
 
 export type MoviesList = typeof moviesList.$inferSelect;
 export type MoviesListInsert = typeof moviesList.$inferInsert;
+export type MoviesListImportInsert = Omit<MoviesListInsert, "id" | "userId" | "mediaId">
 
 export type MoviesAchCodeName = typeof moviesAchievements[number]["codeName"];
 

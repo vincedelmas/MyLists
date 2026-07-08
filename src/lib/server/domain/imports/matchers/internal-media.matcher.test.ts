@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
-import {ImportMatcherItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
 
@@ -44,7 +44,7 @@ describe("InternalMediaMatcher", () => {
 });
 
 
-const createItem = (id: number, overrides: Partial<ImportMatcherItem> = {}): ImportMatcherItem => ({
+const createItem = (id: number, overrides: Partial<ImportItemsSelect> = {}): ImportItemsSelect => ({
     id,
     jobId: 1,
     rowNumber: id + 1,

@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
-import {ImportMatcherItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 import {TmdbMovieExternalImportResolver} from "@/lib/server/domain/imports/matchers/movie-external-import.resolver";
 
@@ -223,7 +223,7 @@ const collect = async <T>(iterable: AsyncIterable<T>) => {
 };
 
 
-const createItem = (id: number, overrides: Partial<ImportMatcherItem> = {}): ImportMatcherItem => ({
+const createItem = (id: number, overrides: Partial<ImportItemsSelect> = {}): ImportItemsSelect => ({
     id,
     jobId: 10,
     rowNumber: id + 1,

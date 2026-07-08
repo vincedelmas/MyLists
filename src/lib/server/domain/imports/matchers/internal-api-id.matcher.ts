@@ -1,6 +1,6 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
-import {ImportMatcherItem, MatchedImportItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
 
 
 export class InternalApiIdMatcher {
@@ -10,7 +10,7 @@ export class InternalApiIdMatcher {
     ) {
     }
 
-    async match(items: ImportMatcherItem[]) {
+    async match(items: ImportItemsSelect[]) {
         const candidates = items.filter((item) => item.externalApiSource === this.expectedProvider && item.externalApiId);
 
         if (candidates.length === 0) {
@@ -22,7 +22,7 @@ export class InternalApiIdMatcher {
         const mediaIdByApiId = new Map(mediaRows.map((media) => [String(media.apiId), media.id]));
 
         const matched: MatchedImportItem[] = [];
-        const unresolved: ImportMatcherItem[] = [];
+        const unresolved: ImportItemsSelect[] = [];
 
         for (const item of items) {
             const mediaId = item.externalApiSource === this.expectedProvider && item.externalApiId

@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
-import {ImportMatcherItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 import {MoviesMatcher} from "@/lib/server/domain/imports/matchers/movies.matcher";
 
@@ -156,7 +156,7 @@ async function* asyncResults<T>(values: T[]) {
 }
 
 
-const createItem = (id: number, overrides: Partial<ImportMatcherItem> = {}): ImportMatcherItem => ({
+const createItem = (id: number, overrides: Partial<ImportItemsSelect> = {}): ImportItemsSelect => ({
     id,
     jobId: 10,
     rowNumber: id + 1,

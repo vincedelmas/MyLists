@@ -1,4 +1,4 @@
-import {ImportItemOutcome, ImportMatcherItem} from "@/lib/types/imports.types";
+import {ImportItemOutcome, ImportItemsSelect} from "@/lib/types/imports.types";
 
 
 export interface MediaMatcherContext {
@@ -8,5 +8,5 @@ export interface MediaMatcherContext {
 
 
 export interface MediaMatcher {
-    match(context: MediaMatcherContext, items: ImportMatcherItem[]): AsyncIterable<ImportItemOutcome[]>;
+    match(context: MediaMatcherContext, items: ImportItemsSelect[]): AsyncIterable<ImportItemOutcome[]>;
 }

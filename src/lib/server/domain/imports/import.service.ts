@@ -2,7 +2,7 @@ import {notFound} from "@tanstack/react-router";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
-import {ImportItemOutcome, ImportParserRegistry} from "@/lib/types/imports.types";
+import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry} from "@/lib/types/imports.types";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
@@ -71,7 +71,7 @@ export class ImportService {
 
     async getQueuedItemsByMediaType(jobId: number) {
         const items = await this.repository.getQueuedItemsForProcessingJob(jobId);
-        const groups = new Map<MediaType, (typeof items)[number][]>();
+        const groups = new Map<MediaType, ImportItemsSelect[]>();
 
         for (const item of items) {
             if (!item.mediaType) {
@@ -79,7 +79,7 @@ export class ImportService {
             }
 
             const group = groups.get(item.mediaType) ?? [];
-            group.push(item);
+            group.push(item as ImportItemsSelect);
             groups.set(item.mediaType, group);
         }
 
@@ -120,9 +120,7 @@ export class ImportService {
 
         try {
             const parser = this.parsers[source];
-            if (!parser) {
-                throw new Error(`Import source "${source}" is not supported yet`);
-            }
+            if (!parser) throw new Error(`Import source "${source}" is not supported yet`);
 
             const parsed = parser(contents);
             const queuedJob = await withTransaction(async () => {

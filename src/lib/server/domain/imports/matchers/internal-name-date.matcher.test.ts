@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
-import {ImportMatcherItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {InternalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 
@@ -62,7 +62,7 @@ describe("InternalNameDateMatcher", () => {
 });
 
 
-const createItem = (id: number, overrides: Partial<ImportMatcherItem> = {}): ImportMatcherItem => ({
+const createItem = (id: number, overrides: Partial<ImportItemsSelect> = {}): ImportItemsSelect => ({
     id,
     jobId: 1,
     rowNumber: id + 1,

@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
-import {ImportMatcherItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
 import {ImportItemStatus, ImportJobStatus, MediaType, Status} from "@/lib/utils/enums";
 
@@ -23,7 +23,7 @@ describe("ImportJobProcessor", () => {
         const finalJob = { id: 10, status: ImportJobStatus.COMPLETED };
         const importService = createImportServiceStub();
         const matcher = {
-            match: vi.fn().mockImplementation(async function* (_context, items: ImportMatcherItem[]) {
+            match: vi.fn().mockImplementation(async function* (_context, items: ImportItemsSelect[]) {
                 yield [{ itemId: items[0].id, status: ImportItemStatus.COMPLETED, matchedMediaId: 101 }];
             }),
         };
@@ -83,7 +83,7 @@ const createMatcherRegistryStub = () => ({
 });
 
 
-const createItem = (id: number, mediaType: MediaType): ImportMatcherItem => ({
+const createItem = (id: number, mediaType: MediaType): ImportItemsSelect => ({
     id,
     jobId: 10,
     mediaType,

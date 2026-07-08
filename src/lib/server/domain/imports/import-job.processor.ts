@@ -1,5 +1,4 @@
 import {ImportService} from "@/lib/server/domain/imports/import.service";
-import {ImportMatcherItem} from "@/lib/types/imports.types";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
 
 
@@ -19,8 +18,9 @@ export class ImportJobProcessor {
             const groups = await this.importService.getQueuedItemsByMediaType(job.id);
 
             for (const [mediaType, queuedItems] of groups) {
-                const matcherItems = queuedItems.map((item) => ({ ...item, mediaType }));
-                const processingItems = await this._markGroupProcessing(job.id, matcherItems);
+                const markedItems = await this.importService.markItemsProcessing(job.id, queuedItems.map(item => item.id));
+                const markedIds = new Set(markedItems.map(item => item.id));
+                const processingItems = queuedItems.filter(item => markedIds.has(item.id));
                 if (processingItems.length === 0) continue;
 
                 const matcher = this.matcherRegistry.get(mediaType);
@@ -32,20 +32,9 @@ export class ImportJobProcessor {
             return this.importService.finalizeProcessingJob(job.id);
         }
         catch (error) {
-            await this.importService.markProcessingJobFailed(job.id, getErrorMessage(error));
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            await this.importService.markProcessingJobFailed(job.id, errorMessage);
             throw error;
         }
     }
-
-    private async _markGroupProcessing(jobId: number, queuedItems: ImportMatcherItem[]) {
-        const markedItems = await this.importService.markItemsProcessing(jobId, queuedItems.map(item => item.id));
-        const markedIds = new Set(markedItems.map(item => item.id));
-
-        return queuedItems.filter(item => markedIds.has(item.id));
-    }
 }
-
-
-const getErrorMessage = (error: unknown) => {
-    return error instanceof Error ? error.message : String(error);
-};

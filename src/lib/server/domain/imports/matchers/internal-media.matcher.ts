@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {ImportMatcherItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {InternalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {InternalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
@@ -14,7 +14,7 @@ export class InternalMediaMatcher {
         this.apiIdMatcher = new InternalApiIdMatcher(expectedProvider, mediaService);
     }
 
-    async match(items: ImportMatcherItem[]) {
+    async match(items: ImportItemsSelect[]) {
         const apiIdResult = await this.apiIdMatcher.match(items);
         const nameDateResult = await this.nameDateMatcher.match(apiIdResult.unresolved);
 

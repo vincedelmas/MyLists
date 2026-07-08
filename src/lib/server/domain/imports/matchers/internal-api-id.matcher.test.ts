@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
-import {ImportMatcherItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {InternalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 
@@ -23,7 +23,7 @@ describe("InternalApiIdMatcher", () => {
 });
 
 
-const createItem = (id: number, overrides: Partial<ImportMatcherItem> = {}) => ({
+const createItem = (id: number, overrides: Partial<ImportItemsSelect> = {}) => ({
     id,
     jobId: 1,
     rowNumber: id + 1,

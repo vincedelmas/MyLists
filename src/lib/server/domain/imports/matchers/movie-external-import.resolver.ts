@@ -1,7 +1,7 @@
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
-import {ExternalResolverResult, ImportMatcherItem} from "@/lib/types/imports.types";
+import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-provider.service";
 
 
@@ -11,7 +11,7 @@ const MOVIE_API_RESOLUTION_FAILED_PREFIX = "Movie API resolution failed";
 
 
 export interface MovieExternalImportResolver {
-    resolve(items: ImportMatcherItem[]): AsyncIterable<ExternalResolverResult>;
+    resolve(items: ImportItemsSelect[]): AsyncIterable<ExternalResolverResult>;
 }
 
 
@@ -23,7 +23,7 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
     ) {
     }
 
-    async* resolve(items: ImportMatcherItem[]) {
+    async* resolve(items: ImportItemsSelect[]) {
         let batch = this._createEmptyBatch();
 
         for (const item of items) {
@@ -104,7 +104,7 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
         return batch.matched.length > 0 || batch.failed.length > 0 || batch.skipped.length > 0 || batch.unresolved.length > 0;
     }
 
-    private _hasTmdbExternalId(item: ImportMatcherItem): item is ImportMatcherItem & { externalApiId: string } {
+    private _hasTmdbExternalId(item: ImportItemsSelect): item is ImportItemsSelect & { externalApiId: string } {
         return item.externalApiSource === ApiProviderType.TMDB && !!item.externalApiId;
     }
 
@@ -118,7 +118,7 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
         });
     }
 
-    private _createSkippedOutcome(item: ImportMatcherItem, statusReason: string) {
+    private _createSkippedOutcome(item: ImportItemsSelect, statusReason: string) {
         return {
             statusReason,
             itemId: item.id,
@@ -127,7 +127,7 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
         };
     }
 
-    private _createFailedOutcome(item: ImportMatcherItem, error: unknown) {
+    private _createFailedOutcome(item: ImportItemsSelect, error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 
         return {

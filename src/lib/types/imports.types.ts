@@ -4,7 +4,7 @@ import {ApiProviderType, ImportItemStatus, ImportSource, MediaType} from "@/lib/
 
 type ImportParser = (contents: string) => ParsedImport;
 export type ImportParserRegistry = Partial<Record<ImportSource, ImportParser>>;
-export type ImportMatcherItem = Omit<typeof importItems.$inferSelect, "mediaType"> & { mediaType: MediaType };
+export type ImportItemsSelect = Omit<typeof importItems.$inferSelect, "mediaType"> & { mediaType: MediaType };
 
 
 export interface ParsedImportItem {
@@ -50,7 +50,7 @@ export interface ImportJobCounterDelta {
 
 export interface MatchedImportItem {
     mediaId: number;
-    item: ImportMatcherItem;
+    item: ImportItemsSelect;
 }
 
 
@@ -58,5 +58,5 @@ export interface ExternalResolverResult {
     failed: ImportItemOutcome[];
     matched: MatchedImportItem[];
     skipped: ImportItemOutcome[];
-    unresolved: ImportMatcherItem[];
+    unresolved: ImportItemsSelect[];
 }

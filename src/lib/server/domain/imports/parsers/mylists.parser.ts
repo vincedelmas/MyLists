@@ -95,6 +95,9 @@ const optionalPlatformSchema = z.string()
     .transform((value) => value || null);
 
 
+type MyListsRow = z.output<typeof myListsRowSchema>;
+
+
 const myListsRowSchema = z.object({
     status: z.enum(Status),
     name: optionalStringSchema,
@@ -144,12 +147,6 @@ const myListsRowSchema = z.object({
 });
 
 
-type MyListsRow = z.output<typeof myListsRowSchema>;
-
-
-export type ParsedMyListsItem = ParsedImportItem;
-
-
 export class MyListsCsvFileError extends Error {
     constructor(message: string, options?: ErrorOptions) {
         super(message, options);
@@ -187,7 +184,7 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
                 externalApiSource: parseApiProvider(rawRow.external_api_source),
                 mediaType: Object.values(MediaType).find(mt => mt === rawRow.media_type?.trim()) ?? null,
                 statusReason: parsedRow.error.issues.map(i => `${i.path.join(".") || "row"}: ${i.message}`).join("; "),
-            } satisfies ParsedMyListsItem;
+            } satisfies ParsedImportItem;
         }
 
         return mapValidRow(rowNumber, headers, parsedRow.data);

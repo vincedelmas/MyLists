@@ -1,12 +1,12 @@
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
-import {ImportMatcherItem, MatchedImportItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
 
 
 export class InternalNameDateMatcher {
     constructor(private mediaService: BaseService<any, any>) {
     }
 
-    async match(items: ImportMatcherItem[]) {
+    async match(items: ImportItemsSelect[]) {
         const candidates = items.filter(item => item.name?.trim() && isSupportedReleaseDate(item.releaseDate));
 
         if (candidates.length === 0) {
@@ -25,7 +25,7 @@ export class InternalNameDateMatcher {
         }
 
         const matched: MatchedImportItem[] = [];
-        const unresolved: ImportMatcherItem[] = [];
+        const unresolved: ImportItemsSelect[] = [];
 
         for (const item of items) {
             if (!item.name || !isSupportedReleaseDate(item.releaseDate)) {

@@ -1,4 +1,4 @@
-import {ImportMatcherItem} from "@/lib/types/imports.types";
+import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-provider.service";
@@ -27,7 +27,7 @@ export class MoviesMatcher implements MediaMatcher {
         );
     }
 
-    async* match(context: MediaMatcherContext, items: ImportMatcherItem[]) {
+    async* match(context: MediaMatcherContext, items: ImportItemsSelect[]) {
         if (items.length === 0) return;
 
         const { matched, unresolved } = await this.internalMatcher.match(items);

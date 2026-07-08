@@ -73,6 +73,6 @@ export type UserTag = {
 
 export type ExportMediaList = {
     mediaName: string;
-    apiId: string | number;
+    externalApiId: string;
     releaseDate: string | null;
 }

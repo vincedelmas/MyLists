@@ -246,19 +246,3 @@ export const FeatureStatus = {
     COMPLETED: "Completed",
 } as const;
 export type FeatureStatus = (typeof FeatureStatus)[keyof typeof FeatureStatus];
-
-
-export const apiProviderMediaTypeMap = (mediaType: MediaType) => {
-    switch (mediaType) {
-        case MediaType.MOVIES:
-        case MediaType.SERIES:
-        case MediaType.ANIME:
-            return ApiProviderType.TMDB;
-        case MediaType.GAMES:
-            return ApiProviderType.IGDB;
-        case MediaType.BOOKS:
-            return ApiProviderType.BOOKS;
-        case MediaType.MANGA:
-            return ApiProviderType.MANGA;
-    }
-};

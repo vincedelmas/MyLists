@@ -1,12 +1,12 @@
 import {describe, expect, it} from "vitest";
 import type {Movie, MoviesList} from "./movies.types";
-import {ApiProviderType, MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import {convertToCsv} from "@/lib/utils/file-download";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
+import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {ApiProviderType, MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import type {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
-import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 
 
 describe("MoviesService", () => {
@@ -70,7 +70,7 @@ describe("MoviesService", () => {
                     id: 1,
                     redo: 1,
                     total: 2,
-                    apiId: 550,
+                    externalApiId: "550",
                     rating: 9,
                     userId: 42,
                     mediaId: 100,
@@ -92,16 +92,16 @@ describe("MoviesService", () => {
             expect(rows).toEqual([expect.objectContaining({
                 redo: 1,
                 total: 2,
-                name: "Fight Club",
+                mediaName: "Fight Club",
                 rating: 9,
                 comment: "Nice",
                 favorite: true,
                 status: Status.COMPLETED,
-                media_type: MediaType.MOVIES,
-                release_date: "1999-10-15",
-                external_api_id: 550,
-                external_api_source: ApiProviderType.TMDB,
-                format_version: "1",
+                mediaType: MediaType.MOVIES,
+                releaseDate: "1999-10-15",
+                externalApiId: "550",
+                externalApiSource: ApiProviderType.TMDB,
+                formatVersion: "1",
             })]);
             expect(parsed).toMatchObject({
                 failedCount: 0,
@@ -111,6 +111,16 @@ describe("MoviesService", () => {
                     externalApiId: "550",
                     mediaType: MediaType.MOVIES,
                     externalApiSource: ApiProviderType.TMDB,
+                    payload: {
+                        redo: 1,
+                        total: 2,
+                        rating: 9,
+                        comment: "Nice",
+                        favorite: true,
+                        status: Status.COMPLETED,
+                        addedAt: "2024-01-01 00:00:00",
+                        lastUpdated: "2024-01-02 00:00:00",
+                    },
                 }],
             });
         });

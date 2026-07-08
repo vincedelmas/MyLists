@@ -501,8 +501,8 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
 
         return getDbClient()
             .select({
-                apiId: sql<string>`${mediaTable.apiId}`,
                 mediaName: sql<string>`${mediaTable.name}`,
+                externalApiId: sql<string>`${mediaTable.apiId}`,
                 releaseDate: sql<string | null>`${mediaTable.releaseDate}`,
                 ...getTableColumns(listTable),
             })

@@ -1,7 +1,6 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {ImportItemOutcome, ParsedImport} from "@/lib/types/imports.types";
-import {MyListsCsvFileError} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
 
@@ -161,7 +160,7 @@ describe("ImportService.createImportJob", () => {
         };
 
         parser.mockImplementation(() => {
-            throw new MyListsCsvFileError("Missing required CSV headers: status");
+            throw new Error("Missing required CSV headers: status");
         });
 
         repository.markJobFailed.mockResolvedValue(failedJob);

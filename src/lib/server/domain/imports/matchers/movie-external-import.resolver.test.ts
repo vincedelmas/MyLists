@@ -197,7 +197,7 @@ describe("TmdbMovieExternalImportResolver", () => {
                 itemId: failedItem.id,
                 matchedMediaId: null,
                 status: ImportItemStatus.FAILED,
-                statusReason: "Movie API resolution failed: TMDB unavailable",
+                statusReason: "API failed for this media",
             }],
         });
     });

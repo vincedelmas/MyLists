@@ -5,9 +5,9 @@ import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.typ
 import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-provider.service";
 
 
+const MOVIE_API_RES_FAILED_REASON = "API failed for this media";
 const MOVIE_API_MATCH_NOT_FOUND_REASON = "Movie API match not found";
 const MOVIE_API_MATCH_AMBIGUOUS_REASON = "Movie API match is ambiguous";
-const MOVIE_API_RESOLUTION_FAILED_PREFIX = "Movie API resolution failed";
 
 
 export interface MovieExternalImportResolver {
@@ -73,7 +73,8 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {
-                batch.failed.push(this._createFailedOutcome(item, error));
+                this._logResolutionError(item, error);
+                batch.failed.push(this._createFailedOutcome(item));
             }
 
             if (this._shouldFlush(batch)) {
@@ -127,14 +128,24 @@ export class TmdbMovieExternalImportResolver implements MovieExternalImportResol
         };
     }
 
-    private _createFailedOutcome(item: ImportItemsSelect, error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-
+    private _createFailedOutcome(item: ImportItemsSelect) {
         return {
             itemId: item.id,
             matchedMediaId: null,
             status: ImportItemStatus.FAILED,
-            statusReason: `${MOVIE_API_RESOLUTION_FAILED_PREFIX}: ${errorMessage}`,
+            statusReason: MOVIE_API_RES_FAILED_REASON,
         };
+    }
+
+    private _logResolutionError(item: ImportItemsSelect, error: unknown) {
+        console.warn("Movie import API resolution failed", {
+            error,
+            itemId: item.id,
+            name: item.name,
+            jobId: item.jobId,
+            releaseDate: item.releaseDate,
+            externalApiId: item.externalApiId,
+            externalApiSource: item.externalApiSource,
+        });
     }
 }

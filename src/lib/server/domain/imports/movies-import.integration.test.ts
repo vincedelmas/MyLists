@@ -186,7 +186,7 @@ describe("movies import processing", () => {
             rowNumber: 3,
             matchedMediaId: null,
             status: ImportItemStatus.FAILED,
-            statusReason: "Movie API resolution failed: TMDB unavailable",
+            statusReason: "API failed for this media",
         });
         expect(storedJob).toMatchObject({
             failedCount: 1,

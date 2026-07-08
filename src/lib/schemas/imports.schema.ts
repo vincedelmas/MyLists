@@ -3,10 +3,7 @@ import {ImportSource} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, paginationSchema} from "@/lib/schemas/common.schema";
 
 
-export type ImportUpload = z.infer<typeof importUploadSchema>;
-
-
-export const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024;
 
 
 const acceptedCsvMimeTypes = new Set([

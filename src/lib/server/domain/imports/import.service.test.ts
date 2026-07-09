@@ -24,6 +24,7 @@ describe("ImportService.createImportJob", () => {
         insertParsedItems: vi.fn(),
         deleteTerminalJob: vi.fn(),
         claimNextQueuedJob: vi.fn(),
+        requeueStaleProcessingJobs: vi.fn(),
         markItemsProcessing: vi.fn(),
         incrementJobCounters: vi.fn(),
         settleProcessingItems: vi.fn(),
@@ -51,6 +52,14 @@ describe("ImportService.createImportJob", () => {
         repository.claimNextQueuedJob.mockResolvedValue(job);
 
         await expect(service.claimNextQueuedJob()).resolves.toBe(job);
+    });
+
+    it("requeues stale processing jobs for the drain worker", async () => {
+        const jobs = [{ id: 10, status: ImportJobStatus.QUEUED }];
+        repository.requeueStaleProcessingJobs.mockResolvedValue(jobs);
+
+        await expect(service.requeueStaleProcessingJobs()).resolves.toBe(jobs);
+        expect(repository.requeueStaleProcessingJobs).toHaveBeenCalledTimes(1);
     });
 
     it("finalizes an accounted processing job", async () => {

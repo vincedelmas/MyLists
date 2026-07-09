@@ -25,6 +25,10 @@ export class ImportService {
         return this.repository.claimNextQueuedJob();
     }
 
+    async requeueStaleProcessingJobs(staleAfterMinutes: number) {
+        return withTransaction(() => this.repository.requeueStaleProcessingJobs(staleAfterMinutes));
+    }
+
     async finalizeProcessingJob(jobId: number) {
         return this.repository.finalizeProcessingJob(jobId);
     }

@@ -1,4 +1,4 @@
-import {eq} from "drizzle-orm";
+import {eq, sql} from "drizzle-orm";
 import Database from "bun:sqlite";
 import * as schema from "@/lib/server/database/schema";
 import {importItems, importJobs, user} from "@/lib/server/database/schema";
@@ -177,6 +177,61 @@ describe("ImportRepository", () => {
             completedCount: 1,
             processedCount: 3,
         });
+    });
+
+    it("requeues stale processing jobs and only resets unfinished processing items", async () => {
+        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await ImportRepository.insertParsedItems(job.id, [createItem(2), createItem(3), createItem(4)]);
+        await ImportRepository.markJobQueued(job.id, 3, 0);
+        await ImportRepository.claimNextQueuedJob();
+
+        const queuedItems = await ImportRepository.getQueuedItemsForProcessingJob(job.id);
+        await ImportRepository.markItemsProcessing(job.id, [queuedItems[0].id, queuedItems[1].id]);
+        await ImportRepository.settleProcessingItems(job.id, [{
+            itemId: queuedItems[0].id,
+            matchedMediaId: 101,
+            status: ImportItemStatus.COMPLETED,
+        }]);
+        await ImportRepository.incrementJobCounters(job.id, {
+            failedCount: 0,
+            skippedCount: 0,
+            completedCount: 1,
+            processedCount: 1,
+        });
+
+        await expect(ImportRepository.requeueStaleProcessingJobs(360)).resolves.toEqual([]);
+
+        await db
+            .update(importJobs)
+            .set({
+                error: "Worker stopped",
+                updatedAt: sql`datetime('now', '-7 hours')`,
+            })
+            .where(eq(importJobs.id, job.id));
+
+        const requeuedJobs = await ImportRepository.requeueStaleProcessingJobs(360);
+
+        expect(requeuedJobs).toHaveLength(1);
+        expect(requeuedJobs[0]).toMatchObject({
+            id: job.id,
+            error: null,
+            startedAt: null,
+            status: ImportJobStatus.QUEUED,
+            completedCount: 1,
+            processedCount: 1,
+        });
+
+        const storedItems = await db
+            .select()
+            .from(importItems)
+            .where(eq(importItems.jobId, job.id))
+            .orderBy(importItems.rowNumber);
+
+        expect(storedItems.map(item => item.status)).toEqual([
+            ImportItemStatus.COMPLETED,
+            ImportItemStatus.QUEUED,
+            ImportItemStatus.QUEUED,
+        ]);
     });
 
     it("finalizes a fully accounted job without issues as completed", async () => {

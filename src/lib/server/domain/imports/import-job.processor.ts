@@ -9,6 +9,10 @@ export class ImportJobProcessor {
     ) {
     }
 
+    async requeueStaleProcessingJobs(staleAfterMinutes: number) {
+        return this.importService.requeueStaleProcessingJobs(staleAfterMinutes);
+    }
+
     async processNextJob() {
         const job = await this.importService.claimNextQueuedJob();
         if (!job) return null;
@@ -29,7 +33,12 @@ export class ImportJobProcessor {
                 }
             }
 
-            return this.importService.finalizeProcessingJob(job.id);
+            const finalizedJob = await this.importService.finalizeProcessingJob(job.id);
+            if (!finalizedJob) {
+                throw new Error(`Import job ${job.id} could not be finalized because it still has unfinished items`);
+            }
+
+            return finalizedJob;
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

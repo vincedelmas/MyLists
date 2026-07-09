@@ -17,6 +17,47 @@ const TERMINAL_JOB_STATUSES = [
 
 
 export class ImportRepository {
+    static async requeueStaleProcessingJobs(staleAfterMinutes: number) {
+        const db = getDbClient();
+
+        const staleJobs = await db
+            .select({ id: importJobs.id })
+            .from(importJobs)
+            .where(and(
+                eq(importJobs.status, ImportJobStatus.PROCESSING),
+                lt(importJobs.updatedAt, sql`datetime('now', ${`-${staleAfterMinutes} minutes`})`),
+            ));
+
+        if (staleJobs.length === 0) return [];
+
+        const staleJobIds = staleJobs.map(job => job.id);
+
+        await db
+            .update(importItems)
+            .set({
+                updatedAt: sql`datetime('now')`,
+                status: ImportItemStatus.QUEUED,
+            })
+            .where(and(
+                inArray(importItems.jobId, staleJobIds),
+                eq(importItems.status, ImportItemStatus.PROCESSING),
+            ));
+
+        return db
+            .update(importJobs)
+            .set({
+                error: null,
+                startedAt: null,
+                status: ImportJobStatus.QUEUED,
+                updatedAt: sql`datetime('now')`,
+            })
+            .where(and(
+                inArray(importJobs.id, staleJobIds),
+                eq(importJobs.status, ImportJobStatus.PROCESSING),
+            ))
+            .returning();
+    }
+
     static async markProcessingJobFailed(jobId: number, error: string) {
         const [job] = await getDbClient()
             .update(importJobs)

@@ -250,4 +250,49 @@ describe("parseMyListsCsv", () => {
         expect(parsed.items[0].payload).not.toHaveProperty("externalApiId");
         expect(parsed.items[0].payload).not.toHaveProperty("id");
     });
+
+    it("rejects files containing multiple media types", () => {
+        expect(() => parseMyListsCsv(toCsv([
+            {
+                id: "1",
+                userId: "42",
+                mediaId: "100",
+                mediaName: "Hades",
+                formatVersion: "1",
+                mediaType: MediaType.GAMES,
+                externalApiId: "114795",
+                externalApiSource: ApiProviderType.IGDB,
+                releaseDate: "2020-09-17",
+                status: Status.COMPLETED,
+                rating: "9",
+                favorite: "true",
+                comment: "",
+                playtime: "480",
+                platform: "PC",
+                addedAt: "",
+                lastUpdated: "",
+                customCover: "",
+            },
+            {
+                id: "2",
+                userId: "42",
+                mediaId: "101",
+                mediaName: "Fight Club",
+                formatVersion: "1",
+                mediaType: MediaType.MOVIES,
+                externalApiId: "550",
+                externalApiSource: ApiProviderType.TMDB,
+                releaseDate: "1999-10-15",
+                status: Status.COMPLETED,
+                rating: "9",
+                favorite: "true",
+                comment: "",
+                playtime: "",
+                platform: "",
+                addedAt: "",
+                lastUpdated: "",
+                customCover: "",
+            },
+        ]))).toThrow('The CSV file contains mixed media types. Row 3 is "movies" but expected "games".');
+    });
 });

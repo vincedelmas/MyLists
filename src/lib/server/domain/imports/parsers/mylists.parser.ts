@@ -4,6 +4,7 @@ import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType,} from "@/lib/utils/enums";
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
 import {booksMyListsCSVRowSchema} from "@/lib/server/domain/media/books/books.types";
+import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/manga.types";
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/movies.types";
 import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
 
@@ -33,7 +34,7 @@ const mediaRowValidatorMap = {
     [MediaType.MOVIES]: moviesMyListsCSVRowSchema,
     [MediaType.GAMES]: gamesMyListsCSVRowSchema,
     [MediaType.BOOKS]: booksMyListsCSVRowSchema,
-    [MediaType.MANGA]: moviesMyListsCSVRowSchema,
+    [MediaType.MANGA]: mangaMyListsCSVRowSchema,
 } satisfies Record<MediaType, z.ZodTypeAny>;
 
 

@@ -5,9 +5,9 @@ import {GamesProviderService} from "@/lib/server/domain/media/games/games-provid
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {GamesImportListWriter} from "@/lib/server/domain/imports/list-writers/games-import-list.writer";
-import {internalMediaMatcherPipeline} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
+import {internalMediaMatcherPipeline} from "@/lib/server/domain/imports/matchers/media-pipeline.matcher";
 import {IgdbGameExternalImportResolver} from "@/lib/server/domain/imports/matchers/game-external-import.resolver";
-import {ExternalImportResolver, InternalMatcherPipeline, MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {ExternalMediaMatcher, InternalMatcherPipeline, MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
 const MATCH_NOT_FOUND_REASON = "No game match found";
@@ -17,7 +17,7 @@ export class GamesMatcher implements MediaMatcher {
     constructor(
         private internalMatcherPipeline: InternalMatcherPipeline,
         private listWriter: GamesImportListWriter,
-        private externalResolver: ExternalImportResolver,
+        private externalResolver: ExternalMediaMatcher,
     ) {
     }
 
@@ -41,7 +41,7 @@ export class GamesMatcher implements MediaMatcher {
             yield completedOutcomes;
         }
 
-        for await (const externalResult of this.externalResolver.resolve(unresolved)) {
+        for await (const externalResult of this.externalResolver.match(unresolved)) {
             const externalCompletedOutcomes = await this.listWriter.addMatchedItems(context.userId, externalResult.matched);
             if (externalCompletedOutcomes.length > 0) {
                 yield externalCompletedOutcomes;

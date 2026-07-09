@@ -4,10 +4,10 @@ import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-provider.service";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
-import {internalMediaMatcherPipeline} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
 import {MoviesImportListWriter} from "@/lib/server/domain/imports/list-writers/movies-import-list.writer";
-import {TmdbMovieExternalImportResolver} from "@/lib/server/domain/imports/matchers/movie-external-import.resolver";
-import {ExternalImportResolver, InternalMatcherPipeline, MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {ExternalTMDBMovieMatcher} from "@/lib/server/domain/imports/matchers/movie-external-import.resolver";
+import {externalMediaMatcherPipeline, internalMediaMatcherPipeline} from "@/lib/server/domain/imports/matchers/media-pipeline.matcher";
+import {ExternalMatcherPipeline, InternalMatcherPipeline, MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
 const MATCH_NOT_FOUND_REASON = "No movie match found";
@@ -16,8 +16,8 @@ const MATCH_NOT_FOUND_REASON = "No movie match found";
 export class MoviesMatcher implements MediaMatcher {
     constructor(
         private internalMatcherPipeline: InternalMatcherPipeline,
+        private externalMatcherPipeline: ExternalMatcherPipeline,
         private listWriter: MoviesImportListWriter,
-        private externalResolver: ExternalImportResolver,
     ) {
     }
 
@@ -27,8 +27,10 @@ export class MoviesMatcher implements MediaMatcher {
                 internalApiIdMatcher(ApiProviderType.TMDB, moviesService),
                 internalNameDateMatcher(moviesService),
             ]),
+            externalMediaMatcherPipeline([
+                new ExternalTMDBMovieMatcher(moviesService, moviesProviderService),
+            ]),
             new MoviesImportListWriter(moviesService),
-            new TmdbMovieExternalImportResolver(moviesService, moviesProviderService),
         );
     }
 
@@ -41,7 +43,7 @@ export class MoviesMatcher implements MediaMatcher {
             yield completedOutcomes;
         }
 
-        for await (const externalResult of this.externalResolver.resolve(unresolved)) {
+        for await (const externalResult of this.externalMatcherPipeline.run(unresolved)) {
             const externalCompletedOutcomes = await this.listWriter.addMatchedItems(context.userId, externalResult.matched);
             if (externalCompletedOutcomes.length > 0) {
                 yield externalCompletedOutcomes;

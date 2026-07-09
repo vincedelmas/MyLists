@@ -3,7 +3,7 @@ import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-provider.service";
-import {ExternalImportResolver} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
 const MOVIE_API_RES_FAILED_REASON = "API failed for this media";
@@ -11,7 +11,7 @@ const MOVIE_API_MATCH_NOT_FOUND_REASON = "Movie API match not found";
 const MOVIE_API_MATCH_AMBIGUOUS_REASON = "Movie API match is ambiguous";
 
 
-export class TmdbMovieExternalImportResolver implements ExternalImportResolver {
+export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
     constructor(
         private moviesService: MoviesService,
         private moviesProviderService: MoviesProviderService,
@@ -19,7 +19,7 @@ export class TmdbMovieExternalImportResolver implements ExternalImportResolver {
     ) {
     }
 
-    async* resolve(items: ImportItemsSelect[]) {
+    async* match(items: ImportItemsSelect[]) {
         let batch = this._createEmptyBatch();
 
         for (const item of items) {

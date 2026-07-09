@@ -1,21 +1,21 @@
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {GamesProviderService} from "@/lib/server/domain/media/games/games-provider.service";
-import {ExternalImportResolver} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
 const PROVIDER_BATCH_SIZE = 500;
 const GAME_API_RES_FAILED_REASON = "API failed for this media";
 
 
-export class IgdbGameExternalImportResolver implements ExternalImportResolver {
+export class IgdbGameExternalImportResolver implements ExternalMediaMatcher {
     constructor(
         private gamesProviderService: GamesProviderService,
         private resultBatchSize = 50,
     ) {
     }
 
-    async* resolve(items: ImportItemsSelect[]) {
+    async* match(items: ImportItemsSelect[]) {
         let batch = this._createEmptyBatch();
 
         const igdbItems = items.filter((item): item is ImportItemsSelect & { externalApiId: string } => this._hasIgdbExternalId(item));

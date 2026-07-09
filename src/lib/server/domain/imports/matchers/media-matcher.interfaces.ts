@@ -22,6 +22,11 @@ export interface InternalMatcherPipeline {
 }
 
 
-export interface ExternalImportResolver {
-    resolve(items: ImportItemsSelect[]): AsyncIterable<ExternalResolverResult>;
+export interface ExternalMediaMatcher {
+    match(items: ImportItemsSelect[]): AsyncIterable<ExternalResolverResult>;
+}
+
+
+export interface ExternalMatcherPipeline {
+    run(items: ImportItemsSelect[]): AsyncIterable<ExternalResolverResult>;
 }

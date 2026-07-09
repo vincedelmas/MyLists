@@ -12,6 +12,7 @@ export type Game = typeof games.$inferSelect;
 export type GamesList = typeof gamesList.$inferSelect;
 export type GamesListInsert = typeof gamesList.$inferInsert;
 export type GamesImportPayload = z.infer<typeof gamesImportPayloadSchema>;
+export type GamesFinalListInsert = z.infer<typeof gamesFinalListInsertSchema>;
 
 
 export type GamesAchCodeName = typeof gamesAchievements[number]["codeName"];
@@ -28,6 +29,13 @@ export type UpsertGameWithDetails = {
 const emptyStringToNull = (value: unknown) => value === "" ? null : value;
 
 const emptyStringToUndefined = (value: unknown) => value === "" ? undefined : value;
+
+
+export const gamesFinalListInsertSchema = createInsertSchema(gamesList, {
+    status: z.enum(Status),
+    customCover: z.string().nullable().optional(),
+    platform: z.enum(GamesPlatformsEnum).nullable().optional(),
+});
 
 
 const gamesCSVListSchema = createInsertSchema(gamesList, {

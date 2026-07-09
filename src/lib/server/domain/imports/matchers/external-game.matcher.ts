@@ -35,7 +35,7 @@ export class ExternalIGDBGamesMatcher implements ExternalMediaMatcher {
             const chunkedApiIds = chunk.map((item) => item.externalApiId);
 
             try {
-                const mediaIdByApiId = await this.gamesProviderService.resolveExternalMediaBatch(chunkedApiIds);
+                const mediaIdByApiId = await this.gamesProviderService.fetchAndStoreMediaDetailsBulk(chunkedApiIds);
                 for (const item of chunk) {
                     const mediaId = mediaIdByApiId.get(item.externalApiId);
                     if (mediaId) batch.matched.push({ item, mediaId });

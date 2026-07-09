@@ -26,7 +26,7 @@ describe("GamesProviderService", () => {
         };
         const service = new GamesProviderService(client as any, repository as any, {} as any);
 
-        const result = await service.resolveExternalMediaBatch([1, 2, 3]);
+        const result = await service.fetchAndStoreMediaDetailsBulk([1, 2, 3]);
 
         expect(repository.findByApiIds).toHaveBeenCalledWith([1, 2, 3]);
         expect(client.getGamesDetails).toHaveBeenCalledWith([2, 3]);

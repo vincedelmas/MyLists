@@ -1,5 +1,4 @@
 import {ProviderSearchResult} from "@/lib/types/provider.types";
-import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-provider.service";
@@ -13,7 +12,6 @@ const MOVIE_API_MATCH_AMBIGUOUS_REASON = "Movie API match is ambiguous";
 
 export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
     constructor(
-        private moviesService: MoviesService,
         private moviesProviderService: MoviesProviderService,
         private resultBatchSize = 50,
     ) {
@@ -25,7 +23,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
         for (const item of items) {
             try {
                 if (this._hasTmdbExternalId(item)) {
-                    const mediaId = await this.moviesService.resolveExternalMedia(item.externalApiId, this.moviesProviderService);
+                    const mediaId = await this.moviesProviderService.fetchAndStoreMediaDetails(item.externalApiId);
                     batch.matched.push({ item, mediaId });
                     if (this._shouldFlush(batch)) {
                         yield batch;
@@ -64,8 +62,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const [candidate] = candidates;
-                const mediaId = await this.moviesService.resolveExternalMedia(candidate.id, this.moviesProviderService);
+                const mediaId = await this.moviesProviderService.fetchAndStoreMediaDetails(candidates[0].id);
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {

@@ -15,7 +15,7 @@ export class GamesProviderService extends BaseTrendsProviderService<GamesReposit
         return this.hltbClient.search(gameName);
     }
 
-    async resolveExternalMediaBatch(apiIds: (number | string)[]) {
+    async fetchAndStoreMediaDetailsBulk(apiIds: (number | string)[]) {
         const uniqueApiIds = [...new Set(apiIds.map(Number).filter(Number.isFinite))];
         const mediaIdByApiId = new Map<string, number>();
         if (uniqueApiIds.length === 0) return mediaIdByApiId;

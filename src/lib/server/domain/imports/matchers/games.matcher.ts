@@ -5,7 +5,7 @@ import {GamesProviderService} from "@/lib/server/domain/media/games/games-provid
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {GamesImportListWriter} from "@/lib/server/domain/imports/list-writers/games-import-list.writer";
-import {ExternalIGDBGamesMatcher} from "@/lib/server/domain/imports/matchers/game-external-import.resolver";
+import {ExternalIGDBGamesMatcher} from "@/lib/server/domain/imports/matchers/external-game.matcher";
 import {externalMediaMatcherPipeline, internalMediaMatcherPipeline} from "@/lib/server/domain/imports/matchers/media-pipeline.matcher";
 import {ExternalMatcherPipeline, InternalMatcherPipeline, MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 

@@ -60,15 +60,20 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
         throw new Error(`The CSV file contains too many rows. Maximum is ${MYLISTS_CSV_MAX_ROWS}.`);
     }
 
-    // Check mediaType using first row
-    const rawRow = Object.fromEntries(headers.map((header, cellIdx) => [header, rows[0][cellIdx] ?? ""]));
-    const result = z.enum(MediaType).safeParse(rawRow.mediaType);
+    // MyLists exports one media list per file; mixed mediaType is wrong CSV
+    const firstRawRow = Object.fromEntries(headers.map((header, cellIdx) => [header, rows[0][cellIdx] ?? ""]));
+    const result = z.enum(MediaType).safeParse(firstRawRow.mediaType);
     if (!result.success) throw new Error("The CSV file does not contain a valid media type");
     const mediaZodValidator = mediaRowValidatorMap[result.data];
 
     const items = rows.map((cells, idx) => {
         const rowNumber = idx + 2;
         const rawRow = Object.fromEntries(headers.map((header, cellIdx) => [header, cells[cellIdx] ?? ""]));
+
+        if (rawRow.mediaType?.trim() !== result.data) {
+            throw new Error(`The CSV file contains mixed media types. Row ${rowNumber} is "${rawRow.mediaType}" but expected "${result.data}".`);
+        }
+
         const parsedRow = mediaZodValidator.safeParse(rawRow);
 
         if (!parsedRow.success) {

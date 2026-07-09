@@ -1,11 +1,9 @@
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
+import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
-export class InternalNameDateMatcher {
-    constructor(private mediaService: BaseService<any, any>) {
-    }
-
+export const internalNameDateMatcher = (mediaService: BaseService<any, any>) => ({
     async match(items: ImportItemsSelect[]) {
         const candidates = items.filter(item => item.name?.trim() && isSupportedReleaseDate(item.releaseDate));
 
@@ -14,7 +12,7 @@ export class InternalNameDateMatcher {
         }
 
         const uniqueNames = [...new Set(candidates.map(item => item.name!.trim().toLowerCase()))];
-        const mediaRows = await this.mediaService.findByNames(uniqueNames);
+        const mediaRows = await mediaService.findByNames(uniqueNames);
         const mediaByName = new Map<string, typeof mediaRows>();
 
         for (const media of mediaRows) {
@@ -46,7 +44,7 @@ export class InternalNameDateMatcher {
 
         return { matched, unresolved };
     }
-}
+}) satisfies InternalMediaMatcher;
 
 
 const isSupportedReleaseDate = (releaseDate: string | null) => {

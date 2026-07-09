@@ -2,9 +2,11 @@ import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-provider.service";
-import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
-import {MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher";
+import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
+import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
+import {internalMediaMatcherPipeline} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
 import {MoviesImportListWriter} from "@/lib/server/domain/imports/list-writers/movies-import-list.writer";
+import {MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {MovieExternalImportResolver, TmdbMovieExternalImportResolver} from "@/lib/server/domain/imports/matchers/movie-external-import.resolver";
 
 
@@ -13,7 +15,7 @@ const MATCH_NOT_FOUND_REASON = "No movie match found";
 
 export class MoviesMatcher implements MediaMatcher {
     constructor(
-        private internalMatcher: InternalMediaMatcher,
+        private internalMatcherPipeline: ReturnType<typeof internalMediaMatcherPipeline>,
         private listWriter: MoviesImportListWriter,
         private externalResolver: MovieExternalImportResolver,
     ) {
@@ -21,7 +23,10 @@ export class MoviesMatcher implements MediaMatcher {
 
     static create(moviesService: MoviesService, moviesProviderService: MoviesProviderService) {
         return new MoviesMatcher(
-            new InternalMediaMatcher(ApiProviderType.TMDB, moviesService),
+            internalMediaMatcherPipeline([
+                internalApiIdMatcher(ApiProviderType.TMDB, moviesService),
+                internalNameDateMatcher(moviesService),
+            ]),
             new MoviesImportListWriter(moviesService),
             new TmdbMovieExternalImportResolver(moviesService, moviesProviderService),
         );
@@ -30,7 +35,7 @@ export class MoviesMatcher implements MediaMatcher {
     async* match(context: MediaMatcherContext, items: ImportItemsSelect[]) {
         if (items.length === 0) return;
 
-        const { matched, unresolved } = await this.internalMatcher.match(items);
+        const { matched, unresolved } = await this.internalMatcherPipeline.run(items);
         const completedOutcomes = await this.listWriter.addMatchedItems(context.userId, matched);
         if (completedOutcomes.length > 0) {
             yield completedOutcomes;

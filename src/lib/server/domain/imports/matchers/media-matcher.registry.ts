@@ -1,5 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
-import {MediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher";
+import {MediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
 export class MediaMatcherRegistry {

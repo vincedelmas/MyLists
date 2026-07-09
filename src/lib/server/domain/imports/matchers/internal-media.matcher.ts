@@ -1,26 +1,23 @@
-import {ApiProviderType} from "@/lib/utils/enums";
-import {ImportItemsSelect} from "@/lib/types/imports.types";
-import {BaseService} from "@/lib/server/domain/media/base/base.service";
-import {InternalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
-import {InternalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
+import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
+import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
-export class InternalMediaMatcher {
-    private apiIdMatcher: InternalApiIdMatcher;
-    private nameDateMatcher: InternalNameDateMatcher;
+export const internalMediaMatcherPipeline = (internalMatchers: InternalMediaMatcher[]) => ({
+    async run(items: ImportItemsSelect[]) {
+        let currentUnresolved = items;
+        const allMatched: MatchedImportItem[] = [];
 
-    constructor(expectedProvider: ApiProviderType, mediaService: BaseService<any, any>) {
-        this.nameDateMatcher = new InternalNameDateMatcher(mediaService);
-        this.apiIdMatcher = new InternalApiIdMatcher(expectedProvider, mediaService);
-    }
+        for (const matcher of internalMatchers) {
+            if (currentUnresolved.length === 0) break;
 
-    async match(items: ImportItemsSelect[]) {
-        const apiIdResult = await this.apiIdMatcher.match(items);
-        const nameDateResult = await this.nameDateMatcher.match(apiIdResult.unresolved);
+            const { matched, unresolved } = await matcher.match(currentUnresolved);
+            allMatched.push(...matched);
+            currentUnresolved = unresolved;
+        }
 
         return {
-            matched: [...apiIdResult.matched, ...nameDateResult.matched],
-            unresolved: nameDateResult.unresolved,
+            matched: allMatched,
+            unresolved: currentUnresolved,
         };
     }
-}
+});

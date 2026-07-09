@@ -2,9 +2,11 @@ import {ImportItemsSelect} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {GamesService} from "@/lib/server/domain/media/games/games.service";
 import {GamesProviderService} from "@/lib/server/domain/media/games/games-provider.service";
-import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
-import {MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher";
+import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
+import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {GamesImportListWriter} from "@/lib/server/domain/imports/list-writers/games-import-list.writer";
+import {internalMediaMatcherPipeline} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
+import {MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {GameExternalImportResolver, IgdbGameExternalImportResolver} from "@/lib/server/domain/imports/matchers/game-external-import.resolver";
 
 
@@ -13,7 +15,7 @@ const MATCH_NOT_FOUND_REASON = "No game match found";
 
 export class GamesMatcher implements MediaMatcher {
     constructor(
-        private internalMatcher: InternalMediaMatcher,
+        private internalMatcherPipeline: ReturnType<typeof internalMediaMatcherPipeline>,
         private listWriter: GamesImportListWriter,
         private externalResolver: GameExternalImportResolver,
     ) {
@@ -21,7 +23,10 @@ export class GamesMatcher implements MediaMatcher {
 
     static create(gamesService: GamesService, gamesProviderService: GamesProviderService) {
         return new GamesMatcher(
-            new InternalMediaMatcher(ApiProviderType.IGDB, gamesService),
+            internalMediaMatcherPipeline([
+                internalApiIdMatcher(ApiProviderType.IGDB, gamesService),
+                internalNameDateMatcher(gamesService),
+            ]),
             new GamesImportListWriter(gamesService),
             new IgdbGameExternalImportResolver(gamesProviderService),
         );
@@ -30,7 +35,7 @@ export class GamesMatcher implements MediaMatcher {
     async* match(context: MediaMatcherContext, items: ImportItemsSelect[]) {
         if (items.length === 0) return;
 
-        const { matched, unresolved } = await this.internalMatcher.match(items);
+        const { matched, unresolved } = await this.internalMatcherPipeline.run(items);
         const completedOutcomes = await this.listWriter.addMatchedItems(context.userId, matched);
         if (completedOutcomes.length > 0) {
             yield completedOutcomes;

@@ -15,6 +15,49 @@ const toCsv = (rows: Record<string, string>[]) => {
 
 
 describe("parseMyListsCsv", () => {
+    it("parses MyLists book rows into a books import payload", () => {
+        const parsed = parseMyListsCsv(toCsv([{
+            id: "1",
+            userId: "42",
+            mediaId: "100",
+            mediaName: "Dune",
+            formatVersion: "1",
+            mediaType: MediaType.BOOKS,
+            externalApiId: "book-123",
+            externalApiSource: ApiProviderType.BOOKS,
+            releaseDate: "1965-08-01",
+            status: Status.COMPLETED,
+            actualPage: "412",
+            redo: "1",
+            total: "824",
+            rating: "10",
+            favorite: "true",
+            comment: "Classic.",
+            addedAt: "2024-01-01 00:00:00",
+            lastUpdated: "2024-01-02 00:00:00",
+            customCover: "",
+        }]));
+
+        expect(parsed).toMatchObject({
+            failedCount: 0,
+            items: [{
+                name: "Dune",
+                mediaType: MediaType.BOOKS,
+                externalApiId: "book-123",
+                externalApiSource: ApiProviderType.BOOKS,
+                payload: {
+                    status: Status.COMPLETED,
+                    actualPage: 412,
+                    redo: 1,
+                    total: 824,
+                    rating: 10,
+                    favorite: true,
+                    comment: "Classic.",
+                },
+            }],
+        });
+    });
+
     it("parses MyLists series rows into a TV import payload", () => {
         const parsed = parseMyListsCsv(toCsv([{
             id: "1",

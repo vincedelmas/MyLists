@@ -1,5 +1,5 @@
 import z from "zod";
-import {GBooksDetails} from "@/lib/types/provider.types";
+import {GBooksDetails, ProviderSearchResults} from "@/lib/types/provider.types";
 import {GbooksApi, LlmApi} from "@/lib/server/api-providers/api";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
@@ -10,6 +10,11 @@ import {gbooksTransformer} from "@/lib/server/api-providers/transformers/gbook.t
 export class BooksProviderService extends BaseProviderService<BooksRepository, GBooksDetails, UpsertBooksWithDetails> {
     constructor(private client: GbooksApi, private llmClient: LlmApi, repository: BooksRepository) {
         super(repository);
+    }
+
+    async search(query: string, page = 1): Promise<ProviderSearchResults> {
+        const searchData = await this.client.search(query, page);
+        return gbooksTransformer.transformSearchResults(searchData);
     }
 
     protected _fetchRawDetails(apiId: string) {

@@ -1,0 +1,58 @@
+import {ImportItemStatus, Status} from "@/lib/utils/enums";
+import {BooksService} from "@/lib/server/domain/media/books/books.service";
+import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
+import {Book, booksFinalListInsertSchema, BooksImportPayload, booksImportPayloadSchema} from "@/lib/server/domain/media/books/books.types";
+
+
+export class BooksImportListWriter {
+    constructor(private booksService: BooksService) {
+    }
+
+    async addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]> {
+        if (matches.length === 0) return [];
+
+        const userBooks = [];
+
+        for (const { item, mediaId } of matches) {
+            const payload = booksImportPayloadSchema.parse(item.payload);
+            const media = await this.booksService.findById(mediaId);
+            if (!media) throw new Error(`Matched book media ${mediaId} does not exist`);
+
+            const fullPayload = this._materializeBookListPayload(payload, media);
+            userBooks.push(booksFinalListInsertSchema.parse({ userId, mediaId, ...fullPayload }));
+        }
+
+        await this.booksService.bulkInsertUserMedia(userBooks);
+
+        return matches.map(({ item, mediaId }) => ({
+            itemId: item.id,
+            matchedMediaId: mediaId,
+            status: ImportItemStatus.COMPLETED,
+        }));
+    }
+
+    private _materializeBookListPayload(payload: BooksImportPayload, media: Book) {
+        const redo = payload.redo ?? 0;
+        const actualPage = payload.actualPage ?? this._defaultActualPage(payload.status, media);
+        const total = payload.total ?? this._calculateTotal(payload.status, actualPage, redo, media);
+
+        return {
+            ...payload,
+            redo,
+            total,
+            actualPage,
+        };
+    }
+
+    private _defaultActualPage(status: Status, media: Book) {
+        if (status === Status.COMPLETED) return media.pages;
+        if (status === Status.PLAN_TO_READ) return 0;
+        return 0;
+    }
+
+    private _calculateTotal(status: Status, actualPage: number | null, redo: number, media: Book) {
+        if (status === Status.COMPLETED) return media.pages + (redo * media.pages);
+        if (status === Status.PLAN_TO_READ) return 0;
+        return (actualPage ?? 0) + (redo * media.pages);
+    }
+}

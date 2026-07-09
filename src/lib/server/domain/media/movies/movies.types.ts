@@ -9,7 +9,8 @@ import {moviesAchievements} from "@/lib/server/domain/media/movies/achievements.
 export type Movie = typeof movies.$inferSelect;
 export type MoviesList = typeof moviesList.$inferSelect;
 export type MoviesListInsert = typeof moviesList.$inferInsert;
-export type MoviesListCSVPayload = z.infer<typeof moviesListCSVPayloadSchema>;
+export type MoviesImportPayload = z.infer<typeof moviesImportPayloadSchema>;
+export type MoviesFinalListInsert = z.infer<typeof moviesFinalListInsertSchema>;
 export type MoviesAchCodeName = typeof moviesAchievements[number]["codeName"];
 
 
@@ -25,7 +26,13 @@ const emptyStringToNull = (value: unknown) => value === "" ? null : value;
 const emptyStringToUndefined = (value: unknown) => value === "" ? undefined : value;
 
 
-const moviesListSchema = createInsertSchema(moviesList, {
+export const moviesFinalListInsertSchema = createInsertSchema(moviesList, {
+    status: z.enum(Status),
+    customCover: z.string().nullable().optional(),
+});
+
+
+const moviesCSVListSchema = createInsertSchema(moviesList, {
     status: z.enum(Status),
     comment: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
     addedAt: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
@@ -46,7 +53,7 @@ const moviesListSchema = createInsertSchema(moviesList, {
 });
 
 
-const moviesListCSVPayloadSchema = moviesListSchema.omit({
+export const moviesImportPayloadSchema = moviesCSVListSchema.omit({
     id: true,
     userId: true,
     mediaId: true,
@@ -54,4 +61,4 @@ const moviesListCSVPayloadSchema = moviesListSchema.omit({
 });
 
 
-export const moviesListCSVImportSchema = minimalMyListsCSVSchema.extend(moviesListCSVPayloadSchema.shape);
+export const moviesMyListsCSVRowSchema = minimalMyListsCSVSchema.extend(moviesImportPayloadSchema.shape);

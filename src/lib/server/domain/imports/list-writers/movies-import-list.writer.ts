@@ -1,7 +1,7 @@
-import {ImportItemStatus} from "@/lib/utils/enums";
+import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
-import {MoviesListCSVPayload, MoviesListInsert} from "@/lib/server/domain/media/movies/movies.types";
+import {moviesFinalListInsertSchema, MoviesImportPayload, moviesImportPayloadSchema} from "@/lib/server/domain/media/movies/movies.types";
 
 
 export class MoviesImportListWriter {
@@ -12,13 +12,11 @@ export class MoviesImportListWriter {
         if (matches.length === 0) return [];
 
         const userMovies = matches.map(({ item, mediaId }) => {
-            const payload = item.payload as MoviesListCSVPayload;
+            const partialPayload = moviesImportPayloadSchema.parse(item.payload);
+            const fullPayload = this._materializeMovieListPayload(partialPayload);
+            const rowToInsert = moviesFinalListInsertSchema.parse({ userId, mediaId, ...fullPayload });
 
-            return ({
-                userId,
-                mediaId,
-                ...payload,
-            }) satisfies MoviesListInsert;
+            return rowToInsert;
         });
 
         await this.moviesService.bulkInsertUserMedia(userMovies);
@@ -28,5 +26,16 @@ export class MoviesImportListWriter {
             matchedMediaId: mediaId,
             status: ImportItemStatus.COMPLETED,
         }));
+    }
+
+    private _materializeMovieListPayload(payload: MoviesImportPayload) {
+        const redo = payload.redo ?? 0;
+        const total = payload.total ?? (payload.status === Status.COMPLETED ? 1 + redo : 0);
+
+        return {
+            ...payload,
+            redo,
+            total,
+        };
     }
 }

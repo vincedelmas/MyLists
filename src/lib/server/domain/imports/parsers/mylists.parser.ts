@@ -2,7 +2,7 @@ import * as z from "zod";
 import {parse} from "csv-parse/sync";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType,} from "@/lib/utils/enums";
-import {moviesListCSVImportSchema} from "@/lib/server/domain/media/movies/movies.types";
+import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/movies.types";
 
 
 export const MYLISTS_CSV_VERSION = "1";
@@ -25,13 +25,13 @@ const parseCsvRecords = (csv: string) => {
 
 
 const mediaRowValidatorMap = {
-    [MediaType.SERIES]: moviesListCSVImportSchema,
-    [MediaType.ANIME]: moviesListCSVImportSchema,
-    [MediaType.MOVIES]: moviesListCSVImportSchema,
-    [MediaType.GAMES]: moviesListCSVImportSchema,
-    [MediaType.BOOKS]: moviesListCSVImportSchema,
-    [MediaType.MANGA]: moviesListCSVImportSchema,
-} satisfies Record<MediaType, typeof moviesListCSVImportSchema>;
+    [MediaType.SERIES]: moviesMyListsCSVRowSchema,
+    [MediaType.ANIME]: moviesMyListsCSVRowSchema,
+    [MediaType.MOVIES]: moviesMyListsCSVRowSchema,
+    [MediaType.GAMES]: moviesMyListsCSVRowSchema,
+    [MediaType.BOOKS]: moviesMyListsCSVRowSchema,
+    [MediaType.MANGA]: moviesMyListsCSVRowSchema,
+} satisfies Record<MediaType, typeof moviesMyListsCSVRowSchema>;
 
 
 const parseApiProvider = (value: string | undefined) => {

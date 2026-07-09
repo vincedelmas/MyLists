@@ -8,7 +8,7 @@ const PROVIDER_BATCH_SIZE = 500;
 const GAME_API_RES_FAILED_REASON = "API failed for this media";
 
 
-export class IgdbGameExternalImportResolver implements ExternalMediaMatcher {
+export class ExternalIGDBGamesMatcher implements ExternalMediaMatcher {
     constructor(
         private gamesProviderService: GamesProviderService,
         private resultBatchSize = 50,

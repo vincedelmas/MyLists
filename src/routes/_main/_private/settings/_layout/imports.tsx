@@ -5,7 +5,7 @@ import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
-import {FileSpreadsheet, Info, UploadCloud} from "lucide-react";
+import {FileSpreadsheet, Info, TriangleAlert, UploadCloud} from "lucide-react";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {ExistingImportsPanel} from "@/lib/client/components/user-settings/ExistingImportsPanel";
 import {finishedImportJobsOptions} from "@/lib/client/react-query/query-options/imports.options";
@@ -74,7 +74,7 @@ function SettingsImportsPage() {
                             </p>
                         </div>
 
-                        <div className="rounded-xl border border-app-accent/50 p-4">
+                        <div className="rounded-xl border border-app-accent/80 p-4">
                             <div className="space-y-2 text-sm leading-relaxed">
                                 <div className="flex gap-2 items-center font-semibold text-primary">
                                     <Info className="size-4 text-app-accent"/>
@@ -85,13 +85,30 @@ function SettingsImportsPage() {
                                         You can leave this page while the import runs.
                                     </li>
                                     <li>
-                                        Rows that cannot be matched automatically need to be added by hand.
+                                        Rows that cannot be matched automatically would need to be added by hand.
+                                    </li>
+                                    <li>
+                                        Entries already in your list are ignored and counted as completed.
                                     </li>
                                     <li>
                                         The import is parsed immediately, then processed automatically.
                                         Refresh the selected job to check progress.
                                     </li>
                                 </ul>
+                            </div>
+                        </div>
+
+                        <div className="rounded-xl border border-app-rating/80 p-4">
+                            <div className="space-y-2 text-sm leading-relaxed">
+                                <div className="flex gap-2 items-center font-semibold text-primary">
+                                    <TriangleAlert className="size-4 text-app-rating"/>
+                                    Caveat
+                                </div>
+                                <div className="text-muted-foreground">
+                                    When adding a media by hand it will automatically create an Activity and a Media Feed.
+                                    You can remove both: the Media Feed Info using the trash icon on you profile, and the Activity in
+                                    the "MyActivity" page or using the "Activity Cleanup" settings page.
+                                </div>
                             </div>
                         </div>
 
@@ -102,7 +119,7 @@ function SettingsImportsPage() {
                             <ol className="list-decimal space-y-1.5 pl-4 text-sm text-muted-foreground">
                                 <li>Export your list from the Content & Lists settings page.</li>
                                 <li>Upload the generated MyLists CSV here.</li>
-                                <li>Run the import drain worker, then refresh the job status when needed.</li>
+                                <li>Refresh the job status when needed (updated per batch so can be a minute :)).</li>
                                 <li>Review skipped or failed rows and add them manually if needed.</li>
                             </ol>
                         </div>

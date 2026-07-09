@@ -1,5 +1,5 @@
 import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
-import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {InternalMatcherPipeline, InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
 export const internalMediaMatcherPipeline = (internalMatchers: InternalMediaMatcher[]) => ({
@@ -20,4 +20,4 @@ export const internalMediaMatcherPipeline = (internalMatchers: InternalMediaMatc
             unresolved: currentUnresolved,
         };
     }
-});
+}) satisfies InternalMatcherPipeline;

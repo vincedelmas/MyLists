@@ -15,3 +15,8 @@ export interface MediaMatcher {
 export interface InternalMediaMatcher {
     match(items: ImportItemsSelect[]): Promise<{ matched: MatchedImportItem[], unresolved: ImportItemsSelect[] }>;
 }
+
+
+export interface InternalMatcherPipeline {
+    run(items: ImportItemsSelect[]): Promise<{ matched: MatchedImportItem[]; unresolved: ImportItemsSelect[] }>;
+}

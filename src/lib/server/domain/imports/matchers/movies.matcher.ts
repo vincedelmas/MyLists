@@ -6,7 +6,7 @@ import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/interna
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {internalMediaMatcherPipeline} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
 import {MoviesImportListWriter} from "@/lib/server/domain/imports/list-writers/movies-import-list.writer";
-import {MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {InternalMatcherPipeline, MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {MovieExternalImportResolver, TmdbMovieExternalImportResolver} from "@/lib/server/domain/imports/matchers/movie-external-import.resolver";
 
 
@@ -15,7 +15,7 @@ const MATCH_NOT_FOUND_REASON = "No movie match found";
 
 export class MoviesMatcher implements MediaMatcher {
     constructor(
-        private internalMatcherPipeline: ReturnType<typeof internalMediaMatcherPipeline>,
+        private internalMatcherPipeline: InternalMatcherPipeline,
         private listWriter: MoviesImportListWriter,
         private externalResolver: MovieExternalImportResolver,
     ) {

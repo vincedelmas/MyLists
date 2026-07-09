@@ -6,7 +6,7 @@ import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/interna
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {GamesImportListWriter} from "@/lib/server/domain/imports/list-writers/games-import-list.writer";
 import {internalMediaMatcherPipeline} from "@/lib/server/domain/imports/matchers/internal-media.matcher";
-import {MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {InternalMatcherPipeline, MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {GameExternalImportResolver, IgdbGameExternalImportResolver} from "@/lib/server/domain/imports/matchers/game-external-import.resolver";
 
 
@@ -15,7 +15,7 @@ const MATCH_NOT_FOUND_REASON = "No game match found";
 
 export class GamesMatcher implements MediaMatcher {
     constructor(
-        private internalMatcherPipeline: ReturnType<typeof internalMediaMatcherPipeline>,
+        private internalMatcherPipeline: InternalMatcherPipeline,
         private listWriter: GamesImportListWriter,
         private externalResolver: GameExternalImportResolver,
     ) {

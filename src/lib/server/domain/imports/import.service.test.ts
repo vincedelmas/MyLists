@@ -58,7 +58,7 @@ describe("ImportService.createImportJob", () => {
         const jobs = [{ id: 10, status: ImportJobStatus.QUEUED }];
         repository.requeueStaleProcessingJobs.mockResolvedValue(jobs);
 
-        await expect(service.requeueStaleProcessingJobs()).resolves.toBe(jobs);
+        await expect(service.requeueStaleProcessingJobs(6 * 60)).resolves.toBe(jobs);
         expect(repository.requeueStaleProcessingJobs).toHaveBeenCalledTimes(1);
     });
 

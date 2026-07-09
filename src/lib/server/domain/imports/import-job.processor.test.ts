@@ -12,7 +12,7 @@ describe("ImportJobProcessor", () => {
 
         importService.requeueStaleProcessingJobs.mockResolvedValue([{ id: 10 }]);
 
-        await expect(processor.requeueStaleProcessingJobs()).resolves.toEqual([{ id: 10 }]);
+        await expect(processor.requeueStaleProcessingJobs(6 * 60)).resolves.toEqual([{ id: 10 }]);
         expect(importService.requeueStaleProcessingJobs).toHaveBeenCalledTimes(1);
     });
 

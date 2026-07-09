@@ -1,4 +1,4 @@
-import {ImportItemOutcome, ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
+import {ExternalResolverResult, ImportItemOutcome, ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
 
 
 export interface MediaMatcherContext {
@@ -19,4 +19,9 @@ export interface InternalMediaMatcher {
 
 export interface InternalMatcherPipeline {
     run(items: ImportItemsSelect[]): Promise<{ matched: MatchedImportItem[]; unresolved: ImportItemsSelect[] }>;
+}
+
+
+export interface ExternalImportResolver {
+    resolve(items: ImportItemsSelect[]): AsyncIterable<ExternalResolverResult>;
 }

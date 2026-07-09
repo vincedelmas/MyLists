@@ -1,18 +1,14 @@
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {GamesProviderService} from "@/lib/server/domain/media/games/games-provider.service";
+import {ExternalImportResolver} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
 const PROVIDER_BATCH_SIZE = 500;
 const GAME_API_RES_FAILED_REASON = "API failed for this media";
 
 
-export interface GameExternalImportResolver {
-    resolve(items: ImportItemsSelect[]): AsyncIterable<ExternalResolverResult>;
-}
-
-
-export class IgdbGameExternalImportResolver implements GameExternalImportResolver {
+export class IgdbGameExternalImportResolver implements ExternalImportResolver {
     constructor(
         private gamesProviderService: GamesProviderService,
         private resultBatchSize = 50,

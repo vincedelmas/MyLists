@@ -4,6 +4,7 @@ import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType,} from "@/lib/utils/enums";
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/movies.types";
+import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
 
 
 export const MYLISTS_CSV_VERSION = "1";
@@ -26,8 +27,8 @@ const parseCsvRecords = (csv: string) => {
 
 
 const mediaRowValidatorMap = {
-    [MediaType.SERIES]: moviesMyListsCSVRowSchema,
-    [MediaType.ANIME]: moviesMyListsCSVRowSchema,
+    [MediaType.SERIES]: seriesMyListsCSVRowSchema,
+    [MediaType.ANIME]: animeMyListsCSVRowSchema,
     [MediaType.MOVIES]: moviesMyListsCSVRowSchema,
     [MediaType.GAMES]: gamesMyListsCSVRowSchema,
     [MediaType.BOOKS]: moviesMyListsCSVRowSchema,

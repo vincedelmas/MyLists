@@ -2,14 +2,19 @@ import {MediaType} from "@/lib/utils/enums";
 import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
-import {TmdbTrendingTvResponse, TmdbTvDetails} from "@/lib/types/provider.types";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 import {BaseTrendsProviderService} from "@/lib/server/domain/media/base/provider.service";
+import {ProviderSearchResults, TmdbTrendingTvResponse, TmdbTvDetails} from "@/lib/types/provider.types";
 
 
 export class TvProviderService extends BaseTrendsProviderService<TvRepository, TmdbTvDetails, UpsertTvWithDetails> {
     constructor(private client: TmdbApi, repository: TvRepository, private readonly jikanClient: JikanApi) {
         super(repository);
+    }
+
+    async search(query: string, page = 1): Promise<ProviderSearchResults> {
+        const searchData = await this.client.search(query, page);
+        return tmdbTransformer.transformSearchResults(searchData);
     }
 
     protected _fetchRawDetails(apiId: number) {

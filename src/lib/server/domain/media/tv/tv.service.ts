@@ -91,6 +91,10 @@ export class TvService extends BaseService<AnimeSchemaConfig | SeriesSchemaConfi
         return { fields };
     }
 
+    async getMediaEpsPerSeason(mediaId: number) {
+        return this.repository.getMediaEpsPerSeason(mediaId);
+    }
+
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();

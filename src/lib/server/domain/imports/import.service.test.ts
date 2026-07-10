@@ -13,6 +13,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 
 describe("ImportService.createImportJob", () => {
+    const parser = vi.fn();
     const repository = {
         createJob: vi.fn(),
         markJobFailed: vi.fn(),
@@ -24,15 +25,15 @@ describe("ImportService.createImportJob", () => {
         insertParsedItems: vi.fn(),
         deleteTerminalJob: vi.fn(),
         claimNextQueuedJob: vi.fn(),
-        requeueStaleProcessingJobs: vi.fn(),
         markItemsProcessing: vi.fn(),
+        findActiveJobForUser: vi.fn(),
         incrementJobCounters: vi.fn(),
         settleProcessingItems: vi.fn(),
         finalizeProcessingJob: vi.fn(),
         markProcessingJobFailed: vi.fn(),
+        requeueStaleProcessingJobs: vi.fn(),
         getQueuedItemsForProcessingJob: vi.fn(),
     };
-    const parser = vi.fn();
     const service = new ImportService(repository as any, {
         [ImportSource.MYLISTS]: parser,
     });
@@ -45,6 +46,7 @@ describe("ImportService.createImportJob", () => {
             source: ImportSource.MYLISTS,
             status: ImportJobStatus.PARSING,
         });
+        repository.findActiveJobForUser.mockResolvedValue(null);
     });
 
     it("claims the next queued job for the drain worker", async () => {
@@ -54,7 +56,7 @@ describe("ImportService.createImportJob", () => {
         await expect(service.claimNextQueuedJob()).resolves.toBe(job);
     });
 
-    it("requeues stale processing jobs for the drain worker", async () => {
+    it("re-queues stale processing jobs for the drain worker", async () => {
         const jobs = [{ id: 10, status: ImportJobStatus.QUEUED }];
         repository.requeueStaleProcessingJobs.mockResolvedValue(jobs);
 
@@ -159,6 +161,18 @@ describe("ImportService.createImportJob", () => {
         expect(repository.insertParsedItems).toHaveBeenCalledWith(10, parsed.items);
         expect(repository.markJobQueued).toHaveBeenCalledWith(10, 1, 0);
         expect(repository.markJobFailed).not.toHaveBeenCalled();
+    });
+
+    it("rejects creating a new import when the user already has an active one", async () => {
+        repository.findActiveJobForUser.mockResolvedValue({ id: 9, status: ImportJobStatus.QUEUED });
+        await expect(service.createImportJob(42, ImportSource.MYLISTS, "csv")).rejects.toThrow(FormattedError);
+        expect(repository.createJob).not.toHaveBeenCalled();
+    });
+
+    it("formats the database constraint error when concurrent requests race", async () => {
+        repository.createJob.mockRejectedValue(new Error("UNIQUE constraint failed: import_jobs.user_id"));
+        await expect(service.createImportJob(42, ImportSource.MYLISTS, "csv")).rejects.toThrow(FormattedError);
+        expect(parser).not.toHaveBeenCalled();
     });
 
     it("marks file-level parsing errors failed and returns the failed job", async () => {

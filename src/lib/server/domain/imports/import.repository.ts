@@ -230,6 +230,25 @@ export class ImportRepository {
         return job;
     }
 
+    static async findActiveJobForUser(userId: number) {
+        return getDbClient()
+            .select({
+                id: importJobs.id,
+                source: importJobs.source,
+                status: importJobs.status,
+                createdAt: importJobs.createdAt,
+                updatedAt: importJobs.updatedAt,
+                startedAt: importJobs.startedAt,
+            })
+            .from(importJobs)
+            .where(and(
+                eq(importJobs.userId, userId),
+                inArray(importJobs.status, [ImportJobStatus.PARSING, ImportJobStatus.QUEUED, ImportJobStatus.PROCESSING]),
+            ))
+            .orderBy(desc(importJobs.createdAt), desc(importJobs.id))
+            .get();
+    }
+
     static async deleteTerminalJob(jobId: number, userId: number) {
         const [deletedJob] = await getDbClient()
             .delete(importJobs)

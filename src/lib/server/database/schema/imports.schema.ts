@@ -24,6 +24,7 @@ export const importJobs = sqliteTable("import_jobs", {
 }, (table) => [
     index("ix_import_jobs_user_created_at").on(table.userId, table.createdAt),
     index("ix_import_jobs_status_created_at").on(table.status, table.createdAt),
+    uniqueIndex("ux_import_jobs_user_active").on(table.userId).where(sql`${table.status} IN ('parsing', 'queued', 'processing')`),
 ]);
 
 

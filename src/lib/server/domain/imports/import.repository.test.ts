@@ -31,14 +31,16 @@ describe("ImportRepository", () => {
 
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
-        await db.insert(user).values({
-            id: 42,
-            emailVerified: true,
-            name: "import-user",
-            email: "import-user@example.com",
-            createdAt: "2024-01-01 00:00:00",
-            updatedAt: "2024-01-01 00:00:00",
-        });
+        for (const id of [42, 43, 44, 45]) {
+            await db.insert(user).values({
+                id,
+                emailVerified: true,
+                name: `import-user-${id}`,
+                updatedAt: "2024-01-01 00:00:00",
+                createdAt: "2024-01-01 00:00:00",
+                email: `import-user-${id}@example.com`,
+            });
+        }
     });
 
     afterEach(() => {
@@ -57,9 +59,26 @@ describe("ImportRepository", () => {
         });
     });
 
+    it("allows only one active job per user", async () => {
+        const activeJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+
+        await expect(ImportRepository.createJob(42, ImportSource.MYLISTS)).rejects.toBeDefined();
+        await expect(ImportRepository.findActiveJobForUser(42)).resolves.toMatchObject({
+            id: activeJob.id,
+            status: ImportJobStatus.PARSING,
+        });
+
+        await ImportRepository.markJobFailed(activeJob.id, "Invalid file");
+
+        await expect(ImportRepository.createJob(42, ImportSource.MYLISTS)).resolves.toMatchObject({
+            userId: 42,
+            status: ImportJobStatus.PARSING,
+        });
+    });
+
     it("atomically claims only the oldest queued job while no job is processing", async () => {
         const firstJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        const secondJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const secondJob = await ImportRepository.createJob(43, ImportSource.MYLISTS);
         await ImportRepository.markJobQueued(firstJob.id, 0, 0);
         await ImportRepository.markJobQueued(secondJob.id, 0, 0);
 
@@ -86,7 +105,7 @@ describe("ImportRepository", () => {
 
     it("loads only queued items from a processing job in deterministic media and row order", async () => {
         const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        const waitingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const waitingJob = await ImportRepository.createJob(43, ImportSource.MYLISTS);
 
         await ImportRepository.insertParsedItems(processingJob.id, [
             createItem(4, { mediaType: MediaType.MOVIES }),
@@ -344,7 +363,7 @@ describe("ImportRepository", () => {
 
     it("marks processing failures as terminal and only affects processing jobs", async () => {
         const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        const parsingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const parsingJob = await ImportRepository.createJob(43, ImportSource.MYLISTS);
 
         await ImportRepository.markJobQueued(processingJob.id, 0, 0);
         await ImportRepository.claimNextQueuedJob();
@@ -361,8 +380,8 @@ describe("ImportRepository", () => {
 
     it("finds jobs only for their owner and counts processing and earlier queued jobs", async () => {
         const processingJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        const earlierQueuedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        const targetJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        const earlierQueuedJob = await ImportRepository.createJob(43, ImportSource.MYLISTS);
+        const targetJob = await ImportRepository.createJob(44, ImportSource.MYLISTS);
 
         await ImportRepository.markJobQueued(processingJob.id, 0, 0);
         await ImportRepository.markJobQueued(earlierQueuedJob.id, 0, 0);
@@ -372,7 +391,7 @@ describe("ImportRepository", () => {
             .set({ status: ImportJobStatus.PROCESSING })
             .where(eq(importJobs.id, processingJob.id));
 
-        await expect(ImportRepository.findJobForUser(targetJob.id, 42)).resolves.toMatchObject({ id: targetJob.id });
+        await expect(ImportRepository.findJobForUser(targetJob.id, 44)).resolves.toMatchObject({ id: targetJob.id });
         await expect(ImportRepository.findJobForUser(targetJob.id, 999)).resolves.toBeUndefined();
         await expect(ImportRepository.countJobsAhead(queuedTarget)).resolves.toBe(2);
     });
@@ -399,10 +418,10 @@ describe("ImportRepository", () => {
 
     it("deletes only owned terminal jobs and cascades their items", async () => {
         const finishedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        const queuedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-
         await ImportRepository.insertParsedItems(finishedJob.id, [createItem(2)]);
         await ImportRepository.markJobFailed(finishedJob.id, "Invalid file");
+
+        const queuedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         await ImportRepository.markJobQueued(queuedJob.id, 0, 0);
 
         await expect(ImportRepository.deleteTerminalJob(queuedJob.id, 42)).resolves.toBeNull();

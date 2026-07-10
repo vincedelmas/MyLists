@@ -13,6 +13,8 @@ const importParserRegistry: ImportParserRegistry = {
     [ImportSource.MYLISTS]: parseMyListsCsv,
 };
 
+const ACTIVE_IMPORT_ERROR = "You already have an import in progress. Wait for it to finish before starting another.";
+
 
 export class ImportService {
     constructor(
@@ -120,7 +122,23 @@ export class ImportService {
     }
 
     async createImportJob(userId: number, source: ImportSource, contents: string) {
-        const job = await this.repository.createJob(userId, source);
+        const activeJob = await this.repository.findActiveJobForUser(userId);
+        if (activeJob) {
+            throw new FormattedError(ACTIVE_IMPORT_ERROR);
+        }
+
+        let job: Awaited<ReturnType<typeof ImportRepository.createJob>>;
+        try {
+            job = await this.repository.createJob(userId, source);
+        }
+        catch (error) {
+            const message = String(error);
+            if (message.includes("ux_import_jobs_user_active") || message.includes("import_jobs.user_id")) {
+                throw new FormattedError(ACTIVE_IMPORT_ERROR);
+            }
+
+            throw error;
+        }
 
         try {
             const parser = this.parsers[source];

@@ -40,6 +40,9 @@ function SettingsImportsPage() {
         formData.set("source", submittedData.source);
 
         createMutation.mutate({ data: formData }, {
+            onError: () => {
+                form.reset({ source: ImportSource.MYLISTS });
+            },
             onSuccess: (result) => {
                 form.reset({ source: ImportSource.MYLISTS });
                 setFileInputResetKey((key) => key + 1);

@@ -10,21 +10,46 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/c
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
+interface ImportJobListItem {
+    id: number;
+    source: string;
+    status: string;
+    updatedAt: string;
+    failedCount: number;
+    skippedCount: number;
+    finishedAt: string | null;
+}
+
+
+const formatImportLabel = (job: ImportJobListItem) => {
+    const issueCount = job.failedCount + job.skippedCount;
+    const issueLabel = issueCount > 0 ? ` · ${issueCount} issue${issueCount > 1 ? "s" : ""}` : "";
+
+    return `#${job.id} · ${job.source} · ${job.status.replaceAll("_", " ")} · ${formatDate(job.finishedAt ?? job.updatedAt)}${issueLabel}`;
+};
+
+
 export function ExistingImportsPanel() {
-    const [open, setOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate({ from: "/settings/imports" });
-    const { data: importJobs, isLoading } = useQuery(allUserJobsOptions(open));
     const search = useSearch({ from: "/_main/_private/settings/_layout/imports" });
+    const { data: importJobs = [], isLoading, isError } = useQuery(allUserJobsOptions(isOpen));
 
-    const selectedJob = importJobs?.find(job => job.id === search.jobId);
-    const selectedValue = selectedJob ? String(selectedJob.id) : undefined;
+    const selectedJob = importJobs.find(job => job.id === search.jobId);
+    const selectedValue = search.jobId ? String(search.jobId) : undefined;
+    const selectPlaceholder = importJobs.length === 0 ? "No imports yet" : "Select import job";
+    const selectedJobLabel = selectedJob ? formatImportLabel(selectedJob) : search.jobId ? `Job #${search.jobId}` : undefined;
 
-    const handleDeleted = () => {
-        void navigate({ search: { page: 1 }, resetScroll: false });
+    const handleSelectOpenChange = (isOpen: boolean) => {
+        if (isOpen) setIsOpen(true);
+    };
+
+    const handleJobDelete = () => {
+        void navigate({ search: prev => ({ ...prev, page: 1, jobId: undefined }), resetScroll: false });
     };
 
     const handleJobChange = (jobId: string) => {
-        void navigate({ search: prev => ({ ...prev, page: 1, jobId }), resetScroll: false });
+        void navigate({ search: prev => ({ ...prev, page: 1, jobId: Number(jobId) }), resetScroll: false });
     };
 
     return (
@@ -47,24 +72,29 @@ export function ExistingImportsPanel() {
                         </CardDescription>
                     </div>
 
-                    <Select value={selectedValue} onValueChange={handleJobChange} onOpenChange={() => setOpen(!open)}>
+                    <Select value={selectedValue} onValueChange={handleJobChange} onOpenChange={handleSelectOpenChange}>
                         <SelectTrigger className="w-full">
-                            <SelectValue placeholder={importJobs?.length === 0 ? "No imports yet" : "Select import job"}/>
+                            <SelectValue placeholder={selectPlaceholder}>
+                                {selectedJobLabel}
+                            </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                             {isLoading ?
                                 <Loader2 className="size-5 animate-spin mx-auto"/>
-                                :
-                                importJobs?.map((job) => {
-                                    const issueCount = job.failedCount + job.skippedCount;
-
-                                    return (
-                                        <SelectItem key={job.id} value={String(job.id)}>
-                                            #{job.id} · {job.source} · {job.status.replaceAll("_", " ")} · {formatDate(job.finishedAt ?? job.updatedAt)}
-                                            {issueCount > 0 ? ` · ${issueCount} issue${issueCount > 1 ? "s" : ""}` : ""}
-                                        </SelectItem>
-                                    );
-                                })
+                                : isError ?
+                                    <div className="px-2 py-1.5 text-sm text-destructive">
+                                        Imports could not be loaded.
+                                    </div>
+                                    : importJobs.length === 0 ?
+                                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                            No imports yet.
+                                        </div>
+                                        :
+                                        importJobs.map((job) =>
+                                            <SelectItem key={job.id} value={String(job.id)}>
+                                                {formatImportLabel(job)}
+                                            </SelectItem>
+                                        )
                             }
                         </SelectContent>
                     </Select>
@@ -81,7 +111,7 @@ export function ExistingImportsPanel() {
                         <SelectedImportJob
                             jobId={search.jobId}
                             page={search.page ?? 1}
-                            onDeleted={handleDeleted}
+                            onDeleted={handleJobDelete}
                         />
                     }
                 </CardContent>

@@ -12,7 +12,7 @@ import {AlertTriangle, CheckCircle2, Clock3, ListRestart, Loader2, RefreshCw, Tr
 interface SelectedImportJobProps {
     page: number;
     jobId: number;
-    onDeleted: (jobId: number) => void;
+    onDeleted: () => void;
 }
 
 
@@ -56,7 +56,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
 
         deleteMutation.mutate({ data: { jobId } }, {
             onSuccess: () => {
-                onDeleted(jobId);
+                onDeleted();
             },
         });
     };

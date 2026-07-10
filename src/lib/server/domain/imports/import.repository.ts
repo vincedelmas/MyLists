@@ -285,7 +285,15 @@ export class ImportRepository {
 
     static async getAllUserJobs(userId: number) {
         return getDbClient()
-            .select()
+            .select({
+                id: importJobs.id,
+                source: importJobs.source,
+                status: importJobs.status,
+                updatedAt: importJobs.updatedAt,
+                finishedAt: importJobs.finishedAt,
+                failedCount: importJobs.failedCount,
+                skippedCount: importJobs.skippedCount,
+            })
             .from(importJobs)
             .where(eq(importJobs.userId, userId))
             .orderBy(desc(importJobs.createdAt), desc(importJobs.id));

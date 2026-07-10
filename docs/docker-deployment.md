@@ -71,7 +71,7 @@ Do not store these paths only inside the container filesystem in prod.
 
 ## Redis
 
-Compose starts Redis by default and the Docker env example enables it:
+Compose starts Redis by default, and the Docker env example enables it:
 
 ```env
 REDIS_ENABLED=true
@@ -80,13 +80,30 @@ REDIS_URL=redis://redis:6379
 
 When Redis is disabled, the app uses in-memory cache and in-memory rate limiting inside each app process.
 
-API monitoring in the admin dashboard is Redis-backed. Without Redis, outbound API calls are not recorded into the monitoring rollups and the live Redis counters show zero/null
-data.
+API monitoring in the admin dashboard is Redis-backed. Without Redis, outbound API calls are not recorded into the monitoring
+rollups and the live Redis counters show zero/null data.
+
+## Import Drain
+
+Imports are processed by the built CLI. The web app only creates queued import jobs; it does not start a worker process.
+Run the import drain on a schedule with the same image, env, and persistent mounts as the app:
+
+```bash
+flock -n /tmp/mylists-import-drain.lock bun dist/cli/index.js import-drain
+```
+
+For Docker Compose:
+
+```bash
+flock -n /tmp/mylists-import-drain.lock docker compose --env-file .env.docker run --rm app bun dist/cli/index.js import-drain
+```
+
+A typical schedule is every 2 minutes for example. The `flock` lock skips a new run when the previous drain is still active.
+The database also only allows one import job to be in `PROCESSING` at a time.
 
 ## Maintenance
 
-The image does not run cron. Use Dokploy cron, host cron, systemd timers, Kubernetes CronJob, or another scheduler.
-
+The image does not run cron. Use Dokploy cron, host cron, Kubernetes CronJob, or another scheduler.
 Run the maintenance task with the same image, env, and persistent mounts as the app:
 
 ```bash
@@ -94,7 +111,7 @@ docker compose --env-file .env.docker run --rm app \
   bun dist/cli/index.js maintenance --json
 ```
 
-A typical schedule is once per day, for example 03:00 AM UTC.
+A typical schedule is once per day, for example, 03:00 AM UTC.
 
 ## CLI Usage
 

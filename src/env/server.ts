@@ -26,11 +26,6 @@ export const serverEnv = createEnv({
         REDIS_URL: z.url().default("redis://localhost:6379"),
         REDIS_ENABLED: z.string().transform((s) => s !== "false" && s !== "0").default(false),
 
-        // Imports
-        IMPORT_DRAIN_SYSTEMD_SERVICE: z.string().default("mylists-import-drain.service"),
-        IMPORT_DRAIN_AUTO_START: z.string().default("true").transform((s) => s !== "false" && s !== "0"),
-        IMPORT_DRAIN_SYSTEMD_USER: z.string().default("true").transform((s) => s !== "false" && s !== "0"),
-
         // Better-Auth
         BETTER_AUTH_SECRET: z.string().min(20),
 

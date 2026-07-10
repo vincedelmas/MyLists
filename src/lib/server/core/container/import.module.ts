@@ -1,4 +1,3 @@
-import {serverEnv} from "@/env/server";
 import {MediaType} from "@/lib/utils/enums";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {TvMatcher} from "@/lib/server/domain/imports/matchers/tv.matcher";
@@ -10,7 +9,6 @@ import {MoviesMatcher} from "@/lib/server/domain/imports/matchers/movies.matcher
 import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
 import {MediaProviderServiceRegistry, MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
-import {NoopImportDrainStarter, SystemdImportDrainStarter} from "@/lib/server/domain/imports/import-drain.starter";
 
 
 export function setupImportModule(
@@ -44,10 +42,6 @@ export function setupImportModule(
     importMatcherRegistry.register(MediaType.MANGA, MangaMatcher.create(mangaService, mangaProviderService));
 
     const importProcessor = new ImportJobProcessor(importService, importMatcherRegistry);
-    
-    const importDrainStarter = serverEnv.IMPORT_DRAIN_AUTO_START
-        ? new SystemdImportDrainStarter(serverEnv.IMPORT_DRAIN_SYSTEMD_SERVICE, serverEnv.IMPORT_DRAIN_SYSTEMD_USER)
-        : new NoopImportDrainStarter();
 
     return {
         repositories: {
@@ -55,7 +49,6 @@ export function setupImportModule(
         },
         services: {
             importProcessor,
-            importDrainStarter,
             imports: importService,
         },
         registries: {

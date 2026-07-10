@@ -2,13 +2,14 @@ import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 
 
 type TvDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["overTitle"]>[number];
 
 
-export const TvOverTitle = ({ mediaType, media }: TvDetailsProps<typeof MediaType.SERIES | typeof MediaType.ANIME>) => {
+export const TvOverTitle = ({ mediaType, media }: TvDetailsProps<TvMediaType>) => {
     const hasNetwork = (media.networks?.length ?? 0) > 0;
 
     return (

@@ -70,3 +70,9 @@ export type UserTag = {
         mediaCover: string;
     }[];
 }
+
+export type ExportMediaList = {
+    mediaName: string;
+    externalApiId: string;
+    releaseDate: string | null;
+}

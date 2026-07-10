@@ -9,16 +9,17 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {MediaSchemaConfig} from "@/lib/types/media.config.types";
 import {MediaListArgs, SearchType, SimpleSearch} from "@/lib/schemas";
-import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
+import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {ExpandedListFilters, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData} from "@/lib/types/media-list.types";
 import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user} from "@/lib/server/database/schema";
+import {ExpandedListFilters, ExportMediaList, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData} from "@/lib/types/media-list.types";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
 
 
 const SIMILAR_MAX_GENRES = 10;
+const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 
 
 export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
@@ -74,6 +75,26 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
                 filterColumn: genreTable.name,
             }),
         };
+    }
+
+    async bulkInsertUserMedia(rows: TConfig["listTable"]["$inferInsert"][]) {
+        if (rows.length === 0) return [];
+
+        const { listTable } = this.config;
+        const insertedRows: TConfig["listTable"]["$inferSelect"][] = [];
+
+        for (let offset = 0; offset < rows.length; offset += USER_MEDIA_INSERT_BATCH_SIZE) {
+            const batch = rows.slice(offset, offset + USER_MEDIA_INSERT_BATCH_SIZE);
+            const inserted = await getDbClient()
+                .insert(listTable)
+                .values(batch)
+                .onConflictDoNothing({ target: [listTable.userId, listTable.mediaId] })
+                .returning();
+
+            insertedRows.push(...inserted);
+        }
+
+        return insertedRows;
     }
 
     async getCoverFilenames() {
@@ -377,6 +398,54 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         return result;
     }
 
+    async findByApiIds(apiIds: (number | string)[]) {
+        if (apiIds.length === 0) return [];
+
+        const { mediaTable } = this.config;
+        const uniqueApiIds = [...new Set(apiIds)];
+        const matches: { id: number; apiId: number | string }[] = [];
+
+        for (let offset = 0; offset < uniqueApiIds.length; offset += 300) {
+            const chunk = uniqueApiIds.slice(offset, offset + 300);
+            const rows = await getDbClient()
+                .select({
+                    id: sql<number>`${mediaTable.id}`,
+                    apiId: sql<number | string>`${mediaTable.apiId}`,
+                })
+                .from(mediaTable)
+                .where(inArray(mediaTable.apiId, chunk));
+
+            matches.push(...rows);
+        }
+
+        return matches;
+    }
+
+    async findByNames(names: string[]) {
+        if (names.length === 0) return [];
+
+        const { mediaTable } = this.config;
+        const uniqueNames = [...new Set(names.map(name => name.trim().toLowerCase()).filter(Boolean))];
+        const matches: { id: number; name: string; releaseDate: string | null }[] = [];
+        const lowerNames = sql<string>`lower(trim(${mediaTable.name}))`;
+
+        for (let offset = 0; offset < uniqueNames.length; offset += 300) {
+            const chunk = uniqueNames.slice(offset, offset + 300);
+            const rows = await getDbClient()
+                .select({
+                    id: sql<number>`${mediaTable.id}`,
+                    name: sql<string>`${mediaTable.name}`,
+                    releaseDate: sql<string | null>`${mediaTable.releaseDate}`,
+                })
+                .from(mediaTable)
+                .where(inArray(lowerNames, chunk));
+
+            matches.push(...rows);
+        }
+
+        return matches;
+    }
+
     async updateUserMediaDetails(userId: number, mediaId: number, updateData: TConfig["listTable"]["$inferSelect"]): Promise<TConfig["listTable"]["$inferSelect"]> {
         const { listTable } = this.config;
 
@@ -427,20 +496,19 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
         };
     }
 
-    async downloadMediaListAsCSV(userId: number): Promise<(TConfig["listTable"]["$inferSelect"] & { mediaName: string, apiId: string | number })[] | undefined> {
+    async downloadMediaListAsCSV(userId: number): Promise<(TConfig["listTable"]["$inferSelect"] & ExportMediaList)[] | undefined> {
         const { mediaTable, listTable } = this.config;
 
-        const data = await getDbClient()
+        return getDbClient()
             .select({
-                apiId: sql<string>`${mediaTable.apiId}`,
                 mediaName: sql<string>`${mediaTable.name}`,
+                externalApiId: sql<string>`${mediaTable.apiId}`,
+                releaseDate: sql<string | null>`${mediaTable.releaseDate}`,
                 ...getTableColumns(listTable),
             })
             .from(listTable)
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
             .where(eq(listTable.userId, userId));
-
-        return data;
     }
 
     async getUserFollowsMediaData(userId: number | undefined, mediaId: number): Promise<UserFollowsMediaData<TConfig["listTable"]["$inferSelect"]>[]> {

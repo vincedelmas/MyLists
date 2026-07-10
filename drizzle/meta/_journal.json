@@ -232,6 +232,27 @@
       "when": 1782806629934,
       "tag": "0032_which_came_first",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1783335034242,
+      "tag": "0033_import_list_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1783335382934,
+      "tag": "0034_import_jobs_and_items",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1783680000000,
+      "tag": "0035_import_single_active_job",
+      "breakpoints": true
     }
   ]
 }

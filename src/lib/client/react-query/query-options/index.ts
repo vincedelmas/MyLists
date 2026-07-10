@@ -2,6 +2,7 @@ export * from "./activity.options";
 export * from "./auth.options";
 export * from "./collections.options";
 export * from "./feature-votes.options";
+export * from "./imports.options";
 export * from "./media.options";
 export * from "./mediadle.options";
 export * from "./wcf.options";

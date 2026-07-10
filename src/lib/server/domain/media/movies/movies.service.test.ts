@@ -1,8 +1,10 @@
 import {describe, expect, it} from "vitest";
 import type {Movie, MoviesList} from "./movies.types";
-import {RatingSystemType, Status} from "@/lib/utils/enums";
+import {convertToCsv} from "@/lib/utils/file-download";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
+import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {ApiProviderType, MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import type {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
@@ -56,6 +58,74 @@ describe("MoviesService", () => {
         ...makeState(overrides),
         tags: [],
         ratingSystem: RatingSystemType.SCORE,
+    });
+
+    describe("downloadMediaListAsCSV", () => {
+        it("exports rows using the MyLists import-compatible shape", async () => {
+            const repository = createRepoStub({
+                mediaType: MediaType.MOVIES,
+                listTable: createListTableStub(),
+            }, {
+                downloadMediaListAsCSV: async () => [{
+                    id: 1,
+                    redo: 1,
+                    total: 2,
+                    externalApiId: "550",
+                    rating: 9,
+                    userId: 42,
+                    mediaId: 100,
+                    comment: "Nice",
+                    favorite: true,
+                    customCover: null,
+                    status: Status.COMPLETED,
+                    mediaName: "Fight Club",
+                    releaseDate: "1999-10-15",
+                    addedAt: "2024-01-01 00:00:00",
+                    lastUpdated: "2024-01-02 00:00:00",
+                }],
+            }) as unknown as MoviesRepository;
+            const service = new MoviesService(repository);
+
+            const rows = await service.downloadMediaListAsCSV(42);
+            const parsed = parseMyListsCsv(convertToCsv(rows!));
+
+            expect(rows).toEqual([expect.objectContaining({
+                redo: 1,
+                total: 2,
+                mediaName: "Fight Club",
+                rating: 9,
+                comment: "Nice",
+                favorite: true,
+                status: Status.COMPLETED,
+                mediaType: MediaType.MOVIES,
+                releaseDate: "1999-10-15",
+                externalApiId: "550",
+                externalApiSource: ApiProviderType.TMDB,
+                formatVersion: "1",
+            })]);
+            expect(parsed).toMatchObject({
+                failedCount: 0,
+                items: [{
+                    name: "Fight Club",
+                    releaseDate: "1999-10-15",
+                    externalApiId: "550",
+                    mediaType: MediaType.MOVIES,
+                    externalApiSource: ApiProviderType.TMDB,
+                    payload: {
+                        redo: 1,
+                        total: 2,
+                        rating: 9,
+                        comment: "Nice",
+                        favorite: true,
+                        status: Status.COMPLETED,
+                    },
+                }],
+            });
+            expect(rows?.[0]).not.toHaveProperty("addedAt");
+            expect(rows?.[0]).not.toHaveProperty("lastUpdated");
+            expect(parsed.items[0].payload).not.toHaveProperty("addedAt");
+            expect(parsed.items[0].payload).not.toHaveProperty("lastUpdated");
+        });
     });
 
     describe("calculateDeltaStats", () => {

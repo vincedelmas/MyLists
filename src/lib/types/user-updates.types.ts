@@ -1,8 +1,6 @@
 import {MediaType, UpdateType} from "@/lib/utils/enums";
 
 
-export type LogPayloadDb = { old_value: any; new_value: any };
-
 export type LogPayload = { oldValue: any; newValue: any } | null;
 
 export type LogUpdateParams = {
@@ -10,6 +8,6 @@ export type LogUpdateParams = {
     userId: number;
     timestamp?: string;
     mediaType: MediaType;
-    payload: LogPayloadDb;
     updateType: UpdateType;
+    payload: { old_value: any; new_value: any };
 };

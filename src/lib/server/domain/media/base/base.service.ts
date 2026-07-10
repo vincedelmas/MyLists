@@ -4,12 +4,15 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {Achievement} from "@/lib/types/achievements.types";
 import {StatsCTE, Tag} from "@/lib/types/media-common.types";
 import {MediaSchemaConfig} from "@/lib/types/media.config.types";
+import {apiProviderMediaTypeMap} from "@/lib/utils/media-mapping";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {BaseProviderService} from "@/lib/server/domain/media/base/provider.service";
 import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
+import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {MyListsCSVImport} from "@/lib/types/imports.types";
 
 
 export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends BaseRepository<TConfig>> {
@@ -96,6 +99,10 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return this.repository.getMediaDetailsByIds(mediaIds, userId);
     }
 
+    async bulkInsertUserMedia(rows: TConfig["listTable"]["$inferInsert"][]) {
+        return this.repository.bulkInsertUserMedia(rows);
+    }
+
     async findById(mediaId: number) {
         return this.repository.findById(mediaId);
     }
@@ -104,8 +111,24 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return this.repository.findByApiId(apiId);
     }
 
+    async findByApiIds(apiIds: (number | string)[]) {
+        return this.repository.findByApiIds(apiIds);
+    }
+
+    async findByNames(names: string[]) {
+        return this.repository.findByNames(names);
+    }
+
     async downloadMediaListAsCSV(userId: number) {
-        return this.repository.downloadMediaListAsCSV(userId);
+        const mediaType = this.repository.config.mediaType;
+        const rows = await this.repository.downloadMediaListAsCSV(userId);
+
+        return rows?.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, ...row }) => ({
+            ...row,
+            mediaType,
+            formatVersion: MYLISTS_CSV_VERSION,
+            externalApiSource: apiProviderMediaTypeMap(mediaType),
+        }) satisfies MyListsCSVImport);
     }
 
     async calculateAdvancedMediaStats(mediaAvgRating: number | null, userId?: number) {

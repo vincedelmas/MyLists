@@ -142,7 +142,7 @@ interface jikanPagination {
 }
 
 
-export interface JikanAnime {
+interface JikanAnime {
     url: string;
     title: string;
     type?: string;
@@ -273,7 +273,7 @@ interface TmdbBaseSearchResult {
 }
 
 
-export interface TmdbPaginatedResponse<T> {
+interface TmdbPaginatedResponse<T> {
     page: number;
     results: T[];
     total_pages: number;
@@ -349,7 +349,7 @@ export interface TmdbMovieDetails {
 }
 
 
-export interface CreatedBy {
+interface CreatedBy {
     id: number;
     name: string;
     gender: number;
@@ -477,7 +477,7 @@ export interface GBooksSearchResults {
 }
 
 
-export interface GBooksSearchDetails {
+interface GBooksSearchDetails {
     id: string;
     kind: string;
     etag: string;
@@ -505,7 +505,7 @@ export interface GBooksSearchDetails {
 }
 
 
-export interface GBooksMoreImageLinks {
+interface GBooksMoreImageLinks {
     thumbnail: string;
     smallThumbnail: string;
     small?: string;
@@ -515,7 +515,7 @@ export interface GBooksMoreImageLinks {
 }
 
 
-export interface GBooksMoreVolumeInfo extends Omit<GBooksSearchDetails["volumeInfo"], "imageLinks"> {
+interface GBooksMoreVolumeInfo extends Omit<GBooksSearchDetails["volumeInfo"], "imageLinks"> {
     imageLinks: GBooksMoreImageLinks;
 }
 

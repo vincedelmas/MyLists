@@ -1,5 +1,5 @@
-import {MediaType} from "@/lib/utils/enums";
 import {ColumnDef} from "@tanstack/react-table";
+import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
 import {ExtractListByType} from "@/lib/types/query.options.types";
 import {DisplayTvRedo} from "@/lib/client/components/media/tv/DisplayTvRedo";
 import {CommonInfoTableCell} from "@/lib/client/components/media/base/CommonInfoTableCell";
@@ -7,8 +7,8 @@ import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsA
 import {ColumnConfigProps, getBaseColumns} from "@/lib/client/components/media/base/BaseListTable";
 
 
-export const getTvColumns = (props: ColumnConfigProps): ColumnDef<ExtractListByType<typeof MediaType.SERIES | typeof MediaType.ANIME>>[] => {
-    const base = getBaseColumns<ExtractListByType<typeof MediaType.SERIES | typeof MediaType.ANIME>>(props);
+export const getTvColumns = (props: ColumnConfigProps): ColumnDef<ExtractListByType<TvMediaType>>[] => {
+    const base = getBaseColumns<ExtractListByType<TvMediaType>>(props);
 
     base.splice(2, 0, {
         id: "progress",

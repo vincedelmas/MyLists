@@ -14,3 +14,4 @@ export * from "./notifications.schema";
 export * from "./admin.schema";
 export * from "./feature-votes.schema";
 export * from "./collections.schema";
+export * from "./imports.schema";

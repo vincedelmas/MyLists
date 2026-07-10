@@ -66,10 +66,10 @@ type BaseSelection<TListTable, TMediaTable> = {
 }
 
 
-export type ListTable = Table & ListTableColumns;
+type TagTable = Table & TagTableColumns;
+type ListTable = Table & ListTableColumns;
+type GenreTable = Table & GenreTableColumns;
 export type MediaTable = Table & MediaTableColumns;
-export type GenreTable = Table & GenreTableColumns;
-export type TagTable = Table & TagTableColumns;
 
 
 export interface MediaSchemaConfig<

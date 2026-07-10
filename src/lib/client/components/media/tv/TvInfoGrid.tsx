@@ -5,6 +5,7 @@ import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatLocaleName} from "@/lib/utils/text-formatting";
+import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
@@ -12,7 +13,7 @@ import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetails
 type TvDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]>[number];
 
 
-export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps<typeof MediaType.SERIES | typeof MediaType.ANIME>) => {
+export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps<TvMediaType>) => {
     const creators = media.createdBy?.split(", ").map((c) => ({ name: c })) || [];
 
     return (

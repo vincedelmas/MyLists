@@ -100,7 +100,7 @@ function MediaListFormPage() {
 
                 try {
                     const formattedData = convertToCsv(data);
-                    saveAsFile(formattedData, selectedListForExport, "text/csv");
+                    saveAsFile(formattedData, `mylists-${selectedListForExport}.csv`, "text/csv");
                 }
                 catch {
                     toast.error("An error occurred while formatting the CSV.");

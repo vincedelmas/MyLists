@@ -19,6 +19,11 @@ const sidebarItems: LinkSidebarItem[] = [
         label: "Content & Lists",
         to: "/settings/content-lists",
     },
+    // {
+    //     id: "imports",
+    //     label: "Imports",
+    //     to: "/settings/imports",
+    // },
     {
         id: "profile-customization",
         label: "Profile Customization",

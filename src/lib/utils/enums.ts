@@ -207,6 +207,37 @@ export const ApiProviderType = {
 export type ApiProviderType = (typeof ApiProviderType)[keyof typeof ApiProviderType];
 
 
+export const ImportSource = {
+    IMDB: "imdb",
+    TMDB: "tmdb",
+    MYLISTS: "mylists",
+    LETTERBOXD: "letterboxd",
+} as const;
+export type ImportSource = (typeof ImportSource)[keyof typeof ImportSource];
+
+
+export const ImportJobStatus = {
+    QUEUED: "queued",
+    FAILED: "failed",
+    PARSING: "parsing",
+    CANCELLED: "cancelled",
+    COMPLETED: "completed",
+    PROCESSING: "processing",
+    COMPLETED_WITH_ERRORS: "completed_with_errors",
+} as const;
+export type ImportJobStatus = (typeof ImportJobStatus)[keyof typeof ImportJobStatus];
+
+
+export const ImportItemStatus = {
+    FAILED: "failed",
+    QUEUED: "queued",
+    SKIPPED: "skipped",
+    COMPLETED: "completed",
+    PROCESSING: "processing",
+} as const;
+export type ImportItemStatus = (typeof ImportItemStatus)[keyof typeof ImportItemStatus];
+
+
 export const FeatureStatus = {
     UNDER_CONSIDERATION: "Under Consideration",
     PLANNED: "Planned",
@@ -215,4 +246,3 @@ export const FeatureStatus = {
     COMPLETED: "Completed",
 } as const;
 export type FeatureStatus = (typeof FeatureStatus)[keyof typeof FeatureStatus];
-

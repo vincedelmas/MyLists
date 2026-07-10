@@ -13,19 +13,19 @@ export type UpdatePayload = {
         RedoTvPayload | EpsSeasonPayload);
 }
 
-export type CommentPayload = {
+type CommentPayload = {
     comment: string | null | undefined,
 }
 
-export type PlatformPayload = {
+type PlatformPayload = {
     platform: GamesPlatformsEnum | null,
 }
 
-export type RatingPayload = {
+type RatingPayload = {
     rating: number | null,
 }
 
-export type FavoritePayload = {
+type FavoritePayload = {
     favorite: boolean,
 }
 

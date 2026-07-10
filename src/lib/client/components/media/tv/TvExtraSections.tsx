@@ -2,6 +2,7 @@ import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
+import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
 
@@ -9,7 +10,7 @@ import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/b
 type TvDetailsProps<T extends MediaType> = Parameters<NonNullable<MediaConfig[T]["extraSections"]>>[number];
 
 
-export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<typeof MediaType.SERIES | typeof MediaType.ANIME>) => {
+export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<TvMediaType>) => {
     const cleanedActors = (media.actors ?? []).filter((a) => a.name !== null);
 
     return (

@@ -1,4 +1,4 @@
-export type MediaRefreshRange = "30d" | "90d" | "1y" | "all";
+type MediaRefreshRange = "30d" | "90d" | "1y" | "all";
 export type ApiMonitoringRange = "24h" | "7d" | "30d" | "90d" | "all";
 
 

@@ -1,6 +1,6 @@
 import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Archive, Award, CircleX, Film, FolderKanban, History, Home, ListCheck, Play, Radio, RefreshCw, Settings, UserRoundX, Users} from "lucide-react";
+import {Archive, Award, CircleX, Film, FolderKanban, GitCompareArrows, History, Home, ListCheck, Play, Radio, RefreshCw, Settings, UserRoundX, Users} from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -103,6 +103,14 @@ export function AdminSidebar() {
                                     <Link to="/admin/mediadle">
                                         <Film className="size-4"/>
                                         <span>Mediadle Stats</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild>
+                                    <Link to="/admin/which-came-first">
+                                        <GitCompareArrows className="size-4"/>
+                                        <span>WCF Stats</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

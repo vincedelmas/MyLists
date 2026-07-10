@@ -114,6 +114,14 @@ export const getAdminMediadleStats = createServerFn({ method: "GET" })
     });
 
 
+export const getAdminWhichCameFirstStats = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .handler(async () => {
+        const whichCameFirstService = await getContainer().then((c) => c.services.whichCameFirst);
+        return whichCameFirstService.getAdminStats();
+    });
+
+
 export const postAdminUpdateUser = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminPostUpdateUserSchema)

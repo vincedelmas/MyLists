@@ -44,6 +44,77 @@ export class WcfService {
         };
     }
 
+    async getAdminStats() {
+        const [
+            summary,
+            answerSummary,
+            poolByType,
+            runsByStatus,
+            dailyRuns,
+            scoreDistribution,
+            mediaTypeUsage,
+            roundAccuracy,
+            topPlayers,
+            recentRuns,
+        ] = await Promise.all([
+            this.repository.getAdminSummary(),
+            this.repository.getAdminAnswerSummary(),
+            this.repository.getAdminPoolByType(),
+            this.repository.getAdminRunsByStatus(),
+            this.repository.getAdminDailyRuns(30),
+            this.repository.getAdminScoreDistribution(),
+            this.repository.getAdminMediaTypeUsage(),
+            this.repository.getAdminRoundAccuracy(),
+            this.repository.getAdminTopPlayers(8),
+            this.repository.getAdminRecentRuns(12),
+        ]);
+
+        const poolByTypeMap = new Map(poolByType.map((row) => [row.mediaType, row]));
+        const runsByStatusMap = new Map(runsByStatus.map((row) => [row.status, row.count]));
+        const mediaTypeUsageMap = new Map(mediaTypeUsage.map((row) => [row.mediaType, row]));
+        const roundAccuracyMap = new Map(roundAccuracy.map((row) => [row.roundNumber, row]));
+
+        return {
+            summary: {
+                ...summary,
+                ...answerSummary,
+                capRate: summary.endedPlayedRuns > 0 ? (summary.cappedRuns / summary.endedPlayedRuns) * 100 : 0,
+                accuracy: answerSummary.totalAnswers > 0 ? (answerSummary.correctAnswers / answerSummary.totalAnswers) * 100 : 0,
+            },
+            dailyRuns,
+            recentRuns,
+            scoreDistribution,
+            poolByType: WCF_MEDIA_TYPES.map((mediaType) => ({
+                mediaType,
+                count: Number(poolByTypeMap.get(mediaType)?.count ?? 0),
+                oldestReleaseDate: poolByTypeMap.get(mediaType)?.oldestReleaseDate ?? null,
+                newestReleaseDate: poolByTypeMap.get(mediaType)?.newestReleaseDate ?? null,
+            })),
+            runsByStatus: (["active", "won", "lost", "exhausted", "abandoned"] as const).map((status) => ({
+                status,
+                count: runsByStatusMap.get(status) ?? 0,
+            })),
+            mediaTypeUsage: WCF_MEDIA_TYPES.map((mediaType) => ({
+                mediaType,
+                selectedCount: mediaTypeUsageMap.get(mediaType)?.selectedCount ?? 0,
+                roundAppearances: mediaTypeUsageMap.get(mediaType)?.roundAppearances ?? 0,
+            })),
+            roundAccuracy: Array.from({ length: WCF_MAX_ROUNDS }, (_value, index) => {
+                const roundNumber = index + 1;
+                return roundAccuracyMap.get(roundNumber) ?? {
+                    roundNumber,
+                    accuracy: 0,
+                    totalAnswers: 0,
+                    correctAnswers: 0,
+                };
+            }),
+            topPlayers: topPlayers.map((player) => ({
+                ...player,
+                accuracy: player.totalAnswers > 0 ? (player.correctAnswers / player.totalAnswers) * 100 : 0,
+            })),
+        };
+    }
+
     async startRun(userId: number, mediaTypes: MediaType[]) {
         const poolCounts = await this.repository.countPool(mediaTypes);
         const totalEligible = poolCounts.reduce((total, row) => total + row.count, 0);

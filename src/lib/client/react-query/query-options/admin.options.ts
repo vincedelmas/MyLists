@@ -15,6 +15,7 @@ import {
     getAdminMediaRefreshStats,
     getAdminOverview,
     getAdminTasks,
+    getAdminWhichCameFirstStats,
 } from "@/lib/server/functions/admin";
 
 
@@ -63,6 +64,12 @@ export const adminAchievementsOptions = queryOptions({
 export const adminMediadleOptions = (search: SearchType) => queryOptions({
     queryKey: ["admin", "mediadle", search],
     queryFn: () => getAdminMediadleStats({ data: search }),
+});
+
+
+export const adminWhichCameFirstOptions = queryOptions({
+    queryKey: ["admin", "which-came-first"],
+    queryFn: () => getAdminWhichCameFirstStats(),
 });
 
 

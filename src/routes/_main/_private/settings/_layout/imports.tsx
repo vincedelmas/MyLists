@@ -1,51 +1,54 @@
-import React, {useState} from "react";
+import {useState} from "react";
+import {useForm} from "react-hook-form";
 import {ImportSource} from "@/lib/utils/enums";
-import {importSearchSchema} from "@/lib/schemas";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
-import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
-import {FileSpreadsheet, Info, TriangleAlert, UploadCloud} from "lucide-react";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {FileSpreadsheet, Info, TriangleAlert, UploadCloud} from "lucide-react";
+import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
+import {importSearchSchema, ImportUploadFormValues, importUploadSchema} from "@/lib/schemas";
 import {ExistingImportsPanel} from "@/lib/client/components/user-settings/ExistingImportsPanel";
-import {finishedImportJobsOptions} from "@/lib/client/react-query/query-options/imports.options";
+import {Form, FormControl, FormField, FormItem, FormMessage} from "@/lib/client/components/ui/form";
 import {useCreateImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/imports")({
     validateSearch: importSearchSchema,
-    loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(finishedImportJobsOptions);
-    },
     component: SettingsImportsPage,
 });
 
 
 function SettingsImportsPage() {
-    const search = Route.useSearch();
     const navigate = Route.useNavigate();
     const createMutation = useCreateImportJobMutation();
-    const finishedJobs = useSuspenseQuery(finishedImportJobsOptions).data;
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [activeSource, setActiveSource] = useState<ImportSource>(ImportSource.MYLISTS);
+    const [fileInputResetKey, setFileInputResetKey] = useState(0);
+    const form = useForm<ImportUploadFormValues>({
+        resolver: zodResolver(importUploadSchema),
+        defaultValues: {
+            source: ImportSource.MYLISTS,
+        },
+    });
 
-    const handleSubmit = (ev: React.SubmitEvent<HTMLFormElement>) => {
-        ev.preventDefault();
-        if (!selectedFile || createMutation.isPending) return;
+    const selectedFile = form.watch("file");
+    const activeSource = form.watch("source");
 
+    const handleSubmit = (submittedData: ImportUploadFormValues) => {
         const formData = new FormData();
-        formData.set("file", selectedFile);
-        formData.set("source", activeSource);
+
+        formData.set("file", submittedData.file);
+        formData.set("source", submittedData.source);
 
         createMutation.mutate({ data: formData }, {
             onSuccess: (result) => {
+                form.reset({ source: ImportSource.MYLISTS });
+                setFileInputResetKey((key) => key + 1);
                 void navigate({ search: prev => ({ ...prev, page: 1, jobId: result.jobId }), resetScroll: false });
             },
         });
     };
 
-    const sourceTabs: TabItem<ImportSource>[] = [
+    const sourceTabs: TabItem<ImportUploadFormValues["source"]>[] = [
         {
             isAccent: true,
             label: "MyLists",
@@ -60,7 +63,7 @@ function SettingsImportsPage() {
                 <TabHeader
                     tabs={sourceTabs}
                     activeTab={activeSource}
-                    setActiveTab={setActiveSource}
+                    setActiveTab={(source) => form.setValue("source", source, { shouldValidate: true })}
                 />
 
                 <div className="mt-4 px-2">
@@ -124,51 +127,62 @@ function SettingsImportsPage() {
                             </ol>
                         </div>
 
-                        <form className="space-y-4" onSubmit={handleSubmit}>
-                            <div>
-                                <h3 className="text-lg font-bold">
-                                    Upload CSV File
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                    Only CSV are allowed, 5MB max and 3000 rows max per file.
-                                </p>
-                            </div>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                                <div>
+                                    <h3 className="text-lg font-bold">
+                                        Upload CSV File
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Only CSV are allowed, 5MB max and 3000 rows max per file.
+                                    </p>
+                                </div>
 
-                            <label htmlFor="mylists-import-file" className="group flex min-h-44 cursor-pointer flex-col items-center
-                            justify-center rounded-xl border border-dashed border-muted-foreground/60 bg-background/40 p-6 text-center
-                            transition hover:border-app-accent hover:bg-app-accent/5">
-                                <UploadCloud className="mb-2 size-8 text-muted-foreground transition group-hover:text-app-accent"/>
-                                <span className="text-sm font-medium">
-                                    {selectedFile ? selectedFile.name : "Drop file here or click to upload"}
-                                </span>
-                                {selectedFile &&
-                                    <span className="mt-1 text-xs text-muted-foreground">
-                                        {(selectedFile.size / 1024).toFixed(1)} KB
-                                    </span>
-                                }
-                                <Input
-                                    type="file"
-                                    className="sr-only"
-                                    id="mylists-import-file"
-                                    accept=".csv,text/csv,text/plain"
-                                    onChange={(ev) => setSelectedFile(ev.target.files?.[0] ?? null)}
+                                <FormField
+                                    name="file"
+                                    control={form.control}
+                                    render={({ field: { onChange, value: _value, ...field } }) => (
+                                        <FormItem>
+                                            <label className="group flex min-h-44 flex-col items-center justify-center rounded-xl border
+                                            border-dashed border-muted-foreground/60 bg-background/40 p-6 text-center transition
+                                            cursor-pointer hover:border-app-accent hover:bg-app-accent/5">
+                                                <UploadCloud className="mb-2 size-8 text-muted-foreground transition group-hover:text-app-accent"/>
+                                                <span className="text-sm font-medium">
+                                                    {selectedFile ? selectedFile.name : "Drop file here or click to upload"}
+                                                </span>
+                                                {selectedFile &&
+                                                    <span className="mt-1 text-xs text-muted-foreground">
+                                                        {(selectedFile.size / 1024).toFixed(1)} KB
+                                                    </span>
+                                                }
+                                                <FormControl>
+                                                    <Input
+                                                        {...field}
+                                                        type="file"
+                                                        className="sr-only"
+                                                        key={fileInputResetKey}
+                                                        accept=".csv,text/csv,text/plain"
+                                                        disabled={createMutation.isPending}
+                                                        onChange={(ev) => onChange(ev.target.files?.[0])}
+                                                    />
+                                                </FormControl>
+                                            </label>
+                                            <FormMessage/>
+                                        </FormItem>
+                                    )}
                                 />
-                            </label>
 
-                            <Button type="submit" disabled={!selectedFile || createMutation.isPending}>
-                                <UploadCloud className="size-4"/>
-                                Import File
-                            </Button>
-                        </form>
+                                <FormSubmitButton disabled={!selectedFile} isLoading={createMutation.isPending}>
+                                    <UploadCloud className="size-4"/>
+                                    Import File
+                                </FormSubmitButton>
+                            </form>
+                        </Form>
                     </div>
                 </div>
             </section>
 
-            <ExistingImportsPanel
-                page={search.page ?? 1}
-                finishedJobs={finishedJobs}
-                selectedJobId={search.jobId}
-            />
+            <ExistingImportsPanel/>
         </div>
     );
 }

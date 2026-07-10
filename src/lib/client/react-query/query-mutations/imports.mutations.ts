@@ -1,6 +1,6 @@
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {postCreateImportJob, postDeleteImportJob} from "@/lib/server/functions/imports";
-import {finishedImportJobsOptions, importJobOptions} from "@/lib/client/react-query/query-options/imports.options";
+import {allUserJobsOptions, importJobOptions} from "@/lib/client/react-query/query-options/imports.options";
 
 
 export const useCreateImportJobMutation = () => {
@@ -10,7 +10,7 @@ export const useCreateImportJobMutation = () => {
         mutationFn: ({ data }: { data: FormData }) => postCreateImportJob({ data }),
         onSuccess: async (job) => {
             await queryClient.invalidateQueries({ queryKey: importJobOptions(job.jobId).queryKey });
-            await queryClient.invalidateQueries({ queryKey: finishedImportJobsOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: allUserJobsOptions.queryKey });
         },
     });
 };
@@ -28,7 +28,7 @@ export const useDeleteImportJobMutation = (jobId: number, meta?: MutationMeta) =
         onSuccess: async () => {
             queryClient.removeQueries({ queryKey: importJobOptions(jobId).queryKey });
             queryClient.removeQueries({ queryKey: ["imports", "job", jobId, "issues"] });
-            await queryClient.invalidateQueries({ queryKey: finishedImportJobsOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: allUserJobsOptions.queryKey });
         },
     });
 };

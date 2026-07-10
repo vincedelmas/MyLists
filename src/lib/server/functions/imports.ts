@@ -62,12 +62,12 @@ export const getImportJob = createServerFn({ method: "GET" })
     });
 
 
-export const getFinishedImportJobs = createServerFn({ method: "GET" })
+export const getAllUserJobs = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const container = await getContainer();
         const importService = container.services.imports;
-        return importService.getFinishedImportJobs(currentUser.id);
+        return importService.getAllUserJobs(currentUser.id);
     });
 
 

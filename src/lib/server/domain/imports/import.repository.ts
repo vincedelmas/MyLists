@@ -283,29 +283,12 @@ export class ImportRepository {
             .get();
     }
 
-    static async getTerminalJobsForUser(userId: number) {
+    static async getAllUserJobs(userId: number) {
         return getDbClient()
-            .select({
-                id: importJobs.id,
-                error: importJobs.error,
-                source: importJobs.source,
-                status: importJobs.status,
-                createdAt: importJobs.createdAt,
-                updatedAt: importJobs.updatedAt,
-                startedAt: importJobs.startedAt,
-                finishedAt: importJobs.finishedAt,
-                totalCount: importJobs.totalCount,
-                failedCount: importJobs.failedCount,
-                skippedCount: importJobs.skippedCount,
-                completedCount: importJobs.completedCount,
-                processedCount: importJobs.processedCount,
-            })
+            .select()
             .from(importJobs)
-            .where(and(
-                eq(importJobs.userId, userId),
-                inArray(importJobs.status, TERMINAL_JOB_STATUSES),
-            ))
-            .orderBy(desc(importJobs.finishedAt), desc(importJobs.createdAt), desc(importJobs.id));
+            .where(eq(importJobs.userId, userId))
+            .orderBy(desc(importJobs.createdAt), desc(importJobs.id));
     }
 
     static async countJobsAhead(job: typeof importJobs.$inferSelect) {

@@ -1,13 +1,12 @@
-import React, {Suspense} from "react";
+import {useQuery} from "@tanstack/react-query";
 import {ImportJobStatus} from "@/lib/utils/enums";
-import {useSuspenseQuery} from "@tanstack/react-query";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {importJobOptions} from "@/lib/client/react-query/query-options";
 import {ImportJobIssuesTable} from "@/lib/client/components/user-settings/ImportJobIssuesTable";
-import {AlertTriangle, CheckCircle2, Clock3, ListRestart, RefreshCw, Trash2} from "lucide-react";
 import {useDeleteImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
+import {AlertTriangle, CheckCircle2, Clock3, ListRestart, Loader2, RefreshCw, Trash2} from "lucide-react";
 
 
 interface SelectedImportJobProps {
@@ -27,7 +26,23 @@ const terminalStatuses = new Set<string>([
 
 export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobProps) {
     const deleteMutation = useDeleteImportJobMutation(jobId);
-    const { data: job, refetch, isFetching } = useSuspenseQuery(importJobOptions(jobId));
+    const { data: job, refetch, isFetching, isLoading, isError } = useQuery(importJobOptions(jobId));
+
+    if (isLoading) {
+        return (
+            <div className="rounded-xl border bg-muted/20 p-5 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin"/>
+            </div>
+        );
+    }
+
+    if (isError || !job) {
+        return (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">
+                This import job could not be loaded.
+            </div>
+        );
+    }
 
     const isTerminal = terminalStatuses.has(job.status);
     const issueCount = job.failedCount + job.skippedCount;
@@ -122,12 +137,10 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                     No skipped or failed rows for this import.
                 </div>
                 :
-                <Suspense>
-                    <ImportJobIssuesTable
-                        page={page}
-                        jobId={jobId}
-                    />
-                </Suspense>
+                <ImportJobIssuesTable
+                    page={page}
+                    jobId={jobId}
+                />
             }
         </div>
     );

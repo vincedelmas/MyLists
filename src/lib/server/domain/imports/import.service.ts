@@ -8,12 +8,11 @@ import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry} from "@/lib/
 
 
 const OUTCOME_BATCH_SIZE = 200;
+const ACTIVE_IMPORT_ERROR = "You already have an import in progress. Wait for it to finish before starting another.";
 
 const importParserRegistry: ImportParserRegistry = {
     [ImportSource.MYLISTS]: parseMyListsCsv,
 };
-
-const ACTIVE_IMPORT_ERROR = "You already have an import in progress. Wait for it to finish before starting another.";
 
 
 export class ImportService {
@@ -107,8 +106,8 @@ export class ImportService {
         return { job, jobsAhead };
     }
 
-    async getFinishedImportJobs(userId: number) {
-        return this.repository.getTerminalJobsForUser(userId);
+    async getAllUserJobs(userId: number) {
+        return this.repository.getAllUserJobs(userId);
     }
 
     async deleteImportJob(userId: number, jobId: number) {

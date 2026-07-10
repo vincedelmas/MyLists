@@ -8,9 +8,7 @@ import {moviesAchievements} from "@/lib/server/domain/media/movies/achievements.
 
 export type Movie = typeof movies.$inferSelect;
 export type MoviesList = typeof moviesList.$inferSelect;
-export type MoviesListInsert = typeof moviesList.$inferInsert;
 export type MoviesImportPayload = z.infer<typeof moviesImportPayloadSchema>;
-export type MoviesFinalListInsert = z.infer<typeof moviesFinalListInsertSchema>;
 export type MoviesAchCodeName = typeof moviesAchievements[number]["codeName"];
 
 

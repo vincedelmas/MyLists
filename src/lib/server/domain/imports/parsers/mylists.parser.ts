@@ -9,9 +9,9 @@ import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/movies
 import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
 
 
-export const MYLISTS_CSV_VERSION = "1";
+const MYLISTS_CSV_MAX_ROWS = 3000;
 
-export const MYLISTS_CSV_MAX_ROWS = 3000;
+export const MYLISTS_CSV_VERSION = "1";
 
 
 const parseCsvRecords = (csv: string) => {

@@ -8,9 +8,7 @@ import {booksAchievements} from "@/lib/server/domain/media/books/achievements.se
 
 export type Book = typeof books.$inferSelect;
 export type BooksList = typeof booksList.$inferSelect;
-export type BooksListInsert = typeof booksList.$inferInsert;
 export type BooksImportPayload = z.infer<typeof booksImportPayloadSchema>;
-export type BooksFinalListInsert = z.infer<typeof booksFinalListInsertSchema>;
 export type BooksAchCodeName = typeof booksAchievements[number]["codeName"];
 
 

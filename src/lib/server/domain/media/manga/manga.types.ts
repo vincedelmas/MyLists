@@ -10,11 +10,7 @@ export type Manga = typeof manga.$inferSelect;
 
 
 export type MangaList = typeof mangaList.$inferSelect;
-export type MangaListInsert = typeof mangaList.$inferInsert;
 export type MangaImportPayload = z.infer<typeof mangaImportPayloadSchema>;
-export type MangaFinalListInsert = z.infer<typeof mangaFinalListInsertSchema>;
-
-
 export type MangaAchCodeName = typeof mangaAchievements[number]["codeName"];
 
 

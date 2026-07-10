@@ -16,7 +16,6 @@ export type AnimeList = typeof animeList.$inferSelect;
 export type TvType = Series | Anime;
 export type TvList = SeriesList | AnimeList;
 export type TvImportPayload = z.infer<typeof tvImportPayloadSchema>;
-export type TvFinalListInsert = z.infer<typeof tvFinalListInsertSchema>;
 export type TvMediaType = typeof MediaType.SERIES | typeof MediaType.ANIME;
 
 export type TvAchCodeName = typeof animeAchievements[number]["codeName"] | typeof seriesAchievements[number]["codeName"];

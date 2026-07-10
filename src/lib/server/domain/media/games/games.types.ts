@@ -10,9 +10,7 @@ export type Game = typeof games.$inferSelect;
 
 
 export type GamesList = typeof gamesList.$inferSelect;
-export type GamesListInsert = typeof gamesList.$inferInsert;
 export type GamesImportPayload = z.infer<typeof gamesImportPayloadSchema>;
-export type GamesFinalListInsert = z.infer<typeof gamesFinalListInsertSchema>;
 
 
 export type GamesAchCodeName = typeof gamesAchievements[number]["codeName"];

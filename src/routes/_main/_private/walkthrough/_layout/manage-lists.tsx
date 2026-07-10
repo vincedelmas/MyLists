@@ -1,8 +1,8 @@
-import React from "react";
+import {useRef} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {createFileRoute} from "@tanstack/react-router";
-import {useSuspenseQuery} from "@tanstack/react-query";
+import {useSuspenseQuery, useQueryClient} from "@tanstack/react-query";
 import {Header} from "@/lib/client/components/media/base/Header";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
@@ -28,7 +28,33 @@ export const Route = createFileRoute("/_main/_private/walkthrough/_layout/manage
 
 
 function ListsOnboarding() {
+    const queryClient = useQueryClient();
     const apiData = useSuspenseQuery(mediaListOptions(MediaType.MOVIES, "DemoProfile", {})).data;
+    const prevMediaIdRef = useRef<number | null>(null);
+
+    const handleSurpriseMe = async () => {
+        const totalItems = apiData.results.pagination.totalItems;
+        if (totalItems === 0) return;
+
+        const perPage = 50;
+
+        for (let i = 0; i < 3; i++) {
+            const randomIndex = Math.floor(Math.random() * totalItems);
+            const targetPage = Math.floor(randomIndex / perPage) + 1;
+            const itemIndex = randomIndex % perPage;
+
+            const items = (await queryClient.fetchQuery(
+                mediaListOptions(MediaType.MOVIES, "DemoProfile", { page: targetPage, perPage })
+            )).results.items;
+
+            const item = items[itemIndex];
+            if (item && item.mediaId !== prevMediaIdRef.current) {
+                prevMediaIdRef.current = item.mediaId;
+                window.open(`/details/movies/${item.mediaId}`, '_blank');
+                return;
+            }
+        }
+    };
 
     return (
         <OnboardingContainer>
@@ -52,6 +78,7 @@ function ListsOnboarding() {
                         filters={{}}
                         isGrid={true}
                         pagination={apiData.results.pagination}
+                        onSurpriseMeClick={handleSurpriseMe}
                         onGridClick={() => undefined}
                         onSortChange={() => undefined}
                         onFilterClick={() => undefined}

@@ -4,7 +4,7 @@ import {statusUtils} from "@/lib/utils/media-mapping";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
-import {useSuspenseQuery} from "@tanstack/react-query";
+import {useSuspenseQuery, useQueryClient} from "@tanstack/react-query";
 import {Header} from "@/lib/client/components/media/base/Header";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_
 
 function MediaList() {
     const filters = Route.useSearch();
+    const queryClient = useQueryClient();
     const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
     const { username, mediaType } = Route.useParams();
@@ -42,6 +43,32 @@ function MediaList() {
             search: (prev) => ({ ...prev, view: isGrid ? "list" : "grid" }),
             replace: true,
         });
+    };
+
+    const prevMediaIdRef = useRef<number | null>(null);
+
+    const handleSurpriseMe = async () => {
+        const totalItems = apiData.results.pagination.totalItems;
+        if (totalItems === 0) return;
+
+        const perPage = 50;
+
+        for (let i = 0; i < 3; i++) {
+            const randomIndex = Math.floor(Math.random() * totalItems);
+            const targetPage = Math.floor(randomIndex / perPage) + 1;
+            const itemIndex = randomIndex % perPage;
+
+            const items = (await queryClient.fetchQuery(
+                mediaListOptions(mediaType, username, { ...filters, page: targetPage, perPage })
+            )).results.items;
+
+            const item = items[itemIndex];
+            if (item && item.mediaId !== prevMediaIdRef.current) {
+                prevMediaIdRef.current = item.mediaId;
+                window.open(`/details/${mediaType}/${item.mediaId}`, '_blank');
+                return;
+            }
+        }
     };
 
     const handleFilterChange = (newFilters: Partial<MediaListArgs>) => {
@@ -90,6 +117,7 @@ function MediaList() {
                 onGridClick={handleGridToggle}
                 pagination={apiData.results.pagination}
                 onFilterClick={() => setFiltersPanelOpen(true)}
+                onSurpriseMeClick={handleSurpriseMe}
                 onSortChange={({ sorting }) => handleFilterChange({ sorting })}
                 onStatusChange={({ status }) => handleFilterChange({ status })}
             />

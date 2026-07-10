@@ -7,7 +7,7 @@ import {ListPagination} from "@/lib/types/query.options.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
-import {ArrowUpDown, ChevronDown, Filter, Grid2X2, List, ListFilter} from "lucide-react";
+import {ArrowUpDown, ChevronDown, DicesIcon, Filter, Grid2X2, List, ListFilter} from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -24,6 +24,7 @@ interface HeaderProps {
     filters: MediaListArgs;
     onGridClick: () => void;
     onFilterClick: () => void;
+    onSurpriseMeClick: () => void;
     pagination: ListPagination;
     onSortChange: ({ sorting }: { sorting: string }) => void;
     onStatusChange: ({ status }: { status: Status[] }) => void;
@@ -32,7 +33,7 @@ interface HeaderProps {
 
 export const Header = (props: HeaderProps) => {
     const isBelowSm = useBreakpoint("sm");
-    const { allStatuses, filters, isGrid, onGridClick, onFilterClick, pagination, onSortChange, onStatusChange } = props;
+    const { allStatuses, filters, isGrid, onGridClick, onFilterClick, pagination, onSortChange, onStatusChange, onSurpriseMeClick } = props;
     const { localSearch, handleInputChange } = useSearchNavigate<SearchType>({ search: filters.search ?? "" });
 
     if (isBelowSm) {
@@ -66,6 +67,13 @@ export const Header = (props: HeaderProps) => {
                         title="Advanced Filters"
                     >
                         <Filter className="size-4"/> Filters
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={onSurpriseMeClick}
+                        title="Surprise Me"
+                    >
+                        <DicesIcon className="size-4"/> Surprise Me
                     </Button>
                     <div className="flex h-9 items-center justify-center rounded-md border bg-input/30 px-1">
                         <button
@@ -114,6 +122,13 @@ export const Header = (props: HeaderProps) => {
                 className="w-full md:w-auto"
             >
                 <Filter className="size-4"/> Filters
+            </Button>
+            <Button
+                variant="outline"
+                onClick={onSurpriseMeClick}
+                title="Surprise Me"
+            >
+                <DicesIcon className="size-4"/> Surprise Me
             </Button>
             <SortComponent
                 className="w-45"

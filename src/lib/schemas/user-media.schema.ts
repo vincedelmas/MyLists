@@ -1,7 +1,8 @@
 import * as z from "zod";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
-import {GamesPlatformsEnum, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {IMPORT_COMMENT_MAX_LENGTH, IMPORT_PLAYTIME_MAX_MINUTES, IMPORT_PROGRESS_MAX, IMPORT_REDO_MAX, importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
 
 
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
@@ -21,6 +22,31 @@ const loggedActivityUpdateTypes = new Set<UpdateType>([
     UpdateType.CHAPTER,
     UpdateType.PLAYTIME,
 ]);
+
+const allowedPayloadFieldsByUpdateType = {
+    [UpdateType.RATING]: ["rating"],
+    [UpdateType.STATUS]: ["status"],
+    [UpdateType.PAGE]: ["actualPage"],
+    [UpdateType.COMMENT]: ["comment"],
+    [UpdateType.PLAYTIME]: ["playtime"],
+    [UpdateType.FAVORITE]: ["favorite"],
+    [UpdateType.PLATFORM]: ["platform"],
+    [UpdateType.REDO]: ["redo", "redo2"],
+    [UpdateType.CHAPTER]: ["currentChapter"],
+    [UpdateType.TV]: ["currentSeason", "currentEpisode"],
+} satisfies Record<UpdateType, string[]>;
+
+
+const validateStatusForMediaType = (mediaType: MediaType, status: Status, ctx: z.RefinementCtx, path: (string | number)[]) => {
+    const result = importStatusSchema(mediaType).safeParse(status);
+    if (!result.success) {
+        ctx.addIssue({
+            path,
+            code: "custom",
+            message: result.error.issues[0]?.message ?? "Status is not valid for this media type.",
+        });
+    }
+};
 
 
 export const updateUserCustomCoverSchema = z.object({
@@ -50,6 +76,9 @@ export const addMediaToListSchema = z.object({
     mediaType: mediaTypeFieldSchema,
     status: z.enum(Status).optional(),
     mediaId: coercedPositiveIntFieldSchema,
+}).superRefine((data, ctx) => {
+    if (!data.status) return;
+    validateStatusForMediaType(data.mediaType, data.status, ctx, ["status"]);
 });
 
 export const updateUserMediaSchema = z.object({
@@ -60,26 +89,44 @@ export const updateUserMediaSchema = z.object({
         loggedAt: loggedAtSchema,
         favorite: z.boolean().optional(),
         status: z.enum(Status).optional(),
-        comment: z.string().nullish().optional(),
-        redo: z.number().int().min(0).optional(),
-        actualPage: z.number().int().min(0).optional(),
-        currentSeason: z.number().int().min(1).optional(),
-        currentChapter: z.number().int().min(0).optional(),
-        redo2: z.array(z.number().int().min(0)).optional(),
-        currentEpisode: z.number().int().min(0).optional(),
         platform: z.enum(GamesPlatformsEnum).optional().nullable(),
-        playtime: z.number().min(0).max(15000 * 60).optional(),
+        redo: z.number().int().min(0).max(IMPORT_REDO_MAX).optional(),
         rating: z.number().min(0).max(10).optional().nullable(),
-    }).refine((data) => {
+        actualPage: z.number().int().min(0).max(IMPORT_PROGRESS_MAX).optional(),
+        redo2: z.array(z.number().int().min(0).max(IMPORT_REDO_MAX)).optional(),
+        playtime: z.number().min(0).max(IMPORT_PLAYTIME_MAX_MINUTES).optional(),
+        currentSeason: z.number().int().min(1).max(IMPORT_PROGRESS_MAX).optional(),
+        currentChapter: z.number().int().min(0).max(IMPORT_PROGRESS_MAX).optional(),
+        currentEpisode: z.number().int().min(0).max(IMPORT_PROGRESS_MAX).optional(),
+        comment: z.string().max(IMPORT_COMMENT_MAX_LENGTH, `Comment cannot exceed ${IMPORT_COMMENT_MAX_LENGTH} characters`).nullish(),
+    }).superRefine((data, ctx) => {
         const definedFields = Object.entries(data)
             .filter(([key, value]) => key !== "type" && key !== "loggedAt" && value !== undefined)
             .map(([key, _]) => key);
-        return definedFields.length === 1;
-    }, {
-        message: "Too many fields provided in the payload.", path: ["type"],
+
+        if (definedFields.length !== 1) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["type"],
+                message: "Expected exactly one update field in the payload.",
+            });
+            return;
+        }
+
+        const [definedField] = definedFields;
+        if (!allowedPayloadFieldsByUpdateType[data.type].includes(definedField)) {
+            ctx.addIssue({
+                code: "custom",
+                path: [definedField],
+                message: `Field "${definedField}" is not valid for update type "${data.type}".`,
+            });
+        }
     }).refine((data) => !data.loggedAt || loggedActivityUpdateTypes.has(data.type), {
         message: "Only progress changes can be backdated.", path: ["loggedAt"],
     })
+}).superRefine((data, ctx) => {
+    if (!data.payload.status) return;
+    validateStatusForMediaType(data.mediaType, data.payload.status, ctx, ["payload", "status"]);
 });
 
 export const deleteUserUpdatesSchema = z.object({

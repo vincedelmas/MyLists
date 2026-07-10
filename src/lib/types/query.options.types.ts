@@ -16,12 +16,12 @@ import {
 
 
 // --- Inferred Query Options Types -----------------------------------------------------
+type ProfileOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof profileOptions>["queryFn"]>>>;
+type MediaListOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaListOptions>["queryFn"]>>>;
+type MediaDetailsOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaDetailsOptions>["queryFn"]>>>;
 export type HistoryOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof historyOptions>["queryFn"]>>>;
-export type ProfileOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof profileOptions>["queryFn"]>>>;
 export type ProfileHeaderOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof profileHeaderOptions>["queryFn"]>>>;
-export type MediaListOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaListOptions>["queryFn"]>>>;
 export type ListFiltersOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof listFiltersOptions>["queryFn"]>>>;
-export type MediaDetailsOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaDetailsOptions>["queryFn"]>>>;
 export type AchCard = Awaited<ReturnType<NonNullable<ReturnType<typeof achievementOptions>["queryFn"]>>>["result"][number];
 export type AchSummary = Awaited<ReturnType<NonNullable<ReturnType<typeof achievementOptions>["queryFn"]>>>["summary"][MediaType];
 export type HofUserData = Awaited<ReturnType<NonNullable<ReturnType<typeof hallOfFameOptions>["queryFn"]>>>["items"][number];
@@ -56,9 +56,9 @@ export type ExtractMediaDetailsByType<T extends MediaType> =
 
 // --- Follows List Types -----------------------------------------------------------
 export type FollowData = MediaDetailsOptionsType["followsData"][number];
-export type FollowUserMedia = FollowData["userMedia"];
+type FollowUserMedia = FollowData["userMedia"];
 export type ExtractFollowByType<T extends MediaType> = FollowData & { userMedia: ExtractFollowUserMediaByType<T> }
-export type ExtractFollowUserMediaByType<T extends MediaType> =
+type ExtractFollowUserMediaByType<T extends MediaType> =
     T extends typeof MediaType.GAMES ? Extract<FollowUserMedia, { playtime: any }> :
         T extends TvMediaType ? Extract<FollowUserMedia, { currentSeason: any }> :
             T extends typeof MediaType.BOOKS ? Extract<FollowUserMedia, { actualPage: any }> :

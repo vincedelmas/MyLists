@@ -3,7 +3,7 @@ import {MediaType} from "@/lib/utils/enums";
 
 export type ProfileCustomKey = "highlightedMedia";
 export type HighlightedMediaTab = "overview" | MediaType;
-export type HighlightedMediaMode = "random" | "curated" | "disabled";
+type HighlightedMediaMode = "random" | "curated" | "disabled";
 
 export const PROFILE_MAX_HIGHLIGHTED_MEDIA = 7;
 
@@ -24,7 +24,7 @@ export interface HighlightedMediaResolvedItem extends HighlightedMediaRef {
 }
 
 
-export interface BaseHighlightedMediaTabConfig<T> {
+interface BaseHighlightedMediaTabConfig<T> {
     items: T[];
     title: string;
     mode: HighlightedMediaMode;

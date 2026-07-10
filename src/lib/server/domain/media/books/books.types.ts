@@ -1,9 +1,18 @@
 import * as z from "zod";
-import {Status} from "@/lib/utils/enums";
+import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {books, booksList} from "@/lib/server/database/schema";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
 import {booksAchievements} from "@/lib/server/domain/media/books/achievements.seed";
+import {
+    importCommentSchema,
+    importFavoriteSchema,
+    importRatingSchema,
+    importRedoSchema,
+    importStatusSchema,
+    importTotalSchema,
+    nullableImportProgressSchema
+} from "@/lib/server/domain/imports/import-list-validation";
 
 
 export type Book = typeof books.$inferSelect;
@@ -33,38 +42,20 @@ export type UpdateBooksWithDetails = {
 };
 
 
-const emptyStringToNull = (value: unknown) => value === "" ? null : value;
-
-const emptyStringToUndefined = (value: unknown) => value === "" ? undefined : value;
-
-const parseBoolean = (value: unknown) => {
-    if (value === "") return null;
-    if (typeof value !== "string") return value;
-
-    const normalizedValue = value.trim().toLowerCase();
-    if (normalizedValue === "true" || normalizedValue === "1") return true;
-    if (normalizedValue === "false" || normalizedValue === "0") return false;
-
-    return value;
-};
-
-
 export const booksFinalListInsertSchema = createInsertSchema(booksList, {
-    status: z.enum(Status),
+    status: importStatusSchema(MediaType.BOOKS),
     customCover: z.string().nullable().optional(),
 });
 
 
 const booksCSVListSchema = createInsertSchema(booksList, {
-    status: z.enum(Status),
-    comment: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
-    addedAt: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
-    lastUpdated: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
-    rating: z.preprocess(emptyStringToNull, z.coerce.number().nullable().optional()),
-    favorite: z.preprocess(parseBoolean, z.boolean().nullable().optional()),
-    redo: z.preprocess(emptyStringToUndefined, z.coerce.number().int().optional()),
-    total: z.preprocess(emptyStringToUndefined, z.coerce.number().int().optional()),
-    actualPage: z.preprocess(emptyStringToNull, z.coerce.number().int().nullable().optional()),
+    redo: importRedoSchema,
+    total: importTotalSchema,
+    rating: importRatingSchema,
+    comment: importCommentSchema,
+    favorite: importFavoriteSchema,
+    actualPage: nullableImportProgressSchema,
+    status: importStatusSchema(MediaType.BOOKS),
 });
 
 
@@ -72,7 +63,9 @@ export const booksImportPayloadSchema = booksCSVListSchema.omit({
     id: true,
     userId: true,
     mediaId: true,
+    addedAt: true,
     customCover: true,
+    lastUpdated: true,
 });
 
 

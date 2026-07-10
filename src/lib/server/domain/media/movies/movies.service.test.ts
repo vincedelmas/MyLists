@@ -118,11 +118,13 @@ describe("MoviesService", () => {
                         comment: "Nice",
                         favorite: true,
                         status: Status.COMPLETED,
-                        addedAt: "2024-01-01 00:00:00",
-                        lastUpdated: "2024-01-02 00:00:00",
                     },
                 }],
             });
+            expect(rows?.[0]).not.toHaveProperty("addedAt");
+            expect(rows?.[0]).not.toHaveProperty("lastUpdated");
+            expect(parsed.items[0].payload).not.toHaveProperty("addedAt");
+            expect(parsed.items[0].payload).not.toHaveProperty("lastUpdated");
         });
     });
 

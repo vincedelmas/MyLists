@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
+import {IMPORT_COMMENT_MAX_LENGTH} from "@/lib/server/domain/imports/import-list-validation";
 
 
 const toCsv = (rows: Record<string, string>[]) => {
@@ -147,11 +148,11 @@ describe("parseMyListsCsv", () => {
                     redo: 1,
                     redo2: [1, 0, 0],
                     total: 12,
-                    addedAt: "2024-01-01 00:00:00",
-                    lastUpdated: "2024-01-02 00:00:00",
                 },
             }],
         });
+        expect(parsed.items[0].payload).not.toHaveProperty("addedAt");
+        expect(parsed.items[0].payload).not.toHaveProperty("lastUpdated");
     });
 
     it("parses MyLists anime rows into a TV import payload", () => {
@@ -194,11 +195,11 @@ describe("parseMyListsCsv", () => {
                     redo: 0,
                     redo2: [0],
                     total: 28,
-                    addedAt: null,
-                    lastUpdated: null,
                 },
             }],
         });
+        expect(parsed.items[0].payload).not.toHaveProperty("addedAt");
+        expect(parsed.items[0].payload).not.toHaveProperty("lastUpdated");
     });
 
     it("parses MyLists game rows into a games import payload", () => {
@@ -241,14 +242,78 @@ describe("parseMyListsCsv", () => {
                     comment: "Great run.",
                     playtime: 480,
                     platform: "PC",
-                    addedAt: "2024-01-01 00:00:00",
-                    lastUpdated: "2024-01-02 00:00:00",
                 },
             }],
         });
         expect(parsed.items[0].payload).not.toHaveProperty("mediaName");
         expect(parsed.items[0].payload).not.toHaveProperty("externalApiId");
         expect(parsed.items[0].payload).not.toHaveProperty("id");
+        expect(parsed.items[0].payload).not.toHaveProperty("addedAt");
+        expect(parsed.items[0].payload).not.toHaveProperty("lastUpdated");
+    });
+
+    it("rejects statuses that are not compatible with the row media type", () => {
+        const parsed = parseMyListsCsv(toCsv([{
+            id: "1",
+            userId: "42",
+            mediaId: "100",
+            mediaName: "Fight Club",
+            formatVersion: "1",
+            mediaType: MediaType.MOVIES,
+            externalApiId: "550",
+            externalApiSource: ApiProviderType.TMDB,
+            releaseDate: "1999-10-15",
+            status: Status.PLAYING,
+            redo: "0",
+            total: "1",
+            rating: "9",
+            favorite: "true",
+            comment: "",
+            addedAt: "",
+            lastUpdated: "",
+            customCover: "",
+        }]));
+
+        expect(parsed).toMatchObject({
+            failedCount: 1,
+            items: [{
+                status: ImportItemStatus.FAILED,
+                mediaType: MediaType.MOVIES,
+                statusReason: expect.stringContaining("Status is not valid for movies"),
+            }],
+        });
+    });
+
+    it("rejects comments that exceed the import limit", () => {
+        const parsed = parseMyListsCsv(toCsv([{
+            id: "1",
+            userId: "42",
+            mediaId: "100",
+            mediaName: "Fight Club",
+            formatVersion: "1",
+            mediaType: MediaType.MOVIES,
+            externalApiId: "550",
+            externalApiSource: ApiProviderType.TMDB,
+            releaseDate: "1999-10-15",
+            status: Status.COMPLETED,
+            redo: "0",
+            total: "1",
+            rating: "9",
+            favorite: "true",
+            comment: "x".repeat(IMPORT_COMMENT_MAX_LENGTH + 1),
+            addedAt: "",
+            lastUpdated: "",
+            customCover: "",
+        }]));
+
+        expect(parsed).toMatchObject({
+            failedCount: 1,
+            items: [{
+                status: ImportItemStatus.FAILED,
+                mediaType: MediaType.MOVIES,
+                statusReason: expect.stringContaining(`Comment cannot exceed ${IMPORT_COMMENT_MAX_LENGTH} characters`),
+            }],
+        });
     });
 
     it("rejects files containing multiple media types", () => {

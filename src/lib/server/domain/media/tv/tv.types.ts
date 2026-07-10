@@ -1,23 +1,33 @@
 import * as z from "zod";
+import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
-import {MediaType, Status} from "@/lib/utils/enums";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
 import {anime, animeList, series, seriesList} from "@/lib/server/database/schema";
 import {animeAchievements} from "@/lib/server/domain/media/tv/anime/achievements.seed";
 import {seriesAchievements} from "@/lib/server/domain/media/tv/series/achievements.seed";
+import {
+    IMPORT_REDO_MAX,
+    importCommentSchema,
+    importFavoriteSchema,
+    importPositiveProgressSchema,
+    importProgressSchema,
+    importRatingSchema,
+    importRedoSchema,
+    importStatusSchema,
+    importTotalSchema
+} from "@/lib/server/domain/imports/import-list-validation";
 
 
-export type Series = typeof series.$inferSelect;
-export type Anime = typeof anime.$inferSelect;
+type Series = typeof series.$inferSelect;
+type Anime = typeof anime.$inferSelect;
 
-export type SeriesList = typeof seriesList.$inferSelect;
-export type AnimeList = typeof animeList.$inferSelect;
+type SeriesList = typeof seriesList.$inferSelect;
+type AnimeList = typeof animeList.$inferSelect;
 
 export type TvType = Series | Anime;
 export type TvList = SeriesList | AnimeList;
 export type TvImportPayload = z.infer<typeof tvImportPayloadSchema>;
 export type TvMediaType = typeof MediaType.SERIES | typeof MediaType.ANIME;
-
 export type TvAchCodeName = typeof animeAchievements[number]["codeName"] | typeof seriesAchievements[number]["codeName"];
 
 
@@ -29,21 +39,6 @@ export type UpsertTvWithDetails = {
     seasonsData?: { season: number, episodes: number }[],
 };
 
-
-const emptyStringToNull = (value: unknown) => value === "" ? null : value;
-
-const emptyStringToUndefined = (value: unknown) => value === "" ? undefined : value;
-
-const parseBoolean = (value: unknown) => {
-    if (value === "") return null;
-    if (typeof value !== "string") return value;
-
-    const normalizedValue = value.trim().toLowerCase();
-    if (normalizedValue === "true" || normalizedValue === "1") return true;
-    if (normalizedValue === "false" || normalizedValue === "0") return false;
-
-    return value;
-};
 
 const parseRedo2 = (value: unknown) => {
     if (value === "") return undefined;
@@ -62,52 +57,57 @@ const parseRedo2 = (value: unknown) => {
         }
     }
 
-    return trimmedValue.split(",").map((part) => Number(part.trim()));
+    const parts = trimmedValue.split(",").map((part) => part.trim());
+    if (parts.some((part) => part === "")) return value;
+
+    return parts.map((part) => Number(part));
 };
 
-const tvListSchemaOverrides = {
-    status: z.enum(Status),
-    favorite: z.preprocess(parseBoolean, z.boolean().nullable().optional()),
-    comment: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
-    addedAt: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
-    redo: z.preprocess(emptyStringToUndefined, z.coerce.number().int().optional()),
-    lastUpdated: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
-    total: z.preprocess(emptyStringToUndefined, z.coerce.number().int().optional()),
-    rating: z.preprocess(emptyStringToNull, z.coerce.number().nullable().optional()),
-    currentSeason: z.preprocess(emptyStringToUndefined, z.coerce.number().int().optional()),
-    currentEpisode: z.preprocess(emptyStringToUndefined, z.coerce.number().int().optional()),
-    redo2: z.preprocess(parseRedo2, z.array(z.coerce.number().int().min(0)).optional()),
-};
+const tvListSchemaOverrides = (mediaType: TvMediaType) => ({
+    redo: importRedoSchema,
+    total: importTotalSchema,
+    rating: importRatingSchema,
+    comment: importCommentSchema,
+    favorite: importFavoriteSchema,
+    currentEpisode: importProgressSchema,
+    status: importStatusSchema(mediaType),
+    currentSeason: importPositiveProgressSchema,
+    redo2: z.preprocess(parseRedo2, z.array(z.coerce.number().int().min(0).max(IMPORT_REDO_MAX)).optional()),
+});
 
 
-const seriesCSVListSchema = createInsertSchema(seriesList, tvListSchemaOverrides);
+const seriesCSVListSchema = createInsertSchema(seriesList, tvListSchemaOverrides(MediaType.SERIES));
 
-const animeCSVListSchema = createInsertSchema(animeList, tvListSchemaOverrides);
+const animeCSVListSchema = createInsertSchema(animeList, tvListSchemaOverrides(MediaType.ANIME));
 
 const seriesFinalListInsertSchema = createInsertSchema(seriesList, {
-    status: z.enum(Status),
+    status: importStatusSchema(MediaType.SERIES),
     customCover: z.string().nullable().optional(),
-    redo2: z.array(z.number().int().min(0)),
+    redo2: z.array(z.number().int().min(0).max(IMPORT_REDO_MAX)),
 });
 
 const animeFinalListInsertSchema = createInsertSchema(animeList, {
-    status: z.enum(Status),
+    status: importStatusSchema(MediaType.ANIME),
     customCover: z.string().nullable().optional(),
-    redo2: z.array(z.number().int().min(0)),
+    redo2: z.array(z.number().int().min(0).max(IMPORT_REDO_MAX)),
 });
 
 const seriesImportPayloadSchema = seriesCSVListSchema.omit({
     id: true,
     userId: true,
     mediaId: true,
+    addedAt: true,
     customCover: true,
+    lastUpdated: true,
 });
 
 const animeImportPayloadSchema = animeCSVListSchema.omit({
     id: true,
     userId: true,
     mediaId: true,
+    addedAt: true,
     customCover: true,
+    lastUpdated: true,
 });
 
 

@@ -123,7 +123,7 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         const mediaType = this.repository.config.mediaType;
         const rows = await this.repository.downloadMediaListAsCSV(userId);
 
-        return rows?.map((row) => ({
+        return rows?.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, ...row }) => ({
             ...row,
             mediaType,
             formatVersion: MYLISTS_CSV_VERSION,

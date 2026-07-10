@@ -1,18 +1,22 @@
 import * as z from "zod";
 import {createInsertSchema} from "drizzle-zod";
-import {GamesPlatformsEnum, Status} from "@/lib/utils/enums";
 import {games, gamesList} from "@/lib/server/database/schema";
+import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
 import {gamesAchievements} from "@/lib/server/domain/media/games/achievements.seed";
+import {
+    emptyStringToNull,
+    importCommentSchema,
+    importFavoriteSchema,
+    importPlaytimeSchema,
+    importRatingSchema,
+    importStatusSchema
+} from "@/lib/server/domain/imports/import-list-validation";
 
 
 export type Game = typeof games.$inferSelect;
-
-
 export type GamesList = typeof gamesList.$inferSelect;
 export type GamesImportPayload = z.infer<typeof gamesImportPayloadSchema>;
-
-
 export type GamesAchCodeName = typeof gamesAchievements[number]["codeName"];
 
 
@@ -24,36 +28,20 @@ export type UpsertGameWithDetails = {
 };
 
 
-const emptyStringToNull = (value: unknown) => value === "" ? null : value;
-
-const emptyStringToUndefined = (value: unknown) => value === "" ? undefined : value;
-
-
 export const gamesFinalListInsertSchema = createInsertSchema(gamesList, {
-    status: z.enum(Status),
+    status: importStatusSchema(MediaType.GAMES),
     customCover: z.string().nullable().optional(),
     platform: z.enum(GamesPlatformsEnum).nullable().optional(),
 });
 
 
 const gamesCSVListSchema = createInsertSchema(gamesList, {
-    status: z.enum(Status),
-    comment: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
-    addedAt: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
-    lastUpdated: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
-    rating: z.preprocess(emptyStringToNull, z.coerce.number().nullable().optional()),
-    playtime: z.preprocess(emptyStringToUndefined, z.coerce.number().int().optional()),
+    rating: importRatingSchema,
+    comment: importCommentSchema,
+    playtime: importPlaytimeSchema,
+    favorite: importFavoriteSchema,
+    status: importStatusSchema(MediaType.GAMES),
     platform: z.preprocess(emptyStringToNull, z.enum(GamesPlatformsEnum).nullable().optional()),
-    favorite: z.preprocess((value) => {
-        if (value === "") return null;
-        if (typeof value !== "string") return value;
-
-        const normalizedValue = value.trim().toLowerCase();
-        if (normalizedValue === "true" || normalizedValue === "1") return true;
-        if (normalizedValue === "false" || normalizedValue === "0") return false;
-
-        return value;
-    }, z.boolean().nullable().optional()),
 });
 
 
@@ -61,7 +49,9 @@ export const gamesImportPayloadSchema = gamesCSVListSchema.omit({
     id: true,
     userId: true,
     mediaId: true,
+    addedAt: true,
     customCover: true,
+    lastUpdated: true,
 });
 
 

@@ -5,7 +5,7 @@ export type TaskVisibility = "admin" | "user";
 export type TaskFormValues = Record<string, any>;
 export type TaskStatus = "completed" | "failed" | "partial";
 export type TaskTrigger = "user" | "cron/cli" | "dashboard";
-export type TaskInputValue = string | number | boolean | null | TaskInputValue[] | { [key: string]: TaskInputValue | undefined };
+type TaskInputValue = string | number | boolean | null | TaskInputValue[] | { [key: string]: TaskInputValue | undefined };
 
 
 export type TaskStep = {
@@ -56,7 +56,7 @@ export type TaskInputProperty = {
     type?: "object" | "array" | "string" | "number" | "boolean" | "null" | "integer";
 };
 
-export type TaskInputSchema = TaskInputProperty & {
+type TaskInputSchema = TaskInputProperty & {
     type: "object";
     required?: string[];
     properties: Record<string, TaskInputProperty>;

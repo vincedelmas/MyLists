@@ -17,8 +17,8 @@ export const addGenresToBooksUsingLlmTask = defineTask({
     }),
     handler: async (ctx, input) => {
         const container = await getContainer();
-        const booksService = container.registries.mediaService.getService(MediaType.BOOKS);
-        const booksProvider = container.registries.mediaProviderService.getService(MediaType.BOOKS);
+        const llmClient = container.apiClients.llmClient;
+        const booksService = container.registries.mediaService.get(MediaType.BOOKS);
 
         ctx.metric("llm.model", serverEnv.LLM_MODEL_ID);
         ctx.metric("llm.endpoint", serverEnv.LLM_BASE_URL);
@@ -56,7 +56,7 @@ export const addGenresToBooksUsingLlmTask = defineTask({
             await ctx.step(`batch-${batchIndex}`, async () => {
                 const promptToSend = `${mainPrompt}\n${booksBatch.join("\n")}`;
 
-                const data = await booksProvider.llmResponse(promptToSend, adminLlmResponseSchema);
+                const data = await llmClient.llmBookGenresCall(promptToSend, adminLlmResponseSchema);
                 const content = data.choices[0].message.content ?? "";
 
                 let result;

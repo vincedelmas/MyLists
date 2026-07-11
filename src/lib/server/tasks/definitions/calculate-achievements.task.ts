@@ -22,7 +22,7 @@ export const calculateAchievementsTask = defineTask({
 
         for (const mediaType of typesToProcess) {
             await ctx.step(`calculate-${mediaType}`, async () => {
-                const mediaService = mediaRegistry.getService(mediaType);
+                const mediaService = mediaRegistry.get(mediaType);
                 const mediaAchievements = allAchievements.filter((ach) => ach.mediaType === mediaType);
 
                 ctx.metric(`${mediaType}.count`, mediaAchievements.length);

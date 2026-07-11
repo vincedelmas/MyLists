@@ -49,7 +49,7 @@ export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
         const { mediaType } = data;
 
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
 
         return mediaService.updateUserCustomCover(currentUser.id, data);
     });
@@ -78,7 +78,7 @@ export const getUserTagNames = createServerFn({ method: "GET" })
     .validator(userTagNamesSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
         return mediaService.getTagNames(currentUser.id);
     });
 
@@ -88,7 +88,7 @@ export const postEditUserTag = createServerFn({ method: "POST" })
     .validator(editUserTagSchema)
     .handler(async ({ data: { mediaType, mediaId, tag, action }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
 
         return mediaService.editUserTag(currentUser.id, tag, action, mediaId);
     });

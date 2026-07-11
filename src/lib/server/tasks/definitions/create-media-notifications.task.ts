@@ -17,7 +17,7 @@ export const createMediaNotificationsTask = defineTask({
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`process-${mediaType}`, async () => {
-                const mediaService = mediaRegistry.getService(mediaType);
+                const mediaService = mediaRegistry.get(mediaType);
                 const allMediaToNotify = await mediaService.getUpcomingMedia(undefined, true);
 
                 ctx.metric(`${mediaType}.found`, allMediaToNotify.length);

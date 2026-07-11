@@ -42,7 +42,7 @@ export const getMediaListSF = createServerFn({ method: "GET" })
         const userHasMediaTypeActive = await userService.hasActiveMediaType(targetUserId, data.mediaType);
         if (!userHasMediaTypeActive) throw notFound();
 
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
         const results = await mediaService.getMediaList(currentUserId, targetUserId, args) as MediaListDataByType[typeof mediaType];
 
         return {
@@ -59,7 +59,7 @@ export const getTagsViewFn = createServerFn({ method: "GET" })
     .handler(async ({ data: { mediaType, search }, context: { user } }) => {
         const targetUserId = user.id;
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
 
         return mediaService.getTagsView(targetUserId, search);
     });
@@ -70,7 +70,7 @@ export const getMediaListFilters = createServerFn({ method: "GET" })
     .validator(mediaListFiltersSchema)
     .handler(async ({ data: { mediaType }, context: { user } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
         return mediaService.getListFilters(user.id);
     });
 
@@ -80,6 +80,6 @@ export const getMediaListSearchFilters = createServerFn({ method: "GET" })
     .validator(mediaListSearchFiltersSchema)
     .handler(async ({ data: { mediaType, query, job }, context: { user } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
         return mediaService.getSearchListFilters(user.id, query, job);
     });

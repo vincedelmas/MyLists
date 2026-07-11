@@ -1,7 +1,8 @@
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
-import {MangaProviderService} from "@/lib/server/domain/media/manga/manga-provider.service";
+import {UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
+import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
@@ -12,7 +13,8 @@ const MANGA_API_MATCH_AMBIGUOUS_REASON = "Manga API match is ambiguous";
 
 export class ExternalJikanMangaMatcher implements ExternalMediaMatcher {
     constructor(
-        private mangaProviderService: MangaProviderService,
+        private mangaProvider: ExternalMediaProvider<UpsertMangaWithDetails>,
+        private mangaIngestion: MediaIngestionService<UpsertMangaWithDetails>,
         private resultBatchSize = 50,
     ) {
     }
@@ -23,7 +25,7 @@ export class ExternalJikanMangaMatcher implements ExternalMediaMatcher {
         for (const item of items) {
             try {
                 if (this._hasMangaExternalId(item)) {
-                    const mediaId = await this.mangaProviderService.fetchAndStoreMediaDetails(item.externalApiId);
+                    const mediaId = await this.mangaIngestion.storeFromExternal(item.externalApiId, false);
                     batch.matched.push({ item, mediaId });
                     if (this._shouldFlush(batch)) {
                         yield batch;
@@ -41,7 +43,7 @@ export class ExternalJikanMangaMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const searchResults = await this.mangaProviderService.search(item.name);
+                const searchResults = await this.mangaProvider.search.search(item.name);
                 const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
 
                 if (candidates.length === 0) {
@@ -62,7 +64,7 @@ export class ExternalJikanMangaMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const mediaId = await this.mangaProviderService.fetchAndStoreMediaDetails(candidates[0].id);
+                const mediaId = await this.mangaIngestion.storeFromExternal(candidates[0].id, false);
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {

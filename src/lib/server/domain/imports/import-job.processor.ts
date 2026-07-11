@@ -5,7 +5,7 @@ import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-m
 export class ImportJobProcessor {
     constructor(
         private importService: ImportService,
-        private matcherRegistry: MediaMatcherRegistry,
+        private matcherRegistry: typeof MediaMatcherRegistry,
     ) {
     }
 

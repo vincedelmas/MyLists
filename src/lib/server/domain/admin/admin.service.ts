@@ -39,7 +39,7 @@ export class AdminService {
 
     async getMediaOverviewForAdmin(mediaServiceRegistry: typeof MediaServiceRegistry) {
         const mediaStats = await Promise.all(Object.values(MediaType).map(async (mediaType) => {
-            const mediaService = mediaServiceRegistry.getService(mediaType);
+            const mediaService = mediaServiceRegistry.get(mediaType);
             const { added, updated } = await mediaService.getUserMediaAddedAndUpdatedForAdmin();
             return { mediaType, added, updated };
         }));
@@ -261,8 +261,7 @@ export class AdminService {
                     .exec();
 
                 flushed += 1;
-            }
-            finally {
+            } finally {
                 await redis.del(lockKey);
             }
         }

@@ -15,7 +15,7 @@ export const backfillGameCollectionIdsTask = defineTask({
     handler: async (ctx) => {
         const db = getDbClient();
         const container = await getContainer();
-        const igdbClient = container.clients.igdb;
+        const igdbClient = container.apiClients.igdb;
 
         const apiIds = await db
             .select({ apiId: games.apiId })

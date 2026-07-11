@@ -1,25 +1,18 @@
-import {AdminService} from "@/lib/server/domain/admin/admin.service";
-import {setupMediaModule} from "@/lib/server/core/container/media.module";
-import {setupAdminModule} from "@/lib/server/core/container/admin.module";
-import {CacheManager, initCacheManager} from "@/lib/server/core/cache-manager";
+import {CacheManager, setupCacheManager} from "@/lib/server/core/cache-manager";
 import {setupUserModule, UserModule} from "@/lib/server/core/container/user.module";
+import {AdminModule, setupAdminModule} from "@/lib/server/core/container/admin.module";
+import {MediaModule, setupMediaModule} from "@/lib/server/core/container/media.module";
 import {ImportModule, setupImportModule} from "@/lib/server/core/container/import.module";
 import {ProviderModule, setupProviderModule} from "@/lib/server/core/container/provider.module";
-import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
-import {MediaProviderServiceRegistry, MediaRepositoryRegistry, MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import {ApiClientModule, setupApiClientsModule} from "@/lib/server/core/container/api-client.module";
 
 
 interface AppContainer {
     cacheManager: CacheManager;
-    clients: ProviderModule["clients"];
+    apiClients: ApiClientModule;
     repositories: UserModule["repositories"] & ImportModule["repositories"];
-    services: UserModule["services"] & ImportModule["services"] & { admin: AdminService };
-    registries: {
-        importMatcher: MediaMatcherRegistry;
-        mediaRepo: typeof MediaRepositoryRegistry;
-        mediaService: typeof MediaServiceRegistry;
-        mediaProviderService: typeof MediaProviderServiceRegistry;
-    };
+    services: UserModule["services"] & ImportModule["services"] & AdminModule["services"];
+    registries: MediaModule["registries"] & ImportModule["registries"] & ProviderModule["registries"];
 }
 
 
@@ -27,17 +20,19 @@ let containerPromise: Promise<AppContainer> | null = null;
 
 
 async function initContainer(): Promise<AppContainer> {
-    const cacheManager = await initCacheManager();
-    const apiModule = await setupProviderModule();
+    const cacheManager = await setupCacheManager();
+    const clientsModule = await setupApiClientsModule();
 
+    const mediaModule = setupMediaModule();
     const adminService = setupAdminModule();
-    const mediaModule = setupMediaModule(apiModule);
-    const userModule = setupUserModule(mediaModule.mediaServiceRegistry);
-    const importModule = setupImportModule(mediaModule.mediaServiceRegistry, mediaModule.mediaProviderServiceRegistry);
+    const userModule = setupUserModule(mediaModule);
+    const providerModule = setupProviderModule(mediaModule, clientsModule);
+
+    const importModule = setupImportModule(mediaModule, providerModule);
 
     return {
         cacheManager,
-        clients: apiModule.clients,
+        apiClients: clientsModule,
         repositories: {
             ...userModule.repositories,
             ...importModule.repositories,
@@ -45,13 +40,12 @@ async function initContainer(): Promise<AppContainer> {
         services: {
             ...userModule.services,
             ...importModule.services,
-            admin: adminService,
+            ...adminService.services,
         },
         registries: {
-            mediaRepo: mediaModule.mediaRepoRegistry,
-            mediaService: mediaModule.mediaServiceRegistry,
-            importMatcher: importModule.registries.importMatcher,
-            mediaProviderService: mediaModule.mediaProviderServiceRegistry,
+            ...mediaModule.registries,
+            ...importModule.registries,
+            ...providerModule.registries,
         },
     };
 }

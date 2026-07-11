@@ -46,7 +46,7 @@ const transformBooksDetailsResults = async (rawData: GBooksDetails) => {
 };
 
 
-export const gbooksTransformer = {
+export const gBooksTransformer = {
     transformSearchResults,
     transformDetailsResults: transformBooksDetailsResults,
 }

@@ -1,6 +1,7 @@
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
-import {GamesProviderService} from "@/lib/server/domain/media/games/games-provider.service";
+import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
+import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
@@ -10,7 +11,7 @@ const GAME_API_RES_FAILED_REASON = "API failed for this media";
 
 export class ExternalIGDBGamesMatcher implements ExternalMediaMatcher {
     constructor(
-        private gamesProviderService: GamesProviderService,
+        private gamesIngestion: MediaIngestionService<UpsertGameWithDetails>,
         private resultBatchSize = 50,
     ) {
     }
@@ -35,7 +36,7 @@ export class ExternalIGDBGamesMatcher implements ExternalMediaMatcher {
             const chunkedApiIds = chunk.map((item) => item.externalApiId);
 
             try {
-                const mediaIdByApiId = await this.gamesProviderService.fetchAndStoreMediaDetailsBulk(chunkedApiIds);
+                const mediaIdByApiId = await this.gamesIngestion.storeBatchFromExternal(chunkedApiIds, false);
                 for (const item of chunk) {
                     const mediaId = mediaIdByApiId.get(item.externalApiId);
                     if (mediaId) batch.matched.push({ item, mediaId });

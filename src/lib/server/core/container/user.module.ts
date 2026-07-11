@@ -1,6 +1,6 @@
+import {MediaModule} from "@/lib/server/core/container/media.module";
 import {WcfService} from "@/lib/server/domain/which-came-first/wcf.service";
 import {MediadleService} from "@/lib/server/domain/mediadle/mediadle.service";
-import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
 import {CollectionsService} from "@/lib/server/domain/collections/collections.service";
@@ -30,7 +30,9 @@ import {
 } from "@/lib/server/domain/user";
 
 
-export function setupUserModule(mediaServiceRegistry: typeof MediaServiceRegistry) {
+export function setupUserModule(mediaModule: MediaModule) {
+    const mediaServiceRegistry = mediaModule.registries.mediaService;
+
     // User Repositories
     const userRepository = UserRepository;
     const mediadleRepository = MediadleRepository;

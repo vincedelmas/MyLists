@@ -1,12 +1,18 @@
 import {MediaType} from "@/lib/utils/enums";
-import {TvProviderService, TvRepository, TvService} from "@/lib/server/domain/media/tv";
-import {GamesProviderService, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
-import {MangaProviderService, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
-import {BooksProviderService, BooksRepository, BooksService} from "@/lib/server/domain/media/books";
-import {MoviesProviderService, MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
+import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
+import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
+import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
+import {UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
+import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
+import {TvRepository, TvService} from "@/lib/server/domain/media/tv";
+import {GamesRepository, GamesService} from "@/lib/server/domain/media/games";
+import {MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
+import {BooksRepository, BooksService} from "@/lib/server/domain/media/books";
+import {MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
+import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
 
-interface MediaRepositoryMap {
+interface MediaRepositoryRegistryMap {
     [MediaType.SERIES]: TvRepository;
     [MediaType.ANIME]: TvRepository;
     [MediaType.MOVIES]: MoviesRepository;
@@ -16,7 +22,23 @@ interface MediaRepositoryMap {
 }
 
 
-interface MediaServiceMap {
+export class MediaRepositoryRegistry {
+    private static repositories: MediaRepositoryRegistryMap = {} as MediaRepositoryRegistryMap;
+
+    static register<T extends keyof MediaRepositoryRegistryMap>(mediaType: T, repository: MediaRepositoryRegistryMap[T]) {
+        this.repositories[mediaType] = repository;
+    }
+
+    static get<T extends keyof MediaRepositoryRegistryMap>(mediaType: T) {
+        if (!this.repositories[mediaType]) {
+            throw new Error(`Repository for media type ${mediaType} not registered`);
+        }
+        return this.repositories[mediaType];
+    }
+}
+
+
+interface MediaServiceRegistryMap {
     [MediaType.SERIES]: TvService;
     [MediaType.ANIME]: TvService;
     [MediaType.MOVIES]: MoviesService;
@@ -26,40 +48,14 @@ interface MediaServiceMap {
 }
 
 
-interface MediaProviderServiceMap {
-    [MediaType.SERIES]: TvProviderService;
-    [MediaType.ANIME]: TvProviderService;
-    [MediaType.MOVIES]: MoviesProviderService;
-    [MediaType.GAMES]: GamesProviderService;
-    [MediaType.BOOKS]: BooksProviderService;
-    [MediaType.MANGA]: MangaProviderService;
-}
-
-
-export class MediaRepositoryRegistry {
-    private static repositories: Partial<MediaRepositoryMap> = {};
-
-    static registerRepository<T extends keyof MediaRepositoryMap>(mediaType: T, repository: MediaRepositoryMap[T]) {
-        this.repositories[mediaType] = repository;
-    }
-
-    static getRepository<T extends keyof MediaRepositoryMap>(mediaType: T) {
-        if (!this.repositories[mediaType]) {
-            throw new Error(`Repository for media type ${mediaType} not registered`);
-        }
-        return this.repositories[mediaType];
-    }
-}
-
-
 export class MediaServiceRegistry {
-    private static services: Partial<MediaServiceMap> = {};
+    private static services: MediaServiceRegistryMap = {} as MediaServiceRegistryMap;
 
-    static registerService<T extends keyof MediaServiceMap>(mediaType: T, service: MediaServiceMap[T]) {
+    static register<T extends keyof MediaServiceRegistryMap>(mediaType: T, service: MediaServiceRegistryMap[T]) {
         this.services[mediaType] = service;
     }
 
-    static getService<T extends keyof MediaServiceMap>(mediaType: T): MediaServiceMap[T] {
+    static get<T extends keyof MediaServiceRegistryMap>(mediaType: T): MediaServiceRegistryMap[T] {
         if (!this.services[mediaType]) {
             throw new Error(`Service for media type ${mediaType} not registered`);
         }
@@ -68,17 +64,53 @@ export class MediaServiceRegistry {
 }
 
 
-export class MediaProviderServiceRegistry {
-    private static providers: Partial<MediaProviderServiceMap> = {};
+interface ExternalMediaProviderRegistryMap {
+    [MediaType.SERIES]: ExternalMediaProvider<UpsertTvWithDetails>;
+    [MediaType.ANIME]: ExternalMediaProvider<UpsertTvWithDetails>;
+    [MediaType.MOVIES]: ExternalMediaProvider<UpsertMovieWithDetails>;
+    [MediaType.GAMES]: ExternalMediaProvider<UpsertGameWithDetails>;
+    [MediaType.BOOKS]: ExternalMediaProvider<UpsertBooksWithDetails>;
+    [MediaType.MANGA]: ExternalMediaProvider<UpsertMangaWithDetails>;
+}
 
-    static registerService<T extends keyof MediaProviderServiceMap>(mediaType: T, provider: MediaProviderServiceMap[T]) {
+
+export class ExternalMediaProviderRegistry {
+    private static providers: ExternalMediaProviderRegistryMap = {} as ExternalMediaProviderRegistryMap;
+
+    static register<T extends keyof ExternalMediaProviderRegistryMap>(mediaType: T, provider: ExternalMediaProviderRegistryMap[T]) {
         this.providers[mediaType] = provider;
     }
 
-    static getService<T extends keyof MediaProviderServiceMap>(mediaType: T) {
+    static get<T extends keyof ExternalMediaProviderRegistryMap>(mediaType: T) {
         if (!this.providers[mediaType]) {
-            throw new Error(`ProviderService for media type ${mediaType} not registered`);
+            throw new Error(`ExternalMediaProvider for media type ${mediaType} not registered`);
         }
         return this.providers[mediaType];
+    }
+}
+
+
+interface MediaIngestionServiceRegistryMap {
+    [MediaType.SERIES]: MediaIngestionService<UpsertTvWithDetails>;
+    [MediaType.ANIME]: MediaIngestionService<UpsertTvWithDetails>;
+    [MediaType.MOVIES]: MediaIngestionService<UpsertMovieWithDetails>;
+    [MediaType.GAMES]: MediaIngestionService<UpsertGameWithDetails>;
+    [MediaType.BOOKS]: MediaIngestionService<UpsertBooksWithDetails>;
+    [MediaType.MANGA]: MediaIngestionService<UpsertMangaWithDetails>;
+}
+
+
+export class MediaIngestionServiceRegistry {
+    private static ingestion: MediaIngestionServiceRegistryMap = {} as MediaIngestionServiceRegistryMap;
+
+    static register<T extends keyof MediaIngestionServiceRegistryMap>(mediaType: T, provider: MediaIngestionServiceRegistryMap[T]) {
+        this.ingestion[mediaType] = provider;
+    }
+
+    static get<T extends keyof MediaIngestionServiceRegistryMap>(mediaType: T) {
+        if (!this.ingestion[mediaType]) {
+            throw new Error(`IngestionService for media type ${mediaType} not registered`);
+        }
+        return this.ingestion[mediaType];
     }
 }

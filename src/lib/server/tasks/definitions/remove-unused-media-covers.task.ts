@@ -35,7 +35,7 @@ export const removeUnusedMediaCoversTask = defineTask({
                     return;
                 }
 
-                const mediaService = mediaRegistry.getService(mediaType);
+                const mediaService = mediaRegistry.get(mediaType);
                 const dbCoverFilenames = await mediaService.getCoverFilenames();
                 const dbCustomCoverFilenames = await mediaService.getCustomCoverFilenames();
                 const dbCoverSet = new Set([...dbCoverFilenames, ...dbCustomCoverFilenames]);

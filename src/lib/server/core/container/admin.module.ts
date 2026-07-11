@@ -4,5 +4,11 @@ import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
 
 export function setupAdminModule() {
     const adminRepository = AdminRepository;
-    return new AdminService(adminRepository);
+    return {
+        services: {
+            admin: new AdminService(adminRepository),
+        },
+    };
 }
+
+export type AdminModule = ReturnType<typeof setupAdminModule>;

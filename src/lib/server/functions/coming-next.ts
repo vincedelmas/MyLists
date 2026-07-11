@@ -12,7 +12,7 @@ export const getComingNextMedia = createServerFn({ method: "GET" })
 
         const comingNextData = await Promise.all(
             mediaTypes.map(async (mediaType) => {
-                const mediaService = container.registries.mediaService.getService(mediaType);
+                const mediaService = container.registries.mediaService.get(mediaType);
                 const items = await mediaService.getUpcomingMedia(currentUser.id);
                 return ({ items, mediaType });
             })

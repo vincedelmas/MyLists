@@ -36,7 +36,7 @@ export const getActivityAddMediaSearch = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(activityAddMediaSearchSchema)
     .handler(async ({ data: { mediaType, query }, context: { currentUser } }) => {
-        const mediaService = await getContainer().then(c => c.registries.mediaService.getService(mediaType));
+        const mediaService = await getContainer().then(c => c.registries.mediaService.get(mediaType));
         return mediaService.searchUserListByName(currentUser.id, query.trim(), 20);
     });
 

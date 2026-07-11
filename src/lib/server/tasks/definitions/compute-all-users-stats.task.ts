@@ -18,7 +18,7 @@ export const computeAllUsersStatsTask = defineTask({
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`stats-${mediaType}`, async () => {
-                const mediaService = mediaRegistry.getService(mediaType);
+                const mediaService = mediaRegistry.get(mediaType);
 
                 await withTransaction(async () => {
                     const userMediaStats = await mediaService.computeAllUsersStats();

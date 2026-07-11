@@ -25,7 +25,7 @@ export class UserMediaService {
     }
 
     async addMediaToList({ userId, mediaType, mediaId, status, silent = false }: MediaAction & { status?: Status; silent?: boolean }) {
-        const mediaService = this.mediaServiceRegistry.getService(mediaType);
+        const mediaService = this.mediaServiceRegistry.get(mediaType);
 
         const { newState, media, delta, logPayload } = await mediaService.addMediaToUserList(userId, mediaId, status);
         await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
@@ -52,7 +52,7 @@ export class UserMediaService {
             await this.userUpdatesService.deleteRecentInitialAdd(userId, mediaType, mediaId);
         }
 
-        const mediaService = this.mediaServiceRegistry.getService(mediaType);
+        const mediaService = this.mediaServiceRegistry.get(mediaType);
         const { newState, media, delta, logPayload } = await mediaService.updateUserMediaDetails(userId, mediaId, mediaPayload);
 
         await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
@@ -73,7 +73,7 @@ export class UserMediaService {
     }
 
     async removeMediaFromList({ userId, mediaType, mediaId }: MediaAction) {
-        const mediaService = this.mediaServiceRegistry.getService(mediaType);
+        const mediaService = this.mediaServiceRegistry.get(mediaType);
 
         const delta = await mediaService.removeMediaFromUserList(userId, mediaId);
         await this.userUpdatesService.deleteMediaUpdatesForUser(userId, mediaType, mediaId);

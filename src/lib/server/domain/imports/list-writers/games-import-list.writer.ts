@@ -1,10 +1,11 @@
 import {ImportItemStatus} from "@/lib/utils/enums";
 import {GamesService} from "@/lib/server/domain/media/games/games.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
+import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {gamesFinalListInsertSchema, GamesImportPayload, gamesImportPayloadSchema} from "@/lib/server/domain/media/games/games.types";
 
 
-export class GamesImportListWriter {
+export class GamesImportListWriter implements ImportListWriter {
     constructor(private gamesService: GamesService) {
     }
 

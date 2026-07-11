@@ -1,8 +1,8 @@
 import {ProviderSearchResult} from "@/lib/types/provider.types";
-import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
+import {TvMediaType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
-import {TvProviderService} from "@/lib/server/domain/media/tv/tv.provider.service";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
+import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
@@ -14,7 +14,8 @@ const TV_API_MATCH_AMBIGUOUS_REASON = "TV API match is ambiguous";
 export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
     constructor(
         private mediaType: TvMediaType,
-        private tvProviderService: TvProviderService,
+        private tvProvider: ExternalMediaProvider<UpsertTvWithDetails>,
+        private tvIngestion: MediaIngestionService<UpsertTvWithDetails>,
         private resultBatchSize = 50,
     ) {
     }
@@ -25,7 +26,7 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
         for (const item of items) {
             try {
                 if (this._hasTmdbExternalId(item)) {
-                    const mediaId = await this.tvProviderService.fetchAndStoreMediaDetails(item.externalApiId);
+                    const mediaId = await this.tvIngestion.storeFromExternal(item.externalApiId, false);
                     batch.matched.push({ item, mediaId });
                     if (this._shouldFlush(batch)) {
                         yield batch;
@@ -43,7 +44,7 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const searchResults = await this.tvProviderService.search(item.name);
+                const searchResults = await this.tvProvider.search.search(item.name);
                 const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
 
                 if (candidates.length === 0) {
@@ -64,7 +65,7 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const mediaId = await this.tvProviderService.fetchAndStoreMediaDetails(candidates[0].id);
+                const mediaId = await this.tvIngestion.storeFromExternal(candidates[0].id, false);
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {

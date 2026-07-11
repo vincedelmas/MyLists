@@ -11,7 +11,7 @@ export const lockOldMoviesTask = defineTask({
     inputSchema: z.object({}),
     handler: async (ctx) => {
         const container = await getContainer();
-        const moviesService = container.registries.mediaService.getService(MediaType.MOVIES);
+        const moviesService = container.registries.mediaService.get(MediaType.MOVIES);
 
         await ctx.step("lock-movies", async () => {
             const totalMoviesLocked = await moviesService.lockOldMovies();

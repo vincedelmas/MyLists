@@ -1,5 +1,4 @@
 import {z} from "zod";
-import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 
@@ -11,10 +10,10 @@ export const checkHltbWorksTask = defineTask({
     inputSchema: z.object({}),
     handler: async (ctx) => {
         const container = await getContainer();
-        const gamesProvider = container.registries.mediaProviderService.getService(MediaType.GAMES);
+        const hltbClient = container.apiClients.hltb;
 
         await ctx.step(`verify-hltb-search`, async () => {
-            const hltbData = await gamesProvider.checkHLTBWorks("Halo 3");
+            const hltbData = await hltbClient.search("Halo 3");
 
             ctx.metric("game_name", hltbData.name);
             ctx.metric("story", hltbData.mainStory ?? "null");

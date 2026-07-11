@@ -1,8 +1,9 @@
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
+import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
-import {BooksProviderService} from "@/lib/server/domain/media/books/books-provider.service";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
 
 const BOOKS_API_RES_FAILED_REASON = "API failed for this media";
@@ -12,7 +13,8 @@ const BOOKS_API_MATCH_AMBIGUOUS_REASON = "Book API match is ambiguous";
 
 export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
     constructor(
-        private booksProviderService: BooksProviderService,
+        private booksProvider: ExternalMediaProvider<UpsertBooksWithDetails>,
+        private booksIngestion: MediaIngestionService<UpsertBooksWithDetails>,
         private resultBatchSize = 50,
     ) {
     }
@@ -23,7 +25,7 @@ export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
         for (const item of items) {
             try {
                 if (this._hasBooksExternalId(item)) {
-                    const mediaId = await this.booksProviderService.fetchAndStoreMediaDetails(item.externalApiId);
+                    const mediaId = await this.booksIngestion.storeFromExternal(item.externalApiId, false);
                     batch.matched.push({ item, mediaId });
                     if (this._shouldFlush(batch)) {
                         yield batch;
@@ -41,7 +43,7 @@ export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const searchResults = await this.booksProviderService.search(item.name);
+                const searchResults = await this.booksProvider.search.search(item.name);
                 const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
 
                 if (candidates.length === 0) {
@@ -62,7 +64,7 @@ export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const mediaId = await this.booksProviderService.fetchAndStoreMediaDetails(candidates[0].id);
+                const mediaId = await this.booksIngestion.storeFromExternal(candidates[0].id, false);
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {

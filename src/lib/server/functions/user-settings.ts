@@ -114,7 +114,7 @@ export const getDownloadListAsCSV = createServerFn({ method: "GET" })
     .validator(downloadListAsCsvSchema)
     .handler(async ({ data: { selectedList }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(selectedList);
+        const mediaService = container.registries.mediaService.get(selectedList);
         return mediaService.downloadMediaListAsCSV(currentUser.id);
     });
 

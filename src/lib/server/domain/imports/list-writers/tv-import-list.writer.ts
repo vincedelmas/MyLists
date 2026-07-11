@@ -1,6 +1,7 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {TvService} from "@/lib/server/domain/media/tv/tv.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
+import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {tvFinalListInsertSchema, TvImportPayload, tvImportPayloadSchema} from "@/lib/server/domain/media/tv/tv.types";
 
 
@@ -13,7 +14,7 @@ type SeasonEpisodes = {
 const SPECIAL_STATUSES: Status[] = [Status.RANDOM, Status.PLAN_TO_WATCH];
 
 
-export class TvImportListWriter {
+export class TvImportListWriter implements ImportListWriter {
     constructor(private tvService: TvService) {
     }
 

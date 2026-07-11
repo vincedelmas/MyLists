@@ -11,7 +11,7 @@ export const getDailyMediadle = createServerFn({ method: "GET" })
     .handler(async ({ context: { currentUser } }) => {
         const container = await getContainer();
         const mediadleService = container.services.mediadle;
-        const moviesService = container.registries.mediaService.getService(MediaType.MOVIES);
+        const moviesService = container.registries.mediaService.get(MediaType.MOVIES);
 
         return mediadleService.getDailyMediadleData(moviesService, currentUser?.id);
     });
@@ -22,7 +22,7 @@ export const getMediadleSuggestions = createServerFn({ method: "GET" })
     .validator(mediadleSuggestionsSchema)
     .handler(async ({ data: { query } }) => {
         const container = await getContainer();
-        const moviesService = container.registries.mediaService.getService(MediaType.MOVIES);
+        const moviesService = container.registries.mediaService.get(MediaType.MOVIES);
         return moviesService.searchMediadleSuggestion(query);
     });
 
@@ -33,6 +33,6 @@ export const postAddMediadleGuess = createServerFn({ method: "POST" })
     .handler(async ({ data: { guess }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediadleService = container.services.mediadle;
-        const moviesService = container.registries.mediaService.getService(MediaType.MOVIES);
+        const moviesService = container.registries.mediaService.get(MediaType.MOVIES);
         return mediadleService.addMediadleGuess(currentUser.id, guess, moviesService);
     });

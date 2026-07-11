@@ -2,17 +2,16 @@ import {notFound} from "@tanstack/react-router";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {Achievement} from "@/lib/types/achievements.types";
+import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {StatsCTE, Tag} from "@/lib/types/media-common.types";
+import {mediaTypeToApiProvider} from "@/lib/utils/media-mapping";
 import {MediaSchemaConfig} from "@/lib/types/media.config.types";
-import {apiProviderMediaTypeMap} from "@/lib/utils/media-mapping";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import {BaseProviderService} from "@/lib/server/domain/media/base/provider.service";
 import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
-import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/parsers/mylists.parser";
-import {MyListsCSVImport} from "@/lib/types/imports.types";
 
 
 export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends BaseRepository<TConfig>> {
@@ -127,7 +126,7 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
             ...row,
             mediaType,
             formatVersion: MYLISTS_CSV_VERSION,
-            externalApiSource: apiProviderMediaTypeMap(mediaType),
+            externalApiSource: mediaTypeToApiProvider(mediaType),
         }) satisfies MyListsCSVImport);
     }
 
@@ -256,13 +255,6 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         const delta = this.calculateDeltaStats(oldState, null, media);
 
         return delta;
-    }
-
-    async resolveExternalMedia(apiId: number | string, providerService: BaseProviderService<any, any, any>) {
-        const media = await this.repository.findByApiId(apiId);
-        if (media) return media.id;
-
-        return providerService.fetchAndStoreMediaDetails(apiId);
     }
 
     async getMediaAndUserDetails(userId: number | undefined, mediaId: number) {

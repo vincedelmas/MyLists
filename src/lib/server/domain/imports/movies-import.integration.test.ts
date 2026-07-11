@@ -20,7 +20,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const { ImportService } = await import("@/lib/server/domain/imports/import.service");
 const { MoviesService } = await import("@/lib/server/domain/media/movies/movies.service");
 const { ImportRepository } = await import("@/lib/server/domain/imports/import.repository");
-const { MoviesMatcher } = await import("@/lib/server/domain/imports/matchers/movies.matcher");
+const { createMoviesMatcher } = await import("@/lib/server/domain/imports/matchers/movies.matcher");
 const { MoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
 const { MediaMatcherRegistry } = await import("@/lib/server/domain/imports/matchers/media-matcher.registry");
@@ -31,6 +31,8 @@ describe("movies import processing", () => {
     let db: BunSQLiteDatabase<typeof schema>;
 
     beforeEach(async () => {
+        MediaMatcherRegistry.clear();
+
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
@@ -64,8 +66,12 @@ describe("movies import processing", () => {
     it("matches an internal movie, adds it to the user list, and completes the import job", async () => {
         const importService = new ImportService(ImportRepository);
         const moviesService = new MoviesService(new MoviesRepository());
-        const matcherRegistry = new MediaMatcherRegistry();
-        matcherRegistry.register(MediaType.MOVIES, MoviesMatcher.create(moviesService, { search: vi.fn() } as any));
+        const matcherRegistry = MediaMatcherRegistry;
+        matcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+            moviesService,
+            { search: { search: vi.fn() } } as any,
+            { storeFromExternal: vi.fn() } as any,
+        ));
         const processor = new ImportJobProcessor(importService, matcherRegistry);
 
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
@@ -124,13 +130,19 @@ describe("movies import processing", () => {
     it("settles external skipped and failed movie rows and completes the import job with errors", async () => {
         const importService = new ImportService(ImportRepository);
         const moviesService = new MoviesService(new MoviesRepository());
-        const moviesProviderService = {
-            search: vi.fn()
-                .mockResolvedValueOnce({ hasNextPage: false, data: [] })
-                .mockRejectedValueOnce(new Error("TMDB unavailable")),
+        const moviesProvider = {
+            search: {
+                search: vi.fn()
+                    .mockResolvedValueOnce({ hasNextPage: false, data: [] })
+                    .mockRejectedValueOnce(new Error("TMDB unavailable")),
+            },
         };
-        const matcherRegistry = new MediaMatcherRegistry();
-        matcherRegistry.register(MediaType.MOVIES, MoviesMatcher.create(moviesService, moviesProviderService as any));
+        const matcherRegistry = MediaMatcherRegistry;
+        matcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+            moviesService,
+            moviesProvider as any,
+            { storeFromExternal: vi.fn() } as any,
+        ));
         const processor = new ImportJobProcessor(importService, matcherRegistry);
 
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
@@ -174,7 +186,7 @@ describe("movies import processing", () => {
         const [storedJob] = await db.select().from(importJobs).where(eq(importJobs.id, job.id));
         const [skippedItem, failedItem] = storedImportItems.sort((a, b) => a.rowNumber - b.rowNumber);
 
-        expect(moviesProviderService.search).toHaveBeenCalledTimes(2);
+        expect(moviesProvider.search.search).toHaveBeenCalledTimes(2);
         expect(storedListItems).toEqual([]);
         expect(skippedItem).toMatchObject({
             rowNumber: 2,

@@ -23,7 +23,7 @@ export const getMediaDetails = createServerFn({ method: "GET" })
     .validator(mediaDetailsSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
 
         const {
             media,
@@ -41,7 +41,7 @@ export const getMediaCommunityActivity = createServerFn({ method: "GET" })
     .validator(mediaCommunityActivitySchema)
     .handler(async ({ data: { mediaType, mediaId, search }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
         return mediaService.getMediaCommunityActivity(currentUser?.id, mediaId, search);
     });
 
@@ -51,10 +51,8 @@ export const resolveExternalMedia = createServerFn({ method: "POST" })
     .validator(externalMediaResolveSchema)
     .handler(async ({ data: { mediaType, apiId } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
-        const mediaProviderService = container.registries.mediaProviderService.getService(mediaType);
-
-        const mediaId = await mediaService.resolveExternalMedia(apiId, mediaProviderService);
+        const ingestionService = container.registries.ingestionServices.get(mediaType);
+        const mediaId = await ingestionService.storeFromExternal(apiId);
         return { mediaId };
     });
 
@@ -64,7 +62,7 @@ export const getJobDetails = createServerFn({ method: "GET" })
     .validator(jobDetailsSchema)
     .handler(async ({ data: { mediaType, job, name, pagination }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
         return mediaService.getMediaJobDetails(job, name, pagination, currentUser?.id);
     });
 
@@ -75,9 +73,9 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
         const adminService = container.services.admin;
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
         const isManagerOrAbove = isAtLeastRole(currentUser.role as RoleType, RoleType.MANAGER);
-        const mediaProviderService = container.registries.mediaProviderService.getService(mediaType);
+        const ingestionService = container.registries.ingestionServices.get(mediaType);
 
         if (!isManagerOrAbove && mediaType === MediaType.BOOKS) {
             throw new FormattedError("Unauthorized to refresh book metadata.");
@@ -95,7 +93,7 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
             }
         }
 
-        await mediaProviderService.fetchAndRefreshMediaDetails(media.apiId);
+        await ingestionService.refreshFromExternal(media.apiId);
         void adminService.logMediaRefresh({ userId: currentUser.id, mediaType, apiId: media.apiId }).catch();
     });
 
@@ -105,7 +103,7 @@ export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();
-        const gamesService = container.registries.mediaService.getService(MediaType.GAMES);
+        const gamesService = container.registries.mediaService.get(MediaType.GAMES);
 
         if (mediaType !== MediaType.GAMES) {
             throw new FormattedError("Platform lookup is only available for games ;).");
@@ -120,7 +118,7 @@ export const postUpdateBookCover = createServerFn({ method: "POST" })
     .validator((data) => updateBookCoverSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
     .handler(async ({ data: { mediaId, imageUrl, imageFile } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(MediaType.BOOKS);
+        const mediaService = container.registries.mediaService.get(MediaType.BOOKS);
         await mediaService.updateDefaultCover(mediaId, { imageUrl, imageFile });
     });
 
@@ -130,7 +128,7 @@ export const getMediaDetailsToEdit = createServerFn({ method: "GET" })
     .validator(mediaDetailsToEditSchema)
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
         return mediaService.getMediaEditableFields(mediaId);
     });
 
@@ -140,6 +138,6 @@ export const postEditMediaDetails = createServerFn({ method: "POST" })
     .validator(editMediaDetailsSchema)
     .handler(async ({ data: { mediaType, mediaId, payload } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.getService(mediaType);
+        const mediaService = container.registries.mediaService.get(mediaType);
         return mediaService.updateMediaEditableFields(mediaId, payload);
     });

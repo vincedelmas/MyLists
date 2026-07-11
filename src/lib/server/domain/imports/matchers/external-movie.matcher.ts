@@ -1,7 +1,8 @@
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
-import {MoviesProviderService} from "@/lib/server/domain/media/movies/movies-provider.service";
+import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
+import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
@@ -12,7 +13,8 @@ const MOVIE_API_MATCH_AMBIGUOUS_REASON = "Movie API match is ambiguous";
 
 export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
     constructor(
-        private moviesProviderService: MoviesProviderService,
+        private moviesProvider: ExternalMediaProvider<UpsertMovieWithDetails>,
+        private moviesIngestion: MediaIngestionService<UpsertMovieWithDetails>,
         private resultBatchSize = 50,
     ) {
     }
@@ -23,7 +25,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
         for (const item of items) {
             try {
                 if (this._hasTmdbExternalId(item)) {
-                    const mediaId = await this.moviesProviderService.fetchAndStoreMediaDetails(item.externalApiId);
+                    const mediaId = await this.moviesIngestion.storeFromExternal(item.externalApiId, false);
                     batch.matched.push({ item, mediaId });
                     if (this._shouldFlush(batch)) {
                         yield batch;
@@ -41,7 +43,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const searchResults = await this.moviesProviderService.search(item.name);
+                const searchResults = await this.moviesProvider.search.search(item.name);
                 const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
 
                 if (candidates.length === 0) {
@@ -62,7 +64,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const mediaId = await this.moviesProviderService.fetchAndStoreMediaDetails(candidates[0].id);
+                const mediaId = await this.moviesIngestion.storeFromExternal(candidates[0].id, false);
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {

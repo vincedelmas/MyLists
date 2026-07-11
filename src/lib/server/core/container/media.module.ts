@@ -1,16 +1,13 @@
 import {MediaType} from "@/lib/utils/enums";
-import {ProviderModule} from "@/lib/server/core/container/provider.module";
-import {BooksProviderService, BooksRepository, BooksService} from "@/lib/server/domain/media/books";
-import {GamesProviderService, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
-import {MangaProviderService, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
-import {MoviesProviderService, MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
-import {animeConfig, seriesConfig, TvProviderService, TvRepository, TvService} from "@/lib/server/domain/media/tv";
-import {MediaProviderServiceRegistry, MediaRepositoryRegistry, MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import {BooksRepository, BooksService} from "@/lib/server/domain/media/books";
+import {GamesRepository, GamesService} from "@/lib/server/domain/media/games";
+import {MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
+import {MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
+import {animeConfig, seriesConfig, TvRepository, TvService} from "@/lib/server/domain/media/tv";
+import {MediaRepositoryRegistry, MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 
 
-export function setupMediaModule(apiModule: ProviderModule) {
-    const { clients } = apiModule;
-
+export function setupMediaModule() {
     const repositories = {
         series: new TvRepository(seriesConfig),
         anime: new TvRepository(animeConfig),
@@ -20,7 +17,7 @@ export function setupMediaModule(apiModule: ProviderModule) {
         manga: new MangaRepository(),
     };
     Object.entries(repositories).forEach(([key, repo]) => {
-        MediaRepositoryRegistry.registerRepository(key as MediaType, repo);
+        MediaRepositoryRegistry.register(key as MediaType, repo);
     });
 
     const services = {
@@ -32,25 +29,32 @@ export function setupMediaModule(apiModule: ProviderModule) {
         manga: new MangaService(repositories.manga),
     };
     Object.entries(services).forEach(([key, service]) => {
-        MediaServiceRegistry.registerService(key as MediaType, service);
-    })
-
-    // Create and register provider services
-    const providerServices = {
-        series: new TvProviderService(clients.tmdb, repositories.series, clients.jikan),
-        anime: new TvProviderService(clients.tmdb, repositories.anime, clients.jikan),
-        movies: new MoviesProviderService(clients.tmdb, repositories.movies),
-        games: new GamesProviderService(clients.igdb, repositories.games, clients.hltb),
-        books: new BooksProviderService(clients.gBook, clients.llmClient, repositories.books),
-        manga: new MangaProviderService(clients.jikan, repositories.manga),
-    };
-    Object.entries(providerServices).forEach(([key, service]) => {
-        MediaProviderServiceRegistry.registerService(key as MediaType, service);
+        MediaServiceRegistry.register(key as MediaType, service);
     })
 
     return {
-        mediaRepoRegistry: MediaRepositoryRegistry,
-        mediaServiceRegistry: MediaServiceRegistry,
-        mediaProviderServiceRegistry: MediaProviderServiceRegistry,
+        repositories: {
+            series: repositories.series,
+            anime: repositories.anime,
+            movies: repositories.movies,
+            games: repositories.games,
+            books: repositories.books,
+            manga: repositories.manga,
+        },
+        services: {
+            series: services.series,
+            anime: services.anime,
+            movies: services.movies,
+            games: services.games,
+            books: services.books,
+            manga: services.manga,
+        },
+        registries: {
+            mediaService: MediaServiceRegistry,
+            mediaRepository: MediaRepositoryRegistry,
+        }
     };
 }
+
+
+export type MediaModule = ReturnType<typeof setupMediaModule>;

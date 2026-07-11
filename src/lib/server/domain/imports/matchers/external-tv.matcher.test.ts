@@ -10,14 +10,17 @@ describe("ExternalTMDBTvMatcher", () => {
             externalApiId: "136315",
             externalApiSource: ApiProviderType.TMDB,
         });
-        const tvProviderService = {
-            fetchAndStoreMediaDetails: vi.fn().mockResolvedValue(100),
+        const tvProvider = {
+            search: { search: vi.fn() },
         };
-        const matcher = new ExternalTMDBTvMatcher(MediaType.SERIES, tvProviderService as any);
+        const tvIngestion = {
+            storeFromExternal: vi.fn().mockResolvedValue(100),
+        };
+        const matcher = new ExternalTMDBTvMatcher(MediaType.SERIES, tvProvider as any, tvIngestion as any);
 
         const [result] = await collect(matcher.match([item]));
 
-        expect(tvProviderService.fetchAndStoreMediaDetails).toHaveBeenCalledWith("136315");
+        expect(tvIngestion.storeFromExternal).toHaveBeenCalledWith("136315", false);
         expect(result).toEqual({
             failed: [],
             skipped: [],
@@ -33,21 +36,25 @@ describe("ExternalTMDBTvMatcher", () => {
             name: "Frieren",
             releaseDate: "2023",
         });
-        const tvProviderService = {
-            fetchAndStoreMediaDetails: vi.fn().mockResolvedValue(200),
-            search: vi.fn().mockResolvedValue({
-                hasNextPage: false,
-                data: [
-                    { id: 1, name: "Frieren", date: "2023-09-29", itemType: MediaType.SERIES, image: "" },
-                    { id: 2, name: "Frieren", date: "2023-09-29", itemType: MediaType.ANIME, image: "" },
-                ],
-            }),
+        const tvProvider = {
+            search: {
+                search: vi.fn().mockResolvedValue({
+                    hasNextPage: false,
+                    data: [
+                        { id: 1, name: "Frieren", date: "2023-09-29", itemType: MediaType.SERIES, image: "" },
+                        { id: 2, name: "Frieren", date: "2023-09-29", itemType: MediaType.ANIME, image: "" },
+                    ],
+                }),
+            },
         };
-        const matcher = new ExternalTMDBTvMatcher(MediaType.ANIME, tvProviderService as any);
+        const tvIngestion = {
+            storeFromExternal: vi.fn().mockResolvedValue(200),
+        };
+        const matcher = new ExternalTMDBTvMatcher(MediaType.ANIME, tvProvider as any, tvIngestion as any);
 
         const [result] = await collect(matcher.match([item]));
 
-        expect(tvProviderService.fetchAndStoreMediaDetails).toHaveBeenCalledWith(2);
+        expect(tvIngestion.storeFromExternal).toHaveBeenCalledWith(2, false);
         expect(result.matched).toEqual([{ item, mediaId: 200 }]);
     });
 });

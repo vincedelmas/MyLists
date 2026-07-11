@@ -122,7 +122,7 @@ export class UserActivityService {
     }
 
     async addActivity(userId: number, payload: AddActivity) {
-        const mediaService = this.mediaServiceRegistry.getService(payload.mediaType);
+        const mediaService = this.mediaServiceRegistry.get(payload.mediaType);
 
         const media = await mediaService.findById(payload.mediaId);
         if (!media) throw new FormattedError("Media not found");
@@ -222,7 +222,7 @@ export class UserActivityService {
                 return;
             }
 
-            const mediaService = this.mediaServiceRegistry.getService(mediaType);
+            const mediaService = this.mediaServiceRegistry.get(mediaType);
             const mediaDetails = await mediaService.getMediaDetailsByIds(mediaIds);
             mediaDetailsByType.set(mediaType, new Map(mediaDetails.map((m) => [m.id, m])));
         }));
@@ -232,7 +232,7 @@ export class UserActivityService {
 
     private async _searchActivityMediaIds(userId: number, mediaTypes: MediaType[], search: string) {
         const entries = await Promise.all(mediaTypes.map(async (mediaType) => {
-            const mediaService = this.mediaServiceRegistry.getService(mediaType);
+            const mediaService = this.mediaServiceRegistry.get(mediaType);
             const results = await mediaService.searchUserListByName(userId, search, 20);
 
             return [mediaType, results.map((result) => result.mediaId)] as const;

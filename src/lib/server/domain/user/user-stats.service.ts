@@ -141,7 +141,7 @@ export class UserStatsService {
         const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ userId });
 
         const tagCountPromises = userPreComputedStats.mediaTypes.map((mediaType) => {
-            const mediaService = this.mediaServiceRegistry.getService(mediaType);
+            const mediaService = this.mediaServiceRegistry.get(mediaType);
             return mediaService.computeTotalTags(userId);
         });
         const tagCounts = await Promise.all(tagCountPromises);
@@ -157,7 +157,7 @@ export class UserStatsService {
     }
 
     async userAdvancedMediaStats(userId: number, mediaType: MediaType) {
-        const mediaService = this.mediaServiceRegistry.getService(mediaType);
+        const mediaService = this.mediaServiceRegistry.get(mediaType);
 
         const preComputedMediaStats = await this.repository.getAggregatedMediaStats({ userId, mediaType });
         const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ userId, mediaType });
@@ -181,7 +181,7 @@ export class UserStatsService {
         const mediaUpdatesPerMonth = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ excludeBulkImports: true });
 
         const tagCountPromises = platformPreComputedStats.mediaTypes.map((mediaType) => {
-            const mediaService = this.mediaServiceRegistry.getService(mediaType);
+            const mediaService = this.mediaServiceRegistry.get(mediaType);
             return mediaService.computeTotalTags();
         });
         const tagCounts = await Promise.all(tagCountPromises);
@@ -197,7 +197,7 @@ export class UserStatsService {
     }
 
     async platformMediaAdvancedStats(mediaType: MediaType) {
-        const mediaService = this.mediaServiceRegistry.getService(mediaType);
+        const mediaService = this.mediaServiceRegistry.get(mediaType);
 
         const platformPreComputedStats = await this.repository.getAggregatedMediaStats({ mediaType });
         const specificMediaStats = await mediaService.calculateAdvancedMediaStats(platformPreComputedStats.avgRated);

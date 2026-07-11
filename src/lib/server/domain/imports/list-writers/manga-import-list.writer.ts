@@ -1,10 +1,11 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {MangaService} from "@/lib/server/domain/media/manga/manga.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
+import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {Manga, mangaFinalListInsertSchema, MangaImportPayload, mangaImportPayloadSchema} from "@/lib/server/domain/media/manga/manga.types";
 
 
-export class MangaImportListWriter {
+export class MangaImportListWriter implements ImportListWriter {
     constructor(private mangaService: MangaService) {
     }
 

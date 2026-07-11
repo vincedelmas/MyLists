@@ -55,7 +55,7 @@ export class UserProfileService {
                 const needsRandomForOverview = (tabConfig.mode === "disabled" && settings.overview.mode === "random");
 
                 if (needsRandomForTab || needsRandomForOverview) {
-                    const mediaService = this.mediaServiceRegistry.getService(mediaType);
+                    const mediaService = this.mediaServiceRegistry.get(mediaType);
                     const favorites = await mediaService.getUserFavorites(userId, 3 * PROFILE_MAX_HIGHLIGHTED_MEDIA);
                     const mapFavorites = favorites.map((fav) => ({
                         ...fav,
@@ -97,7 +97,7 @@ export class UserProfileService {
         const targetMediaTypes = tab === "overview" ? Object.values(MediaType) : [tab];
 
         const results = await Promise.all(targetMediaTypes.map(async (mediaType) => {
-            const mediaService = this.mediaServiceRegistry.getService(mediaType);
+            const mediaService = this.mediaServiceRegistry.get(mediaType);
             const mediaDetails = await mediaService.searchUserListByName(userId, query, perTypeLimit);
             return mediaDetails.map((media) => ({
                 ...media,
@@ -144,7 +144,7 @@ export class UserProfileService {
         const lookupMap = new Map<string, Omit<HighlightedMediaResolvedItem, "mediaType">>();
 
         await Promise.all(Object.entries(groupedByMediaType).map(async ([mediaType, mediaIds]) => {
-            const mediaService = this.mediaServiceRegistry.getService(mediaType as MediaType);
+            const mediaService = this.mediaServiceRegistry.get(mediaType as MediaType);
             const mediaDetails = await mediaService.getMediaDetailsByIds(mediaIds, userId);
             for (const md of mediaDetails) {
                 lookupMap.set(`${mediaType}|${md.id}`, {

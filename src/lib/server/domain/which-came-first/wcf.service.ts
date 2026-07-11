@@ -17,7 +17,7 @@ export class WcfService {
 
     async curatePool() {
         for (const mediaType of WCF_MEDIA_TYPES) {
-            const mediaService = this.mediaServiceRegistry.getService(mediaType);
+            const mediaService = this.mediaServiceRegistry.get(mediaType);
             const popularMediaRefs = await mediaService.getPopularMediaRefs();
             await this.repository.syncCuratedPool(mediaType, popularMediaRefs);
         }
@@ -215,7 +215,7 @@ export class WcfService {
     }
 
     private async _getMedia(mediaType: MediaType, mediaId: number) {
-        const mediaService = this.mediaServiceRegistry.getService(mediaType);
+        const mediaService = this.mediaServiceRegistry.get(mediaType);
         const mediaDetails = await mediaService.findById(mediaId);
         if (!mediaDetails) return undefined;
 

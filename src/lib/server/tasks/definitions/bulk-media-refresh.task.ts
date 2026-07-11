@@ -14,7 +14,7 @@ export const bulkMediaRefreshTask = defineTask({
     }),
     handler: async (ctx, input) => {
         const container = await getContainer();
-        const registry = container.registries.mediaProviderService;
+        const registry = container.registries.ingestionServices;
 
         const mediaTypes = input.mediaTypes;
         const typesToProcess = mediaTypes && mediaTypes.length > 0 ? mediaTypes : Object.values(MediaType);
@@ -25,9 +25,9 @@ export const bulkMediaRefreshTask = defineTask({
                 let processedCount = 0;
 
                 const startTime = Date.now();
-                const provider = registry.getService(mediaType);
+                const ingestionService = registry.get(mediaType);
 
-                for await (const result of provider.bulkProcessAndRefreshMedia(input.limit)) {
+                for await (const result of ingestionService.bulkRefresh(input.limit)) {
                     if (result.state === "fulfilled") {
                         ctx.increment(`${mediaType}.success`);
                     }

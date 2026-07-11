@@ -4,10 +4,6 @@ import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
-import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
-import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
-import {jikanTransformer} from "@/lib/server/api-providers/transformers/jikan.transformer";
-import {gbooksTransformer} from "@/lib/server/api-providers/transformers/gbook.transformer";
 
 
 export const getSearchResults = createServerFn({ method: "GET" })
@@ -15,11 +11,8 @@ export const getSearchResults = createServerFn({ method: "GET" })
     .validator(navbarSearchSchema)
     .handler(async ({ data: { query, page, apiProvider }, context: { currentUser } }) => {
         const container = await getContainer();
-        const igdbClient = container.clients.igdb;
-        const tmdbClient = container.clients.tmdb;
-        const gBookClient = container.clients.gBook;
-        const jikanClient = container.clients.jikan;
         const userService = container.services.user;
+        const providers = container.registries.externalProviders;
 
         if (query === "") {
             return { hasNextPage: false, data: [] };
@@ -34,21 +27,22 @@ export const getSearchResults = createServerFn({ method: "GET" })
         }
 
         if (apiProvider === ApiProviderType.TMDB) {
-            const rawResults = await tmdbClient.search(query, page);
-            return tmdbTransformer.transformSearchResults(rawResults);
+            return providers.get(MediaType.SERIES).search.search(query, page);
         }
 
         if (apiProvider === ApiProviderType.IGDB) {
-            const rawResults = await igdbClient.search(query, page);
-            return igdbTransformer.transformSearchResults(rawResults);
+            return providers.get(MediaType.GAMES).search.search(query, page);
+        }
+
+        if (apiProvider === ApiProviderType.MANGA) {
+            return providers.get(MediaType.MANGA).search.search(query, page);
         }
 
         if (apiProvider === ApiProviderType.BOOKS) {
-            const rawResults = await gBookClient.search(query, page);
-            const apiResults = gbooksTransformer.transformSearchResults(rawResults);
+            const apiResults = await providers.get(MediaType.BOOKS).search.search(query, page);
 
             if (page === 1) {
-                const booksService = container.registries.mediaService.getService(MediaType.BOOKS);
+                const booksService = container.registries.mediaService.get(MediaType.BOOKS);
                 const dbResults = await booksService.searchByName(query);
 
                 const dbApiIds = new Set(dbResults.map((r) => String(r.id)));
@@ -61,9 +55,5 @@ export const getSearchResults = createServerFn({ method: "GET" })
             }
 
             return apiResults;
-        }
-        else {
-            const rawResults = await jikanClient.search(query, page);
-            return jikanTransformer.transformSearchResults(rawResults);
         }
     });

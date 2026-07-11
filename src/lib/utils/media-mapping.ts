@@ -1,7 +1,7 @@
 import {ApiProviderType, MediaType, Status} from "@/lib/utils/enums";
 
 
-export const apiProviderMediaTypeMap = (mediaType: MediaType) => {
+export const mediaTypeToApiProvider = (mediaType: MediaType) => {
     switch (mediaType) {
         case MediaType.MOVIES:
         case MediaType.SERIES:

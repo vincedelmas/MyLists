@@ -39,7 +39,7 @@ export class CollectionsService {
             this.repository.incrementViewCount(collectionId),
         ]);
 
-        const mediaService = this.mediaRegistry.getService(collection.mediaType);
+        const mediaService = this.mediaRegistry.get(collection.mediaType);
         const mediaRows = await mediaService.getMediaDetailsByIds(items.map((item) => item.mediaId), actorId);
         const mediaMap = new Map(mediaRows.map((m) => [m.id, m]));
 
@@ -281,7 +281,7 @@ export class CollectionsService {
         const mediaLookup = new Map<string, MediaInfo>();
 
         await Promise.all([...mediaMapByType.entries()].map(async ([mediaType, ids]) => {
-            const mediaService = this.mediaRegistry.getService(mediaType);
+            const mediaService = this.mediaRegistry.get(mediaType);
             const mediaDetails = await mediaService.getMediaDetailsByIds([...ids]);
             mediaDetails.forEach((media) => mediaLookup.set(`${mediaType}-${media.id}`, media));
         }));

@@ -3,15 +3,20 @@ import {serverEnv} from "@/env/server";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
 
 
-export type CacheManager = Awaited<ReturnType<typeof initCacheManager>>;
+export type CacheManager = Awaited<ReturnType<typeof setupCacheManager>>;
 
 
 interface CacheStore {
     getStoreType(): string;
+
     del(key: string): Promise<void>;
+
     get<T>(key: string): Promise<T | undefined>;
+
     increment(key: string, amount?: number): Promise<number>;
+
     set(key: string, value: any, ttl?: number): Promise<void>;
+
     wrap<T>(key: string, fn: () => Promise<T>, options?: { ttl?: number }): Promise<T>;
 }
 
@@ -124,7 +129,7 @@ class MemoryCacheStore implements CacheStore {
 }
 
 
-export const initCacheManager = async () => {
+export const setupCacheManager = async () => {
     const cache_ttl_ms = serverEnv.CACHE_TTL_MIN * 60 * 1000;
 
     let cache: CacheStore;

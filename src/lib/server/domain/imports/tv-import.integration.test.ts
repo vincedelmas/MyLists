@@ -1,6 +1,7 @@
 import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
 import * as schema from "@/lib/server/database/schema";
+import {importItems, importJobs, series, seriesEpisodesPerSeason, seriesList, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
@@ -8,11 +9,10 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
-import {TvMatcher} from "@/lib/server/domain/imports/matchers/tv.matcher";
+import {createTvMatcher} from "@/lib/server/domain/imports/matchers/tv.matcher";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {TvService} from "@/lib/server/domain/media/tv/tv.service";
 import {seriesConfig} from "@/lib/server/domain/media/tv/series/series.config";
-import {importItems, importJobs, series, seriesEpisodesPerSeason, seriesList, user} from "@/lib/server/database/schema";
 import {ApiProviderType, ImportItemStatus, ImportJobStatus, ImportSource, MediaType, Status} from "@/lib/utils/enums";
 
 
@@ -30,6 +30,8 @@ describe("TV import processing", () => {
     let db: BunSQLiteDatabase<typeof schema>;
 
     beforeEach(async () => {
+        MediaMatcherRegistry.clear();
+
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
@@ -69,8 +71,8 @@ describe("TV import processing", () => {
     it("matches an internal series and adds it to the user list", async () => {
         const importService = new ImportService(ImportRepository);
         const seriesService = new TvService(new TvRepository(seriesConfig));
-        const matcherRegistry = new MediaMatcherRegistry();
-        matcherRegistry.register(MediaType.SERIES, TvMatcher.create(MediaType.SERIES, seriesService, {} as any));
+        const matcherRegistry = MediaMatcherRegistry;
+        matcherRegistry.register(MediaType.SERIES, createTvMatcher(MediaType.SERIES, seriesService, {} as any, {} as any));
         const processor = new ImportJobProcessor(importService, matcherRegistry);
 
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);

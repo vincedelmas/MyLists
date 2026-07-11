@@ -3,7 +3,7 @@ import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
 import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
-export const internalNameDateMatcher = (mediaService: BaseService<any, any>) => ({
+export const internalNameDateMatcher = (mediaService: BaseService<any, any>): InternalMediaMatcher => ({
     async match(items: ImportItemsSelect[]) {
         const candidates = items.filter(item => item.name?.trim() && isSupportedReleaseDate(item.releaseDate));
 
@@ -44,7 +44,7 @@ export const internalNameDateMatcher = (mediaService: BaseService<any, any>) => 
 
         return { matched, unresolved };
     }
-}) satisfies InternalMediaMatcher;
+});
 
 
 const isSupportedReleaseDate = (releaseDate: string | null) => {

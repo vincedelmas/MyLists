@@ -46,7 +46,8 @@ export type IngestionContext = {
 
 
 export type RefreshPolicy = {
-    chunkSize: number;
+    chunkSize?: number;
+    shouldAbortBulkRefresh?: (reason: unknown) => boolean;
 }
 
 

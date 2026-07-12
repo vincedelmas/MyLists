@@ -89,7 +89,7 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
             }
             catch (err) {
                 if (err instanceof DOMException && err.name === "TimeoutError") {
-                    throw new FormattedError("Request timed out. API probably down. Please try again later.");
+                    throw new FormattedError("Request timed out. API probably down. Please try again later.", { statusCode: 504 });
                 }
                 throw err;
             }
@@ -134,18 +134,18 @@ async function handleResponseError(res: Response) {
         case 404:
             throw notFound();
         case 429:
-            throw new FormattedError("Too many requests. Please try again in a minute.");
+            throw new FormattedError("Too many requests. Please try again in a minute.", { statusCode: res.status });
         case 403:
-            throw new FormattedError("API quota or access limit reached. Please try again later.");
+            throw new FormattedError("API quota or access limit reached. Please try again later.", { statusCode: res.status });
         case 410:
-            throw new FormattedError("Media no longer available on the API.");
+            throw new FormattedError("Media no longer available on the API.", { statusCode: res.status });
         case 401:
-            throw new FormattedError("API not accessible. Please try again later.");
+            throw new FormattedError("API not accessible. Please try again later.", { statusCode: res.status });
         case 500:
         case 502:
         case 503:
         case 504:
-            throw new FormattedError("API currently not accessible. Please try again later.");
+            throw new FormattedError("API currently not accessible. Please try again later.", { statusCode: res.status });
         default: {
             throw new Error(`Unexpected Error: ${res.status}`);
         }

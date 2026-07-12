@@ -1,5 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {JikanApi} from "@/lib/server/api-providers/api";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {MangaRepository} from "@/lib/server/domain/media/manga";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
@@ -36,6 +37,13 @@ export const createMangaIngestionService = (repository: MangaRepository, provide
         refreshCandidates: {
             getCandidateApiIds: () => {
                 return repository.getMediaIdsToBeRefreshed();
+            },
+        },
+        refreshPolicy: {
+            shouldAbortBulkRefresh: (reason) => {
+                if (!(reason instanceof FormattedError)) return false;
+                const statusCode = reason?.args?.statusCode ?? 200;
+                return statusCode >= 500 && statusCode < 600;
             },
         },
     });

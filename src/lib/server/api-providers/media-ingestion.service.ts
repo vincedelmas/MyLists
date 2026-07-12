@@ -47,44 +47,23 @@ export function createMediaIngestionService<TDetails>(params: {
                 const details = detailsByApiId.get(String(apiId));
 
                 if (!details) {
-                    yield {
-                        apiId,
-                        state: "rejected" as const,
-                        reason: new Error("Missing bulk details response"),
-                    };
+                    yield { apiId, state: "rejected" as const, reason: new Error("Missing bulk details response") };
                     continue;
                 }
 
                 try {
-                    const enriched = await applyEnrichers(details, {
-                        mode: "refresh",
-                        isBulk: true,
-                    });
-
+                    const enriched = await applyEnrichers(details, { mode: "refresh", isBulk: true });
                     await repository.updateMediaWithDetails(enriched);
-
-                    yield {
-                        apiId,
-                        state: "fulfilled" as const,
-                        reason: undefined,
-                    };
+                    yield { apiId, state: "fulfilled" as const, reason: undefined };
                 }
                 catch (reason) {
-                    yield {
-                        apiId,
-                        state: "rejected" as const,
-                        reason,
-                    };
+                    yield { apiId, state: "rejected" as const, reason };
                 }
             }
         }
         catch (reason) {
             for (const apiId of apiIds) {
-                yield {
-                    apiId,
-                    state: "rejected" as const,
-                    reason,
-                };
+                yield { apiId, state: "rejected" as const, reason };
             }
         }
     }
@@ -92,25 +71,15 @@ export function createMediaIngestionService<TDetails>(params: {
     async function* refreshOneByOne(apiIds: (number | string)[]) {
         for (const apiId of apiIds) {
             try {
-                const details = await fetchAndPrepareDetails(apiId, {
-                    mode: "refresh",
-                    isBulk: true,
-                });
-
+                const details = await fetchAndPrepareDetails(apiId, { mode: "refresh", isBulk: true });
                 await repository.updateMediaWithDetails(details);
-
-                yield {
-                    apiId,
-                    state: "fulfilled" as const,
-                    reason: undefined,
-                };
+                yield { apiId, state: "fulfilled" as const, reason: undefined };
             }
             catch (reason) {
-                yield {
-                    apiId,
-                    state: "rejected" as const,
-                    reason,
-                };
+                yield { apiId, state: "rejected" as const, reason };
+                if (refreshPolicy?.shouldAbortBulkRefresh?.(reason)) {
+                    return;
+                }
             }
         }
     }
@@ -178,7 +147,10 @@ export function createMediaIngestionService<TDetails>(params: {
 
         async* bulkRefresh(limit?: number) {
             const apiIds = await refreshCandidates?.getCandidateApiIds() ?? [];
-            const chunkSize = provider.details.getDetailsBatch ? refreshPolicy?.chunkSize ?? 100 : 1;
+
+            const chunkSize = provider.details.getDetailsBatch
+                ? refreshPolicy?.chunkSize ?? 100
+                : apiIds.length || 1;
 
             for (const chunk of chunks(apiIds, chunkSize, limit)) {
                 if (provider.details.getDetailsBatch) {

@@ -49,8 +49,8 @@ export const createJikanApi = async () => {
             const response = await http.call(`${config.mangaUrl}/${mangaId}/full`);
             const data = await response.json();
 
-            if ("status" in data && data.status === 500) {
-                throw new FormattedError("Sorry the API is has an internal error (not my fault :D). Please try again later.");
+            if ("status" in data && data.status >= 500) {
+                throw new FormattedError("API currently not accessible. Please try again later.", { statusCode: data.status });
             }
 
             return data.data;

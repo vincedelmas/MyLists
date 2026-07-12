@@ -1,9 +1,18 @@
 import {createSerializationAdapter} from "@tanstack/react-router";
 
 
+type FormattedErrorArgs = {
+    statusCode: number,
+};
+
+
 export class FormattedError extends Error {
-    constructor(message: string) {
+    public args?: FormattedErrorArgs;
+
+    constructor(message: string, args?: FormattedErrorArgs) {
         super(message);
+
+        this.args = args;
         this.name = "FormattedError";
 
         if (Error.captureStackTrace) {

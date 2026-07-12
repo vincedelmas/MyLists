@@ -1,4 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
+import {logger} from "@/lib/server/core/logger";
 import {TvRepository} from "@/lib/server/domain/media/tv";
 import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {TvMediaType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
@@ -9,18 +10,25 @@ import {ExternalMediaProvider, MediaDetailsEnricher} from "@/lib/server/api-prov
 
 const createAnimeGenresEnricher = (jikan: JikanApi): MediaDetailsEnricher<UpsertTvWithDetails> => {
     return async (details, context) => {
+        // If isBulk is true, we don't query Jikan for the genres, so we don't want to override the genres
         if (context.isBulk) {
             const enriched = { ...details };
-            delete enriched.genresData;
+            delete enriched.genresData; // genresData are the genres from TMDB, we want to keep the one from Jikan
             return enriched;
         }
 
-        const jikanData = await jikan.getAnimeGenresAndDemographics(details.mediaData.name);
+        try {
+            const jikanData = await jikan.getAnimeGenresAndDemographics(details.mediaData.name);
 
-        return {
-            ...details,
-            genresData: tmdbTransformer.addAnimeSpecificGenres(jikanData, details.genresData),
-        };
+            return {
+                ...details,
+                genresData: tmdbTransformer.addAnimeSpecificGenres(jikanData, details.genresData),
+            };
+        }
+        catch (err) {
+            logger.warn({ err, animeName: details.mediaData.name }, "Skipping Jikan anime genre enrichment");
+            return details;
+        }
     };
 };
 

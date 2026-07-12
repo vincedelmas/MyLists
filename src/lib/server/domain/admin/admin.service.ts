@@ -1,28 +1,17 @@
 import {serverEnv} from "@/env/server";
 import {SearchType} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
+import {logger} from "@/lib/server/core/logger";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
 import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
 import {getRollupKey, PENDING_ROLLUPS_KEY} from "@/lib/server/core/cache-keys";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
-import {AdminApiMonitoringParams, AdminErrorLog, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
+import {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 
 
 export class AdminService {
     constructor(private repository: typeof AdminRepository) {
-    }
-
-    async saveErrorToDb(error: AdminErrorLog) {
-        return this.repository.saveErrorToDb(error);
-    }
-
-    async getPaginatedErrorLogs(data: SearchType) {
-        return this.repository.getPaginatedErrorLogs(data);
-    }
-
-    async deleteErrorLogs(errorIds: number[] | null) {
-        return this.repository.deleteErrorLogs(errorIds);
     }
 
     async saveTaskToDb(data: SaveTaskToDb) {
@@ -144,7 +133,10 @@ export class AdminService {
     }
 
     async getApiMonitoringStats({ range = "30d", dailyRange = "30d", recentPage = 1 }: AdminApiMonitoringParams = {}) {
-        await this.flushProviderApiRedisRollups().catch();
+        await this.flushProviderApiRedisRollups().catch((err) => {
+            logger.warn({ err }, "Failed to flush provider API Redis rollups before reading stats");
+        });
+
         const rangeDays = { "24h": 1, "7d": 7, "30d": 30, "90d": 90, all: null };
 
         const selectedDays = rangeDays[range];
@@ -159,7 +151,7 @@ export class AdminService {
             this.repository.getApiCallSummary(selectedDays),
             this.repository.getRecentApiCalls(recentPage),
             this._getProviderApiRedisSnapshot().catch((err) => {
-                console.warn("Failed to read provider API live Redis snapshot:", err);
+                logger.warn({ err }, "Failed to read provider API live Redis snapshot");
                 return null;
             }),
         ]);
@@ -261,7 +253,8 @@ export class AdminService {
                     .exec();
 
                 flushed += 1;
-            } finally {
+            }
+            finally {
                 await redis.del(lockKey);
             }
         }

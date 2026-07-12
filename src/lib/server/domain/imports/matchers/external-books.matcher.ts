@@ -1,3 +1,4 @@
+import {logger} from "@/lib/server/core/logger";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
@@ -133,14 +134,14 @@ export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
     }
 
     private _logResolutionError(item: ImportItemsSelect, error: unknown) {
-        console.warn("Book import API resolution failed", {
-            error,
+        logger.warn({
+            err: error,
             itemId: item.id,
             name: item.name,
             jobId: item.jobId,
             releaseDate: item.releaseDate,
             externalApiId: item.externalApiId,
             externalApiSource: item.externalApiSource,
-        });
+        }, "Book import API resolution failed");
     }
 }

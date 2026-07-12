@@ -1,9 +1,10 @@
+import {logger} from "@/lib/server/core/logger";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
-import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
-import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
 
 const MANGA_API_RES_FAILED_REASON = "API failed for this media";
@@ -133,14 +134,14 @@ export class ExternalJikanMangaMatcher implements ExternalMediaMatcher {
     }
 
     private _logResolutionError(item: ImportItemsSelect, error: unknown) {
-        console.warn("Manga import API resolution failed", {
-            error,
+        logger.warn({
+            err: error,
             itemId: item.id,
             name: item.name,
             jobId: item.jobId,
             releaseDate: item.releaseDate,
             externalApiId: item.externalApiId,
             externalApiSource: item.externalApiSource,
-        });
+        }, "Manga import API resolution failed");
     }
 }

@@ -1,4 +1,5 @@
 import {notFound} from "@tanstack/react-router";
+import {logger} from "@/lib/server/core/logger";
 import {MediaInfo} from "@/lib/types/activity.types";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {FormattedError} from "@/lib/utils/error-classes";
@@ -952,11 +953,13 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
                 }
                 catch (err) {
                     parsed = {};
-                    console.error(`Failed to parse statusCounts for user ${row.userId}:`, row.statusCounts, err);
+                    logger.error({ err, userId: row.userId, statusCounts: row.statusCounts }, "Failed to parse user status counts");
                 }
             }
 
-            const parsedObj = (parsed && typeof parsed === "object") ? (parsed as Record<Status, number>) : {} as Record<Status, number>;
+            const parsedObj = (parsed && typeof parsed === "object")
+                ? parsed as Record<Status, number>
+                : {} as Record<Status, number>;
 
             const statusCounts = expectedStatuses.reduce<Record<Status, number>>((acc, status) => {
                 const v = parsedObj[status];

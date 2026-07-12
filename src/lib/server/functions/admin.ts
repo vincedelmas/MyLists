@@ -8,12 +8,12 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {deleteCookie} from "@tanstack/react-start/server";
 import {setSignedCookie} from "@/lib/utils/signed-cookies";
 import {getAllTasksMetadata, getTask} from "@/lib/server/tasks/registry";
+import {listAdminLogFiles, readAdminLogFile} from "@/lib/server/core/admin-logs-reader";
 import {ADMIN_COOKIE_NAME, isAdminAuthenticated, setAdminCookie} from "@/lib/utils/admin-token";
 import {requiredAuthAndAdminTokenMiddleware, requiredAuthAndManagerRoleMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     adminApiMonitoringSchema,
     adminDeleteArchivedTaskSchema,
-    adminDeleteErrorLogSchema,
     adminPostUpdateTiersSchema,
     adminPostUpdateUserSchema,
     adminRefreshSchema,
@@ -188,24 +188,6 @@ export const postAdminDeleteArchivedTask = createServerFn({ method: "POST" })
     });
 
 
-export const getAdminErrorLogs = createServerFn({ method: "GET" })
-    .middleware([requiredAuthAndAdminTokenMiddleware])
-    .validator(searchTypeSchema)
-    .handler(async ({ data }) => {
-        const adminService = await getContainer().then((c) => c.services.admin);
-        return adminService.getPaginatedErrorLogs(data);
-    });
-
-
-export const postAdminDeleteErrorLog = createServerFn({ method: "POST" })
-    .middleware([requiredAuthAndAdminTokenMiddleware])
-    .validator(adminDeleteErrorLogSchema)
-    .handler(async ({ data: { errorIds } }) => {
-        const adminService = await getContainer().then((c) => c.services.admin);
-        return adminService.deleteErrorLogs(errorIds);
-    });
-
-
 export const getAdminMediaRefreshStats = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminRefreshSchema)
@@ -235,7 +217,7 @@ export const getAdminAllUpdatesHistory = createServerFn({ method: "GET" })
 
 export const postImpersonateUser = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
-    .validator((data) => z.object({ userId: z.coerce.number().int().positive() }).parse(data))
+    .validator(z.object({ userId: z.coerce.number().int().positive() }))
     .handler(async ({ data: { userId } }) => {
         const ctx = await auth.$context;
         const prefix = ctx.options?.advanced?.cookiePrefix ?? "better-auth";
@@ -263,4 +245,19 @@ export const postImpersonateUser = createServerFn({ method: "POST" })
 
         // 10 min cookie
         await setSignedCookie(cookies.sessionToken, newSession.token, ctx.secret, 10 * 60);
+    });
+
+
+export const getAdminListLogFiles = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .handler(async () => {
+        return listAdminLogFiles();
+    });
+
+
+export const getAdminReadLogFile = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(z.object({ fileName: z.string() }))
+    .handler(async ({ data: { fileName } }) => {
+        return readAdminLogFile(fileName);
     });

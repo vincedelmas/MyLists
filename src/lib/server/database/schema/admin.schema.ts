@@ -7,15 +7,6 @@ import {index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite
 import {customJson, dateAsString} from "@/lib/server/database/custom-types";
 
 
-export const errorLogs = sqliteTable("error_logs", {
-    id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
-    stack: text("stack"),
-    name: text("name").notNull(),
-    message: text("message").notNull(),
-    createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
-});
-
-
 export const taskHistory = sqliteTable("task_history", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     taskId: text("task_id").notNull(),

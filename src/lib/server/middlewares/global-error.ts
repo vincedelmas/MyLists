@@ -1,8 +1,7 @@
 import z from "zod";
-import {auth} from "@/lib/server/core/auth";
+import {logger} from "@/lib/server/core/logger";
 import {createMiddleware} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
-import {getContainer} from "@/lib/server/core/container";
 import {DEFAULT_ERROR_MESSAGE} from "@/lib/utils/constants";
 import {isNotFound, isRedirect} from "@tanstack/react-router";
 import {FormattedError, UnauthorizedError, ValidationError} from "@/lib/utils/error-classes";
@@ -13,7 +12,7 @@ import {FormattedError, UnauthorizedError, ValidationError} from "@/lib/utils/er
  * redirect: thrown in code but returned and handled frontend side by tanstack router.
  * notFound: thrown in code but returned and handled frontend side by tanstack router.
  * FormattedError: Expected Error with pre-formatted message for frontend side.
- * ZodError: Unexpected Error on validation, return generic error message.
+ * ValidationErrors: Expected Error from Forms with formatted field and message for frontend side.
  * Error: Unexpected Error anywhere, return generic error message.
  **/
 export const funcErrorMiddleware = createMiddleware({ type: "function" }).server(async ({ next }) => {
@@ -25,21 +24,16 @@ export const funcErrorMiddleware = createMiddleware({ type: "function" }).server
 
         return results;
     }
-    catch (err: any) {
-        if (process.env.NODE_ENV !== "production") {
-            console.error("ServerFunc Error:", { err });
-        }
-
+    catch (err) {
         if (isRedirect(err) || isNotFound(err) || err instanceof FormattedError || err instanceof UnauthorizedError) {
             throw err;
         }
-
-        await saveErrorToDb(err).catch();
-
         if (err instanceof ValidationError) {
+            logger.warn({ err, request: getRequestLogPayload(err) }, "Server function validation error");
             throw err;
         }
         else {
+            logger.error({ err, request: getRequestLogPayload(err) }, "Unhandled server function error");
             throw new Error(DEFAULT_ERROR_MESSAGE, { cause: err });
         }
     }
@@ -52,42 +46,28 @@ export const reqErrorMiddleware = createMiddleware({ type: "request" }).server(a
         return results;
     }
     catch (err: any) {
-        if (process.env.NODE_ENV !== "production") {
-            console.error("Request Error:", { err });
-        }
-
-        await saveErrorToDb(err).catch();
-
+        logger.error({ err, request: getRequestLogPayload(err) }, "Unhandled request error");
         throw new Error(DEFAULT_ERROR_MESSAGE, { cause: err });
     }
 });
 
 
-const saveErrorToDb = async (err: any) => {
+const getRequestLogPayload = (err: unknown) => {
     const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers });
-    const adminService = await getContainer().then((c) => c.services.admin);
 
-    const addErrorExtra = (err: unknown) => {
+    const getErrorExtra = (err: unknown) => {
         if (err instanceof z.ZodError) {
             return { issues: err.issues.map(({ input: _input, ...issue }) => issue) };
         }
-        return null;
-    };
 
-    const stack = {
-        url: request.url,
-        method: request.method,
-        stack: err?.stack ?? null,
-        extra: addErrorExtra(err),
-        referer: request.headers.get("Referer"),
-        userAgent: request.headers.get("User-agent"),
-        userInfo: session?.user ? { id: session.user.id, username: session.user.name } : null,
+        return null;
     }
 
-    await adminService.saveErrorToDb({
-        stack: JSON.stringify(stack),
-        name: err?.name ?? "UnknownError",
-        message: err?.message ?? "No message provided",
-    });
+    return {
+        url: request.url,
+        method: request.method,
+        extra: getErrorExtra(err),
+        referer: request.headers.get("Referer"),
+        userAgent: request.headers.get("User-agent"),
+    };
 }

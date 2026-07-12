@@ -1,5 +1,4 @@
-import pino from "pino";
-import pretty from "pino-pretty";
+import {logger} from "@/lib/server/core/logger";
 import {TaskName} from "@/lib/server/tasks/registry";
 import {TaskLog, TaskResult, TaskStatus, TaskStep, TaskTrigger} from "@/lib/types/tasks.types";
 
@@ -23,15 +22,16 @@ export interface TaskContext {
 type TaskContextOptions = {
     taskId: string;
     taskName: TaskName;
-    stdoutAsJson?: boolean;
     triggeredBy: TaskTrigger;
 };
 
 
 export const createTaskContext = (options: TaskContextOptions) => {
-    const { taskId, taskName, triggeredBy, stdoutAsJson } = options;
+    const { taskId, taskName, triggeredBy } = options;
+
     const startedAtMs = Date.now();
     const startedAt = new Date().toISOString();
+    const taskLogger = logger.child({ taskId, taskName });
 
     const logs: TaskLog[] = [];
     const steps: TaskStep[] = [];
@@ -40,12 +40,9 @@ export const createTaskContext = (options: TaskContextOptions) => {
     const stepStack: TaskStep[] = [];
     const stepErrorCounts = new WeakMap<TaskStep, { errors: number; warnings: number }>();
 
-    const getCurrentStepName = () => stepStack.at(-1)?.name;
-
-    const consoleLogger = pino(
-        { level: "info" },
-        stdoutAsJson ? process.stdout : pretty({ colorize: true, translateTime: "HH:MM:ss.l" })
-    );
+    const getCurrentStepName = () => {
+        return stepStack.at(-1)?.name;
+    }
 
     const addLog = (level: "info" | "warn" | "error", message: string, data?: Record<string, any>) => {
         const logEntry: TaskLog = {
@@ -56,8 +53,8 @@ export const createTaskContext = (options: TaskContextOptions) => {
             time: new Date().toISOString(),
         };
 
-        if (process.env.NODE_ENV !== "production") {
-            consoleLogger[level]({ taskId, taskName, step: getCurrentStepName(), ...data }, message);
+        if (process.env.NODE_ENV !== "test") {
+            taskLogger[level]({ step: getCurrentStepName(), ...data }, message);
         }
 
         if (level !== "info") {

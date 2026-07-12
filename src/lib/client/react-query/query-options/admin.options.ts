@@ -1,6 +1,6 @@
 import {SearchType} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
-import {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
+import type {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 import {
     getAdminAchievements,
     getAdminAllCollections,
@@ -8,12 +8,13 @@ import {
     getAdminApiMonitoringStats,
     getAdminArchivedTasks,
     getAdminCollectionsOverview,
-    getAdminErrorLogs,
     getAdminInactiveAccountDeletions,
+    getAdminListLogFiles,
     getAdminMediadleStats,
     getAdminMediaOverview,
     getAdminMediaRefreshStats,
     getAdminOverview,
+    getAdminReadLogFile,
     getAdminTasks,
     getAdminWhichCameFirstStats,
 } from "@/lib/server/functions/admin";
@@ -86,12 +87,6 @@ export const adminArchivedTasksOptions = queryOptions({
 });
 
 
-export const adminErrorLogsOptions = (search: SearchType) => queryOptions({
-    queryKey: ["admin", "errors", search],
-    queryFn: () => getAdminErrorLogs({ data: search }),
-});
-
-
 export const adminMediaRefreshOptions = (params: AdminMediaRefreshStatsParams = {}) => queryOptions({
     queryKey: ["admin", "media-refresh", params],
     queryFn: () => getAdminMediaRefreshStats({ data: params }),
@@ -101,4 +96,18 @@ export const adminMediaRefreshOptions = (params: AdminMediaRefreshStatsParams = 
 export const adminApiMonitoringOptions = (params: AdminApiMonitoringParams = {}) => queryOptions({
     queryKey: ["admin", "api-monitoring", params],
     queryFn: () => getAdminApiMonitoringStats({ data: params }),
+});
+
+
+export const adminLogFilesOptions = queryOptions({
+    queryKey: ["admin", "logs", "files"],
+    queryFn: () => getAdminListLogFiles(),
+    staleTime: 15_000,
+});
+
+
+export const adminLogFileOptions = (fileName: string) => queryOptions({
+    queryKey: ["admin", "logs", "file", fileName],
+    queryFn: () => getAdminReadLogFile({ data: { fileName } }),
+    staleTime: 5_000,
 });

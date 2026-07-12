@@ -206,6 +206,16 @@ View logs:
 docker compose logs -f app
 ```
 
+The app writes structured JSON logs in prod by default.
+The admin Runtime Logs page reads from `ADMIN_LOG_DIR` when configured.
+For PM2 deployments, point it at your PM2 output log, for example:
+
+```env
+ADMIN_LOG_DIR=/home/deploy/.pm2/logs
+```
+
+If `ADMIN_LOG_DIR` is empty, the app tries PM2-injected log path env vars and then `~/.pm2/logs/mylists-out.log`.
+
 Restart the app:
 
 ```bash

@@ -8,20 +8,19 @@ import {getTask, TaskName, taskRegistry} from "@/lib/server/tasks/registry";
 
 type RunTaskOptions<TName extends TaskName> = {
     taskName: TName;
-    stdoutAsJson?: boolean;
     triggeredBy: TaskTrigger;
     input: typeof taskRegistry[TName] extends { inputSchema: infer S } ? S extends z.ZodType ? z.infer<S> : never : never;
 };
 
 
 export const runTask = async <T extends TaskName>(options: RunTaskOptions<T>) => {
-    const { taskName, input, triggeredBy, stdoutAsJson } = options;
+    const { taskName, input, triggeredBy } = options;
 
     const taskId = randomUUID();
     const task = getTask(taskName)!;
     const container = await getContainer();
     const adminService = container.services.admin;
-    const { ctx, finalize } = createTaskContext({ taskId, taskName, triggeredBy, stdoutAsJson });
+    const { ctx, finalize } = createTaskContext({ taskId, taskName, triggeredBy });
 
     let status: TaskStatus = "completed";
     let errorMessage: string | undefined;

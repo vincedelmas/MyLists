@@ -1,3 +1,4 @@
+import {logger} from "@/lib/server/core/logger";
 import {closest} from "@/lib/utils/levenshtein";
 import {HltbApiResponse, HltbGameEntry} from "@/lib/types/provider.types";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
@@ -65,7 +66,7 @@ export const createHltbApi = async () => {
             return await response.text();
         }
         catch (err) {
-            console.warn("First request failed, trying alternative:", err);
+            logger.warn({ err, gameName }, "HLTB first request failed, trying alternative");
         }
     }
 
@@ -88,7 +89,7 @@ export const createHltbApi = async () => {
             };
         }
         catch (err) {
-            console.error("Error fetching auth token:", err);
+            logger.error({ err }, "Error fetching HLTB auth token");
         }
     }
 
@@ -114,7 +115,7 @@ export const createHltbApi = async () => {
                 return game || defaultEntry;
             }
             catch (err) {
-                console.error(`Error when searching for game ${gameName}:`, err);
+                logger.error({ err, gameName }, "Error when searching HLTB game");
                 return defaultEntry;
             }
         },
@@ -135,7 +136,7 @@ function parseGameResults(htmlResult: string) {
             } as HltbGameEntry));
     }
     catch (err) {
-        console.error("Error parsing game results:", err);
+        logger.error({ err }, "Error parsing HLTB game results");
         return [];
     }
 }

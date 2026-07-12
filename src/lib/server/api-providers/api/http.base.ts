@@ -1,4 +1,5 @@
 import {serverEnv} from "@/env/server";
+import {logger} from "@/lib/server/core/logger";
 import {notFound} from "@tanstack/react-router";
 import {RateLimiterQueue} from "rate-limiter-flexible";
 import {FormattedError} from "@/lib/utils/error-classes";
@@ -54,11 +55,19 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     }
                     catch (err) {
                         const errorName = err instanceof Error ? err.name : "UnknownError";
-                        void recordCall(config.consumeKey, { url, method, startedAt, success: false, errorName }).catch();
+                        void recordCall(config.consumeKey, { url, method, startedAt, success: false, errorName })
+                            .catch((err) => {
+                                logger.warn({ err, consumeKey: config.consumeKey, method, errorName }, "Failed to record provider API call");
+                            });
+
                         throw err;
                     }
 
-                    void recordCall(config.consumeKey, { url, method, startedAt, success: response.ok, status: response.status }).catch();
+                    void recordCall(config.consumeKey, { url, method, startedAt, success: response.ok, status: response.status })
+                        .catch((err) => {
+                            logger.warn({ err, consumeKey: config.consumeKey, method, status: response.status },
+                                "Failed to record provider API call");
+                        });
 
                     if (response.ok) {
                         return response;

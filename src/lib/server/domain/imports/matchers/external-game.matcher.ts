@@ -1,7 +1,8 @@
+import {logger} from "@/lib/server/core/logger";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
-import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
@@ -94,14 +95,14 @@ export class ExternalIGDBGamesMatcher implements ExternalMediaMatcher {
     }
 
     private _logResolutionError(item: ImportItemsSelect, error: unknown) {
-        console.warn("Game import API resolution failed", {
-            error,
+        logger.warn({
+            err: error,
             itemId: item.id,
             name: item.name,
             jobId: item.jobId,
             releaseDate: item.releaseDate,
             externalApiId: item.externalApiId,
             externalApiSource: item.externalApiSource,
-        });
+        }, "Game import API resolution failed");
     }
 }

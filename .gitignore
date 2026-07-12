@@ -39,3 +39,4 @@ dist
 **/routeTree.gen.ts
 /bun.lock
 how-errors-works.md
+/logs

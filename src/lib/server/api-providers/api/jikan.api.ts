@@ -1,5 +1,5 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.client";
+import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {JikanAnimeSearchResponse, JikanDetails, JikanMangaSearchResponse, SearchData} from "@/lib/types/provider.types";
 
 

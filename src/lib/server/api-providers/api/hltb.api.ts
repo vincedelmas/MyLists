@@ -1,6 +1,6 @@
 import {closest} from "@/lib/utils/levenshtein";
 import {HltbApiResponse, HltbGameEntry} from "@/lib/types/provider.types";
-import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.client";
+import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 
 
 type HltbApiConfig = ApiClientConfig & {

@@ -1,7 +1,7 @@
 import z from "zod";
 import {serverEnv} from "@/env/server";
 import {LLMResponse} from "@/lib/types/provider.types";
-import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.client";
+import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 
 
 type LlmApiConfig = ApiClientConfig & {

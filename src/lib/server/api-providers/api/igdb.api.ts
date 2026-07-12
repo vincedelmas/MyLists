@@ -5,7 +5,7 @@ import {ApiProviderType} from "@/lib/utils/enums";
 import {apiTokens} from "@/lib/server/database/schema";
 import {getContainer} from "@/lib/server/core/container";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.client";
+import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {IgdbGameCollectionIds, IgdbGameDetails, IgdbSearchResponse, IgdbSearchResultItem, IgdbTokenResponse, IgdbTrendGamesResponse, SearchData} from "@/lib/types/provider.types";
 
 

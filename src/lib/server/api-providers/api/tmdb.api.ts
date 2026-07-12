@@ -1,6 +1,6 @@
 import {serverEnv} from "@/env/server";
 import {getContainer} from "@/lib/server/core/container";
-import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.client";
+import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {
     SearchData,
     TmdbChangesResponse,

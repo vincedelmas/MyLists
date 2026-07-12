@@ -1,6 +1,6 @@
 import {serverEnv} from "@/env/server";
 import {GBooksDetails, GBooksSearchResults, SearchData} from "@/lib/types/provider.types";
-import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.client";
+import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 
 
 type GBooksApiConfig = ApiClientConfig & {

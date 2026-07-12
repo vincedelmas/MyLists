@@ -3,13 +3,15 @@ import {createFileRoute} from "@tanstack/react-router";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatDateTime} from "@/lib/utils/date-formatting";
-import {RefreshCw, ServerCrash, Terminal} from "lucide-react";
+import {FileIcon, RefreshCw, ServerCrash, Terminal} from "lucide-react";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {adminLogFileOptions, adminLogFilesOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 
 
 export const Route = createFileRoute("/_admin/admin/error-logs")({
@@ -77,7 +79,7 @@ function AdminRuntimeLogsPage() {
                             Log file
                         </CardTitle>
                         <CardDescription>
-                            Select a readable log file. Rotated gzip archives and oversized files are intentionally skipped.
+                            Select a log file. Rotated gzip archives and oversized files are intentionally skipped.
                         </CardDescription>
                         <CardAction className="flex gap-2 max-sm:col-start-1 max-sm:row-start-3 max-sm:justify-self-start">
                             <Select value={selectedFileName} disabled={logFiles.length === 0} onValueChange={setSelectedFileName}>
@@ -120,7 +122,11 @@ function AdminRuntimeLogsPage() {
                                 />
                             </div>
                             :
-                            <EmptyLogsState/>
+                            <EmptyState
+                                className="py-6"
+                                icon={ServerCrash}
+                                message="No runtime log files found"
+                            />
                         }
                     </CardContent>
                 </Card>
@@ -132,31 +138,41 @@ function AdminRuntimeLogsPage() {
                                 {selectedFileName}
                             </CardTitle>
                             <CardDescription>
-                                {logFileQuery.data ?
-                                    `${logFileQuery.data.lines.length} log line${logFileQuery.data.lines.length === 1 ? "" : "s"} loaded` :
-                                    "Select a file to load its contents"
+                                {logFileQuery.data
+                                    ? `${logFileQuery.data.lines.length} log line${logFileQuery.data.lines.length === 1 ? "" : "s"} loaded`
+                                    : "Select a file to load its contents"
                                 }
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-3">
                             {logFileQuery.isLoading &&
-                                <LogViewerLoading/>
+                                <div className="space-y-2 rounded-xl border bg-muted/30 p-3">
+                                    {Array.from({ length: 8 }).map((_, index) =>
+                                        <div
+                                            style={{ width: `${96 - (index % 3) * 12}%` }}
+                                            key={index} className="h-9 animate-pulse rounded-md bg-muted"
+                                        />
+                                    )}
+                                </div>
                             }
 
                             {logFileQuery.isError &&
-                                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
-                                    {logFileQuery.error instanceof Error ? logFileQuery.error.message : "Failed to read log file"}
-                                </div>
+                                <InlineErrorContainer>
+                                    {logFileQuery.error ? logFileQuery.error.message : "Failed to read log file"}
+                                </InlineErrorContainer>
                             }
 
                             {logFileQuery.data && logFileQuery.data.lines.length === 0 &&
                                 <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                    This log file is empty.
+                                    <EmptyState
+                                        icon={FileIcon}
+                                        message="This log file is empty."
+                                    />
                                 </div>
                             }
 
                             {logFileQuery.data && logFileQuery.data.lines.length > 0 &&
-                                <div className="max-h-[70vh] space-y-2 overflow-auto rounded-xl bg-black/80 p-3 text-sm shadow-inner">
+                                <div className="max-h-[80vh] space-y-1 overflow-auto rounded-lg bg-black/50 p-3 border border-neutral-600">
                                     {logFileQuery.data.lines.map((line) =>
                                         <LogLineRow
                                             line={line}
@@ -174,22 +190,6 @@ function AdminRuntimeLogsPage() {
 }
 
 
-function EmptyLogsState() {
-    return (
-        <div className="flex items-start gap-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            <ServerCrash className="mt-0.5 size-4 shrink-0"/>
-            <div>
-                <p className="font-medium text-primary">No runtime log files found.</p>
-                <p>
-                    In local development, the app now writes to the configured admin log directory when the pino logger is used.
-                    Trigger any server-side log line, then refresh this page.
-                </p>
-            </div>
-        </div>
-    );
-}
-
-
 function LogMeta({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-lg border bg-muted/30 p-3">
@@ -199,20 +199,6 @@ function LogMeta({ label, value }: { label: string; value: string }) {
             <p className="mt-1 font-medium">
                 {value}
             </p>
-        </div>
-    );
-}
-
-
-function LogViewerLoading() {
-    return (
-        <div className="space-y-2 rounded-xl border bg-muted/30 p-3">
-            {Array.from({ length: 8 }).map((_, index) =>
-                <div
-                    style={{ width: `${96 - (index % 3) * 12}%` }}
-                    key={index} className="h-9 animate-pulse rounded-md bg-muted"
-                />
-            )}
         </div>
     );
 }
@@ -239,7 +225,7 @@ function LogLineRow({ line }: { line: { lineNumber: number; kind: string; record
     const message = typeof line.record.msg === "string" ? line.record.msg : "No message";
 
     return (
-        <details className="group rounded-lg border border-white/10 bg-white/5 p-3 text-slate-200 open:bg-white/[0.07]">
+        <details className="group rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-slate-200 open:bg-white/[0.07]">
             <summary
                 className="grid cursor-pointer list-none grid-cols-[4rem_auto_minmax(0,1fr)_auto] items-center gap-3 font-mono text-xs
                 marker:hidden max-sm:grid-cols-[3rem_auto_minmax(0,1fr)]">
@@ -252,7 +238,7 @@ function LogLineRow({ line }: { line: { lineNumber: number; kind: string; record
                 <span className="truncate text-slate-100">
                     {message}
                 </span>
-                <span className="text-slate-500 max-sm:hidden">
+                <span className="text-muted-foreground max-sm:hidden">
                     {time ? formatDateTime(time, { seconds: true }) : "no time"}
                 </span>
             </summary>

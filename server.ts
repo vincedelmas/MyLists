@@ -4,7 +4,7 @@
  **/
 
 import path from "path";
-import {fileURLToPath} from "bun";
+import {serverEnv} from "@/env/server";
 import {logger} from "@/lib/server/core/logger";
 import {installProcessErrorHandlers} from "@/lib/server/core/process-errors";
 
@@ -12,14 +12,13 @@ import {installProcessErrorHandlers} from "@/lib/server/core/process-errors";
 installProcessErrorHandlers();
 
 
+const DIST_DIR = import.meta.dir;
 const PORT = Number(process.env.PORT ?? 3000);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const CLIENT_DIR = path.resolve(DIST_DIR, "client");
+const SERVER_ENTRY = path.resolve(DIST_DIR, "server/server.js");
 
-const CLIENT_DIR = path.resolve(__dirname, "dist/client");
-const SERVER_ENTRY = path.resolve(__dirname, "dist/server/server.js");
-
-const UPLOADS_DIR_NAME = process.env.UPLOADS_DIR_NAME ?? "static";
-const BASE_UPLOADS_LOCATION = process.env.BASE_UPLOADS_LOCATION ?? "./public/static/";
+const UPLOADS_DIR_NAME = serverEnv.UPLOADS_DIR_NAME ?? "static";
+const BASE_UPLOADS_LOCATION = serverEnv.BASE_UPLOADS_LOCATION ?? "./public/static/";
 const UPLOADS_ROUTE = `/${UPLOADS_DIR_NAME}/*`;
 
 

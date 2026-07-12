@@ -17,10 +17,11 @@
         "cli:docker": "bun ./dist/cli/index.js",
         "dev": "bun --bun vite dev --port 3000",
         "cli": "bun --env-file=.env src/cli/index.ts",
-        "build": "bun run build:server && bun run build:cli",
         "seed:achievements": "bun run cli -- seed-achievements",
         "email": "email dev -d src/lib/client/components/emails",
         "build:cli": "bun --bun vite build --config vite.cli.config.ts",
+        "build": "bun run build:server && bun run build:cli && bun run build:entry",
+        "build:entry": "bun build ./server.ts --target=bun --outfile=./dist/server.js",
         "new:db": "mkdir -p instance && bun run dk push --force && bun run seed:achievements",
         "new:db:docker": "mkdir -p instance && bun run dk push --force && bun run cli:docker -- seed-achievements",
         "auth:generate": "bunx @better-auth/cli@latest generate --y --output src/lib/server/database/schema/auth.schema.ts"

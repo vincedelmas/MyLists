@@ -6,6 +6,10 @@
 import path from "path";
 import {fileURLToPath} from "bun";
 import {logger} from "@/lib/server/core/logger";
+import {installProcessErrorHandlers} from "@/lib/server/core/process-errors";
+
+
+installProcessErrorHandlers();
 
 
 const PORT = Number(process.env.PORT ?? 3000);

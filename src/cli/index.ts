@@ -4,6 +4,10 @@ import {logger} from "@/lib/server/core/logger";
 import {runTask} from "@/lib/server/tasks/task-runner";
 import {getAllTasks} from "@/lib/server/tasks/registry";
 import {runImportDrainCommand} from "@/cli/import-drain-command";
+import {installProcessErrorHandlers} from "@/lib/server/core/process-errors";
+
+
+installProcessErrorHandlers();
 
 
 const program = new Command();

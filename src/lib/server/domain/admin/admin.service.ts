@@ -133,7 +133,10 @@ export class AdminService {
     }
 
     async getApiMonitoringStats({ range = "30d", dailyRange = "30d", recentPage = 1 }: AdminApiMonitoringParams = {}) {
-        await this.flushProviderApiRedisRollups().catch();
+        await this.flushProviderApiRedisRollups().catch((err) => {
+            logger.warn({ err }, "Failed to flush provider API Redis rollups before reading stats");
+        });
+
         const rangeDays = { "24h": 1, "7d": 7, "30d": 30, "90d": 90, all: null };
 
         const selectedDays = rangeDays[range];

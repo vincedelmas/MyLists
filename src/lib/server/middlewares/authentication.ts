@@ -1,4 +1,5 @@
 import {auth} from "@/lib/server/core/auth";
+import {logger} from "@/lib/server/core/logger";
 import {createMiddleware} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
@@ -16,7 +17,9 @@ export const publicAuthMiddleware = createMiddleware({ type: "function" })
         if (currentUser) {
             void getContainer()
                 .then((c) => c.services.user.updateUserLastSeen(c.cacheManager, currentUser.id))
-                .catch()
+                .catch((err) => {
+                    logger.warn({ err, userId: currentUser.id }, "Failed to update user last seen");
+                });
         }
 
         return next({ context: { currentUser } });

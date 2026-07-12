@@ -1,3 +1,4 @@
+import {logger} from "@/lib/server/core/logger";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
@@ -94,7 +95,10 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
         }
 
         await ingestionService.refreshFromExternal(media.apiId);
-        void adminService.logMediaRefresh({ userId: currentUser.id, mediaType, apiId: media.apiId }).catch();
+        void adminService.logMediaRefresh({ userId: currentUser.id, mediaType, apiId: media.apiId })
+            .catch((err) => {
+                logger.warn({ err, userId: currentUser.id, mediaType, apiId: media.apiId }, "Failed to log media refresh");
+            });
     });
 
 

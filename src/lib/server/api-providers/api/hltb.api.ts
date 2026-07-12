@@ -1,84 +1,53 @@
 import {closest} from "@/lib/utils/levenshtein";
-import {RateLimiterAbstract} from "rate-limiter-flexible";
-import {BaseApi} from "@/lib/server/api-providers/api/base.api";
-import {createRateLimiter} from "@/lib/server/core/rate-limiter";
 import {HltbApiResponse, HltbGameEntry} from "@/lib/types/provider.types";
+import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.client";
 
 
-export class HltbApi extends BaseApi {
-    private static readonly consumeKey = "hltb-API";
-    private static readonly baseUrl = "https://howlongtobeat.com/";
-    private static searchUrl = HltbApi.baseUrl + "api/bleed"
-    private static tokenUrl = HltbApi.baseUrl + "api/bleed/init";
-    private static readonly throttleOptions = { points: 4, duration: 1, keyPrefix: "hltbAPI" };
-    private static readonly userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +
-        "Chrome/125.0.0.0 Safari/537.36";
+type HltbApiConfig = ApiClientConfig & {
+    baseUrl: string;
+    tokenUrl: string;
+    searchUrl: string;
+    userAgent: string;
+};
 
-    constructor(limiter: RateLimiterAbstract, consumeKey: string) {
-        super(limiter, consumeKey);
-    }
+type HltbAuthData = {
+    token: string;
+    hpKey: string;
+    hpVal: string;
+};
 
-    public static async create() {
-        const hltbLimiter = await createRateLimiter(HltbApi.throttleOptions);
-        return new HltbApi(hltbLimiter, HltbApi.consumeKey);
-    }
 
-    async search(gameName: string) {
-        const defaultEntry: HltbGameEntry = {
-            name: gameName,
-            mainStory: null,
-            mainExtra: null,
-            completionist: null,
-        };
+const createConfig = (): HltbApiConfig => {
+    const baseUrl = "https://howlongtobeat.com/";
+    return {
+        baseUrl,
+        consumeKey: "hltb-API",
+        searchUrl: baseUrl + "api/bleed",
+        tokenUrl: baseUrl + "api/bleed/init",
+        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        throttleOptions: [{
+            points: 4,
+            duration: 1,
+            keyPrefix: "hltbAPI",
+        }],
+    };
+};
 
-        try {
-            const ua = HltbApi.userAgent;
 
-            const htmlResult = await this._sendWebRequest(gameName, ua);
-            if (!htmlResult) return defaultEntry;
+export const createHltbApi = async () => {
+    const config = createConfig();
+    const http = await createApiHttpClient(config);
 
-            const gamesList = this._parseGameResults(htmlResult);
-            if (gamesList.length === 0) return defaultEntry;
-
-            const closestGameName = closest(gameName, gamesList.map((g) => g.name));
-            const game = gamesList.find((g) => g.name === closestGameName);
-
-            return game || defaultEntry;
-        }
-        catch (err) {
-            console.error(`Error when searching for game ${gameName}:`, err);
-            return defaultEntry;
-        }
-    }
-
-    private _parseGameResults(htmlResult: string) {
-        try {
-            const response: HltbApiResponse = JSON.parse(htmlResult);
-            return response.data
-                .filter((game) => game.game_name)
-                .map((game) => ({
-                    name: game.game_name!,
-                    mainStory: game.comp_main ? (game.comp_main / 3600).toFixed(2) : undefined,
-                    mainExtra: game.comp_plus ? (game.comp_plus / 3600).toFixed(2) : undefined,
-                    completionist: game.comp_100 ? (game.comp_100 / 3600).toFixed(2) : undefined,
-                } as HltbGameEntry));
-        }
-        catch (err) {
-            console.error("Error parsing game results:", err);
-            return [];
-        }
-    }
-
-    private async _sendWebRequest(gameName: string, ua: string) {
+    async function sendWebRequest(gameName: string) {
         const headers: Record<string, string> = {
             "accept": "*/*",
-            "User-Agent": ua,
-            "Origin": HltbApi.baseUrl,
-            "Referer": HltbApi.baseUrl,
+            "Origin": config.baseUrl,
+            "Referer": config.baseUrl,
+            "User-Agent": config.userAgent,
             "content-type": "application/json",
         };
 
-        const authData = await this._getAuthToken(ua);
+        const authData = await getAuthToken();
 
         if (authData) {
             headers["x-hp-key"] = authData.hpKey;
@@ -87,8 +56,8 @@ export class HltbApi extends BaseApi {
         }
 
         try {
-            const payload = this._createPayload(gameName, authData);
-            const response = await this.call(HltbApi.searchUrl, "post", {
+            const payload = createPayload(gameName, authData);
+            const response = await http.call(config.searchUrl, "post", {
                 headers,
                 body: JSON.stringify(payload),
             });
@@ -100,59 +69,113 @@ export class HltbApi extends BaseApi {
         }
     }
 
-    private async _getAuthToken(ua: string) {
+    async function getAuthToken() {
         const headers = {
-            "User-Agent": ua,
-            "referer": HltbApi.baseUrl,
+            "referer": config.baseUrl,
+            "User-Agent": config.userAgent,
         };
 
         try {
-            const response = await this.call(`${HltbApi.tokenUrl}?t=${Date.now()}`, "get", { headers });
+            const response = await http.call(`${config.tokenUrl}?t=${Date.now()}`, "get", { headers });
             const data = await response.json();
             const token = data?.token ?? data?.data?.token;
             const hpKey = data?.hpKey ?? data?.data?.hpKey;
             const hpVal = data?.hpVal ?? data?.data?.hpVal;
-            return { token: String(token), hpKey: String(hpKey), hpVal: String(hpVal) };
+            return {
+                token: String(token),
+                hpKey: String(hpKey),
+                hpVal: String(hpVal),
+            };
         }
         catch (err) {
             console.error("Error fetching auth token:", err);
         }
     }
 
-    private _createPayload(gameName: string, authData?: { token: string, hpKey?: string, hpVal?: string }) {
-        const payload: Record<string, any> = {
-            size: 10,
-            searchPage: 1,
-            searchType: "games",
-            searchTerms: gameName.split(" "),
-            searchOptions: {
-                games: {
-                    userId: 0,
-                    platform: "",
-                    rangeCategory: "main",
-                    sortCategory: "popular",
-                    rangeTime: { min: 0, max: 0 },
-                    rangeYear: { max: "", min: "" },
-                    gameplay: {
-                        flow: "",
-                        genre: "",
-                        difficulty: "",
-                        perspective: "",
-                    },
-                },
-                sort: 0,
-                filter: "",
-                randomizer: 0,
-                lists: { sortCategory: "follows" },
-                users: { sortCategory: "postcount" },
-            },
-            useCache: true,
-        };
+    return {
+        async search(gameName: string) {
+            const defaultEntry: HltbGameEntry = {
+                name: gameName,
+                mainStory: null,
+                mainExtra: null,
+                completionist: null,
+            };
 
-        if (authData?.hpKey && authData?.hpVal) {
-            payload[authData.hpKey] = authData.hpVal;
-        }
+            try {
+                const htmlResult = await sendWebRequest(gameName);
+                if (!htmlResult) return defaultEntry;
 
-        return payload;
+                const gamesList = parseGameResults(htmlResult);
+                if (gamesList.length === 0) return defaultEntry;
+
+                const closestGameName = closest(gameName, gamesList.map((g) => g.name));
+                const game = gamesList.find((g) => g.name === closestGameName);
+
+                return game || defaultEntry;
+            }
+            catch (err) {
+                console.error(`Error when searching for game ${gameName}:`, err);
+                return defaultEntry;
+            }
+        },
+    };
+};
+
+
+function parseGameResults(htmlResult: string) {
+    try {
+        const response: HltbApiResponse = JSON.parse(htmlResult);
+        return response.data
+            .filter((game) => game.game_name)
+            .map((game) => ({
+                name: game.game_name!,
+                mainStory: game.comp_main ? (game.comp_main / 3600).toFixed(2) : undefined,
+                mainExtra: game.comp_plus ? (game.comp_plus / 3600).toFixed(2) : undefined,
+                completionist: game.comp_100 ? (game.comp_100 / 3600).toFixed(2) : undefined,
+            } as HltbGameEntry));
+    }
+    catch (err) {
+        console.error("Error parsing game results:", err);
+        return [];
     }
 }
+
+function createPayload(gameName: string, authData?: HltbAuthData) {
+    const payload: Record<string, any> = {
+        size: 10,
+        searchPage: 1,
+        searchType: "games",
+        searchTerms: gameName.split(" "),
+        searchOptions: {
+            games: {
+                userId: 0,
+                platform: "",
+                rangeCategory: "main",
+                sortCategory: "popular",
+                rangeTime: { min: 0, max: 0 },
+                rangeYear: { max: "", min: "" },
+                gameplay: {
+                    flow: "",
+                    genre: "",
+                    difficulty: "",
+                    perspective: "",
+                },
+            },
+            sort: 0,
+            filter: "",
+            randomizer: 0,
+            lists: { sortCategory: "follows" },
+            users: { sortCategory: "postcount" },
+        },
+        useCache: true,
+    };
+
+    if (authData?.hpKey && authData.hpVal) {
+        payload[authData.hpKey] = authData.hpVal;
+    }
+
+    return payload;
+}
+
+
+export type HltbApi = Awaited<ReturnType<typeof createHltbApi>>;

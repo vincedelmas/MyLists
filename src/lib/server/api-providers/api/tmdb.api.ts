@@ -1,8 +1,6 @@
 import {serverEnv} from "@/env/server";
 import {getContainer} from "@/lib/server/core/container";
-import {RateLimiterAbstract} from "rate-limiter-flexible";
-import {createRateLimiter} from "@/lib/server/core/rate-limiter";
-import {BaseApi} from "@/lib/server/api-providers/api/base.api";
+import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.client";
 import {
     SearchData,
     TmdbChangesResponse,
@@ -14,89 +12,105 @@ import {
 } from "@/lib/types/provider.types";
 
 
-export class TmdbApi extends BaseApi {
-    private static readonly consumeKey = "tmdb-API";
-    private readonly apiKey = serverEnv.THEMOVIEDB_API_KEY;
-    private readonly baseUrl = "https://api.themoviedb.org/3";
-    private static readonly tvChangedIdsCacheKey = "tmdb:tvChangedIds";
-    private static readonly tvChangedIdsTtl = 5 * 60 * 1000; // 5 min in ms
-    private static readonly throttleOptions = { points: 30, duration: 1, keyPrefix: "tmdbAPI" };
+type TmdbApiConfig = ApiClientConfig & {
+    apiKey: string;
+    baseUrl: string;
+    tvChangedIdsTtl: number;
+    tvChangedIdsCacheKey: string;
+};
 
-    constructor(limiter: RateLimiterAbstract, consumeKey: string) {
-        super(limiter, consumeKey);
-    }
 
-    public static async create() {
-        const tmdbLimiter = await createRateLimiter(TmdbApi.throttleOptions);
-        return new TmdbApi(tmdbLimiter, TmdbApi.consumeKey);
-    }
+const createConfig = (): TmdbApiConfig => ({
+    resultsPerPage: 20,
+    consumeKey: "tmdb-API",
+    tvChangedIdsTtl: 5 * 60 * 1000,
+    apiKey: serverEnv.THEMOVIEDB_API_KEY,
+    baseUrl: "https://api.themoviedb.org/3",
+    tvChangedIdsCacheKey: "tmdb:tvChangedIds",
+    throttleOptions: [{
+        points: 30,
+        duration: 1,
+        keyPrefix: "tmdbAPI",
+    }],
+});
 
-    async search(query: string, page = 1): Promise<SearchData<TmdbMultiSearchResponse>> {
-        const params = new URLSearchParams({
-            query: query,
-            api_key: this.apiKey,
-            page: page.toString(),
-        });
 
-        const response = await this.call(`${this.baseUrl}/search/multi?${params.toString()}`);
-        return {
-            page,
-            rawData: await response.json(),
-            resultsPerPage: this.resultsPerPage,
-        };
-    }
+export const createTmdbApi = async () => {
+    const config = createConfig();
+    const http = await createApiHttpClient(config);
+    const resultsPerPage = config.resultsPerPage ?? 20;
 
-    async getMovieDetails(movieId: number): Promise<TmdbMovieDetails> {
-        const response = await this.call(`${this.baseUrl}/movie/${movieId}?api_key=${this.apiKey}&append_to_response=credits`);
-        return response.json();
-    }
+    return {
+        async search(query: string, page = 1): Promise<SearchData<TmdbMultiSearchResponse>> {
+            const params = new URLSearchParams({
+                query: query,
+                api_key: config.apiKey,
+                page: page.toString(),
+            });
 
-    async getTvDetails(tvId: number): Promise<TmdbTvDetails> {
-        const response = await this.call(`${this.baseUrl}/tv/${tvId}?api_key=${this.apiKey}&append_to_response=credits`);
-        return response.json();
-    }
+            const response = await http.call(`${config.baseUrl}/search/multi?${params.toString()}`);
+            return {
+                page,
+                resultsPerPage,
+                rawData: await response.json(),
+            };
+        },
 
-    async getTvTrending(): Promise<TmdbTrendingTvResponse> {
-        const response = await this.call(`${this.baseUrl}/trending/tv/week?api_key=${this.apiKey}`);
-        return response.json();
-    }
+        async getMovieDetails(movieId: number): Promise<TmdbMovieDetails> {
+            const response = await http.call(`${config.baseUrl}/movie/${movieId}?api_key=${config.apiKey}&append_to_response=credits`);
+            return response.json();
+        },
 
-    async getMoviesTrending(): Promise<TmdbTrendingMoviesResponse> {
-        const response = await this.call(`${this.baseUrl}/trending/movie/week?api_key=${this.apiKey}`);
-        return response.json();
-    }
+        async getTvDetails(tvId: number): Promise<TmdbTvDetails> {
+            const response = await http.call(`${config.baseUrl}/tv/${tvId}?api_key=${config.apiKey}&append_to_response=credits`);
+            return response.json();
+        },
 
-    async getTvChangedIds() {
-        const cacheStore = await getContainer().then((c) => c.cacheManager);
+        async getTvTrending(): Promise<TmdbTrendingTvResponse> {
+            const response = await http.call(`${config.baseUrl}/trending/tv/week?api_key=${config.apiKey}`);
+            return response.json();
+        },
 
-        return cacheStore.wrap<number[]>(TmdbApi.tvChangedIdsCacheKey, async () => {
-            let page = 1;
-            let totalPages = 1;
-            const changedApiIds: number[] = [];
+        async getMoviesTrending(): Promise<TmdbTrendingMoviesResponse> {
+            const response = await http.call(`${config.baseUrl}/trending/movie/week?api_key=${config.apiKey}`);
+            return response.json();
+        },
 
-            while (page <= Math.min(totalPages, 20)) {
-                try {
-                    const response = await this.call(`${this.baseUrl}/tv/changes?api_key=${this.apiKey}&page=${page}`);
-                    const data: TmdbChangesResponse = await response.json();
+        async getTvChangedIds() {
+            const cacheStore = await getContainer().then((c) => c.cacheManager);
 
-                    if (data?.results) {
-                        changedApiIds.push(...data.results.map((item) => item.id))
+            return cacheStore.wrap<number[]>(config.tvChangedIdsCacheKey, async () => {
+                let page = 1;
+                let totalPages = 1;
+                const changedApiIds: number[] = [];
+
+                while (page <= Math.min(totalPages, 20)) {
+                    try {
+                        const response = await http.call(`${config.baseUrl}/tv/changes?api_key=${config.apiKey}&page=${page}`);
+                        const data: TmdbChangesResponse = await response.json();
+
+                        if (data?.results) {
+                            changedApiIds.push(...data.results.map((item) => item.id))
+                        }
+
+                        totalPages = data.total_pages || 1;
+                        page += 1;
                     }
-
-                    totalPages = data.total_pages || 1;
-                    page += 1;
-                }
-                catch (error) {
-                    // Failed on 1st page -> Throw so task system log 'failure'. No cache created.
-                    if (changedApiIds.length === 0) {
-                        throw error;
+                    catch (error) {
+                        // Failed on 1st page -> Throw so task system log 'failure'. No cache created.
+                        if (changedApiIds.length === 0) {
+                            throw error;
+                        }
+                        // Else return what we have so task can process pages 1 to N-1.
+                        break;
                     }
-                    // Else return what we have so task can process pages 1 to N-1.
-                    break;
                 }
-            }
 
-            return changedApiIds;
-        }, { ttl: TmdbApi.tvChangedIdsTtl });
-    }
-}
+                return changedApiIds;
+            }, { ttl: config.tvChangedIdsTtl });
+        },
+    };
+};
+
+
+export type TmdbApi = Awaited<ReturnType<typeof createTmdbApi>>;

@@ -1,14 +1,14 @@
-import {GbooksApi, HltbApi, IgdbApi, JikanApi, LlmApi, TmdbApi} from "@/lib/server/api-providers/api";
+import {createGBooksApi, createHltbApi, createIgdbApi, createJikanApi, createLlmApi, createTmdbApi} from "@/lib/server/api-providers/api";
 
 
-export async function setupApiClientsModule() {
+export const setupApiClientsModule = async () => {
     const [hltbClient, igdbClient, tmdbClient, jikanClient, gBookClient, llmClient] = await Promise.all([
-        HltbApi.create(),
-        IgdbApi.create(),
-        TmdbApi.create(),
-        JikanApi.create(),
-        GbooksApi.create(),
-        LlmApi.create(),
+        createHltbApi(),
+        createIgdbApi(),
+        createTmdbApi(),
+        createJikanApi(),
+        createGBooksApi(),
+        createLlmApi(),
     ]);
 
     return {
@@ -19,7 +19,7 @@ export async function setupApiClientsModule() {
         hltb: hltbClient,
         llmClient: llmClient,
     };
-}
+};
 
 
 export type ApiClientModule = Awaited<ReturnType<typeof setupApiClientsModule>>;

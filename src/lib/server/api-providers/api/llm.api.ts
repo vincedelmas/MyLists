@@ -1,44 +1,54 @@
 import z from "zod";
 import {serverEnv} from "@/env/server";
 import {LLMResponse} from "@/lib/types/provider.types";
-import {RateLimiterAbstract} from "rate-limiter-flexible";
-import {createRateLimiter} from "@/lib/server/core/rate-limiter";
-import {BaseApi} from "@/lib/server/api-providers/api/base.api";
+import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.client";
 
 
-export class LlmApi extends BaseApi {
-    private static readonly consumeKey = "llm-API";
-    private readonly baseUrl = serverEnv.LLM_BASE_URL;
-    private static readonly throttleOptions = { points: 5, duration: 1, keyPrefix: "llmAPI" };
+type LlmApiConfig = ApiClientConfig & {
+    apiKey: string;
+    baseUrl: string;
+    modelId: string;
+};
 
-    constructor(limiter: RateLimiterAbstract, consumeKey: string) {
-        super(limiter, consumeKey);
-    }
 
-    public static async create() {
-        const llmLimiter = await createRateLimiter(LlmApi.throttleOptions);
-        return new LlmApi(llmLimiter, LlmApi.consumeKey);
-    }
+const createConfig = (): LlmApiConfig => ({
+    consumeKey: "llm-API",
+    apiKey: serverEnv.LLM_API_KEY,
+    baseUrl: serverEnv.LLM_BASE_URL,
+    modelId: serverEnv.LLM_MODEL_ID,
+    throttleOptions: [{
+        points: 5,
+        duration: 1,
+        keyPrefix: "llmAPI",
+    }],
+});
 
-    async llmBookGenresCall(content: string, schema: z.Schema): Promise<LLMResponse> {
-        const response = await this.call(`${this.baseUrl}/chat/completions`, "post", {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${serverEnv.LLM_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: serverEnv.LLM_MODEL_ID,
-                messages: [{ role: "user", content: content }],
-                response_format: {
-                    type: "json_schema",
-                    json_schema: {
-                        strict: true,
-                        name: "bookGenres",
-                        schema: z.toJSONSchema(schema),
+
+export const createLlmApi = async () => {
+    const config = createConfig();
+    const http = await createApiHttpClient(config);
+
+    return {
+        async llmBookGenresCall(content: string, schema: z.Schema): Promise<LLMResponse> {
+            const response = await http.call(`${config.baseUrl}/chat/completions`, "post", {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${config.apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: config.modelId,
+                    messages: [{ role: "user", content: content }],
+                    response_format: {
+                        type: "json_schema",
+                        json_schema: {
+                            strict: true,
+                            name: "bookGenres",
+                            schema: z.toJSONSchema(schema),
+                        }
                     }
-                }
-            }),
-        });
-        return response.json();
-    }
-}
+                }),
+            });
+            return response.json();
+        },
+    };
+};

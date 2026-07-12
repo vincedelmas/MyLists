@@ -55,6 +55,10 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     }
                     catch (err) {
                         const errorName = err instanceof Error ? err.name : "UnknownError";
+                        logger.error(
+                            { err, consumeKey: config.consumeKey, data: { url, method, startedAt, success: false, errorName } },
+                            "Failed to fetch API",
+                        );
                         void recordCall(config.consumeKey, { url, method, startedAt, success: false, errorName })
                             .catch((err) => {
                                 logger.warn({ err, consumeKey: config.consumeKey, method, errorName }, "Failed to record provider API call");

@@ -1,6 +1,6 @@
 import {SearchType} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
-import {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
+import type {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 import {
     getAdminAchievements,
     getAdminAllCollections,
@@ -8,7 +8,6 @@ import {
     getAdminApiMonitoringStats,
     getAdminArchivedTasks,
     getAdminCollectionsOverview,
-    getAdminErrorLogs,
     getAdminInactiveAccountDeletions,
     getAdminMediadleStats,
     getAdminMediaOverview,
@@ -83,12 +82,6 @@ export const adminTasksOptions = queryOptions({
 export const adminArchivedTasksOptions = queryOptions({
     queryKey: ["admin", "tasks", "archived"],
     queryFn: getAdminArchivedTasks,
-});
-
-
-export const adminErrorLogsOptions = (search: SearchType) => queryOptions({
-    queryKey: ["admin", "errors", search],
-    queryFn: () => getAdminErrorLogs({ data: search }),
 });
 
 

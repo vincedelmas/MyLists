@@ -1,5 +1,6 @@
 import Redis from "ioredis";
 import {serverEnv} from "@/env/server";
+import {logger} from "@/lib/server/core/logger";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
 
 
@@ -142,7 +143,7 @@ export const setupCacheManager = async () => {
         cache = new MemoryCacheStore(cache_ttl_ms);
     }
 
-    console.log(`${cache.getStoreType()} cache init. Default TTL: ${cache_ttl_ms / 1000}s`);
+    logger.info({ storeType: cache.getStoreType(), ttlSeconds: cache_ttl_ms / 1000 }, "Cache manager initialized");
 
     return cache;
 };

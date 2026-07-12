@@ -5,6 +5,7 @@
 
 import path from "path";
 import {fileURLToPath} from "bun";
+import {logger} from "@/lib/server/core/logger";
 
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -23,11 +24,11 @@ let server: ReturnType<typeof Bun.serve>;
 
 
 const startServer = async () => {
-    console.log("[INFO] Starting server...");
+    logger.info({ port: PORT }, "Starting server");
 
     // Load TanStack Start handler
     const { default: handler } = await import(SERVER_ENTRY);
-    console.log("[SUCCESS] TanStack Start handler loaded");
+    logger.info("TanStack Start handler loaded");
 
     // Scan and register static file routes at startup
     const glob = new Bun.Glob("**/*");
@@ -49,7 +50,7 @@ const startServer = async () => {
         }
     }
 
-    console.log(`[SUCCESS] Registered ${Object.keys(routes).length} static routes`);
+    logger.info({ count: Object.keys(routes).length }, "Registered static routes");
 
     // Start Bun server
     server = Bun.serve({
@@ -88,18 +89,18 @@ const startServer = async () => {
             },
         },
         error(err) {
-            console.error("[ERROR]", err);
+            logger.error({ err }, "Bun server error");
             return new Response("Internal Server Error", { status: 500 });
         },
     })
 
-    console.log(`[SUCCESS] Server running on http://localhost:${server.port}`);
+    logger.info({ port: server.port, url: `http://localhost:${server.port}` }, "Server running");
 };
 
 
 // Graceful shutdown handler
 const shutdown = async (signal: string) => {
-    console.log(`[INFO] Received ${signal}, starting graceful shutdown...`);
+    logger.info({ signal }, "Starting graceful shutdown");
     isShuttingDown = true;
 
     // Give in-flight requests time to complete
@@ -107,10 +108,10 @@ const shutdown = async (signal: string) => {
 
     await new Promise((resolve) => setTimeout(resolve, GRACE_PERIOD_MS));
 
-    console.log("[INFO] Grace period complete, stopping server...");
+    logger.info("Grace period complete, stopping server");
     void server.stop();
 
-    console.log("[SUCCESS] Server stopped gracefully");
+    logger.info("Server stopped gracefully");
     process.exit(0);
 };
 
@@ -120,6 +121,6 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 
 
 startServer().catch((err) => {
-    console.error("[ERROR] Failed to start server:", err);
+    logger.fatal({ err }, "Failed to start server");
     process.exit(1);
 })

@@ -1,9 +1,10 @@
+import {logger} from "@/lib/server/core/logger";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
-import {TvMediaType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
-import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {TvMediaType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
 
 const TV_API_RES_FAILED_REASON = "API failed for this media";
@@ -134,8 +135,8 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
     }
 
     private _logResolutionError(item: ImportItemsSelect, error: unknown) {
-        console.warn("TV import API resolution failed", {
-            error,
+        logger.warn({
+            err: error,
             itemId: item.id,
             name: item.name,
             jobId: item.jobId,
@@ -143,6 +144,6 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
             releaseDate: item.releaseDate,
             externalApiId: item.externalApiId,
             externalApiSource: item.externalApiSource,
-        });
+        }, "TV import API resolution failed");
     }
 }

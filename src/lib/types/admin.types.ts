@@ -8,12 +8,6 @@ export type AdminMediaRefreshStatsParams = {
     dailyRange?: MediaRefreshRange;
 };
 
-export type AdminErrorLog = {
-    name: string,
-    message: string,
-    stack: string | null,
-}
-
 export type AdminApiMonitoringParams = {
     recentPage?: number;
     range?: ApiMonitoringRange;
@@ -21,11 +15,11 @@ export type AdminApiMonitoringParams = {
 };
 
 export type ProviderApiRollup = {
-    provider: string;
     total: number;
     errors: number;
+    provider: string;
     bucketStartMs: number;
-    durationMsTotal: number;
     maxSecondBurst: number;
+    durationMsTotal: number;
     statusCounts: Record<string, number>;
 };

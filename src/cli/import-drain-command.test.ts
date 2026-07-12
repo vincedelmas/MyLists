@@ -13,9 +13,16 @@ const { getContainer } = vi.hoisted(() => ({
     getContainer: vi.fn(),
 }));
 
+const { logger } = vi.hoisted(() => ({
+    logger: {
+        info: vi.fn(),
+    },
+}));
 
-vi.mock("@/lib/server/core/container", () => ({ getContainer }));
+
+vi.mock("@/lib/server/core/logger", () => ({ logger }));
 vi.mock("@/lib/server/tasks/task-runner", () => ({ runTask }));
+vi.mock("@/lib/server/core/container", () => ({ getContainer }));
 vi.mock("@/lib/server/domain/imports/import-drain", () => ({ drainImportJobs }));
 
 
@@ -25,7 +32,6 @@ const { runImportDrainCommand } = await import("@/cli/import-drain-command");
 describe("runImportDrainCommand", () => {
     beforeEach(() => {
         vi.resetAllMocks();
-        vi.spyOn(console, "log").mockImplementation(() => undefined);
     });
 
     it("drains imports with the container import processor", async () => {
@@ -37,11 +43,11 @@ describe("runImportDrainCommand", () => {
         await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
 
         expect(drainImportJobs).toHaveBeenCalledWith(importProcessor);
-        expect(console.log).toHaveBeenCalledWith("Import drain finished. Processed jobs: 2. Failed jobs: 0");
+        expect(logger.info).toHaveBeenCalledWith({ processedJobs: 2, failedJobs: 0 }, "Import drain finished");
         expect(runTask).toHaveBeenCalledWith({
             input: {},
-            taskName: "compute-all-users-stats",
             triggeredBy: "cron/cli",
+            taskName: "compute-all-users-stats",
         });
     });
 
@@ -66,8 +72,8 @@ describe("runImportDrainCommand", () => {
 
         expect(runTask).toHaveBeenCalledWith({
             input: {},
-            taskName: "compute-all-users-stats",
             triggeredBy: "cron/cli",
+            taskName: "compute-all-users-stats",
         });
     });
 });

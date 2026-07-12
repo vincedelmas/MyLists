@@ -1,4 +1,5 @@
 import {serverEnv} from "@/env/server";
+import {logger} from "@/lib/server/core/logger";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
 import {IRateLimiterRedisOptions, RateLimiterMemory, RateLimiterRedis} from "rate-limiter-flexible";
 
@@ -12,7 +13,7 @@ export const createRateLimiter = async (options: RateLimiterOptions) => {
     if (serverEnv.REDIS_ENABLED) {
         try {
             const connection = await getRedisConnection();
-            console.log(`Creating Redis rate limiter with options:`, options);
+            logger.info({ options }, "Creating Redis rate limiter");
             return new RateLimiterRedis({ ...options, storeClient: connection });
         }
         catch (err) {
@@ -20,7 +21,7 @@ export const createRateLimiter = async (options: RateLimiterOptions) => {
         }
     }
     else {
-        console.log(`Creating In-Memory rate limiter with options:`, options);
+        logger.info({ options }, "Creating in-memory rate limiter");
         return new RateLimiterMemory(options);
     }
 };

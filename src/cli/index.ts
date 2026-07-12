@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {Command} from "commander";
+import {logger} from "@/lib/server/core/logger";
 import {runTask} from "@/lib/server/tasks/task-runner";
 import {getAllTasks} from "@/lib/server/tasks/registry";
 import {runImportDrainCommand} from "@/cli/import-drain-command";
@@ -18,7 +19,6 @@ for (const task of tasks) {
     const cmd = program
         .command(task.name)
         .description(task.description)
-        .option("-j, --json", "Output logs as JSON");
 
     const cliOptions = extractCLIOptions(task.inputSchema);
 
@@ -40,20 +40,18 @@ for (const task of tasks) {
             const rawInput = parseClIOptions(options, cliOptions);
             const input = task.inputSchema.parse(rawInput);
 
-            console.log(`\nRunning task: ${task.name}`);
-            console.log(`Input: ${JSON.stringify(input, null, 2)}\n`);
+            logger.info({ taskName: task.name, input }, "Running CLI task");
 
             await runTask({
                 input: input as any,
                 taskName: task.name,
                 triggeredBy: "cron/cli",
-                stdoutAsJson: options.json,
             });
 
             process.exit(0);
         }
         catch (error) {
-            console.error("Failed to run task:", error);
+            logger.error({ err: error }, "Failed to run CLI task");
             process.exit(1);
         }
     });
@@ -69,7 +67,7 @@ program
             process.exit(0);
         }
         catch (error) {
-            console.error("Failed to drain imports:", error);
+            logger.error({ err: error }, "Failed to drain imports");
             process.exit(1);
         }
     });

@@ -51,10 +51,6 @@ export const adminDeleteArchivedTaskSchema = z.object({
     taskId: z.string(),
 });
 
-export const adminDeleteErrorLogSchema = z.object({
-    errorIds: z.array(z.number()).nullable(),
-});
-
 export const adminLlmResponseSchema = z.array(z.object({
     bookApiId: z.string(),
     genres: z.array(z.string()),

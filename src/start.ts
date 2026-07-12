@@ -1,3 +1,4 @@
+import {logger} from "@/lib/server/core/logger";
 import {createCsrfMiddleware, createStart} from "@tanstack/react-start";
 import {funcErrorMiddleware, reqErrorMiddleware} from "@/lib/server/middlewares/global-error";
 import {formattedErrorAdapter, unauthorizedErrorAdapter, validationErrorAdapter} from "@/lib/utils/error-classes";
@@ -31,18 +32,18 @@ const csrfMiddleware = createCsrfMiddleware({
     failureResponse: (ctx) => {
         const requestUrl = new URL(ctx.request.url);
 
-        console.warn("CSRF validation failed", {
+        logger.warn({
             method: ctx.request.method,
             pathname: requestUrl.pathname,
             requestOrigin: requestUrl.origin,
             host: ctx.request.headers.get("Host"),
-            forwardedHost: ctx.request.headers.get("X-Forwarded-Host"),
-            forwardedProto: ctx.request.headers.get("X-Forwarded-Proto"),
-            secFetchSite: ctx.request.headers.get("Sec-Fetch-Site"),
             origin: ctx.request.headers.get("Origin"),
             referer: ctx.request.headers.get("Referer"),
             userAgent: ctx.request.headers.get("User-Agent"),
-        });
+            secFetchSite: ctx.request.headers.get("Sec-Fetch-Site"),
+            forwardedHost: ctx.request.headers.get("X-Forwarded-Host"),
+            forwardedProto: ctx.request.headers.get("X-Forwarded-Proto"),
+        }, "CSRF validation failed");
 
         return new Response("Forbidden", { status: 403 });
     },

@@ -1,5 +1,6 @@
 import {Redis} from "ioredis";
 import {serverEnv} from "@/env/server";
+import {logger} from "@/lib/server/core/logger";
 
 
 let redisInstance: Redis | null = null;
@@ -12,26 +13,26 @@ export const connectRedis = () => {
     }
 
     if (!connectionPromise) {
-        console.log("Attempting to connect to Redis using ioredis...");
+        logger.info("Attempting to connect to Redis using ioredis");
 
         redisInstance = new Redis(serverEnv.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: null });
 
         connectionPromise = new Promise((resolve, reject) => {
-            redisInstance!.on("connect", () => console.log("ioredis: connecting..."));
+            redisInstance!.on("connect", () => logger.info("ioredis connecting"));
             redisInstance!.on("ready", () => {
-                console.log("ioredis: client ready.");
+                logger.info("ioredis client ready");
                 resolve(redisInstance!);
             });
             redisInstance!.on("error", (error) => {
-                console.error("ioredis: Client Error:", error);
+                logger.error({ err: error }, "ioredis client error");
                 if (redisInstance?.status !== "ready" && redisInstance?.status !== "connecting") {
                     redisInstance = null;
                     connectionPromise = null;
                     reject(error);
                 }
             });
-            redisInstance!.on("end", () => console.log("ioredis: client connection closed."));
-            redisInstance!.on("reconnecting", () => console.warn("ioredis: client reconnecting..."));
+            redisInstance!.on("end", () => logger.info("ioredis client connection closed"));
+            redisInstance!.on("reconnecting", () => logger.warn("ioredis client reconnecting"));
             redisInstance!.connect().catch(reject);
         });
     }

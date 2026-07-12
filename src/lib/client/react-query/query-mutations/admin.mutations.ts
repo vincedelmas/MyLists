@@ -1,10 +1,9 @@
 import {toast} from "sonner";
 import {SearchType} from "@/lib/schemas";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
-import {adminAchievementsOptions, adminArchivedTasksOptions, adminErrorLogsOptions, userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
+import {adminAchievementsOptions, adminArchivedTasksOptions, userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {
     postAdminDeleteArchivedTask,
-    postAdminDeleteErrorLog,
     postAdminTriggerTask,
     postAdminUpdateAchievement,
     postAdminUpdateTiers,
@@ -73,14 +72,3 @@ export const useAdminDeleteTaskMutation = () => {
     });
 };
 
-
-export const useAdminDeleteErrorLogsMutation = (search: SearchType) => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: postAdminDeleteErrorLog,
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: adminErrorLogsOptions(search).queryKey });
-        },
-    });
-};

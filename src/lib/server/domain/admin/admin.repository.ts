@@ -1,12 +1,12 @@
 import {SearchType} from "@/lib/schemas";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
+import {ProviderApiRollup} from "@/lib/types/admin.types";
 import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {AdminErrorLog, ProviderApiRollup} from "@/lib/types/admin.types";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
-import {asc, count, countDistinct, desc, eq, gte, inArray, like, or, sql} from "drizzle-orm";
-import {apiCallRollup, collections, errorLogs, mediaRefreshLog, taskHistory, user} from "@/lib/server/database/schema";
+import {asc, count, countDistinct, desc, eq, gte, like, or, sql} from "drizzle-orm";
+import {apiCallRollup, collections, mediaRefreshLog, taskHistory, user} from "@/lib/server/database/schema";
 
 
 export class AdminRepository {
@@ -161,51 +161,6 @@ export class AdminRepository {
                     .limit(limit);
             },
         });
-    }
-
-    static async saveErrorToDb(error: AdminErrorLog) {
-        await getDbClient()
-            .insert(errorLogs)
-            .values({
-                name: error.name,
-                stack: error.stack,
-                message: error.message,
-            });
-    }
-
-    static async getPaginatedErrorLogs(data: SearchType) {
-        const { items, total, pages } = await paginate({
-            page: data.page,
-            perPage: data.perPage,
-            getTotal: async () => {
-                return getDbClient()
-                    .select({ count: count() })
-                    .from(errorLogs)
-                    .get()?.count ?? 0;
-            },
-            getItems: ({ limit, offset }) => {
-                return getDbClient()
-                    .select()
-                    .from(errorLogs)
-                    .offset(offset)
-                    .limit(limit)
-                    .orderBy(desc(errorLogs.createdAt));
-            },
-        });
-
-        return { items, total, pages };
-    }
-
-    static async deleteErrorLogs(errorIds: number[] | null) {
-        if (errorIds) {
-            await getDbClient()
-                .delete(errorLogs)
-                .where(inArray(errorLogs.id, errorIds));
-        }
-        else {
-            await getDbClient()
-                .delete(errorLogs);
-        }
     }
 
     static async saveTaskToDb(data: SaveTaskToDb) {

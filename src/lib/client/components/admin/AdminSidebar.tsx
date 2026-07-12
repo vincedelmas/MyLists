@@ -164,7 +164,7 @@ export function AdminSidebar() {
                                 <SidebarMenuButton asChild>
                                     <Link to="/admin/error-logs">
                                         <CircleX className="size-4"/>
-                                        <span>Logged Errors</span>
+                                        <span>Runtime Logs</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

@@ -21,7 +21,7 @@ export function AuthSessionSync() {
             localStorage.setItem(AUTH_SYNC_STORAGE_KEY, JSON.stringify({ userId }));
         }
         catch {
-            console.warn("Could not sync auth state to local storage");
+            // Best-effort cross-tab sync. Browsers can block localStorage in private or restricted modes.
         }
     };
 

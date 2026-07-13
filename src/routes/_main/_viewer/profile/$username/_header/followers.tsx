@@ -3,6 +3,7 @@ import {cn} from "@/lib/utils/classnames";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
@@ -56,6 +57,9 @@ function ProfileFollowers() {
 
 
 interface FollowerCardProps {
+    profileOwner: string;
+    currentUserName?: string;
+    isViewingOwnProfile: boolean;
     follower: {
         id: number;
         username: string;
@@ -63,22 +67,25 @@ interface FollowerCardProps {
         image: string | null;
         myFollowStatus: SocialState | null;
     };
-    profileOwner: string;
-    currentUserName?: string;
-    isViewingOwnProfile: boolean;
 }
 
 
 function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnProfile }: FollowerCardProps) {
+    const confirm = useConfirm();
     const isMe = currentUserName === follower.username;
     const removeMutation = useRemoveFollowerMutation(profileOwner);
 
-    const handleRemoveFollower = () => {
-        if (window.confirm(`Are you sure you want to remove ${follower.username} from your followers?`)) {
-            removeMutation.mutate({ data: { followerId: follower.id } }, {
-                onSuccess: () => toast.success("Follower removed!"),
-            });
-        }
+    const handleRemoveFollower = async () => {
+        if (!await confirm({
+            confirmLabel: "Remove",
+            variant: "destructive",
+            title: "Remove Follower?",
+            description: <span><b>{follower.username}</b> will no longer follow you.</span>,
+        })) return;
+
+        removeMutation.mutate({ data: { followerId: follower.id } }, {
+            onSuccess: () => toast.success("Follower removed!"),
+        });
     };
 
     return (

@@ -3,13 +3,14 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityEditor} from "@/lib/types/activity.types";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
+import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {toDateInputValue} from "@/lib/utils/date-formatting";
-import {useCurrentDate} from "@/lib/client/hooks/use-dates";
-import {UpdateActivity, UpdateActivityInput, updateActivityPayloadSchema} from "@/lib/schemas";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
+import {UpdateActivity, UpdateActivityInput, updateActivityPayloadSchema} from "@/lib/schemas";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {useDeleteActivityMutation, useUpdateActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
@@ -24,6 +25,7 @@ interface ActivityEditDialogProps {
 
 
 export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEditDialogProps) => {
+    const confirm = useConfirm();
     const currentDate = useCurrentDate();
     const updateMutation = useUpdateActivityMutation({ noErrorToast: true });
     const deleteMutation = useDeleteActivityMutation({ noErrorToast: true });
@@ -65,8 +67,13 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
         });
     };
 
-    const handleOnDelete = () => {
-        if (!window.confirm("Delete this activity event?")) return;
+    const handleOnDelete = async () => {
+        if (!await confirm({
+            variant: "destructive",
+            confirmLabel: "Delete Event",
+            title: "Delete this activity event?",
+            description: "This activity entry will be permanently deleted.",
+        })) return;
 
         deleteMutation.mutate({ data: { activityId: activity.id } }, {
             onError: (error) => {

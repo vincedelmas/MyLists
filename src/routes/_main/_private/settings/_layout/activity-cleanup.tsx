@@ -6,6 +6,7 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/activity-
 
 function ActivityCleanupSettings() {
     const mediaType = "all";
+    const confirm = useConfirm();
     const { currentUser } = useAuth();
     const today = toDateInputValue(new Date());
     const bulkMutation = useBulkHideActivityMutation({ noErrorToast: true });
@@ -43,9 +45,12 @@ function ActivityCleanupSettings() {
         form.setValue("endDate", shiftDateInputValue(accountCreatedAt, { days, max: today }), { shouldDirty: true });
     };
 
-    const handleSubmit = (values: BulkHideActivity) => {
-        const confirmed = window.confirm("Hide matching activity? This keeps the rows editable and reversible.");
-        if (!confirmed) return;
+    const handleSubmit = async (values: BulkHideActivity) => {
+        if (!await confirm({
+            confirmLabel: "Hide Activity",
+            title: "Hide Matching Activity?",
+            description: "This keeps the rows editable and reversible.",
+        })) return;
 
         bulkMutation.mutate({
             data: {

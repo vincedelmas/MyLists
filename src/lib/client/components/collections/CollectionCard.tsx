@@ -1,5 +1,6 @@
 import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -17,6 +18,7 @@ interface CollectionCardProps {
 
 
 export const CollectionCard = ({ collection, showOwner = true, showMediaType = true }: CollectionCardProps) => {
+    const confirm = useConfirm();
     const { currentUser } = useAuth();
     const deleteMutation = useDeleteCollectionMutation(collection.id);
 
@@ -25,7 +27,14 @@ export const CollectionCard = ({ collection, showOwner = true, showMediaType = t
 
     const handleDelete = async () => {
         if (!canManage || deleteMutation.isPending) return;
-        if (!window.confirm("This collection will be permanently deleted. Are you sure?")) return;
+
+        if (!await confirm({
+            variant: "destructive",
+            title: "Delete this collection?",
+            confirmLabel: "Delete collection",
+            description: "This collection will be permanently deleted.",
+        })) return;
+
         await deleteMutation.mutateAsync({ data: { collectionId: collection.id } });
     };
 

@@ -2,14 +2,15 @@ import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {Card} from "@/lib/client/components/ui/card";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {historyOptions} from "@/lib/client/react-query/query-options";
 import {TagsLists} from "@/lib/client/components/media/base/TagsLists";
 import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
-import {historyOptions} from "@/lib/client/react-query/query-options";
 import {BacklogModeSystem} from "@/lib/client/components/media/base/BacklogModeSystem";
 import {CustomCoverTabContent} from "@/lib/client/components/media/base/CustomCoverTab";
 import {UserMediaSpecificDetails} from "@/lib/client/components/media/base/UserMediaSpecificDetails";
@@ -29,6 +30,7 @@ interface UserMediaDetailsProps {
 
 
 export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMediaDetailsProps) => {
+    const confirm = useConfirm();
     const queryClient = useQueryClient();
     const [backlogDate, setBacklogDate] = useState("");
     const [backlogMode, setBacklogMode] = useState(false);
@@ -41,8 +43,14 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMedi
         loggedAt: backlogMode ? backlogDate : undefined,
     });
 
-    const handleRemoveMediaFromList = () => {
-        if (!window.confirm(`Do you want to remove this ${mediaType} from your list?`)) return;
+    const handleRemoveMediaFromList = async () => {
+        if (!await confirm({
+            confirmLabel: "Remove",
+            variant: "destructive",
+            title: `Remove this ${mediaType}?`,
+            description: `This ${mediaType} will be removed from your list.`,
+        })) return;
+
         removeMediaFromListMutation.mutate({ data: { mediaType, mediaId: userMedia.mediaId } }, {
             onSuccess: () => {
                 queryClient.removeQueries({ queryKey: historyOptions(mediaType, userMedia.mediaId).queryKey });

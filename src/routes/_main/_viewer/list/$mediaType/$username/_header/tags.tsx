@@ -5,6 +5,7 @@ import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {DropdownMenu} from "@radix-ui/react-dropdown-menu";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {SimpleSearch, simpleSearchSchema} from "@/lib/schemas";
@@ -152,6 +153,7 @@ interface TagCardProps {
 
 
 const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagCardProps) => {
+    const confirm = useConfirm();
     const [editName, setEditName] = useState("");
     const [isEditing, setIsEditing] = useState(false);
 
@@ -162,12 +164,18 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
         setIsEditing(false);
     };
 
-    const handleDelete = (ev: React.MouseEvent) => {
+    const handleDelete = async (ev: React.MouseEvent) => {
         ev.preventDefault();
         ev.stopPropagation();
-        if (window.confirm(`Delete "${tag.tagName}"?`)) {
-            onDelete(tag.tagName);
-        }
+
+        if (!await confirm({
+            variant: "destructive",
+            confirmLabel: "Delete Tag",
+            title: `Delete "${tag.tagName}"?`,
+            description: "This tag will be removed from matching list items.",
+        })) return;
+
+        onDelete(tag.tagName);
     };
 
     return (

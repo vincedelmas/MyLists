@@ -4,10 +4,11 @@ import {useForm} from "react-hook-form";
 import {FeatureStatus} from "@/lib/utils/enums";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {Textarea} from "@/lib/client/components/ui/textarea";
+import {FormError} from "@/lib/client/components/forms/FormError";
 import {PostFeatureStatus, postFeatureStatusSchema} from "@/lib/schemas";
 import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
-import {FormError} from "@/lib/client/components/forms/FormError";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
@@ -23,6 +24,7 @@ interface AdminFeatureDialogProps {
 
 
 export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentComment }: AdminFeatureDialogProps) => {
+    const confirm = useConfirm();
     const [open, setOpen] = useState(false);
     const updateStatusMutation = useAdminUpdateFeatureMutation({ noErrorToast: true });
     const deleteFeatureMutation = useAdminDeleteFeatureMutation({ noErrorToast: true });
@@ -59,8 +61,13 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
         });
     };
 
-    const handleDelete = () => {
-        if (!window.confirm("Delete this feature request and all its votes?")) return;
+    const handleDelete = async () => {
+        if (!await confirm({
+            variant: "destructive",
+            confirmLabel: "Delete request",
+            title: "Delete this feature request?",
+            description: "The request and all of its votes will be permanently deleted.",
+        })) return;
 
         deleteFeatureMutation.mutate({ data: { featureId } }, {
             onError: (error) => {

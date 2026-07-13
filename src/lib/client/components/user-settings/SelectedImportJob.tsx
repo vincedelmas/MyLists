@@ -2,6 +2,7 @@ import {useQuery} from "@tanstack/react-query";
 import {ImportJobStatus} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {importJobOptions} from "@/lib/client/react-query/query-options";
 import {ImportJobIssuesTable} from "@/lib/client/components/user-settings/ImportJobIssuesTable";
@@ -25,6 +26,7 @@ const terminalStatuses = new Set<string>([
 
 
 export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobProps) {
+    const confirm = useConfirm();
     const deleteMutation = useDeleteImportJobMutation(jobId);
     const { data: job, refetch, isFetching, isLoading, isError } = useQuery(importJobOptions(jobId));
 
@@ -48,11 +50,13 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
     const issueCount = job.failedCount + job.skippedCount;
     const progress = job.totalCount ? Math.round((job.processedCount / job.totalCount) * 100) : 0;
 
-    const handleDelete = () => {
-        if (!window.confirm(
-            "Are you sure you want to delete this import job? " +
-            "This will remove the job and every row attached to it."
-        )) return;
+    const handleDelete = async () => {
+        if (!await confirm({
+            variant: "destructive",
+            confirmLabel: "Delete Job",
+            title: "Delete this import job?",
+            description: "This will remove the job and every row attached to it.",
+        })) return;
 
         deleteMutation.mutate({ data: { jobId } }, {
             onSuccess: () => {

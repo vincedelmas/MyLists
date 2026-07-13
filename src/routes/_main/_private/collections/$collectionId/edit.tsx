@@ -4,6 +4,7 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options";
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/_main/_private/collections/$collectionId/
 
 
 function CollectionEditPage() {
+    const confirm = useConfirm();
     const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
     const { collectionId } = Route.useParams();
@@ -48,7 +50,12 @@ function CollectionEditPage() {
 
     const handleDelete = async () => {
         if (deleteMutation.isPending) return;
-        if (!window.confirm("This collection will be permanently deleted. Are you sure?")) return;
+        if (!await confirm({
+            variant: "destructive",
+            title: "Delete This Collection?",
+            confirmLabel: "Delete Collection",
+            description: "This collection will be permanently deleted.",
+        })) return;
 
         deleteMutation.mutate({ data: { collectionId } }, {
             onError: (error) => {

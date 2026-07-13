@@ -1,7 +1,6 @@
 import {toast} from "sonner";
 import {useRef} from "react";
 import {CreateCollection} from "@/lib/schemas";
-import {useBlocker} from "@tanstack/react-router";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {DraftItem} from "@/lib/types/collections.types";
@@ -13,6 +12,7 @@ import {Textarea} from "@/lib/client/components/ui/textarea";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {GripVertical, List, ListOrdered, Trash2} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {useConfirmBlocker} from "@/lib/client/hooks/use-confirm-blocker";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
@@ -36,12 +36,14 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
     const dragIndex = useRef<number | null>(null);
     const { fields, append, remove, move } = useFieldArray({ control: form.control, name: "items" });
 
-    useBlocker({
-        shouldBlockFn: () => {
-            if (!isDirty || isSubmitting) return false;
-            return !confirm("Your edit will be lost. Are you sure you want to leave this page?");
-        },
-    })
+    useConfirmBlocker({
+        cancelLabel: "Stay",
+        confirmLabel: "Leave",
+        variant: "destructive",
+        when: isDirty && !isSubmitting,
+        title: "Leave without saving?",
+        description: "Your collection edits will be lost if you leave this page.",
+    });
 
     const handleDrop = (index: number) => {
         if (dragIndex.current === null || dragIndex.current === index) return;

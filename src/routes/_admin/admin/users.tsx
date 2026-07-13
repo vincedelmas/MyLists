@@ -5,6 +5,7 @@ import {formatDate} from "@/lib/utils/date-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {PrivacyType, RoleType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {postImpersonateUser} from "@/lib/server/functions/admin";
@@ -46,6 +47,7 @@ const DEFAULT = { search: "", page: 1, sorting: "updatedAt" } satisfies SearchTy
 
 
 function UserManagementPage() {
+    const confirm = useConfirm();
     const filters = Route.useSearch();
     const { setCurrentUser } = useAuth();
     const navigate = Route.useNavigate();
@@ -67,8 +69,15 @@ function UserManagementPage() {
         updateFilters({ sorting: newSorting[0]?.id ?? "updatedAt", sortDesc: newSorting[0]?.desc ?? true, page: 1 });
     };
 
-    const updateUser = (userId: number | undefined, payload: AdminUpdatePayload) => {
-        if (payload.deleteUser && !window.confirm("Are you sure you want to delete this user?")) return;
+    const updateUser = async (userId: number | undefined, payload: AdminUpdatePayload) => {
+        if (payload.deleteUser && !await confirm({
+            requireText: "DELETE",
+            variant: "destructive",
+            title: "Delete This User?",
+            confirmLabel: "Delete User",
+            description: "This user account and its related data will be removed.",
+        })) return;
+
         updateUserMutation.mutate({ data: { userId, payload } });
     };
 

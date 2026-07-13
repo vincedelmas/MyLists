@@ -2,6 +2,7 @@ import {Trash2} from "lucide-react";
 import authClient from "@/lib/utils/auth-client";
 import {useQueryClient} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {authOptions} from "@/lib/client/react-query/query-options";
 import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {useDeleteAccountMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -13,16 +14,19 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/danger")(
 
 
 function DangerForm() {
+    const confirm = useConfirm();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const deleteAccountMutation = useDeleteAccountMutation();
 
     const onSubmit = async () => {
-        const firstConfirm = window.confirm("Are you sure?");
-        if (!firstConfirm) return;
-
-        const secondConfirm = window.confirm("All your data will be permanently deleted. Are you really sure?");
-        if (!secondConfirm) return;
+        if (!await confirm({
+            requireText: "DELETE",
+            variant: "destructive",
+            title: "Delete Your Account?",
+            confirmLabel: "Delete Account",
+            description: "All your data will be permanently deleted. No recovery possible, I don't keep any data. This action cannot be undone.",
+        })) return;
 
         deleteAccountMutation.mutate(undefined, {
             onSuccess: async () => {

@@ -2,6 +2,7 @@ import {Trash} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {UserUpdateType} from "@/lib/types/query.options.types";
 import {Payload} from "@/lib/client/components/general/Payload";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -19,8 +20,16 @@ interface UserUpdateProps {
 
 
 export function UserUpdate({ update, username, onDelete, canDelete, isPending, mediaIdBeingDeleted }: UserUpdateProps) {
-    const handleDeleteUpdate = (updateId: number) => {
-        if (!window.confirm("This update will be definitively deleted, are you sure?")) return;
+    const confirm = useConfirm();
+
+    const handleDeleteUpdate = async (updateId: number) => {
+        if (!await confirm({
+            title: "Delete this update?",
+            description: "This update will be permanently deleted.",
+            confirmLabel: "Delete update",
+            variant: "destructive",
+        })) return;
+
         onDelete?.(updateId);
     };
 

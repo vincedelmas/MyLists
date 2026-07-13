@@ -27,7 +27,7 @@ export const serverEnv = createEnv({
         LOG_LEVEL: z.string().trim().default("info"),
         ADMIN_LOG_PREFIX: z.string().trim().default("mylists-"),
         ADMIN_LOG_MAX_BYTES: z.coerce.number().default(10 * 1024 * 1024),
-        ADMIN_LOG_DIR: z.string().default(process.env.NODE_ENV === "development" ? "./logs" : path.join(homedir(), ".pm2", "logs")),
+        ADMIN_LOG_DIR: z.string().default(path.join(homedir(), ".pm2", "logs")),
 
         // Redis
         CACHE_TTL_MIN: z.coerce.number().int().default(5),

@@ -261,7 +261,7 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return delta;
     }
 
-    async getMediaAndUserDetails(userId: number | undefined, mediaId: number, includeUserMedia = true) {
+    async getMediaAndUserDetails(userId: number | undefined, mediaId: number) {
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
 
@@ -269,9 +269,7 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         if (!mediaWithDetails) throw notFound();
 
         const similarMedia = await this.repository.findSimilarMedia(mediaWithDetails.id);
-        const userMedia = includeUserMedia
-            ? await this.repository.findUserMedia(userId, mediaWithDetails.id)
-            : null;
+        const userMedia = await this.repository.findUserMedia(userId, mediaWithDetails.id);
         const followsData = await this.repository.getUserFollowsMediaData(userId, mediaWithDetails.id);
 
         return {

@@ -12,8 +12,8 @@ import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
-import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
 import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
+import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
 import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 
@@ -33,14 +33,15 @@ export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/"
 
 
 function CollectionViewer() {
-    const { isAnonymous } = useAuth();
     const navigate = Route.useNavigate();
     const { collectionId } = Route.useParams();
+    const { currentUser, isAnonymous } = useAuth();
     const copyMutation = useCopyCollectionMutation(collectionId);
     const toggleLikeMutation = useToggleCollectionLikeMutation(collectionId);
     const apiData = useSuspenseQuery(collectionDetailsReadOptions(collectionId)).data;
 
     const { collection, items, isLiked, canManage } = apiData;
+    const isMediaTypeActive = currentUser?.settings.some(s => s.mediaType === collection.mediaType && s.active) ?? false;
 
     const handleLikeCollection = () => {
         toggleLikeMutation.mutate({ data: { collectionId } });
@@ -104,7 +105,7 @@ function CollectionViewer() {
                     message="This collection does not have any media yet."
                 />
                 :
-                <div className="pt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {items.map((item) =>
                         <MediaCard key={item.mediaId} item={item} mediaType={collection.mediaType}>
                             {collection.ordered &&
@@ -112,14 +113,14 @@ function CollectionViewer() {
                                     #{item.orderIndex}
                                 </div>
                             }
-                            {!isAnonymous && item.inUserList &&
+                            {!isAnonymous && isMediaTypeActive && item.inUserList &&
                                 <MediaCornerCommon
                                     isCommon={item.inUserList}
                                 />
                             }
                             <div className="absolute bottom-0 w-full space-y-1 rounded-b-sm p-3">
                                 <div className="flex w-full items-center justify-between space-x-2 text-sm">
-                                    <h3 className="grow truncate font-semibold text-primary" title={item.mediaName}>
+                                    <h3 className="grow truncate font-medium text-primary" title={item.mediaName}>
                                         {item.mediaName}
                                     </h3>
                                 </div>

@@ -718,11 +718,6 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
             const commonMediaIdsResult = await getDbClient()
                 .select({ mediaId: listTable.mediaId })
                 .from(listTable)
-                .innerJoin(userMediaSettings, and(
-                    eq(userMediaSettings.userId, listTable.userId),
-                    eq(userMediaSettings.mediaType, this.config.mediaType),
-                    eq(userMediaSettings.active, true),
-                ))
                 .where(and(eq(listTable.userId, currentUserId), inArray(listTable.mediaId, mediaIds)));
 
             commonIdsSet = new Set(commonMediaIdsResult.map(m => m.mediaId));

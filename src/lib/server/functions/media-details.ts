@@ -25,16 +25,13 @@ export const getMediaDetails = createServerFn({ method: "GET" })
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.get(mediaType);
-        const includeUserMedia = currentUser
-            ? await container.services.user.hasActiveMediaType(currentUser.id, mediaType)
-            : false;
 
         const {
             media,
             userMedia,
             followsData,
             similarMedia,
-        } = await mediaService.getMediaAndUserDetails(currentUser?.id, mediaId, includeUserMedia);
+        } = await mediaService.getMediaAndUserDetails(currentUser?.id, mediaId);
 
         return { media, userMedia, followsData, similarMedia };
     });

@@ -23,7 +23,7 @@ export const DisabledMediaListNotice = ({ mediaType, compact = false }: Disabled
                     {capitalize(mediaType)} List Disabled
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                    Your {mediaType} list is disabled. To update this media, enable it in your settings.
+                    Your {mediaType} list is disabled. To track this media, enable it in your settings.
                 </p>
                 <Button size="sm" variant={compact ? "outline" : "default"} className={cn(!compact && "w-full")} asChild>
                     <Link to="/settings/content-lists">

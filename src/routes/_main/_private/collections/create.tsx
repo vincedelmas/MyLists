@@ -1,6 +1,5 @@
 import {useState} from "react";
 import {useForm} from "react-hook-form";
-import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {createFileRoute} from "@tanstack/react-router";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
@@ -19,12 +18,11 @@ export const Route = createFileRoute("/_main/_private/collections/create")({
 
 
 function CollectionCreatePage() {
-    const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
+    const mediaTypes = Object.values(MediaType);
     const createMutation = useCreateCollectionMutation({ noErrorToast: true });
     const [mediaType, setMediaType] = useState<MediaType | null>(null);
     const [step, setStep] = useState<"mediaType" | "editor">("mediaType");
-    const activeTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? [];
     const form = useForm<CreateCollection>({
         resolver: zodResolver(createCollectionSchema),
         defaultValues: {
@@ -72,7 +70,7 @@ function CollectionCreatePage() {
                         </span>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                        {activeTypes.map((mt) =>
+                        {mediaTypes.map((mt) =>
                             <Button key={mt} variant="outline" className="capitalize" onClick={() => selectMediaType(mt)}>
                                 <MainThemeIcon type={mt}/> {mt}
                             </Button>

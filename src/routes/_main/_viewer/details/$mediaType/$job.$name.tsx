@@ -1,3 +1,4 @@
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/text-formatting";
@@ -28,14 +29,15 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$na
 
 
 function JobInfoPage() {
+    const { currentUser } = useAuth();
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
     const { mediaType, job, name } = Route.useParams();
     const apiData = useSuspenseQuery(jobDetailsOptions(mediaType, job, name, filters)).data;
-    const { page = 1 } = filters;
+    const isMediaTypeActive = currentUser?.settings.some((s) => s.mediaType === mediaType && s.active) ?? false;
 
-    const onPageChange = async (page: number) => {
-        await navigate({ search: { page } });
+    const onPageChange = async (newPage: number) => {
+        await navigate({ search: { page: newPage } });
     };
 
     return (
@@ -58,7 +60,7 @@ function JobInfoPage() {
                                 </div>
                             </div>
                         </div>
-                        {item.inUserList &&
+                        {isMediaTypeActive && item.inUserList &&
                             <MediaCornerCommon
                                 isCommon={item.inUserList}
                             />
@@ -67,9 +69,9 @@ function JobInfoPage() {
                 )}
             </div>
             <Pagination
-                currentPage={page}
                 totalPages={apiData.pages}
                 onChangePage={onPageChange}
+                currentPage={filters.page ?? 1}
             />
         </PageTitle>
     );

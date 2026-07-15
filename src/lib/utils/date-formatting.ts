@@ -284,7 +284,8 @@ export const monthBucketFromDateInput = (value?: string | number | Date) => {
     const date = value ? dateFromUTCInput(value) : new Date();
     if (isNaN(date.getTime())) return "";
 
-    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+    const year = String(date.getUTCFullYear()).padStart(4, "0");
+    return `${year}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 };
 
 

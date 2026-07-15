@@ -13,7 +13,7 @@ export const PENDING_ROLLUPS_KEY = "api-monitor:rollups:pending";
 
 
 export const getPlatformStatsCacheKey = (data: StatsActiveTab) => {
-    return `platformStats:v2:${JSON.stringify(data)}`;
+    return `platformStats:v3:${JSON.stringify(data)}`;
 };
 
 export const getUserStatsCacheKey = (userId: number, data: StatsActiveTab) => {

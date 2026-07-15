@@ -1,5 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
+import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
 
 
@@ -87,6 +88,13 @@ export const toActivityStoredValue = (mediaType: MediaType, value: number) => {
 
 export const calculateActivityTime = (mediaType: MediaType, specificGained: number, duration?: number) => {
     return activityMediaConfig[mediaType].calculateTime(specificGained, duration);
+};
+
+
+export const isValidActivityDate = (value: string) => {
+    const date = toDateInputValue(value, { timeZone: "utc" });
+    const today = toDateInputValue(new Date(), { timeZone: "utc" });
+    return date >= MIN_ACTIVITY_DATE && date <= today;
 };
 
 

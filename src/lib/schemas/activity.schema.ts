@@ -1,5 +1,7 @@
 import z from "zod";
 import {ActivityKind} from "@/lib/utils/enums";
+import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
+import {isValidActivityDate} from "@/lib/utils/activity-utils";
 import {calendarDateRangeToISOString} from "@/lib/utils/date-formatting";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, optionalSearchFieldSchema, usernameFieldSchema} from "@/lib/schemas/common.schema";
 
@@ -58,9 +60,9 @@ export const activityAddMediaSearchSchema = z.object({
 export const updateActivityPayloadSchema = z.object({
     isRedo: z.boolean(),
     hidden: z.boolean(),
-    lastUpdate: z.string(),
     isCompleted: z.boolean(),
     specificGained: z.number().min(0, "Progress must be 0 or more."),
+    lastUpdate: z.string().refine(isValidActivityDate, `Date must be between ${MIN_ACTIVITY_DATE} and today.`),
 }).partial().refine((data) => Object.values(data).some((val) => val !== undefined), {
     message: "Provide at least one field to update.", path: ["lastUpdate"],
 });
@@ -76,7 +78,8 @@ export const addActivitySchema = z.object({
     isRedo: z.boolean().optional().default(false),
     isCompleted: z.boolean().optional().default(false),
     mediaId: z.coerce.number().int().positive("Choose a media first."),
-    lastUpdate: z.string().min(1, "Progress date is required."),
+    lastUpdate: z.string().min(1, "Progress date is required.")
+        .refine(isValidActivityDate, `Date must be between ${MIN_ACTIVITY_DATE} and today.`),
     specificGained: z.number().positive("Progress must be greater than 0."),
 });
 

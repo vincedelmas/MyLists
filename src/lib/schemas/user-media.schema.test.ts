@@ -74,4 +74,24 @@ describe("user media schemas", () => {
             }),
         ]));
     });
+
+    it("rejects implausibly old backlog dates", () => {
+        const result = updateUserMediaSchema.safeParse({
+            mediaId: 1,
+            mediaType: MediaType.ANIME,
+            payload: {
+                type: UpdateType.TV,
+                currentEpisode: 1,
+                loggedAt: "0008-11-30",
+            },
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.error?.issues).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                path: ["payload", "loggedAt"],
+                message: "Date must be between 1900-01-01 and today.",
+            }),
+        ]));
+    });
 });

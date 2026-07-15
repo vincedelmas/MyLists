@@ -1,9 +1,9 @@
 import * as z from "zod";
-import {dateFromUTCInput} from "@/lib/utils/date-formatting";
+import {isValidActivityDate} from "@/lib/utils/activity-utils";
+import {importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
-import {importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
-import {COMMENT_MAX_LENGTH, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
+import {COMMENT_MAX_LENGTH, MIN_ACTIVITY_DATE, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
 
 
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
@@ -12,7 +12,7 @@ export type UpdateUserCustomCoverInput = z.input<typeof updateUserCustomCoverSch
 
 
 const loggedAtSchema = z.string().trim().pipe(z.iso.date())
-    .refine((value) => dateFromUTCInput(value).getTime() <= Date.now(), "Date cannot be in the future.")
+    .refine(isValidActivityDate, `Date must be between ${MIN_ACTIVITY_DATE} and today.`)
     .optional();
 
 export const loggedActivityUpdateTypes = new Set<UpdateType>([

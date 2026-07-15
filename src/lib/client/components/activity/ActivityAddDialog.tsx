@@ -6,6 +6,7 @@ import {useQuery} from "@tanstack/react-query";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
+import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {Button} from "@/lib/client/components/ui/button";
 import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
@@ -268,6 +269,7 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                                                     {...field}
                                                     type="date"
                                                     max={currentDate}
+                                                    min={MIN_ACTIVITY_DATE}
                                                 />
                                             </FormControl>
                                             <FormMessage/>

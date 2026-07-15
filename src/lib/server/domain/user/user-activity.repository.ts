@@ -81,6 +81,7 @@ export class UserActivityRepository {
             eq(userMediaActivity.hidden, false),
             gt(userMediaActivity.specificGained, 0),
             gte(userMediaActivity.monthBucket, filters.startMonth),
+            sql`strftime('%Y-%m', ${userMediaActivity.monthBucket} || '-01') = ${userMediaActivity.monthBucket}`,
         ];
         if (filters.userId) conditions.push(eq(userMediaActivity.userId, filters.userId));
         if (filters.mediaType) conditions.push(eq(userMediaActivity.mediaType, filters.mediaType));

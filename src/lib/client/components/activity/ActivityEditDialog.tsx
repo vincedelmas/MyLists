@@ -1,6 +1,7 @@
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
+import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityEditor} from "@/lib/types/activity.types";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
@@ -130,6 +131,7 @@ export const ActivityEditDialog = ({ open, activity, onOpenChange }: ActivityEdi
                                                 {...field}
                                                 type="date"
                                                 max={currentDate}
+                                                min={MIN_ACTIVITY_DATE}
                                                 value={field.value ?? ""}
                                             />
                                         </FormControl>

@@ -37,7 +37,7 @@ export class UserActivityService {
         const mediaTypes = filters.mediaType ? [filters.mediaType] : Object.values(MediaType);
 
         const activities = await this.repository.getStatsActivities(userId, mediaTypes, timeBucket);
-        const mediaDetailsByType = await this._getMediaDetailsByType(activities);
+        const mediaDetailsByType = await this._getMediaDurationsByType(activities);
 
         const activityRecord = Object.fromEntries(
             mediaTypes.map((mediaType) =>
@@ -48,7 +48,7 @@ export class UserActivityService {
             const mediaDetails = mediaDetailsByType.get(entry.mediaType)?.get(entry.mediaId);
             if (!mediaDetails) continue;
 
-            const timeGained = calculateActivityTime(entry.mediaType, entry.specificGained, mediaDetails.duration);
+            const timeGained = calculateActivityTime(entry.mediaType, entry.specificGained, mediaDetails.duration ?? undefined);
             const aggStats = activityRecord[entry.mediaType];
 
             aggStats.count += 1;
@@ -172,7 +172,7 @@ export class UserActivityService {
         });
 
         const chartMap = new Map<string, MonthlyActivityChartDatum>();
-        const mediaDetailsByType = await this._getMediaDetailsByType(activities);
+        const mediaDetailsByType = await this._getMediaDurationsByType(activities);
 
         for (const activity of activities) {
             const monthData = chartMap.get(activity.monthBucket) ?? {
@@ -184,7 +184,7 @@ export class UserActivityService {
             const mediaDetails = mediaDetailsByType.get(activity.mediaType)?.get(activity.mediaId);
             if (!mediaDetails) continue;
 
-            const timeGained = calculateActivityTime(activity.mediaType, activity.specificGained, mediaDetails.duration) / 60;
+            const timeGained = calculateActivityTime(activity.mediaType, activity.specificGained, mediaDetails.duration ?? undefined) / 60;
 
             monthData.total += timeGained;
             monthData[activity.mediaType] = (monthData[activity.mediaType] ?? 0) + timeGained;
@@ -228,6 +228,23 @@ export class UserActivityService {
         }));
 
         return mediaDetailsByType;
+    }
+
+    private async _getMediaDurationsByType(activities: ActivityMediaRef[]) {
+        const mediaTypes = [...new Set(activities.map((activity) => activity.mediaType))];
+        const durationsByType = new Map<MediaType, Map<number, { id: number; duration: number | null }>>();
+
+        await Promise.all(mediaTypes.map(async (mediaType) => {
+            const mediaIds = activities
+                .filter((activity) => activity.mediaType === mediaType)
+                .map((activity) => activity.mediaId);
+
+            const mediaService = this.mediaServiceRegistry.get(mediaType);
+            const durations = await mediaService.getMediaDurationsByIds(mediaIds);
+            durationsByType.set(mediaType, new Map(durations.map((media) => [media.id, media])));
+        }));
+
+        return durationsByType;
     }
 
     private async _searchActivityMediaIds(userId: number, mediaTypes: MediaType[], search: string) {

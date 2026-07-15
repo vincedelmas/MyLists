@@ -260,6 +260,7 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
 
     async getMediaDetailsByIds(mediaIds: number[], userId?: number): Promise<MediaInfo[]> {
         const { mediaTable, listTable } = this.config;
+        const uniqueMediaIds = [...new Set(mediaIds)];
 
         return getDbClient()
             .select({
@@ -272,7 +273,26 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
                 eq(listTable.mediaId, mediaTable.id),
                 userId === undefined ? sql`FALSE` : eq(listTable.userId, userId),
             ))
-            .where(inArray(mediaTable.id, mediaIds)) as unknown as MediaInfo[];
+            .where(inArray(mediaTable.id, uniqueMediaIds)) as unknown as MediaInfo[];
+    }
+
+    async getMediaDurationsByIds(mediaIds: number[]) {
+        const { mediaTable, mediaType } = this.config;
+        const uniqueMediaIds = [...new Set(mediaIds)];
+        if (uniqueMediaIds.length === 0) return [];
+
+        const hasDuration = mediaType === MediaType.SERIES || mediaType === MediaType.ANIME || mediaType === MediaType.MOVIES;
+        const durationColumn = hasDuration
+            ? (mediaTable as typeof mediaTable & { duration: SQL<number> }).duration
+            : sql<number | null>`NULL`;
+
+        return getDbClient()
+            .select({
+                id: mediaTable.id,
+                duration: durationColumn,
+            })
+            .from(mediaTable)
+            .where(inArray(mediaTable.id, uniqueMediaIds));
     }
 
     async getCommonListFilters(userId: number) {
@@ -698,6 +718,11 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
             const commonMediaIdsResult = await getDbClient()
                 .select({ mediaId: listTable.mediaId })
                 .from(listTable)
+                .innerJoin(userMediaSettings, and(
+                    eq(userMediaSettings.userId, listTable.userId),
+                    eq(userMediaSettings.mediaType, this.config.mediaType),
+                    eq(userMediaSettings.active, true),
+                ))
                 .where(and(eq(listTable.userId, currentUserId), inArray(listTable.mediaId, mediaIds)));
 
             commonIdsSet = new Set(commonMediaIdsResult.map(m => m.mediaId));

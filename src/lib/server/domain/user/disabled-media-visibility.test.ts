@@ -28,6 +28,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { animeConfig } = await import("@/lib/server/domain/media/tv/anime/anime.config");
 const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
+const { TvService } = await import("@/lib/server/domain/media/tv/tv.service");
 const { UserStatsRepository } = await import("@/lib/server/domain/user/user-stats.repository");
 const { UserUpdatesRepository } = await import("@/lib/server/domain/user/user-updates.repository");
 const { UserActivityRepository } = await import("@/lib/server/domain/user/user-activity.repository");
@@ -102,6 +103,54 @@ describe("disabled media visibility", () => {
         expect(enabledActivity.items).toHaveLength(2);
         expect(enabledAchievements.map((item) => item.name)).toEqual(["Anime achievement", "Movie achievement"]);
         expect(enabledCommunity.total).toBe(1);
+    });
+
+    it("does not expose disabled list ownership on another user's list or media details", async () => {
+        const animeRepository = new TvRepository(animeConfig);
+        const animeService = new TvService(animeRepository);
+
+        await db.insert(user).values({
+            id: 43,
+            emailVerified: true,
+            name: "list-owner",
+            privacy: "public",
+            email: "list-owner@example.com",
+            updatedAt: "2026-01-01 00:00:00",
+            createdAt: "2026-01-01 00:00:00",
+        });
+        await db.insert(userMediaSettings).values({
+            userId: 43,
+            mediaType: MediaType.ANIME,
+            active: true,
+        });
+        await db.insert(animeList).values({
+            id: 2,
+            userId: 43,
+            mediaId: 100,
+            currentSeason: 1,
+            currentEpisode: 12,
+            status: Status.COMPLETED,
+        });
+
+        const disabledViewerList = await animeRepository.getMediaList(42, 43, {});
+        const disabledViewerDetails = await animeService.getMediaAndUserDetails(42, 100, false);
+
+        expect(disabledViewerList.items[0].common).toBe(false);
+        expect(disabledViewerDetails.userMedia).toBeNull();
+
+        await db
+            .update(userMediaSettings)
+            .set({ active: true })
+            .where(and(
+                eq(userMediaSettings.userId, 42),
+                eq(userMediaSettings.mediaType, MediaType.ANIME),
+            ));
+
+        const enabledViewerList = await animeRepository.getMediaList(42, 43, {});
+        const enabledViewerDetails = await animeService.getMediaAndUserDetails(42, 100, true);
+
+        expect(enabledViewerList.items[0].common).toBe(true);
+        expect(enabledViewerDetails.userMedia?.mediaId).toBe(100);
     });
 });
 

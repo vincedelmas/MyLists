@@ -98,6 +98,10 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return this.repository.getMediaDetailsByIds(mediaIds, userId);
     }
 
+    async getMediaDurationsByIds(mediaIds: number[]) {
+        return this.repository.getMediaDurationsByIds(mediaIds);
+    }
+
     async bulkInsertUserMedia(rows: TConfig["listTable"]["$inferInsert"][]) {
         return this.repository.bulkInsertUserMedia(rows);
     }
@@ -257,7 +261,7 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         return delta;
     }
 
-    async getMediaAndUserDetails(userId: number | undefined, mediaId: number) {
+    async getMediaAndUserDetails(userId: number | undefined, mediaId: number, includeUserMedia = true) {
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
 
@@ -265,7 +269,9 @@ export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends B
         if (!mediaWithDetails) throw notFound();
 
         const similarMedia = await this.repository.findSimilarMedia(mediaWithDetails.id);
-        const userMedia = await this.repository.findUserMedia(userId, mediaWithDetails.id);
+        const userMedia = includeUserMedia
+            ? await this.repository.findUserMedia(userId, mediaWithDetails.id)
+            : null;
         const followsData = await this.repository.getUserFollowsMediaData(userId, mediaWithDetails.id);
 
         return {

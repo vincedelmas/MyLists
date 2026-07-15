@@ -27,6 +27,7 @@ interface MediaTableProps {
 export const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onChangePage }: MediaTableProps) => {
     const { currentUser } = useAuth();
     const isConnected = !!currentUser;
+    const isMediaTypeActive = currentUser?.settings.some((setting) => setting.mediaType === mediaType && setting.active) ?? false;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: 25 };
@@ -41,7 +42,7 @@ export const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption
         setDialogOpen(true);
     };
 
-    const listColumns = mediaConfig[mediaType].mediaListColumns({ isCurrent, isConnected, mediaType, queryOption, onEdit: handleEdit });
+    const listColumns = mediaConfig[mediaType].mediaListColumns({ isCurrent, isConnected, isMediaTypeActive, mediaType, queryOption, onEdit: handleEdit });
 
     const table = useReactTable({
         manualFiltering: true,

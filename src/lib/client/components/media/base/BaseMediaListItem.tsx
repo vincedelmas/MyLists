@@ -17,6 +17,7 @@ import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaE
 interface BaseMediaListItemProps {
     isCurrent: boolean;
     isConnected: boolean;
+    isMediaTypeActive: boolean;
     mediaType: MediaType;
     allStatuses: Status[];
     rating: React.ReactNode;
@@ -29,7 +30,8 @@ interface BaseMediaListItemProps {
 
 export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     const [dialogOpen, setDialogOpen] = useState(false);
-    const { isCurrent, queryOption, isConnected, mediaType, allStatuses, rating, userMedia, redoDisplay, mediaDetailsDisplay } = props;
+    const { isCurrent, queryOption, isConnected, isMediaTypeActive, mediaType, allStatuses, rating, userMedia, redoDisplay, mediaDetailsDisplay } = props;
+    const isCommon = isMediaTypeActive && userMedia.common;
 
     return (
         <>
@@ -40,13 +42,14 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                             <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
                         </Button>
                     }
-                    {!isCurrent && !userMedia.common && isConnected &&
+                    {!isCurrent && !isCommon && isConnected &&
                         <div className="absolute right-0 -top-0.5 z-10">
                             <QuickAddMedia
                                 mediaType={mediaType}
                                 queryOption={queryOption}
                                 allStatuses={allStatuses}
                                 mediaId={userMedia.mediaId}
+                                isMediaTypeActive={isMediaTypeActive}
                             />
                         </div>
                     }
@@ -56,7 +59,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                 </div>
                 {isConnected &&
                     <MediaCornerCommon
-                        isCommon={userMedia.common}
+                        isCommon={isCommon}
                     />
                 }
 

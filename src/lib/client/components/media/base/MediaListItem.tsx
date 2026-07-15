@@ -9,6 +9,7 @@ interface MediaListItemProps<T extends MediaType> {
     mediaType: T;
     isCurrent: boolean;
     isConnected: boolean;
+    isMediaTypeActive: boolean;
     allStatuses: Status[];
     userMedia: ExtractListByType<T>;
     queryOption: ReturnType<typeof mediaListOptions>;
@@ -16,7 +17,7 @@ interface MediaListItemProps<T extends MediaType> {
 
 
 export const MediaListItem = <T extends MediaType>(props: MediaListItemProps<T>) => {
-    const { mediaType, queryOption, isCurrent, isConnected, allStatuses, userMedia } = props;
+    const { mediaType, queryOption, isCurrent, isConnected, isMediaTypeActive, allStatuses, userMedia } = props;
 
     const MediaItemComponent = mediaConfig[mediaType].mediaListCard;
     const rating = formatRating(userMedia.ratingSystem, userMedia.rating);
@@ -29,6 +30,7 @@ export const MediaListItem = <T extends MediaType>(props: MediaListItemProps<T>)
             userMedia={userMedia}
             queryOption={queryOption}
             isConnected={isConnected}
+            isMediaTypeActive={isMediaTypeActive}
             allStatuses={allStatuses}
         />
     );

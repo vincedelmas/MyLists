@@ -99,6 +99,7 @@ function ListsOnboarding() {
                         isCurrent={true}
                         allStatuses={[]}
                         isConnected={true}
+                        isMediaTypeActive={true}
                         mediaType={MediaType.MOVIES}
                         userMedia={apiData.results.items[0]}
                         queryOption={mediaListOptions(MediaType.MOVIES, "DemoProfile", {})}

@@ -17,30 +17,35 @@ export const getUserStats = createServerFn({ method: "GET" })
             .filter(s => s.active)
             .map(s => s.mediaType);
 
-        return container.cacheManager.wrap(
-            getUserStatsCacheKey(user.id, activeTab), async () => {
-                if (activeTab === "overview") {
-                    const userStats = await userStatsService.userAdvancedSummaryStats(user.id);
-                    return {
-                        ...userStats,
-                        activatedMediaTypes,
-                        mediaType: undefined,
-                        ratingSystem: user.ratingSystem,
-                    };
-                }
+        if (activeTab !== "overview" && !activatedMediaTypes.includes(activeTab)) {
+            throw new FormattedError("MediaType not activated");
+        }
 
-                if (user.userMediaSettings.find((s) => s.mediaType === activeTab)?.active === false) {
-                    throw new FormattedError("MediaType not activated");
-                }
+        if (activeTab === "overview") {
+            const stats = await container.cacheManager.wrap(
+                getUserStatsCacheKey(user.id, activeTab),
+                () => userStatsService.userAdvancedSummaryStats(user.id),
+                { ttl: ONE_HOUR_CACHE_TTL_MS },
+            );
 
-                const mediaStats = await userStatsService.userAdvancedMediaStats(user.id, activeTab);
-                return {
-                    ...mediaStats,
-                    activatedMediaTypes,
-                    mediaType: activeTab,
-                    ratingSystem: user.ratingSystem,
-                } as AdvancedMediaStats;
-            },
+            return {
+                ...stats,
+                activatedMediaTypes,
+                mediaType: undefined,
+                ratingSystem: user.ratingSystem,
+            };
+        }
+
+        const stats = await container.cacheManager.wrap(
+            getUserStatsCacheKey(user.id, activeTab),
+            () => userStatsService.userAdvancedMediaStats(user.id, activeTab),
             { ttl: ONE_HOUR_CACHE_TTL_MS },
         );
+
+        return {
+            ...stats,
+            activatedMediaTypes,
+            mediaType: activeTab,
+            ratingSystem: user.ratingSystem,
+        } as AdvancedMediaStats;
     });

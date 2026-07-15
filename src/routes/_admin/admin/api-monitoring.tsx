@@ -14,6 +14,7 @@ import {adminApiMonitoringOptions} from "@/lib/client/react-query/query-options/
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {EmptyState} from "@/lib/client/components/general/EmptyState";
 
 
 export const Route = createFileRoute("/_admin/admin/api-monitoring")({
@@ -53,88 +54,92 @@ const dailyRangeOptions = [
 ] as const;
 
 
+const formatPerSecond = (value: number) => {
+    if (value > 0 && value < 0.0001) return "<0.0001";
+    return formatNumber(value, { maximumFractionDigits: 4 });
+};
+
+
 function ApiMonitoringPage() {
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
     const apiData = useSuspenseQuery(adminApiMonitoringOptions(filters)).data;
-    const { range = "30d", dailyRange = "30d" } = filters;
 
     const totalErrors = apiData.summary.failed;
+    const { range = "30d", dailyRange = "30d" } = filters;
     const errorRate = apiData.summary.total ? (totalErrors / apiData.summary.total) * 100 : 0;
+    const selectedProviderRange = rangeOptions.find((opt) => opt.value === range)?.label ?? "Selected range";
+    const selectedDailyRange = dailyRangeOptions.find((opt) => opt.value === dailyRange)?.label ?? "Selected range";
+    const providerMixTotal = apiData.totalsByProvider.reduce((total, row) => total + Number(row.count), 0);
     const providerColorMap = new Map(apiData.providers.map((provider, idx) => [provider, providerColors[idx % providerColors.length]]));
 
     const onNavigate = (params: AdminApiMonitoringParams) => {
-        navigate({ search: params, resetScroll: false });
+        navigate({ search: { ...filters, ...params }, resetScroll: false });
     };
 
     return (
         <DashboardShell>
             <DashboardHeader heading="API Monitoring" description="Track outbound provider traffic, quotas, latency, errors, and bursts."/>
             <div className="space-y-6">
-                {!apiData.liveRedis &&
-                    <Card className="border-amber-500/40 bg-amber-500/10">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-amber-600">
-                                <AlertTriangle className="size-4"/>
-                                Redis monitoring unavailable
-                            </CardTitle>
-                            <CardDescription>
-                                API monitoring rollups and live counters require Redis. Enable Redis to collect outbound provider metrics.
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-                }
-
-                <div className="grid gap-4 grid-cols-6 max-sm:grid-cols-2">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                    <div>
+                        <h2 className="text-lg font-semibold tracking-tight">
+                            All-time overview
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Lifetime metrics for all providers, including errors, avg. latency, and peak traffic.
+                        </p>
+                    </div>
+                </div>
+                <div className="grid gap-4 grid-cols-6 max-xl:grid-cols-3 max-sm:grid-cols-2">
                     <UserStats
-                        icon={Radio}
                         title="Total Calls"
+                        description="Lifetime volume"
                         value={formatNumber(apiData.summary.total)}
-                        description={rangeOptions.find((opt) => opt.value === range)?.label ?? "Selected range"}
+                        icon={<Radio className="text-app-accent size-5"/>}
                     />
                     <UserStats
-                        icon={BarChart3}
-                        title="Avg / Day"
-                        description="Selected range"
-                        value={formatNumber(apiData.summary.avgPerDay)}
+                        title="Avg. / Day"
+                        description="Since monitoring began"
+                        icon={<BarChart3 className="text-app-accent size-5"/>}
+                        value={formatNumber(apiData.summary.avgPerDay, { maximumFractionDigits: 1 })}
                     />
                     <UserStats
-                        icon={Gauge}
-                        title="Avg / Sec"
-                        description="Selected range"
-                        value={formatNumber(apiData.summary.avgPerSecond)}
+                        title="Avg. / Sec"
+                        description="Since monitoring began"
+                        icon={<Gauge className="text-app-accent size-5"/>}
+                        value={formatPerSecond(apiData.summary.avgPerSecond)}
                     />
                     <UserStats
-                        icon={Clock}
-                        title="Live / Min"
-                        description="Requires Redis"
-                        value={formatNumber(apiData.liveRedis?.lastMinuteTotal ?? 0)}
-                    />
-                    <UserStats
-                        icon={Activity}
                         title="Max Burst"
-                        description="Highest calls in one second"
+                        description="Max peak in one sec."
+                        icon={<Activity className="text-app-accent size-5"/>}
                         value={formatNumber(apiData.summary.busiestSecondCount)}
                     />
                     <UserStats
                         title="Errors"
-                        icon={AlertTriangle}
                         value={formatNumber(totalErrors)}
-                        description={`${formatPercent(errorRate)} failure rate`}
+                        icon={<AlertTriangle className="text-app-accent size-5"/>}
+                        description={`${formatPercent(errorRate)} lifetime failure rate`}
+                    />
+                    <UserStats
+                        title="Avg. Latency"
+                        description="All calls, all providers"
+                        value={formatMs(apiData.summary.avgDurationMs)}
+                        icon={<Clock className="text-app-accent size-5"/>}
                     />
                 </div>
-
                 <div className="grid gap-4 grid-cols-7 max-sm:grid-cols-2">
                     <Card className="col-span-4 max-sm:col-span-5">
                         <CardHeader>
                             <CardTitle>Daily Provider Calls</CardTitle>
-                            <CardDescription>Stacked by provider</CardDescription>
+                            <CardDescription>{selectedDailyRange} · daily volume stacked by provider</CardDescription>
                             <CardAction>
                                 <Select
                                     value={dailyRange}
                                     onValueChange={(value: Exclude<ApiMonitoringRange, "24h">) => onNavigate({ dailyRange: value })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger aria-label="Daily Provider Calls range">
                                         <SelectValue placeholder="Select Range"/>
                                     </SelectTrigger>
                                     <SelectContent>
@@ -184,11 +189,11 @@ function ApiMonitoringPage() {
                         <CardHeader>
                             <CardTitle>Provider Mix</CardTitle>
                             <CardDescription>
-                                Share, errors, and latency by provider
+                                {selectedProviderRange} · share, errors, and avg. latency
                             </CardDescription>
                             <CardAction>
                                 <Select value={range} onValueChange={(value: ApiMonitoringRange) => onNavigate({ range: value })}>
-                                    <SelectTrigger>
+                                    <SelectTrigger aria-label="Provider Mix range">
                                         <SelectValue placeholder="Select Range"/>
                                     </SelectTrigger>
                                     <SelectContent>
@@ -204,13 +209,15 @@ function ApiMonitoringPage() {
                         <CardContent className="mt-2">
                             <div className="space-y-3">
                                 {apiData.totalsByProvider.length === 0 &&
-                                    <p className="text-sm text-muted-foreground">
-                                        No provider calls yet
-                                    </p>
+                                    <EmptyState
+                                        icon={Radio}
+                                        className="py-4"
+                                        message="No provider calls in this range"
+                                    />
                                 }
                                 {apiData.totalsByProvider.map((row) => {
                                     const count = Number(row.count);
-                                    const pct = apiData.summary.total ? Math.round((count / apiData.summary.total) * 100) : 0;
+                                    const pct = providerMixTotal ? (count / providerMixTotal) * 100 : 0;
 
                                     return (
                                         <div key={row.provider} className="space-y-1 text-sm">
@@ -219,7 +226,7 @@ function ApiMonitoringPage() {
                                                     {row.provider}
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">
-                                                    {formatNumber(count)} ({formatPercent(pct, { fractionDigits: 0 })})
+                                                    {formatNumber(count)} ({formatPercent(pct, { fractionDigits: pct > 0 && pct < 1 ? 1 : 0 })})
                                                 </span>
                                             </div>
                                             <div className="h-2 rounded-full bg-muted">
@@ -229,7 +236,11 @@ function ApiMonitoringPage() {
                                                 />
                                             </div>
                                             <div className="flex justify-between text-xs text-muted-foreground">
-                                                <span>{formatNumber(Number(row.errors))} errors</span>
+                                                <span>
+                                                    {formatNumber(row.errors)}{" "}
+                                                    ({formatPercent((row.errors / (count ?? 1)), { fractionDigits: 3 })}){" "}
+                                                    errors
+                                                </span>
                                                 <span>{formatMs(Number(row.avgDurationMs ?? 0))} avg</span>
                                             </div>
                                         </div>
@@ -239,12 +250,11 @@ function ApiMonitoringPage() {
                         </CardContent>
                     </Card>
                 </div>
-
                 <div className="grid gap-4 grid-cols-7 max-sm:grid-cols-2">
                     <Card className="col-span-3 max-sm:col-span-5">
                         <CardHeader>
                             <CardTitle>Burst Details</CardTitle>
-                            <CardDescription>Selected range peaks</CardDescription>
+                            <CardDescription>All-time traffic peaks and latency</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -279,7 +289,7 @@ function ApiMonitoringPage() {
                     <Card className="col-span-4 max-sm:col-span-5">
                         <CardHeader>
                             <CardTitle>Status Breakdown</CardTitle>
-                            <CardDescription>HTTP status volume</CardDescription>
+                            <CardDescription>All-time HTTP status volume</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -308,7 +318,6 @@ function ApiMonitoringPage() {
                         </CardContent>
                     </Card>
                 </div>
-
                 <Card>
                     <CardHeader>
                         <CardTitle>Recent Provider Rollups</CardTitle>

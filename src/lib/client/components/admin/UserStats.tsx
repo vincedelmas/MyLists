@@ -1,3 +1,4 @@
+import React from "react";
 import {type LucideIcon} from "lucide-react";
 import {Card, CardContent, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 
@@ -18,7 +19,7 @@ export function UserStats({ title, value, description, icon }: UserStatsProps) {
             const IconComponent = icon as React.ComponentType<{ className?: string }>;
             return <IconComponent className="size-5 text-muted-foreground"/>;
         }
-        
+
         return icon;
     };
 

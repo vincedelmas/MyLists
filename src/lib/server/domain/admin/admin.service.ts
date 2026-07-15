@@ -147,8 +147,8 @@ export class AdminService {
             this.repository.getApiCallProviders(),
             this.repository.getApiCallDailyCountsByProvider(dailyDays),
             this.repository.getApiCallTotalsByProvider(selectedDays),
-            this.repository.getApiCallStatusTotals(selectedDays),
-            this.repository.getApiCallSummary(selectedDays),
+            this.repository.getApiCallStatusTotals(),
+            this.repository.getApiCallSummary(),
             this.repository.getRecentApiCalls(recentPage),
             this._getProviderApiRedisSnapshot().catch((err) => {
                 logger.warn({ err }, "Failed to read provider API live Redis snapshot");
@@ -168,12 +168,13 @@ export class AdminService {
             ? this._buildDailySeriesByKey(dailyStartDate, today, providerKeys, countsByKey)
             : [];
 
-        const rangeStart = selectedDays
-            ? Date.now() - (selectedDays * 24 * 60 * 60 * 1000)
-            : summary.firstCallAt ? new Date(summary.firstCallAt).getTime() : null;
+        const firstCallAtMs = summary.firstCallAt ? new Date(summary.firstCallAt).getTime() : null;
+        const firstCallDayMs = summary.firstCallAt ? new Date(summary.firstCallAt).setUTCHours(0, 0, 0, 0) : null;
 
-        const activeSeconds = rangeStart ? Math.max(1, Math.floor((Date.now() - rangeStart) / 1000)) : 0;
-        const activeDays = rangeStart ? Math.max(1, Math.ceil((Date.now() - rangeStart) / (24 * 60 * 60 * 1000))) : 0;
+        const activeSeconds = firstCallAtMs !== null ? Math.max(1, Math.floor((Date.now() - firstCallAtMs) / 1000)) : 0;
+        const activeDays = firstCallDayMs !== null
+            ? Math.max(1, Math.floor((today.getTime() - firstCallDayMs) / (24 * 60 * 60 * 1000)) + 1)
+            : 0;
 
         return {
             daily,
@@ -188,7 +189,7 @@ export class AdminService {
             summary: {
                 ...summary,
                 avgPerDay: summary.total && activeDays ? Math.round((summary.total / activeDays) * 10) / 10 : 0,
-                avgPerSecond: summary.total && activeSeconds ? Math.round((summary.total / activeSeconds) * 10000) / 10000 : 0,
+                avgPerSecond: summary.total && activeSeconds ? summary.total / activeSeconds : 0,
             },
         };
     }

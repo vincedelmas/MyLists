@@ -99,6 +99,12 @@ export class AchievementsRepository {
             })
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
+            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userAchievement.userId),
+                eq(userMediaSettings.mediaType, achievement.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
             .groupBy(userAchievement.achievementId)
             .as("subq");
@@ -128,6 +134,11 @@ export class AchievementsRepository {
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
             .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userAchievement.userId),
+                eq(userMediaSettings.mediaType, achievement.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
             .orderBy(desc(userAchievement.completedAt))
             .limit(limit);
@@ -142,6 +153,12 @@ export class AchievementsRepository {
             .select({ count: count() })
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
+            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userAchievement.userId),
+                eq(userMediaSettings.mediaType, achievement.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(and(
                 forUser,
                 eq(userAchievement.completed, true),
@@ -212,6 +229,11 @@ export class AchievementsRepository {
             })
             .from(achievement)
             .innerJoin(achievementTier, eq(achievement.id, achievementTier.achievementId))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userId),
+                eq(userMediaSettings.mediaType, achievement.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .leftJoin(userAchievement, and(eq(achievementTier.id, userAchievement.tierId), eq(userAchievement.userId, userId)))
             .orderBy(achievement.id, tierOrder);
 

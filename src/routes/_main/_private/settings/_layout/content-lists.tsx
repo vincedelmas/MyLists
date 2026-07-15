@@ -123,7 +123,8 @@ function MediaListFormPage() {
                             <div className="text-sm font-medium mb-2">
                                 Active Content
                                 <div className="text-xs font-normal text-muted-foreground">
-                                    Customize which media types you track. Disabling a list hides it from your profile navigation.
+                                    Disabled media are hidden from your profile, stats, feeds, activity, achievements, etc.
+                                    Your data are kept and returns if you re-enable it.
                                 </div>
                             </div>
                             {mediaTypeConfigs.map((config) => (

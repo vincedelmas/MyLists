@@ -7,6 +7,7 @@ import {ValidationError} from "@/lib/utils/error-classes";
 import {saveUploadedImage} from "@/lib/utils/image-saver";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
 import {
     downloadListAsCsvSchema,
     generalSettingsSchema,
@@ -56,8 +57,9 @@ export const postMediaListSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(mediaListSettingsSchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const userService = await getContainer().then(c => c.services.user);
-        const userStatsService = await getContainer().then(c => c.services.userStats);
+        const container = await getContainer();
+        const userService = container.services.user;
+        const userStatsService = container.services.userStats;
 
         const toUpdateInUserStats: Partial<Record<MediaType, boolean>> = {
             anime: data.anime,
@@ -74,6 +76,9 @@ export const postMediaListSettings = createServerFn({ method: "POST" })
 
         await userService.updateUserSettings(currentUser.id, toUpdateInUser);
         await userStatsService.updateUserMediaListSettings(currentUser.id, toUpdateInUserStats);
+
+        // Re compute user's overview stats
+        await container.cacheManager.del(getUserStatsCacheKey(currentUser.id, "overview"))
     });
 
 

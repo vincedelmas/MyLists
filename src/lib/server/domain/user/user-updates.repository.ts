@@ -4,8 +4,8 @@ import {paginate} from "@/lib/server/database/pagination";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {LogUpdateParams} from "@/lib/types/user-updates.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {followers, user, userMediaUpdate} from "@/lib/server/database/schema";
 import {MediaType, PrivacyType, SocialState, UpdateType} from "@/lib/utils/enums";
+import {followers, user, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
 import {and, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, like, or, SQL, sql} from "drizzle-orm";
 
 
@@ -17,18 +17,37 @@ export class UserUpdatesRepository {
     static readonly updateThresholdSec = 300;
 
     static async getUserUpdates(userId: number, limit = 8) {
-        return getDbClient().query.userMediaUpdate.findMany({
-            where: eq(userMediaUpdate.userId, userId),
-            orderBy: [desc(userMediaUpdate.timestamp)],
-            limit: limit,
-        });
+        return getDbClient()
+            .select({
+                ...getTableColumns(userMediaUpdate),
+            })
+            .from(userMediaUpdate)
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userMediaUpdate.userId),
+                eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
+            .where(eq(userMediaUpdate.userId, userId))
+            .orderBy(desc(userMediaUpdate.timestamp))
+            .limit(limit);
     }
 
     static async getUserUpdatesPaginated(filters: SimpleSearch, userId?: number) {
         const search = filters?.search ?? "";
 
         const baseConditions: SQL[] = [];
-        if (userId !== undefined) baseConditions.push(eq(userMediaUpdate.userId, userId));
+        if (userId !== undefined) {
+            baseConditions.push(
+                eq(userMediaUpdate.userId, userId),
+                inArray(
+                    userMediaUpdate.mediaType,
+                    getDbClient()
+                        .select({ mediaType: userMediaSettings.mediaType })
+                        .from(userMediaSettings)
+                        .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.active, true)))
+                ),
+            );
+        }
         if (search) baseConditions.push(like(userMediaUpdate.mediaName, `%${search}%`));
 
         const queryItems = getDbClient()
@@ -114,6 +133,11 @@ export class UserUpdatesRepository {
             })
             .from(userMediaUpdate)
             .innerJoin(user, eq(userMediaUpdate.userId, user.id))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userMediaUpdate.userId),
+                eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(and(
                 // Limit updates to people User B follows
                 inArray(userMediaUpdate.userId, followedByB),
@@ -135,6 +159,11 @@ export class UserUpdatesRepository {
                 value: count(userMediaUpdate.mediaId).as("value"),
             })
             .from(userMediaUpdate)
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userMediaUpdate.userId),
+                eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .$dynamic();
 
         if (excludeBulkImports) {
@@ -167,8 +196,13 @@ export class UserUpdatesRepository {
 
         if (returnData) {
             return getDbClient()
-                .select()
+                .select({ ...getTableColumns(userMediaUpdate) })
                 .from(userMediaUpdate)
+                .innerJoin(userMediaSettings, and(
+                    eq(userMediaSettings.userId, userMediaUpdate.userId),
+                    eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
+                    eq(userMediaSettings.active, true),
+                ))
                 .where(eq(userMediaUpdate.userId, userId))
                 .orderBy(desc(userMediaUpdate.timestamp))
                 .limit(8).then((res) => res[res.length - 1] ?? null);

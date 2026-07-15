@@ -23,11 +23,10 @@ interface OverviewTabProps {
 
 export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, highlightedMedia }: OverviewTabProps) => {
     const rating = globalStats.avgRated;
+    const distributionTotalDays = perMedia.reduce((total, media) => total + media.timeSpentDays, 0);
+    
     const ratingDisplay = ratingSystem === "score"
-        ? formatNumber(rating, {
-            fractionDigits: 2,
-            locale: "en",
-        })
+        ? formatNumber(rating, { fractionDigits: 2, locale: "en" })
         : getFeelingIcon(rating, { size: 28, className: "mt-1" });
 
     return (
@@ -53,7 +52,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
             </div>
 
             <DistributionContainer label="Time Distribution" icon={Clock}>
-                {globalStats.totalDays === 0 ?
+                {distributionTotalDays === 0 ?
                     <EmptyState
                         icon={ClockAlert}
                         message="No time to display yet."
@@ -61,7 +60,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
                     :
                     <div className="flex w-full gap-0.5 h-5 rounded-sm overflow-hidden bg-background">
                         {perMedia.map((media) => {
-                            const percentage = (media.timeSpentDays / globalStats.totalDays) * 100;
+                            const percentage = (media.timeSpentDays / distributionTotalDays) * 100;
                             if (percentage <= 0) return null;
 
                             return (
@@ -86,7 +85,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
                 }
                 <div className="flex w-full gap-1 mt-1 pb-2">
                     {perMedia.map((media) => {
-                        const percentage = (media.timeSpentDays / globalStats.totalDays) * 100;
+                        const percentage = (media.timeSpentDays / distributionTotalDays) * 100;
 
                         return (
                             <div key={media.mediaType} className="overflow-hidden" style={{ width: `${percentage}%` }}>

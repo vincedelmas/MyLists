@@ -37,6 +37,7 @@ export class UserProfileService {
         const settings = await this.getHighlightedMediaSettings(userId);
 
         const mediaTypes = Object.values(MediaType);
+        const activeMediaTypes = new Set(await this.repository.getActiveMediaTypes(userId));
         const overviewPool: HighlightedMediaResolvedItem[] = [];
         const resolvedTabs: Partial<HighlightedMediaResolvedSettings> = {};
 
@@ -45,6 +46,11 @@ export class UserProfileService {
             const tabConfig = settings[mediaType];
             let tabItems: HighlightedMediaResolvedItem[] = [];
             let poolItems: HighlightedMediaResolvedItem[] = [];
+
+            if (!activeMediaTypes.has(mediaType)) {
+                resolvedTabs[mediaType] = { ...tabConfig, items: [] };
+                return;
+            }
 
             if (tabConfig.mode === "curated") {
                 tabItems = await this._resolveCuratedItems(mediaType, tabConfig.items, userId);
@@ -80,7 +86,8 @@ export class UserProfileService {
             overviewItems = this._shuffle(overviewPool).slice(0, PROFILE_MAX_HIGHLIGHTED_MEDIA);
         }
         else if (overviewConfig.mode === "curated") {
-            overviewItems = await this._resolveCuratedItems("overview", overviewConfig.items, userId);
+            const activeItems = overviewConfig.items.filter((item) => activeMediaTypes.has(item.mediaType));
+            overviewItems = await this._resolveCuratedItems("overview", activeItems, userId);
         }
 
         return {

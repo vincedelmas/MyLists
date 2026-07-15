@@ -300,10 +300,8 @@ export class UserStatsRepository {
     }
 
     static async getAggregatedMediaStats({ userId, mediaType }: { userId?: number, mediaType: MediaType }) {
-        const conditions = [eq(userMediaSettings.mediaType, mediaType)];
-        if (userId) {
-            conditions.push(eq(userMediaSettings.userId, userId));
-        }
+        const conditions = [eq(userMediaSettings.active, true), eq(userMediaSettings.mediaType, mediaType)];
+        if (userId) conditions.push(eq(userMediaSettings.userId, userId));
 
         const stats = getDbClient()
             .select({
@@ -355,7 +353,9 @@ export class UserStatsRepository {
     }
 
     static async getPreComputedStatsSummary({ userId }: { userId?: number }) {
-        const forUser = userId ? eq(userMediaSettings.userId, userId) : undefined;
+        const conditions: SQL[] = [eq(userMediaSettings.active, true)];
+        if (userId) conditions.push(eq(userMediaSettings.userId, userId));
+        const activeSettings = and(...conditions);
 
         const preComputedStats = getDbClient()
             .select({
@@ -369,7 +369,7 @@ export class UserStatsRepository {
                 totalHours: sql<number>`sum(${userMediaSettings.timeSpent}) / 60.0`.mapWith(Number),
             })
             .from(userMediaSettings)
-            .where(forUser)
+            .where(activeSettings)
             .get();
 
         if (!preComputedStats) throw new Error("No stats found");
@@ -377,7 +377,7 @@ export class UserStatsRepository {
         const statusCountsList = await getDbClient()
             .select({ statusCounts: userMediaSettings.statusCounts })
             .from(userMediaSettings)
-            .where(forUser);
+            .where(activeSettings);
 
         const mediaTimeDistribution = await getDbClient()
             .select({
@@ -385,7 +385,7 @@ export class UserStatsRepository {
                 value: sql`sum(${userMediaSettings.timeSpent}) / 60.0`.mapWith(Number),
             })
             .from(userMediaSettings)
-            .where(forUser)
+            .where(activeSettings)
             .groupBy(userMediaSettings.mediaType);
 
         let totalUsers = 0;

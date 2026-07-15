@@ -3,10 +3,10 @@ import {alias} from "drizzle-orm/sqlite-core";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
-import {user, userMediaActivity} from "@/lib/server/database/schema";
+import {user, userMediaActivity, userMediaSettings} from "@/lib/server/database/schema";
 import {LogActivity, PaginatedActivityFilter} from "@/lib/types/activity.types";
 import {dateFromUTCInput, monthBucketFromDateInput} from "@/lib/utils/date-formatting";
-import {and, asc, count, desc, eq, gt, gte, inArray, isNull, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
+import {and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
 
 
 const BULK_IMPORT_GRACE_MONTHS = 2;
@@ -66,6 +66,11 @@ export class UserActivityRepository {
                 specificGained: userMediaActivity.specificGained,
             })
             .from(userMediaActivity)
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userMediaActivity.userId),
+                eq(userMediaSettings.mediaType, userMediaActivity.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(and(
                 eq(userMediaActivity.userId, userId),
                 gt(userMediaActivity.specificGained, 0),
@@ -94,6 +99,11 @@ export class UserActivityRepository {
                 specificGained: sum(userMediaActivity.specificGained).mapWith(Number),
             })
             .from(userMediaActivity)
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userMediaActivity.userId),
+                eq(userMediaSettings.mediaType, userMediaActivity.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .$dynamic();
 
         if (filters.excludeBulkImports) {
@@ -115,6 +125,11 @@ export class UserActivityRepository {
         const rows = await getDbClient()
             .selectDistinct({ mediaType: userMediaActivity.mediaType })
             .from(userMediaActivity)
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userMediaActivity.userId),
+                eq(userMediaSettings.mediaType, userMediaActivity.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(and(
                 eq(userMediaActivity.userId, userId),
                 eq(userMediaActivity.monthBucket, timeBucket),
@@ -176,12 +191,22 @@ export class UserActivityRepository {
         const total = getDbClient()
             .select({ count: count() })
             .from(userMediaActivity)
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userMediaActivity.userId),
+                eq(userMediaSettings.mediaType, userMediaActivity.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(and(...conditions))
             .get()?.count ?? 0;
 
         const items = await getDbClient()
-            .select()
+            .select({ ...getTableColumns(userMediaActivity) })
             .from(userMediaActivity)
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, userMediaActivity.userId),
+                eq(userMediaSettings.mediaType, userMediaActivity.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(and(...conditions))
             .orderBy(desc(userMediaActivity.lastUpdate))
             .limit(pagination.limit)

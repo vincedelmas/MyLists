@@ -18,6 +18,7 @@ import {CollectionsLists} from "@/lib/client/components/media/base/CollectionsLi
 import {MediaFollowsSection} from "@/lib/client/components/media/base/MediaFollowsSection";
 import {MediaCommunityActivity} from "@/lib/client/components/media/base/MediaCommunityActivity";
 import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
+import {DisabledMediaListNotice} from "@/lib/client/components/media/base/DisabledMediaListNotice";
 import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 
@@ -40,10 +41,11 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
 
 
 function MediaDetailsPage() {
-    const { isAnonymous } = useAuth();
+    const { currentUser, isAnonymous } = useAuth();
     const { mediaType, mediaId } = Route.useParams();
     const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsOptions(mediaType, mediaId));
     const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsOptions(mediaType, mediaId)).data;
+    const isMediaTypeActive = currentUser?.settings.some((setting) => setting.mediaType === mediaType && setting.active) ?? false;
 
     const handleAddMediaToUser = () => {
         addMediaToListMutation.mutate({ data: { mediaType, mediaId: media.id } });
@@ -118,7 +120,7 @@ function MediaDetailsPage() {
                                 </a>
                             </Button>
 
-                            {userMedia ?
+                            {userMedia && isMediaTypeActive ?
                                 <UserMediaDetails
                                     mediaType={mediaType}
                                     userMedia={userMedia}
@@ -135,19 +137,24 @@ function MediaDetailsPage() {
                                         progress, add ratings, comments, tags and more."
                                     />
                                     :
-                                    <Card>
-                                        <div className="text-center space-y-2">
-                                            <h3 className="text-lg font-semibold text-slate-200">
-                                                Are you interested in this?
-                                            </h3>
-                                            <p className="text-sm text-muted-foreground">
-                                                Add this {mediaType} to your list to track your progress.
-                                            </p>
-                                        </div>
-                                        <Button className="w-full mt-2" onClick={handleAddMediaToUser}>
-                                            <Plus className="size-4"/> Add to List
-                                        </Button>
-                                    </Card>
+                                    !isMediaTypeActive ?
+                                        <DisabledMediaListNotice
+                                            mediaType={mediaType}
+                                        />
+                                        :
+                                        <Card>
+                                            <div className="text-center space-y-2">
+                                                <h3 className="text-lg font-semibold text-slate-200">
+                                                    Are you interested in this?
+                                                </h3>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Add this {mediaType} to your list to track your progress.
+                                                </p>
+                                            </div>
+                                            <Button className="w-full mt-2" onClick={handleAddMediaToUser}>
+                                                <Plus className="size-4"/> Add to List
+                                            </Button>
+                                        </Card>
                             }
                             <CollectionsLists
                                 mediaId={media.id}

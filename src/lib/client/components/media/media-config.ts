@@ -98,6 +98,7 @@ export type MediaConfig = {
             mediaType: T,
             isCurrent: boolean,
             isConnected: boolean,
+            isMediaTypeActive: boolean,
             allStatuses: Status[],
             rating: React.ReactNode,
             userMedia: ExtractListByType<T>,

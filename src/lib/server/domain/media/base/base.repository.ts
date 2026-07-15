@@ -14,7 +14,7 @@ import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user} from "@/lib/server/database/schema";
+import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user, userMediaSettings} from "@/lib/server/database/schema";
 import {ExpandedListFilters, ExportMediaList, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData} from "@/lib/types/media-list.types";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
 
@@ -260,6 +260,7 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
 
     async getMediaDetailsByIds(mediaIds: number[], userId?: number): Promise<MediaInfo[]> {
         const { mediaTable, listTable } = this.config;
+        const uniqueMediaIds = [...new Set(mediaIds)];
 
         return getDbClient()
             .select({
@@ -272,7 +273,26 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
                 eq(listTable.mediaId, mediaTable.id),
                 userId === undefined ? sql`FALSE` : eq(listTable.userId, userId),
             ))
-            .where(inArray(mediaTable.id, mediaIds)) as unknown as MediaInfo[];
+            .where(inArray(mediaTable.id, uniqueMediaIds)) as unknown as MediaInfo[];
+    }
+
+    async getMediaDurationsByIds(mediaIds: number[]) {
+        const { mediaTable, mediaType } = this.config;
+        const uniqueMediaIds = [...new Set(mediaIds)];
+        if (uniqueMediaIds.length === 0) return [];
+
+        const hasDuration = mediaType === MediaType.SERIES || mediaType === MediaType.ANIME || mediaType === MediaType.MOVIES;
+        const durationColumn = hasDuration
+            ? (mediaTable as typeof mediaTable & { duration: SQL<number> }).duration
+            : sql<number | null>`NULL`;
+
+        return getDbClient()
+            .select({
+                id: mediaTable.id,
+                duration: durationColumn,
+            })
+            .from(mediaTable)
+            .where(inArray(mediaTable.id, uniqueMediaIds));
     }
 
     async getCommonListFilters(userId: number) {
@@ -528,6 +548,11 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
             .from(followers)
             .innerJoin(user, eq(user.id, followers.followedId))
             .innerJoin(listTable, eq(listTable.userId, followers.followedId))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, listTable.userId),
+                eq(userMediaSettings.mediaType, this.config.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED), eq(listTable.mediaId, mediaId)))
             .orderBy(asc(user.name));
 
@@ -566,6 +591,11 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
             })
             .from(listTable)
             .innerJoin(user, eq(user.id, listTable.userId))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, listTable.userId),
+                eq(userMediaSettings.mediaType, this.config.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(conditions)
             .get();
 
@@ -582,6 +612,11 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
             })
             .from(listTable)
             .innerJoin(user, eq(user.id, listTable.userId))
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.userId, listTable.userId),
+                eq(userMediaSettings.mediaType, this.config.mediaType),
+                eq(userMediaSettings.active, true),
+            ))
             .where(conditions)
             .orderBy(desc(sql`COALESCE(${listTable.lastUpdated}, ${listTable.addedAt})`))
             .limit(limit)

@@ -6,7 +6,6 @@ import {anime, animeList, series, seriesList} from "@/lib/server/database/schema
 import {animeAchievements} from "@/lib/server/domain/media/tv/anime/achievements.seed";
 import {seriesAchievements} from "@/lib/server/domain/media/tv/series/achievements.seed";
 import {
-    IMPORT_REDO_MAX,
     importCommentSchema,
     importFavoriteSchema,
     importPositiveProgressSchema,
@@ -16,6 +15,7 @@ import {
     importStatusSchema,
     importTotalSchema
 } from "@/lib/server/domain/imports/import-list-validation";
+import {REDO_MAX} from "@/lib/utils/constants";
 
 
 type Series = typeof series.$inferSelect;
@@ -72,7 +72,7 @@ const tvListSchemaOverrides = (mediaType: TvMediaType) => ({
     currentEpisode: importProgressSchema,
     status: importStatusSchema(mediaType),
     currentSeason: importPositiveProgressSchema,
-    redo2: z.preprocess(parseRedo2, z.array(z.coerce.number().int().min(0).max(IMPORT_REDO_MAX)).optional()),
+    redo2: z.preprocess(parseRedo2, z.array(z.coerce.number().int().min(0).max(REDO_MAX)).optional()),
 });
 
 
@@ -83,13 +83,13 @@ const animeCSVListSchema = createInsertSchema(animeList, tvListSchemaOverrides(M
 const seriesFinalListInsertSchema = createInsertSchema(seriesList, {
     status: importStatusSchema(MediaType.SERIES),
     customCover: z.string().nullable().optional(),
-    redo2: z.array(z.number().int().min(0).max(IMPORT_REDO_MAX)),
+    redo2: z.array(z.number().int().min(0).max(REDO_MAX)),
 });
 
 const animeFinalListInsertSchema = createInsertSchema(animeList, {
     status: importStatusSchema(MediaType.ANIME),
     customCover: z.string().nullable().optional(),
-    redo2: z.array(z.number().int().min(0).max(IMPORT_REDO_MAX)),
+    redo2: z.array(z.number().int().min(0).max(REDO_MAX)),
 });
 
 const seriesImportPayloadSchema = seriesCSVListSchema.omit({

@@ -2,7 +2,8 @@ import * as z from "zod";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
-import {IMPORT_COMMENT_MAX_LENGTH, IMPORT_PLAYTIME_MAX_MINUTES, IMPORT_PROGRESS_MAX, IMPORT_REDO_MAX, importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
+import {importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
+import {COMMENT_MAX_LENGTH, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
 
 
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
@@ -14,7 +15,7 @@ const loggedAtSchema = z.string().trim().pipe(z.iso.date())
     .refine((value) => dateFromUTCInput(value).getTime() <= Date.now(), "Date cannot be in the future.")
     .optional();
 
-const loggedActivityUpdateTypes = new Set<UpdateType>([
+export const loggedActivityUpdateTypes = new Set<UpdateType>([
     UpdateType.TV,
     UpdateType.PAGE,
     UpdateType.REDO,
@@ -90,15 +91,15 @@ export const updateUserMediaSchema = z.object({
         favorite: z.boolean().optional(),
         status: z.enum(Status).optional(),
         platform: z.enum(GamesPlatformsEnum).optional().nullable(),
-        redo: z.number().int().min(0).max(IMPORT_REDO_MAX).optional(),
+        redo: z.number().int().min(0).max(REDO_MAX).optional(),
         rating: z.number().min(0).max(10).optional().nullable(),
-        actualPage: z.number().int().min(0).max(IMPORT_PROGRESS_MAX).optional(),
-        redo2: z.array(z.number().int().min(0).max(IMPORT_REDO_MAX)).optional(),
-        playtime: z.number().min(0).max(IMPORT_PLAYTIME_MAX_MINUTES).optional(),
-        currentSeason: z.number().int().min(1).max(IMPORT_PROGRESS_MAX).optional(),
-        currentChapter: z.number().int().min(0).max(IMPORT_PROGRESS_MAX).optional(),
-        currentEpisode: z.number().int().min(0).max(IMPORT_PROGRESS_MAX).optional(),
-        comment: z.string().max(IMPORT_COMMENT_MAX_LENGTH, `Comment cannot exceed ${IMPORT_COMMENT_MAX_LENGTH} characters`).nullish(),
+        comment: z.string().max(COMMENT_MAX_LENGTH, `Comment cannot exceed ${COMMENT_MAX_LENGTH} characters`).nullish(),
+        actualPage: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
+        currentSeason: z.number().int().min(1).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
+        currentChapter: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
+        currentEpisode: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
+        playtime: z.number().min(0).max(PLAYTIME_MAX_MINUTES, `Playtime cannot exceed ${PLAYTIME_MAX_MINUTES}!`).optional(),
+        redo2: z.array(z.number().int().min(0).max(REDO_MAX, `A season cannot be re-watched more than ${REDO_MAX} times.`)).optional(),
     }).superRefine((data, ctx) => {
         const definedFields = Object.entries(data)
             .filter(([key, value]) => key !== "type" && key !== "loggedAt" && value !== undefined)

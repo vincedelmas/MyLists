@@ -1,9 +1,9 @@
-import {SimpleSearch} from "@/lib/schemas";
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {UpdatePayload} from "@/lib/types/user-media.types";
-import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
+import {MediaType, TagAction} from "@/lib/utils/enums";
+import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {allUpdatesOptions, historyOptions, mediaDetailsOptions, mediaListOptions, profileOptions, tagNamesOptions} from "@/lib/client/react-query/query-options";
 import {
@@ -136,18 +136,9 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
 export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number, queryOption: UserMediaQueryOption, options: UpdateUserMediaMutationOptions = {}) => {
     const queryClient = useQueryClient();
 
-    const activityUpdateTypes = new Set<UpdateType>([
-        UpdateType.TV,
-        UpdateType.PAGE,
-        UpdateType.REDO,
-        UpdateType.STATUS,
-        UpdateType.CHAPTER,
-        UpdateType.PLAYTIME,
-    ]);
-
     return useMutation({
         mutationFn: ({ payload }: UpdatePayload) => {
-            const activityUpdate = activityUpdateTypes.has(payload.type);
+            const activityUpdate = loggedActivityUpdateTypes.has(payload.type);
 
             if (options.backlogMode && !activityUpdate) {
                 throw new FormattedError("Progress only can be edited in backlog mode.");
@@ -158,10 +149,16 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
 
             const payloadWithDate = options.loggedAt && activityUpdate ? { ...payload, loggedAt: options.loggedAt } : payload;
 
+            // Check frontend side
+            const result = updateUserMediaSchema.safeParse({ payload: payloadWithDate, mediaType, mediaId });
+            if (!result.success) {
+                throw new FormattedError(result.error.issues[0].message);
+            }
+
             return postUpdateUserMedia({ data: { payload: payloadWithDate, mediaType, mediaId } });
         },
         onSuccess: async (data, variables) => {
-            const activityUpdate = activityUpdateTypes.has(variables.payload.type);
+            const activityUpdate = loggedActivityUpdateTypes.has(variables.payload.type);
 
             await queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey });
             if (activityUpdate) {

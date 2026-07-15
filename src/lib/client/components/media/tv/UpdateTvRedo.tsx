@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {UpdateType} from "@/lib/utils/enums";
+import {REDO_MAX} from "@/lib/utils/constants";
 import {Button} from "@/lib/client/components/ui/button";
 import {MinusCircle, Pencil, PlusCircle} from "lucide-react";
 import {Separator} from "@/lib/client/components/ui/separator";
@@ -26,11 +27,11 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
     };
 
     const updateSeason = (idx: number, value: number) => {
-        setDraftRedo((prevSeasons) => prevSeasons.map((s, i) => (i === idx ? Math.max(0, s + value) : s)));
+        setDraftRedo(prev => prev.map((s, i) => i === idx ? Math.min(REDO_MAX, Math.max(0, s + value)) : s));
     };
 
     const updateAllSeasons = (value: number) => {
-        setDraftRedo((prevSeasons) => prevSeasons.map((s) => Math.max(0, s + value)));
+        setDraftRedo(prev => prev.map((s) => Math.min(REDO_MAX, Math.max(0, s + value))));
     };
 
     const onUpdateRedoValues = () => {
@@ -61,11 +62,21 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                     <div className="mt-2">
                         <div className="flex justify-between items-center p-2 px-3">
                             <span className="font-semibold">All Seasons</span>
-                            <div className="flex items-center">
-                                <Button variant="ghost" size="icon" onClick={() => updateAllSeasons(-1)} className="mr-2">
+                            <div className="flex gap-3 items-center">
+                                <Button
+                                    size="bare"
+                                    variant="invisible"
+                                    onClick={() => updateAllSeasons(-1)}
+                                    disabled={draftRedo.every((s) => s <= 0)}
+                                >
                                     <MinusCircle className="size-5"/>
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => updateAllSeasons(1)}>
+                                <Button
+                                    size="bare"
+                                    variant="invisible"
+                                    onClick={() => updateAllSeasons(1)}
+                                    disabled={draftRedo.every((s) => s >= REDO_MAX)}
+                                >
                                     <PlusCircle className="size-5"/>
                                 </Button>
                             </div>
@@ -80,11 +91,21 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                         </div>
                                         <div>{season}x</div>
                                     </div>
-                                    <div className="flex items-center">
-                                        <Button variant="ghost" size="icon" onClick={() => updateSeason(idx, -1)} className="mr-2">
+                                    <div className="flex gap-3 items-center">
+                                        <Button
+                                            size="bare"
+                                            variant="invisible"
+                                            disabled={season <= 0}
+                                            onClick={() => updateSeason(idx, -1)}
+                                        >
                                             <MinusCircle className="size-5"/>
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => updateSeason(idx, 1)}>
+                                        <Button
+                                            size="bare"
+                                            variant="invisible"
+                                            disabled={season >= REDO_MAX}
+                                            onClick={() => updateSeason(idx, 1)}
+                                        >
                                             <PlusCircle className="size-5"/>
                                         </Button>
                                     </div>

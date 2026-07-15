@@ -1,7 +1,8 @@
 import {describe, expect, it} from "vitest";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
-import {IMPORT_COMMENT_MAX_LENGTH} from "@/lib/server/domain/imports/import-list-validation";
+
+import {COMMENT_MAX_LENGTH} from "@/lib/utils/constants";
 
 
 const toCsv = (rows: Record<string, string>[]) => {
@@ -300,7 +301,7 @@ describe("parseMyListsCsv", () => {
             total: "1",
             rating: "9",
             favorite: "true",
-            comment: "x".repeat(IMPORT_COMMENT_MAX_LENGTH + 1),
+            comment: "x".repeat(COMMENT_MAX_LENGTH + 1),
             addedAt: "",
             lastUpdated: "",
             customCover: "",
@@ -311,7 +312,7 @@ describe("parseMyListsCsv", () => {
             items: [{
                 status: ImportItemStatus.FAILED,
                 mediaType: MediaType.MOVIES,
-                statusReason: expect.stringContaining(`Comment cannot exceed ${IMPORT_COMMENT_MAX_LENGTH} characters`),
+                statusReason: expect.stringContaining(`Comment cannot exceed ${COMMENT_MAX_LENGTH} characters`),
             }],
         });
     });

@@ -2,20 +2,15 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {BookLibraryEntry, BookLibraryRepository} from "@/lib/server/domain/library/books/book-library.repository";
-import {
-    changeBookStatus,
-    createInitialBookProgress,
-    importBookProgress,
-    replaceBookPage,
-    replaceBookRereads,
-} from "@/lib/server/domain/library/books/book-progress";
+import {changeBookStatus, createInitialBookProgress, importBookProgress, replaceBookPage, replaceBookRereads} from "@/lib/server/domain/library/books/book-progress";
 
 
 const MINUTES_PER_PAGE = 1.7;
 
 
 export class BookLibraryService {
-    constructor(private readonly repository: BookLibraryRepository) {}
+    constructor(private readonly repository: BookLibraryRepository) {
+    }
 
     async add(params: { userId: number; catalogItemId: number; status?: Status; silent?: boolean }) {
         const media = await this.repository.getBookCatalogItem(params.catalogItemId);

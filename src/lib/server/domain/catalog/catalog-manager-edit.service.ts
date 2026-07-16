@@ -18,7 +18,8 @@ export class CatalogManagerEditService {
         private readonly games: GameCatalogAdminRepository,
         private readonly books: BookCatalogAdminRepository,
         private readonly manga: MangaCatalogAdminRepository,
-    ) {}
+    ) {
+    }
 
     async update(kind: MediaType, catalogItemId: number, payload: Record<string, unknown>) {
         const imageCover = await saveCover(kind, payload.imageCover);
@@ -43,13 +44,13 @@ export class CatalogManagerEditService {
         else if (kind === MediaType.MOVIES) {
             updated = await this.movies.updateEditableFields(catalogItemId, {
                 imageCover,
-                originalName: stringValue(payload.originalName),
-                name: stringValue(payload.name) as string | undefined,
-                directorName: stringValue(payload.directorName),
-                releaseDate: stringValue(payload.releaseDate),
-                duration: numberValue(payload.duration, "duration", false),
                 synopsis: stringValue(payload.synopsis),
+                releaseDate: stringValue(payload.releaseDate),
+                originalName: stringValue(payload.originalName),
+                directorName: stringValue(payload.directorName),
+                name: stringValue(payload.name) as string | undefined,
                 budget: numberValue(payload.budget, "budget", true),
+                duration: numberValue(payload.duration, "duration", false),
                 revenue: numberValue(payload.revenue, "revenue", true),
                 tagline: stringValue(payload.tagline),
                 originalLanguage: stringValue(payload.originalLanguage),

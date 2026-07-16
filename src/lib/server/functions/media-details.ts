@@ -176,7 +176,7 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
             throw new FormattedError("Unauthorized to refresh book metadata.");
         }
 
-        const media = await container.features.catalogRefreshCandidates.getItemIdentity(mediaType, mediaId);
+        const media = container.features.catalogRefreshCandidates.getItemIdentity(mediaType, mediaId);
         if (!media) throw new FormattedError("Media not found, cannot refresh metadata.");
 
         if (!isManagerOrAbove && media.lastApiUpdate) {

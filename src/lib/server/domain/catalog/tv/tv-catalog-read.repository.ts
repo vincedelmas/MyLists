@@ -3,58 +3,48 @@ import {JobType} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {
-    catalogGenre,
-    catalogItem,
-    catalogItemGenre,
-    tvActor,
-    tvDetails,
-    tvNetwork,
-    tvSeason,
-    libraryEntry,
-} from "@/lib/server/database/schema";
+import {catalogGenre, catalogItem, catalogItemGenre, libraryEntry, tvActor, tvDetails, tvNetwork, tvSeason,} from "@/lib/server/database/schema";
 
 
 /** Read model for the series/anime catalog using catalog item IDs. */
 export class TvCatalogReadRepository {
-    constructor(private readonly kind: TvMediaType) {}
+    constructor(private readonly kind: TvMediaType) {
+    }
 
     async findDetails(catalogItemId: number) {
-        const details = await getDbClient()
+        const details = getDbClient()
             .select({
-                catalogItemId: catalogItem.id,
                 id: catalogItem.id,
                 name: catalogItem.name,
-                releaseDate: catalogItem.releaseDate,
+                addedAt: catalogItem.addedAt,
+                catalogItemId: catalogItem.id,
+                lockStatus: catalogItem.locked,
                 synopsis: catalogItem.synopsis,
                 imageCover: catalogItem.imageCover,
-                lockStatus: catalogItem.locked,
-                addedAt: catalogItem.addedAt,
-                lastApiUpdate: catalogItem.lastProviderUpdate,
+                releaseDate: catalogItem.releaseDate,
                 apiId: catalogItem.primaryExternalId,
-                originalName: tvDetails.originalName,
-                lastAirDate: tvDetails.lastAirDate,
+                lastApiUpdate: catalogItem.lastProviderUpdate,
                 homepage: tvDetails.homepage,
                 createdBy: tvDetails.createdBy,
-                duration: tvDetails.episodeDurationMinutes,
+                voteCount: tvDetails.voteCount,
+                popularity: tvDetails.popularity,
+                lastAirDate: tvDetails.lastAirDate,
+                voteAverage: tvDetails.voteAverage,
+                originalName: tvDetails.originalName,
                 totalSeasons: tvDetails.totalSeasons,
                 totalEpisodes: tvDetails.totalEpisodes,
                 originCountry: tvDetails.originCountry,
                 prodStatus: tvDetails.productionStatus,
-                voteAverage: tvDetails.voteAverage,
-                voteCount: tvDetails.voteCount,
-                popularity: tvDetails.popularity,
                 seasonToAir: tvDetails.nextEpisodeSeason,
                 episodeToAir: tvDetails.nextEpisodeNumber,
+                duration: tvDetails.episodeDurationMinutes,
                 nextEpisodeToAir: tvDetails.nextEpisodeAirDate,
             })
             .from(catalogItem)
             .innerJoin(tvDetails, eq(tvDetails.catalogItemId, catalogItem.id))
-            .where(and(
-                eq(catalogItem.id, catalogItemId),
-                eq(catalogItem.kind, this.kind),
-            ))
+            .where(and(eq(catalogItem.id, catalogItemId), eq(catalogItem.kind, this.kind)))
             .get();
+
         if (!details) return;
 
         const [actors, genres, networks, epsPerSeason] = await Promise.all([
@@ -82,14 +72,15 @@ export class TvCatalogReadRepository {
         ]);
 
         const { catalogItemId: _, apiId, imageCover, ...media } = details;
+
         return {
             ...media,
-            apiId: Number(apiId),
-            imageCover: getImageUrl(`${this.kind}-covers`, imageCover),
             actors,
             genres,
             networks,
             epsPerSeason,
+            apiId: Number(apiId),
+            imageCover: getImageUrl(`${this.kind}-covers`, imageCover),
             providerData: {
                 name: "TMDB",
                 url: `https://www.themoviedb.org/tv/${apiId}`,
@@ -98,17 +89,19 @@ export class TvCatalogReadRepository {
     }
 
     async findSimilar(catalogItemId: number) {
-        const target = await getDbClient()
+        const target = getDbClient()
             .select({ catalogItemId: catalogItem.id })
             .from(catalogItem)
             .where(and(eq(catalogItem.kind, this.kind), eq(catalogItem.id, catalogItemId)))
             .get();
+
         if (!target) return [];
 
         const targetGenreIds = await getDbClient()
             .select({ genreId: catalogItemGenre.genreId })
             .from(catalogItemGenre)
             .where(eq(catalogItemGenre.catalogItemId, target.catalogItemId));
+
         if (targetGenreIds.length === 0) return [];
 
         return getDbClient()
@@ -126,12 +119,9 @@ export class TvCatalogReadRepository {
                 inArray(catalogItemGenre.genreId, targetGenreIds.map(({ genreId }) => genreId)),
             ))
             .groupBy(catalogItem.id)
-            .orderBy(
-                desc(sql`count(${catalogItemGenre.genreId})`),
-                asc(catalogItem.id),
-            )
+            .orderBy(desc(sql`count(${catalogItemGenre.genreId})`), asc(catalogItem.id))
             .limit(10)
-            .then((rows) => rows.map(({ imageCover, commonGenreCount: _, ...row }) => ({
+            .then(rows => rows.map(({ imageCover, commonGenreCount: _, ...row }) => ({
                 ...row,
                 mediaCover: getImageUrl(`${this.kind}-covers`, imageCover),
             })));
@@ -139,6 +129,7 @@ export class TvCatalogReadRepository {
 
     async getMediaJobDetails(job: JobType, name: string, offset: number, limit: number, viewerId?: number) {
         let matchingIds;
+
         if (job === JobType.ACTOR) {
             matchingIds = getDbClient()
                 .select({ catalogItemId: tvActor.catalogItemId })
@@ -161,16 +152,14 @@ export class TvCatalogReadRepository {
             return { items: [], total: 0, pages: 0 };
         }
 
-        const conditions = and(
-            eq(catalogItem.kind, this.kind),
-            inArray(catalogItem.id, matchingIds),
-        );
+        const conditions = and(eq(catalogItem.kind, this.kind), inArray(catalogItem.id, matchingIds));
+
         const [rows, totalRow] = await Promise.all([
             getDbClient()
                 .select({
-                    catalogItemId: catalogItem.id,
                     mediaId: catalogItem.id,
                     mediaName: catalogItem.name,
+                    catalogItemId: catalogItem.id,
                     imageCover: catalogItem.imageCover,
                     releaseDate: catalogItem.releaseDate,
                 })
@@ -185,24 +174,27 @@ export class TvCatalogReadRepository {
                 .where(conditions)
                 .get(),
         ]);
+
         const catalogItemIds = rows.map(({ catalogItemId }) => catalogItemId);
+
         const viewerEntries = viewerId && catalogItemIds.length > 0
             ? await getDbClient()
                 .select({ catalogItemId: libraryEntry.catalogItemId })
                 .from(libraryEntry)
                 .where(and(eq(libraryEntry.userId, viewerId), inArray(libraryEntry.catalogItemId, catalogItemIds)))
             : [];
-        const viewerCatalogIds = new Set(viewerEntries.map(({ catalogItemId }) => catalogItemId));
+
         const total = totalRow?.value ?? 0;
+        const viewerCatalogIds = new Set(viewerEntries.map(({ catalogItemId }) => catalogItemId));
 
         return {
-            items: rows.map(({ catalogItemId, imageCover, ...row }) => ({
-                ...row,
-                imageCover: getImageUrl(`${this.kind}-covers`, imageCover),
-                inUserList: viewerCatalogIds.has(catalogItemId),
-            })),
             total,
             pages: Math.ceil(total / limit),
+            items: rows.map(({ catalogItemId, imageCover, ...row }) => ({
+                ...row,
+                inUserList: viewerCatalogIds.has(catalogItemId),
+                imageCover: getImageUrl(`${this.kind}-covers`, imageCover),
+            })),
         };
     }
 }

@@ -9,7 +9,7 @@ import {MediaType} from "@/lib/utils/enums";
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
-const {CatalogRefreshCandidateRepository} = await import("./catalog-refresh-candidate.repository");
+const { CatalogRefreshCandidateRepository } = await import("./catalog-refresh-candidate.repository");
 
 
 describe("normalized catalog refresh candidates", () => {
@@ -76,19 +76,17 @@ describe("normalized catalog refresh candidates", () => {
 });
 
 
-const catalog = (
-    id: number,
-    kind: MediaType,
-    overrides: Partial<typeof schema.catalogItem.$inferInsert> = {},
-) => ({
-    id,
-    kind,
-    primaryProvider: providerFor(kind),
-    primaryExternalId: String(id),
-    name: `${kind}-${id}`,
-    imageCover: `${id}.jpg`,
-    ...overrides,
-});
+const catalog = (id: number, kind: MediaType, overrides: Partial<typeof schema.catalogItem.$inferInsert> = {}) => {
+    return ({
+        id,
+        kind,
+        primaryProvider: providerFor(kind),
+        primaryExternalId: String(id),
+        name: `${kind}-${id}`,
+        imageCover: `${id}.jpg`,
+        ...overrides,
+    });
+}
 
 
 const providerFor = (kind: MediaType) => {

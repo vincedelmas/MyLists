@@ -1,8 +1,8 @@
+import {JobType} from "@/lib/utils/enums";
+import {Pagination, SearchType} from "@/lib/schemas";
 import {TvMediaType} from "@/lib/types/media-kind.types";
 import {TvCatalogReadRepository} from "@/lib/server/domain/catalog/tv/tv-catalog-read.repository";
 import {TvLibraryReadRepository} from "@/lib/server/domain/library/tv/tv-library-read.repository";
-import {JobType} from "@/lib/utils/enums";
-import {Pagination, SearchType} from "@/lib/schemas";
 
 
 /** Complete read boundary for the series/anime detail page. */

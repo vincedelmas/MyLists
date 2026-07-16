@@ -1,7 +1,7 @@
-import {and, eq, gte, inArray, isNotNull, isNull, lte, or, sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {catalogItem, mangaDetails, tvDetails} from "@/lib/server/database/schema";
+import {and, eq, gte, inArray, isNotNull, isNull, lte, or, sql} from "drizzle-orm";
 
 
 type TvKind = typeof MediaType.SERIES | typeof MediaType.ANIME;
@@ -14,7 +14,10 @@ type TvKind = typeof MediaType.SERIES | typeof MediaType.ANIME;
 export class CatalogRefreshCandidateRepository {
     getItemIdentity(kind: MediaType, catalogItemId: number) {
         return getDbClient()
-            .select({ apiId: catalogItem.primaryExternalId, lastApiUpdate: catalogItem.lastProviderUpdate })
+            .select({
+                apiId: catalogItem.primaryExternalId,
+                lastApiUpdate: catalogItem.lastProviderUpdate,
+            })
             .from(catalogItem)
             .where(and(eq(catalogItem.id, catalogItemId), eq(catalogItem.kind, kind)))
             .get();
@@ -22,12 +25,14 @@ export class CatalogRefreshCandidateRepository {
 
     async getTvCandidateApiIds(kind: TvKind, changedApiIds: (number | string)[]) {
         const changedExternalIds = changedApiIds.map(String);
+
         const changedAndStale = changedExternalIds.length > 0
             ? and(
                 inArray(catalogItem.primaryExternalId, changedExternalIds),
                 lte(catalogItem.lastProviderUpdate, sql`datetime('now', '-1 day')`),
             )
             : undefined;
+
         const episodeHasAired = and(
             isNotNull(tvDetails.nextEpisodeAirDate),
             lte(tvDetails.nextEpisodeAirDate, sql`date('now')`),
@@ -41,30 +46,25 @@ export class CatalogRefreshCandidateRepository {
                 eq(catalogItem.kind, kind),
                 eq(catalogItem.locked, false),
                 changedAndStale ? or(changedAndStale, episodeHasAired) : episodeHasAired,
-            ));
+            )).then(rows => rows.map(row => Number(row.externalId)));
 
-        return numericExternalIds(rows);
+        return rows;
     }
 
     async getMovieCandidateApiIds() {
-        const rows = await getDbClient()
+        return getDbClient()
             .select({ externalId: catalogItem.primaryExternalId })
             .from(catalogItem)
             .where(and(
-                eq(catalogItem.kind, MediaType.MOVIES),
                 eq(catalogItem.locked, false),
+                eq(catalogItem.kind, MediaType.MOVIES),
                 lte(catalogItem.lastProviderUpdate, sql`datetime('now', '-2 days')`),
-                or(
-                    isNull(catalogItem.releaseDate),
-                    gte(catalogItem.releaseDate, sql`date('now', '-6 months')`),
-                ),
-            ));
-
-        return numericExternalIds(rows);
+                or(isNull(catalogItem.releaseDate), gte(catalogItem.releaseDate, sql`date('now', '-6 months')`)),
+            )).then(rows => rows.map(row => Number(row.externalId)))
     }
 
     async getGameCandidateApiIds() {
-        const rows = await getDbClient()
+        return getDbClient()
             .select({ externalId: catalogItem.primaryExternalId })
             .from(catalogItem)
             .where(and(
@@ -75,13 +75,11 @@ export class CatalogRefreshCandidateRepository {
                     isNull(catalogItem.releaseDate),
                     gte(catalogItem.releaseDate, sql`date('now')`),
                 ),
-            ));
-
-        return numericExternalIds(rows);
+            )).then(rows => rows.map(row => Number(row.externalId)))
     }
 
     async getMangaCandidateApiIds() {
-        const rows = await getDbClient()
+        return getDbClient()
             .select({ externalId: catalogItem.primaryExternalId })
             .from(catalogItem)
             .innerJoin(mangaDetails, eq(mangaDetails.catalogItemId, catalogItem.id))
@@ -94,13 +92,6 @@ export class CatalogRefreshCandidateRepository {
                     gte(catalogItem.releaseDate, sql`date('now')`),
                     inArray(mangaDetails.productionStatus, ["Publishing", "On Hiatus"]),
                 ),
-            ));
-
-        return numericExternalIds(rows);
+            )).then(rows => rows.map(row => Number(row.externalId)))
     }
 }
-
-
-const numericExternalIds = (rows: { externalId: string }[]) => rows
-    .map(({ externalId }) => Number(externalId))
-    .filter(Number.isFinite);

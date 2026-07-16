@@ -19,15 +19,12 @@ export class ProfileHighlightsReadService {
         private readonly repository = ProfileHighlightsRepository,
         private readonly settingsRepository = UserProfileRepository,
         private readonly random: () => number = Math.random,
-    ) {}
-
-    async getHighlightedMediaSettings(userId: number) {
-        return this.resolveSettingsDefaults(await this.settingsRepository.getHighlightedMediaSettings(userId));
+    ) {
     }
 
     async resolveHighlightedMedia(userId: number) {
-        const settings = await this.getHighlightedMediaSettings(userId);
         const mediaTypes = Object.values(MediaType);
+        const settings = this.resolveSettingsDefaults(await this.settingsRepository.getHighlightedMediaSettings(userId));
         const activeMediaTypes = new Set(await this.repository.getActiveMediaTypes(userId));
         const overviewPool: HighlightedMediaResolvedItem[] = [];
         const resolvedTabs: Partial<HighlightedMediaResolvedSettings> = {};

@@ -3,14 +3,19 @@ import {SocialGraphRepository} from "@/lib/server/domain/social/social-graph.rep
 
 
 export class SocialGraphReadService {
-    constructor(private readonly repository = new SocialGraphRepository()) {}
+    constructor(private readonly repository = new SocialGraphRepository()) {
+    }
 
     getPublicHeader(ownerId: number, viewerId?: number) {
+        const { followersCount, followsCount } = this.repository.getCounts(ownerId);
+        const followStatus = (viewerId === ownerId || viewerId === undefined)
+            ? undefined
+            : this.repository.getFollowingStatus(viewerId, ownerId);
+        
         return {
-            ...this.repository.getCounts(ownerId),
-            followStatus: viewerId === ownerId || viewerId === undefined
-                ? undefined
-                : this.repository.getFollowingStatus(viewerId, ownerId),
+            followsCount,
+            followStatus,
+            followersCount,
         };
     }
 

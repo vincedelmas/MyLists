@@ -1,18 +1,12 @@
+import {MediaType} from "@/lib/utils/enums";
 import {and, eq, inArray, sql} from "drizzle-orm";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaIngestionRepository} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertMovieWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
-import {MovieLibraryRepository} from "@/lib/server/domain/library/movies/movie-library.repository";
 import {MovieLibraryService} from "@/lib/server/domain/library/movies/movie-library.service";
-import {
-    catalogGenre,
-    catalogItem,
-    catalogItemGenre,
-    movieActor,
-    movieDetails,
-} from "@/lib/server/database/schema";
-import {MediaType} from "@/lib/utils/enums";
+import {MovieLibraryRepository} from "@/lib/server/domain/library/movies/movie-library.repository";
+import {catalogGenre, catalogItem, catalogItemGenre, movieActor, movieDetails,} from "@/lib/server/database/schema";
 
 
 /** Adapter from the retained TMDB movie transformer into the concrete movie catalog. */

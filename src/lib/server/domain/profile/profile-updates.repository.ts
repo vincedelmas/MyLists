@@ -1,22 +1,14 @@
-import {alias} from "drizzle-orm/sqlite-core";
 import {SimpleSearch} from "@/lib/schemas";
-import {MediaType, PrivacyType, SocialState} from "@/lib/utils/enums";
-import {getDbClient} from "@/lib/server/database/async-storage";
+import {alias} from "drizzle-orm/sqlite-core";
 import {paginate} from "@/lib/server/database/pagination";
-import {
-    catalogItem,
-    followers,
-    libraryChange,
-    libraryEntry,
-    profileMediaChannel,
-    user,
-} from "@/lib/server/database/schema";
+import {getDbClient} from "@/lib/server/database/async-storage";
+import {MediaType, PrivacyType, SocialState} from "@/lib/utils/enums";
 import {and, count, desc, eq, gt, gte, inArray, like, or, SQL, sql} from "drizzle-orm";
+import {catalogItem, followers, libraryChange, libraryEntry, profileMediaChannel, user} from "@/lib/server/database/schema";
 
 
 const BULK_IMPORT_GRACE_MONTHS = 2;
 const BULK_IMPORT_UPDATE_THRESHOLD = 200;
-const mediaName = sql<string>`coalesce(${libraryChange.mediaNameSnapshot}, ${catalogItem.name})`;
 
 
 export class ProfileUpdatesRepository {
@@ -28,29 +20,34 @@ export class ProfileUpdatesRepository {
             ))
             .orderBy(desc(libraryChange.occurredAt))
             .limit(limit);
+
         return rows.map(toLegacyUpdate);
     }
 
     static async getUserUpdatesPaginated(filters: SimpleSearch, userId?: number) {
         const conditions: SQL[] = [];
+
         if (userId !== undefined) {
             conditions.push(eq(libraryEntry.userId, userId), eq(profileMediaChannel.enabled, true));
         }
-        if (filters.search) conditions.push(like(mediaName, `%${filters.search}%`));
+        if (filters.search) {
+            conditions.push(like(sql<string>`coalesce(${libraryChange.mediaNameSnapshot}, ${catalogItem.name})`, `%${filters.search}%`));
+        }
+
         const where = conditions.length > 0 ? and(...conditions) : undefined;
 
         const { items, total } = await paginate({
             page: filters.page,
             perPage: filters.perPage,
-            getTotal: () => getDbClient().select({ value: count() })
+            getTotal: () => getDbClient()
+                .select({ value: count() })
                 .from(libraryChange)
                 .innerJoin(libraryEntry, eq(libraryEntry.id, libraryChange.libraryEntryId))
                 .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
                 .innerJoin(profileMediaChannel, and(
                     eq(profileMediaChannel.userId, libraryEntry.userId),
                     eq(profileMediaChannel.kind, catalogItem.kind),
-                ))
-                .where(where).get()?.value ?? 0,
+                )).where(where).get()?.value ?? 0,
             getItems: async ({ limit, offset }) => {
                 const rows = await baseUpdateQuery(userId === undefined)
                     .where(where)
@@ -60,33 +57,40 @@ export class ProfileUpdatesRepository {
                 return rows.map(toLegacyUpdate);
             },
         });
+        
         return { total, items };
     }
 
     static async getFollowsUpdates(profileOwnerId: number, visitorId?: number, limit = 10) {
-        const followedByOwner = getDbClient().select({ id: followers.followedId })
-            .from(followers)
-            .where(and(eq(followers.followerId, profileOwnerId), eq(followers.status, SocialState.ACCEPTED)));
         const privacyConditions: SQL[] = [eq(user.privacy, PrivacyType.PUBLIC)];
+
         if (visitorId !== undefined) {
-            const followedByVisitor = getDbClient().select({ id: followers.followedId })
+            const followedByVisitor = getDbClient()
+                .select({ id: followers.followedId })
                 .from(followers)
                 .where(and(eq(followers.followerId, visitorId), eq(followers.status, SocialState.ACCEPTED)));
+
             privacyConditions.push(
-                eq(user.privacy, PrivacyType.RESTRICTED),
                 eq(user.id, visitorId),
+                eq(user.privacy, PrivacyType.RESTRICTED),
                 and(eq(user.privacy, PrivacyType.PRIVATE), inArray(user.id, followedByVisitor))!,
             );
         }
 
+        const followedByOwner = getDbClient()
+            .select({ id: followers.followedId })
+            .from(followers)
+            .where(and(eq(followers.followerId, profileOwnerId), eq(followers.status, SocialState.ACCEPTED)));
+
         const rows = await baseUpdateQuery(true)
             .where(and(
-                inArray(libraryEntry.userId, followedByOwner),
                 or(...privacyConditions),
                 eq(profileMediaChannel.enabled, true),
+                inArray(libraryEntry.userId, followedByOwner),
             ))
             .orderBy(desc(libraryChange.occurredAt))
             .limit(limit);
+
         return rows.map(toLegacyUpdate);
     }
 
@@ -105,11 +109,7 @@ export class ProfileUpdatesRepository {
         return remaining.at(-1) ?? null;
     }
 
-    static async mediaUpdatesStatsPerMonth(filters: {
-        userId?: number;
-        mediaType?: MediaType;
-        excludeBulkImports?: boolean;
-    }) {
+    static async mediaUpdatesStatsPerMonth(filters: { userId?: number; mediaType?: MediaType; excludeBulkImports?: boolean }) {
         const conditions: SQL[] = [eq(profileMediaChannel.enabled, true)];
         if (filters.userId !== undefined) conditions.push(eq(libraryEntry.userId, filters.userId));
         if (filters.mediaType !== undefined) conditions.push(eq(catalogItem.kind, filters.mediaType));
@@ -165,21 +165,18 @@ export class ProfileUpdatesRepository {
 }
 
 
-const updateSelection = (includeUsername: boolean) => ({
-    ...(includeUsername ? { username: user.name } : {}),
-    id: libraryChange.id,
-    userId: libraryEntry.userId,
-    mediaId: catalogItem.id,
-    mediaName,
-    mediaType: catalogItem.kind,
-    updateType: libraryChange.updateType,
-    payload: libraryChange.payload,
-    timestamp: libraryChange.occurredAt,
-});
-
-
 const baseUpdateQuery = (includeUsername = false) => getDbClient()
-    .select(updateSelection(includeUsername))
+    .select({
+        id: libraryChange.id,
+        mediaId: catalogItem.id,
+        userId: libraryEntry.userId,
+        mediaType: catalogItem.kind,
+        payload: libraryChange.payload,
+        timestamp: libraryChange.occurredAt,
+        updateType: libraryChange.updateType,
+        mediaName: sql<string>`coalesce(${libraryChange.mediaNameSnapshot}, ${catalogItem.name})`,
+        ...(includeUsername ? { username: user.name } : {}),
+    })
     .from(libraryChange)
     .innerJoin(libraryEntry, eq(libraryEntry.id, libraryChange.libraryEntryId))
     .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
@@ -191,10 +188,8 @@ const baseUpdateQuery = (includeUsername = false) => getDbClient()
     .$dynamic();
 
 
-const toLegacyUpdate = <T extends {
-    id: number;
-    payload: { oldValue?: unknown; newValue?: unknown; old_value?: unknown; new_value?: unknown } | null;
-}>(row: T) => {
+// TODO: Clean there are old_value and oldValue in db !
+const toLegacyUpdate = <T extends { id: number; payload: { oldValue?: unknown; newValue?: unknown; old_value?: unknown; new_value?: unknown } | null }>(row: T) => {
     const { payload, ...rest } = row;
     return {
         ...rest,

@@ -372,17 +372,6 @@ export class UserRepository {
         return getDbClient().select().from(user).where(eq(user.id, userId)).get();
     }
 
-    static async hasActiveMediaType(userId: number, mediaType: MediaType) {
-        const setting = await getDbClient().select({ kind: profileMediaChannel.kind })
-            .from(profileMediaChannel).where(and(
-                eq(profileMediaChannel.userId, userId),
-                eq(profileMediaChannel.kind, mediaType),
-                eq(profileMediaChannel.enabled, true),
-            )).get();
-
-        return !!setting;
-    }
-
     static async incrementMediaTypeView(userId: number, mediaType: MediaType) {
         return getDbClient().update(profileMediaChannel)
             .set({ views: sql`${profileMediaChannel.views} + 1` })

@@ -1,11 +1,6 @@
 import {AchievementDifficulty} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {
-    achievement,
-    achievementTier,
-    profileMediaChannel,
-    userAchievement,
-} from "@/lib/server/database/schema";
+import {achievement, achievementTier, profileMediaChannel, userAchievement,} from "@/lib/server/database/schema";
 import {and, count, desc, eq, inArray, max, sql} from "drizzle-orm";
 
 
@@ -54,13 +49,14 @@ export class AchievementsReadRepository {
     }
 
     static getAchievementsDetails(userId: number, limit = 3) {
-        return getDbClient().select({
-            id: achievement.id,
-            name: achievement.name,
-            description: achievement.description,
-            difficulty: achievementTier.difficulty,
-            completedAt: userAchievement.completedAt,
-        }).from(userAchievement)
+        return getDbClient()
+            .select({
+                id: achievement.id,
+                name: achievement.name,
+                description: achievement.description,
+                difficulty: achievementTier.difficulty,
+                completedAt: userAchievement.completedAt,
+            }).from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
             .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
             .innerJoin(profileMediaChannel, and(

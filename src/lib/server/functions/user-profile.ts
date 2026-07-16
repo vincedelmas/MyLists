@@ -1,7 +1,7 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {simpleSearchUsernameSchema} from "@/lib/schemas";
+import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {authorizationMiddleware, resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
 
 
@@ -16,12 +16,11 @@ export const getUserProfileHeader = createServerFn({ method: "GET" })
 export const getUserProfile = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .handler(async ({ context: { currentUser, user, libraryAccessScope } }) => {
-        const targetUserId = user.id;
         const container = await getContainer();
         const userService = container.services.user;
 
-        if (currentUser && currentUser.id !== targetUserId) {
-            await userService.incrementProfileView(targetUserId);
+        if (currentUser && currentUser.id !== user.id) {
+            await userService.incrementProfileView(user.id);
         }
 
         return container.features.profileReader.getOverview(user, currentUser?.id, libraryAccessScope);
@@ -44,7 +43,7 @@ export const getUsersFollowers = createServerFn({ method: "GET" })
     });
 
 
-export const getAllUpdatesHistory = createServerFn({ method: "GET" })
+export const getAllFeedsHistory = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .validator(simpleSearchUsernameSchema)
     .handler(async ({ data, context: { user } }) => {

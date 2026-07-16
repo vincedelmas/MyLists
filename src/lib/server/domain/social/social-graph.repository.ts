@@ -1,8 +1,8 @@
 import {alias} from "drizzle-orm/sqlite-core";
-import {and, asc, eq, sql} from "drizzle-orm";
 import {SocialState} from "@/lib/utils/enums";
-import {getDbClient} from "@/lib/server/database/async-storage";
+import {and, asc, count, eq, sql} from "drizzle-orm";
 import {followers, user} from "@/lib/server/database/schema";
+import {getDbClient} from "@/lib/server/database/async-storage";
 
 
 export class SocialGraphRepository {
@@ -43,28 +43,32 @@ export class SocialGraphRepository {
     }
 
     getFollowingStatus(followerId: number, followedId: number) {
-        return getDbClient().select().from(followers).where(and(
-            eq(followers.followerId, followerId),
-            eq(followers.followedId, followedId),
-        )).get();
+        return getDbClient()
+            .select()
+            .from(followers)
+            .where(and(eq(followers.followerId, followerId), eq(followers.followedId, followedId)))
+            .get();
     }
 
     getCounts(userId: number) {
-        const followsCount = getDbClient().select({ value: sql<number>`count()` })
-            .from(followers).where(and(
-                eq(followers.followerId, userId),
-                eq(followers.status, SocialState.ACCEPTED),
-            )).get()?.value ?? 0;
-        const followersCount = getDbClient().select({ value: sql<number>`count()` })
-            .from(followers).where(and(
-                eq(followers.followedId, userId),
-                eq(followers.status, SocialState.ACCEPTED),
-            )).get()?.value ?? 0;
+        const followsCount = getDbClient()
+            .select({ value: count() })
+            .from(followers)
+            .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED)))
+            .get()?.value ?? 0;
+
+        const followersCount = getDbClient()
+            .select({ value: count() })
+            .from(followers)
+            .where(and(eq(followers.followedId, userId), eq(followers.status, SocialState.ACCEPTED)))
+            .get()?.value ?? 0;
+
         return { followersCount, followsCount };
     }
 
     async getFollowers(viewerId: number | undefined, ownerId: number, limit = 8) {
         const viewerRelationships = alias(followers, "viewerFollowerRelationships");
+
         const rows = await getDbClient().select({
             id: user.id,
             image: user.image,
@@ -86,32 +90,33 @@ export class SocialGraphRepository {
             ))
             .orderBy(asc(user.name))
             .limit(limit);
+
         return { followers: rows };
     }
 
     async getFollows(viewerId: number | undefined, ownerId: number, limit = 8) {
         const viewerRelationships = alias(followers, "viewerFollowedRelationships");
-        const rows = await getDbClient().select({
-            id: user.id,
-            image: user.image,
-            username: user.name,
-            privacy: user.privacy,
-            myFollowStatus: sql<SocialState | null>`CASE
+
+        const rows = await getDbClient()
+            .select({
+                id: user.id,
+                image: user.image,
+                username: user.name,
+                privacy: user.privacy,
+                myFollowStatus: sql<SocialState | null>`CASE
                 WHEN ${viewerRelationships.followerId} IS NOT NULL THEN ${viewerRelationships.status}
-                ELSE NULL
-            END`,
-        }).from(followers)
+                    ELSE NULL
+                END`,
+            }).from(followers)
             .innerJoin(user, eq(followers.followedId, user.id))
             .leftJoin(viewerRelationships, and(
                 eq(viewerRelationships.followedId, user.id),
                 eq(viewerRelationships.followerId, viewerId ?? -1),
             ))
-            .where(and(
-                eq(followers.followerId, ownerId),
-                eq(followers.status, SocialState.ACCEPTED),
-            ))
+            .where(and(eq(followers.followerId, ownerId), eq(followers.status, SocialState.ACCEPTED)))
             .orderBy(asc(user.name))
             .limit(limit);
+
         return { follows: rows };
     }
 }

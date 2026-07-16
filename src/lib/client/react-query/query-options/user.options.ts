@@ -6,7 +6,7 @@ import {HighlightedMediaTab} from "@/lib/types/profile-custom.types";
 import {getPlatformStats} from "@/lib/server/functions/platform-stats";
 import {getUserAchievements} from "@/lib/server/functions/user-achievements";
 import {getProfileCustomSearch, getProfileCustomSettings} from "@/lib/server/functions/user-settings";
-import {getAllUpdatesHistory, getUserProfile, getUserProfileHeader, getUsersFollowers, getUsersFollows} from "@/lib/server/functions/user-profile";
+import {getAllFeedsHistory, getUserProfile, getUserProfileHeader, getUsersFollowers, getUsersFollows} from "@/lib/server/functions/user-profile";
 import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
 
 
@@ -59,7 +59,7 @@ export const followsOptions = (username: string) => queryOptions({
 
 export const allUpdatesOptions = (username: string, filters: SimpleSearch) => queryOptions({
     queryKey: viewerScopedKey(["allUpdates", username, filters]),
-    queryFn: () => getAllUpdatesHistory({ data: { ...filters, username } }),
+    queryFn: () => getAllFeedsHistory({ data: { ...filters, username } }),
 });
 
 

@@ -6,11 +6,6 @@ export type LibraryActor = {
     role: RoleType;
 };
 
-export type LibraryOwner = {
-    id: number;
-    privacy: PrivacyType;
-};
-
 type LibraryAccessReason = "owner" | "administrator" | "public" | "member" | "follower";
 
 export type LibraryAccessScope = {
@@ -28,41 +23,81 @@ type MediaListAccessDeniedReason =
     | "media_type_disabled";
 
 
+interface DecideLibraryAccessParams {
+    actor?: LibraryActor | null;
+    followState?: SocialState | null;
+    owner: {
+        id: number;
+        privacy: PrivacyType;
+    };
+}
+
+
 /**
  * Resolves access to a user's private library-derived surfaces. Public profile
  * headers and collections deliberately do not use this policy.
  */
-export const decideLibraryAccess = ({
-    actor,
-    owner,
-    followState,
-}: {
-    actor?: LibraryActor;
-    owner: LibraryOwner;
-    followState?: SocialState | null;
-}): LibraryAccessDecision => {
+export const decideLibraryAccess = ({ actor, owner, followState }: DecideLibraryAccessParams): LibraryAccessDecision => {
     if (actor?.id === owner.id) {
-        return { allowed: true, scope: { actorId: actor.id, ownerId: owner.id, reason: "owner" } };
+        return {
+            allowed: true,
+            scope: {
+                reason: "owner",
+                actorId: actor.id,
+                ownerId: owner.id,
+            }
+        };
     }
 
     if (actor?.role === RoleType.ADMIN) {
-        return { allowed: true, scope: { actorId: actor.id, ownerId: owner.id, reason: "administrator" } };
+        return {
+            allowed: true,
+            scope: {
+                actorId: actor.id,
+                ownerId: owner.id,
+                reason: "administrator",
+            }
+        };
     }
 
     if (owner.privacy === PrivacyType.PUBLIC) {
-        return { allowed: true, scope: { actorId: actor?.id, ownerId: owner.id, reason: "public" } };
+        return {
+            allowed: true,
+            scope: {
+                reason: "public",
+                ownerId: owner.id,
+                actorId: actor?.id,
+            }
+        };
     }
 
     if (!actor) {
-        return { allowed: false, reason: "authentication_required" };
+        return {
+            allowed: false,
+            reason: "authentication_required",
+        };
     }
 
     if (owner.privacy === PrivacyType.RESTRICTED) {
-        return { allowed: true, scope: { actorId: actor.id, ownerId: owner.id, reason: "member" } };
+        return {
+            allowed: true,
+            scope: {
+                reason: "member",
+                actorId: actor.id,
+                ownerId: owner.id,
+            }
+        };
     }
 
     if (followState === SocialState.ACCEPTED) {
-        return { allowed: true, scope: { actorId: actor.id, ownerId: owner.id, reason: "follower" } };
+        return {
+            allowed: true,
+            scope: {
+                actorId: actor.id,
+                ownerId: owner.id,
+                reason: "follower"
+            }
+        };
     }
 
     return { allowed: false, reason: "follow_required" };

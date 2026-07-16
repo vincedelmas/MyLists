@@ -19,6 +19,7 @@ type DeleteUserAccountPayload =
 
 export class UserService {
     private readonly profileChannels = new ProfileChannelAccessRepository();
+
     constructor(
         private repository: typeof UserRepository,
         private inactiveAccountService: InactiveAccountService,
@@ -160,10 +161,6 @@ export class UserService {
 
     async updateFeatureFlag(userId: number) {
         return this.repository.updateFeatureFlag(userId);
-    }
-
-    async hasActiveMediaType(userId: number, mediaType: MediaType) {
-        return this.repository.hasActiveMediaType(userId, mediaType);
     }
 
     async getUserByUsername(username: string) {

@@ -4,6 +4,7 @@ import {customJson} from "@/lib/server/database/custom-types";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {ApiProviderType, ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
+import {catalogItem} from "@/lib/server/database/schema/catalog.schema";
 
 
 export const importJobs = sqliteTable("import_jobs", {
@@ -36,7 +37,7 @@ export const importItems = sqliteTable("import_items", {
     statusReason: text("status_reason"),
     externalApiId: text("external_api_id"),
     rowNumber: integer("row_number").notNull(),
-    matchedMediaId: integer("matched_media_id"),
+    matchedMediaId: integer("matched_media_id").references(() => catalogItem.id, { onDelete: "set null" }),
     mediaType: text("media_type").$type<MediaType>(),
     payload: customJson<Record<string, any>>("payload_json").notNull(),
     externalApiSource: text("external_api_source").$type<ApiProviderType>(),

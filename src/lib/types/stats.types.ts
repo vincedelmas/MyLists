@@ -1,49 +1,22 @@
-import {SQL} from "drizzle-orm";
-import {TvService} from "@/lib/server/domain/media/tv";
-import {MangaService} from "@/lib/server/domain/media/manga";
-import {GamesService} from "@/lib/server/domain/media/games";
-import {BooksService} from "@/lib/server/domain/media/books";
-import {MoviesService} from "@/lib/server/domain/media/movies";
-import {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
-import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import {UserActivityService, UserStatsRepository, UserStatsService, UserUpdatesRepository} from "@/lib/server/domain/user";
+import {MediaType, RatingSystemType} from "@/lib/utils/enums";
+import {UserActivityService, UserStatsService} from "@/lib/server/domain/user";
+import {ProfileUpdatesReadService} from "@/lib/server/domain/profile/profile-updates-read.service";
+import {TvStatsReadRepository} from "@/lib/server/domain/library/tv/tv-stats-read.repository";
+import {MovieStatsReadRepository} from "@/lib/server/domain/library/movies/movie-stats-read.repository";
+import {GameStatsReadRepository} from "@/lib/server/domain/library/games/game-stats-read.repository";
+import {BookStatsReadRepository} from "@/lib/server/domain/library/books/book-stats-read.repository";
+import {MangaStatsReadRepository} from "@/lib/server/domain/library/manga/manga-stats-read.repository";
 
 
-export type DeltaStats = {
-    views?: number;
-    timeSpent?: number;
-    totalRedo?: number;
-    totalEntries?: number;
-    entriesRated?: number;
-    totalSpecific?: number;
-    sumEntriesRated?: number;
-    entriesCommented?: number;
-    entriesFavorites?: number;
-    statusCounts?: Partial<Record<Status, number>>;
-};
-
-
-export type TopAffinityConfig = {
-    limit?: number,
-    filters: SQL[],
-    minRatingCount?: number,
-    metricTable: SQLiteTable,
-    metricIdCol: SQLiteColumn,
-    mediaLinkCol: SQLiteColumn,
-    metricNameCol: SQLiteColumn,
-}
-
-
-type BaseMediaStats = Awaited<ReturnType<typeof UserStatsRepository.getAggregatedMediaStats>>;
-type UpdatesStats = Awaited<ReturnType<typeof UserUpdatesRepository.mediaUpdatesStatsPerMonth>>;
+type BaseMediaStats = Awaited<ReturnType<MovieStatsReadRepository["getAggregatedMediaStats"]>>;
+type UpdatesStats = Awaited<ReturnType<ProfileUpdatesReadService["mediaUpdatesStatsPerMonth"]>>;
 type ActivityStats = { activityByMonth: Awaited<ReturnType<UserActivityService["getActivityStatsByMonth"]>> };
 type OtherBase = { activatedMediaTypes: MediaType[]; ratingSystem: RatingSystemType; };
-type TvSpecificStats = Awaited<ReturnType<TvService["calculateAdvancedMediaStats"]>>;
-type MoviesSpecificStats = Awaited<ReturnType<MoviesService["calculateAdvancedMediaStats"]>>;
-type GamesSpecificStats = Awaited<ReturnType<GamesService["calculateAdvancedMediaStats"]>>;
-type BooksSpecificStats = Awaited<ReturnType<BooksService["calculateAdvancedMediaStats"]>>;
-type MangaSpecificStats = Awaited<ReturnType<MangaService["calculateAdvancedMediaStats"]>>;
+type TvSpecificStats = Awaited<ReturnType<TvStatsReadRepository["getAdvancedMediaStats"]>>;
+type MoviesSpecificStats = Awaited<ReturnType<MovieStatsReadRepository["getAdvancedMediaStats"]>>;
+type GamesSpecificStats = Awaited<ReturnType<GameStatsReadRepository["getAdvancedMediaStats"]>>;
+type BooksSpecificStats = Awaited<ReturnType<BookStatsReadRepository["getAdvancedMediaStats"]>>;
+type MangaSpecificStats = Awaited<ReturnType<MangaStatsReadRepository["getAdvancedMediaStats"]>>;
 
 
 export type AdvancedMediaStats =
@@ -67,6 +40,6 @@ export type MediaNaming = {
     durationDistributionUnit: string;
 }
 
-export type TopAffinity = Awaited<ReturnType<BaseRepository<any>["computeTopAffinityStats"]>>;
+export type TopAffinity = TvSpecificStats["actorsStats"];
 
 export type ExtractStatsByType<T extends MediaType | undefined> = Extract<UserStatsResult, { mediaType: T }>;

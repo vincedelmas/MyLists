@@ -6,7 +6,7 @@ import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {historyOptions} from "@/lib/client/react-query/query-options";
 import {TagsLists} from "@/lib/client/components/media/base/TagsLists";
-import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
+import {ExtractUserMediaByType, UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
@@ -97,7 +97,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMedi
                     <div className={(backlogMode && !backlogDate) ? "pointer-events-none opacity-40 space-y-2" : "space-y-2"}>
                         <UserMediaSpecificDetails
                             mediaType={mediaType}
-                            userMedia={userMedia}
+                            userMedia={userMedia as ExtractUserMediaByType<typeof mediaType>}
                             queryOption={queryOption}
                             mutationOptions={{ backlogMode, loggedAt: backlogMode ? backlogDate : undefined }}
                         />

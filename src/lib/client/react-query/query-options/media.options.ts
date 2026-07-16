@@ -12,10 +12,19 @@ import {
     getMediaDetailsToEdit,
     resolveExternalMedia
 } from "@/lib/server/functions/media-details";
+import {
+    mediaCommunityActivityKey,
+    mediaDetailsKey,
+    ViewerCacheIdentity,
+} from "@/lib/client/react-query/query-options/media.keys";
+import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
+
+export {mediaDetailsRootKey} from "@/lib/client/react-query/query-options/media.keys";
+export type {ViewerCacheIdentity} from "@/lib/client/react-query/query-options/media.keys";
 
 
-export const upcomingOptions = queryOptions({
-    queryKey: ["upcoming"],
+export const upcomingOptions = () => queryOptions({
+    queryKey: viewerScopedKey(["upcoming"]),
     queryFn: () => getComingNextMedia(),
 });
 
@@ -33,21 +42,26 @@ export const mediaExternalOptions = (mediaType: MediaType, apiId: string) => que
 })
 
 
-export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number) => queryOptions({
-    queryKey: ["details", mediaType, mediaId] as const,
+export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number, viewerId: ViewerCacheIdentity) => queryOptions({
+    queryKey: mediaDetailsKey(mediaType, mediaId, viewerId),
     queryFn: () => getMediaDetails({ data: { mediaType, mediaId } }),
     staleTime: 3 * 1000,
 });
 
 
-export const mediaCommunityActivityOptions = (mediaId: number, mediaType: MediaType, search: Pagination = { page: 1, perPage: 8 }) => queryOptions({
-    queryKey: ["details", "activity", "community", mediaType, mediaId, search] as const,
+export const mediaCommunityActivityOptions = (
+    mediaId: number,
+    mediaType: MediaType,
+    viewerId: ViewerCacheIdentity,
+    search: Pagination = { page: 1, perPage: 8 },
+) => queryOptions({
+    queryKey: mediaCommunityActivityKey(mediaId, mediaType, viewerId, search),
     queryFn: () => getMediaCommunityActivity({ data: { mediaId, mediaType, search } }),
 });
 
 
 export const gameCompatiblePlatformsOptions = (mediaId: number, enabled: boolean) => queryOptions({
-    queryKey: ["gameCompatiblePlatforms", mediaId] as const,
+    queryKey: viewerScopedKey(["gameCompatiblePlatforms", mediaId]),
     queryFn: () => getGameCompatiblePlatforms({ data: { mediaType: MediaType.GAMES, mediaId } }),
     staleTime: 10 * 60 * 1000,
     enabled,
@@ -55,13 +69,13 @@ export const gameCompatiblePlatformsOptions = (mediaId: number, enabled: boolean
 
 
 export const adminAllUpdatesOptions = (filters: SearchType) => queryOptions({
-    queryKey: ["adminAllUpdates", filters],
+    queryKey: viewerScopedKey(["adminAllUpdates", filters]),
     queryFn: () => getAdminAllUpdatesHistory({ data: filters }),
 });
 
 
 export const editMediaDetailsOptions = (mediaType: MediaType, mediaId: number) => queryOptions({
-    queryKey: ["editDetails", mediaType, mediaId],
+    queryKey: viewerScopedKey(["editDetails", mediaType, mediaId]),
     queryFn: () => getMediaDetailsToEdit({ data: { mediaType, mediaId } }),
     gcTime: 0,
     staleTime: 0,
@@ -69,7 +83,7 @@ export const editMediaDetailsOptions = (mediaType: MediaType, mediaId: number) =
 
 
 export const jobDetailsOptions = (mediaType: MediaType, job: JobType, name: string, pagination: Pagination) => queryOptions({
-    queryKey: ["jobDetails", mediaType, job, name, pagination],
+    queryKey: viewerScopedKey(["jobDetails", mediaType, job, name, pagination]),
     queryFn: () => getJobDetails({ data: { mediaType, job, name, pagination } }),
 });
 

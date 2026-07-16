@@ -9,7 +9,7 @@ export const useMoviedleGuessMutation = () => {
     return useMutation({
         mutationFn: postAddMediadleGuess,
         onSuccess: () => {
-            return queryClient.invalidateQueries({ queryKey: dailyMediadleOptions.queryKey });
+            return queryClient.invalidateQueries({ queryKey: dailyMediadleOptions().queryKey });
         },
     });
 };

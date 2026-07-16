@@ -4,6 +4,7 @@ import {relations} from "drizzle-orm/relations";
 import {MediaType, SocialNotifType} from "@/lib/utils/enums";
 import {integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {featureRequests} from "@/lib/server/database/schema/feature-votes.schema";
+import {catalogItem} from "@/lib/server/database/schema/catalog.schema";
 
 
 export const socialNotifications = sqliteTable("social_notifications", {
@@ -28,7 +29,7 @@ export const mediaNotifications = sqliteTable("media_notifications", {
     id: integer().primaryKey().notNull(),
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    mediaId: integer("media_id").notNull(),
+    mediaId: integer("media_id").notNull().references(() => catalogItem.id, { onDelete: "cascade" }),
     mediaType: text("media_type").$type<MediaType>().notNull(),
     season: integer("season"),
     episode: integer("episode"),

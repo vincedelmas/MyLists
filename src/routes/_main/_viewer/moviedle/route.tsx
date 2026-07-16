@@ -25,7 +25,7 @@ const SKIP_VAL = "rtehsqqt";
 
 export const Route = createFileRoute("/_main/_viewer/moviedle")({
     loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(dailyMediadleOptions);
+        return queryClient.ensureQueryData(dailyMediadleOptions());
     },
     component: MediadlePage,
 });
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_main/_viewer/moviedle")({
 function MediadlePage() {
     const { isAnonymous } = useAuth();
     const makeGuessMutation = useMoviedleGuessMutation();
-    const { userData, ...mediadleData } = useSuspenseQuery(dailyMediadleOptions).data;
+    const { userData, ...mediadleData } = useSuspenseQuery(dailyMediadleOptions()).data;
     const { search, setSearch, selectValue, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer();
     const { data: suggestions = [], isLoading, error } = useQuery(mediadleSuggestionsOptions(debouncedSearch));
 
@@ -202,7 +202,7 @@ function MediadlePage() {
 
 interface UserStatsProps {
     isAnonymous: boolean;
-    userData: Awaited<ReturnType<typeof dailyMediadleOptions.queryFn & {}>>["userData"];
+    userData: Awaited<ReturnType<NonNullable<ReturnType<typeof dailyMediadleOptions>["queryFn"]>>>["userData"];
 }
 
 

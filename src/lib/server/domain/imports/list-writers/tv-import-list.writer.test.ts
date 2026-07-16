@@ -6,22 +6,15 @@ import {TvImportListWriter} from "@/lib/server/domain/imports/list-writers/tv-im
 
 describe("TvImportListWriter", () => {
     it("materializes completed TV defaults from matched media seasons", async () => {
-        const tvService = {
-            bulkInsertUserMedia: vi.fn().mockResolvedValue([]),
-            findById: vi.fn().mockResolvedValue({
-                id: 100,
-                apiId: 136315,
-                name: "The Bear",
-                totalSeasons: 3,
-                totalEpisodes: 28,
-            }),
-            getMediaEpsPerSeason: vi.fn().mockResolvedValue([
+        const tvCatalog = {
+            getEpisodesPerSeason: vi.fn().mockResolvedValue([
                 { season: 1, episodes: 8 },
                 { season: 2, episodes: 10 },
                 { season: 3, episodes: 10 },
             ]),
         };
-        const writer = new TvImportListWriter(tvService as any);
+        const libraryWriter = { importRows: vi.fn().mockResolvedValue(undefined) };
+        const writer = new TvImportListWriter(tvCatalog as any, MediaType.SERIES, libraryWriter as any);
 
         const matches: MatchedImportItem[] = [{
             mediaId: 100,
@@ -45,7 +38,7 @@ describe("TvImportListWriter", () => {
 
         await writer.addMatchedItems(42, matches);
 
-        expect(tvService.bulkInsertUserMedia).toHaveBeenCalledWith([{
+        expect(libraryWriter.importRows).toHaveBeenCalledWith(MediaType.SERIES, [{
             userId: 42,
             mediaId: 100,
             status: Status.COMPLETED,
@@ -58,18 +51,11 @@ describe("TvImportListWriter", () => {
     });
 
     it("preserves complete MyLists TV progress payloads", async () => {
-        const tvService = {
-            bulkInsertUserMedia: vi.fn().mockResolvedValue([]),
-            findById: vi.fn().mockResolvedValue({
-                id: 100,
-                apiId: 209867,
-                name: "Frieren",
-                totalSeasons: 1,
-                totalEpisodes: 28,
-            }),
-            getMediaEpsPerSeason: vi.fn().mockResolvedValue([{ season: 1, episodes: 28 }]),
+        const tvCatalog = {
+            getEpisodesPerSeason: vi.fn().mockResolvedValue([{ season: 1, episodes: 28 }]),
         };
-        const writer = new TvImportListWriter(tvService as any);
+        const libraryWriter = { importRows: vi.fn().mockResolvedValue(undefined) };
+        const writer = new TvImportListWriter(tvCatalog as any, MediaType.ANIME, libraryWriter as any);
 
         await writer.addMatchedItems(42, [{
             mediaId: 100,
@@ -99,7 +85,7 @@ describe("TvImportListWriter", () => {
             },
         }]);
 
-        expect(tvService.bulkInsertUserMedia).toHaveBeenCalledWith([{
+        expect(libraryWriter.importRows).toHaveBeenCalledWith(MediaType.ANIME, [{
             userId: 42,
             mediaId: 100,
             status: Status.WATCHING,

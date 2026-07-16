@@ -27,7 +27,7 @@ export const Notifications = () => {
     const mutation = useMarkAllNotifAsRead();
     const isBelowLg = useBreakpoint("lg");
     const [open, setOpen] = useState(false);
-    const { data: counts } = useQuery(notificationsCountOptions);
+    const { data: counts } = useQuery(notificationsCountOptions());
     const [activeTab, setActiveTab] = useState<NotifTab>("media");
     const { data: notifications, isLoading } = useQuery(notificationsOptions(open, activeTab));
 

@@ -41,6 +41,24 @@ describe("ImportRepository", () => {
                 email: `import-user-${id}@example.com`,
             });
         }
+        await db.insert(schema.catalogItem).values([
+            {
+                id: 101,
+                kind: MediaType.MOVIES,
+                primaryProvider: "tmdb",
+                primaryExternalId: "101",
+                name: "Matched movie 101",
+                imageCover: "101.jpg",
+            },
+            {
+                id: 102,
+                kind: MediaType.MOVIES,
+                primaryProvider: "tmdb",
+                primaryExternalId: "102",
+                name: "Matched movie 102",
+                imageCover: "102.jpg",
+            },
+        ]);
     });
 
     afterEach(() => {

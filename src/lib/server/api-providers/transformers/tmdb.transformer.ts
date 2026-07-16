@@ -3,7 +3,6 @@ import {getImageUrl} from "@/lib/utils/image-url";
 import {isLatin1} from "@/lib/utils/text-formatting";
 import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
-import {moviesConfig} from "@/lib/server/domain/media/movies/movies.config";
 import {
     JikanAnimeSearchResponse,
     ProviderSearchResult,
@@ -31,7 +30,7 @@ const maxNetworks = 2;
 const animeDefaultDuration = 24;
 const seriesDefaultDuration = 40;
 const moviesDefaultDuration = 90;
-const maxGenres = moviesConfig.apiProvider.maxGenres;
+const maxGenres = 5;
 const imageBaseUrl = "https://image.tmdb.org/t/p/w300";
 
 

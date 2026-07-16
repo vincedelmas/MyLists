@@ -4,7 +4,6 @@ import {ApiProviderType, ImportItemStatus, ImportSource, MediaType} from "@/lib/
 
 
 type ImportParser = (contents: string) => ParsedImport;
-export type MyListsCSVImport = z.infer<typeof minimalMyListsCSVSchema>;
 export type ParsedImportItem = Omit<typeof importItems.$inferInsert, "jobId">;
 export type ImportParserRegistry = Partial<Record<ImportSource, ImportParser>>;
 export type ImportItemsSelect = Omit<typeof importItems.$inferSelect, "mediaType"> & { mediaType: MediaType };

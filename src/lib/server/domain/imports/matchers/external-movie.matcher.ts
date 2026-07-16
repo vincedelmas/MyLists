@@ -2,7 +2,7 @@ import {logger} from "@/lib/server/core/logger";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
-import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
+import {UpsertMovieWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 

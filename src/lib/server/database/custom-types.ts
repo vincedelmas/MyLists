@@ -29,20 +29,6 @@ export const imageUrl = (name: string, coverType: CoverType) => customType<{ dat
 })(name);
 
 
-export const nullableImageUrl = (name: string, coverType: CoverType) => customType<{ data: string | null; driverData: string | null }>({
-    dataType() {
-        return "text";
-    },
-    toDriver(value: string | null) {
-        return value ? getImageFilename(value) : null;
-    },
-    fromDriver(value: string | null) {
-        if (!value) return null;
-        return getImageUrl(coverType, value);
-    },
-})(name);
-
-
 /**
  * Converts better-auth's Date objects (for user `createdAt`/`updatedAt`) to UTC ISO strings in SQLite text format.
  * Handles Date-to-string conversion (replacing 'T' with space, 'Z' with '.000') and string-to-string passthrough.

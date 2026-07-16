@@ -158,8 +158,9 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
     const [isEditing, setIsEditing] = useState(false);
 
     const handleRename = () => {
-        if (editName.trim() && editName !== tag.tagName) {
-            onRename(tag.tagName, editName);
+        const trimmed = editName.trim();
+        if (trimmed && trimmed !== tag.tagName) {
+            onRename(tag.tagName, trimmed);
         }
         setIsEditing(false);
     };

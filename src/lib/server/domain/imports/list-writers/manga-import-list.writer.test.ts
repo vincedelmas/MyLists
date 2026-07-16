@@ -6,16 +6,11 @@ import {MangaImportListWriter} from "@/lib/server/domain/imports/list-writers/ma
 
 describe("MangaImportListWriter", () => {
     it("materializes completed manga defaults from matched media chapters", async () => {
-        const mangaService = {
-            bulkInsertUserMedia: vi.fn().mockResolvedValue([]),
-            findById: vi.fn().mockResolvedValue({
-                id: 100,
-                apiId: 2,
-                name: "Berserk",
-                chapters: 375,
-            }),
+        const mangaCatalog = {
+            findForImport: vi.fn().mockResolvedValue({ chapters: 375 }),
         };
-        const writer = new MangaImportListWriter(mangaService as any);
+        const libraryWriter = { importRows: vi.fn().mockResolvedValue(undefined) };
+        const writer = new MangaImportListWriter(mangaCatalog as any, libraryWriter as any);
 
         const matches: MatchedImportItem[] = [{
             mediaId: 100,
@@ -39,7 +34,7 @@ describe("MangaImportListWriter", () => {
 
         await writer.addMatchedItems(42, matches);
 
-        expect(mangaService.bulkInsertUserMedia).toHaveBeenCalledWith([{
+        expect(libraryWriter.importRows).toHaveBeenCalledWith([{
             userId: 42,
             mediaId: 100,
             status: Status.COMPLETED,

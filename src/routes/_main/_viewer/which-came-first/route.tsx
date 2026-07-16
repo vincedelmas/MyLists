@@ -20,14 +20,15 @@ import {useAbandonWCFRunMutation, useAnswerWCFRoundMutation, useResetWCFStatsMut
 
 export const Route = createFileRoute("/_main/_viewer/which-came-first")({
     loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(whichCameFirstOptions);
+        return queryClient.ensureQueryData(whichCameFirstOptions());
     },
     component: WhichCameFirstPage,
 });
 
 
 type AnswerResult = NonNullable<ReturnType<typeof useAnswerWCFRoundMutation>["data"]>;
-type ActiveRunData = NonNullable<NonNullable<Awaited<ReturnType<NonNullable<typeof whichCameFirstOptions.queryFn>>>>["activeRun"]>;
+type WhichCameFirstData = Awaited<ReturnType<NonNullable<ReturnType<typeof whichCameFirstOptions>["queryFn"]>>>;
+type ActiveRunData = NonNullable<WhichCameFirstData["activeRun"]>;
 
 
 function WhichCameFirstPage() {
@@ -36,7 +37,7 @@ function WhichCameFirstPage() {
     const answerMutation = useAnswerWCFRoundMutation();
     const abandonMutation = useAbandonWCFRunMutation();
     const [showGameOver, setShowGameOver] = useState(false);
-    const { activeRun, stats } = useSuspenseQuery(whichCameFirstOptions).data;
+    const { activeRun, stats } = useSuspenseQuery(whichCameFirstOptions()).data;
     const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
     const [selectedTypes, setSelectedTypes] = useState<MediaType[]>(activeRun?.selectedMediaTypes ?? [...WCF_MEDIA_TYPES]);
 
@@ -61,7 +62,7 @@ function WhichCameFirstPage() {
     };
 
     const continueGame = async () => {
-        await queryClient.invalidateQueries({ queryKey: whichCameFirstOptions.queryKey });
+        await queryClient.invalidateQueries({ queryKey: whichCameFirstOptions().queryKey });
         setAnswerResult(null);
         setShowGameOver(false);
     };
@@ -85,7 +86,7 @@ function WhichCameFirstPage() {
         if (!answerResult?.correct || answerResult.runEnded) return;
 
         const timeout = window.setTimeout(() => {
-            void queryClient.invalidateQueries({ queryKey: whichCameFirstOptions.queryKey })
+            void queryClient.invalidateQueries({ queryKey: whichCameFirstOptions().queryKey })
                 .then(() => setAnswerResult(null));
         }, 1400);
 
@@ -555,7 +556,7 @@ const formatComparisonDate = (date: string, otherDate: string) => {
 
 interface StatsProps {
     canReset: boolean;
-    stats: Awaited<ReturnType<NonNullable<typeof whichCameFirstOptions.queryFn>>>["stats"];
+    stats: WhichCameFirstData["stats"];
 }
 
 

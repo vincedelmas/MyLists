@@ -1,8 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {TmdbApi} from "@/lib/server/api-providers/api";
-import {MoviesRepository} from "@/lib/server/domain/media/movies";
-import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
+import {ExternalMediaProvider, MediaIngestionRepository, RefreshCandidateSource} from "@/lib/server/api-providers/interfaces.types";
+import {UpsertMovieWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 
@@ -34,14 +33,14 @@ export const createTmdbMoviesProvider = (tmdb: TmdbApi): ExternalMediaProvider<U
 }
 
 
-export const createMoviesIngestionService = (repository: MoviesRepository, provider: ExternalMediaProvider<UpsertMovieWithDetails>) => {
+export const createMoviesIngestionService = (
+    repository: MediaIngestionRepository<UpsertMovieWithDetails>,
+    provider: ExternalMediaProvider<UpsertMovieWithDetails>,
+    refreshCandidates?: RefreshCandidateSource,
+) => {
     return createMediaIngestionService({
         provider,
-        repository: repository,
-        refreshCandidates: {
-            getCandidateApiIds: () => {
-                return repository.getMediaIdsToBeRefreshed();
-            },
-        },
+        repository,
+        refreshCandidates,
     });
 }

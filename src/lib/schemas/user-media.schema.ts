@@ -144,7 +144,7 @@ export const editUserTagSchema = z.object({
     mediaType: mediaTypeFieldSchema,
     mediaId: coercedPositiveIntFieldSchema.optional(),
     tag: z.object({
-        name: z.string(),
-        oldName: z.string().optional(),
+        name: z.string().trim().min(1, "Tag name cannot be empty."),
+        oldName: z.string().trim().min(1, "Tag name cannot be empty.").optional(),
     }),
 });

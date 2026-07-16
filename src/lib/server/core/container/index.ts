@@ -12,7 +12,9 @@ interface AppContainer {
     apiClients: ApiClientModule;
     repositories: UserModule["repositories"] & ImportModule["repositories"];
     services: UserModule["services"] & ImportModule["services"] & AdminModule["services"];
-    registries: MediaModule["registries"] & ImportModule["registries"] & ProviderModule["registries"];
+    registries: ImportModule["registries"] & ProviderModule["registries"];
+    library: MediaModule["library"];
+    features: MediaModule["features"] & UserModule["features"] & ProviderModule["features"];
 }
 
 
@@ -26,7 +28,7 @@ async function initContainer(): Promise<AppContainer> {
     const mediaModule = setupMediaModule();
     const adminService = setupAdminModule();
     const userModule = setupUserModule(mediaModule);
-    const providerModule = setupProviderModule(mediaModule, clientsModule);
+    const providerModule = setupProviderModule(clientsModule);
 
     const importModule = setupImportModule(mediaModule, providerModule);
 
@@ -43,9 +45,14 @@ async function initContainer(): Promise<AppContainer> {
             ...adminService.services,
         },
         registries: {
-            ...mediaModule.registries,
             ...importModule.registries,
             ...providerModule.registries,
+        },
+        library: mediaModule.library,
+        features: {
+            ...mediaModule.features,
+            ...userModule.features,
+            ...providerModule.features,
         },
     };
 }

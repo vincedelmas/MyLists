@@ -3,6 +3,7 @@ import {useRouter} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useQueryClient} from "@tanstack/react-query";
 import {authOptions} from "@/lib/client/react-query/query-options";
+import {setViewerCacheIdentity} from "@/lib/client/react-query/query-options/viewer-cache";
 
 
 const AUTH_SYNC_STORAGE_KEY = "mylists:auth-sync";
@@ -13,6 +14,7 @@ export function AuthSessionSync() {
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
     const currentUserId = currentUser?.id ?? null;
+    setViewerCacheIdentity(currentUserId);
     const suppressNextBroadcastRef = useRef(false);
     const previousUserIdRef = useRef<number | null | undefined>(undefined);
 
@@ -27,7 +29,9 @@ export function AuthSessionSync() {
 
     useEffect(() => {
         const refreshAuthenticatedRouteData = async () => {
-            await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
+            const isViewerData = (query: { queryKey: readonly unknown[] }) => query.queryKey[0] !== authOptions.queryKey[0];
+            await queryClient.cancelQueries({ predicate: isViewerData });
+            queryClient.removeQueries({ predicate: isViewerData });
             await router.invalidate();
         };
 

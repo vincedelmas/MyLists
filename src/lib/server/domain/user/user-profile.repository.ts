@@ -1,15 +1,15 @@
 import {and, eq, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {HighlightedMediaSettings} from "@/lib/types/profile-custom.types";
-import {profileCustom, userMediaSettings} from "@/lib/server/database/schema";
+import {profileCustom, profileMediaChannel} from "@/lib/server/database/schema";
 
 
 export class UserProfileRepository {
     static async getActiveMediaTypes(userId: number) {
         return getDbClient()
-            .select({ mediaType: userMediaSettings.mediaType })
-            .from(userMediaSettings)
-            .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.active, true)))
+            .select({ mediaType: profileMediaChannel.kind })
+            .from(profileMediaChannel)
+            .where(and(eq(profileMediaChannel.userId, userId), eq(profileMediaChannel.enabled, true)))
             .then((rows) => rows.map((row) => row.mediaType));
     }
 

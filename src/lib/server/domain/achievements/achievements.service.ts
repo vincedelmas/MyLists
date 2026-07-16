@@ -1,13 +1,15 @@
 import {sql} from "drizzle-orm";
 import {AchievementTier} from "@/lib/schemas";
 import {userAchievement} from "@/lib/server/database/schema";
-import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
-import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Achievement, AchievementSeedData} from "@/lib/types/achievements.types";
+import {StatsCTE} from "@/lib/types/media-common.types";
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
+import {AchievementsReadService} from "@/lib/server/domain/achievements/achievements-read.service";
 
 
 export class AchievementsService {
+    private readonly reader = new AchievementsReadService();
+
     constructor(private repository: typeof AchievementsRepository) {
     }
 
@@ -28,11 +30,15 @@ export class AchievementsService {
     // -----------------------------------------------------------------------------------
 
     async getDifficultySummary(userId: number) {
-        return this.repository.getDifficultySummary(userId);
+        return this.reader.getDifficultySummary(userId);
     }
 
     async getAchievementsDetails(userId: number, limit = 3) {
-        return this.repository.getAchievementsDetails(userId, limit);
+        return this.reader.getAchievementsDetails(userId, limit);
+    }
+
+    async getActiveMediaTypes(userId: number) {
+        return this.reader.getActiveMediaTypes(userId);
     }
 
     async getAllAchievements() {
@@ -40,83 +46,18 @@ export class AchievementsService {
     }
 
     async getUserAchievementStats(userId: number) {
-        const { completedResult, totalAchievementsResult } = await this.repository.getUserAchievementStats(userId);
-
-        const mediaTypes = Object.values(MediaType);
-        const difficulties = Object.values(AchievementDifficulty);
-
-        const totalAchievementsMap = new Map(totalAchievementsResult.map((item) => [item.mediaType, item.total]));
-        const completedCountsMap = new Map(completedResult.map((item) => [`${item.mediaType}-${item.difficulty}`, item.count]));
-        const allDifficultySums = Object.fromEntries(difficulties.map((diff) => [diff, 0]));
-
-        type TierStat = { count: number | string; tier: AchievementDifficulty | "total" };
-
-        const mediaTypeEntries = {} as Record<MediaType, TierStat[]>;
-        for (const mt of mediaTypes) {
-            mediaTypeEntries[mt] = [] as TierStat[];
-        }
-        const results = { all: [] as TierStat[], ...mediaTypeEntries };
-
-        let grandTotal = 0;
-        let grandTotalGained = 0;
-        for (const mediaType of mediaTypes) {
-            let mediaTypeTotalGained = 0;
-            const mediaTypeStats: TierStat[] = [];
-
-            for (const difficulty of difficulties) {
-                const count = completedCountsMap.get(`${mediaType}-${difficulty}`) || 0;
-                mediaTypeStats.push({ tier: difficulty, count });
-                allDifficultySums[difficulty] += count;
-                mediaTypeTotalGained += count;
-            }
-
-            const mediaTypeAchievementTotal = totalAchievementsMap.get(mediaType) || 0;
-            mediaTypeStats.push({ tier: "total", count: `${mediaTypeTotalGained}/${mediaTypeAchievementTotal}` });
-
-            results[mediaType] = mediaTypeStats;
-
-            grandTotal += mediaTypeAchievementTotal;
-            grandTotalGained += mediaTypeTotalGained;
-        }
-
-        const allStats: TierStat[] = [];
-        for (const difficulty of difficulties) {
-            allStats.push({ tier: difficulty, count: allDifficultySums[difficulty] });
-        }
-
-        allStats.push({ tier: "total", count: `${grandTotalGained}/${grandTotal}` });
-        results["all"] = allStats;
-
-        return results;
+        return this.reader.getUserAchievementStats(userId);
     }
 
     async getUserAchievements(userId: number) {
-        const results = await this.repository.getUserAchievements(userId);
-
-        const uniqueAchIds = [...new Set(results.map((r) => r.achievement.id))];
-
-        return uniqueAchIds.map((id) => {
-            const rows = results.filter((r) => r.achievement.id === id);
-            return {
-                ...rows[0].achievement,
-                tiers: rows.map(({ tier, userProgress }) => ({
-                    ...tier,
-                    count: userProgress?.count ?? 0,
-                    progress: userProgress?.progress ?? 0,
-                    completed: userProgress?.completed ?? false,
-                    completedAt: userProgress?.completedAt ?? null,
-                })),
-            };
-        }).sort((a, b) => a.mediaType.localeCompare(b.mediaType) || a.name.localeCompare(b.name));
+        return this.reader.getUserAchievements(userId);
     }
 
     async calculateAllAchievementsRarity() {
         return this.repository.calculateAllAchievementsRarity();
     }
 
-    async calculateAchievement(achievement: Achievement, mediaService: BaseService<any, any>) {
-        const achievementCTE = mediaService.getAchievementCte(achievement);
-
+    async calculateAchievementFromCte(achievement: Achievement, achievementCTE: StatsCTE) {
         for (const tier of achievement.tiers) {
             const valueNeeded = tier.criteria.count;
 

@@ -3,6 +3,7 @@ import {getContainer} from "@/lib/server/core/container";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {authorizationMiddleware} from "@/lib/server/middlewares/authorization";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {ProfileHighlightsRepository} from "@/lib/server/domain/profile/profile-highlights.repository";
 import {
     activityAddMediaSearchSchema,
     addActivitySchema,
@@ -17,18 +18,18 @@ import {
 export const getMonthlyActivityStats = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .validator(monthlyActivityStatsSchema)
-    .handler(async ({ data, context: { user } }) => {
-        const userActivityService = await getContainer().then(c => c.services.userActivity);
-        return userActivityService.getMonthlyActivityStats(user.id, data);
+    .handler(async ({ data, context: { user, libraryAccessScope } }) => {
+        const container = await getContainer();
+        return container.services.userActivity.getMonthlyActivityStats(user.id, data, libraryAccessScope);
     });
 
 
 export const getMonthlyActivity = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .validator(monthlyActivitySchema)
-    .handler(async ({ data, context: { user } }) => {
-        const userActivityService = await getContainer().then(c => c.services.userActivity);
-        return userActivityService.getMonthlyActivity(user.id, data);
+    .handler(async ({ data, context: { user, libraryAccessScope } }) => {
+        const container = await getContainer();
+        return container.services.userActivity.getMonthlyActivity(user.id, data, libraryAccessScope);
     });
 
 
@@ -36,8 +37,7 @@ export const getActivityAddMediaSearch = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(activityAddMediaSearchSchema)
     .handler(async ({ data: { mediaType, query }, context: { currentUser } }) => {
-        const mediaService = await getContainer().then(c => c.registries.mediaService.get(mediaType));
-        return mediaService.searchUserListByName(currentUser.id, query.trim(), 20);
+        return ProfileHighlightsRepository.searchUserListByName(currentUser.id, mediaType, query.trim(), 20);
     });
 
 

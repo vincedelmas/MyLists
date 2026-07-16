@@ -1,5 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
-import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {mediaDetailsRootKey} from "@/lib/client/react-query/query-options";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {postEditMediaDetails, postUpdateBookCover, refreshMediaDetails, resolveExternalMedia} from "@/lib/server/functions/media-details";
 
@@ -13,7 +13,7 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) =
             successToastMessage: "Metadata refreshed successfully!",
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey });
+            await queryClient.invalidateQueries({ queryKey: mediaDetailsRootKey(mediaType, mediaId) });
         },
     });
 };
@@ -34,7 +34,7 @@ export const useUpdateBookCoverMutation = (mediaId: number, meta?: MutationMeta)
         mutationFn: postUpdateBookCover,
         meta: { ...meta },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(MediaType.BOOKS, mediaId).queryKey });
+            await queryClient.invalidateQueries({ queryKey: mediaDetailsRootKey(MediaType.BOOKS, mediaId) });
         },
     });
 };

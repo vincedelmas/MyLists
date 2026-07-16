@@ -1,15 +1,8 @@
-import {Column, SQL} from "drizzle-orm";
 import {MediaListArgs} from "@/lib/schemas";
-import {MediaTable} from "@/lib/types/media.config.types";
-import {IdNamePair, NameObj} from "@/lib/types/media-common.types";
-import {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
+import {NameObj} from "@/lib/types/media-common.types";
 import {ListFiltersOptionsType} from "@/lib/types/query.options.types";
-import {GamesPlatformsEnum, JobType, MediaType, RatingSystemType} from "@/lib/utils/enums";
+import {GamesPlatformsEnum, JobType, MediaType} from "@/lib/utils/enums";
 
-
-export type EpsPerSeasonType = { season: number, episodes: number };
-
-export type FilterDefinitions = Partial<Record<keyof MediaListArgs, FilterDefinition>>;
 
 export type ExpandedListFilters = {
     genres: NameObj[];
@@ -17,27 +10,6 @@ export type ExpandedListFilters = {
     langs?: NameObj[];
     platforms?: { name: GamesPlatformsEnum }[];
 };
-
-export type MediaListData<TList> = {
-    items: (TList & {
-        pages?: number;
-        common: boolean;
-        mediaName: string;
-        chapters?: number;
-        imageCover: string;
-        tags: IdNamePair[];
-        ratingSystem: RatingSystemType;
-        epsPerSeason?: EpsPerSeasonType[];
-    })[];
-    pagination: {
-        page: number;
-        perPage: number;
-        sorting: string;
-        totalPages: number;
-        totalItems: number;
-        availableSorting: string[];
-    };
-}
 
 export type SheetFilterObject = {
     job?: JobType;
@@ -48,18 +20,6 @@ export type SheetFilterObject = {
     getItems?: (data: ListFiltersOptionsType) => { name: string }[] | undefined;
 };
 
-export type ListFilterDefinition = {
-    mediaTable: MediaTable;
-    filterColumn: SQLiteColumn;
-    argName: keyof MediaListArgs;
-    entityTable?: SQLiteTable & { mediaId: Column<any, any, any> };
-}
-
-export type FilterDefinition = {
-    isActive: (args: MediaListArgs) => boolean;
-    getCondition: (args: MediaListArgs) => SQL | undefined;
-}
-
 export type UserTag = {
     totalCount: number;
     tagId: number;
@@ -69,10 +29,4 @@ export type UserTag = {
         mediaName: string;
         mediaCover: string;
     }[];
-}
-
-export type ExportMediaList = {
-    mediaName: string;
-    externalApiId: string;
-    releaseDate: string | null;
 }

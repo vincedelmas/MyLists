@@ -1,5 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
-import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 import {adminOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {
     achievementOptions,
@@ -27,7 +27,7 @@ export type AchSummary = Awaited<ReturnType<NonNullable<ReturnType<typeof achiev
 export type HofUserData = Awaited<ReturnType<NonNullable<ReturnType<typeof hallOfFameOptions>["queryFn"]>>>["items"][number];
 export type HofUserRank = Awaited<ReturnType<NonNullable<ReturnType<typeof hallOfFameOptions>["queryFn"]>>>["userRanks"];
 export type TasteMatch = NonNullable<Awaited<ReturnType<NonNullable<ReturnType<typeof tasteMatchesOptions>["queryFn"]>>>["featuredMatch"]>;
-export type ComingNextItem = Awaited<ReturnType<NonNullable<typeof upcomingOptions.queryFn>>>[number]["items"][number];
+export type ComingNextItem = Awaited<ReturnType<NonNullable<ReturnType<typeof upcomingOptions>["queryFn"]>>>[number]["items"][number];
 export type AdminUserOverview = Awaited<ReturnType<NonNullable<typeof adminOverviewOptions.queryFn>>>["recentUsers"];
 
 

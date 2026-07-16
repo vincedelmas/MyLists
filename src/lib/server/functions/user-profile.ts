@@ -9,98 +9,38 @@ export const getUserProfileHeader = createServerFn({ method: "GET" })
     .middleware([resolveTargetUserMiddleware])
     .handler(async ({ context: { currentUser, targetUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
-
-        const { followersCount, followsCount } = await userService.getFollowCount(targetUser.id);
-        const followStatus = currentUser && await userService.getFollowingStatus(currentUser.id, targetUser.id);
-
-        return {
-            userData: {
-                id: targetUser.id,
-                name: targetUser.name,
-                image: targetUser.image,
-                privacy: targetUser.privacy,
-                createdAt: targetUser.createdAt,
-                backgroundImage: targetUser.backgroundImage,
-                userMediaSettings: targetUser.userMediaSettings.map(({ timeSpent, active }) => ({
-                    timeSpent,
-                    active,
-                })),
-            },
-            social: {
-                followsCount,
-                followStatus,
-                followersCount,
-                followId: targetUser.id,
-            }
-        };
+        return container.features.profileReader.getPublicHeader(targetUser, currentUser?.id);
     });
 
 
 export const getUserProfile = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .handler(async ({ context: { currentUser, user } }) => {
+    .handler(async ({ context: { currentUser, user, libraryAccessScope } }) => {
         const targetUserId = user.id;
         const container = await getContainer();
         const userService = container.services.user;
-        const userStatsService = container.services.userStats;
-        const userProfileService = container.services.userProfile;
-        const userUpdatesService = container.services.userUpdates;
-        const achievementsService = container.services.achievements;
 
         if (currentUser && currentUser.id !== targetUserId) {
             await userService.incrementProfileView(targetUserId);
         }
 
-        const { followsCount } = await userService.getFollowCount(targetUserId);
-        const userFollows = await userService.getUserFollows(undefined, targetUserId);
-        const userUpdates = await userUpdatesService.getUserUpdates(targetUserId);
-        const followsUpdates = await userUpdatesService.getFollowsUpdates(targetUserId, currentUser?.id);
-        const mediaGlobalSummary = await userStatsService.userPreComputedStatsSummary(targetUserId);
-        const perMediaSummary = await userStatsService.userPerMediaSummaryStats(targetUserId);
-        const highlightedMedia = await userProfileService.resolveHighlightedMedia(targetUserId);
-        const achievements = await achievementsService.getAchievementsDetails(targetUserId);
-
-        return {
-            userUpdates,
-            userFollows,
-            achievements,
-            followsCount,
-            followsUpdates,
-            perMediaSummary,
-            highlightedMedia,
-            mediaGlobalSummary,
-            userData: {
-                id: user.id,
-                name: user.name,
-                image: user.image,
-                privacy: user.privacy,
-                createdAt: user.createdAt,
-                ratingSystem: user.ratingSystem,
-                backgroundImage: user.backgroundImage,
-                userMediaSettings: user.userMediaSettings.map(({ mediaType, timeSpent, active }) => ({
-                    active,
-                    mediaType,
-                    timeSpent,
-                })),
-            },
-        };
+        return container.features.profileReader.getOverview(user, currentUser?.id, libraryAccessScope);
     });
 
 
 export const getUsersFollows = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .handler(async ({ context: { user, currentUser } }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.getUserFollows(currentUser?.id, user.id, 999999);
+    .handler(async ({ context: { user, currentUser, libraryAccessScope } }) => {
+        const container = await getContainer();
+        return container.features.socialGraphReader.getFollows(libraryAccessScope, user.id, currentUser?.id, 999999);
     });
 
 
 export const getUsersFollowers = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
-    .handler(async ({ context: { user, currentUser } }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.getUserFollowers(currentUser?.id, user.id, 999999);
+    .handler(async ({ context: { user, currentUser, libraryAccessScope } }) => {
+        const container = await getContainer();
+        return container.features.socialGraphReader.getFollowers(libraryAccessScope, user.id, currentUser?.id, 999999);
     });
 
 

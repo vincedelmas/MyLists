@@ -2,7 +2,8 @@ import {logger} from "@/lib/server/core/logger";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
-import {TvMediaType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
+import {TvMediaType} from "@/lib/types/media-kind.types";
+import {UpsertTvWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 

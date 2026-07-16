@@ -9,7 +9,8 @@ export const curateWCFTask = defineTask({
     description: "Refresh the popular media pool used by Which Came First",
     inputSchema: z.object({}),
     handler: async (ctx) => {
-        const whichCameFirstService = await getContainer().then(c => c.services.whichCameFirst);
+        const container = await getContainer();
+        const whichCameFirstService = container.services.whichCameFirst;
         const counts = await whichCameFirstService.curatePool();
 
         for (const row of counts) {

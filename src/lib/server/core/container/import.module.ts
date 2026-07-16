@@ -22,34 +22,40 @@ export function setupImportModule(mediaModule: MediaModule, providerModule: Prov
     const matchersService = {
         series: createTvMatcher(
             MediaType.SERIES,
-            mediaModule.services.series,
+            providerModule.features.catalogs.series,
             externalProviderRegistry.get(MediaType.SERIES),
             ingestionServiceRegistry.get(MediaType.SERIES),
+            mediaModule.features.tvLibraryWriter,
         ),
         anime: createTvMatcher(
             MediaType.ANIME,
-            mediaModule.services.anime,
+            providerModule.features.catalogs.anime,
             externalProviderRegistry.get(MediaType.ANIME),
             ingestionServiceRegistry.get(MediaType.ANIME),
+            mediaModule.features.tvLibraryWriter,
         ),
         movies: createMoviesMatcher(
-            mediaModule.services.movies,
+            providerModule.features.catalogs.movies,
             externalProviderRegistry.get(MediaType.MOVIES),
             ingestionServiceRegistry.get(MediaType.MOVIES),
+            mediaModule.features.movieLibraryWriter,
         ),
         games: createGamesMatcher(
-            mediaModule.services.games,
+            providerModule.features.catalogs.games,
             ingestionServiceRegistry.get(MediaType.GAMES),
+            mediaModule.features.gameLibraryWriter,
         ),
         books: createBooksMatcher(
-            mediaModule.services.books,
+            providerModule.features.catalogs.books,
             externalProviderRegistry.get(MediaType.BOOKS),
             ingestionServiceRegistry.get(MediaType.BOOKS),
+            mediaModule.features.bookLibraryWriter,
         ),
         manga: createMangaMatcher(
-            mediaModule.services.manga,
+            providerModule.features.catalogs.manga,
             externalProviderRegistry.get(MediaType.MANGA),
             ingestionServiceRegistry.get(MediaType.MANGA),
+            mediaModule.features.mangaLibraryWriter,
         ),
     }
     Object.entries(matchersService).forEach(([key, service]) => {

@@ -1,4 +1,5 @@
 import {logger} from "@/lib/server/core/logger";
+import {notFound} from "@tanstack/react-router";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
@@ -24,16 +25,72 @@ export const getMediaDetails = createServerFn({ method: "GET" })
     .validator(mediaDetailsSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(mediaType);
-
-        const {
-            media,
-            userMedia,
-            followsData,
-            similarMedia,
-        } = await mediaService.getMediaAndUserDetails(currentUser?.id, mediaId);
-
-        return { media, userMedia, followsData, similarMedia };
+        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+            const result = await container.features.tvDetailsReaders[mediaType].getMediaAndUserDetails(currentUser?.id, mediaId);
+            if (!result) throw notFound();
+            return {
+                similarMedia: result.similarMedia,
+                media: { ...result.media, kind: mediaType },
+                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
+                followsData: result.followsData.map((follow) => ({
+                    ...follow,
+                    userMedia: { ...follow.userMedia, kind: mediaType },
+                })),
+            };
+        }
+        if (mediaType === MediaType.MOVIES) {
+            const result = await container.features.movieDetailsReader.getMediaAndUserDetails(currentUser?.id, mediaId);
+            if (!result) throw notFound();
+            return {
+                similarMedia: result.similarMedia,
+                media: { ...result.media, kind: mediaType },
+                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
+                followsData: result.followsData.map((follow) => ({
+                    ...follow,
+                    userMedia: { ...follow.userMedia, kind: mediaType },
+                })),
+            };
+        }
+        if (mediaType === MediaType.GAMES) {
+            const result = await container.features.gameDetailsReader.getMediaAndUserDetails(currentUser?.id, mediaId);
+            if (!result) throw notFound();
+            return {
+                similarMedia: result.similarMedia,
+                media: { ...result.media, kind: mediaType },
+                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
+                followsData: result.followsData.map((follow) => ({
+                    ...follow,
+                    userMedia: { ...follow.userMedia, kind: mediaType },
+                })),
+            };
+        }
+        if (mediaType === MediaType.BOOKS) {
+            const result = await container.features.bookDetailsReader.getMediaAndUserDetails(currentUser?.id, mediaId);
+            if (!result) throw notFound();
+            return {
+                similarMedia: result.similarMedia,
+                media: { ...result.media, kind: mediaType },
+                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
+                followsData: result.followsData.map((follow) => ({
+                    ...follow,
+                    userMedia: { ...follow.userMedia, kind: mediaType },
+                })),
+            };
+        }
+        if (mediaType === MediaType.MANGA) {
+            const result = await container.features.mangaDetailsReader.getMediaAndUserDetails(currentUser?.id, mediaId);
+            if (!result) throw notFound();
+            return {
+                similarMedia: result.similarMedia,
+                media: { ...result.media, kind: mediaType },
+                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
+                followsData: result.followsData.map((follow) => ({
+                    ...follow,
+                    userMedia: { ...follow.userMedia, kind: mediaType },
+                })),
+            };
+        }
+        throw new Error(`Unsupported media type: ${mediaType}`);
     });
 
 
@@ -42,8 +99,27 @@ export const getMediaCommunityActivity = createServerFn({ method: "GET" })
     .validator(mediaCommunityActivitySchema)
     .handler(async ({ data: { mediaType, mediaId, search }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.getMediaCommunityActivity(currentUser?.id, mediaId, search);
+        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+            return container.features.tvDetailsReaders[mediaType]
+                .getCommunityActivity(currentUser?.id, mediaId, search);
+        }
+        if (mediaType === MediaType.MOVIES) {
+            return container.features.movieDetailsReader
+                .getCommunityActivity(currentUser?.id, mediaId, search);
+        }
+        if (mediaType === MediaType.GAMES) {
+            return container.features.gameDetailsReader
+                .getCommunityActivity(currentUser?.id, mediaId, search);
+        }
+        if (mediaType === MediaType.BOOKS) {
+            return container.features.bookDetailsReader
+                .getCommunityActivity(currentUser?.id, mediaId, search);
+        }
+        if (mediaType === MediaType.MANGA) {
+            return container.features.mangaDetailsReader
+                .getCommunityActivity(currentUser?.id, mediaId, search);
+        }
+        throw new Error(`Unsupported media type: ${mediaType}`);
     });
 
 
@@ -63,8 +139,27 @@ export const getJobDetails = createServerFn({ method: "GET" })
     .validator(jobDetailsSchema)
     .handler(async ({ data: { mediaType, job, name, pagination }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.getMediaJobDetails(job, name, pagination, currentUser?.id);
+        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+            return container.features.tvDetailsReaders[mediaType]
+                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+        }
+        if (mediaType === MediaType.MOVIES) {
+            return container.features.movieDetailsReader
+                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+        }
+        if (mediaType === MediaType.GAMES) {
+            return container.features.gameDetailsReader
+                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+        }
+        if (mediaType === MediaType.BOOKS) {
+            return container.features.bookDetailsReader
+                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+        }
+        if (mediaType === MediaType.MANGA) {
+            return container.features.mangaDetailsReader
+                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+        }
+        throw new Error(`Unsupported media type: ${mediaType}`);
     });
 
 
@@ -74,7 +169,6 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
         const adminService = container.services.admin;
-        const mediaService = container.registries.mediaService.get(mediaType);
         const isManagerOrAbove = isAtLeastRole(currentUser.role as RoleType, RoleType.MANAGER);
         const ingestionService = container.registries.ingestionServices.get(mediaType);
 
@@ -82,7 +176,7 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
             throw new FormattedError("Unauthorized to refresh book metadata.");
         }
 
-        const media = await mediaService.findById(mediaId);
+        const media = await container.features.catalogRefreshCandidates.getItemIdentity(mediaType, mediaId);
         if (!media) throw new FormattedError("Media not found, cannot refresh metadata.");
 
         if (!isManagerOrAbove && media.lastApiUpdate) {
@@ -107,13 +201,11 @@ export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();
-        const gamesService = container.registries.mediaService.get(MediaType.GAMES);
-
         if (mediaType !== MediaType.GAMES) {
             throw new FormattedError("Platform lookup is only available for games ;).");
         }
 
-        return gamesService.getCompatiblePlatforms(mediaId);
+        return container.features.gameDetailsReader.getCompatiblePlatforms(mediaId);
     });
 
 
@@ -122,8 +214,7 @@ export const postUpdateBookCover = createServerFn({ method: "POST" })
     .validator((data) => updateBookCoverSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
     .handler(async ({ data: { mediaId, imageUrl, imageFile } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(MediaType.BOOKS);
-        await mediaService.updateDefaultCover(mediaId, { imageUrl, imageFile });
+        await container.features.bookCoverContribution.contribute(mediaId, { imageUrl, imageFile });
     });
 
 
@@ -132,8 +223,11 @@ export const getMediaDetailsToEdit = createServerFn({ method: "GET" })
     .validator(mediaDetailsToEditSchema)
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.getMediaEditableFields(mediaId);
+
+        const result = await container.features.catalogAdminReaders[mediaType].getEditableFields(mediaId);
+        if (!result) throw notFound();
+
+        return result;
     });
 
 
@@ -142,6 +236,5 @@ export const postEditMediaDetails = createServerFn({ method: "POST" })
     .validator(editMediaDetailsSchema)
     .handler(async ({ data: { mediaType, mediaId, payload } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.updateMediaEditableFields(mediaId, payload);
+        await container.features.catalogManagerEditor.update(mediaType, mediaId, payload);
     });

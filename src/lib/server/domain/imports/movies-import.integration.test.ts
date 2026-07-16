@@ -1,7 +1,7 @@
 import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
 import * as schema from "@/lib/server/database/schema";
-import {importItems, importJobs, movies, moviesList, user} from "@/lib/server/database/schema";
+import {importItems, importJobs, libraryEntry, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -18,12 +18,12 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 
 const { ImportService } = await import("@/lib/server/domain/imports/import.service");
-const { MoviesService } = await import("@/lib/server/domain/media/movies/movies.service");
 const { ImportRepository } = await import("@/lib/server/domain/imports/import.repository");
 const { createMoviesMatcher } = await import("@/lib/server/domain/imports/matchers/movies.matcher");
-const { MoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
 const { MediaMatcherRegistry } = await import("@/lib/server/domain/imports/matchers/media-matcher.registry");
+const { MovieLibraryWriter } = await import("@/lib/server/domain/library/movies/movie-library.writer");
+const { MovieCatalogIngestionRepository } = await import("@/lib/server/domain/catalog/movies/movie-catalog-ingestion.repository");
 
 
 describe("movies import processing", () => {
@@ -48,14 +48,11 @@ describe("movies import processing", () => {
             createdAt: "2024-01-01 00:00:00",
             updatedAt: "2024-01-01 00:00:00",
         });
-        await db.insert(movies).values({
-            id: 100,
-            apiId: 550,
-            duration: 139,
-            name: "Fight Club",
-            imageCover: "fight-club.jpg",
-            releaseDate: "1999-10-15",
+        await db.insert(schema.catalogItem).values({
+            id: 1000, kind: MediaType.MOVIES, primaryProvider: ApiProviderType.TMDB,
+            primaryExternalId: "550", name: "Fight Club", imageCover: "fight-club.jpg",
         });
+        await db.insert(schema.movieDetails).values({ catalogItemId: 1000, durationMinutes: 139 });
     });
 
     afterEach(() => {
@@ -65,12 +62,12 @@ describe("movies import processing", () => {
 
     it("matches an internal movie, adds it to the user list, and completes the import job", async () => {
         const importService = new ImportService(ImportRepository);
-        const moviesService = new MoviesService(new MoviesRepository());
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
-            moviesService,
+            new MovieCatalogIngestionRepository(),
             { search: { search: vi.fn() } } as any,
             { storeFromExternal: vi.fn() } as any,
+            new MovieLibraryWriter(),
         ));
         const processor = new ImportJobProcessor(importService, matcherRegistry);
 
@@ -101,21 +98,29 @@ describe("movies import processing", () => {
             processedCount: 1,
         });
 
-        const [storedListItem] = await db.select().from(moviesList).where(eq(moviesList.userId, 42));
+        const storedListItem = await db.select({
+            userId: schema.libraryEntry.userId,
+            catalogItemId: schema.libraryEntry.catalogItemId,
+            rating: schema.libraryEntry.rating,
+            favorite: schema.libraryEntry.favorite,
+            status: schema.libraryEntry.status,
+            watchCount: schema.movieProgress.watchCount,
+        }).from(schema.libraryEntry).innerJoin(
+            schema.movieProgress, eq(schema.movieProgress.libraryEntryId, schema.libraryEntry.id),
+        ).where(eq(schema.libraryEntry.userId, 42)).get();
         const [storedImportItem] = await db.select().from(importItems).where(eq(importItems.jobId, job.id));
         const [storedJob] = await db.select().from(importJobs).where(eq(importJobs.id, job.id));
 
         expect(storedListItem).toMatchObject({
-            redo: 1,
-            total: 2,
+            watchCount: 2,
             userId: 42,
-            mediaId: 100,
+            catalogItemId: 1000,
             rating: 9,
             favorite: true,
             status: Status.COMPLETED,
         });
         expect(storedImportItem).toMatchObject({
-            matchedMediaId: 100,
+            matchedMediaId: 1000,
             status: ImportItemStatus.COMPLETED,
         });
         expect(storedJob).toMatchObject({
@@ -129,7 +134,6 @@ describe("movies import processing", () => {
 
     it("settles external skipped and failed movie rows and completes the import job with errors", async () => {
         const importService = new ImportService(ImportRepository);
-        const moviesService = new MoviesService(new MoviesRepository());
         const moviesProvider = {
             search: {
                 search: vi.fn()
@@ -139,9 +143,10 @@ describe("movies import processing", () => {
         };
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
-            moviesService,
+            new MovieCatalogIngestionRepository(),
             moviesProvider as any,
             { storeFromExternal: vi.fn() } as any,
+            new MovieLibraryWriter(),
         ));
         const processor = new ImportJobProcessor(importService, matcherRegistry);
 
@@ -181,7 +186,7 @@ describe("movies import processing", () => {
             processedCount: 2,
         });
 
-        const storedListItems = await db.select().from(moviesList).where(eq(moviesList.userId, 42));
+        const storedListItems = await db.select().from(libraryEntry).where(eq(libraryEntry.userId, 42));
         const storedImportItems = await db.select().from(importItems).where(eq(importItems.jobId, job.id));
         const [storedJob] = await db.select().from(importJobs).where(eq(importJobs.id, job.id));
         const [skippedItem, failedItem] = storedImportItems.sort((a, b) => a.rowNumber - b.rowNumber);

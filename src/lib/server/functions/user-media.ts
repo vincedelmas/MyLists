@@ -11,14 +11,27 @@ import {
     updateUserMediaSchema,
     userTagNamesSchema
 } from "@/lib/schemas";
+import {MediaType} from "@/lib/utils/enums";
 
 
 export const getUserMediaHistory = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
-        const userUpdatesService = await getContainer().then(c => c.services.userUpdates);
-        return userUpdatesService.getUserMediaHistory(currentUser.id, mediaType, mediaId);
+        const container = await getContainer();
+        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+            return container.features.tvDetailsReaders[mediaType].getUserMediaHistory(currentUser.id, mediaId);
+        }
+        if (mediaType === MediaType.MOVIES) {
+            return container.features.movieDetailsReader.getUserMediaHistory(currentUser.id, mediaId);
+        }
+        if (mediaType === MediaType.GAMES) {
+            return container.features.gameDetailsReader.getUserMediaHistory(currentUser.id, mediaId);
+        }
+        if (mediaType === MediaType.BOOKS) {
+            return container.features.bookDetailsReader.getUserMediaHistory(currentUser.id, mediaId);
+        }
+        return container.features.mangaDetailsReader.getUserMediaHistory(currentUser.id, mediaId);
     });
 
 
@@ -26,8 +39,8 @@ export const postAddMediaToList = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(addMediaToListSchema)
     .handler(async ({ data: { mediaType, mediaId, status }, context: { currentUser } }) => {
-        const userMediaService = await getContainer().then(c => c.services.userMedia);
-        return userMediaService.addMediaToList({ mediaType, mediaId, status, userId: currentUser.id });
+        const container = await getContainer();
+        return container.library.commands.add({ mediaType, mediaId, status, userId: currentUser.id });
     });
 
 
@@ -35,8 +48,8 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(updateUserMediaSchema)
     .handler(async ({ data: { mediaType, mediaId, payload }, context: { currentUser } }) => {
-        const userMediaService = await getContainer().then(c => c.services.userMedia);
-        return userMediaService.updateUserMedia({ mediaType, mediaId, payload, userId: currentUser.id });
+        const container = await getContainer();
+        return container.library.commands.update({ mediaType, mediaId, payload, userId: currentUser.id });
     });
 
 
@@ -46,12 +59,8 @@ export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
         return updateUserCustomCoverSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data);
     })
     .handler(async ({ data, context: { currentUser } }) => {
-        const { mediaType } = data;
-
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(mediaType);
-
-        return mediaService.updateUserCustomCover(currentUser.id, data);
+        return container.library.commands.updateCustomCover(currentUser.id, data);
     });
 
 
@@ -59,8 +68,9 @@ export const postRemoveMediaFromList = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
-        const userMediaService = await getContainer().then(c => c.services.userMedia);
-        await userMediaService.removeMediaFromList({ mediaType, mediaId, userId: currentUser.id });
+        const container = await getContainer();
+        await container.library.commands.remove({ mediaType, mediaId, userId: currentUser.id });
+        await container.services.notifications.deleteUserMediaNotifications(currentUser.id, mediaType, mediaId);
     });
 
 
@@ -68,8 +78,8 @@ export const postDeleteUserUpdates = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(deleteUserUpdatesSchema)
     .handler(async ({ data: { updateIds, returnData }, context: { currentUser } }) => {
-        const userUpdatesService = await getContainer().then(c => c.services.userUpdates);
-        return userUpdatesService.deleteUserUpdates(currentUser.id, updateIds, returnData);
+        const container = await getContainer();
+        return container.services.userUpdates.deleteUserUpdates(currentUser.id, updateIds, returnData);
     });
 
 
@@ -78,8 +88,7 @@ export const getUserTagNames = createServerFn({ method: "GET" })
     .validator(userTagNamesSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.getTagNames(currentUser.id);
+        return container.library.commands.getTagNames(currentUser.id, mediaType);
     });
 
 
@@ -88,7 +97,5 @@ export const postEditUserTag = createServerFn({ method: "POST" })
     .validator(editUserTagSchema)
     .handler(async ({ data: { mediaType, mediaId, tag, action }, context: { currentUser } }) => {
         const container = await getContainer();
-        const mediaService = container.registries.mediaService.get(mediaType);
-
-        return mediaService.editUserTag(currentUser.id, tag, action, mediaId);
+        return container.library.commands.editTag({ userId: currentUser.id, mediaType, mediaId, action, tag });
     });

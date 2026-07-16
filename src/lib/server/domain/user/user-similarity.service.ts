@@ -10,7 +10,8 @@ const MINIMUM_PER_MEDIA_RATINGS = 3;
 
 
 export class UserSimilarityService {
-    constructor(private repository: typeof UserSimilarityRepository) {
+    constructor(private repository: Pick<typeof UserSimilarityRepository,
+        "findCandidateAggregates" | "getCandidateProfiles" | "getSharedFavMedia">) {
     }
 
     async getTasteMatches(currentUserId: number, filters: TasteMatchesSearch, activeMediaTypes: MediaType[] = Object.values(MediaType)) {
@@ -85,9 +86,9 @@ export class UserSimilarityService {
             })
             .sort((left, right) => {
                 if (filters.sorting === "overlap") {
-                    return right.sharedRatings - left.sharedRatings || right.similarity - left.similarity;
+                    return right.sharedRatings - left.sharedRatings || right.similarity - left.similarity || left.id - right.id;
                 }
-                return right.similarity - left.similarity || right.sharedRatings - left.sharedRatings;
+                return right.similarity - left.similarity || right.sharedRatings - left.sharedRatings || left.id - right.id;
             });
 
         const isSearching = search.length > 0;

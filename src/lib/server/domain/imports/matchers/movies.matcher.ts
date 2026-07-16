@@ -1,25 +1,27 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
-import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
+import {UpsertMovieWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalTMDBMovieMatcher} from "@/lib/server/domain/imports/matchers/external-movie.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {MoviesImportListWriter} from "@/lib/server/domain/imports/list-writers/movies-import-list.writer";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {MovieLibraryWriter} from "@/lib/server/domain/library/movies/movie-library.writer";
+import {MovieCatalogIngestionRepository} from "@/lib/server/domain/catalog/movies/movie-catalog-ingestion.repository";
 
 
 export const createMoviesMatcher = (
-    moviesService: MoviesService,
+    catalog: MovieCatalogIngestionRepository,
     moviesProvider: ExternalMediaProvider<UpsertMovieWithDetails>,
     moviesIngestion: MediaIngestionService<UpsertMovieWithDetails>,
+    libraryWriter: MovieLibraryWriter,
 ) => createMediaMatcher({
     internalMatchers: [
-        internalApiIdMatcher(ApiProviderType.TMDB, moviesService),
-        internalNameDateMatcher(moviesService),
+        internalApiIdMatcher(ApiProviderType.TMDB, catalog),
+        internalNameDateMatcher(catalog),
     ],
     externalMatchers: [
         new ExternalTMDBMovieMatcher(moviesProvider, moviesIngestion),
     ],
-    listWriter: new MoviesImportListWriter(moviesService),
+    listWriter: new MoviesImportListWriter(libraryWriter),
 });

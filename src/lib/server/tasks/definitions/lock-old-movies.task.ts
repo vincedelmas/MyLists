@@ -1,5 +1,4 @@
 import {z} from "zod";
-import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 
@@ -11,10 +10,8 @@ export const lockOldMoviesTask = defineTask({
     inputSchema: z.object({}),
     handler: async (ctx) => {
         const container = await getContainer();
-        const moviesService = container.registries.mediaService.get(MediaType.MOVIES);
-
         await ctx.step("lock-movies", async () => {
-            const totalMoviesLocked = await moviesService.lockOldMovies();
+            const totalMoviesLocked = await container.features.movieCatalogAdmin.lockOldMovies();
 
             ctx.metric("movies.locked", totalMoviesLocked);
 

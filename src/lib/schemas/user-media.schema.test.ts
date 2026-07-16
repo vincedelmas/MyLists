@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
-import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import {addMediaToListSchema, updateUserMediaSchema} from "@/lib/schemas/user-media.schema";
+import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {addMediaToListSchema, editUserTagSchema, updateUserMediaSchema} from "@/lib/schemas/user-media.schema";
 
 
 describe("user media schemas", () => {
@@ -73,6 +73,20 @@ describe("user media schemas", () => {
                 message: "Comment cannot exceed 5000 characters",
             }),
         ]));
+    });
+
+    it("rejects blank tag names and canonicalizes surrounding whitespace", () => {
+        expect(editUserTagSchema.safeParse({
+            action: TagAction.ADD,
+            mediaType: MediaType.MOVIES,
+            tag: { name: "   " },
+        }).success).toBe(false);
+
+        expect(editUserTagSchema.parse({
+            action: TagAction.RENAME,
+            mediaType: MediaType.MOVIES,
+            tag: { name: "  favorite  ", oldName: "  old  " },
+        }).tag).toEqual({ name: "favorite", oldName: "old" });
     });
 
     it("rejects implausibly old backlog dates", () => {

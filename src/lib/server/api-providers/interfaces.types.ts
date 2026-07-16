@@ -56,6 +56,18 @@ export type MediaDetailsEnricher<UpsertWithDetails> = {
 }
 
 
+/** Minimal persistence port used by the provider/transformer ingestion pipeline. */
+export interface MediaIngestionRepository<TDetails> {
+    findByApiId(apiId: number | string): Promise<{ id: number; apiId: number | string } | undefined>;
+
+    findByApiIds(apiIds: (number | string)[]): Promise<{ id: number; apiId: number | string }[]>;
+
+    storeMediaWithDetails(details: TDetails): Promise<number>;
+
+    updateMediaWithDetails(details: TDetails): Promise<boolean>;
+}
+
+
 export interface ExternalMediaProvider<TDetails> {
     source: "tmdb" | "igdb" | "google-books" | "jikan";
     mediaType: MediaType;

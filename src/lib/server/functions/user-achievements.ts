@@ -6,7 +6,8 @@ import {authorizationMiddleware} from "@/lib/server/middlewares/authorization";
 export const getUserAchievements = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .handler(async ({ context: { user } }) => {
-        const achievementsService = await getContainer().then(c => c.services.achievements);
+        const container = await getContainer();
+        const achievementsService = container.services.achievements;
 
         const result = await achievementsService.getUserAchievements(user.id);
         const summary = await achievementsService.getUserAchievementStats(user.id);
@@ -14,6 +15,6 @@ export const getUserAchievements = createServerFn({ method: "GET" })
         return {
             result,
             summary,
-            userActivatedMediaTypes: user.userMediaSettings.filter(s => s.active).map(s => s.mediaType),
+            userActivatedMediaTypes: await container.features.profileChannelAccess.getEnabledKinds(user.id),
         };
     });

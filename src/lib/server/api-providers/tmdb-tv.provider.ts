@@ -1,11 +1,11 @@
 import {MediaType} from "@/lib/utils/enums";
 import {logger} from "@/lib/server/core/logger";
-import {TvRepository} from "@/lib/server/domain/media/tv";
 import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
-import {TvMediaType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
+import {TvMediaType} from "@/lib/types/media-kind.types";
+import {UpsertTvWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
-import {ExternalMediaProvider, MediaDetailsEnricher} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalMediaProvider, MediaDetailsEnricher, MediaIngestionRepository, RefreshCandidateSource} from "@/lib/server/api-providers/interfaces.types";
 
 
 const createAnimeGenresEnricher = (jikan: JikanApi): MediaDetailsEnricher<UpsertTvWithDetails> => {
@@ -29,16 +29,6 @@ const createAnimeGenresEnricher = (jikan: JikanApi): MediaDetailsEnricher<Upsert
             logger.warn({ err, animeName: details.mediaData.name }, "Skipping Jikan anime genre enrichment");
             return details;
         }
-    };
-};
-
-
-const createTvRefreshCandidates = (repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
-    return {
-        async getCandidateApiIds() {
-            const changedIds = await provider.changedIds?.getChangedIds() ?? [];
-            return repository.getMediaIdsToBeRefreshed(changedIds.map(Number));
-        },
     };
 };
 
@@ -88,20 +78,29 @@ export const createTmdbAnimeProvider = (tmdb: TmdbApi): ExternalMediaProvider<Up
 };
 
 
-export const createSeriesIngestionService = (repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
+export const createSeriesIngestionService = (
+    repository: MediaIngestionRepository<UpsertTvWithDetails>,
+    provider: ExternalMediaProvider<UpsertTvWithDetails>,
+    refreshCandidates?: RefreshCandidateSource,
+) => {
     return createMediaIngestionService({
         provider,
         repository,
-        refreshCandidates: createTvRefreshCandidates(repository, provider),
+        refreshCandidates,
     });
 };
 
 
-export const createAnimeIngestionService = (jikan: JikanApi, repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
+export const createAnimeIngestionService = (
+    jikan: JikanApi,
+    repository: MediaIngestionRepository<UpsertTvWithDetails>,
+    provider: ExternalMediaProvider<UpsertTvWithDetails>,
+    refreshCandidates?: RefreshCandidateSource,
+) => {
     return createMediaIngestionService({
         provider,
         repository,
-        refreshCandidates: createTvRefreshCandidates(repository, provider),
+        refreshCandidates,
         enrichers: [
             createAnimeGenresEnricher(jikan),
         ],

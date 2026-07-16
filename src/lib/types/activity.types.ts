@@ -1,6 +1,4 @@
-import {DeltaStats} from "@/lib/types/stats.types";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
-import {UpdateUserMediaDetails} from "@/lib/types/user-media.types";
 
 
 export type MediaInfo = {
@@ -58,25 +56,3 @@ export type MonthlyActivityChartDatum = {
     month: string;
     total: number;
 } & Partial<Record<MediaType, number>>;
-
-
-export type LogActivityFromDelta = {
-    userId: number;
-    mediaId: number;
-    delta: DeltaStats;
-    lastUpdate?: string;
-    mediaType: MediaType;
-    newState: UpdateUserMediaDetails<any, any>["newState"];
-};
-
-
-export type LogActivity = {
-    userId: number;
-    mediaId: number;
-    isRedo: boolean;
-    hidden?: boolean;
-    lastUpdate?: string;
-    isCompleted: boolean;
-    mediaType: MediaType;
-    specificGained: number;
-}

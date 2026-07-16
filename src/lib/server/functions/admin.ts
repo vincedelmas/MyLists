@@ -55,10 +55,9 @@ export const getAdminOverview = createServerFn({ method: "GET" })
 export const getAdminMediaOverview = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
-        const adminService = await getContainer().then((c) => c.services.admin);
-        const mediaServiceRegistry = await getContainer().then((c) => c.registries.mediaService);
-
-        return adminService.getMediaOverviewForAdmin(mediaServiceRegistry);
+        const container = await getContainer();
+        const adminService = container.services.admin;
+        return adminService.getMediaOverviewForAdmin();
     });
 
 

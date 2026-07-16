@@ -1,7 +1,6 @@
 import {z} from "zod";
 import dedent from "dedent";
 import {serverEnv} from "@/env/server";
-import {MediaType} from "@/lib/utils/enums";
 import {adminLlmResponseSchema} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
@@ -18,13 +17,25 @@ export const addGenresToBooksUsingLlmTask = defineTask({
     handler: async (ctx, input) => {
         const container = await getContainer();
         const llmClient = container.apiClients.llmClient;
-        const booksService = container.registries.mediaService.get(MediaType.BOOKS);
+        const bookCatalog = container.features.bookCatalogAdmin;
 
         ctx.metric("llm.model", serverEnv.LLM_MODEL_ID);
         ctx.metric("llm.endpoint", serverEnv.LLM_BASE_URL);
 
-        const booksGenres = booksService.getAvailableGenres();
-        const batchedBooks = await booksService.batchBooksWithoutGenres(input.batchSize ?? 10);
+        const booksGenres = BOOK_GENRES;
+        const booksWithoutGenres = await bookCatalog.getBooksWithoutGenres();
+        const prompts = booksWithoutGenres.map((book) => `
+bookApiId: ${book.apiId}
+title: ${book.title}
+authors: ${book.authors}
+description: ${book.synopsis}
+----------
+`);
+        const batchSize = input.batchSize ?? 10;
+        const batchedBooks = Array.from(
+            { length: Math.ceil(prompts.length / batchSize) },
+            (_, index) => prompts.slice(index * batchSize, (index + 1) * batchSize),
+        );
         const processingBatches = batchedBooks.slice(0, input.batchLimit ?? 10);
 
         ctx.metric("batches.total", batchedBooks.length);
@@ -77,10 +88,18 @@ export const addGenresToBooksUsingLlmTask = defineTask({
                         continue;
                     }
 
-                    await booksService.addGenresToBook(item.bookApiId, validGenres);
+                    await bookCatalog.synchronizeGenresByExternalId(item.bookApiId, validGenres);
                     ctx.increment("books.tagged");
                 }
             });
         }
     },
 });
+
+
+const BOOK_GENRES: readonly string[] = [
+    "Action & Adventure", "Biography", "Chick lit", "Children", "Classic", "Crime", "Drama",
+    "Dystopian", "Essay", "Fantastic", "Fantasy", "Historical Fiction", "History", "Humor", "Horror",
+    "Literary Novel", "Memoirs", "Mystery", "Paranormal", "Philosophy", "Poetry", "Romance", "Science",
+    "Science-Fiction", "Short story", "Suspense", "Testimony", "Thriller", "Western", "Young adult",
+];

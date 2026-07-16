@@ -1,12 +1,13 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
-import {BooksService} from "@/lib/server/domain/media/books/books.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {Book, booksFinalListInsertSchema, BooksImportPayload, booksImportPayloadSchema} from "@/lib/server/domain/media/books/books.types";
+import {booksFinalListInsertSchema, BooksImportPayload, booksImportPayloadSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {BookLibraryWriter} from "@/lib/server/domain/library/books/book-library.writer";
+import {BookCatalogIngestionRepository} from "@/lib/server/domain/catalog/books/book-catalog-ingestion.repository";
 
 
 export class BooksImportListWriter implements ImportListWriter {
-    constructor(private booksService: BooksService) {
+    constructor(private catalog: BookCatalogIngestionRepository, private libraryWriter: BookLibraryWriter) {
     }
 
     async addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]> {
@@ -16,14 +17,14 @@ export class BooksImportListWriter implements ImportListWriter {
 
         for (const { item, mediaId } of matches) {
             const payload = booksImportPayloadSchema.parse(item.payload);
-            const media = await this.booksService.findById(mediaId);
+            const media = await this.catalog.findForImport(mediaId);
             if (!media) throw new Error(`Matched book media ${mediaId} does not exist`);
 
             const fullPayload = this._materializeBookListPayload(payload, media);
             userBooks.push(booksFinalListInsertSchema.parse({ userId, mediaId, ...fullPayload }));
         }
 
-        await this.booksService.bulkInsertUserMedia(userBooks);
+        await this.libraryWriter.importRows(userBooks);
 
         return matches.map(({ item, mediaId }) => ({
             itemId: item.id,
@@ -32,7 +33,7 @@ export class BooksImportListWriter implements ImportListWriter {
         }));
     }
 
-    private _materializeBookListPayload(payload: BooksImportPayload, media: Book) {
+    private _materializeBookListPayload(payload: BooksImportPayload, media: { pages: number }) {
         const redo = payload.redo ?? 0;
         const actualPage = payload.actualPage ?? this._defaultActualPage(payload.status, media);
         const total = payload.total ?? this._calculateTotal(payload.status, actualPage, redo, media);
@@ -45,13 +46,13 @@ export class BooksImportListWriter implements ImportListWriter {
         };
     }
 
-    private _defaultActualPage(status: Status, media: Book) {
+    private _defaultActualPage(status: Status, media: { pages: number }) {
         if (status === Status.COMPLETED) return media.pages;
         if (status === Status.PLAN_TO_READ) return 0;
         return 0;
     }
 
-    private _calculateTotal(status: Status, actualPage: number | null, redo: number, media: Book) {
+    private _calculateTotal(status: Status, actualPage: number | null, redo: number, media: { pages: number }) {
         if (status === Status.COMPLETED) return media.pages + (redo * media.pages);
         if (status === Status.PLAN_TO_READ) return 0;
         return (actualPage ?? 0) + (redo * media.pages);

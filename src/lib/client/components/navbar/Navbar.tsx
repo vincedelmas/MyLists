@@ -10,6 +10,7 @@ import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
 import {authOptions} from "@/lib/client/react-query/query-options";
+import {setViewerCacheIdentity} from "@/lib/client/react-query/query-options/viewer-cache";
 import {Link, useLocation, useNavigate} from "@tanstack/react-router";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
@@ -65,6 +66,7 @@ export const Navbar = () => {
 
     const logoutUser = async () => {
         await authClient.signOut();
+        setViewerCacheIdentity(null);
         queryClient.setQueryData(authOptions.queryKey, null);
         await navigate({ to: "/", replace: true });
         queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });

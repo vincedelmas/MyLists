@@ -1,7 +1,7 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
-import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {UpComingAlert} from "@/lib/client/components/media/base/MediaDetailsComps";
 

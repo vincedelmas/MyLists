@@ -4,6 +4,7 @@ import {useQueryClient} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {authOptions} from "@/lib/client/react-query/query-options";
+import {setViewerCacheIdentity} from "@/lib/client/react-query/query-options/viewer-cache";
 import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {useDeleteAccountMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
@@ -31,6 +32,7 @@ function DangerForm() {
         deleteAccountMutation.mutate(undefined, {
             onSuccess: async () => {
                 await authClient.signOut();
+                setViewerCacheIdentity(null);
                 queryClient.setQueryData(authOptions.queryKey, null);
                 await navigate({ to: "/", replace: true });
                 queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });

@@ -10,12 +10,10 @@ import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cac
 export const getUserStats = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .validator(userStatsInputSchema)
-    .handler(async ({ data: { activeTab }, context: { user } }) => {
+    .handler(async ({ data: { activeTab }, context: { user, libraryAccessScope } }) => {
         const container = await getContainer();
         const userStatsService = container.services.userStats;
-        const activatedMediaTypes = user.userMediaSettings
-            .filter(s => s.active)
-            .map(s => s.mediaType);
+        const activatedMediaTypes = await container.features.profileChannelAccess.getEnabledKinds(user.id);
 
         if (activeTab !== "overview" && !activatedMediaTypes.includes(activeTab)) {
             throw new FormattedError("MediaType not activated");
@@ -38,7 +36,10 @@ export const getUserStats = createServerFn({ method: "GET" })
 
         const stats = await container.cacheManager.wrap(
             getUserStatsCacheKey(user.id, activeTab),
-            () => userStatsService.userAdvancedMediaStats(user.id, activeTab),
+            () => userStatsService.userAdvancedMediaStats(user.id, activeTab, {
+                ...libraryAccessScope,
+                mediaTypeEnabled: true,
+            }),
             { ttl: ONE_HOUR_CACHE_TTL_MS },
         );
 

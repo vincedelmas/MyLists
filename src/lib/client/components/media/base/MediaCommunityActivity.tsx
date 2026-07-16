@@ -13,6 +13,7 @@ import {mediaCommunityActivityOptions} from "@/lib/client/react-query/query-opti
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
 import {ChevronDown, CircleHelp, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 
 
 type MediaCommunityActivityQuery = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaCommunityActivityOptions>["queryFn"]>>>;
@@ -26,8 +27,14 @@ interface CommunityActivityProps {
 
 
 export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivityProps) => {
+    const { currentUser } = useAuth();
     const isBelowSm = useBreakpoint("sm");
-    const apiData = useSuspenseQuery(mediaCommunityActivityOptions(mediaId, mediaType, { page: 1, perPage: 8 })).data;
+    const apiData = useSuspenseQuery(mediaCommunityActivityOptions(
+        mediaId,
+        mediaType,
+        currentUser?.id ?? null,
+        { page: 1, perPage: 8 },
+    )).data;
 
     if (!apiData.total) {
         return null;

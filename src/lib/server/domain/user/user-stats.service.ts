@@ -1,90 +1,38 @@
-import {HallOfFameSearch} from "@/lib/schemas";
-import {DeltaStats} from "@/lib/types/stats.types";
-import {MediaType, Status} from "@/lib/utils/enums";
-import {statusUtils} from "@/lib/utils/media-mapping";
-import {UserMediaStats} from "@/lib/types/user-media.types";
-import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
-import {UserStatsRepository} from "@/lib/server/domain/user/user-stats.repository";
+import {MediaType} from "@/lib/utils/enums";
 import {UserActivityService} from "@/lib/server/domain/user/user-activity.service";
-import {UserUpdatesRepository} from "@/lib/server/domain/user/user-updates.repository";
-import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
+import {isTvKind} from "@/lib/server/domain/library/tv/tv-library-read.repository";
+import {TvStatsReadRepository} from "@/lib/server/domain/library/tv/tv-stats-read.repository";
+import {TvMediaType} from "@/lib/types/media-kind.types";
+import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {MovieStatsReadRepository} from "@/lib/server/domain/library/movies/movie-stats-read.repository";
+import {GameStatsReadRepository} from "@/lib/server/domain/library/games/game-stats-read.repository";
+import {BookStatsReadRepository} from "@/lib/server/domain/library/books/book-stats-read.repository";
+import {MangaStatsReadRepository} from "@/lib/server/domain/library/manga/manga-stats-read.repository";
+import {StatsSummaryReadService} from "@/lib/server/domain/stats/stats-summary-read.service";
+import {ProfileUpdatesReadService} from "@/lib/server/domain/profile/profile-updates-read.service";
+import {AchievementsReadService} from "@/lib/server/domain/achievements/achievements-read.service";
+import {StatsSummaryRepository} from "@/lib/server/domain/stats/stats-summary.repository";
+import {ProfileChannelAccessRepository} from "@/lib/server/domain/access/profile-channel-access.repository";
 
 
 export class UserStatsService {
+    private readonly summary = new StatsSummaryReadService();
+    private readonly updates = new ProfileUpdatesReadService();
+    private readonly achievements = new AchievementsReadService();
+    private readonly profileChannels = new ProfileChannelAccessRepository();
+
     constructor(
-        private repository: typeof UserStatsRepository,
         private userActivityService: UserActivityService,
-        private achievementsRepository: typeof AchievementsRepository,
-        private userUpdatesRepository: typeof UserUpdatesRepository,
-        private mediaServiceRegistry: typeof MediaServiceRegistry,
+        private tvStatsReaders?: Record<TvMediaType, TvStatsReadRepository>,
+        private movieStatsReader?: MovieStatsReadRepository,
+        private gameStatsReader?: GameStatsReadRepository,
+        private bookStatsReader?: BookStatsReadRepository,
+        private mangaStatsReader?: MangaStatsReadRepository,
     ) {
     }
 
     async updateUserMediaListSettings(userId: number, payload: Partial<Record<MediaType, boolean>>) {
-        await this.repository.updateUserMediaListSettings(userId, payload);
-    }
-
-    async updateUserPreComputedStatsWithDelta(userId: number, mediaType: MediaType, mediaId: number, delta: DeltaStats) {
-        await this.repository.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
-    }
-
-    async updateAllUsersPreComputedStats(mediaType: MediaType, userStats: UserMediaStats[]) {
-        await this.repository.updateAllUsersPreComputedStats(mediaType, userStats);
-    }
-
-    async userHalloFameData(filters: HallOfFameSearch, userId?: number) {
-        const {
-            mediaTypes,
-            currentUserRankData,
-            mediaTypeCountMap,
-            currentUserActiveSettings,
-            rankedUsers,
-            userSettingsMap,
-            rankSelectionColName,
-            page, pages, total,
-        } = await this.repository.userHalloFameData(filters, userId);
-
-        // Calculate Current User's Percentile Ranks
-        const userRanks = [];
-        for (const mediaType of mediaTypes) {
-            let percent: number | null = null;
-            const rankKey = `${mediaType}Rank` as keyof typeof currentUserRankData;
-
-            const rank = (currentUserRankData?.[rankKey] as unknown as number) ?? null;
-            const mtCount = mediaTypeCountMap.get(mediaType) ?? 0;
-            const active = currentUserActiveSettings.has(mediaType);
-
-            if (rank !== null && active) {
-                if (mtCount === 0) {
-                    percent = null;
-                }
-                else if (mtCount === 1 && rank === 1) {
-                    percent = 100;
-                }
-                else if (rank > mtCount) {
-                    percent = null;
-                }
-                else {
-                    percent = (rank / mtCount) * 100;
-                }
-            }
-
-            userRanks.push({ rank, active, mediaType, percent });
-        }
-
-        const items = rankedUsers.map((row) => {
-            return {
-                id: row.id,
-                name: row.name,
-                image: row.image,
-                privacy: row.privacy,
-                totalTime: row.totalTime,
-                settings: userSettingsMap.get(row.id) ?? [],
-                rank: (row[rankSelectionColName as keyof typeof row] as number) ?? null,
-            }
-        });
-
-        return { items, page, pages, total, userRanks }
+        await this.profileChannels.updateSettings(userId, payload);
     }
 
     // --- User Profile Summary Stats --------------------------------------------
@@ -94,58 +42,18 @@ export class UserStatsService {
     }
 
     async userPerMediaSummaryStats(userId: number) {
-        const excludedStatuses = statusUtils.getNoPlanTo();
-        const activeSettings = await this.repository.userActiveMediaSettings(userId);
-
-        const data = [];
-        for (const setting of activeSettings) {
-            let totalNoPlan = 0;
-            Object.entries(setting.statusCounts).forEach(([status, count]) => {
-                if (!excludedStatuses.includes(status as Status)) {
-                    totalNoPlan += count;
-                }
-            });
-
-            const statusList = Object.entries(setting.statusCounts)
-                .map(([status, count]) =>
-                    ({ status: status as Status, count, percent: (count / setting.totalEntries) * 100 })
-                );
-
-            const summary = {
-                statusList: statusList,
-                totalNoPlan: totalNoPlan,
-                mediaType: setting.mediaType,
-                avgRated: setting.averageRating,
-                timeSpent: setting.timeSpent / 60,
-                noData: setting.totalEntries === 0,
-                totalEntries: setting.totalEntries,
-                entriesRated: setting.entriesRated,
-                totalSpecific: setting.totalSpecific,
-                timeSpentDays: setting.timeSpent / 1440,
-                entriesFavorites: setting.entriesFavorites,
-                percentRated: (setting.entriesRated === 0) ? null : (setting.entriesRated / totalNoPlan) * 100,
-            };
-
-            data.push(summary);
-        }
-
-        return data;
+        return this.summary.getPerMediaSummary(userId);
     }
 
     // --- User Advanced Stats  --------------------------------------------------
 
     async userAdvancedSummaryStats(userId: number) {
         const userPreComputedStats = await this._getComputedStatsSummary({ userId });
-        const platinumAchievements = await this.achievementsRepository.countPlatinumAchievements(userId);
-        const mediaUpdatesPerMonth = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ userId });
+        const platinumAchievements = await this.achievements.countPlatinumAchievements(userId);
+        const mediaUpdatesPerMonth = await this.updates.mediaUpdatesStatsPerMonth({ userId });
         const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ userId });
 
-        const tagCountPromises = userPreComputedStats.mediaTypes.map((mediaType) => {
-            const mediaService = this.mediaServiceRegistry.get(mediaType);
-            return mediaService.computeTotalTags(userId);
-        });
-        const tagCounts = await Promise.all(tagCountPromises);
-        const totalTags = tagCounts.reduce((sum, count) => sum + count, 0);
+        const totalTags = await StatsSummaryRepository.countTags(userPreComputedStats.mediaTypes, userId);
 
         return {
             ...userPreComputedStats,
@@ -156,13 +64,29 @@ export class UserStatsService {
         };
     }
 
-    async userAdvancedMediaStats(userId: number, mediaType: MediaType) {
-        const mediaService = this.mediaServiceRegistry.get(mediaType);
-
-        const preComputedMediaStats = await this.repository.getAggregatedMediaStats({ userId, mediaType });
+    async userAdvancedMediaStats(userId: number, mediaType: MediaType, access?: MediaListAccessScope) {
+        if (!access) throw new Error("Media stats access scope is required");
+        const useTv = isTvKind(mediaType);
+        const preComputedMediaStats = useTv
+            ? await this.tvStatsReaders![mediaType].getAggregatedMediaStats({ type: "library", access: access! })
+            : mediaType === MediaType.MOVIES
+                ? await this.movieStatsReader!.getAggregatedMediaStats({ type: "library", access: access! })
+                : mediaType === MediaType.GAMES
+                    ? await this.gameStatsReader!.getAggregatedMediaStats({ type: "library", access: access! })
+                    : mediaType === MediaType.BOOKS
+                        ? await this.bookStatsReader!.getAggregatedMediaStats({ type: "library", access: access! })
+                        : await this.mangaStatsReader!.getAggregatedMediaStats({ type: "library", access: access! });
         const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ userId, mediaType });
-        const specificMediaStats = await mediaService.calculateAdvancedMediaStats(preComputedMediaStats.avgRated, userId);
-        const mediaUpdatesPerMonthStats = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ mediaType, userId });
+        const specificMediaStats = useTv
+            ? await this.tvStatsReaders![mediaType].getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated)
+            : mediaType === MediaType.MOVIES
+                ? await this.movieStatsReader!.getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated)
+                : mediaType === MediaType.GAMES
+                    ? await this.gameStatsReader!.getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated)
+                    : mediaType === MediaType.BOOKS
+                        ? await this.bookStatsReader!.getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated)
+                        : await this.mangaStatsReader!.getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated);
+        const mediaUpdatesPerMonthStats = await this.updates.mediaUpdatesStatsPerMonth({ mediaType, userId });
 
         return {
             ...preComputedMediaStats,
@@ -176,16 +100,11 @@ export class UserStatsService {
 
     async platformAdvancedStatsSummary() {
         const platformPreComputedStats = await this._getComputedStatsSummary({});
-        const platinumAchievements = await this.achievementsRepository.countPlatinumAchievements();
+        const platinumAchievements = await this.achievements.countPlatinumAchievements();
         const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ excludeBulkImports: true });
-        const mediaUpdatesPerMonth = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ excludeBulkImports: true });
+        const mediaUpdatesPerMonth = await this.updates.mediaUpdatesStatsPerMonth({ excludeBulkImports: true });
 
-        const tagCountPromises = platformPreComputedStats.mediaTypes.map((mediaType) => {
-            const mediaService = this.mediaServiceRegistry.get(mediaType);
-            return mediaService.computeTotalTags();
-        });
-        const tagCounts = await Promise.all(tagCountPromises);
-        const totalTags = tagCounts.reduce((sum, count) => sum + count, 0);
+        const totalTags = await StatsSummaryRepository.countTags(platformPreComputedStats.mediaTypes);
 
         return {
             ...platformPreComputedStats,
@@ -197,12 +116,27 @@ export class UserStatsService {
     }
 
     async platformMediaAdvancedStats(mediaType: MediaType) {
-        const mediaService = this.mediaServiceRegistry.get(mediaType);
-
-        const platformPreComputedStats = await this.repository.getAggregatedMediaStats({ mediaType });
-        const specificMediaStats = await mediaService.calculateAdvancedMediaStats(platformPreComputedStats.avgRated);
+        const useTv = isTvKind(mediaType);
+        const platformPreComputedStats = useTv
+            ? await this.tvStatsReaders![mediaType].getAggregatedMediaStats({ type: "platform" })
+            : mediaType === MediaType.MOVIES
+                ? await this.movieStatsReader!.getAggregatedMediaStats({ type: "platform" })
+                : mediaType === MediaType.GAMES
+                    ? await this.gameStatsReader!.getAggregatedMediaStats({ type: "platform" })
+                    : mediaType === MediaType.BOOKS
+                        ? await this.bookStatsReader!.getAggregatedMediaStats({ type: "platform" })
+                        : await this.mangaStatsReader!.getAggregatedMediaStats({ type: "platform" });
+        const specificMediaStats = useTv
+            ? await this.tvStatsReaders![mediaType].getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated)
+            : mediaType === MediaType.MOVIES
+                ? await this.movieStatsReader!.getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated)
+                : mediaType === MediaType.GAMES
+                    ? await this.gameStatsReader!.getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated)
+                    : mediaType === MediaType.BOOKS
+                        ? await this.bookStatsReader!.getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated)
+                        : await this.mangaStatsReader!.getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated);
         const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ mediaType, excludeBulkImports: true });
-        const mediaUpdatesPerMonthStats = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ mediaType, excludeBulkImports: true });
+        const mediaUpdatesPerMonthStats = await this.updates.mediaUpdatesStatsPerMonth({ mediaType, excludeBulkImports: true });
 
         return {
             ...platformPreComputedStats,
@@ -213,59 +147,6 @@ export class UserStatsService {
     }
 
     private async _getComputedStatsSummary({ userId }: { userId?: number }) {
-        const {
-            preComputedStats,
-            statusCountsList,
-            mediaTimeDistribution,
-            totalUsers,
-        } = await this.repository.getPreComputedStatsSummary({ userId });
-
-        const {
-            totalHours,
-            totalEntries,
-            totalFavorites,
-            totalComments,
-            totalRedo,
-            totalRated,
-            sumOfAllRatings,
-            distinctMediaTypes,
-        } = preComputedStats;
-
-        const excludedStatuses = statusUtils.getNoPlanTo();
-        const totalEntriesNoPlan = statusCountsList.reduce((sum, setting) => {
-            let settingSum = 0;
-            for (const [status, count] of Object.entries(setting.statusCounts)) {
-                if (!excludedStatuses.includes(status as Status)) {
-                    settingSum += count;
-                }
-            }
-            return sum + settingSum;
-        }, 0);
-
-        const avgRated = (totalRated === 0) ? null : (sumOfAllRatings / totalRated);
-        const percentRated = (totalEntriesNoPlan === 0) ? null : (totalRated / totalEntriesNoPlan) * 100;
-
-        // The divisor for averages changes based on context
-        const avgDivisor = userId ? distinctMediaTypes : totalUsers;
-        const avgComments = (avgDivisor === 0) ? null : (totalComments / avgDivisor);
-        const avgFavorites = (avgDivisor === 0) ? null : (totalFavorites / avgDivisor);
-
-        return {
-            avgRated,
-            totalRedo,
-            totalRated,
-            avgComments,
-            percentRated,
-            avgFavorites,
-            totalEntries,
-            totalComments,
-            totalFavorites,
-            totalEntriesNoPlan,
-            mediaTimeDistribution,
-            totalHours: totalHours,
-            totalDays: totalHours / 24,
-            mediaTypes: mediaTimeDistribution.map((d) => d.name),
-            ...(userId ? {} : { totalUsers }),
-        };
+        return this.summary.getSummary(userId);
     }
 }

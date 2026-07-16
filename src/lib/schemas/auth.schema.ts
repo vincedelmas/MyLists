@@ -58,7 +58,7 @@ export const forgotPasswordSchema = z.object({
 
 
 export const registerSchema = z.object({
-    username: z.string()
+    username: z.string().trim()
         .min(1, "Username is required.")
         .min(3, "The username is too short (3 min).")
         .max(15, "The username is too long (15 max)."),

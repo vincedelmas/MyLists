@@ -1,8 +1,10 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
-import {TvService} from "@/lib/server/domain/media/tv/tv.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {tvFinalListInsertSchema, TvImportPayload, tvImportPayloadSchema} from "@/lib/server/domain/media/tv/tv.types";
+import {tvFinalListInsertSchema, TvFinalListInsert, TvImportPayload, tvImportPayloadSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {TvMediaType} from "@/lib/types/media-kind.types";
+import {TvLibraryWriter} from "@/lib/server/domain/library/tv/tv-library.writer";
+import {TvCatalogIngestionRepository} from "@/lib/server/domain/catalog/tv/tv-catalog-ingestion.repository";
 
 
 type SeasonEpisodes = {
@@ -15,13 +17,17 @@ const SPECIAL_STATUSES: Status[] = [Status.RANDOM, Status.PLAN_TO_WATCH];
 
 
 export class TvImportListWriter implements ImportListWriter {
-    constructor(private tvService: TvService) {
+    constructor(
+        private catalog: TvCatalogIngestionRepository,
+        private mediaType: TvMediaType,
+        private libraryWriter: TvLibraryWriter,
+    ) {
     }
 
     async addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]> {
         if (matches.length === 0) return [];
 
-        const userTvRows = [];
+        const userTvRows: TvFinalListInsert[] = [];
 
         for (const { item, mediaId } of matches) {
             const payload = tvImportPayloadSchema.parse(item.payload);
@@ -29,7 +35,7 @@ export class TvImportListWriter implements ImportListWriter {
             userTvRows.push(tvFinalListInsertSchema.parse({ userId, mediaId, ...fullPayload }));
         }
 
-        await this.tvService.bulkInsertUserMedia(userTvRows);
+        await this.libraryWriter.importRows(this.mediaType, userTvRows);
 
         return matches.map(({ item, mediaId }) => ({
             itemId: item.id,
@@ -39,7 +45,7 @@ export class TvImportListWriter implements ImportListWriter {
     }
 
     private async _materializeTvListPayload(mediaId: number, payload: TvImportPayload) {
-        const seasons = await this.tvService.getMediaEpsPerSeason(mediaId);
+        const seasons = await this.catalog.getEpisodesPerSeason(mediaId);
 
         const redo2 = this._checkRedo2(payload.redo2, seasons.length);
         const currentSeason = payload.currentSeason ?? this._defaultCurrentSeason(payload.status, seasons);

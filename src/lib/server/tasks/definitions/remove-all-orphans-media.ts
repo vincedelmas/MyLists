@@ -3,6 +3,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {CatalogOrphanRepository} from "@/lib/server/domain/catalog/catalog-orphan.repository";
 
 
 export const removeAllOrphansMediaTask = defineTask({
@@ -13,25 +14,21 @@ export const removeAllOrphansMediaTask = defineTask({
     handler: async (ctx) => {
         const container = await getContainer();
         const mediaTypes = Object.values(MediaType);
-        const mediaRegistry = container.registries.mediaService;
-        const userUpdatesService = container.services.userUpdates;
         const notificationsService = container.services.notifications;
+        const catalogOrphans = new CatalogOrphanRepository();
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`remove-${mediaType}`, async () => {
 
                 await withTransaction(async (_tx) => {
-                    const mediaService = mediaRegistry.get(mediaType);
-                    const mediaIdsToRemove = await mediaService.getOrphanedMediaIds(mediaType);
+                    const mediaIdsToRemove = await catalogOrphans.getOrphanedIds(mediaType);
                     ctx.metric(`${mediaType}.removed`, mediaIdsToRemove.length);
 
                     // Remove in other services
-                    await userUpdatesService.deleteMediaUpdates(mediaType, mediaIdsToRemove);
                     await notificationsService.deleteMediaNotifications(mediaType, mediaIdsToRemove);
                     await container.services.whichCameFirst.deletePoolMedia(mediaType, mediaIdsToRemove);
 
-                    // Remove main media and associated tables: actors, genres, companies, authors...
-                    await mediaService.removeMediaByIds(mediaIdsToRemove);
+                    await catalogOrphans.deleteItems(mediaType, mediaIdsToRemove);
                 });
             });
         }

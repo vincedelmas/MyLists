@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `ux_user_name` ON `user` (`name`);

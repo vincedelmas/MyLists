@@ -5,7 +5,9 @@ import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
-import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {mediaDetailsOptions, mediaExternalOptions} from "@/lib/client/react-query/query-options";
+import {authOptions} from "@/lib/client/react-query/query-options";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {ExternalLink, Heart, List, MessageCircle, Plus, RotateCcw, Star, Tags} from "lucide-react";
 import {
     OnboardingContainer,
@@ -18,20 +20,26 @@ import {
 } from "@/lib/client/components/onboarding/OnBoardingShared";
 
 
-// Edge of Tomorrow
-const mediaId = 110;
+// Edge of Tomorrow's stable TMDB identity.
+const externalMediaId = "137113";
 
 
 export const Route = createFileRoute("/_main/_private/walkthrough/_layout/add-media")({
     loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(mediaDetailsOptions(MediaType.MOVIES, mediaId));
+        const currentUser = await queryClient.ensureQueryData(authOptions);
+        const { mediaId } = await queryClient.ensureQueryData(mediaExternalOptions(MediaType.MOVIES, externalMediaId));
+        await queryClient.ensureQueryData(mediaDetailsOptions(MediaType.MOVIES, mediaId, currentUser?.id ?? null));
+        return { mediaId };
     },
     component: RouteComponent,
 });
 
 
 function RouteComponent() {
-    const apiData = useSuspenseQuery(mediaDetailsOptions(MediaType.MOVIES, mediaId)).data;
+    const { currentUser } = useAuth();
+    const { mediaId } = Route.useLoaderData();
+    const detailsQuery = mediaDetailsOptions(MediaType.MOVIES, mediaId, currentUser?.id ?? null);
+    const apiData = useSuspenseQuery(detailsQuery).data;
     const { media, userMedia } = apiData;
 
     return (
@@ -86,7 +94,7 @@ function RouteComponent() {
                             <UserMediaDetails
                                 userMedia={userMedia}
                                 mediaType={MediaType.MOVIES}
-                                queryOption={mediaDetailsOptions(MediaType.MOVIES, mediaId)}
+                                queryOption={detailsQuery}
                             />
                         </div>
                     }

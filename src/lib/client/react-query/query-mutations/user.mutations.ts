@@ -59,7 +59,7 @@ export const useRespondFollowRequest = () => {
     return useMutation({
         mutationFn: postRespondToFollowRequest,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: notificationsCountOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: notificationsCountOptions().queryKey });
             await queryClient.invalidateQueries({ queryKey: notificationsOptions(false, "social").queryKey });
         }
     })
@@ -84,7 +84,7 @@ export const useMarkAllNotifAsRead = () => {
     return useMutation({
         mutationFn: markAllNotifAsRead,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: notificationsCountOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: notificationsCountOptions().queryKey });
         }
     })
 };
@@ -129,7 +129,7 @@ export const useProfileCustomMutation = (meta?: MutationMeta) => {
         mutationFn: postProfileCustomSettings,
         meta: { ...meta },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: profileCustomOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: profileCustomOptions().queryKey });
             if (currentUser) {
                 await queryClient.invalidateQueries({ queryKey: profileOptions(currentUser.name).queryKey });
                 await queryClient.invalidateQueries({ queryKey: profileHeaderOptions(currentUser.name).queryKey });

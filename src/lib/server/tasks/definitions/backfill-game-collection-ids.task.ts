@@ -1,12 +1,12 @@
 import {z} from "zod";
-import {asc, inArray, sql} from "drizzle-orm";
-import {games} from "@/lib/server/database/schema";
+import {and, asc, eq} from "drizzle-orm";
+import {catalogItem} from "@/lib/server/database/schema";
+import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 import {getDbClient} from "@/lib/server/database/async-storage";
 
 
-// TODO: to remove after backfilling
 export const backfillGameCollectionIdsTask = defineTask({
     name: "backfill-game-collection-ids" as const,
     visibility: "admin",
@@ -18,10 +18,16 @@ export const backfillGameCollectionIdsTask = defineTask({
         const igdbClient = container.apiClients.igdb;
 
         const apiIds = await db
-            .select({ apiId: games.apiId })
-            .from(games)
-            .orderBy(asc(games.id))
-            .then((rows) => rows.map((row) => row.apiId));
+            .select({ apiId: catalogItem.primaryExternalId })
+            .from(catalogItem)
+            .where(and(
+                eq(catalogItem.kind, MediaType.GAMES),
+                eq(catalogItem.primaryProvider, "igdb"),
+            ))
+            .orderBy(asc(catalogItem.id))
+            .then((rows) => rows
+                .map((row) => Number(row.apiId))
+                .filter(Number.isSafeInteger));
 
         ctx.metric("games.total", apiIds.length);
 
@@ -38,14 +44,7 @@ export const backfillGameCollectionIdsTask = defineTask({
                     collectionId: collectionIdsByApiId.get(apiId) ?? null,
                 }));
 
-                const updateCases = updates.map((item) =>
-                    sql`WHEN ${games.apiId} = ${item.apiId} THEN ${item.collectionId}`
-                );
-
-                await db
-                    .update(games)
-                    .set({ collectionId: sql`CASE ${sql.join(updateCases, sql` `)} ELSE ${games.collectionId} END` })
-                    .where(inArray(games.apiId, chunk));
+                await container.features.gameCatalogAdmin.synchronizeCollectionExternalIds(updates);
 
                 ctx.increment("games.processed", updates.length);
                 ctx.increment("games.with_collection", updates.filter((item) => item.collectionId !== null).length);

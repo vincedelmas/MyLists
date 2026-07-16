@@ -2,12 +2,11 @@ import {MediaType} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {formatDateForDb} from "@/lib/utils/date-formatting";
-import {gamesConfig} from "@/lib/server/domain/media/games/games.config";
-import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
+import {UpsertGameWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {HltbGameEntry, IgdbGameDetails, IgdbSearchResponse, IgdbTrendGamesResponse, ProviderSearchResult, SearchData, TrendsMedia} from "@/lib/types/provider.types";
 
 
-const maxGenres = gamesConfig.apiProvider.maxGenres;
+const maxGenres = 5;
 const imageBaseUrl = "https://images.igdb.com/igdb/image/upload/t_1080p/";
 
 

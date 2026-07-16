@@ -112,10 +112,7 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
         },
         onSuccess: (_data, variables) => {
             if (queryOption.queryKey[0] === "details") {
-                queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                    if (!oldData) return;
-                    return { ...oldData, userMedia: null };
-                });
+                void queryClient.invalidateQueries({ queryKey: queryOption.queryKey });
             }
             else if (queryOption.queryKey[0] === "userList") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
@@ -166,10 +163,7 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
             }
 
             if (queryOption.queryKey[0] === "details") {
-                queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                    if (!oldData) return;
-                    return { ...oldData, userMedia: { ...oldData.userMedia, ...data } };
-                })
+                await queryClient.invalidateQueries({ queryKey: queryOption.queryKey });
             }
             else if (queryOption.queryKey[0] === "userList") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {

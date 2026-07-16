@@ -2,12 +2,13 @@ import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
+import {catalogItem} from "@/lib/server/database/schema/catalog.schema";
 
 
 export const dailyMediadle = sqliteTable("daily_mediadle", {
     id: integer().primaryKey().notNull(),
     mediaType: text().$type<MediaType>().notNull(),
-    mediaId: integer().notNull(),
+    mediaId: integer().notNull().references(() => catalogItem.id, { onDelete: "restrict" }),
     date: text().notNull(),
     pixelationLevels: integer().default(5).notNull(),
 });

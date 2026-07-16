@@ -15,14 +15,14 @@ import {compareCalendarDates, formatCalendarRelativeDate} from "@/lib/utils/date
 
 export const Route = createFileRoute("/_main/_private/coming-next")({
     loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(upcomingOptions);
+        return queryClient.ensureQueryData(upcomingOptions());
     },
     component: ComingNextPage,
 });
 
 
 function ComingNextPage() {
-    const apiData = useSuspenseQuery(upcomingOptions).data;
+    const apiData = useSuspenseQuery(upcomingOptions()).data;
     const mediaTypes = apiData.map((next) => next.mediaType);
     const [activeTab, setActiveTab] = useState<"all" | MediaType>("all");
     const allItems = apiData.flatMap(g => g.items.map(item => ({ ...item, mediaType: g.mediaType })));

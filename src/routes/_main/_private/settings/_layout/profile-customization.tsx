@@ -19,14 +19,14 @@ import {HIGHLIGHTED_MEDIA_TABS, HighlightedMediaSearchItem, HighlightedMediaSett
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/profile-customization")({
     loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(profileCustomOptions);
+        return queryClient.ensureQueryData(profileCustomOptions());
     },
     component: ProfileCustomForm,
 });
 
 
 function ProfileCustomForm() {
-    const apiData = useSuspenseQuery(profileCustomOptions).data;
+    const apiData = useSuspenseQuery(profileCustomOptions()).data;
     const mutation = useProfileCustomMutation({ noErrorToast: true });
     const [activeTab, setActiveTab] = useState<HighlightedMediaTab>("overview");
     const [localPreviewCache, setLocalPreviewCache] = useState<Record<string, HighlightedMediaSearchItem>>({});

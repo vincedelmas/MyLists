@@ -3,6 +3,22 @@ import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {seriesAchievements} from "@/lib/server/domain/achievements/seeds/series.seed";
+import {animeAchievements} from "@/lib/server/domain/achievements/seeds/anime.seed";
+import {moviesAchievements} from "@/lib/server/domain/achievements/seeds/movies.seed";
+import {gamesAchievements} from "@/lib/server/domain/achievements/seeds/games.seed";
+import {booksAchievements} from "@/lib/server/domain/achievements/seeds/books.seed";
+import {mangaAchievements} from "@/lib/server/domain/achievements/seeds/manga.seed";
+
+
+const achievementDefinitions = {
+    [MediaType.SERIES]: seriesAchievements,
+    [MediaType.ANIME]: animeAchievements,
+    [MediaType.MOVIES]: moviesAchievements,
+    [MediaType.GAMES]: gamesAchievements,
+    [MediaType.BOOKS]: booksAchievements,
+    [MediaType.MANGA]: mangaAchievements,
+};
 
 
 export const seedAchievementsTask = defineTask({
@@ -13,13 +29,11 @@ export const seedAchievementsTask = defineTask({
     handler: async (ctx) => {
         const container = await getContainer();
         const mediaTypes = Object.values(MediaType);
-        const mediaRegistry = container.registries.mediaService;
         const achievementsService = container.services.achievements;
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`seed-${mediaType}`, async () => {
-                const mediaService = mediaRegistry.get(mediaType);
-                const achievementsDef = mediaService.getAchievementsDefinition();
+                const achievementsDef = achievementDefinitions[mediaType];
 
                 const definitionCount = Object.keys(achievementsDef).length;
                 ctx.metric(`${mediaType}.definitions_found`, definitionCount);

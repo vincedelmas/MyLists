@@ -7,22 +7,23 @@ import {getPlatformStats} from "@/lib/server/functions/platform-stats";
 import {getUserAchievements} from "@/lib/server/functions/user-achievements";
 import {getProfileCustomSearch, getProfileCustomSettings} from "@/lib/server/functions/user-settings";
 import {getAllUpdatesHistory, getUserProfile, getUserProfileHeader, getUsersFollowers, getUsersFollows} from "@/lib/server/functions/user-profile";
+import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
 
 
 export const profileHeaderOptions = (username: string) => queryOptions({
-    queryKey: ["profile", "header", username],
+    queryKey: viewerScopedKey(["profile", "header", username]),
     queryFn: () => getUserProfileHeader({ data: { username } }),
 });
 
 
 export const profileOptions = (username: string) => queryOptions({
-    queryKey: ["profile", username],
+    queryKey: viewerScopedKey(["profile", username]),
     queryFn: () => getUserProfile({ data: { username } }),
 });
 
 
-export const profileCustomOptions = queryOptions({
-    queryKey: ["settings", "profile-custom"],
+export const profileCustomOptions = () => queryOptions({
+    queryKey: viewerScopedKey(["settings", "profile-custom"]),
     queryFn: getProfileCustomSettings,
 });
 
@@ -31,7 +32,7 @@ export const profileCustomSearchOptions = (tab: HighlightedMediaTab, query: stri
     const parsedSearch = highlightedMediaSearchSchema.safeParse({ tab, query });
 
     return queryOptions({
-        queryKey: ["settings", "profile-custom", "search", tab, query],
+        queryKey: viewerScopedKey(["settings", "profile-custom", "search", tab, query]),
         queryFn: () => {
             if (!parsedSearch.success) {
                 return [];
@@ -45,37 +46,37 @@ export const profileCustomSearchOptions = (tab: HighlightedMediaTab, query: stri
 
 
 export const followersOptions = (username: string) => queryOptions({
-    queryKey: ["followers", username],
+    queryKey: viewerScopedKey(["followers", username]),
     queryFn: () => getUsersFollowers({ data: { username } }),
 });
 
 
 export const followsOptions = (username: string) => queryOptions({
-    queryKey: ["follows", username],
+    queryKey: viewerScopedKey(["follows", username]),
     queryFn: () => getUsersFollows({ data: { username } }),
 });
 
 
 export const allUpdatesOptions = (username: string, filters: SimpleSearch) => queryOptions({
-    queryKey: ["allUpdates", username, filters],
+    queryKey: viewerScopedKey(["allUpdates", username, filters]),
     queryFn: () => getAllUpdatesHistory({ data: { ...filters, username } }),
 });
 
 
 export const hallOfFameOptions = (search: HallOfFameSearch) => queryOptions({
-    queryKey: ["hof", search],
+    queryKey: viewerScopedKey(["hof", search]),
     queryFn: () => getHallOfFame({ data: search }),
 });
 
 
 export const achievementOptions = (username: string) => queryOptions({
-    queryKey: ["achievementPage", username],
+    queryKey: viewerScopedKey(["achievementPage", username]),
     queryFn: () => getUserAchievements({ data: { username } }),
 });
 
 
 export const userStatsOptions = (username: string, activeTab: StatsActiveTab) => queryOptions({
-    queryKey: ["userStats", username, activeTab],
+    queryKey: viewerScopedKey(["userStats", username, activeTab]),
     queryFn: () => getUserStats({ data: { username, activeTab } }),
 });
 

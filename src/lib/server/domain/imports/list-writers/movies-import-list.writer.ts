@@ -1,12 +1,12 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
-import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {moviesFinalListInsertSchema, MoviesImportPayload, moviesImportPayloadSchema} from "@/lib/server/domain/media/movies/movies.types";
+import {moviesFinalListInsertSchema, MoviesImportPayload, moviesImportPayloadSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {MovieLibraryWriter} from "@/lib/server/domain/library/movies/movie-library.writer";
 
 
 export class MoviesImportListWriter implements ImportListWriter {
-    constructor(private moviesService: MoviesService) {
+    constructor(private libraryWriter: MovieLibraryWriter) {
     }
 
     async addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]> {
@@ -20,7 +20,7 @@ export class MoviesImportListWriter implements ImportListWriter {
             return rowToInsert;
         });
 
-        await this.moviesService.bulkInsertUserMedia(userMovies);
+        await this.libraryWriter.importRows(userMovies);
 
         return matches.map(({ item, mediaId }) => ({
             itemId: item.id,

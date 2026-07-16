@@ -1,11 +1,10 @@
 import {SearchType} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
-import {FormattedError} from "@/lib/utils/error-classes";
 import {paginate} from "@/lib/server/database/pagination";
 import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {and, count, desc, eq, getTableColumns, gte, isNotNull, like, notInArray, sql} from "drizzle-orm";
-import {dailyMediadle, mediadleStats, movies, user, userMediadleProgress} from "@/lib/server/database/schema";
+import {and, count, desc, eq, getTableColumns, isNotNull, like, sql} from "drizzle-orm";
+import {dailyMediadle, mediadleStats, user, userMediadleProgress} from "@/lib/server/database/schema";
 
 
 export class MediadleRepository {
@@ -54,29 +53,20 @@ export class MediadleRepository {
             .get();
     }
 
-    static async createDailyMoviedle() {
-        const alreadyUsedMoviesIds = await getDbClient()
+    static async getUsedMovieIds(limit: number) {
+        return getDbClient()
             .select({ mediaId: dailyMediadle.mediaId })
             .from(dailyMediadle)
             .where(eq(dailyMediadle.mediaType, MediaType.MOVIES))
-            .limit(200)
+            .limit(limit)
             .then((res) => res.map((r) => r.mediaId));
+    }
 
-        const selectedMovie = getDbClient()
-            .select()
-            .from(movies)
-            .where(and(notInArray(movies.id, alreadyUsedMoviesIds), gte(movies.voteCount, 700)))
-            .orderBy(sql`RANDOM()`)
-            .get();
-
-        if (!selectedMovie) {
-            throw new FormattedError("No movies found to create a daily mediadle.");
-        }
-
+    static async createDailyMoviedle(mediaId: number) {
         const [newMoviedle] = await getDbClient()
             .insert(dailyMediadle)
             .values({
-                mediaId: selectedMovie.id,
+                mediaId,
                 mediaType: MediaType.MOVIES,
                 date: toDateInputValue(new Date(), { timeZone: "utc" }),
             }).returning();

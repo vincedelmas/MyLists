@@ -1,7 +1,7 @@
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {
     ExternalMediaProvider,
     IngestionContext,
+    MediaIngestionRepository,
     MediaDetailsEnricher,
     MediaIngestionService,
     RefreshCandidateSource,
@@ -10,7 +10,7 @@ import {
 
 
 export function createMediaIngestionService<TDetails>(params: {
-    repository: BaseRepository<any>;
+    repository: MediaIngestionRepository<TDetails>;
     provider: ExternalMediaProvider<TDetails>;
     refreshCandidates?: RefreshCandidateSource;
     enrichers?: MediaDetailsEnricher<TDetails>[];

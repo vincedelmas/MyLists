@@ -12,6 +12,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const createService = () => {
     const userRepository = {
         deleteUserAccount: vi.fn().mockResolvedValue(undefined),
+        updateUserSettings: vi.fn().mockResolvedValue(undefined),
     } as unknown as typeof UserRepository;
 
     const inactiveAccountService = {
@@ -71,5 +72,27 @@ describe("UserService.deleteUserAccount", () => {
         expect(userRepository.deleteUserAccount).not.toHaveBeenCalled();
         expect(inactiveAccountService.markAsDeleted).toHaveBeenCalledOnce();
         expect(inactiveAccountService.markAsDeleted).toHaveBeenCalledWith(7, 42, "active-again-user");
+    });
+});
+
+
+describe("UserService.updateUserSettings", () => {
+    it("maps a database username race to the existing form validation contract", async () => {
+        const { service, userRepository } = createService();
+        vi.mocked(userRepository.updateUserSettings).mockRejectedValue(
+            new Error("UNIQUE constraint failed: user.name"),
+        );
+
+        await expect(service.updateUserSettings(42, { name: "already-taken" }))
+            .rejects.toMatchObject({ field: "username", message: expect.any(String) });
+    });
+
+    it("does not hide unrelated database failures", async () => {
+        const { service, userRepository } = createService();
+        const failure = new Error("disk unavailable");
+        vi.mocked(userRepository.updateUserSettings).mockRejectedValue(failure);
+
+        await expect(service.updateUserSettings(42, { privacy: "public" }))
+            .rejects.toBe(failure);
     });
 });

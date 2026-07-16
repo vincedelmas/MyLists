@@ -13,7 +13,7 @@ export const useCreateFeatureRequestMutation = (meta?: MutationMeta) => {
             ...meta,
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: featureVotesOptions().queryKey });
         },
     });
 };
@@ -25,7 +25,7 @@ export const useToggleFeatureVoteMutation = () => {
     return useMutation({
         mutationFn: postToggleFeatureVote,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: featureVotesOptions().queryKey });
         },
     });
 };
@@ -38,7 +38,7 @@ export const useAdminUpdateFeatureMutation = (meta?: MutationMeta) => {
         mutationFn: postAdminUpdateFeatureStatus,
         meta: { ...meta },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: featureVotesOptions().queryKey });
         },
     });
 };
@@ -51,7 +51,7 @@ export const useAdminDeleteFeatureMutation = (meta?: MutationMeta) => {
         mutationFn: postAdminDeleteFeatureRequest,
         meta: { ...meta },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: featureVotesOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: featureVotesOptions().queryKey });
         },
     });
 };

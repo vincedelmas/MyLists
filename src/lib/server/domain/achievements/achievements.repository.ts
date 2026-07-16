@@ -5,10 +5,17 @@ import {AchievementDifficulty} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AchievementSeedData} from "@/lib/types/achievements.types";
 import {and, asc, count, desc, eq, inArray, max, notInArray, SQL, sql} from "drizzle-orm";
-import {achievement, achievementTier, user, userAchievement, userMediaSettings} from "@/lib/server/database/schema";
+import {achievement, achievementTier, profileMediaChannel, user, userAchievement} from "@/lib/server/database/schema";
 
 
 export class AchievementsRepository {
+    static async getActiveMediaTypes(userId: number) {
+        return getDbClient().select({ mediaType: profileMediaChannel.kind })
+            .from(profileMediaChannel)
+            .where(and(eq(profileMediaChannel.userId, userId), eq(profileMediaChannel.enabled, true)))
+            .then((rows) => rows.map(({ mediaType }) => mediaType));
+    }
+
     static async seedAchievements(achievementsDef: readonly AchievementSeedData[]) {
         const tx = getDbClient();
 
@@ -100,10 +107,10 @@ export class AchievementsRepository {
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
             .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userAchievement.userId),
-                eq(userMediaSettings.mediaType, achievement.mediaType),
-                eq(userMediaSettings.active, true),
+            .innerJoin(profileMediaChannel, and(
+                eq(profileMediaChannel.userId, userAchievement.userId),
+                eq(profileMediaChannel.kind, achievement.mediaType),
+                eq(profileMediaChannel.enabled, true),
             ))
             .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
             .groupBy(userAchievement.achievementId)
@@ -134,10 +141,10 @@ export class AchievementsRepository {
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
             .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userAchievement.userId),
-                eq(userMediaSettings.mediaType, achievement.mediaType),
-                eq(userMediaSettings.active, true),
+            .innerJoin(profileMediaChannel, and(
+                eq(profileMediaChannel.userId, userAchievement.userId),
+                eq(profileMediaChannel.kind, achievement.mediaType),
+                eq(profileMediaChannel.enabled, true),
             ))
             .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
             .orderBy(desc(userAchievement.completedAt))
@@ -154,10 +161,10 @@ export class AchievementsRepository {
             .from(userAchievement)
             .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
             .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userAchievement.userId),
-                eq(userMediaSettings.mediaType, achievement.mediaType),
-                eq(userMediaSettings.active, true),
+            .innerJoin(profileMediaChannel, and(
+                eq(profileMediaChannel.userId, userAchievement.userId),
+                eq(profileMediaChannel.kind, achievement.mediaType),
+                eq(profileMediaChannel.enabled, true),
             ))
             .where(and(
                 forUser,
@@ -173,9 +180,9 @@ export class AchievementsRepository {
         const tierOrder = this._getSQLTierOrdering();
 
         const activeMediaTypes = await getDbClient()
-            .select({ mediaType: userMediaSettings.mediaType })
-            .from(userMediaSettings)
-            .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.active, true)))
+            .select({ mediaType: profileMediaChannel.kind })
+            .from(profileMediaChannel)
+            .where(and(eq(profileMediaChannel.userId, userId), eq(profileMediaChannel.enabled, true)))
             .then((rows) => rows.map((r) => r.mediaType));
 
         const subq = getDbClient()
@@ -229,10 +236,10 @@ export class AchievementsRepository {
             })
             .from(achievement)
             .innerJoin(achievementTier, eq(achievement.id, achievementTier.achievementId))
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userId),
-                eq(userMediaSettings.mediaType, achievement.mediaType),
-                eq(userMediaSettings.active, true),
+            .innerJoin(profileMediaChannel, and(
+                eq(profileMediaChannel.userId, userId),
+                eq(profileMediaChannel.kind, achievement.mediaType),
+                eq(profileMediaChannel.enabled, true),
             ))
             .leftJoin(userAchievement, and(eq(achievementTier.id, userAchievement.tierId), eq(userAchievement.userId, userId)))
             .orderBy(achievement.id, tierOrder);

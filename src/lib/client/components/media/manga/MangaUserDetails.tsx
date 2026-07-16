@@ -17,7 +17,7 @@ export const MangaUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, mutationOptions);
     const mediaData = getMediaData()!;
 
-    function getMediaData() {
+    function getMediaData(): { chapters: number | null } | undefined {
         if (queryOption.queryKey[0] === "details") {
             const apiData = queryClient.getQueryData(queryOption.queryKey);
             if (apiData && "chapters" in apiData.media) {
@@ -26,7 +26,8 @@ export const MangaUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
         }
         else if (queryOption.queryKey[0] === "userList") {
             const apiData = queryClient.getQueryData(queryOption.queryKey);
-            return apiData?.results.items.find((m) => "chapters" in m && m.mediaId === userMedia.mediaId);
+            const media = apiData?.results.items.find((item) => item.mediaId === userMedia.mediaId);
+            return media && "chapters" in media ? media : undefined;
         }
     }
 

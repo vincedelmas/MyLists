@@ -1,4 +1,4 @@
-import {integer, sqliteTable, text} from "drizzle-orm/sqlite-core";
+import {integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {dateAsString, imageUrl} from "@/lib/server/database/custom-types";
 import {ApiProviderType, PrivacyType, RatingSystemType, RoleType} from "@/lib/utils/enums";
 
@@ -20,7 +20,9 @@ export const user = sqliteTable("user", {
     ratingSystem: text("rating_system").$type<RatingSystemType>().default(RatingSystemType.SCORE).notNull(),
     searchSelector: text("search_selector").$type<ApiProviderType>().default(ApiProviderType.TMDB).notNull(),
     backgroundImage: imageUrl("background_image", "profile-back-covers").default("default.jpg").notNull(),
-});
+}, (table) => [
+    uniqueIndex("ux_user_name").on(table.name),
+]);
 
 
 export const session = sqliteTable("session", {

@@ -9,7 +9,7 @@ export const useStartWCFRunMutation = () => {
     return useMutation({
         mutationFn: postStartWhichCameFirstRun,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: whichCameFirstOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: whichCameFirstOptions().queryKey });
         },
     });
 };
@@ -26,7 +26,7 @@ export const useAbandonWCFRunMutation = () => {
     return useMutation({
         mutationFn: postAbandonWhichCameFirstRun,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: whichCameFirstOptions.queryKey })
+            await queryClient.invalidateQueries({ queryKey: whichCameFirstOptions().queryKey })
         },
     });
 };
@@ -41,7 +41,7 @@ export const useResetWCFStatsMutation = () => {
             successToastMessage: "Which Came First statistics reset.",
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: whichCameFirstOptions.queryKey });
+            await queryClient.invalidateQueries({ queryKey: whichCameFirstOptions().queryKey });
         },
     });
 };

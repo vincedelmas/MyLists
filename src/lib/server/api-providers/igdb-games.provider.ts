@@ -1,10 +1,9 @@
 import {MediaType} from "@/lib/utils/enums";
 import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
-import {GamesRepository} from "@/lib/server/domain/media/games";
-import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
+import {UpsertGameWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
-import {ExternalMediaProvider, MediaDetailsEnricher} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalMediaProvider, MediaDetailsEnricher, MediaIngestionRepository, RefreshCandidateSource} from "@/lib/server/api-providers/interfaces.types";
 
 
 const createHltbEnricher = (hltbClient: HltbApi): MediaDetailsEnricher<UpsertGameWithDetails> => {
@@ -58,15 +57,16 @@ export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<Up
 };
 
 
-export const createGamesIngestionService = (hltbClient: HltbApi, repository: GamesRepository, provider: ExternalMediaProvider<UpsertGameWithDetails>) => {
+export const createGamesIngestionService = (
+    hltbClient: HltbApi,
+    repository: MediaIngestionRepository<UpsertGameWithDetails>,
+    provider: ExternalMediaProvider<UpsertGameWithDetails>,
+    refreshCandidates?: RefreshCandidateSource,
+) => {
     return createMediaIngestionService({
         provider,
-        repository: repository,
-        refreshCandidates: {
-            getCandidateApiIds: () => {
-                return repository.getMediaIdsToBeRefreshed();
-            },
-        },
+        repository,
+        refreshCandidates,
         refreshPolicy: {
             chunkSize: 500,
         },

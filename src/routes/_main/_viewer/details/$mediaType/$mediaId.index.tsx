@@ -21,6 +21,7 @@ import {MediaCommunityCollections} from "@/lib/client/components/media/base/Medi
 import {DisabledMediaListNotice} from "@/lib/client/components/media/base/DisabledMediaListNotice";
 import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {authOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId/")({
@@ -32,9 +33,11 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
         },
     },
     loader: async ({ context: { queryClient }, params: { mediaType, mediaId } }) => {
-        const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId));
+        const currentUser = await queryClient.ensureQueryData(authOptions);
+        const viewerId = currentUser?.id ?? null;
+        const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId, viewerId));
         void queryClient.prefetchQuery(mediaCommunityCollectionsOptions(details.media.id, mediaType));
-        void queryClient.prefetchQuery(mediaCommunityActivityOptions(details.media.id, mediaType, { page: 1, perPage: 8 }));
+        void queryClient.prefetchQuery(mediaCommunityActivityOptions(details.media.id, mediaType, viewerId, { page: 1, perPage: 8 }));
     },
     component: MediaDetailsPage,
 });
@@ -43,8 +46,9 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
 function MediaDetailsPage() {
     const { currentUser, isAnonymous } = useAuth();
     const { mediaType, mediaId } = Route.useParams();
-    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsOptions(mediaType, mediaId));
-    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsOptions(mediaType, mediaId)).data;
+    const detailsQuery = mediaDetailsOptions(mediaType, mediaId, currentUser?.id ?? null);
+    const addMediaToListMutation = useAddMediaToListMutation(detailsQuery);
+    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(detailsQuery).data;
     const isMediaTypeActive = currentUser?.settings.some((setting) => setting.mediaType === mediaType && setting.active) ?? false;
 
     const handleAddMediaToUser = () => {
@@ -124,7 +128,7 @@ function MediaDetailsPage() {
                                 <UserMediaDetails
                                     mediaType={mediaType}
                                     userMedia={userMedia}
-                                    queryOption={mediaDetailsOptions(mediaType, mediaId)}
+                                    queryOption={detailsQuery}
                                 />
                                 :
                                 isAnonymous ?

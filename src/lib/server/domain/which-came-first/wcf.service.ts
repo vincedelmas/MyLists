@@ -1,8 +1,8 @@
 import {MediaType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {WCF_MAX_ROUNDS, WCF_MEDIA_TYPES} from "@/lib/schemas/wcf.schema";
-import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
+import {WcfMediaCatalog} from "@/lib/server/domain/which-came-first/wcf-media-catalog";
 
 
 type ActiveRun = NonNullable<Awaited<ReturnType<typeof WcfRepository.getActiveRun>>>;
@@ -11,14 +11,13 @@ type ActiveRun = NonNullable<Awaited<ReturnType<typeof WcfRepository.getActiveRu
 export class WcfService {
     constructor(
         private repository: typeof WcfRepository,
-        private mediaServiceRegistry: typeof MediaServiceRegistry,
+        private mediaCatalog: WcfMediaCatalog,
     ) {
     }
 
     async curatePool() {
         for (const mediaType of WCF_MEDIA_TYPES) {
-            const mediaService = this.mediaServiceRegistry.get(mediaType);
-            const popularMediaRefs = await mediaService.getPopularMediaRefs();
+            const popularMediaRefs = await this.mediaCatalog.getPopularMediaRefs(mediaType);
             await this.repository.syncCuratedPool(mediaType, popularMediaRefs);
         }
 
@@ -215,16 +214,7 @@ export class WcfService {
     }
 
     private async _getMedia(mediaType: MediaType, mediaId: number) {
-        const mediaService = this.mediaServiceRegistry.get(mediaType);
-        const mediaDetails = await mediaService.findById(mediaId);
-        if (!mediaDetails) return undefined;
-
-        return {
-            mediaId,
-            mediaType,
-            name: mediaDetails.name,
-            imageCover: mediaDetails.imageCover,
-        };
+        return this.mediaCatalog.findById(mediaType, mediaId);
     }
 
     private async _createNextRound(activeRun: ActiveRun) {

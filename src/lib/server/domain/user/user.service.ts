@@ -6,6 +6,7 @@ import {CacheManager} from "@/lib/server/core/cache-manager";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {UserRepository} from "@/lib/server/domain/user/user.repository";
 import {InactiveAccountService} from "@/lib/server/domain/user/inactive-account.service";
+import {ProfileChannelAccessRepository} from "@/lib/server/domain/access/profile-channel-access.repository";
 
 
 const LAST_SEEN_CACHE_KEY = "lastSeen";
@@ -17,6 +18,7 @@ type DeleteUserAccountPayload =
 
 
 export class UserService {
+    private readonly profileChannels = new ProfileChannelAccessRepository();
     constructor(
         private repository: typeof UserRepository,
         private inactiveAccountService: InactiveAccountService,
@@ -141,7 +143,15 @@ export class UserService {
     }
 
     async updateUserSettings(userId: number, payload: Partial<typeof user.$inferInsert>) {
-        await this.repository.updateUserSettings(userId, payload);
+        try {
+            await this.repository.updateUserSettings(userId, payload);
+        }
+        catch (error) {
+            if (payload.name && isUsernameConstraintError(error)) {
+                throw new ValidationError<GeneralSettings>("username", "Invalid username. Please select another one.");
+            }
+            throw error;
+        }
     }
 
     async updateShowOnboarding(userId: number) {
@@ -176,7 +186,7 @@ export class UserService {
     }
 
     async incrementMediaTypeView(userId: number, mediaType: MediaType) {
-        return this.repository.incrementMediaTypeView(userId, mediaType);
+        return this.profileChannels.incrementView(userId, mediaType);
     }
 
     async searchUsers(query: string, page: number = 1) {
@@ -193,3 +203,7 @@ export class UserService {
         return results.map(({ backgroundImage }) => backgroundImage.split("/").pop() as string);
     }
 }
+
+
+const isUsernameConstraintError = (error: unknown) => error instanceof Error
+    && error.message.includes("UNIQUE constraint failed: user.name");

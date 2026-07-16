@@ -9,40 +9,41 @@ import {
     getReadCollectionDetails,
     getUserCollectionMemberships
 } from "@/lib/server/functions/collections";
+import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
 
 
 export const paginatedUserCollectionsOptions = (search: UserCollectionsSearch) => queryOptions({
-    queryKey: ["collections", "user", "paginated", search] as const,
+    queryKey: viewerScopedKey(["collections", "user", "paginated", search]),
     queryFn: () => getPaginatedUserCollections({ data: search }),
 });
 
 
 export const collectionDetailsReadOptions = (collectionId: number) => queryOptions({
-    queryKey: ["collections", "details", "read", collectionId] as const,
+    queryKey: viewerScopedKey(["collections", "details", "read", collectionId]),
     queryFn: () => getReadCollectionDetails({ data: { collectionId } }),
 });
 
 
 export const collectionDetailsEditOptions = (collectionId: number) => queryOptions({
-    queryKey: ["collections", "details", "edit", collectionId] as const,
+    queryKey: viewerScopedKey(["collections", "details", "edit", collectionId]),
     queryFn: () => getEditCollectionDetails({ data: { collectionId } }),
 });
 
 
 export const communityCollectionsOptions = (search: CommunitySearch) => queryOptions({
-    queryKey: ["collections", "community", search] as const,
+    queryKey: viewerScopedKey(["collections", "community", search]),
     queryFn: () => getCommunityCollections({ data: search }),
 });
 
 
 export const mediaCommunityCollectionsOptions = (mediaId: number, mediaType: MediaType) => queryOptions({
-    queryKey: ["details", "collections", "community", mediaType, mediaId],
+    queryKey: viewerScopedKey(["details", "collections", "community", mediaType, mediaId]),
     queryFn: () => getMediaCommunityCollections({ data: { mediaId, mediaType } }),
 });
 
 
 export const userCollectionMembershipsOptions = (mediaId: number, mediaType: MediaType, isOpen: boolean) => queryOptions({
-    queryKey: ["collections", "memberships", mediaType, mediaId] as const,
+    queryKey: viewerScopedKey(["collections", "memberships", mediaType, mediaId]),
     queryFn: () => getUserCollectionMemberships({ data: { mediaId, mediaType } }),
     enabled: isOpen,
 });

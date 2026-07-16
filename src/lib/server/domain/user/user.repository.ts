@@ -4,13 +4,13 @@ import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
 import {ProviderSearchResult, ProviderSearchResults} from "@/lib/types/provider.types";
-import {followers, user, userMediaSettings} from "@/lib/server/database/schema";
+import {followers, profileMediaChannel, user} from "@/lib/server/database/schema";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, SocialState} from "@/lib/utils/enums";
 import {and, asc, count, desc, eq, isNotNull, like, sql} from "drizzle-orm";
 
 
 const orderByMediaType = sql`
-    CASE ${userMediaSettings.mediaType}
+    CASE ${profileMediaChannel.kind}
         WHEN 'series' THEN 1
         WHEN 'anime' THEN 2
         WHEN 'movies' THEN 3
@@ -273,11 +273,11 @@ export class UserRepository {
     static async getMinimalUserSettings(userId: number) {
         return getDbClient()
             .select({
-                active: userMediaSettings.active,
-                mediaType: userMediaSettings.mediaType,
+                active: profileMediaChannel.enabled,
+                mediaType: profileMediaChannel.kind,
             })
-            .from(userMediaSettings)
-            .where(eq(userMediaSettings.userId, userId))
+            .from(profileMediaChannel)
+            .where(eq(profileMediaChannel.userId, userId))
             .orderBy(orderByMediaType);
     }
 
@@ -358,17 +358,7 @@ export class UserRepository {
     }
 
     static async findByUsername(username: string) {
-        const userResult = await getDbClient().query.user.findFirst({
-            where: eq(user.name, username),
-            with: {
-                userMediaSettings: {
-                    orderBy: () => [asc(orderByMediaType)],
-                },
-            },
-        });
-
-        if (!userResult) return null;
-        return userResult;
+        return getDbClient().select().from(user).where(eq(user.name, username)).get() ?? null;
     }
 
     static async updateShowOnboarding(userId: number) {
@@ -379,29 +369,25 @@ export class UserRepository {
     }
 
     static async findById(userId: number) {
-        return getDbClient().query.user.findFirst({
-            where: eq(user.id, userId),
-            with: { userMediaSettings: true },
-        });
+        return getDbClient().select().from(user).where(eq(user.id, userId)).get();
     }
 
     static async hasActiveMediaType(userId: number, mediaType: MediaType) {
-        const setting = await getDbClient().query.userMediaSettings.findFirst({
-            where: and(
-                eq(userMediaSettings.userId, userId),
-                eq(userMediaSettings.mediaType, mediaType),
-                eq(userMediaSettings.active, true),
-            ),
-        });
+        const setting = await getDbClient().select({ kind: profileMediaChannel.kind })
+            .from(profileMediaChannel).where(and(
+                eq(profileMediaChannel.userId, userId),
+                eq(profileMediaChannel.kind, mediaType),
+                eq(profileMediaChannel.enabled, true),
+            )).get();
 
         return !!setting;
     }
 
     static async incrementMediaTypeView(userId: number, mediaType: MediaType) {
-        await getDbClient()
-            .update(userMediaSettings)
-            .set({ views: sql`${userMediaSettings.views} + 1` })
-            .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.mediaType, mediaType)));
+        return getDbClient().update(profileMediaChannel)
+            .set({ views: sql`${profileMediaChannel.views} + 1` })
+            .where(and(eq(profileMediaChannel.userId, userId), eq(profileMediaChannel.kind, mediaType)))
+            .returning().get();
     }
 
     static async incrementProfileView(userId: number) {

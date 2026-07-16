@@ -6,7 +6,15 @@ import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
 import {asc, count, countDistinct, desc, eq, gte, like, or, sql} from "drizzle-orm";
-import {apiCallRollup, collections, mediaRefreshLog, taskHistory, user} from "@/lib/server/database/schema";
+import {
+    apiCallRollup,
+    editorialCollection,
+    editorialCollectionItem,
+    editorialCollectionLike,
+    mediaRefreshLog,
+    taskHistory,
+    user,
+} from "@/lib/server/database/schema";
 
 
 export class AdminRepository {
@@ -17,28 +25,28 @@ export class AdminRepository {
 
         const result = getDbClient()
             .select({
-                total: count(collections.id).as("total"),
-                uniqueOwners: countDistinct(collections.ownerId).as("uniqueOwners"),
-                totalViews: sql<number>`coalesce(sum(${collections.viewCount}), 0)`.as("totalViews"),
-                totalLikes: sql<number>`coalesce(sum(${collections.likeCount}), 0)`.as("totalLikes"),
-                totalCopies: sql<number>`coalesce(sum(${collections.copiedCount}), 0)`.as("totalCopies"),
-                animeCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.ANIME} then 1 else 0 end)`.as("animeCount"),
-                booksCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.BOOKS} then 1 else 0 end)`.as("booksCount"),
-                gamesCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.GAMES} then 1 else 0 end)`.as("gamesCount"),
-                mangaCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.MANGA} then 1 else 0 end)`.as("mangaCount"),
-                publicCount: sql<number>`sum(case when ${collections.privacy} = ${PrivacyType.PUBLIC} then 1 else 0 end)`.as("publicCount"),
-                seriesCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.SERIES} then 1 else 0 end)`.as("seriesCount"),
-                moviesCount: sql<number>`sum(case when ${collections.mediaType} = ${MediaType.MOVIES} then 1 else 0 end)`.as("moviesCount"),
-                privateCount: sql<number>`sum(case when ${collections.privacy} = ${PrivacyType.PRIVATE} then 1 else 0 end)`.as("privateCount"),
-                restrictedCount: sql<number>`sum(case when ${collections.privacy} = ${PrivacyType.RESTRICTED} then 1 else 0 end)`.as("restrictedCount"),
-                createdThisMonth: sql<number>`sum(case when ${collections.createdAt} >= ${currentMonthStart} then 1 else 0 end)`.as("createdThisMonth"),
-                createdPreviousMonth: sql<number>`sum(case 
-                    when ${collections.createdAt} >= ${previousMonthStart} 
-                    and ${collections.createdAt} < ${currentMonthStart} 
+                total: count(editorialCollection.id).as("total"),
+                uniqueOwners: countDistinct(editorialCollection.ownerId).as("uniqueOwners"),
+                totalViews: sql<number>`coalesce(sum(${editorialCollection.viewCount}), 0)`.as("totalViews"),
+                totalLikes: sql<number>`(select count(*) from ${editorialCollectionLike})`.as("totalLikes"),
+                totalCopies: sql<number>`coalesce(sum(${editorialCollection.copiedCount}), 0)`.as("totalCopies"),
+                animeCount: sql<number>`sum(case when ${editorialCollection.kind} = ${MediaType.ANIME} then 1 else 0 end)`.as("animeCount"),
+                booksCount: sql<number>`sum(case when ${editorialCollection.kind} = ${MediaType.BOOKS} then 1 else 0 end)`.as("booksCount"),
+                gamesCount: sql<number>`sum(case when ${editorialCollection.kind} = ${MediaType.GAMES} then 1 else 0 end)`.as("gamesCount"),
+                mangaCount: sql<number>`sum(case when ${editorialCollection.kind} = ${MediaType.MANGA} then 1 else 0 end)`.as("mangaCount"),
+                publicCount: sql<number>`sum(case when ${editorialCollection.visibility} = ${PrivacyType.PUBLIC} then 1 else 0 end)`.as("publicCount"),
+                seriesCount: sql<number>`sum(case when ${editorialCollection.kind} = ${MediaType.SERIES} then 1 else 0 end)`.as("seriesCount"),
+                moviesCount: sql<number>`sum(case when ${editorialCollection.kind} = ${MediaType.MOVIES} then 1 else 0 end)`.as("moviesCount"),
+                privateCount: sql<number>`sum(case when ${editorialCollection.visibility} = ${PrivacyType.PRIVATE} then 1 else 0 end)`.as("privateCount"),
+                restrictedCount: sql<number>`sum(case when ${editorialCollection.visibility} = ${PrivacyType.RESTRICTED} then 1 else 0 end)`.as("restrictedCount"),
+                createdThisMonth: sql<number>`sum(case when ${editorialCollection.createdAt} >= ${currentMonthStart} then 1 else 0 end)`.as("createdThisMonth"),
+                createdPreviousMonth: sql<number>`sum(case
+                    when ${editorialCollection.createdAt} >= ${previousMonthStart}
+                    and ${editorialCollection.createdAt} < ${currentMonthStart}
                     then 1 else 0 end
                 )`.as("createdPreviousMonth"),
             })
-            .from(collections)
+            .from(editorialCollection)
             .get();
 
         return {
@@ -70,9 +78,9 @@ export class AdminRepository {
             .all<{ month: string; count: number }>(sql`
                 SELECT 
                     COUNT(*) as count,
-                    strftime('%Y-%m', ${collections.createdAt}) as month
-                FROM ${collections}
-                GROUP BY strftime('%Y-%m', ${collections.createdAt})
+                    strftime('%Y-%m', ${editorialCollection.createdAt}) as month
+                FROM ${editorialCollection}
+                GROUP BY strftime('%Y-%m', ${editorialCollection.createdAt})
                 ORDER BY month ASC
             `);
 
@@ -90,30 +98,30 @@ export class AdminRepository {
         const sorting = resolveSorting(data.sorting, allowedSorts, "createdAt");
 
         const searchCondition = search
-            ? or(like(collections.title, `%${search}%`), like(user.name, `%${search}%`))
+            ? or(like(editorialCollection.title, `%${search}%`), like(user.name, `%${search}%`))
             : undefined;
 
         const orderColumn = (() => {
             switch (sorting) {
                 case "id":
-                    return collections.id;
+                    return editorialCollection.id;
                 case "title":
-                    return collections.title;
+                    return editorialCollection.title;
                 case "privacy":
-                    return collections.privacy;
+                    return editorialCollection.visibility;
                 case "mediaType":
-                    return collections.mediaType;
+                    return editorialCollection.kind;
                 case "viewCount":
-                    return collections.viewCount;
+                    return editorialCollection.viewCount;
                 case "likeCount":
-                    return collections.likeCount;
+                    return sql`(SELECT COUNT(*) FROM ${editorialCollectionLike} WHERE ${editorialCollectionLike.collectionId} = ${editorialCollection.id})`;
                 case "copiedCount":
-                    return collections.copiedCount;
+                    return editorialCollection.copiedCount;
                 case "ownerName":
                     return user.name;
                 case "createdAt":
                 default:
-                    return collections.createdAt;
+                    return editorialCollection.createdAt;
             }
         })();
 
@@ -124,8 +132,8 @@ export class AdminRepository {
             getTotal: async () => {
                 return getDbClient()
                     .select({ count: count() })
-                    .from(collections)
-                    .innerJoin(user, eq(user.id, collections.ownerId))
+                    .from(editorialCollection)
+                    .innerJoin(user, eq(user.id, editorialCollection.ownerId))
                     .where(searchCondition)
                     .get()?.count ?? 0;
             },
@@ -135,24 +143,26 @@ export class AdminRepository {
                         ownerId: user.id,
                         ownerName: user.name,
                         ownerImage: user.image,
-                        id: collections.id,
-                        title: collections.title,
-                        ordered: collections.ordered,
-                        privacy: collections.privacy,
-                        mediaType: collections.mediaType,
-                        viewCount: collections.viewCount,
-                        likeCount: collections.likeCount,
-                        createdAt: collections.createdAt,
-                        updatedAt: collections.updatedAt,
-                        copiedCount: collections.copiedCount,
+                        id: editorialCollection.id,
+                        title: editorialCollection.title,
+                        ordered: editorialCollection.ordered,
+                        privacy: editorialCollection.visibility,
+                        mediaType: editorialCollection.kind,
+                        viewCount: editorialCollection.viewCount,
+                        likeCount: sql<number>`(
+                            SELECT COUNT(*) FROM ${editorialCollectionLike}
+                            WHERE ${editorialCollectionLike.collectionId} = ${editorialCollection.id}
+                        )`.as("likeCount"),
+                        createdAt: editorialCollection.createdAt,
+                        updatedAt: editorialCollection.updatedAt,
+                        copiedCount: editorialCollection.copiedCount,
                         itemsCount: sql<number>`(
-                            SELECT COUNT(*)
-                            FROM collection_items
-                            WHERE collection_items.collection_id = ${collections.id}
+                            SELECT COUNT(*) FROM ${editorialCollectionItem}
+                            WHERE ${editorialCollectionItem.collectionId} = ${editorialCollection.id}
                         )`.as("itemsCount"),
                     })
-                    .from(collections)
-                    .innerJoin(user, eq(user.id, collections.ownerId))
+                    .from(editorialCollection)
+                    .innerJoin(user, eq(user.id, editorialCollection.ownerId))
                     .$dynamic();
 
                 return (searchCondition ? query.where(searchCondition) : query)

@@ -260,6 +260,146 @@
       "when": 1783851780887,
       "tag": "0036_drop_error_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1784196243346,
+      "tag": "0037_rewrite_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1784197338089,
+      "tag": "0038_follow_invariants",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1784197386932,
+      "tag": "0039_tv_rewatch_invariants",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1784197977870,
+      "tag": "0040_tv_legacy_catalog_mapping",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1784199582302,
+      "tag": "0041_tv_legacy_event_mapping",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1784202585295,
+      "tag": "0042_preserve_unknown_catalog_added_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1784203043622,
+      "tag": "0043_movie_rewrite_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1784203118803,
+      "tag": "0044_preserve_unknown_library_added_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1784205591609,
+      "tag": "0045_game_rewrite_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "6",
+      "when": 1784208145896,
+      "tag": "0046_activity_history_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1784208561499,
+      "tag": "0047_book_rewrite_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1784210807553,
+      "tag": "0048_manga_rewrite_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1784212519496,
+      "tag": "0049_collections_rewrite_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1784214799152,
+      "tag": "0050_achievement_rewrite_invariants",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1784216082843,
+      "tag": "0051_profile_update_snapshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1784217629509,
+      "tag": "0052_clean_invalid_legacy_tags",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1784218436084,
+      "tag": "0053_unique_usernames",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1784220029590,
+      "tag": "0054_book_author_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "6",
+      "when": 1784227236842,
+      "tag": "0055_direct_catalog_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1784228834713,
+      "tag": "0056_remove_v1_media_tables",
+      "breakpoints": true
     }
   ]
 }

@@ -34,6 +34,8 @@ export const serverEnv = createEnv({
         REDIS_URL: z.url().default("redis://localhost:6379"),
         REDIS_ENABLED: z.string().transform((s) => s !== "false" && s !== "0").default(false),
 
+        // Rewrite cutover controls
+
         // Better-Auth
         BETTER_AUTH_SECRET: z.string().min(20),
 

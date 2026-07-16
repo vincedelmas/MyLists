@@ -29,7 +29,7 @@ import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/l
 export const Route = createFileRoute("/_main/_viewer/features-vote")({
     validateSearch: featureVotesSearchSchema,
     loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(featureVotesOptions);
+        return queryClient.ensureQueryData(featureVotesOptions());
     },
     component: FeatureVotesPage,
 });
@@ -56,7 +56,7 @@ function FeatureVotesPage() {
     const { activeTab } = Route.useSearch();
     const { currentUser, isAnonymous } = useAuth();
     const toggleVoteMutation = useToggleFeatureVoteMutation();
-    const apiData = useSuspenseQuery(featureVotesOptions).data;
+    const apiData = useSuspenseQuery(featureVotesOptions()).data;
     const [searchQuery, setSearchQuery] = useState("");
     const isAdmin = isAtLeastRole(currentUser?.role ?? null, RoleType.ADMIN);
     const createFeatureMutation = useCreateFeatureRequestMutation({ noErrorToast: true });

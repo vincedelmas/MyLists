@@ -1,8 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {GBooksApi} from "@/lib/server/api-providers/api";
-import {BooksRepository} from "@/lib/server/domain/media/books";
-import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
+import {ExternalMediaProvider, MediaIngestionRepository} from "@/lib/server/api-providers/interfaces.types";
+import {UpsertBooksWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {gBooksTransformer} from "@/lib/server/api-providers/transformers/gbook.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 
@@ -29,9 +28,12 @@ export const createGBooksBooksProvider = (gBooks: GBooksApi): ExternalMediaProvi
 };
 
 
-export const createBooksIngestionService = (repository: BooksRepository, provider: ExternalMediaProvider<UpsertBooksWithDetails>) => {
+export const createBooksIngestionService = (
+    repository: MediaIngestionRepository<UpsertBooksWithDetails>,
+    provider: ExternalMediaProvider<UpsertBooksWithDetails>,
+) => {
     return createMediaIngestionService({
         provider,
-        repository: repository,
+        repository,
     });
 }

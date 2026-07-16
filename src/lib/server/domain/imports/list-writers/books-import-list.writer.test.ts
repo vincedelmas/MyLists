@@ -6,16 +6,11 @@ import {BooksImportListWriter} from "@/lib/server/domain/imports/list-writers/bo
 
 describe("BooksImportListWriter", () => {
     it("materializes completed book defaults from matched media pages", async () => {
-        const booksService = {
-            bulkInsertUserMedia: vi.fn().mockResolvedValue([]),
-            findById: vi.fn().mockResolvedValue({
-                id: 100,
-                apiId: "book-123",
-                name: "Dune",
-                pages: 412,
-            }),
+        const booksCatalog = {
+            findForImport: vi.fn().mockResolvedValue({ pages: 412 }),
         };
-        const writer = new BooksImportListWriter(booksService as any);
+        const libraryWriter = { importRows: vi.fn().mockResolvedValue(undefined) };
+        const writer = new BooksImportListWriter(booksCatalog as any, libraryWriter as any);
 
         const matches: MatchedImportItem[] = [{
             mediaId: 100,
@@ -39,7 +34,7 @@ describe("BooksImportListWriter", () => {
 
         await writer.addMatchedItems(42, matches);
 
-        expect(booksService.bulkInsertUserMedia).toHaveBeenCalledWith([{
+        expect(libraryWriter.importRows).toHaveBeenCalledWith([{
             userId: 42,
             mediaId: 100,
             status: Status.COMPLETED,

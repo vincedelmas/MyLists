@@ -11,7 +11,7 @@ import {createServerOnlyFn} from "@tanstack/react-start";
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
-import {user as userTable, userMediaSettings} from "@/lib/server/database/schema";
+import {libraryStats, profileMediaChannel, user as userTable} from "@/lib/server/database/schema";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 
 
@@ -29,20 +29,21 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         user: {
             create: {
                 before: async (user) => {
+                    const normalizedName = user.name.trim();
                     const usernameExist = getDbClient()
                         .select()
                         .from(userTable)
-                        .where(eq(userTable.name, user.name))
+                        .where(eq(userTable.name, normalizedName))
                         .get();
 
                     if (!usernameExist) {
-                        return { data: user };
+                        return { data: { ...user, name: normalizedName } };
                     }
 
                     return {
                         data: {
                             ...user,
-                            name: `${user.name}-${crypto.randomBytes(4).toString("hex")}`,
+                            name: `${normalizedName}-${crypto.randomBytes(4).toString("hex")}`,
                         }
                     };
                 },
@@ -57,10 +58,17 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
                         ) as Record<Status, number>,
                     }));
 
-                    await getDbClient()
-                        .insert(userMediaSettings)
-                        .values(userMediaSettingsData)
-                        .onConflictDoNothing();
+                    await getDbClient().insert(profileMediaChannel).values(userMediaSettingsData.map((setting) => ({
+                        userId: setting.userId,
+                        kind: setting.mediaType,
+                        enabled: setting.active,
+                    }))).onConflictDoNothing();
+
+                    await getDbClient().insert(libraryStats).values(userMediaSettingsData.map((setting) => ({
+                        userId: setting.userId,
+                        kind: setting.mediaType,
+                        statusCounts: setting.statusCounts,
+                    }))).onConflictDoNothing();
                 },
             }
         },

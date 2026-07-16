@@ -38,8 +38,12 @@ export const statusUtils = {
 
 
 export const mediaTypeUtils = {
-    getTypesForNotifications: (): MediaType[] => [MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES],
-    getComingNextTypes: (): MediaType[] => [MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GAMES],
+    getTypesForNotifications: (): (typeof MediaType.SERIES | typeof MediaType.ANIME | typeof MediaType.MOVIES)[] => (
+        [MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES]
+    ),
+    getComingNextTypes: (): (typeof MediaType.SERIES | typeof MediaType.ANIME | typeof MediaType.MOVIES | typeof MediaType.GAMES)[] => (
+        [MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GAMES]
+    ),
 };
 
 

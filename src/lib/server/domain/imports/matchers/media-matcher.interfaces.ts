@@ -22,6 +22,12 @@ export interface InternalMediaMatcher {
 }
 
 
+export interface InternalCatalogMatcherSource {
+    findByApiIds(apiIds: (number | string)[]): Promise<{ id: number; apiId: number | string }[]>;
+    findByNames(names: string[]): Promise<{ id: number; name: string; releaseDate: string | null }[]>;
+}
+
+
 export interface ExternalMediaMatcher {
     match(items: ImportItemsSelect[]): AsyncIterable<ExternalResolverResult>;
 }

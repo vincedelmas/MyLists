@@ -1,6 +1,6 @@
 import {logger} from "@/lib/server/core/logger";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
-import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
+import {UpsertGameWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";

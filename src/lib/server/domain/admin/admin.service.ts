@@ -6,8 +6,8 @@ import {SaveTaskToDb} from "@/lib/types/tasks.types";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
 import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
 import {getRollupKey, PENDING_ROLLUPS_KEY} from "@/lib/server/core/cache-keys";
-import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
+import {AdminMediaOverviewRepository} from "@/lib/server/domain/admin/admin-media-overview.repository";
 
 
 export class AdminService {
@@ -26,25 +26,13 @@ export class AdminService {
         return this.repository.deleteArchivedTaskForAdmin(taskId);
     }
 
-    async getMediaOverviewForAdmin(mediaServiceRegistry: typeof MediaServiceRegistry) {
-        const mediaStats = await Promise.all(Object.values(MediaType).map(async (mediaType) => {
-            const mediaService = mediaServiceRegistry.get(mediaType);
-            const { added, updated } = await mediaService.getUserMediaAddedAndUpdatedForAdmin();
-            return { mediaType, added, updated };
-        }));
+    async getMediaOverviewForAdmin() {
+        const mediaStats = await Promise.all(Object.values(MediaType).map(async (mediaType) => ({
+            mediaType,
+            ...await AdminMediaOverviewRepository.getUserMediaAddedAndUpdated(mediaType),
+        })));
 
-        const addedThisMonth = mediaStats.reduce((sum, { added }) => sum + added.thisMonth, 0);
-        const addedLastMonth = mediaStats.reduce((sum, { added }) => sum + added.lastMonth, 0);
-        const updatedThisMonth = mediaStats.reduce((sum, { updated }) => sum + updated.thisMonth, 0);
-
-        return {
-            addedThisMonth,
-            addedLastMonth,
-            updatedThisMonth,
-            addedComparedToLastMonth: addedThisMonth - addedLastMonth,
-            addedPerMediaType: mediaStats.map(({ mediaType, added }) => ({ mediaType, ...added })),
-            updatedPerMediaType: mediaStats.map(({ mediaType, updated }) => ({ mediaType, ...updated })),
-        };
+        return buildMediaOverview(mediaStats);
     }
 
     async getCollectionsOverviewForAdmin() {
@@ -85,7 +73,7 @@ export class AdminService {
         const dailyDays = mediaRefreshRangeDays[dailyRange];
         const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
 
-        const [dailyByType, topUsers, totalsByRole, totalsByType, summary, recentRefreshes] = await Promise.all([
+        const [dailyByType, topUsers, totalsByRole, rawTotalsByType, summary, recentRefreshes] = await Promise.all([
             this.repository.getMediaRefreshDailyCountsByType(dailyDays),
             this.repository.getMediaRefreshTopUsers(topDays),
             this.repository.getMediaRefreshTotalsByRole(),
@@ -102,10 +90,10 @@ export class AdminService {
 
         const daily = dailyStartDate ? this._buildDailySeriesByKey(dailyStartDate, today, mediaTypes, countsByKey) : [];
 
-        const normalizedTotalsByType = mediaTypes
+        const totalsByType = mediaTypes
             .map((mediaType) => ({
                 mediaType,
-                count: Number(totalsByType.find((row) => row.mediaType === mediaType)?.count ?? 0),
+                count: Number(rawTotalsByType.find((row) => row.mediaType === mediaType)?.count ?? 0),
             }))
             .filter((row) => row.count > 0).sort((a, b) => b.count - a.count);
 
@@ -121,7 +109,7 @@ export class AdminService {
             totalsByRole,
             recentRefreshes,
             dailyWindowDays: daily.length,
-            totalsByType: normalizedTotalsByType,
+            totalsByType,
             summary: {
                 total: summary.total,
                 busiestDay: summary.busiestDay,
@@ -327,3 +315,26 @@ export class AdminService {
         });
     };
 }
+
+
+type MediaOverviewRow = {
+    mediaType: MediaType;
+    added: { thisMonth: number; lastMonth: number; comparedToLastMonth: number };
+    updated: { thisMonth: number };
+};
+
+
+const buildMediaOverview = (mediaStats: MediaOverviewRow[]) => {
+    const addedThisMonth = mediaStats.reduce((sum, { added }) => sum + added.thisMonth, 0);
+    const addedLastMonth = mediaStats.reduce((sum, { added }) => sum + added.lastMonth, 0);
+    const updatedThisMonth = mediaStats.reduce((sum, { updated }) => sum + updated.thisMonth, 0);
+
+    return {
+        addedThisMonth,
+        addedLastMonth,
+        updatedThisMonth,
+        addedComparedToLastMonth: addedThisMonth - addedLastMonth,
+        addedPerMediaType: mediaStats.map(({ mediaType, added }) => ({ mediaType, ...added })),
+        updatedPerMediaType: mediaStats.map(({ mediaType, updated }) => ({ mediaType, ...updated })),
+    };
+};

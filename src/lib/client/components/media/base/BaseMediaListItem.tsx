@@ -29,9 +29,10 @@ interface BaseMediaListItemProps {
 
 
 export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
-    const [dialogOpen, setDialogOpen] = useState(false);
     const { isCurrent, queryOption, isConnected, isMediaTypeActive, mediaType, allStatuses, rating, userMedia, redoDisplay, mediaDetailsDisplay } = props;
+
     const isCommon = isMediaTypeActive && userMedia.common;
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     return (
         <>

@@ -1,30 +1,23 @@
 import {MediaType} from "@/lib/utils/enums";
-import {assertNever} from "@/lib/utils/assert-never";
 import type {MediaListArgs} from "@/lib/schemas";
+import {assertNever} from "@/lib/utils/assert-never";
 import type {MediaListPage} from "@/lib/contracts/media/lists";
-import {bookListArgsSchema, gameListArgsSchema, mangaListArgsSchema, movieListArgsSchema, tvListArgsSchema,} from "@/lib/contracts/media/lists";
+import {bookListArgsSchema, gameListArgsSchema, mangaListArgsSchema, movieListArgsSchema, tvListArgsSchema} from "@/lib/contracts/media/lists";
 import type {mediaListOptions} from "@/lib/client/react-query/query-options";
-import {BookListView, GameListView, MangaListView, MovieListView, TvListView,} from "@/lib/client/components/features/media-list/KindListViews";
+import {BookListView, GameListView, MangaListView, MovieListView, TvListView} from "@/lib/client/components/features/media-list/KindListViews";
 
 
 interface MediaListFamilyBoundaryProps {
-    page: MediaListPage;
-    filters: MediaListArgs & { view?: "grid" | "list" };
-    isCurrent: boolean;
     isGrid: boolean;
+    isCurrent: boolean;
+    page: MediaListPage;
     queryOption: ReturnType<typeof mediaListOptions>;
     onChangePage: (filters: { page: number }) => void;
+    filters: MediaListArgs & { view?: "grid" | "list" };
 }
 
 
-export const MediaListKindBoundary = ({
-                                          page,
-                                          filters,
-                                          isCurrent,
-                                          isGrid,
-                                          queryOption,
-                                          onChangePage,
-                                      }: MediaListFamilyBoundaryProps) => {
+export const MediaListKindBoundary = ({ page, filters, isCurrent, isGrid, queryOption, onChangePage }: MediaListFamilyBoundaryProps) => {
     const { view: _view, ...listFilters } = filters;
     const shared = { isCurrent, isGrid, queryOption, onChangePage };
 

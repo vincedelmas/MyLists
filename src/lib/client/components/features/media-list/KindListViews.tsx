@@ -138,7 +138,13 @@ export const MovieListView = (props: FamilyListViewProps<MovieListPage, MovieLis
         page={props.page}
         kind={MediaType.MOVIES}
         getColumns={getMoviesColumns}
-        renderCard={(userMedia, cardProps) => <MovieListItem {...cardProps} mediaType={MediaType.MOVIES} userMedia={userMedia}/>}
+        renderCard={(userMedia, cardProps) =>
+            <MovieListItem
+                {...cardProps}
+                userMedia={userMedia}
+                mediaType={MediaType.MOVIES}
+            />
+        }
     />
 );
 

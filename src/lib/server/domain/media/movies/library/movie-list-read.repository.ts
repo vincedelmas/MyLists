@@ -153,6 +153,7 @@ export class MovieListReadRepository {
 
     async getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
         const ownerId = access.ownerId;
+
         if (job === JobType.ACTOR) {
             return getDbClient()
                 .selectDistinct({ name: movieActor.name })
@@ -177,6 +178,7 @@ export class MovieListReadRepository {
                     like(movieDetails.directorName, `%${query}%`),
                 )) as Promise<{ name: string }[]>;
         }
+
         return [];
     }
 

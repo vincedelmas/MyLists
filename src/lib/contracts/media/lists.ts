@@ -201,6 +201,9 @@ const mediaListFiltersResultSchema = z.discriminatedUnion("kind", [
     listFilters(MediaType.MANGA, {}),
 ]);
 
+type SeriesListItem = z.infer<typeof seriesListItemSchema>;
+type TvListItem<K extends TvMediaType> = Omit<SeriesListItem, "kind"> & { kind: K };
+
 export type TvListArgs = z.infer<typeof tvListArgsSchema>;
 export type MovieListArgs = z.infer<typeof movieListArgsSchema>;
 export type GameListArgs = z.infer<typeof gameListArgsSchema>;
@@ -210,27 +213,14 @@ export type MediaListItem = z.infer<typeof mediaListItemSchema>;
 export type MediaListPage = z.infer<typeof mediaListPageSchema>;
 export type MediaListFiltersResult = z.infer<typeof mediaListFiltersResultSchema>;
 export type ListPagination = z.infer<typeof paginationResultSchema>;
-type SeriesListItem = z.infer<typeof seriesListItemSchema>;
 export type SeriesListPage = z.infer<typeof seriesListPageSchema>;
 export type AnimeListPage = z.infer<typeof animeListPageSchema>;
 export type MovieListPage = z.infer<typeof movieListPageSchema>;
 export type GameListPage = z.infer<typeof gameListPageSchema>;
 export type BookListPage = z.infer<typeof bookListPageSchema>;
 export type MangaListPage = z.infer<typeof mangaListPageSchema>;
-type TvListItem<K extends TvMediaType> =
-    Omit<SeriesListItem, "kind"> & { kind: K };
 export type TvListPage<K extends TvMediaType> = {
     kind: K;
     items: TvListItem<K>[];
     pagination: ListPagination;
-};
-
-export const validateMediaListPage = <T extends MediaListPage>(value: T): T => {
-    if (process.env.NODE_ENV !== "production") mediaListPageSchema.parse(value);
-    return value;
-};
-
-export const validateMediaListFiltersResult = <T extends MediaListFiltersResult>(value: T): T => {
-    if (process.env.NODE_ENV !== "production") mediaListFiltersResultSchema.parse(value);
-    return value;
 };

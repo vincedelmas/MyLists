@@ -1,15 +1,15 @@
 import {useState} from "react";
-import {MediaListArgs, mediaListSearchSchema} from "@/lib/schemas";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Header} from "@/lib/client/components/media/base/Header";
+import {MediaListArgs, mediaListSearchSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {AppliedFilters} from "@/lib/client/components/media/base/AppliedFilters";
 import {FiltersSideSheet} from "@/lib/client/components/media/base/FiltersSideSheet";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {MediaListKindBoundary} from "@/lib/client/components/features/media-list/MediaListKindBoundary";
 
 
@@ -29,25 +29,19 @@ function MediaList() {
     const navigate = Route.useNavigate();
     const { username, mediaType } = Route.useParams();
     const allStatuses = statusUtils.byMediaType(mediaType);
-    const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
     const queryOption = mediaListOptions(mediaType, username, filters);
-    const apiData = useSuspenseQuery(queryOption).data;
+    const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
 
+    const apiData = useSuspenseQuery(queryOption).data;
     const isCurrent = (currentUser?.id === apiData.userData.id);
     const isGrid = filters.view ? filters.view === "grid" : (currentUser?.gridListView ?? true);
 
     const handleGridToggle = () => {
-        void navigate({
-            search: (prev) => ({ ...prev, view: isGrid ? "list" : "grid" }),
-            replace: true,
-        });
+        void navigate({ search: prev => ({ ...prev, view: isGrid ? "list" : "grid" }), replace: true });
     };
 
     const handleFilterChange = (newFilters: Partial<MediaListArgs>) => {
-        void navigate({
-            search: (prev) => mergeListSearch(prev, newFilters),
-            resetScroll: false,
-        });
+        void navigate({ search: prev => mergeListSearch(prev, newFilters), resetScroll: false });
     };
 
     return (
@@ -70,10 +64,10 @@ function MediaList() {
             />
             <div className="animate-in fade-in duration-500 mt-2">
                 <MediaListKindBoundary
-                    page={apiData.results}
+                    isGrid={isGrid}
                     filters={filters}
                     isCurrent={isCurrent}
-                    isGrid={isGrid}
+                    page={apiData.results}
                     queryOption={queryOption}
                     onChangePage={handleFilterChange}
                 />
@@ -94,30 +88,27 @@ function MediaList() {
 }
 
 
-const mergeListSearch = (
-    current: MediaListArgs & { view?: "grid" | "list" },
-    changes: Partial<MediaListArgs>,
-): MediaListArgs & { view?: "grid" | "list" } => ({
+const mergeListSearch = (current: MediaListArgs & { view?: "grid" | "list" }, changes: Partial<MediaListArgs>): MediaListArgs & { view?: "grid" | "list" } => ({
     ...current,
     page: changes.page ?? 1,
     perPage: changes.perPage ?? current.perPage,
     sorting: changes.sorting ?? current.sorting,
-    search: changes.search === undefined ? current.search : changes.search || undefined,
-    favorite: changes.favorite === undefined ? current.favorite : changes.favorite || undefined,
-    comment: changes.comment === undefined ? current.comment : changes.comment || undefined,
-    hideCommon: changes.hideCommon === undefined ? current.hideCommon : changes.hideCommon || undefined,
-    status: toggleFilterValues(current.status, changes.status),
-    genres: toggleFilterValues(current.genres, changes.genres),
     tags: toggleFilterValues(current.tags, changes.tags),
     langs: toggleFilterValues(current.langs, changes.langs),
-    directors: toggleFilterValues(current.directors, changes.directors),
-    publishers: toggleFilterValues(current.publishers, changes.publishers),
+    status: toggleFilterValues(current.status, changes.status),
     actors: toggleFilterValues(current.actors, changes.actors),
+    genres: toggleFilterValues(current.genres, changes.genres),
     authors: toggleFilterValues(current.authors, changes.authors),
-    companies: toggleFilterValues(current.companies, changes.companies),
     networks: toggleFilterValues(current.networks, changes.networks),
     creators: toggleFilterValues(current.creators, changes.creators),
     platforms: toggleFilterValues(current.platforms, changes.platforms),
+    companies: toggleFilterValues(current.companies, changes.companies),
+    directors: toggleFilterValues(current.directors, changes.directors),
+    publishers: toggleFilterValues(current.publishers, changes.publishers),
+    search: changes.search === undefined ? current.search : changes.search || undefined,
+    comment: changes.comment === undefined ? current.comment : changes.comment || undefined,
+    favorite: changes.favorite === undefined ? current.favorite : changes.favorite || undefined,
+    hideCommon: changes.hideCommon === undefined ? current.hideCommon : changes.hideCommon || undefined,
 });
 
 
@@ -130,5 +121,6 @@ const toggleFilterValues = <T extends string>(current: T[] | undefined, changes:
     const retained = (current ?? []).filter((value) => !changedValues.has(value));
     const added = changes.filter((value) => !currentValues.has(value));
     const result = [...retained, ...added];
+
     return result.length > 0 ? result : undefined;
 };

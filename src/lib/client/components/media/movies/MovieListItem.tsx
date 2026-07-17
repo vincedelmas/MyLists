@@ -1,7 +1,7 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {KindListItemProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
+import {KindListItemProps} from "@/lib/client/components/media/family-component.types";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 
 

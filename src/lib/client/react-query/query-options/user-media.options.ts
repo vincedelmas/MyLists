@@ -1,9 +1,9 @@
 import {queryOptions} from "@tanstack/react-query";
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {MediaListArgs, SimpleSearch} from "@/lib/schemas";
+import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
 import {getUserMediaHistory, getUserTagNames} from "@/lib/server/functions/user-media";
 import {getMediaListFilters, getMediaListSearchFilters, getMediaListSF, getTagsViewFn, getUserListHeaderSF} from "@/lib/server/functions/media-lists";
-import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
 
 
 export const mediaListOptions = (mediaType: MediaType, username: string, search: MediaListArgs) => queryOptions({

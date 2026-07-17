@@ -25,10 +25,10 @@ const transformSearchResults = (searchData: SearchData<GBooksSearchResults>) => 
 
 
 const transformBooksDetailsResults = async (rawData: GBooksDetails) => {
-    const mediaData = {
+    return {
         apiId: rawData.id,
         language: rawData.volumeInfo.language,
-        publishers: rawData.volumeInfo.publisher,
+        publisher: rawData.volumeInfo.publisher,
         pages: rawData.volumeInfo.pageCount ?? 50,
         name: rawData.volumeInfo.title ?? "No Title Found",
         releaseDate: formatDateForDb(rawData.volumeInfo.publishedDate),
@@ -38,11 +38,8 @@ const transformBooksDetailsResults = async (rawData: GBooksDetails) => {
             imageUrl: rawData.volumeInfo.imageLinks?.extraLarge ??
                 rawData.volumeInfo.imageLinks?.large ?? rawData.volumeInfo.imageLinks?.medium,
         }),
-    }
-
-    const authorsData = rawData.volumeInfo?.authors?.map((name) => ({ name }));
-
-    return { mediaData, authorsData };
+        authors: rawData.volumeInfo?.authors,
+    };
 };
 
 

@@ -57,12 +57,12 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Option
         return topWriters.join(", ");
     };
 
-    const mediaData = {
+    const snapshot = {
         apiId: rawData.id,
         name: rawData?.name,
         synopsis: rawData?.overview,
         homepage: rawData?.homepage,
-        prodStatus: rawData?.status,
+        productionStatus: rawData?.status,
         voteCount: rawData?.vote_count ?? 0,
         popularity: rawData?.popularity ?? 0,
         createdBy: processCreatedBy(rawData),
@@ -73,34 +73,30 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Option
         totalEpisodes: rawData?.number_of_episodes ?? 1,
         lastAirDate: formatDateForDb(rawData.last_air_date),
         releaseDate: formatDateForDb(rawData.first_air_date),
-        duration: rawData?.episode_run_time?.[0] ?? defaultDuration,
-        seasonToAir: rawData?.next_episode_to_air?.season_number ?? null,
-        episodeToAir: rawData?.next_episode_to_air?.episode_number ?? null,
-        nextEpisodeToAir: formatDateForDb(rawData?.next_episode_to_air?.air_date),
+        durationMinutes: rawData?.episode_run_time?.[0] ?? defaultDuration,
+        nextEpisodeSeason: rawData?.next_episode_to_air?.season_number ?? null,
+        nextEpisodeNumber: rawData?.next_episode_to_air?.episode_number ?? null,
+        nextEpisodeAirDate: formatDateForDb(rawData?.next_episode_to_air?.air_date),
         imageCover: await saveImageFromUrl({
             dirSaveName: dirSaveName,
             imageUrl: `${imageBaseUrl}${rawData?.poster_path}`,
         }),
     };
 
-    const seasonsData = rawData?.seasons?.filter((s) => s.season_number && s.season_number > 0)
-        .map((s) => ({ season: s.season_number, episodes: s.episode_count }))
-        .filter((s) => s.episodes > 0) || [];
+    const seasons = rawData?.seasons?.filter((s) => s.season_number && s.season_number > 0)
+        .map((s) => ({ seasonNumber: s.season_number, episodeCount: s.episode_count }))
+        .filter((s) => s.episodeCount > 0) || [];
 
-    if (seasonsData.length === 0) {
-        seasonsData.push({ season: 1, episodes: 1 });
+    if (seasons.length === 0) {
+        seasons.push({ seasonNumber: 1, episodeCount: 1 });
     }
 
-    const networkData = rawData?.networks?.slice(0, maxNetworks).map((n) => ({ name: n.name }));
-    const actorsData = rawData?.credits?.cast?.slice(0, maxActors).map((c) => ({ name: c.name }));
-    const genresData = rawData?.genres?.slice(0, maxGenres).map((g) => ({ name: g.name }));
-
     return {
-        mediaData,
-        seasonsData,
-        networkData,
-        actorsData,
-        genresData,
+        ...snapshot,
+        seasons,
+        networks: rawData?.networks?.slice(0, maxNetworks).map((network) => network.name),
+        actors: rawData?.credits?.cast?.slice(0, maxActors).map((actor) => actor.name),
+        genres: rawData?.genres?.slice(0, maxGenres).map((genre) => genre.name),
     };
 };
 
@@ -160,7 +156,7 @@ const transformSearchResults = (searchData: SearchData<TmdbMultiSearchResponse>)
 
 
 const transformMoviesDetailsResults = async (rawData: TmdbMovieDetails) => {
-    const mediaData = {
+    return {
         apiId: rawData.id,
         name: rawData?.title,
         tagline: rawData?.tagline,
@@ -173,21 +169,18 @@ const transformMoviesDetailsResults = async (rawData: TmdbMovieDetails) => {
         originalName: rawData?.original_title,
         voteAverage: rawData?.vote_average ?? 0,
         originalLanguage: rawData?.original_language,
-        collectionId: rawData?.belongs_to_collection?.id,
+        collectionExternalId: rawData?.belongs_to_collection?.id,
         releaseDate: formatDateForDb(rawData.release_date),
-        duration: rawData?.runtime ?? moviesDefaultDuration,
+        durationMinutes: rawData?.runtime ?? moviesDefaultDuration,
         directorName: rawData?.credits?.crew?.find((crew) => crew.job === "Director")?.name,
         compositorName: rawData?.credits?.crew?.find((crew) => crew.job === "Original Music Composer")?.name,
         imageCover: await saveImageFromUrl({
             dirSaveName: "movies-covers",
             imageUrl: `${imageBaseUrl}${rawData?.poster_path}`,
         }),
-    }
-
-    const genresData = rawData?.genres?.slice(0, maxGenres).map((genre) => ({ name: genre.name }));
-    const actorsData = rawData?.credits?.cast?.slice(0, maxActors).map((cast) => ({ name: cast.name }));
-
-    return { mediaData, actorsData, genresData };
+        genres: rawData?.genres?.slice(0, maxGenres).map((genre) => genre.name),
+        actors: rawData?.credits?.cast?.slice(0, maxActors).map((cast) => cast.name),
+    };
 };
 
 
@@ -255,15 +248,15 @@ const transformTvTrends = async (rawData: TmdbTrendingTvResponse) => {
 };
 
 
-const addAnimeSpecificGenres = (jikanData: JikanAnimeSearchResponse, genresData: { name: string }[] | null | undefined) => {
+const addAnimeSpecificGenres = (jikanData: JikanAnimeSearchResponse, existingGenres: string[] | null | undefined) => {
     const { genres = [], demographics = [] } = jikanData?.data?.[0] || {};
-    const genreList = genres.map((g) => ({ name: g.name })) as { name: string }[];
-    const demoList = demographics.map((d) => ({ name: d.name })) as { name: string }[];
+    const genreList = genres.map((genre) => genre.name);
+    const demoList = demographics.map((demographic) => demographic.name);
 
     const newGenres = demoList.length >= 5
         ? demoList.slice(0, 5) : [...genreList.slice(0, 5 - demoList.length), ...demoList];
 
-    return newGenres.length ? newGenres : genresData;
+    return newGenres.length ? newGenres : existingGenres;
 };
 
 

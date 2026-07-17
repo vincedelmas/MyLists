@@ -4,7 +4,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {MediaType, Status} from "@/lib/utils/enums";
-import {UpsertTvWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {TvCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {TvMediaType} from "@/lib/types/media-kind.types";
@@ -56,11 +56,11 @@ describe("TV catalog ingestion command", () => {
         const animeProvider = provider(MediaType.ANIME, details({ name: "Anime", apiId: 777 }));
         const seriesIngestion = createMediaIngestionService({
             provider: seriesProvider,
-            repository: new TvCatalogIngestionCommand(new TvCatalogIngestionRepository(MediaType.SERIES)),
+            catalog: new TvCatalogIngestionCommand(new TvCatalogIngestionRepository(MediaType.SERIES)),
         });
         const animeIngestion = createMediaIngestionService({
             provider: animeProvider,
-            repository: new TvCatalogIngestionCommand(new TvCatalogIngestionRepository(MediaType.ANIME)),
+            catalog: new TvCatalogIngestionCommand(new TvCatalogIngestionRepository(MediaType.ANIME)),
         });
 
         const seriesId = await seriesIngestion.storeFromExternal(777);
@@ -82,7 +82,7 @@ describe("TV catalog ingestion command", () => {
         const catalogRepository = new TvCatalogIngestionRepository(MediaType.SERIES);
         const ingestion = createMediaIngestionService({
             provider: externalProvider,
-            repository: new TvCatalogIngestionCommand(catalogRepository),
+            catalog: new TvCatalogIngestionCommand(catalogRepository),
         });
         const catalogItemId = await ingestion.storeFromExternal(888);
 
@@ -98,7 +98,7 @@ describe("TV catalog ingestion command", () => {
             name: "Changing Series",
             apiId: 888,
             duration: 50,
-            seasons: [{ season: 1, episodes: 10 }],
+            seasons: [{ seasonNumber: 1, episodeCount: 10 }],
         }));
         await ingestion.refreshFromExternal(888);
 
@@ -122,35 +122,33 @@ describe("TV catalog ingestion command", () => {
 });
 
 
-const provider = (mediaType: TvMediaType, transformed: UpsertTvWithDetails) => ({
+const provider = (mediaType: TvMediaType, transformed: TvCatalogSnapshot) => ({
     source: "tmdb" as const,
     mediaType,
     search: { search: vi.fn() },
     details: { getDetails: vi.fn(async () => transformed) },
-}) satisfies ExternalMediaProvider<UpsertTvWithDetails>;
+}) satisfies ExternalMediaProvider<TvCatalogSnapshot>;
 
 
 const details = ({
                      apiId,
                      name,
                      duration = 45,
-                     seasons = [{ season: 1, episodes: 12 }, { season: 2, episodes: 8 }],
+                     seasons = [{ seasonNumber: 1, episodeCount: 12 }, { seasonNumber: 2, episodeCount: 8 }],
                  }: {
     apiId: number;
     name: string;
     duration?: number;
-    seasons?: { season: number; episodes: number }[];
-}): UpsertTvWithDetails => ({
-    mediaData: {
-        apiId,
-        name,
-        duration,
-        imageCover: "series.jpg",
-        totalSeasons: seasons.length,
-        totalEpisodes: seasons.reduce((total, season) => total + season.episodes, 0),
-    },
-    seasonsData: seasons,
-    actorsData: [{ name: "Actor" }],
-    networkData: [{ name: "Network" }],
-    genresData: [{ name: "Drama" }],
+    seasons?: { seasonNumber: number; episodeCount: number }[];
+}): TvCatalogSnapshot => ({
+    apiId,
+    name,
+    durationMinutes: duration,
+    imageCover: "series.jpg",
+    totalSeasons: seasons.length,
+    totalEpisodes: seasons.reduce((total, season) => total + season.episodeCount, 0),
+    seasons,
+    actors: ["Actor"],
+    networks: ["Network"],
+    genres: ["Drama"],
 });

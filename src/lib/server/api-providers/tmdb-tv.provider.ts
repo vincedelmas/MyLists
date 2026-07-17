@@ -2,38 +2,38 @@ import {MediaType} from "@/lib/utils/enums";
 import {logger} from "@/lib/server/core/logger";
 import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {UpsertTvWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {CatalogIngestionCommands, TvCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
-import {ExternalMediaProvider, MediaDetailsEnricher, MediaIngestionRepository, RefreshCandidateSource} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalMediaProvider, MediaDetailsEnricher, RefreshCandidateSource} from "@/lib/server/api-providers/interfaces.types";
 
 
-const createAnimeGenresEnricher = (jikan: JikanApi): MediaDetailsEnricher<UpsertTvWithDetails> => {
+const createAnimeGenresEnricher = (jikan: JikanApi): MediaDetailsEnricher<TvCatalogSnapshot> => {
     return async (details, context) => {
         // If isBulk is true, we don't query Jikan for the genres, so we don't want to override the genres
         if (context.isBulk) {
             const enriched = { ...details };
-            delete enriched.genresData; // genresData are the genres from TMDB, we want to keep the one from Jikan
+            delete enriched.genres; // Bulk refresh keeps the existing Jikan-enriched genres.
             return enriched;
         }
 
         try {
-            const jikanData = await jikan.getAnimeGenresAndDemographics(details.mediaData.name);
+            const jikanData = await jikan.getAnimeGenresAndDemographics(details.name);
 
             return {
                 ...details,
-                genresData: tmdbTransformer.addAnimeSpecificGenres(jikanData, details.genresData),
+                genres: tmdbTransformer.addAnimeSpecificGenres(jikanData, details.genres),
             };
         }
         catch (err) {
-            logger.warn({ err, animeName: details.mediaData.name }, "Skipping Jikan anime genre enrichment");
+            logger.warn({ err, animeName: details.name }, "Skipping Jikan anime genre enrichment");
             return details;
         }
     };
 };
 
 
-const createTmdbTvProvider = (tmdb: TmdbApi, mediaType: TvMediaType, transformDetails: typeof tmdbTransformer.transformSeriesDetailsResults): ExternalMediaProvider<UpsertTvWithDetails> => {
+const createTmdbTvProvider = (tmdb: TmdbApi, mediaType: TvMediaType, transformDetails: typeof tmdbTransformer.transformSeriesDetailsResults): ExternalMediaProvider<TvCatalogSnapshot> => {
     return {
         mediaType,
         source: "tmdb",
@@ -68,24 +68,24 @@ const createTmdbTvProvider = (tmdb: TmdbApi, mediaType: TvMediaType, transformDe
 };
 
 
-export const createTmdbSeriesProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertTvWithDetails> => {
+export const createTmdbSeriesProvider = (tmdb: TmdbApi): ExternalMediaProvider<TvCatalogSnapshot> => {
     return createTmdbTvProvider(tmdb, MediaType.SERIES, tmdbTransformer.transformSeriesDetailsResults);
 };
 
 
-export const createTmdbAnimeProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertTvWithDetails> => {
+export const createTmdbAnimeProvider = (tmdb: TmdbApi): ExternalMediaProvider<TvCatalogSnapshot> => {
     return createTmdbTvProvider(tmdb, MediaType.ANIME, tmdbTransformer.transformAnimeDetailsResults);
 };
 
 
 export const createSeriesIngestionService = (
-    repository: MediaIngestionRepository<UpsertTvWithDetails>,
-    provider: ExternalMediaProvider<UpsertTvWithDetails>,
+    catalog: CatalogIngestionCommands<TvCatalogSnapshot>,
+    provider: ExternalMediaProvider<TvCatalogSnapshot>,
     refreshCandidates?: RefreshCandidateSource,
 ) => {
     return createMediaIngestionService({
         provider,
-        repository,
+        catalog,
         refreshCandidates,
     });
 };
@@ -93,13 +93,13 @@ export const createSeriesIngestionService = (
 
 export const createAnimeIngestionService = (
     jikan: JikanApi,
-    repository: MediaIngestionRepository<UpsertTvWithDetails>,
-    provider: ExternalMediaProvider<UpsertTvWithDetails>,
+    catalog: CatalogIngestionCommands<TvCatalogSnapshot>,
+    provider: ExternalMediaProvider<TvCatalogSnapshot>,
     refreshCandidates?: RefreshCandidateSource,
 ) => {
     return createMediaIngestionService({
         provider,
-        repository,
+        catalog,
         refreshCandidates,
         enrichers: [
             createAnimeGenresEnricher(jikan),

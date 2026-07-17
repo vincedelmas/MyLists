@@ -1,29 +1,22 @@
 import {MediaType} from "@/lib/utils/enums";
 import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
-import {UpsertGameWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {CatalogIngestionCommands, GameCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
-import {ExternalMediaProvider, MediaDetailsEnricher, MediaIngestionRepository, RefreshCandidateSource} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalMediaProvider, MediaDetailsEnricher, RefreshCandidateSource} from "@/lib/server/api-providers/interfaces.types";
 
 
-const createHltbEnricher = (hltbClient: HltbApi): MediaDetailsEnricher<UpsertGameWithDetails> => {
+const createHltbEnricher = (hltbClient: HltbApi): MediaDetailsEnricher<GameCatalogSnapshot> => {
     return async (details, context) => {
         if (context.isBulk) return details;
 
-        const hltbData = await hltbClient.search(details.mediaData.name);
-
-        return {
-            ...details,
-            mediaData: igdbTransformer.addHLTBDataToMainDetails(
-                hltbData,
-                details.mediaData,
-            ),
-        };
+        const hltbData = await hltbClient.search(details.name);
+        return igdbTransformer.addHLTBDataToMainDetails(hltbData, { ...details });
     }
 };
 
 
-export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<UpsertGameWithDetails> => {
+export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<GameCatalogSnapshot> => {
     return {
         source: "igdb" as const,
         mediaType: MediaType.GAMES,
@@ -59,13 +52,13 @@ export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<Up
 
 export const createGamesIngestionService = (
     hltbClient: HltbApi,
-    repository: MediaIngestionRepository<UpsertGameWithDetails>,
-    provider: ExternalMediaProvider<UpsertGameWithDetails>,
+    catalog: CatalogIngestionCommands<GameCatalogSnapshot>,
+    provider: ExternalMediaProvider<GameCatalogSnapshot>,
     refreshCandidates?: RefreshCandidateSource,
 ) => {
     return createMediaIngestionService({
         provider,
-        repository,
+        catalog,
         refreshCandidates,
         refreshPolicy: {
             chunkSize: 500,

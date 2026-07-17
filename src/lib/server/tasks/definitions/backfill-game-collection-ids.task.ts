@@ -44,7 +44,7 @@ export const backfillGameCollectionIdsTask = defineTask({
                     collectionId: collectionIdsByApiId.get(apiId) ?? null,
                 }));
 
-                await container.media.catalog.maintenance.games.synchronizeCollectionExternalIds(updates);
+                await container.media.get(MediaType.GAMES).catalog.admin.synchronizeCollectionExternalIds(updates);
 
                 ctx.increment("games.processed", updates.length);
                 ctx.increment("games.with_collection", updates.filter((item) => item.collectionId !== null).length);

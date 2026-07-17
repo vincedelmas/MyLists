@@ -6,7 +6,7 @@ import * as schema from "@/lib/server/database/schema";
 import {MediaType} from "@/lib/utils/enums";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertGameWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {GameCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -43,10 +43,10 @@ describe("game catalog ingestion command", () => {
             mediaType: MediaType.GAMES,
             search: { search: vi.fn() },
             details: { getDetails: vi.fn(async () => transformed) },
-        } satisfies ExternalMediaProvider<UpsertGameWithDetails>;
+        } satisfies ExternalMediaProvider<GameCatalogSnapshot>;
         const ingestion = createMediaIngestionService({
             provider,
-            repository: new GameCatalogIngestionCommand(new GameCatalogIngestionRepository()),
+            catalog: new GameCatalogIngestionCommand(new GameCatalogIngestionRepository()),
         });
 
         const catalogItemId = await ingestion.storeFromExternal(777);
@@ -75,20 +75,18 @@ describe("game catalog ingestion command", () => {
 });
 
 
-const details = (engine: string): UpsertGameWithDetails => ({
-    mediaData: {
-        apiId: 777,
-        name: "Game",
-        imageCover: "game.jpg",
-        gameEngine: engine,
-        hltbMainTime: 20.5,
-        hltbMainAndExtraTime: -1,
-        hltbTotalCompleteTime: 80,
-    },
-    platformsData: [{ name: "PC (Microsoft Windows)" }],
-    companiesData: [
+const details = (engine: string): GameCatalogSnapshot => ({
+    apiId: 777,
+    name: "Game",
+    imageCover: "game.jpg",
+    gameEngine: engine,
+    hltbMainHours: 20.5,
+    hltbMainExtraHours: -1,
+    hltbCompletionistHours: 80,
+    platforms: ["PC (Microsoft Windows)"],
+    companies: [
         { name: "Studio", developer: true, publisher: false },
         { name: "Studio", developer: false, publisher: true },
     ],
-    genresData: [{ name: "Role-playing" }],
+    genres: ["Role-playing"],
 });

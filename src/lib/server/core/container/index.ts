@@ -3,33 +3,29 @@ import {setupUserModule, UserModule} from "@/lib/server/core/container/user.modu
 import {AdminModule, setupAdminModule} from "@/lib/server/core/container/admin.module";
 import {MediaModule, setupMediaModule} from "@/lib/server/core/container/media.module";
 import {ImportModule, setupImportModule} from "@/lib/server/core/container/import.module";
-import {ProviderModule, setupProviderModule} from "@/lib/server/core/container/provider.module";
 import {ApiClientModule, setupApiClientsModule} from "@/lib/server/core/container/api-client.module";
 
 
 interface AppContainer {
+    imports: ImportModule;
     cacheManager: CacheManager;
     apiClients: ApiClientModule;
-    imports: ImportModule;
     stats: UserModule["stats"];
     games: UserModule["games"];
     admin: AdminModule["admin"];
-    media: MediaModule["media"];
     social: UserModule["social"];
+    media: MediaModule["registry"];
     account: UserModule["account"];
     profile: UserModule["profile"];
-    library: MediaModule["library"];
     activity: UserModule["activity"];
     discovery: UserModule["discovery"];
     collections: UserModule["collections"];
     featureVotes: UserModule["featureVotes"];
     achievements: UserModule["achievements"];
+    library: MediaModule["shared"]["library"];
     notifications: UserModule["notifications"];
     inactiveAccounts: UserModule["inactiveAccounts"];
-    catalog: {
-        ingestion: ProviderModule["ingestion"];
-        externalProviders: ProviderModule["externalProviders"];
-    };
+    mediaShared: Omit<MediaModule["shared"], "library">;
 }
 
 
@@ -40,18 +36,20 @@ async function initContainer(): Promise<AppContainer> {
     const cacheManager = await setupCacheManager();
     const clientsModule = await setupApiClientsModule();
 
-    const mediaModule = setupMediaModule();
     const adminModule = setupAdminModule();
-    const userModule = setupUserModule(mediaModule);
-    const providerModule = setupProviderModule(clientsModule);
+    const mediaModule = setupMediaModule(clientsModule);
 
-    const importModule = setupImportModule(mediaModule, providerModule);
+    const userModule = setupUserModule(mediaModule);
+    const importModule = setupImportModule(mediaModule.registry);
 
     return {
         cacheManager,
         apiClients: clientsModule,
-        library: mediaModule.library,
-        media: mediaModule.media,
+        library: mediaModule.shared.library,
+        media: mediaModule.registry,
+        mediaShared: {
+            catalogEdit: mediaModule.shared.catalogEdit,
+        },
         account: userModule.account,
         inactiveAccounts: userModule.inactiveAccounts,
         profile: userModule.profile,
@@ -66,10 +64,6 @@ async function initContainer(): Promise<AppContainer> {
         games: userModule.games,
         admin: adminModule.admin,
         imports: importModule,
-        catalog: {
-            externalProviders: providerModule.externalProviders,
-            ingestion: providerModule.ingestion,
-        },
     };
 }
 

@@ -1,22 +1,22 @@
 import {
     ExternalMediaProvider,
     IngestionContext,
-    MediaIngestionRepository,
     MediaDetailsEnricher,
     MediaIngestionService,
     RefreshCandidateSource,
     RefreshPolicy
 } from "@/lib/server/api-providers/interfaces.types";
+import {CatalogIngestionCommands} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 
 
 export function createMediaIngestionService<TDetails>(params: {
-    repository: MediaIngestionRepository<TDetails>;
+    catalog: CatalogIngestionCommands<TDetails>;
     provider: ExternalMediaProvider<TDetails>;
     refreshCandidates?: RefreshCandidateSource;
     enrichers?: MediaDetailsEnricher<TDetails>[];
     refreshPolicy?: RefreshPolicy;
 }): MediaIngestionService<TDetails> {
-    const { repository, provider, refreshCandidates, refreshPolicy, enrichers = [] } = params;
+    const { catalog, provider, refreshCandidates, refreshPolicy, enrichers = [] } = params;
 
     async function applyEnrichers(details: TDetails, context: IngestionContext) {
         let enriched = details;
@@ -35,7 +35,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
     async function storePreparedDetails(apiId: number | string, details: TDetails, context: IngestionContext) {
         const enriched = await applyEnrichers(details, context);
-        const mediaId = await repository.storeMediaWithDetails(enriched);
+        const mediaId = await catalog.ingest(enriched);
         return [String(apiId), mediaId] as const;
     }
 
@@ -53,7 +53,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
                 try {
                     const enriched = await applyEnrichers(details, { mode: "refresh", isBulk: true });
-                    await repository.updateMediaWithDetails(enriched);
+                    await catalog.refresh(enriched);
                     yield { apiId, state: "fulfilled" as const, reason: undefined };
                 }
                 catch (reason) {
@@ -72,7 +72,7 @@ export function createMediaIngestionService<TDetails>(params: {
         for (const apiId of apiIds) {
             try {
                 const details = await fetchAndPrepareDetails(apiId, { mode: "refresh", isBulk: true });
-                await repository.updateMediaWithDetails(details);
+                await catalog.refresh(details);
                 yield { apiId, state: "fulfilled" as const, reason: undefined };
             }
             catch (reason) {
@@ -95,12 +95,12 @@ export function createMediaIngestionService<TDetails>(params: {
     return {
         async storeFromExternal(apiId: number | string, checkInternalFirst: boolean = true) {
             if (checkInternalFirst) {
-                const existingMedia = await repository.findByApiId(apiId);
+                const existingMedia = await catalog.findByApiId(apiId);
                 if (existingMedia) return existingMedia.id;
             }
 
             const details = await fetchAndPrepareDetails(apiId, { mode: "store", isBulk: false });
-            return repository.storeMediaWithDetails(details);
+            return catalog.ingest(details);
         },
 
         async storeBatchFromExternal(apiIds: (number | string)[], checkInternalFirst: boolean = true) {
@@ -109,7 +109,7 @@ export function createMediaIngestionService<TDetails>(params: {
             if (uniqueApiIds.length === 0) return mediaIdByApiId;
 
             if (checkInternalFirst) {
-                const existingMedia = await repository.findByApiIds(uniqueApiIds);
+                const existingMedia = await catalog.findByApiIds(uniqueApiIds);
                 for (const media of existingMedia) {
                     mediaIdByApiId.set(String(media.apiId), media.id);
                 }
@@ -133,7 +133,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
             for (const apiId of missingApiIds) {
                 const details = await fetchAndPrepareDetails(apiId, { mode: "store", isBulk: true });
-                const mediaId = await repository.storeMediaWithDetails(details);
+                const mediaId = await catalog.ingest(details);
                 mediaIdByApiId.set(String(apiId), mediaId);
             }
 
@@ -142,7 +142,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
         async refreshFromExternal(apiId: number | string, isBulk = false) {
             const details = await fetchAndPrepareDetails(apiId, { mode: "refresh", isBulk });
-            return repository.updateMediaWithDetails(details);
+            return catalog.refresh(details);
         },
 
         async* bulkRefresh(limit?: number) {

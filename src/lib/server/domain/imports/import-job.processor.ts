@@ -1,11 +1,17 @@
 import {ImportService} from "@/lib/server/domain/imports/import.service";
-import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
+import {MediaType} from "@/lib/utils/enums";
+import {MediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+
+
+export interface MediaMatcherSource {
+    get(mediaType: MediaType): MediaMatcher;
+}
 
 
 export class ImportJobProcessor {
     constructor(
         private importService: ImportService,
-        private matcherRegistry: typeof MediaMatcherRegistry,
+        private matcherSource: MediaMatcherSource,
     ) {
     }
 
@@ -27,7 +33,7 @@ export class ImportJobProcessor {
                 const processingItems = queuedItems.filter(item => markedIds.has(item.id));
                 if (processingItems.length === 0) continue;
 
-                const matcher = this.matcherRegistry.get(mediaType);
+                const matcher = this.matcherSource.get(mediaType);
                 for await (const outcomes of matcher.match(context, processingItems)) {
                     await this.importService.applyItemOutcomes(job.id, outcomes);
                 }

@@ -1,13 +1,13 @@
 import {MediaType} from "@/lib/utils/enums";
 import {JikanApi} from "@/lib/server/api-providers/api";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {ExternalMediaProvider, MediaIngestionRepository, RefreshCandidateSource} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertMangaWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {ExternalMediaProvider, RefreshCandidateSource} from "@/lib/server/api-providers/interfaces.types";
+import {CatalogIngestionCommands, MangaCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {jikanTransformer} from "@/lib/server/api-providers/transformers/jikan.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 
 
-export const createJikanMangaProvider = (jikan: JikanApi): ExternalMediaProvider<UpsertMangaWithDetails> => {
+export const createJikanMangaProvider = (jikan: JikanApi): ExternalMediaProvider<MangaCatalogSnapshot> => {
     return {
         source: "jikan",
         mediaType: MediaType.MANGA,
@@ -30,13 +30,13 @@ export const createJikanMangaProvider = (jikan: JikanApi): ExternalMediaProvider
 
 
 export const createMangaIngestionService = (
-    repository: MediaIngestionRepository<UpsertMangaWithDetails>,
-    provider: ExternalMediaProvider<UpsertMangaWithDetails>,
+    catalog: CatalogIngestionCommands<MangaCatalogSnapshot>,
+    provider: ExternalMediaProvider<MangaCatalogSnapshot>,
     refreshCandidates?: RefreshCandidateSource,
 ) => {
     return createMediaIngestionService({
         provider,
-        repository,
+        catalog,
         refreshCandidates,
         refreshPolicy: {
             shouldAbortBulkRefresh: (reason) => {

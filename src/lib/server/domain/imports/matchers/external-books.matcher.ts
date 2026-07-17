@@ -1,7 +1,7 @@
 import {logger} from "@/lib/server/core/logger";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
-import {UpsertBooksWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {BookCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
@@ -14,8 +14,8 @@ const BOOKS_API_MATCH_AMBIGUOUS_REASON = "Book API match is ambiguous";
 
 export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
     constructor(
-        private booksProvider: ExternalMediaProvider<UpsertBooksWithDetails>,
-        private booksIngestion: MediaIngestionService<UpsertBooksWithDetails>,
+        private booksProvider: ExternalMediaProvider<BookCatalogSnapshot>,
+        private booksIngestion: MediaIngestionService<BookCatalogSnapshot>,
         private resultBatchSize = 50,
     ) {
     }

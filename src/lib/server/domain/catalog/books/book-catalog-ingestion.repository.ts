@@ -1,8 +1,7 @@
 import {and, eq, inArray, sql} from "drizzle-orm";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {MediaIngestionRepository} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertBooksWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {BookCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {
     bookAuthor,
     bookDetails,
@@ -13,8 +12,8 @@ import {
 import {MediaType} from "@/lib/utils/enums";
 
 
-/** Adapter from the retained Google Books transformer into the concrete book catalog. */
-export class BookCatalogIngestionRepository implements MediaIngestionRepository<UpsertBooksWithDetails> {
+/** Persists canonical Google Books snapshots into the book catalog tables. */
+export class BookCatalogIngestionRepository {
     async findByApiId(apiId: number | string) {
         return getDbClient().select({ id: catalogItem.id, apiId: catalogItem.primaryExternalId })
             .from(catalogItem).where(and(
@@ -54,18 +53,18 @@ export class BookCatalogIngestionRepository implements MediaIngestionRepository<
             .get();
     }
 
-    storeMediaWithDetails(details: UpsertBooksWithDetails) {
+    insertSnapshot(details: BookCatalogSnapshot) {
         return this.persist(details, "store");
     }
 
-    async updateMediaWithDetails(details: UpsertBooksWithDetails) {
-        if (!await this.findByApiId(details.mediaData.apiId)) return false;
+    async replaceSnapshot(details: BookCatalogSnapshot) {
+        if (!await this.findByApiId(details.apiId)) return false;
         await this.persist(details, "refresh");
         return true;
     }
 
-    private async persist(details: UpsertBooksWithDetails, mode: "store" | "refresh") {
-        const media = details.mediaData;
+    private async persist(details: BookCatalogSnapshot, mode: "store" | "refresh") {
+        const media = details;
         const apiId = String(media.apiId);
         const [item] = await getDbClient().insert(catalogItem).values({
             kind: MediaType.BOOKS,
@@ -75,7 +74,7 @@ export class BookCatalogIngestionRepository implements MediaIngestionRepository<
             releaseDate: media.releaseDate,
             synopsis: media.synopsis,
             imageCover: getImageFilename(media.imageCover),
-            locked: media.lockStatus ?? false,
+            locked: media.locked ?? false,
             lastProviderUpdate: sql`CURRENT_TIMESTAMP`,
         }).onConflictDoUpdate({
             target: [catalogItem.kind, catalogItem.primaryProvider, catalogItem.primaryExternalId],
@@ -92,24 +91,24 @@ export class BookCatalogIngestionRepository implements MediaIngestionRepository<
             catalogItemId: item.id,
             pages: media.pages,
             language: media.language,
-            publisher: media.publishers,
+            publisher: media.publisher,
         }).onConflictDoUpdate({
             target: bookDetails.catalogItemId,
             set: {
                 pages: media.pages,
                 language: media.language,
-                publisher: media.publishers,
+                publisher: media.publisher,
             },
         });
 
         await Promise.all([
-            this.syncAuthors(item.id, details.authorsData, mode),
-            this.syncGenres(item.id, details.genresData, mode),
+            this.syncAuthors(item.id, details.authors, mode),
+            this.syncGenres(item.id, details.genres, mode),
         ]);
         return item.id;
     }
 
-    private async syncAuthors(catalogItemId: number, rows: { name: string }[] | undefined, mode: "store" | "refresh") {
+    private async syncAuthors(catalogItemId: number, rows: string[] | undefined, mode: "store" | "refresh") {
         const names = uniqueNames(rows);
         if (names.length === 0) return;
         if (mode === "refresh") await getDbClient().delete(bookAuthor).where(eq(bookAuthor.catalogItemId, catalogItemId));
@@ -117,7 +116,7 @@ export class BookCatalogIngestionRepository implements MediaIngestionRepository<
             .values(names.map((name, index) => ({ catalogItemId, name, position: index + 1 }))).onConflictDoNothing();
     }
 
-    private async syncGenres(catalogItemId: number, rows: { name: string }[] | undefined, mode: "store" | "refresh") {
+    private async syncGenres(catalogItemId: number, rows: string[] | undefined, mode: "store" | "refresh") {
         const names = uniqueNames(rows);
         if (names.length === 0) return;
         await getDbClient().insert(catalogGenre).values(names.map((name) => ({ name }))).onConflictDoNothing();
@@ -129,4 +128,4 @@ export class BookCatalogIngestionRepository implements MediaIngestionRepository<
 }
 
 
-const uniqueNames = (rows?: { name: string }[]) => [...new Set((rows ?? []).map(({ name }) => name.trim()).filter(Boolean))];
+const uniqueNames = (rows?: string[]) => [...new Set((rows ?? []).map((name) => name.trim()).filter(Boolean))];

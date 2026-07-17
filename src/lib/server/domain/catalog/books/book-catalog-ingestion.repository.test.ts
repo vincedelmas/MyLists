@@ -6,7 +6,7 @@ import * as schema from "@/lib/server/database/schema";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertBooksWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {BookCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -54,10 +54,10 @@ describe("book catalog ingestion command", () => {
             mediaType: MediaType.BOOKS,
             search: { search: vi.fn() },
             details: { getDetails: vi.fn(async () => details("Old Author", 400)) },
-        } satisfies ExternalMediaProvider<UpsertBooksWithDetails>;
+        } satisfies ExternalMediaProvider<BookCatalogSnapshot>;
         const ingestion = createMediaIngestionService({
             provider,
-            repository: new BookCatalogIngestionCommand(new BookCatalogIngestionRepository()),
+            catalog: new BookCatalogIngestionCommand(new BookCatalogIngestionRepository()),
         });
 
         const catalogItemId = await ingestion.storeFromExternal("volume-777");
@@ -118,15 +118,13 @@ describe("book catalog ingestion command", () => {
 });
 
 
-const details = (author: string, pages: number): UpsertBooksWithDetails => ({
-    mediaData: {
-        apiId: "volume-777",
-        name: "Book",
-        imageCover: "book.jpg",
-        pages,
-        language: "en",
-        publishers: "Publisher",
-    },
-    authorsData: [{ name: author }],
-    genresData: [{ name: "Fantasy" }],
+const details = (author: string, pages: number): BookCatalogSnapshot => ({
+    apiId: "volume-777",
+    name: "Book",
+    imageCover: "book.jpg",
+    pages,
+    language: "en",
+    publisher: "Publisher",
+    authors: [author],
+    genres: ["Fantasy"],
 });

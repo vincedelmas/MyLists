@@ -17,16 +17,16 @@ describe("createMediaIngestionService", () => {
             },
         } as const;
 
-        const repository = {
+        const catalog = {
             getMediaIdsToBeRefreshed: vi.fn().mockResolvedValue([1, 2, 3]),
-            updateMediaWithDetails: vi.fn(),
+            refresh: vi.fn(),
         };
 
         const service = createMediaIngestionService({
             provider,
-            repository: repository as any,
+            catalog: catalog as any,
             refreshCandidates: {
-                getCandidateApiIds: repository.getMediaIdsToBeRefreshed,
+                getCandidateApiIds: catalog.getMediaIdsToBeRefreshed,
             },
             refreshPolicy: {
                 shouldAbortBulkRefresh: (reason) => {
@@ -45,6 +45,6 @@ describe("createMediaIngestionService", () => {
         expect(results).toHaveLength(1);
         expect(results[0]).toMatchObject({ apiId: 1, state: "rejected" });
         expect(provider.details.getDetails).toHaveBeenCalledTimes(1);
-        expect(repository.updateMediaWithDetails).not.toHaveBeenCalled();
+        expect(catalog.refresh).not.toHaveBeenCalled();
     });
 });

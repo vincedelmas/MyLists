@@ -6,7 +6,7 @@ import * as schema from "@/lib/server/database/schema";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertMangaWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MangaCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -54,10 +54,10 @@ describe("manga catalog ingestion command", () => {
             mediaType: MediaType.MANGA,
             search: { search: vi.fn() },
             details: { getDetails: vi.fn(async () => details("Old Author", 400, "Publishing")) },
-        } satisfies ExternalMediaProvider<UpsertMangaWithDetails>;
+        } satisfies ExternalMediaProvider<MangaCatalogSnapshot>;
         const ingestion = createMediaIngestionService({
             provider,
-            repository: new MangaCatalogIngestionCommand(new MangaCatalogIngestionRepository()),
+            catalog: new MangaCatalogIngestionCommand(new MangaCatalogIngestionRepository()),
         });
 
         const catalogItemId = await ingestion.storeFromExternal(777);
@@ -123,21 +123,19 @@ describe("manga catalog ingestion command", () => {
 });
 
 
-const details = (author: string, chapters: number | null, prodStatus: string): UpsertMangaWithDetails => ({
-    mediaData: {
-        apiId: 777,
-        name: "Manga",
-        originalName: "Original Manga",
-        imageCover: "manga.jpg",
-        chapters,
-        prodStatus,
-        volumes: 40,
-        siteUrl: "https://example.com/manga/777",
-        publishers: "Serialization",
-        popularity: 1,
-        voteAverage: 9.1,
-        voteCount: 1000,
-    },
-    authorsData: [{ name: author }],
-    genresData: [{ name: "Fantasy" }],
+const details = (author: string, chapters: number | null, productionStatus: string): MangaCatalogSnapshot => ({
+    apiId: 777,
+    name: "Manga",
+    originalName: "Original Manga",
+    imageCover: "manga.jpg",
+    chapters,
+    productionStatus,
+    volumes: 40,
+    siteUrl: "https://example.com/manga/777",
+    publisher: "Serialization",
+    popularity: 1,
+    voteAverage: 9.1,
+    voteCount: 1000,
+    authors: [author],
+    genres: ["Fantasy"],
 });

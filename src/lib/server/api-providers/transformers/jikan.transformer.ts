@@ -24,13 +24,21 @@ const transformSearchResults = (searchData: SearchData<JikanMangaSearchResponse>
 
 
 const transformMangaDetailsResults = async (rawData: JikanDetails) => {
-    const mediaData = {
+    const authors = (rawData?.authors ?? [])
+        .slice(0, 2)
+        .map((author) => {
+            const [last, first] = author.name?.split(",", 2) ?? [""];
+            return first ? `${first.trim()} ${last.trim()}` : last;
+        })
+        .filter((name) => name.trim());
+
+    return {
         siteUrl: rawData.url,
         apiId: rawData.mal_id,
         volumes: rawData.volumes,
         chapters: rawData.chapters,
         synopsis: rawData.synopsis,
-        prodStatus: rawData.status,
+        productionStatus: rawData.status,
         voteAverage: rawData.score,
         originalName: rawData.title,
         voteCount: rawData.scored_by,
@@ -38,24 +46,14 @@ const transformMangaDetailsResults = async (rawData: JikanDetails) => {
         name: rawData.title_english ?? rawData.title,
         endDate: formatDateForDb(rawData.published.to),
         releaseDate: formatDateForDb(rawData.published.from),
-        publishers: rawData.serializations?.[0]?.name ?? null,
+        publisher: rawData.serializations?.[0]?.name ?? null,
         imageCover: await saveImageFromUrl({
             dirSaveName: "manga-covers",
             imageUrl: rawData.images.jpg.large_image_url,
         }),
-    }
-
-    const genresData = rawData?.genres.map((genre) => ({ name: genre.name }));
-    const authorsData = (rawData?.authors ?? [])
-        .slice(0, 2)
-        .map((author) => {
-            const [last, first] = author.name?.split(",", 2) ?? [""];
-            return first ? `${first.trim()} ${last.trim()}` : last;
-        })
-        .filter((name) => name.trim())
-        .map((name) => ({ name }));
-
-    return { mediaData, authorsData, genresData };
+        authors,
+        genres: rawData?.genres.map((genre) => genre.name),
+    };
 };
 
 

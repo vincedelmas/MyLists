@@ -1,8 +1,7 @@
 import {and, eq, inArray, sql} from "drizzle-orm";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {MediaIngestionRepository} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertMangaWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MangaCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {
     catalogGenre,
     catalogItem,
@@ -13,8 +12,8 @@ import {
 import {MediaType} from "@/lib/utils/enums";
 
 
-/** Adapter from the retained Jikan transformer into the concrete manga catalog. */
-export class MangaCatalogIngestionRepository implements MediaIngestionRepository<UpsertMangaWithDetails> {
+/** Persists canonical Jikan snapshots into the manga catalog tables. */
+export class MangaCatalogIngestionRepository {
     async findByApiId(apiId: number | string) {
         return getDbClient().select({ id: catalogItem.id, apiId: catalogItem.primaryExternalId })
             .from(catalogItem).where(and(
@@ -54,18 +53,18 @@ export class MangaCatalogIngestionRepository implements MediaIngestionRepository
             .get();
     }
 
-    storeMediaWithDetails(details: UpsertMangaWithDetails) {
+    insertSnapshot(details: MangaCatalogSnapshot) {
         return this.persist(details, "store");
     }
 
-    async updateMediaWithDetails(details: UpsertMangaWithDetails) {
-        if (!await this.findByApiId(details.mediaData.apiId)) return false;
+    async replaceSnapshot(details: MangaCatalogSnapshot) {
+        if (!await this.findByApiId(details.apiId)) return false;
         await this.persist(details, "refresh");
         return true;
     }
 
-    private async persist(details: UpsertMangaWithDetails, mode: "store" | "refresh") {
-        const media = details.mediaData;
+    private async persist(details: MangaCatalogSnapshot, mode: "store" | "refresh") {
+        const media = details;
         const apiId = String(media.apiId);
         const [item] = await getDbClient().insert(catalogItem).values({
             kind: MediaType.MANGA,
@@ -75,7 +74,7 @@ export class MangaCatalogIngestionRepository implements MediaIngestionRepository
             releaseDate: media.releaseDate,
             synopsis: media.synopsis,
             imageCover: getImageFilename(media.imageCover),
-            locked: media.lockStatus ?? false,
+            locked: media.locked ?? false,
             lastProviderUpdate: sql`CURRENT_TIMESTAMP`,
         }).onConflictDoUpdate({
             target: [catalogItem.kind, catalogItem.primaryProvider, catalogItem.primaryExternalId],
@@ -92,38 +91,38 @@ export class MangaCatalogIngestionRepository implements MediaIngestionRepository
             catalogItemId: item.id,
             originalName: media.originalName,
             chapters: media.chapters,
-            productionStatus: media.prodStatus,
+            productionStatus: media.productionStatus,
             siteUrl: media.siteUrl,
             endDate: media.endDate,
             volumes: media.volumes,
             voteAverage: media.voteAverage,
             voteCount: media.voteCount,
             popularity: media.popularity,
-            publisher: media.publishers,
+            publisher: media.publisher,
         }).onConflictDoUpdate({
             target: mangaDetails.catalogItemId,
             set: {
                 originalName: media.originalName,
                 chapters: media.chapters,
-                productionStatus: media.prodStatus,
+                productionStatus: media.productionStatus,
                 siteUrl: media.siteUrl,
                 endDate: media.endDate,
                 volumes: media.volumes,
                 voteAverage: media.voteAverage,
                 voteCount: media.voteCount,
                 popularity: media.popularity,
-                publisher: media.publishers,
+                publisher: media.publisher,
             },
         });
 
         await Promise.all([
-            this.syncAuthors(item.id, details.authorsData, mode),
-            this.syncGenres(item.id, details.genresData, mode),
+            this.syncAuthors(item.id, details.authors, mode),
+            this.syncGenres(item.id, details.genres, mode),
         ]);
         return item.id;
     }
 
-    private async syncAuthors(catalogItemId: number, rows: { name: string }[] | undefined, mode: "store" | "refresh") {
+    private async syncAuthors(catalogItemId: number, rows: string[] | undefined, mode: "store" | "refresh") {
         const names = uniqueNames(rows);
         if (names.length === 0) return;
         if (mode === "refresh") await getDbClient().delete(mangaAuthor).where(eq(mangaAuthor.catalogItemId, catalogItemId));
@@ -131,7 +130,7 @@ export class MangaCatalogIngestionRepository implements MediaIngestionRepository
             .values(names.map((name) => ({ catalogItemId, name }))).onConflictDoNothing();
     }
 
-    private async syncGenres(catalogItemId: number, rows: { name: string }[] | undefined, mode: "store" | "refresh") {
+    private async syncGenres(catalogItemId: number, rows: string[] | undefined, mode: "store" | "refresh") {
         const names = uniqueNames(rows);
         if (names.length === 0) return;
         await getDbClient().insert(catalogGenre).values(names.map((name) => ({ name }))).onConflictDoNothing();
@@ -143,4 +142,4 @@ export class MangaCatalogIngestionRepository implements MediaIngestionRepository
 }
 
 
-const uniqueNames = (rows?: { name: string }[]) => [...new Set((rows ?? []).map(({ name }) => name.trim()).filter(Boolean))];
+const uniqueNames = (rows?: string[]) => [...new Set((rows ?? []).map((name) => name.trim()).filter(Boolean))];

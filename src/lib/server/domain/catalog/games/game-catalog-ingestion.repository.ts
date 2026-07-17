@@ -1,8 +1,7 @@
 import {and, eq, inArray, sql} from "drizzle-orm";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {MediaIngestionRepository} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertGameWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {GameCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {
     catalogGenre,
     catalogItem,
@@ -14,8 +13,8 @@ import {
 import {MediaType} from "@/lib/utils/enums";
 
 
-/** Adapter from the retained IGDB/HLTB transformer into the concrete game catalog. */
-export class GameCatalogIngestionRepository implements MediaIngestionRepository<UpsertGameWithDetails> {
+/** Persists canonical IGDB/HLTB snapshots into the game catalog tables. */
+export class GameCatalogIngestionRepository {
     async findByApiId(apiId: number | string) {
         return getDbClient().select({ id: catalogItem.id, apiId: catalogItem.primaryExternalId })
             .from(catalogItem).where(and(
@@ -46,18 +45,18 @@ export class GameCatalogIngestionRepository implements MediaIngestionRepository<
             ));
     }
 
-    storeMediaWithDetails(details: UpsertGameWithDetails) {
+    insertSnapshot(details: GameCatalogSnapshot) {
         return this.persist(details, "store");
     }
 
-    async updateMediaWithDetails(details: UpsertGameWithDetails) {
-        if (!await this.findByApiId(details.mediaData.apiId)) return false;
+    async replaceSnapshot(details: GameCatalogSnapshot) {
+        if (!await this.findByApiId(details.apiId)) return false;
         await this.persist(details, "refresh");
         return true;
     }
 
-    private async persist(details: UpsertGameWithDetails, mode: "store" | "refresh") {
-        const media = details.mediaData;
+    private async persist(details: GameCatalogSnapshot, mode: "store" | "refresh") {
+        const media = details;
         const apiId = String(media.apiId);
         const [item] = await getDbClient().insert(catalogItem).values({
             kind: MediaType.GAMES,
@@ -67,7 +66,7 @@ export class GameCatalogIngestionRepository implements MediaIngestionRepository<
             releaseDate: media.releaseDate,
             synopsis: media.synopsis,
             imageCover: getImageFilename(media.imageCover),
-            locked: media.lockStatus ?? false,
+            locked: media.locked ?? false,
             lastProviderUpdate: sql`CURRENT_TIMESTAMP`,
         }).onConflictDoUpdate({
             target: [catalogItem.kind, catalogItem.primaryProvider, catalogItem.primaryExternalId],
@@ -88,11 +87,11 @@ export class GameCatalogIngestionRepository implements MediaIngestionRepository<
             voteAverage: media.voteAverage,
             voteCount: media.voteCount,
             igdbUrl: media.igdbUrl,
-            hltbMainHours: normalizeHltbHours(media.hltbMainTime),
-            hltbMainExtraHours: normalizeHltbHours(media.hltbMainAndExtraTime),
-            hltbCompletionistHours: normalizeHltbHours(media.hltbTotalCompleteTime),
-            steamAppId: media.steamApiId,
-            collectionExternalId: media.collectionId,
+            hltbMainHours: normalizeHltbHours(media.hltbMainHours),
+            hltbMainExtraHours: normalizeHltbHours(media.hltbMainExtraHours),
+            hltbCompletionistHours: normalizeHltbHours(media.hltbCompletionistHours),
+            steamAppId: media.steamAppId,
+            collectionExternalId: media.collectionExternalId,
         }).onConflictDoUpdate({
             target: gameDetails.catalogItemId,
             set: {
@@ -102,23 +101,23 @@ export class GameCatalogIngestionRepository implements MediaIngestionRepository<
                 voteAverage: media.voteAverage,
                 voteCount: media.voteCount,
                 igdbUrl: media.igdbUrl,
-                hltbMainHours: normalizeHltbHours(media.hltbMainTime),
-                hltbMainExtraHours: normalizeHltbHours(media.hltbMainAndExtraTime),
-                hltbCompletionistHours: normalizeHltbHours(media.hltbTotalCompleteTime),
-                steamAppId: media.steamApiId,
-                collectionExternalId: media.collectionId,
+                hltbMainHours: normalizeHltbHours(media.hltbMainHours),
+                hltbMainExtraHours: normalizeHltbHours(media.hltbMainExtraHours),
+                hltbCompletionistHours: normalizeHltbHours(media.hltbCompletionistHours),
+                steamAppId: media.steamAppId,
+                collectionExternalId: media.collectionExternalId,
             },
         });
 
         await Promise.all([
-            this.syncPlatforms(item.id, details.platformsData, mode),
-            this.syncCompanies(item.id, details.companiesData, mode),
-            this.syncGenres(item.id, details.genresData, mode),
+            this.syncPlatforms(item.id, details.platforms, mode),
+            this.syncCompanies(item.id, details.companies, mode),
+            this.syncGenres(item.id, details.genres, mode),
         ]);
         return item.id;
     }
 
-    private async syncPlatforms(catalogItemId: number, rows: { name: string }[] | undefined, mode: "store" | "refresh") {
+    private async syncPlatforms(catalogItemId: number, rows: string[] | undefined, mode: "store" | "refresh") {
         const names = uniqueNames(rows);
         if (names.length === 0) return;
         if (mode === "refresh") await getDbClient().delete(gamePlatform).where(eq(gamePlatform.catalogItemId, catalogItemId));
@@ -137,7 +136,7 @@ export class GameCatalogIngestionRepository implements MediaIngestionRepository<
             .values(companies.map((company) => ({ catalogItemId, ...company }))).onConflictDoNothing();
     }
 
-    private async syncGenres(catalogItemId: number, rows: { name: string }[] | undefined, mode: "store" | "refresh") {
+    private async syncGenres(catalogItemId: number, rows: string[] | undefined, mode: "store" | "refresh") {
         const names = uniqueNames(rows);
         if (names.length === 0) return;
         await getDbClient().insert(catalogGenre).values(names.map((name) => ({ name }))).onConflictDoNothing();
@@ -155,7 +154,7 @@ const normalizeHltbHours = (value: unknown) => {
 };
 
 
-const uniqueNames = (rows?: { name: string }[]) => [...new Set((rows ?? []).map(({ name }) => name.trim()).filter(Boolean))];
+const uniqueNames = (rows?: string[]) => [...new Set((rows ?? []).map((name) => name.trim()).filter(Boolean))];
 
 
 const mergeCompanies = (rows?: { name: string; developer: boolean; publisher: boolean }[]) => {

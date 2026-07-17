@@ -13,11 +13,10 @@ export const createMediaNotificationsTask = defineTask({
         const container = await getContainer();
         const mediaTypes = mediaTypeUtils.getTypesForNotifications();
         const notificationCommands = container.notifications.commands;
-        const catalog = container.media.upcoming;
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`process-${mediaType}`, async () => {
-                const allMediaToNotify = await catalog.getForNotifications(mediaType);
+                const allMediaToNotify = await container.media.get(mediaType).library.upcoming.forNotifications();
 
                 ctx.metric(`${mediaType}.found`, allMediaToNotify.length);
                 if (allMediaToNotify.length === 0) {

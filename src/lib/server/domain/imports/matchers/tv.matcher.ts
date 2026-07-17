@@ -1,7 +1,7 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {UpsertTvWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {TvCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {ExternalTMDBTvMatcher} from "@/lib/server/domain/imports/matchers/external-tv.matcher";
 import {TvImportListWriter} from "@/lib/server/domain/imports/list-writers/tv-import-list.writer";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
@@ -14,8 +14,8 @@ import {TvCatalogIngestionRepository} from "@/lib/server/domain/catalog/tv/tv-ca
 export const createTvMatcher = (
     mediaType: TvMediaType,
     catalog: TvCatalogIngestionRepository,
-    tvProvider: ExternalMediaProvider<UpsertTvWithDetails>,
-    tvIngestion: MediaIngestionService<UpsertTvWithDetails>,
+    tvProvider: ExternalMediaProvider<TvCatalogSnapshot>,
+    tvIngestion: MediaIngestionService<TvCatalogSnapshot>,
     libraryCommands: TvLibraryCommands,
 ) => createMediaMatcher({
     internalMatchers: [

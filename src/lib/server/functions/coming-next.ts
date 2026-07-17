@@ -13,7 +13,7 @@ export const getComingNextMedia = createServerFn({ method: "GET" })
 
         const comingNextData = await Promise.all(
             mediaTypes.map(async (mediaType) => {
-                const items = await container.media.upcoming.getForOwner(mediaType, currentUser.id);
+                const items = await container.media.get(mediaType).library.upcoming.forOwner(currentUser.id);
                 return ({ items, mediaType });
             })
         );

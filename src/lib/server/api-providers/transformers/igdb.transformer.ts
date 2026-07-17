@@ -2,7 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {formatDateForDb} from "@/lib/utils/date-formatting";
-import {UpsertGameWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {GameCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {HltbGameEntry, IgdbGameDetails, IgdbSearchResponse, IgdbTrendGamesResponse, ProviderSearchResult, SearchData, TrendsMedia} from "@/lib/types/provider.types";
 
 
@@ -29,7 +29,18 @@ const transformSearchResults = (searchData: SearchData<IgdbSearchResponse>) => {
 
 
 const transformGamesDetailsResults = async (rawData: IgdbGameDetails) => {
-    const mediaData = {
+    const rawGenres = [
+        ...(rawData?.genres?.map((genre) => genre.name) ?? []),
+        ...(rawData?.themes?.map((theme) => theme.name) ?? []),
+    ];
+    const renameGenresMap: Record<string, string> = {
+        "4X (explore, expand, exploit, and exterminate)": "4X",
+        "Hack and slash/Beat 'em up": "Hack and Slash",
+        "Card & Board Game": "Card Game",
+        "Quiz/Trivia": "Quiz",
+    };
+
+    return {
         apiId: rawData.id,
         name: rawData?.name,
         igdbUrl: rawData?.url,
@@ -37,59 +48,41 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails) => {
         voteAverage: rawData?.total_rating ?? 0,
         voteCount: rawData?.total_rating_count ?? 0,
         gameEngine: rawData?.game_engines?.[0]?.name,
-        collectionId: rawData?.collections?.[0] ?? null,
+        collectionExternalId: rawData?.collections?.[0] ?? null,
         releaseDate: formatDateForDb(rawData.first_release_date),
         playerPerspective: rawData?.player_perspectives?.[0]?.name,
         gameModes: rawData?.game_modes?.map((mode) => mode?.name).join(","),
-        steamApiId: rawData.external_games?.find((source) => source.external_game_source === 1)?.uid,
-        hltbMainTime: null,
-        hltbMainAndExtraTime: null,
-        hltbTotalCompleteTime: null,
+        steamAppId: rawData.external_games?.find((source) => source.external_game_source === 1)?.uid,
+        hltbMainHours: null,
+        hltbMainExtraHours: null,
+        hltbCompletionistHours: null,
         imageCover: await saveImageFromUrl({
             dirSaveName: "games-covers",
             imageUrl: `${imageBaseUrl}${rawData?.cover?.image_id}.jpg`,
         }),
-    }
-
-    const part1GenreData = rawData?.genres?.map((genre) => ({ name: genre.name })) || [];
-    const part2GenreData = rawData?.themes?.map((theme) => ({ name: theme.name })) || [];
-    let genresData = [...part1GenreData, ...part2GenreData];
-    const renameGenresMap: Record<string, string> = {
-        "4X (explore, expand, exploit, and exterminate)": "4X",
-        "Hack and slash/Beat 'em up": "Hack and Slash",
-        "Card & Board Game": "Card Game",
-        "Quiz/Trivia": "Quiz",
-    }
-    for (const genre of genresData) {
-        if (renameGenresMap[genre.name]) {
-            genre.name = renameGenresMap[genre.name];
-        }
-    }
-
-    genresData = genresData.slice(0, maxGenres);
-    const companiesData = rawData?.involved_companies?.filter(company => company.developer || company.publisher)
-        .map(company => ({
+        genres: rawGenres.map((genre) => renameGenresMap[genre] ?? genre).slice(0, maxGenres),
+        companies: rawData?.involved_companies?.filter(company => company.developer || company.publisher)
+            .map(company => ({
             name: company.company.name,
             developer: company.developer,
             publisher: company.publisher,
-        }));
-    const platformsData = rawData?.platforms?.map((platform) => ({ name: platform.name }));
-
-    return { mediaData, companiesData, platformsData, genresData };
+            })),
+        platforms: rawData?.platforms?.map((platform) => platform.name),
+    };
 };
 
 
-const addHLTBDataToMainDetails = (hltbData: HltbGameEntry, mediaData: UpsertGameWithDetails["mediaData"]) => {
+const addHLTBDataToMainDetails = (hltbData: HltbGameEntry, snapshot: GameCatalogSnapshot) => {
     const mainTime = Number(hltbData.mainStory);
-    mediaData.hltbMainTime = isNaN(mainTime) ? null : mainTime;
+    snapshot.hltbMainHours = isNaN(mainTime) ? null : mainTime;
 
     const mainExtraTime = Number(hltbData.mainExtra);
-    mediaData.hltbMainAndExtraTime = isNaN(mainExtraTime) ? null : mainExtraTime;
+    snapshot.hltbMainExtraHours = isNaN(mainExtraTime) ? null : mainExtraTime;
 
     const completionistTime = Number(hltbData.completionist);
-    mediaData.hltbTotalCompleteTime = isNaN(completionistTime) ? null : completionistTime;
+    snapshot.hltbCompletionistHours = isNaN(completionistTime) ? null : completionistTime;
 
-    return mediaData;
+    return snapshot;
 };
 
 

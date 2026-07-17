@@ -3,7 +3,7 @@ import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {UpsertTvWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {TvCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
@@ -16,8 +16,8 @@ const TV_API_MATCH_AMBIGUOUS_REASON = "TV API match is ambiguous";
 export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
     constructor(
         private mediaType: TvMediaType,
-        private tvProvider: ExternalMediaProvider<UpsertTvWithDetails>,
-        private tvIngestion: MediaIngestionService<UpsertTvWithDetails>,
+        private tvProvider: ExternalMediaProvider<TvCatalogSnapshot>,
+        private tvIngestion: MediaIngestionService<TvCatalogSnapshot>,
         private resultBatchSize = 50,
     ) {
     }

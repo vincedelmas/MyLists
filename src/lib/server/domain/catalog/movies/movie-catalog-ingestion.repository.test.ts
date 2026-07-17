@@ -6,7 +6,7 @@ import * as schema from "@/lib/server/database/schema";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertMovieWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MovieCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -53,10 +53,10 @@ describe("movie catalog ingestion command", () => {
             mediaType: MediaType.MOVIES,
             search: { search: vi.fn() },
             details: { getDetails: vi.fn(async () => transformed) },
-        } satisfies ExternalMediaProvider<UpsertMovieWithDetails>;
+        } satisfies ExternalMediaProvider<MovieCatalogSnapshot>;
         const ingestion = createMediaIngestionService({
             provider,
-            repository: new MovieCatalogIngestionCommand(new MovieCatalogIngestionRepository()),
+            catalog: new MovieCatalogIngestionCommand(new MovieCatalogIngestionRepository()),
         });
         const catalogItemId = await ingestion.storeFromExternal(777);
         expect(await ingestion.storeFromExternal(777)).toBe(catalogItemId);
@@ -80,18 +80,16 @@ describe("movie catalog ingestion command", () => {
 });
 
 
-const details = (duration: number): UpsertMovieWithDetails => ({
-    mediaData: {
-        apiId: 777,
-        name: "Movie",
-        imageCover: "movie.jpg",
-        duration,
-        originalLanguage: "en",
-        directorName: "Director",
-        compositorName: "Composer",
-        budget: 100,
-        revenue: 200,
-    },
-    actorsData: [{ name: "Actor" }],
-    genresData: [{ name: "Drama" }],
+const details = (duration: number): MovieCatalogSnapshot => ({
+    apiId: 777,
+    name: "Movie",
+    imageCover: "movie.jpg",
+    durationMinutes: duration,
+    originalLanguage: "en",
+    directorName: "Director",
+    compositorName: "Composer",
+    budget: 100,
+    revenue: 200,
+    actors: ["Actor"],
+    genres: ["Drama"],
 });

@@ -13,11 +13,9 @@ export const getTrendsMedia = createServerFn({ method: "GET" })
         return container.cacheManager.wrap(
             TRENDS_CACHE_KEY,
             async () => {
-                const registry = container.catalog.externalProviders;
-
-                const gamesProvider = registry.get(MediaType.GAMES);
-                const seriesProvider = registry.get(MediaType.SERIES);
-                const moviesProvider = registry.get(MediaType.MOVIES);
+                const gamesProvider = container.media.get(MediaType.GAMES).external;
+                const seriesProvider = container.media.get(MediaType.SERIES).external;
+                const moviesProvider = container.media.get(MediaType.MOVIES).external;
 
                 const gamesTrends = await gamesProvider.trends?.getTrends() ?? [];
                 const seriesTrends = await seriesProvider.trends?.getTrends() ?? [];

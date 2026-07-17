@@ -21,7 +21,6 @@ const { ImportService } = await import("@/lib/server/domain/imports/import.servi
 const { ImportRepository } = await import("@/lib/server/domain/imports/import.repository");
 const { createGamesMatcher } = await import("@/lib/server/domain/imports/matchers/games.matcher");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
-const { MediaMatcherRegistry } = await import("@/lib/server/domain/imports/matchers/media-matcher.registry");
 const { GameLibraryCommands } = await import("@/lib/server/domain/library/games/game-library.commands");
 const { GameCatalogIngestionRepository } = await import("@/lib/server/domain/catalog/games/game-catalog-ingestion.repository");
 
@@ -31,8 +30,6 @@ describe("games import processing", () => {
     let db: BunSQLiteDatabase<typeof schema>;
 
     beforeEach(async () => {
-        MediaMatcherRegistry.clear();
-
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
@@ -62,13 +59,12 @@ describe("games import processing", () => {
 
     it("matches an internal game, adds it to the user list, and completes the import job", async () => {
         const importService = new ImportService(ImportRepository);
-        const matcherRegistry = MediaMatcherRegistry;
-        matcherRegistry.register(MediaType.GAMES, createGamesMatcher(
+        const matcher = createGamesMatcher(
             new GameCatalogIngestionRepository(),
             { storeBatchFromExternal: vi.fn() } as any,
             new GameLibraryCommands(),
-        ));
-        const processor = new ImportJobProcessor(importService, matcherRegistry);
+        );
+        const processor = new ImportJobProcessor(importService, { get: () => matcher });
 
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         await ImportRepository.insertParsedItems(job.id, [{

@@ -1,5 +1,4 @@
-import {MediaIngestionRepository} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertTvWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {CatalogIngestionCommands, TvCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {TvCatalogIngestionRepository} from "@/lib/server/domain/catalog/tv/tv-catalog-ingestion.repository";
 import {TvLibraryCommands} from "@/lib/server/domain/library/tv/tv-library.commands";
 import {TvLibraryRepository} from "@/lib/server/domain/library/tv/tv-library.repository";
@@ -7,7 +6,7 @@ import {withTransaction} from "@/lib/server/database/async-storage";
 
 
 /** Owns catalog refresh reconciliation across the catalog and library aggregates. */
-export class TvCatalogIngestionCommand implements MediaIngestionRepository<UpsertTvWithDetails> {
+export class TvCatalogIngestionCommand implements CatalogIngestionCommands<TvCatalogSnapshot> {
     constructor(
         private readonly catalog: TvCatalogIngestionRepository,
         private readonly library = new TvLibraryRepository(),
@@ -22,17 +21,17 @@ export class TvCatalogIngestionCommand implements MediaIngestionRepository<Upser
         return this.catalog.findByApiIds(apiIds);
     }
 
-    storeMediaWithDetails(details: UpsertTvWithDetails) {
-        return withTransaction(() => this.catalog.storeMediaWithDetails(details));
+    ingest(details: TvCatalogSnapshot) {
+        return withTransaction(() => this.catalog.insertSnapshot(details));
     }
 
-    updateMediaWithDetails(details: UpsertTvWithDetails) {
+    refresh(details: TvCatalogSnapshot) {
         return withTransaction(async () => {
-            const existing = await this.catalog.findByApiId(details.mediaData.apiId);
+            const existing = await this.catalog.findByApiId(details.apiId);
             if (!existing) return false;
 
             const previousEntries = await this.library.findEntriesByCatalogItem(existing.id);
-            const updated = await this.catalog.updateMediaWithDetails(details);
+            const updated = await this.catalog.replaceSnapshot(details);
             if (updated && previousEntries.length > 0) {
                 await this.libraryCommands.reconcileCatalogMetadata(previousEntries);
             }

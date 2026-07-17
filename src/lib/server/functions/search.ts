@@ -11,7 +11,6 @@ export const getSearchResults = createServerFn({ method: "GET" })
     .validator(navbarSearchSchema)
     .handler(async ({ data: { query, page, apiProvider }, context: { currentUser } }) => {
         const container = await getContainer();
-        const providers = container.catalog.externalProviders;
 
         if (query === "") {
             return { hasNextPage: false, data: [] };
@@ -26,22 +25,22 @@ export const getSearchResults = createServerFn({ method: "GET" })
         }
 
         if (apiProvider === ApiProviderType.TMDB) {
-            return providers.get(MediaType.SERIES).search.search(query, page);
+            return container.media.get(MediaType.SERIES).external.search.search(query, page);
         }
 
         if (apiProvider === ApiProviderType.IGDB) {
-            return providers.get(MediaType.GAMES).search.search(query, page);
+            return container.media.get(MediaType.GAMES).external.search.search(query, page);
         }
 
         if (apiProvider === ApiProviderType.MANGA) {
-            return providers.get(MediaType.MANGA).search.search(query, page);
+            return container.media.get(MediaType.MANGA).external.search.search(query, page);
         }
 
         if (apiProvider === ApiProviderType.BOOKS) {
-            const apiResults = await providers.get(MediaType.BOOKS).search.search(query, page);
+            const apiResults = await container.media.get(MediaType.BOOKS).external.search.search(query, page);
 
             if (page === 1) {
-                const dbResults = await container.media.catalog.readers[MediaType.BOOKS].searchByName(query);
+                const dbResults = await container.media.get(MediaType.BOOKS).catalog.read.searchByName(query);
 
                 const dbApiIds = new Set(dbResults.map((r) => String(r.id)));
                 const filteredApiResults = apiResults.data.filter((r) => !dbApiIds.has(String(r.id)));

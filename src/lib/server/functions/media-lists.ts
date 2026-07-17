@@ -12,15 +12,7 @@ export const getUserListHeaderSF = createServerFn({ method: "GET" })
     .validator(mediaTypeUsernameSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser, targetUser } }) => {
         const container = await getContainer();
-        const header = mediaType === MediaType.SERIES || mediaType === MediaType.ANIME
-            ? await container.media.lists.tv[mediaType].getListHeader(targetUser.id)
-            : mediaType === MediaType.MOVIES
-                ? await container.media.lists.movies.getListHeader(targetUser.id)
-                : mediaType === MediaType.GAMES
-                    ? await container.media.lists.games.getListHeader(targetUser.id)
-                    : mediaType === MediaType.BOOKS
-                        ? await container.media.lists.books.getListHeader(targetUser.id)
-                        : await container.media.lists.manga.getListHeader(targetUser.id);
+        const header = await container.media.get(mediaType).library.list.getListHeader(targetUser.id);
         if (!header) throw notFound();
 
         if (currentUser && currentUser.id !== targetUser.id) {
@@ -45,26 +37,26 @@ export const getMediaListSF = createServerFn({ method: "GET" })
         }
 
         if (data.mediaType === MediaType.SERIES) {
-            return listResponse(await container.media.lists.tv[MediaType.SERIES]
+            return listResponse(await container.media.get(MediaType.SERIES).library.list
                 .getMediaList(currentUserId, mediaListAccessScope, data.args), user.id);
         }
         if (data.mediaType === MediaType.ANIME) {
-            return listResponse(await container.media.lists.tv[MediaType.ANIME]
+            return listResponse(await container.media.get(MediaType.ANIME).library.list
                 .getMediaList(currentUserId, mediaListAccessScope, data.args), user.id);
         }
         if (data.mediaType === MediaType.MOVIES) {
-            return listResponse(await container.media.lists.movies
+            return listResponse(await container.media.get(MediaType.MOVIES).library.list
                 .getMediaList(currentUserId, mediaListAccessScope, data.args), user.id);
         }
         if (data.mediaType === MediaType.GAMES) {
-            return listResponse(await container.media.lists.games
+            return listResponse(await container.media.get(MediaType.GAMES).library.list
                 .getMediaList(currentUserId, mediaListAccessScope, data.args), user.id);
         }
         if (data.mediaType === MediaType.BOOKS) {
-            return listResponse(await container.media.lists.books
+            return listResponse(await container.media.get(MediaType.BOOKS).library.list
                 .getMediaList(currentUserId, mediaListAccessScope, data.args), user.id);
         }
-        return listResponse(await container.media.lists.manga
+        return listResponse(await container.media.get(MediaType.MANGA).library.list
             .getMediaList(currentUserId, mediaListAccessScope, data.args), user.id);
     });
 
@@ -80,23 +72,7 @@ export const getTagsViewFn = createServerFn({ method: "GET" })
     .validator(mediaTypeUsernameSchema.extend({ search: simpleSearchSchema }))
     .handler(async ({ data: { mediaType, search }, context: { mediaListAccessScope } }) => {
         const container = await getContainer();
-        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
-            return container.media.lists.tv[mediaType].getTagsView(mediaListAccessScope, search);
-        }
-        if (mediaType === MediaType.MOVIES) {
-            return container.media.lists.movies.getTagsView(mediaListAccessScope, search);
-        }
-        if (mediaType === MediaType.GAMES) {
-            return container.media.lists.games.getTagsView(mediaListAccessScope, search);
-        }
-        if (mediaType === MediaType.BOOKS) {
-            return container.media.lists.books.getTagsView(mediaListAccessScope, search);
-        }
-        if (mediaType === MediaType.MANGA) {
-            return container.media.lists.manga.getTagsView(mediaListAccessScope, search);
-        }
-
-        throw new Error(`Unsupported media type: ${mediaType}`);
+        return container.media.get(mediaType).library.list.getTagsView(mediaListAccessScope, search);
     });
 
 
@@ -106,23 +82,9 @@ export const getMediaListFilters = createServerFn({ method: "GET" })
     .handler(async ({ data: { mediaType }, context: { mediaListAccessScope } }) => {
         const container = await getContainer();
 
-        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
-            return validateMediaListFiltersResult(await container.media.lists.tv[mediaType].getListFilters(mediaListAccessScope));
-        }
-        if (mediaType === MediaType.MOVIES) {
-            return validateMediaListFiltersResult(await container.media.lists.movies.getListFilters(mediaListAccessScope));
-        }
-        if (mediaType === MediaType.GAMES) {
-            return validateMediaListFiltersResult(await container.media.lists.games.getListFilters(mediaListAccessScope));
-        }
-        if (mediaType === MediaType.BOOKS) {
-            return validateMediaListFiltersResult(await container.media.lists.books.getListFilters(mediaListAccessScope));
-        }
-        if (mediaType === MediaType.MANGA) {
-            return validateMediaListFiltersResult(await container.media.lists.manga.getListFilters(mediaListAccessScope));
-        }
-
-        throw new Error(`Unsupported media type: ${mediaType}`);
+        return validateMediaListFiltersResult(
+            await container.media.get(mediaType).library.list.getListFilters(mediaListAccessScope),
+        );
     });
 
 
@@ -131,20 +93,6 @@ export const getMediaListSearchFilters = createServerFn({ method: "GET" })
     .validator(mediaListSearchFiltersSchema)
     .handler(async ({ data: { mediaType, query, job }, context: { mediaListAccessScope } }) => {
         const container = await getContainer();
-        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
-            return container.media.lists.tv[mediaType].getSearchListFilters(mediaListAccessScope, query, job);
-        }
-        if (mediaType === MediaType.MOVIES) {
-            return container.media.lists.movies.getSearchListFilters(mediaListAccessScope, query, job);
-        }
-        if (mediaType === MediaType.GAMES) {
-            return container.media.lists.games.getSearchListFilters(mediaListAccessScope, query, job);
-        }
-        if (mediaType === MediaType.BOOKS) {
-            return container.media.lists.books.getSearchListFilters(mediaListAccessScope, query, job);
-        }
-        if (mediaType === MediaType.MANGA) {
-            return container.media.lists.manga.getSearchListFilters(mediaListAccessScope, query, job);
-        }
-        throw new Error(`Unsupported media type: ${mediaType}`);
+        return container.media.get(mediaType).library.list
+            .getSearchListFilters(mediaListAccessScope, query, job);
     });

@@ -8,7 +8,6 @@ import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.process
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
-import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
 import {createTvMatcher} from "@/lib/server/domain/imports/matchers/tv.matcher";
 import {ApiProviderType, ImportItemStatus, ImportJobStatus, ImportSource, MediaType, Status} from "@/lib/utils/enums";
 import {TvLibraryCommands} from "@/lib/server/domain/library/tv/tv-library.commands";
@@ -29,8 +28,6 @@ describe("TV import processing", () => {
     let db: BunSQLiteDatabase<typeof schema>;
 
     beforeEach(async () => {
-        MediaMatcherRegistry.clear();
-
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
@@ -66,11 +63,10 @@ describe("TV import processing", () => {
 
     it("matches an internal series and adds it to the user list", async () => {
         const importService = new ImportService(ImportRepository);
-        const matcherRegistry = MediaMatcherRegistry;
-        matcherRegistry.register(MediaType.SERIES, createTvMatcher(
+        const matcher = createTvMatcher(
             MediaType.SERIES, new TvCatalogIngestionRepository(MediaType.SERIES), {} as any, {} as any, new TvLibraryCommands(),
-        ));
-        const processor = new ImportJobProcessor(importService, matcherRegistry);
+        );
+        const processor = new ImportJobProcessor(importService, { get: () => matcher });
 
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         await ImportRepository.insertParsedItems(job.id, [{

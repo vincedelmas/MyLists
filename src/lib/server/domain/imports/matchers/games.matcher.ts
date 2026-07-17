@@ -1,6 +1,6 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertGameWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {GameCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalIGDBGamesMatcher} from "@/lib/server/domain/imports/matchers/external-game.matcher";
@@ -12,7 +12,7 @@ import {GameCatalogIngestionRepository} from "@/lib/server/domain/catalog/games/
 
 export const createGamesMatcher = (
     catalog: GameCatalogIngestionRepository,
-    gamesIngestion: MediaIngestionService<UpsertGameWithDetails>,
+    gamesIngestion: MediaIngestionService<GameCatalogSnapshot>,
     libraryCommands: GameLibraryCommands,
 ) => createMediaMatcher({
     internalMatchers: [

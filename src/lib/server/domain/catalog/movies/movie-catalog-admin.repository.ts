@@ -26,7 +26,7 @@ export type MovieCatalogEdit = Partial<{
 /** Manager edit boundary for the canonical movie catalog. */
 export class MovieCatalogAdminRepository {
     async getEditableFields(catalogItemId: number) {
-        const fields = await getDbClient()
+        const fields = getDbClient()
             .select({
                 name: catalogItem.name,
                 originalName: movieDetails.originalName,
@@ -45,6 +45,7 @@ export class MovieCatalogAdminRepository {
             .innerJoin(movieDetails, eq(movieDetails.catalogItemId, catalogItem.id))
             .where(eq(catalogItem.id, catalogItemId))
             .get();
+
         return fields ? { kind: MediaType.MOVIES, fields } : undefined;
     }
 

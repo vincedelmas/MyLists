@@ -51,20 +51,8 @@ export type RefreshPolicy = {
 }
 
 
-export type MediaDetailsEnricher<UpsertWithDetails> = {
-    (details: UpsertWithDetails, context: IngestionContext): Promise<UpsertWithDetails>;
-}
-
-
-/** Minimal persistence port used by the provider/transformer ingestion pipeline. */
-export interface MediaIngestionRepository<TDetails> {
-    findByApiId(apiId: number | string): Promise<{ id: number; apiId: number | string } | undefined>;
-
-    findByApiIds(apiIds: (number | string)[]): Promise<{ id: number; apiId: number | string }[]>;
-
-    storeMediaWithDetails(details: TDetails): Promise<number>;
-
-    updateMediaWithDetails(details: TDetails): Promise<boolean>;
+export type MediaDetailsEnricher<TSnapshot> = {
+    (details: TSnapshot, context: IngestionContext): Promise<TSnapshot>;
 }
 
 

@@ -76,8 +76,3 @@ export type TvCommunityActivityPage<K extends TvMediaType> = {
     pages: number;
     stats: CommunityActivityStats;
 };
-
-export const validateCommunityActivityPage = <T extends CommunityActivityPage>(value: T): T => {
-    if (process.env.NODE_ENV !== "production") communityActivityPageSchema.parse(value);
-    return value;
-};

@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {UpsertBooksWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {BookCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalGoogleBooksMatcher} from "@/lib/server/domain/imports/matchers/external-books.matcher";
@@ -12,8 +12,8 @@ import {BookCatalogIngestionRepository} from "@/lib/server/domain/catalog/books/
 
 export const createBooksMatcher = (
     catalog: BookCatalogIngestionRepository,
-    booksProvider: ExternalMediaProvider<UpsertBooksWithDetails>,
-    booksIngestion: MediaIngestionService<UpsertBooksWithDetails>,
+    booksProvider: ExternalMediaProvider<BookCatalogSnapshot>,
+    booksIngestion: MediaIngestionService<BookCatalogSnapshot>,
     libraryCommands: BookLibraryCommands,
 ) => createMediaMatcher({
     internalMatchers: [

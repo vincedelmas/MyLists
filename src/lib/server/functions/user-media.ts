@@ -1,6 +1,14 @@
+import {and, asc, eq} from "drizzle-orm";
+import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
+import {libraryTag} from "@/lib/server/database/schema";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {getContainer} from "@/lib/server/core/container";
+import {CoverType} from "@/lib/types/media-common.types";
+import {MediaType, TagAction} from "@/lib/utils/enums";
+import {getDbClient} from "@/lib/server/database/async-storage";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
+import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     addMediaToListSchema,
@@ -8,19 +16,9 @@ import {
     editUserTagSchema,
     type UpdateUserCustomCover,
     updateUserCustomCoverSchema,
-    type UpdateUserMedia,
     updateUserMediaSchema,
     userTagNamesSchema,
 } from "@/lib/contracts/media/library";
-import {mediaTypeMediaIdSchema} from "@/lib/schemas";
-import {MediaType, Status, TagAction} from "@/lib/utils/enums";
-import {validateLibraryHistory} from "@/lib/contracts/media/projections";
-import {getDbClient} from "@/lib/server/database/async-storage";
-import {libraryTag} from "@/lib/server/database/schema";
-import {and, asc, eq} from "drizzle-orm";
-import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
-import {FormattedError} from "@/lib/utils/error-classes";
-import {CoverType} from "@/lib/types/media-common.types";
 
 
 export const getUserMediaHistory = createServerFn({ method: "GET" })
@@ -28,20 +26,7 @@ export const getUserMediaHistory = createServerFn({ method: "GET" })
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
-
-        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
-            return validateLibraryHistory(await container.library.readers[mediaType].getUserMediaHistory(currentUser.id, mediaId));
-        }
-        if (mediaType === MediaType.MOVIES) {
-            return validateLibraryHistory(await container.library.readers[MediaType.MOVIES].getUserMediaHistory(currentUser.id, mediaId));
-        }
-        if (mediaType === MediaType.GAMES) {
-            return validateLibraryHistory(await container.library.readers[MediaType.GAMES].getUserMediaHistory(currentUser.id, mediaId));
-        }
-        if (mediaType === MediaType.BOOKS) {
-            return validateLibraryHistory(await container.library.readers[MediaType.BOOKS].getUserMediaHistory(currentUser.id, mediaId));
-        }
-        return validateLibraryHistory(await container.library.readers[MediaType.MANGA].getUserMediaHistory(currentUser.id, mediaId));
+        return container.media.get(mediaType).library.read.getUserMediaHistory(currentUser.id, mediaId);
     });
 
 
@@ -50,8 +35,12 @@ export const postAddMediaToList = createServerFn({ method: "POST" })
     .validator(addMediaToListSchema)
     .handler(async ({ data: { mediaType, mediaId, status }, context: { currentUser } }) => {
         const container = await getContainer();
-        await addMedia(container, { mediaType, mediaId, status, userId: currentUser.id });
-        return requireUserMedia(container, currentUser.id, mediaType, mediaId);
+
+        await container.media.get(mediaType).library.commands.add({ userId: currentUser.id, catalogItemId: mediaId, status });
+        const result = await container.media.get(mediaType).library.read.findUserMedia(currentUser.id, mediaId);
+        if (!result) throw new FormattedError("Media not in your list");
+
+        return result;
     });
 
 
@@ -59,9 +48,35 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(updateUserMediaSchema)
     .handler(async ({ data, context: { currentUser } }) => {
+        const mediaId = data.mediaId;
+        const userId = currentUser.id;
         const container = await getContainer();
-        await updateMedia(container, { ...data, userId: currentUser.id });
-        return requireUserMedia(container, currentUser.id, data.mediaType, data.mediaId);
+
+        switch (data.mediaType) {
+            case MediaType.SERIES:
+            case MediaType.ANIME:
+                await container.media.get(data.mediaType).library.commands.update({ userId, mediaId, payload: data.payload });
+                break;
+            case MediaType.MOVIES:
+                await container.media.get(MediaType.MOVIES).library.commands.update({ userId, mediaId, payload: data.payload });
+                break;
+            case MediaType.GAMES:
+                await container.media.get(MediaType.GAMES).library.commands.update({ userId, mediaId, payload: data.payload });
+                break;
+            case MediaType.BOOKS:
+                await container.media.get(MediaType.BOOKS).library.commands.update({ userId, mediaId, payload: data.payload });
+                break;
+            case MediaType.MANGA:
+                await container.media.get(MediaType.MANGA).library.commands.update({ userId, mediaId, payload: data.payload });
+                break;
+            default:
+                assertNever(data);
+        }
+
+        const result = await container.media.get(data.mediaType).library.read.findUserMedia(userId, mediaId);
+        if (!result) throw new FormattedError("Media not in your list");
+
+        return result;
     });
 
 
@@ -102,10 +117,13 @@ export const getUserTagNames = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(userTagNamesSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser } }) => {
-        return getDbClient().select({ name: libraryTag.name }).from(libraryTag).where(and(
-            eq(libraryTag.userId, currentUser.id),
-            eq(libraryTag.kind, mediaType),
-        )).orderBy(asc(libraryTag.name));
+        return getDbClient()
+            .select({ name: libraryTag.name })
+            .from(libraryTag)
+            .where(and(
+                eq(libraryTag.userId, currentUser.id),
+                eq(libraryTag.kind, mediaType),
+            )).orderBy(asc(libraryTag.name));
     });
 
 
@@ -120,53 +138,8 @@ export const postEditUserTag = createServerFn({ method: "POST" })
 
 type Container = Awaited<ReturnType<typeof getContainer>>;
 
-const addMedia = (container: Container, params: { userId: number; mediaType: MediaType; mediaId: number; status?: Status }) => {
-    const { userId, mediaType, mediaId, status } = params;
-    switch (mediaType) {
-        case MediaType.SERIES:
-        case MediaType.ANIME:
-        case MediaType.MOVIES:
-        case MediaType.GAMES:
-        case MediaType.BOOKS:
-        case MediaType.MANGA:
-            return container.library.commands[mediaType].add({ userId, catalogItemId: mediaId, status });
-        default:
-            return assertNever(mediaType);
-    }
-};
-
-const updateMedia = (container: Container, params: UpdateUserMedia & { userId: number }) => {
-    const { userId, mediaId } = params;
-
-    switch (params.mediaType) {
-        case MediaType.SERIES:
-        case MediaType.ANIME:
-            return container.library.commands[params.mediaType].update({ userId, mediaId, payload: params.payload });
-        case MediaType.MOVIES:
-            return container.library.commands[MediaType.MOVIES].update({ userId, mediaId, payload: params.payload });
-        case MediaType.GAMES:
-            return container.library.commands[MediaType.GAMES].update({ userId, mediaId, payload: params.payload });
-        case MediaType.BOOKS:
-            return container.library.commands[MediaType.BOOKS].update({ userId, mediaId, payload: params.payload });
-        case MediaType.MANGA:
-            return container.library.commands[MediaType.MANGA].update({ userId, mediaId, payload: params.payload });
-        default:
-            return assertNever(params);
-    }
-};
-
 const removeMedia = (container: Container, userId: number, mediaType: MediaType, mediaId: number) => {
-    switch (mediaType) {
-        case MediaType.SERIES:
-        case MediaType.ANIME:
-        case MediaType.MOVIES:
-        case MediaType.GAMES:
-        case MediaType.BOOKS:
-        case MediaType.MANGA:
-            return container.library.commands[mediaType].remove({ userId, catalogItemId: mediaId });
-        default:
-            return assertNever(mediaType);
-    }
+    return container.media.get(mediaType).library.commands.remove({ userId, catalogItemId: mediaId });
 };
 
 const editTag = (container: Container, params: { userId: number; mediaType: MediaType; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) => {
@@ -174,46 +147,25 @@ const editTag = (container: Container, params: { userId: number; mediaType: Medi
     switch (mediaType) {
         case MediaType.SERIES:
         case MediaType.ANIME:
-            return container.library.commands[mediaType].editTag({ userId, kind: mediaType, mediaId, action, tag });
+            return container.media.get(mediaType).library.commands.editTag({ userId, kind: mediaType, mediaId, action, tag });
         case MediaType.MOVIES:
         case MediaType.GAMES:
         case MediaType.BOOKS:
         case MediaType.MANGA:
-            return container.library.commands[mediaType].editTag({ userId, mediaId, action, tag });
+            return container.media.get(mediaType).library.commands.editTag({ userId, mediaId, action, tag });
         default:
             return assertNever(mediaType);
     }
 };
 
 const updateCustomCover = (container: Container, userId: number, mediaType: MediaType, mediaId: number, customCover: string | null) => {
-    switch (mediaType) {
-        case MediaType.SERIES:
-        case MediaType.ANIME:
-        case MediaType.MOVIES:
-        case MediaType.GAMES:
-        case MediaType.BOOKS:
-        case MediaType.MANGA:
-            return container.library.commands[mediaType].updateCustomCover({ userId, catalogItemId: mediaId, customCover });
-        default:
-            return assertNever(mediaType);
-    }
+    return container.media.get(mediaType).library.commands.updateCustomCover({ userId, catalogItemId: mediaId, customCover });
 };
 
 const requireUserMedia = async (container: Container, userId: number, mediaType: MediaType, mediaId: number) => {
-    switch (mediaType) {
-        case MediaType.SERIES:
-        case MediaType.ANIME:
-        case MediaType.MOVIES:
-        case MediaType.GAMES:
-        case MediaType.BOOKS:
-        case MediaType.MANGA: {
-            const result = await container.library.readers[mediaType].findUserMedia(userId, mediaId);
-            if (!result) throw new FormattedError("Media not in your list");
-            return result;
-        }
-        default:
-            return assertNever(mediaType);
-    }
+    const result = await container.media.get(mediaType).library.read.findUserMedia(userId, mediaId);
+    if (!result) throw new FormattedError("Media not in your list");
+    return result;
 };
 
 const prepareCustomCover = async (payload: UpdateUserCustomCover) => {

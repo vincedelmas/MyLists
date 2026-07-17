@@ -32,6 +32,20 @@ concrete progress and metadata rules. New behavior should be added to the
 concrete capability that owns it; do not introduce a lowest-common-denominator
 media abstraction.
 
+## Media module composition
+
+The container assembles one concrete capability module for each `MediaType` and
+publishes them through a single immutable, type-indexed registry. A module owns
+its catalog queries and commands, library queries and commands, external
+provider and ingestion pipeline, and import matcher. Repositories remain private
+to the module composition unless an operational capability must be exposed.
+
+Common capabilities with the same contract, such as library history, may be
+dispatched directly through `registry.get(mediaType)`. Family-specific payloads,
+such as progress updates and list query arguments, remain discriminated and use
+exhaustive narrowing. The registry is composition, not a replacement base media
+service.
+
 ## Canonical persistence
 
 `catalog_item` is the global identity for every media item. Provider IDs are

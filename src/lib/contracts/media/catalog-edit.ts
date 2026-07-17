@@ -169,8 +169,3 @@ export type BookCatalogEditPayloadInput = z.input<typeof bookCatalogEditPayloadS
 export type BookCatalogEditPayload = z.output<typeof bookCatalogEditPayloadSchema>;
 export type MangaCatalogEditPayloadInput = z.input<typeof mangaCatalogEditPayloadSchema>;
 export type MangaCatalogEditPayload = z.output<typeof mangaCatalogEditPayloadSchema>;
-
-export const validateCatalogEditFields = <T extends CatalogEditFields>(value: T): T => {
-    if (process.env.NODE_ENV !== "production") catalogEditFieldsSchema.parse(value);
-    return value;
-};

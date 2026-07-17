@@ -21,7 +21,6 @@ const { ImportService } = await import("@/lib/server/domain/imports/import.servi
 const { ImportRepository } = await import("@/lib/server/domain/imports/import.repository");
 const { createMoviesMatcher } = await import("@/lib/server/domain/imports/matchers/movies.matcher");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
-const { MediaMatcherRegistry } = await import("@/lib/server/domain/imports/matchers/media-matcher.registry");
 const { MovieLibraryCommands } = await import("@/lib/server/domain/library/movies/movie-library.commands");
 const { MovieCatalogIngestionRepository } = await import("@/lib/server/domain/catalog/movies/movie-catalog-ingestion.repository");
 
@@ -31,8 +30,6 @@ describe("movies import processing", () => {
     let db: BunSQLiteDatabase<typeof schema>;
 
     beforeEach(async () => {
-        MediaMatcherRegistry.clear();
-
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
@@ -62,14 +59,13 @@ describe("movies import processing", () => {
 
     it("matches an internal movie, adds it to the user list, and completes the import job", async () => {
         const importService = new ImportService(ImportRepository);
-        const matcherRegistry = MediaMatcherRegistry;
-        matcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+        const matcher = createMoviesMatcher(
             new MovieCatalogIngestionRepository(),
             { search: { search: vi.fn() } } as any,
             { storeFromExternal: vi.fn() } as any,
             new MovieLibraryCommands(),
-        ));
-        const processor = new ImportJobProcessor(importService, matcherRegistry);
+        );
+        const processor = new ImportJobProcessor(importService, { get: () => matcher });
 
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         await ImportRepository.insertParsedItems(job.id, [{
@@ -141,14 +137,13 @@ describe("movies import processing", () => {
                     .mockRejectedValueOnce(new Error("TMDB unavailable")),
             },
         };
-        const matcherRegistry = MediaMatcherRegistry;
-        matcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+        const matcher = createMoviesMatcher(
             new MovieCatalogIngestionRepository(),
             moviesProvider as any,
             { storeFromExternal: vi.fn() } as any,
             new MovieLibraryCommands(),
-        ));
-        const processor = new ImportJobProcessor(importService, matcherRegistry);
+        );
+        const processor = new ImportJobProcessor(importService, { get: () => matcher });
 
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         await ImportRepository.insertParsedItems(job.id, [

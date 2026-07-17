@@ -37,6 +37,7 @@ import {ProfileCustomizationQuery} from "@/lib/server/domain/profile/profile-cus
 import {ProfileCustomizationCommands} from "@/lib/server/domain/profile/profile-customization.commands";
 import {ProfileHighlightsQuery} from "@/lib/server/domain/profile/profile-highlights.query";
 import {ActivityService} from "@/lib/server/domain/activity/activity.service";
+import {MediaType} from "@/lib/utils/enums";
 
 
 export function setupUserModule(mediaModule: MediaModule) {
@@ -80,11 +81,14 @@ export function setupUserModule(mediaModule: MediaModule) {
     const socialGraphCommands = new SocialGraphCommands();
     const userStatsService = new UserStatsService(
         activityService,
-        mediaModule.media.stats.tv,
-        mediaModule.media.stats.movies,
-        mediaModule.media.stats.games,
-        mediaModule.media.stats.books,
-        mediaModule.media.stats.manga,
+        {
+            [MediaType.SERIES]: mediaModule.registry.get(MediaType.SERIES).library.stats,
+            [MediaType.ANIME]: mediaModule.registry.get(MediaType.ANIME).library.stats,
+        },
+        mediaModule.registry.get(MediaType.MOVIES).library.stats,
+        mediaModule.registry.get(MediaType.GAMES).library.stats,
+        mediaModule.registry.get(MediaType.BOOKS).library.stats,
+        mediaModule.registry.get(MediaType.MANGA).library.stats,
     );
     const profileOverview = new ProfileOverviewQuery(
         userStatsService,

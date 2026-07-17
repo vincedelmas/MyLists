@@ -4,6 +4,7 @@ import {serverEnv} from "@/env/server";
 import {adminLlmResponseSchema} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
+import {MediaType} from "@/lib/utils/enums";
 
 
 export const addGenresToBooksUsingLlmTask = defineTask({
@@ -17,7 +18,7 @@ export const addGenresToBooksUsingLlmTask = defineTask({
     handler: async (ctx, input) => {
         const container = await getContainer();
         const llmClient = container.apiClients.llmClient;
-        const bookCatalog = container.media.catalog.maintenance.books;
+        const bookCatalog = container.media.get(MediaType.BOOKS).catalog.admin;
 
         ctx.metric("llm.model", serverEnv.LLM_MODEL_ID);
         ctx.metric("llm.endpoint", serverEnv.LLM_BASE_URL);

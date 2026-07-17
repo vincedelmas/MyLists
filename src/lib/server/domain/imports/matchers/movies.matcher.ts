@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {UpsertMovieWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MovieCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalTMDBMovieMatcher} from "@/lib/server/domain/imports/matchers/external-movie.matcher";
@@ -12,8 +12,8 @@ import {MovieCatalogIngestionRepository} from "@/lib/server/domain/catalog/movie
 
 export const createMoviesMatcher = (
     catalog: MovieCatalogIngestionRepository,
-    moviesProvider: ExternalMediaProvider<UpsertMovieWithDetails>,
-    moviesIngestion: MediaIngestionService<UpsertMovieWithDetails>,
+    moviesProvider: ExternalMediaProvider<MovieCatalogSnapshot>,
+    moviesIngestion: MediaIngestionService<MovieCatalogSnapshot>,
     libraryCommands: MovieLibraryCommands,
 ) => createMediaMatcher({
     internalMatchers: [

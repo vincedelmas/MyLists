@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {UpsertMangaWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MangaCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalJikanMangaMatcher} from "@/lib/server/domain/imports/matchers/external-manga.matcher";
@@ -12,8 +12,8 @@ import {MangaCatalogIngestionRepository} from "@/lib/server/domain/catalog/manga
 
 export const createMangaMatcher = (
     catalog: MangaCatalogIngestionRepository,
-    mangaProvider: ExternalMediaProvider<UpsertMangaWithDetails>,
-    mangaIngestion: MediaIngestionService<UpsertMangaWithDetails>,
+    mangaProvider: ExternalMediaProvider<MangaCatalogSnapshot>,
+    mangaIngestion: MediaIngestionService<MangaCatalogSnapshot>,
     libraryCommands: MangaLibraryCommands,
 ) => createMediaMatcher({
     internalMatchers: [

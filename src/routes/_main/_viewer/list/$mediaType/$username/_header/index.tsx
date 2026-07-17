@@ -10,7 +10,7 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {AppliedFilters} from "@/lib/client/components/media/base/AppliedFilters";
 import {FiltersSideSheet} from "@/lib/client/components/media/base/FiltersSideSheet";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
-import {MediaListFamilyBoundary} from "@/lib/client/features/media-list/MediaListFamilyBoundary";
+import {MediaListKindBoundary} from "@/lib/client/features/media-list/MediaListKindBoundary";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/")({
@@ -69,7 +69,7 @@ function MediaList() {
                 onFilterRemove={(filters) => handleFilterChange(filters)}
             />
             <div className="animate-in fade-in duration-500 mt-2">
-                <MediaListFamilyBoundary
+                <MediaListKindBoundary
                     page={apiData.results}
                     filters={filters}
                     isCurrent={isCurrent}

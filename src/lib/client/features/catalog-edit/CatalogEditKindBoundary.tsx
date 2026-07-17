@@ -1,19 +1,10 @@
 import {MediaType} from "@/lib/utils/enums";
 import {assertNever} from "@/lib/utils/assert-never";
 import type {CatalogEditFields} from "@/lib/contracts/media/catalog-edit";
-import {
-    BookCatalogEditForm,
-    GameCatalogEditForm,
-    MangaCatalogEditForm,
-    MovieCatalogEditForm,
-    TvCatalogEditForm,
-} from "@/lib/client/features/catalog-edit/FamilyCatalogEditForms";
+import {BookCatalogEditForm, GameCatalogEditForm, MangaCatalogEditForm, MovieCatalogEditForm, TvCatalogEditForm} from "@/lib/client/features/catalog-edit/KindCatalogEditForms";
 
 
-export const CatalogEditFamilyBoundary = ({
-    mediaId,
-    data,
-}: { mediaId: number; data: CatalogEditFields }) => {
+export const CatalogEditKindBoundary = ({ mediaId, data }: { mediaId: number; data: CatalogEditFields }) => {
     switch (data.kind) {
         case MediaType.SERIES:
             return <TvCatalogEditForm mediaType={MediaType.SERIES} mediaId={mediaId} fields={data.fields}/>;

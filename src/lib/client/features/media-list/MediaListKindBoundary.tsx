@@ -2,21 +2,9 @@ import {MediaType} from "@/lib/utils/enums";
 import {assertNever} from "@/lib/utils/assert-never";
 import type {MediaListArgs} from "@/lib/schemas";
 import type {MediaListPage} from "@/lib/contracts/media/lists";
+import {bookListArgsSchema, gameListArgsSchema, mangaListArgsSchema, movieListArgsSchema, tvListArgsSchema,} from "@/lib/contracts/media/lists";
 import type {mediaListOptions} from "@/lib/client/react-query/query-options";
-import {
-    bookListArgsSchema,
-    gameListArgsSchema,
-    mangaListArgsSchema,
-    movieListArgsSchema,
-    tvListArgsSchema,
-} from "@/lib/contracts/media/lists";
-import {
-    BookListView,
-    GameListView,
-    MangaListView,
-    MovieListView,
-    TvListView,
-} from "@/lib/client/features/media-list/FamilyListViews";
+import {BookListView, GameListView, MangaListView, MovieListView, TvListView,} from "@/lib/client/features/media-list/KindListViews";
 
 
 interface MediaListFamilyBoundaryProps {
@@ -29,14 +17,14 @@ interface MediaListFamilyBoundaryProps {
 }
 
 
-export const MediaListFamilyBoundary = ({
-    page,
-    filters,
-    isCurrent,
-    isGrid,
-    queryOption,
-    onChangePage,
-}: MediaListFamilyBoundaryProps) => {
+export const MediaListKindBoundary = ({
+                                          page,
+                                          filters,
+                                          isCurrent,
+                                          isGrid,
+                                          queryOption,
+                                          onChangePage,
+                                      }: MediaListFamilyBoundaryProps) => {
     const { view: _view, ...listFilters } = filters;
     const shared = { isCurrent, isGrid, queryOption, onChangePage };
 

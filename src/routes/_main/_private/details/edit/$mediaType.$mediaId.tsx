@@ -4,7 +4,7 @@ import {capitalize} from "@/lib/utils/text-formatting";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options";
-import {CatalogEditFamilyBoundary} from "@/lib/client/features/catalog-edit/CatalogEditFamilyBoundary";
+import {CatalogEditKindBoundary} from "@/lib/client/features/catalog-edit/CatalogEditKindBoundary";
 
 
 export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$mediaId")({
@@ -27,7 +27,7 @@ function MediaEditPage() {
 
     return (
         <PageTitle title={`Edit ${capitalize(apiData.kind)} Details`} subtitle="Update the media information">
-            <CatalogEditFamilyBoundary mediaId={mediaId} data={apiData}/>
+            <CatalogEditKindBoundary mediaId={mediaId} data={apiData}/>
         </PageTitle>
     );
 }

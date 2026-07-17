@@ -2,7 +2,7 @@ import {SearchType} from "@/lib/schemas";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {pixelateImage} from "@/lib/utils/image-pixelation";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
-import {MovieMediadleQuery} from "@/lib/server/domain/catalog/movies/movie-mediadle.query";
+import {MovieMediadleQuery} from "@/lib/server/domain/media/movies/features/mediadle/movie-mediadle.query";
 
 
 export class MediadleService {

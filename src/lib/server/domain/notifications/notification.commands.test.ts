@@ -3,7 +3,7 @@ import {MediaType, Status} from "@/lib/utils/enums";
 import {NotificationCommands} from "./notification.commands";
 import {NotificationsQuery} from "./notifications.query";
 import type {NotificationsRepository} from "./notifications.repository";
-import {TvUpcomingNotificationCommand} from "@/lib/server/domain/library/tv/tv-upcoming-notification.command";
+import {TvUpcomingNotificationCommand} from "@/lib/server/domain/media/tv/features/notifications/tv-upcoming-notification.command";
 
 
 const createRepository = () => ({

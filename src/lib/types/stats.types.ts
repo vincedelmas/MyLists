@@ -2,11 +2,11 @@ import {MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {UserStatsService} from "@/lib/server/domain/user";
 import {ActivityService} from "@/lib/server/domain/activity/activity.service";
 import {ProfileUpdatesQuery} from "@/lib/server/domain/profile/profile-updates.query";
-import {TvStatsReadRepository} from "@/lib/server/domain/library/tv/tv-stats-read.repository";
-import {GameStatsReadRepository} from "@/lib/server/domain/library/games/game-stats-read.repository";
-import {BookStatsReadRepository} from "@/lib/server/domain/library/books/book-stats-read.repository";
-import {MangaStatsReadRepository} from "@/lib/server/domain/library/manga/manga-stats-read.repository";
-import {MovieStatsReadRepository} from "@/lib/server/domain/library/movies/movie-stats-read.repository";
+import {TvStatsReadRepository} from "@/lib/server/domain/media/tv/library/tv-stats-read.repository";
+import {GameStatsReadRepository} from "@/lib/server/domain/media/games/library/game-stats-read.repository";
+import {BookStatsReadRepository} from "@/lib/server/domain/media/books/library/book-stats-read.repository";
+import {MangaStatsReadRepository} from "@/lib/server/domain/media/manga/library/manga-stats-read.repository";
+import {MovieStatsReadRepository} from "@/lib/server/domain/media/movies/library/movie-stats-read.repository";
 
 
 type BaseMediaStats = Awaited<ReturnType<MovieStatsReadRepository["getAggregatedMediaStats"]>>;

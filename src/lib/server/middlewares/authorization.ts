@@ -3,7 +3,7 @@ import {createMiddleware} from "@tanstack/react-start";
 import {PrivacyType, RoleType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {UnauthorizedError} from "@/lib/utils/error-classes";
-import {baseUsernameSchema, mediaTypeUsernameSchema} from "@/lib/schemas";
+import {baseUsernameSchema, mediaTypeUsernameSchema} from "@/lib/schemas/common.schema";
 import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {decideLibraryAccess, decideMediaListAccess} from "@/lib/server/domain/access/library-access.policy";
 
@@ -69,7 +69,7 @@ export const authorizationMiddleware = createMiddleware({ type: "function" })
  */
 export const mediaListAuthorizationMiddleware = createMiddleware({ type: "function" })
     .middleware([authorizationMiddleware])
-    .validator(mediaTypeUsernameSchema)
+    .validator(mediaTypeUsernameSchema.loose())
     .server(async ({ next, data: { mediaType }, context }) => {
         const container = await getContainer();
         const mediaTypeEnabled = await container.profile.channels.isEnabled(context.user.id, mediaType);

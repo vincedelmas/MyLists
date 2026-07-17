@@ -56,10 +56,10 @@ export const communityActivityPageSchema = z.discriminatedUnion("kind", [
     mangaCommunityActivitySchema,
 ]);
 
+type SeriesCommunityActivityPage = z.infer<typeof seriesCommunityActivitySchema>;
 export type CommunityActivityPage = z.infer<typeof communityActivityPageSchema>;
 export type CommunityActivityStats = z.infer<typeof communityActivityStatsSchema>;
 export type CommunityActivityItem = CommunityActivityPage["items"][number];
-type SeriesCommunityActivityPage = z.infer<typeof seriesCommunityActivitySchema>;
 export type MovieCommunityActivityPage = z.infer<typeof movieCommunityActivitySchema>;
 export type GameCommunityActivityPage = z.infer<typeof gameCommunityActivitySchema>;
 export type BookCommunityActivityPage = z.infer<typeof bookCommunityActivitySchema>;

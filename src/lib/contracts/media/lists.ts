@@ -192,7 +192,7 @@ const listFilters = <K extends MediaType, E extends z.ZodRawShape>(kind: K, extr
     ...extra,
 }).strict();
 
-export const mediaListFiltersResultSchema = z.discriminatedUnion("kind", [
+const mediaListFiltersResultSchema = z.discriminatedUnion("kind", [
     listFilters(MediaType.SERIES, { langs: z.array(nameSchema) }),
     listFilters(MediaType.ANIME, { langs: z.array(nameSchema) }),
     listFilters(MediaType.MOVIES, { langs: z.array(nameSchema) }),

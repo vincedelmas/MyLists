@@ -1,13 +1,14 @@
-import {alias} from "drizzle-orm/sqlite-core";
-import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {UpdateActivity} from "@/lib/schemas";
-import {PaginatedActivityFilter} from "@/lib/types/activity.types";
+import {alias} from "drizzle-orm/sqlite-core";
+import {getImageUrl} from "@/lib/utils/image-url";
+import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {PaginatedActivityFilter} from "@/lib/types/activity.types";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {LibraryAccessScope} from "@/lib/server/domain/access/library-access.policy";
-import {catalogItem, libraryActivity, libraryEntry, profileMediaChannel, user,} from "@/lib/server/database/schema";
-import {and, asc, count, desc, eq, gt, gte, inArray, isNull, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
 import {dateFromUTCInput, monthBucketFromDateInput} from "@/lib/utils/date-formatting";
+import {and, asc, count, desc, eq, gt, gte, inArray, isNull, like, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
+import {catalogItem, libraryActivity, libraryEntry, movieDetails, profileMediaChannel, tvDetails, user} from "@/lib/server/database/schema";
 
 
 const BULK_IMPORT_GRACE_MONTHS = 2;
@@ -15,7 +16,7 @@ const BULK_IMPORT_ACTIVITY_THRESHOLD = 200;
 const mediaId = sql<number>`${libraryActivity.catalogItemId}`;
 
 
-export class ProfileActivityRepository {
+export class ActivityRepository {
     static async addActivity(userId: number, payload: {
         mediaType: MediaType;
         mediaId: number;
@@ -25,7 +26,7 @@ export class ProfileActivityRepository {
         hidden?: boolean;
         lastUpdate: string;
     }) {
-        const subject = await getDbClient().select({
+        const subject = getDbClient().select({
             catalogItemId: catalogItem.id,
             libraryEntryId: libraryEntry.id,
         }).from(catalogItem).innerJoin(libraryEntry, and(
@@ -63,7 +64,7 @@ export class ProfileActivityRepository {
     }
 
     static async updateActivity(userId: number, activityId: number, payload: UpdateActivity) {
-        const existing = await getDbClient().select().from(libraryActivity).where(and(
+        const existing = getDbClient().select().from(libraryActivity).where(and(
             eq(libraryActivity.id, activityId),
             eq(libraryActivity.userId, userId),
         )).get();
@@ -87,7 +88,7 @@ export class ProfileActivityRepository {
             )).returning().get();
         }
 
-        const moved = await getDbClient().insert(libraryActivity).values({
+        const moved = getDbClient().insert(libraryActivity).values({
             userId: existing.userId,
             kind: existing.kind,
             catalogItemId: existing.catalogItemId,
@@ -113,6 +114,70 @@ export class ProfileActivityRepository {
             eq(libraryActivity.id, activityId),
             eq(libraryActivity.userId, userId),
         ));
+    }
+
+    static async getMediaDetailsByIds(mediaType: MediaType, mediaIds: number[]) {
+        const uniqueIds = [...new Set(mediaIds)];
+        if (uniqueIds.length === 0) return [];
+
+        const rows = await getDbClient().select({
+            id: catalogItem.id,
+            name: catalogItem.name,
+            imageCover: catalogItem.imageCover,
+            releaseDate: catalogItem.releaseDate,
+            duration: sql<number | null>`CASE
+                WHEN ${catalogItem.kind} IN ('series', 'anime') THEN ${tvDetails.episodeDurationMinutes}
+                WHEN ${catalogItem.kind} = 'movies' THEN ${movieDetails.durationMinutes}
+                ELSE NULL
+            END`,
+        }).from(catalogItem)
+            .leftJoin(tvDetails, eq(tvDetails.catalogItemId, catalogItem.id))
+            .leftJoin(movieDetails, eq(movieDetails.catalogItemId, catalogItem.id))
+            .where(and(
+                eq(catalogItem.kind, mediaType),
+                inArray(catalogItem.id, uniqueIds),
+            ));
+
+        return rows.map((row) => ({
+            ...row,
+            duration: row.duration ?? undefined,
+            releaseDate: row.releaseDate ?? "",
+            imageCover: getImageUrl(`${mediaType}-covers`, row.imageCover),
+            customCover: null,
+        }));
+    }
+
+    static async getMediaDurationsByIds(mediaType: MediaType, mediaIds: number[]) {
+        const uniqueIds = [...new Set(mediaIds)];
+        if (uniqueIds.length === 0) return [];
+
+        return getDbClient().select({
+            id: catalogItem.id,
+            duration: sql<number | null>`CASE
+                WHEN ${catalogItem.kind} IN ('series', 'anime') THEN ${tvDetails.episodeDurationMinutes}
+                WHEN ${catalogItem.kind} = 'movies' THEN ${movieDetails.durationMinutes}
+                ELSE NULL
+            END`,
+        }).from(catalogItem)
+            .leftJoin(tvDetails, eq(tvDetails.catalogItemId, catalogItem.id))
+            .leftJoin(movieDetails, eq(movieDetails.catalogItemId, catalogItem.id))
+            .where(and(
+                eq(catalogItem.kind, mediaType),
+                inArray(catalogItem.id, uniqueIds),
+            ));
+    }
+
+    static async searchUserListByName(userId: number, mediaType: MediaType, query: string, limit: number) {
+        return getDbClient().select({ mediaId: catalogItem.id })
+            .from(libraryEntry)
+            .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
+            .where(and(
+                eq(libraryEntry.userId, userId),
+                eq(catalogItem.kind, mediaType),
+                like(catalogItem.name, `%${query}%`),
+            ))
+            .orderBy(catalogItem.name)
+            .limit(limit);
     }
 
     static async bulkHideActivity(userId: number, filters: { startDate: string; endDate: string; mediaType?: MediaType }) {

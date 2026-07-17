@@ -3,15 +3,13 @@ import type {QueryClient, QueryKey} from "@tanstack/react-query";
 import {mediaDetailsRootKey} from "@/lib/client/react-query/query-options/media.keys";
 
 
-export type LibraryMutationEffect = "add" | "remove" | "update" | "cover" | "tag";
-
 interface LibraryMutationEffectInput {
     mediaId?: number;
     viewerName?: string;
     mediaType: MediaType;
     sourceQueryKey?: QueryKey;
     recordsActivity?: boolean;
-    effect: LibraryMutationEffect;
+    effect: "add" | "remove" | "update" | "cover" | "tag";
 }
 
 

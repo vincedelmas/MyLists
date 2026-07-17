@@ -26,7 +26,7 @@ const DetailsExtraLoading = ({ title }: { title: string }) => {
 }
 
 
-export const DetailsExtraErrorFallback = ({ title }: { title: string }) => {
+const DetailsExtraErrorFallback = ({ title }: { title: string }) => {
     return (
         <section role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-muted-foreground">
             {title} is temporarily unavailable.

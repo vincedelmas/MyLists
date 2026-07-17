@@ -10,7 +10,7 @@ import {MediaType, PrivacyType, Status} from "@/lib/utils/enums";
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
-const { ProfileActivityRepository } = await import("./profile-activity.repository");
+const { ActivityRepository } = await import("../activity/activity.repository");
 const access = { ownerId: 1, actorId: 2, reason: "public" as const };
 
 
@@ -59,7 +59,7 @@ describe("cross-family normalized profile activity", () => {
     });
 
     it("combines enabled families and preserves detached durable activity identities", async () => {
-        await expect(ProfileActivityRepository.getPaginatedActivities(access, {
+        await expect(ActivityRepository.getPaginatedActivities(access, {
             timeBucket: "2026-03",
             page: 1,
             perPage: 48,
@@ -70,9 +70,9 @@ describe("cross-family normalized profile activity", () => {
                 { id: 3, mediaId: 12, mediaType: MediaType.SERIES, specificGained: 1 },
             ],
         });
-        await expect(ProfileActivityRepository.getActivityMediaTypes(access, "2026-03"))
+        await expect(ActivityRepository.getActivityMediaTypes(access, "2026-03"))
             .resolves.toEqual([MediaType.SERIES]);
-        await expect(ProfileActivityRepository.getStatsActivities(
+        await expect(ActivityRepository.getStatsActivities(
             access,
             Object.values(MediaType),
             "2026-03",
@@ -83,7 +83,7 @@ describe("cross-family normalized profile activity", () => {
     });
 
     it("uses the same enabled-channel boundary for platform chart inputs", async () => {
-        await expect(ProfileActivityRepository.getActivityStatsByMonth({
+        await expect(ActivityRepository.getActivityStatsByMonth({
             startMonth: "2026-01",
         })).resolves.toEqual([
             { mediaId: 10, mediaType: MediaType.SERIES, monthBucket: "2026-03", specificGained: 3 },
@@ -92,7 +92,7 @@ describe("cross-family normalized profile activity", () => {
     });
 
     it("adds, edits, moves, hides, and deletes activity by canonical identity", async () => {
-        const created = await ProfileActivityRepository.addActivity(1, {
+        const created = await ActivityRepository.addActivity(1, {
             mediaType: MediaType.SERIES,
             mediaId: 10,
             specificGained: 4,
@@ -100,7 +100,7 @@ describe("cross-family normalized profile activity", () => {
         });
         expect(created).toMatchObject({ id: 4, monthBucket: "2026-04", unitsGained: 4 });
 
-        const moved = await ProfileActivityRepository.updateActivity(1, created.id, {
+        const moved = await ActivityRepository.updateActivity(1, created.id, {
             specificGained: 5,
             hidden: false,
             lastUpdate: "2026-05-10T12:00:00.000Z",
@@ -109,11 +109,11 @@ describe("cross-family normalized profile activity", () => {
         expect(await db.select().from(schema.libraryActivity)
             .where(eq(schema.libraryActivity.id, created.id))).toEqual([]);
 
-        await expect(ProfileActivityRepository.bulkHideActivity(1, {
+        await expect(ActivityRepository.bulkHideActivity(1, {
             startDate: "2026-05-01T00:00:00.000Z",
             endDate: "2026-05-31T23:59:59.999Z",
         })).resolves.toEqual({ count: 1 });
-        await ProfileActivityRepository.deleteActivity(1, moved!.id);
+        await ActivityRepository.deleteActivity(1, moved!.id);
         expect(await db.select().from(schema.libraryActivity)
             .where(eq(schema.libraryActivity.id, moved!.id))).toEqual([]);
     });

@@ -3,14 +3,12 @@ import {TvLibraryCommands} from "@/lib/server/domain/library/tv/tv-library.comma
 import {TvDetailsQuery} from "@/lib/server/domain/catalog/tv/tv-details.query";
 import {TvCatalogReadRepository} from "@/lib/server/domain/catalog/tv/tv-catalog-read.repository";
 import {TvListReadRepository} from "@/lib/server/domain/library/tv/tv-list-read.repository";
-import {TvActivityReadRepository} from "@/lib/server/domain/library/tv/tv-activity-read.repository";
 import {TvStatsReadRepository} from "@/lib/server/domain/library/tv/tv-stats-read.repository";
 import {TvCatalogAdminRepository} from "@/lib/server/domain/catalog/tv/tv-catalog-admin.repository";
 import {MovieLibraryCommands} from "@/lib/server/domain/library/movies/movie-library.commands";
 import {MovieDetailsQuery} from "@/lib/server/domain/catalog/movies/movie-details.query";
 import {MovieCatalogReadRepository} from "@/lib/server/domain/catalog/movies/movie-catalog-read.repository";
 import {MovieListReadRepository} from "@/lib/server/domain/library/movies/movie-list-read.repository";
-import {MovieActivityReadRepository} from "@/lib/server/domain/library/movies/movie-activity-read.repository";
 import {MovieStatsReadRepository} from "@/lib/server/domain/library/movies/movie-stats-read.repository";
 import {MovieCatalogAdminRepository} from "@/lib/server/domain/catalog/movies/movie-catalog-admin.repository";
 import {MovieCatalogEditCommand} from "@/lib/server/domain/catalog/movies/movie-catalog-edit.command";
@@ -20,13 +18,11 @@ import {GameCatalogEditCommand} from "@/lib/server/domain/catalog/games/game-cat
 import {GameDetailsQuery} from "@/lib/server/domain/catalog/games/game-details.query";
 import {GameCatalogReadRepository} from "@/lib/server/domain/catalog/games/game-catalog-read.repository";
 import {GameListReadRepository} from "@/lib/server/domain/library/games/game-list-read.repository";
-import {GameActivityReadRepository} from "@/lib/server/domain/library/games/game-activity-read.repository";
 import {GameStatsReadRepository} from "@/lib/server/domain/library/games/game-stats-read.repository";
 import {BookLibraryCommands} from "@/lib/server/domain/library/books/book-library.commands";
 import {BookCatalogAdminRepository} from "@/lib/server/domain/catalog/books/book-catalog-admin.repository";
 import {BookDetailsQuery} from "@/lib/server/domain/catalog/books/book-details.query";
 import {BookListReadRepository} from "@/lib/server/domain/library/books/book-list-read.repository";
-import {BookActivityReadRepository} from "@/lib/server/domain/library/books/book-activity-read.repository";
 import {BookStatsReadRepository} from "@/lib/server/domain/library/books/book-stats-read.repository";
 import {BookCatalogReadRepository} from "@/lib/server/domain/catalog/books/book-catalog-read.repository";
 import {MangaLibraryCommands} from "@/lib/server/domain/library/manga/manga-library.commands";
@@ -34,7 +30,6 @@ import {MangaCatalogAdminRepository} from "@/lib/server/domain/catalog/manga/man
 import {MangaDetailsQuery} from "@/lib/server/domain/catalog/manga/manga-details.query";
 import {MangaCatalogReadRepository} from "@/lib/server/domain/catalog/manga/manga-catalog-read.repository";
 import {MangaListReadRepository} from "@/lib/server/domain/library/manga/manga-list-read.repository";
-import {MangaActivityReadRepository} from "@/lib/server/domain/library/manga/manga-activity-read.repository";
 import {MangaStatsReadRepository} from "@/lib/server/domain/library/manga/manga-stats-read.repository";
 import {UpcomingMediaCatalogRepository} from "@/lib/server/domain/notifications/upcoming-media-catalog";
 import {BookCoverContributionCommand} from "@/lib/server/domain/catalog/books/book-cover-contribution.command";
@@ -61,23 +56,19 @@ export function setupMediaModule() {
     const mangaCatalogAdmin = new MangaCatalogAdminRepository();
     const mangaDetailsQuery = new MangaDetailsQuery();
     const mangaListReader = new MangaListReadRepository();
-    const mangaActivityReader = new MangaActivityReadRepository();
     const mangaStatsReader = new MangaStatsReadRepository();
     const bookCatalogAdmin = new BookCatalogAdminRepository();
     const bookCoverContribution = new BookCoverContributionCommand(bookCatalogAdmin);
     const bookCatalogReader = new BookCatalogReadRepository();
     const bookDetailsQuery = new BookDetailsQuery(bookCatalogReader);
     const bookListReader = new BookListReadRepository();
-    const bookActivityReader = new BookActivityReadRepository();
     const bookStatsReader = new BookStatsReadRepository();
     const gameCatalogAdmin = new GameCatalogAdminRepository();
     const gameDetailsQuery = new GameDetailsQuery();
     const gameListReader = new GameListReadRepository();
-    const gameActivityReader = new GameActivityReadRepository();
     const gameStatsReader = new GameStatsReadRepository();
     const movieDetailsQuery = new MovieDetailsQuery();
     const movieListReader = new MovieListReadRepository();
-    const movieActivityReader = new MovieActivityReadRepository();
     const movieStatsReader = new MovieStatsReadRepository();
     const movieCatalogAdmin = new MovieCatalogAdminRepository();
     const movieCatalogEditor = new MovieCatalogEditCommand(movieCatalogAdmin);
@@ -92,10 +83,6 @@ export function setupMediaModule() {
     const tvListReaders = {
         [MediaType.SERIES]: new TvListReadRepository(MediaType.SERIES),
         [MediaType.ANIME]: new TvListReadRepository(MediaType.ANIME),
-    };
-    const tvActivityReaders = {
-        [MediaType.SERIES]: new TvActivityReadRepository(MediaType.SERIES),
-        [MediaType.ANIME]: new TvActivityReadRepository(MediaType.ANIME),
     };
     const tvStatsReaders = {
         [MediaType.SERIES]: new TvStatsReadRepository(MediaType.SERIES),
@@ -166,13 +153,6 @@ export function setupMediaModule() {
                 games: gameListReader,
                 books: bookListReader,
                 manga: mangaListReader,
-            },
-            activity: {
-                tv: tvActivityReaders,
-                movies: movieActivityReader,
-                games: gameActivityReader,
-                books: bookActivityReader,
-                manga: mangaActivityReader,
             },
             stats: {
                 tv: tvStatsReaders,

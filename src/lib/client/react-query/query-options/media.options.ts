@@ -1,9 +1,11 @@
-import type {Pagination, SearchType} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
 import {JobType, MediaType} from "@/lib/utils/enums";
+import type {Pagination, SearchType} from "@/lib/schemas";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
 import {getComingNextMedia} from "@/lib/server/functions/coming-next";
 import {getAdminAllUpdatesHistory} from "@/lib/server/functions/admin";
+import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
+import {mediaCommunityActivityKey, mediaDetailsKey, ViewerCacheId} from "@/lib/client/react-query/query-options/media.keys";
 import {
     getGameCompatiblePlatforms,
     getJobDetails,
@@ -12,10 +14,8 @@ import {
     getMediaDetailsToEdit,
     resolveExternalMedia
 } from "@/lib/server/functions/media-details";
-import {mediaCommunityActivityKey, mediaDetailsKey, ViewerCacheId,} from "@/lib/client/react-query/query-options/media.keys";
-import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
 
-export {mediaDetailsRootKey} from "@/lib/client/react-query/query-options/media.keys";
+
 export type {ViewerCacheId} from "@/lib/client/react-query/query-options/media.keys";
 
 

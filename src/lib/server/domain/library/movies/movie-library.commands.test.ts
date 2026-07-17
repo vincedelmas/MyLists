@@ -1,9 +1,10 @@
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {drizzle} from "drizzle-orm/bun-sqlite";
+import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import * as schema from "@/lib/server/database/schema";
+import {ActivityRepository} from "@/lib/server/domain/activity/activity.repository";
 import {ActivityKind, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 
 
@@ -12,7 +13,6 @@ vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbCon
 
 const { MovieLibraryRepository } = await import("./movie-library.repository");
 const { MovieLibraryCommands } = await import("./movie-library.commands");
-const { MovieActivityReadRepository } = await import("./movie-activity-read.repository");
 const { MovieStatsReadRepository } = await import("./movie-stats-read.repository");
 
 
@@ -113,7 +113,7 @@ describe("movie library commands", () => {
         }).where(eq(schema.movieDetails.catalogItemId, 1000));
         await db.insert(schema.movieActor).values({ catalogItemId: 1000, name: "Actor" });
         await db.insert(schema.catalogGenre).values({ name: "Drama" });
-        const genre = await db.select().from(schema.catalogGenre).get();
+        const genre = db.select().from(schema.catalogGenre).get();
         await db.insert(schema.catalogItemGenre).values({ catalogItemId: 1000, genreId: genre!.id });
 
         const repository = new MovieLibraryRepository();
@@ -138,8 +138,8 @@ describe("movie library commands", () => {
         await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
 
         const access = { ownerId: 42, actorId: 42, reason: "owner", mediaTypeEnabled: true } as const;
-        const activity = new MovieActivityReadRepository();
-        expect(await activity.getStatsActivities(access, "2026-06")).toEqual([
+        const activity = ActivityRepository;
+        expect(await activity.getStatsActivities(access, [MediaType.MOVIES], "2026-06")).toEqual([
             { mediaId: 1000, mediaType: MediaType.MOVIES, specificGained: 1 },
         ]);
         expect(await activity.getPaginatedActivities(access, {

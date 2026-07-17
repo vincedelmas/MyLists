@@ -18,9 +18,9 @@ import {
 export const getMonthlyActivityStats = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .validator(monthlyActivityStatsSchema)
-    .handler(async ({ data, context: { user, libraryAccessScope } }) => {
+    .handler(async ({ data, context: { libraryAccessScope } }) => {
         const container = await getContainer();
-        return container.activity.getMonthlyActivityStats(user.id, data, libraryAccessScope);
+        return container.activity.getMonthlyActivityStats(data, libraryAccessScope);
     });
 
 

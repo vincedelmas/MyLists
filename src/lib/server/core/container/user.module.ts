@@ -12,7 +12,7 @@ import {NotificationCommands} from "@/lib/server/domain/notifications/notificati
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
-import {InactiveAccountRepository, UserActivityService, UserProfileRepository, UserRepository, UserStatsService} from "@/lib/server/domain/user";
+import {InactiveAccountRepository, UserProfileRepository, UserRepository, UserStatsService} from "@/lib/server/domain/user";
 import {EditorialCollectionsQuery} from "@/lib/server/domain/collections/editorial-collections.query";
 import {EditorialCollectionCommands} from "@/lib/server/domain/collections/editorial-collection.commands";
 import {SocialGraphQuery} from "@/lib/server/domain/social/social-graph.query";
@@ -36,6 +36,7 @@ import {InactiveAccountCommands} from "@/lib/server/domain/user/inactive-account
 import {ProfileCustomizationQuery} from "@/lib/server/domain/profile/profile-customization.query";
 import {ProfileCustomizationCommands} from "@/lib/server/domain/profile/profile-customization.commands";
 import {ProfileHighlightsQuery} from "@/lib/server/domain/profile/profile-highlights.query";
+import {ActivityService} from "@/lib/server/domain/activity/activity.service";
 
 
 export function setupUserModule(mediaModule: MediaModule) {
@@ -72,13 +73,13 @@ export function setupUserModule(mediaModule: MediaModule) {
     const profileCustomizationCommands = new ProfileCustomizationCommands(userProfileRepository);
     const featureVotesQuery = new FeatureVotesQuery(featureVotesRepository);
     const featureVoteCommands = new FeatureVoteCommands(featureVotesRepository, notificationCommands);
-    const userActivityService = new UserActivityService();
+    const activityService = new ActivityService();
     const editorialCollectionsQuery = new EditorialCollectionsQuery();
     const editorialCollectionsCommands = new EditorialCollectionCommands();
     const socialGraphQuery = new SocialGraphQuery();
     const socialGraphCommands = new SocialGraphCommands();
     const userStatsService = new UserStatsService(
-        userActivityService,
+        activityService,
         mediaModule.media.stats.tv,
         mediaModule.media.stats.movies,
         mediaModule.media.stats.games,
@@ -133,7 +134,7 @@ export function setupUserModule(mediaModule: MediaModule) {
             tasteMatches: tasteMatchesReader,
             hallOfFame: hallOfFameReader,
         },
-        activity: userActivityService,
+        activity: activityService,
         stats: userStatsService,
         achievements: {
             query: achievementsQuery,

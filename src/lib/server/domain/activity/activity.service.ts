@@ -2,18 +2,17 @@ import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {calculateActivityTime} from "@/lib/utils/activity-utils";
+import {LibraryAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {ActivityRepository} from "@/lib/server/domain/activity/activity.repository";
 import {calendarDateRangeToISOString, compareDateInputs} from "@/lib/utils/date-formatting";
 import {AddActivity, MonthlyActivityFilters, MonthlyActivityStatsFilters, UpdateActivity} from "@/lib/schemas";
 import {ActivityEditor as ActivityEditorRow, ActivityMediaRef, MediaInfo, MonthlyActivityChartDatum, WrappedActivityResult} from "@/lib/types/activity.types";
-import {LibraryAccessScope} from "@/lib/server/domain/access/library-access.policy";
-import {ProfileActivityRepository} from "@/lib/server/domain/profile/profile-activity.repository";
-import {ActivityCatalogRepository} from "@/lib/server/domain/activity/activity-catalog.repository";
 
 
-export class UserActivityService {
-    private readonly repository = ProfileActivityRepository;
+export class ActivityService {
+    private readonly repository = ActivityRepository;
 
-    async getMonthlyActivityStats(userId: number, filters: MonthlyActivityStatsFilters, access?: LibraryAccessScope) {
+    async getMonthlyActivityStats(filters: MonthlyActivityStatsFilters, access?: LibraryAccessScope) {
         const timeBucket = `${filters.year}-${zeroPad(filters.month)}`;
         const mediaTypes = filters.mediaType ? [filters.mediaType] : Object.values(MediaType);
         if (!access) throw new FormattedError("Activity access scope is required");
@@ -65,14 +64,14 @@ export class UserActivityService {
         const [availableMediaTypes, result] = await Promise.all([
             this.repository.getActivityMediaTypes(access, timeBucket, filters.hiddenOnly),
             this.repository.getPaginatedActivities(access, {
-                    timeBucket,
-                    perPage: 48,
-                    mediaIdsByType,
-                    page: filters.page,
-                    hiddenOnly: filters.hiddenOnly,
-                    activityKind: filters.activityKind,
-                    mediaType: filters.activeTab === "all" ? undefined : filters.activeTab,
-                }),
+                timeBucket,
+                perPage: 48,
+                mediaIdsByType,
+                page: filters.page,
+                hiddenOnly: filters.hiddenOnly,
+                activityKind: filters.activityKind,
+                mediaType: filters.activeTab === "all" ? undefined : filters.activeTab,
+            }),
         ]);
 
         const mediaDetailsByType = await this._getMediaDetailsByType(result.items);
@@ -186,7 +185,7 @@ export class UserActivityService {
                 return;
             }
 
-            const mediaDetails = await ActivityCatalogRepository.getMediaDetailsByIds(mediaType, mediaIds);
+            const mediaDetails = await this.repository.getMediaDetailsByIds(mediaType, mediaIds);
             mediaDetailsByType.set(mediaType, new Map(mediaDetails.map((m) => [m.id, m])));
         }));
 
@@ -202,7 +201,7 @@ export class UserActivityService {
                 .filter((activity) => activity.mediaType === mediaType)
                 .map((activity) => activity.mediaId);
 
-            const durations = await ActivityCatalogRepository.getMediaDurationsByIds(mediaType, mediaIds);
+            const durations = await this.repository.getMediaDurationsByIds(mediaType, mediaIds);
             durationsByType.set(mediaType, new Map(durations.map((media) => [media.id, media])));
         }));
 
@@ -211,7 +210,7 @@ export class UserActivityService {
 
     private async _searchActivityMediaIds(userId: number, mediaTypes: MediaType[], search: string) {
         const entries = await Promise.all(mediaTypes.map(async (mediaType) => {
-            const results = await ActivityCatalogRepository.searchUserListByName(userId, mediaType, search, 20);
+            const results = await this.repository.searchUserListByName(userId, mediaType, search, 20);
 
             return [mediaType, results.map((result) => result.mediaId)] as const;
         }));

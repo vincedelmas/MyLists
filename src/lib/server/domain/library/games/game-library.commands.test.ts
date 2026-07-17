@@ -1,9 +1,10 @@
 import Database from "bun:sqlite";
 import {eq} from "drizzle-orm";
 import {drizzle} from "drizzle-orm/bun-sqlite";
+import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import * as schema from "@/lib/server/database/schema";
+import {ActivityRepository} from "@/lib/server/domain/activity/activity.repository";
 import {ActivityKind, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 
 
@@ -141,9 +142,8 @@ describe("game library commands", () => {
         await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
 
         const access = { ownerId: 42, actorId: 42, reason: "owner", mediaTypeEnabled: true } as const;
-        const { GameActivityReadRepository } = await import("./game-activity-read.repository");
-        const activity = new GameActivityReadRepository();
-        expect(await activity.getStatsActivities(access, "2026-06")).toEqual([
+        const activity = ActivityRepository;
+        expect(await activity.getStatsActivities(access, [MediaType.GAMES], "2026-06")).toEqual([
             { mediaId: 1000, mediaType: MediaType.GAMES, specificGained: 600 },
         ]);
         expect(await activity.getPaginatedActivities(access, {

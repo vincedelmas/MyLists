@@ -1,7 +1,14 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
-import {supportsUpcomingMedia} from "@/lib/server/domain/library/upcoming-media-capability";
+import type {MediaModule} from "@/lib/server/domain/media/media-module.registry"
+
+
+type UpcomingMediaModule = Extract<MediaModule, { library: { upcoming: { forOwner: unknown } } }>;
+
+const supportsUpcomingMedia = (mediaModule: MediaModule): mediaModule is UpcomingMediaModule => {
+    return "upcoming" in mediaModule.library;
+}
 
 
 export const getComingNextMedia = createServerFn({ method: "GET" })

@@ -1,7 +1,7 @@
 import {and, eq, inArray, sql} from "drizzle-orm";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {MangaCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MangaCatalogSnapshot} from "@/lib/server/domain/media/manga/catalog/manga-catalog-snapshot";
 import {
     catalogGenre,
     catalogItem,

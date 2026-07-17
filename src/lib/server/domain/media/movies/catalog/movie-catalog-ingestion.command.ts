@@ -1,4 +1,5 @@
-import {CatalogIngestionCommands, MovieCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
+import {MovieCatalogSnapshot} from "@/lib/server/domain/media/movies/catalog/movie-catalog-snapshot";
 import {MovieCatalogIngestionRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-ingestion.repository";
 import {MovieLibraryCommands} from "@/lib/server/domain/media/movies/library/movie-library.commands";
 import {MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";

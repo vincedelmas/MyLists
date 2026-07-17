@@ -2,60 +2,12 @@ import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
-
-
-export type ActivityMediaDefinition = {
-    longUnit?: string;
-    inputStep: number;
-    shortUnit?: string;
-    toStoredValue: (value: number) => number;
-    toDisplayValue: (value: number) => number;
-    calculateTime: (specificGained: number, duration?: number) => number;
-}
-
-
-export const tvActivityDefinition: ActivityMediaDefinition = {
-        inputStep: 1,
-        shortUnit: "eps",
-        longUnit: "Episodes",
-        toStoredValue: identity,
-        toDisplayValue: identity,
-        calculateTime: (specificGained, duration = 20) => specificGained * duration,
-};
-
-export const movieActivityDefinition: ActivityMediaDefinition = {
-        inputStep: 1,
-        toStoredValue: identity,
-        toDisplayValue: identity,
-        calculateTime: (specificGained, duration = 100) => specificGained * duration,
-};
-
-export const gameActivityDefinition: ActivityMediaDefinition = {
-        shortUnit: "h.",
-        inputStep: 0.25,
-        longUnit: "Hours Played",
-        calculateTime: identity,
-        toStoredValue: (hours) => hours * 60,
-        toDisplayValue: (minutes) => Math.round((minutes / 60) * 100) / 100,
-};
-
-export const bookActivityDefinition: ActivityMediaDefinition = {
-        inputStep: 1,
-        shortUnit: "p.",
-        longUnit: "Pages Read",
-        toStoredValue: identity,
-        toDisplayValue: identity,
-        calculateTime: (specificGained) => specificGained * 1.7,
-};
-
-export const mangaActivityDefinition: ActivityMediaDefinition = {
-        inputStep: 1,
-        shortUnit: "ch.",
-        longUnit: "Chapters Read",
-        toStoredValue: identity,
-        toDisplayValue: identity,
-        calculateTime: (specificGained) => specificGained * 7,
-};
+import {ActivityMediaDefinition} from "@/lib/server/domain/media/shared/activity/activity-media-definition";
+import {tvActivityDefinition} from "@/lib/server/domain/media/tv/activity/tv-activity.definition";
+import {movieActivityDefinition} from "@/lib/server/domain/media/movies/activity/movie-activity.definition";
+import {gameActivityDefinition} from "@/lib/server/domain/media/games/activity/game-activity.definition";
+import {bookActivityDefinition} from "@/lib/server/domain/media/books/activity/book-activity.definition";
+import {mangaActivityDefinition} from "@/lib/server/domain/media/manga/activity/manga-activity.definition";
 
 
 const activityMediaConfig: Record<MediaType, ActivityMediaDefinition> = {
@@ -120,8 +72,3 @@ export const getDefaultActivityDate = (year: number, month: number) => {
 
     return shiftDateInputValue(`${year}-${zeroPad(month)}-01`, { days: -1, months: 1 });
 };
-
-
-function identity(value: number) {
-    return value;
-}

@@ -1,5 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
-import {MediaModuleRegistry} from "@/lib/server/core/container/media/media-module.registry";
+import {MediaModuleRegistry} from "@/lib/server/domain/media/media-module.registry";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {ImportJobProcessor, MediaMatcherSource} from "@/lib/server/domain/imports/import-job.processor";

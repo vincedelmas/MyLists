@@ -1,7 +1,7 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {UpdateUserMedia} from "@/lib/contracts/media/library";
-import {GamesFinalListInsert} from "@/lib/server/domain/imports/import-media.schemas";
+import {GamesFinalListInsert} from "@/lib/server/domain/media/games/imports/game-import.schemas";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {GameLibraryEntry, GameLibraryRepository} from "@/lib/server/domain/media/games/library/game-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";

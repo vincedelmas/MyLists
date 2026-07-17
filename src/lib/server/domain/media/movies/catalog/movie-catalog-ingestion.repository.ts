@@ -2,7 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {and, eq, inArray, sql} from "drizzle-orm";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {MovieCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MovieCatalogSnapshot} from "@/lib/server/domain/media/movies/catalog/movie-catalog-snapshot";
 import {catalogGenre, catalogItem, catalogItemGenre, movieActor, movieDetails,} from "@/lib/server/database/schema";
 
 

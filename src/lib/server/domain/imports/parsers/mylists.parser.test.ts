@@ -1,14 +1,11 @@
 import {describe, expect, it} from "vitest";
 import {createMyListsCsvParser} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
-import {
-    animeMyListsCSVRowSchema,
-    booksMyListsCSVRowSchema,
-    gamesMyListsCSVRowSchema,
-    mangaMyListsCSVRowSchema,
-    moviesMyListsCSVRowSchema,
-    seriesMyListsCSVRowSchema,
-} from "@/lib/server/domain/imports/import-media.schemas";
+import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/imports/tv-import.schemas";
+import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
+import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/imports/game-import.schemas";
+import {booksMyListsCSVRowSchema} from "@/lib/server/domain/media/books/imports/book-import.schemas";
+import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/imports/manga-import.schemas";
 
 import {COMMENT_MAX_LENGTH} from "@/lib/utils/constants";
 

@@ -3,7 +3,7 @@ import {zeroPad} from "@/lib/utils/number-formatting";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {LibraryAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {ActivityRepository} from "@/lib/server/domain/activity/activity.repository";
-import {MediaModuleRegistry} from "@/lib/server/core/container/media/media-module.registry";
+import {MediaModuleRegistry} from "@/lib/server/domain/media/media-module.registry";
 import {calendarDateRangeToISOString, compareDateInputs} from "@/lib/utils/date-formatting";
 import {AddActivity, MonthlyActivityFilters, MonthlyActivityStatsFilters, UpdateActivity} from "@/lib/schemas";
 import {ActivityEditor as ActivityEditorRow, ActivityMediaRef, MediaInfo, MonthlyActivityChartDatum, WrappedActivityResult} from "@/lib/types/activity.types";

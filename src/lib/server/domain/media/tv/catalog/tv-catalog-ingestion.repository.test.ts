@@ -4,7 +4,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {MediaType, Status} from "@/lib/utils/enums";
-import {TvCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {TvCatalogSnapshot} from "@/lib/server/domain/media/tv/catalog/tv-catalog-snapshot";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {TvMediaType} from "@/lib/types/media-kind.types";

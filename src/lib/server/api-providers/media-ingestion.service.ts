@@ -6,7 +6,7 @@ import {
     RefreshCandidateSource,
     RefreshPolicy
 } from "@/lib/server/api-providers/interfaces.types";
-import {CatalogIngestionCommands} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
 
 
 export function createMediaIngestionService<TDetails>(params: {

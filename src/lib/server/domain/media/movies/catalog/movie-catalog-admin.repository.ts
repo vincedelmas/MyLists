@@ -3,7 +3,7 @@ import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType} from "@/lib/utils/enums";
 import {catalogItem, movieDetails} from "@/lib/server/database/schema";
-import {hasDefinedCatalogFields} from "@/lib/server/domain/catalog/catalog-admin-fields";
+import {hasDefinedCatalogFields} from "@/lib/server/domain/media/shared/catalog/catalog-admin-fields";
 
 
 export type MovieCatalogEdit = Partial<{

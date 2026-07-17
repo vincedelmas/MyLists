@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {MangaCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MangaCatalogSnapshot} from "@/lib/server/domain/media/manga/catalog/manga-catalog-snapshot";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalJikanMangaMatcher} from "@/lib/server/domain/media/manga/imports/external-manga.matcher";

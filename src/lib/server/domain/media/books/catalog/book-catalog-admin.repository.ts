@@ -2,7 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {and, asc, eq, inArray, isNull, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {hasDefinedCatalogFields} from "@/lib/server/domain/catalog/catalog-admin-fields";
+import {hasDefinedCatalogFields} from "@/lib/server/domain/media/shared/catalog/catalog-admin-fields";
 import {bookAuthor, bookDetails, catalogGenre, catalogItem, catalogItemGenre,} from "@/lib/server/database/schema";
 
 

@@ -1,7 +1,15 @@
 import {z} from "zod";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
-import {supportsUpcomingNotifications} from "@/lib/server/domain/notifications/upcoming-notification-capability";
+import {MediaModule} from "@/lib/server/domain/media/media-module.registry";
+
+
+type UpcomingNotificationMediaModule = Extract<MediaModule, { notifications: { upcoming: unknown } }>;
+
+
+const supportsUpcomingNotifications = (mediaModule: MediaModule): mediaModule is UpcomingNotificationMediaModule => {
+    return "notifications" in mediaModule;
+}
 
 
 export const createMediaNotificationsTask = defineTask({

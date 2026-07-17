@@ -1,4 +1,5 @@
-import {CatalogIngestionCommands, TvCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
+import {TvCatalogSnapshot} from "@/lib/server/domain/media/tv/catalog/tv-catalog-snapshot";
 import {TvCatalogIngestionRepository} from "@/lib/server/domain/media/tv/catalog/tv-catalog-ingestion.repository";
 import {TvLibraryCommands} from "@/lib/server/domain/media/tv/library/tv-library.commands";
 import {TvLibraryRepository} from "@/lib/server/domain/media/tv/library/tv-library.repository";

@@ -1,7 +1,7 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {UpdateUserMedia} from "@/lib/contracts/media/library";
-import {BooksFinalListInsert} from "@/lib/server/domain/imports/import-media.schemas";
+import {BooksFinalListInsert} from "@/lib/server/domain/media/books/imports/book-import.schemas";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {BookLibraryEntry, BookLibraryRepository} from "@/lib/server/domain/media/books/library/book-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";

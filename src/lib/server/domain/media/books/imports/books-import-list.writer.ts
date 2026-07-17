@@ -1,7 +1,7 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {booksFinalListInsertSchema, BooksImportPayload, booksImportPayloadSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {booksFinalListInsertSchema, BooksImportPayload, booksImportPayloadSchema} from "@/lib/server/domain/media/books/imports/book-import.schemas";
 import {BookLibraryCommands} from "@/lib/server/domain/media/books/library/book-library.commands";
 import {BookCatalogIngestionRepository} from "@/lib/server/domain/media/books/catalog/book-catalog-ingestion.repository";
 

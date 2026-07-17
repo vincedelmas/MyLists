@@ -2,7 +2,7 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {MediaDetailsKindBoundary} from "@/lib/client/features/media-details/MediaDetailsKindBoundary";
+import {MediaDetailsKindBoundary} from "@/lib/client/components/features/media-details/MediaDetailsKindBoundary";
 import {authOptions, mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 
 

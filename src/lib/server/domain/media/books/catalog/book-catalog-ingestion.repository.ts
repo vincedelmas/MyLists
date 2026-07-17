@@ -1,7 +1,7 @@
 import {and, eq, inArray, sql} from "drizzle-orm";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {BookCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {BookCatalogSnapshot} from "@/lib/server/domain/media/books/catalog/book-catalog-snapshot";
 import {
     bookAuthor,
     bookDetails,

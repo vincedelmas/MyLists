@@ -1,7 +1,7 @@
 import {logger} from "@/lib/server/core/logger";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
-import {MangaCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MangaCatalogSnapshot} from "@/lib/server/domain/media/manga/catalog/manga-catalog-snapshot";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";

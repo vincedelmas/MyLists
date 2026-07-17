@@ -1,7 +1,7 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {mangaFinalListInsertSchema, MangaImportPayload, mangaImportPayloadSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {mangaFinalListInsertSchema, MangaImportPayload, mangaImportPayloadSchema} from "@/lib/server/domain/media/manga/imports/manga-import.schemas";
 import {MangaLibraryCommands} from "@/lib/server/domain/media/manga/library/manga-library.commands";
 import {MangaCatalogIngestionRepository} from "@/lib/server/domain/media/manga/catalog/manga-catalog-ingestion.repository";
 

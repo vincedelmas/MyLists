@@ -3,7 +3,7 @@ import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {catalogGenre, catalogItem, catalogItemGenre, mangaDetails,} from "@/lib/server/database/schema";
 import {MediaType} from "@/lib/utils/enums";
-import {hasDefinedCatalogFields} from "@/lib/server/domain/catalog/catalog-admin-fields";
+import {hasDefinedCatalogFields} from "@/lib/server/domain/media/shared/catalog/catalog-admin-fields";
 
 
 export type MangaCatalogEdit = Partial<{

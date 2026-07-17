@@ -1,7 +1,7 @@
 import {ImportItemStatus} from "@/lib/utils/enums";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {gamesFinalListInsertSchema, GamesImportPayload, gamesImportPayloadSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {gamesFinalListInsertSchema, GamesImportPayload, gamesImportPayloadSchema} from "@/lib/server/domain/media/games/imports/game-import.schemas";
 import {GameLibraryCommands} from "@/lib/server/domain/media/games/library/game-library.commands";
 
 

@@ -1,7 +1,7 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {UpdateUserMedia} from "@/lib/contracts/media/library";
-import {MangaFinalListInsert} from "@/lib/server/domain/imports/import-media.schemas";
+import {MangaFinalListInsert} from "@/lib/server/domain/media/manga/imports/manga-import.schemas";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {MangaLibraryEntry, MangaLibraryRepository} from "@/lib/server/domain/media/manga/library/manga-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";

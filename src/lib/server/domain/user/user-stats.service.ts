@@ -6,7 +6,7 @@ import {AchievementsQuery} from "@/lib/server/domain/achievements/achievements.q
 import {StatsSummaryRepository} from "@/lib/server/domain/stats/stats-summary.repository";
 import {StatsSummaryReadService} from "@/lib/server/domain/stats/stats-summary-read.service";
 import {ProfileChannelAccessRepository} from "@/lib/server/domain/access/profile-channel-access.repository";
-import {MediaModuleRegistry} from "@/lib/server/core/container/media/media-module.registry";
+import {MediaModuleRegistry} from "@/lib/server/domain/media/media-module.registry";
 
 
 export class UserStatsService {

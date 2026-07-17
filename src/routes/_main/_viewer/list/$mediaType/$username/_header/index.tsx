@@ -10,7 +10,7 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {AppliedFilters} from "@/lib/client/components/media/base/AppliedFilters";
 import {FiltersSideSheet} from "@/lib/client/components/media/base/FiltersSideSheet";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
-import {MediaListKindBoundary} from "@/lib/client/features/media-list/MediaListKindBoundary";
+import {MediaListKindBoundary} from "@/lib/client/components/features/media-list/MediaListKindBoundary";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/")({

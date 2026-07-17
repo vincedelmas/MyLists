@@ -6,7 +6,7 @@ import * as schema from "@/lib/server/database/schema";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
-import {MovieCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MovieCatalogSnapshot} from "@/lib/server/domain/media/movies/catalog/movie-catalog-snapshot";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));

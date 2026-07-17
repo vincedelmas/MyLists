@@ -4,7 +4,7 @@ import {capitalize} from "@/lib/utils/text-formatting";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options";
-import {CatalogEditKindBoundary} from "@/lib/client/features/catalog-edit/CatalogEditKindBoundary";
+import {CatalogEditKindBoundary} from "@/lib/client/components/features/catalog-edit/CatalogEditKindBoundary";
 
 
 export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$mediaId")({

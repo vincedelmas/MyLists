@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {MovieCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {MovieCatalogSnapshot} from "@/lib/server/domain/media/movies/catalog/movie-catalog-snapshot";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalTMDBMovieMatcher} from "@/lib/server/domain/media/movies/imports/external-movie.matcher";

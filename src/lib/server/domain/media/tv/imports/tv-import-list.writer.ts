@@ -1,7 +1,7 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {TvFinalListInsert, tvFinalListInsertSchema, TvImportPayload, tvImportPayloadSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {TvFinalListInsert, tvFinalListInsertSchema, TvImportPayload, tvImportPayloadSchema} from "@/lib/server/domain/media/tv/imports/tv-import.schemas";
 import {TvMediaType} from "@/lib/types/media-kind.types";
 import {TvLibraryCommands} from "@/lib/server/domain/media/tv/library/tv-library.commands";
 import {TvCatalogIngestionRepository} from "@/lib/server/domain/media/tv/catalog/tv-catalog-ingestion.repository";

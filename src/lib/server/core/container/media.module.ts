@@ -1,21 +1,21 @@
 import {MediaType} from "@/lib/utils/enums";
 import {ApiClientModule} from "@/lib/server/core/container/api-client.module";
-import {setupTvMediaModule} from "@/lib/server/core/container/media/tv-media.module";
-import {setupGameMediaModule} from "@/lib/server/core/container/media/game-media.module";
-import {setupBookMediaModule} from "@/lib/server/core/container/media/book-media.module";
-import {setupMovieMediaModule} from "@/lib/server/core/container/media/movie-media.module";
-import {setupMangaMediaModule} from "@/lib/server/core/container/media/manga-media.module";
-import {MediaModuleMap, MediaModuleRegistry} from "@/lib/server/core/container/media/media-module.registry";
+import {setupTvMediaModule} from "@/lib/server/domain/media/tv/tv-media.module";
+import {setupGameMediaModule} from "@/lib/server/domain/media/games/game-media.module";
+import {setupBookMediaModule} from "@/lib/server/domain/media/books/book-media.module";
+import {setupMovieMediaModule} from "@/lib/server/domain/media/movies/movie-media.module";
+import {setupMangaMediaModule} from "@/lib/server/domain/media/manga/manga-media.module";
+import {MediaModuleMap, MediaModuleRegistry} from "@/lib/server/domain/media/media-module.registry";
 
 
 export function setupMediaModule(apiClients: ApiClientModule) {
     const modules: MediaModuleMap = {
-        [MediaType.SERIES]: setupTvMediaModule(MediaType.SERIES, apiClients),
-        [MediaType.ANIME]: setupTvMediaModule(MediaType.ANIME, apiClients),
-        [MediaType.MOVIES]: setupMovieMediaModule(apiClients),
-        [MediaType.GAMES]: setupGameMediaModule(apiClients),
-        [MediaType.BOOKS]: setupBookMediaModule(apiClients),
-        [MediaType.MANGA]: setupMangaMediaModule(apiClients),
+        [MediaType.SERIES]: setupTvMediaModule(MediaType.SERIES, { tmdb: apiClients.tmdb, jikan: apiClients.jikan }),
+        [MediaType.ANIME]: setupTvMediaModule(MediaType.ANIME, { tmdb: apiClients.tmdb, jikan: apiClients.jikan }),
+        [MediaType.MOVIES]: setupMovieMediaModule(apiClients.tmdb),
+        [MediaType.GAMES]: setupGameMediaModule({ igdb: apiClients.igdb, hltb: apiClients.hltb }),
+        [MediaType.BOOKS]: setupBookMediaModule(apiClients.gBook),
+        [MediaType.MANGA]: setupMangaMediaModule(apiClients.jikan),
     };
     return new MediaModuleRegistry(modules);
 }

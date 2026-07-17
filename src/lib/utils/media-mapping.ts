@@ -1,4 +1,9 @@
 import {ApiProviderType, MediaType, Status} from "@/lib/utils/enums";
+import {tvStatuses} from "@/lib/server/domain/media/tv/tv-statuses";
+import {movieStatuses} from "@/lib/server/domain/media/movies/movie-statuses";
+import {gameStatuses} from "@/lib/server/domain/media/games/game-statuses";
+import {bookStatuses} from "@/lib/server/domain/media/books/book-statuses";
+import {mangaStatuses} from "@/lib/server/domain/media/manga/manga-statuses";
 
 
 export const mediaTypeToApiProvider = (mediaType: MediaType) => {
@@ -19,21 +24,17 @@ export const mediaTypeToApiProvider = (mediaType: MediaType) => {
 
 export const statusUtils = {
     getNoPlanTo: (): Status[] => [Status.PLAN_TO_WATCH, Status.PLAN_TO_PLAY, Status.PLAN_TO_READ],
-    byMediaType: (mediaType: MediaType) => {
-        switch (mediaType) {
-            case MediaType.SERIES:
-            case MediaType.ANIME:
-                return [Status.WATCHING, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLAN_TO_WATCH];
-            case MediaType.MOVIES:
-                return [Status.COMPLETED, Status.PLAN_TO_WATCH];
-            case MediaType.GAMES:
-                return [Status.PLAYING, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_PLAY];
-            case MediaType.BOOKS:
-                return [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ];
-            case MediaType.MANGA:
-                return [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ];
-        }
-    },
+    byMediaType: (mediaType: MediaType) => statusesByMediaType[mediaType],
+};
+
+
+const statusesByMediaType: Record<MediaType, Status[]> = {
+    [MediaType.SERIES]: tvStatuses,
+    [MediaType.ANIME]: tvStatuses,
+    [MediaType.MOVIES]: movieStatuses,
+    [MediaType.GAMES]: gameStatuses,
+    [MediaType.BOOKS]: bookStatuses,
+    [MediaType.MANGA]: mangaStatuses,
 };
 
 

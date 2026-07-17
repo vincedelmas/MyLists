@@ -2,7 +2,7 @@ import {getImageFilename} from "@/lib/utils/image-url";
 import {TvMediaType} from "@/lib/types/media-kind.types";
 import {and, eq, inArray, notInArray, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {TvCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {TvCatalogSnapshot} from "@/lib/server/domain/media/tv/catalog/tv-catalog-snapshot";
 import {catalogGenre, catalogItem, catalogItemGenre, tvActor, tvDetails, tvNetwork, tvSeason,} from "@/lib/server/database/schema";
 
 

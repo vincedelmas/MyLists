@@ -6,7 +6,7 @@ import * as schema from "@/lib/server/database/schema";
 import {MediaType} from "@/lib/utils/enums";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
-import {GameCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {GameCatalogSnapshot} from "@/lib/server/domain/media/games/catalog/game-catalog-snapshot";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));

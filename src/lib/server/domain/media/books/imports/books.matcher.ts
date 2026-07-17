@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {BookCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {BookCatalogSnapshot} from "@/lib/server/domain/media/books/catalog/book-catalog-snapshot";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalGoogleBooksMatcher} from "@/lib/server/domain/media/books/imports/external-books.matcher";

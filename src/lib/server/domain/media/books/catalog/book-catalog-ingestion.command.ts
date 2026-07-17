@@ -1,5 +1,6 @@
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {BookCatalogSnapshot, CatalogIngestionCommands} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
+import {BookCatalogSnapshot} from "@/lib/server/domain/media/books/catalog/book-catalog-snapshot";
 import {BookCatalogIngestionRepository} from "@/lib/server/domain/media/books/catalog/book-catalog-ingestion.repository";
 import {BookLibraryCommands} from "@/lib/server/domain/media/books/library/book-library.commands";
 import {BookLibraryRepository} from "@/lib/server/domain/media/books/library/book-library.repository";

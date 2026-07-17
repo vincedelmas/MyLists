@@ -1,7 +1,7 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {UpdateUserMedia} from "@/lib/contracts/media/library";
-import {TvFinalListInsert} from "@/lib/server/domain/imports/import-media.schemas";
+import {TvFinalListInsert} from "@/lib/server/domain/media/tv/imports/tv-import.schemas";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {TvLibraryEntry, TvLibraryRepository} from "@/lib/server/domain/media/tv/library/tv-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";

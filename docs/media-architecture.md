@@ -14,10 +14,11 @@ tables.
 The media domain is split by responsibility rather than by a generic base media
 service:
 
-- `domain/catalog` owns shared catalog identity and the concrete TV, movie, game,
-  book, and manga metadata capabilities.
-- `domain/library` owns a user's entries, progress rules, ratings, comments,
-  favorites, custom covers, tags, history, and activity.
+- `domain/media/<family>` is the vertical slice for a media family. It owns that
+  family's catalog, library, imports, provider normalization, achievements,
+  activity projection, module composition, and optional product capabilities.
+- `domain/media/shared` contains mechanisms reused by multiple families without
+  choosing media-specific policy.
 - `domain/collections` owns editorial collections independently from personal
   list channels.
 - `domain/imports` maps provider records and delegates writes to the same concrete
@@ -44,6 +45,10 @@ provider and ingestion pipeline, import matcher and schema, achievement policy,
 activity projection, and any optional product capabilities. Repositories remain
 private to the module composition unless an operational capability must be
 exposed.
+
+The family setup functions and registry live under `domain/media`. The core
+container remains the application composition root and supplies each family
+only the external API clients it requires.
 
 Common capabilities with the same contract, such as library history, may be
 dispatched directly through `registry.get(mediaType)`. Family-specific payloads,
@@ -83,6 +88,27 @@ Cross-media services and scheduled tasks orchestrate capabilities obtained from
 the registry; they do not inspect family tables or select a family repository.
 An exhaustive switch is still appropriate at a transport boundary when a
 discriminated request contains genuinely different family payloads.
+
+### Vertical layout
+
+Each family uses the same navigational vocabulary where applicable:
+
+```text
+domain/media/<family>/
+├── <family>-media.module.ts
+├── catalog/
+├── library/
+├── imports/
+├── external/
+├── achievements/
+├── activity/
+└── features/
+```
+
+Provider transformers emit the snapshot type owned by that family's catalog.
+CSV and list-import schemas are owned by the corresponding `imports` slice.
+The global import domain retains job orchestration, parsing, generic matching,
+and reusable validation primitives such as `import-list-validation.ts`.
 
 ## Canonical persistence
 

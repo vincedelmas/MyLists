@@ -1,5 +1,6 @@
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {CatalogIngestionCommands, MangaCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
+import {MangaCatalogSnapshot} from "@/lib/server/domain/media/manga/catalog/manga-catalog-snapshot";
 import {MangaCatalogIngestionRepository} from "@/lib/server/domain/media/manga/catalog/manga-catalog-ingestion.repository";
 import {MangaLibraryCommands} from "@/lib/server/domain/media/manga/library/manga-library.commands";
 import {MangaLibraryRepository} from "@/lib/server/domain/media/manga/library/manga-library.repository";

@@ -1,5 +1,6 @@
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {CatalogIngestionCommands, GameCatalogSnapshot} from "@/lib/server/domain/catalog/catalog-ingestion.types";
+import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
+import {GameCatalogSnapshot} from "@/lib/server/domain/media/games/catalog/game-catalog-snapshot";
 import {GameCatalogIngestionRepository} from "@/lib/server/domain/media/games/catalog/game-catalog-ingestion.repository";
 
 

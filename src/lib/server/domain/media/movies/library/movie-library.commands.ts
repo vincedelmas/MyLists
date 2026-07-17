@@ -4,7 +4,7 @@ import {withTransaction} from "@/lib/server/database/async-storage";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
-import {MovieFinalListInsert} from "@/lib/server/domain/imports/import-media.schemas";
+import {MovieFinalListInsert} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
 import {MovieLibraryEntry, MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";
 import {
     changeMovieStatus,

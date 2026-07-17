@@ -3,6 +3,11 @@ import {isValidActivityDate} from "@/lib/utils/activity-utils";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 import {COMMENT_MAX_LENGTH, MIN_ACTIVITY_DATE, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
+import {tvStatuses} from "@/lib/server/domain/media/tv/tv-statuses";
+import {movieStatuses} from "@/lib/server/domain/media/movies/movie-statuses";
+import {gameStatuses} from "@/lib/server/domain/media/games/game-statuses";
+import {bookStatuses} from "@/lib/server/domain/media/books/book-statuses";
+import {mangaStatuses} from "@/lib/server/domain/media/manga/manga-statuses";
 
 
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
@@ -24,12 +29,12 @@ export const loggedActivityUpdateTypes = new Set<UpdateType>([
 ]);
 
 const allowedStatuses: Record<MediaType, readonly Status[]> = {
-    [MediaType.SERIES]: [Status.WATCHING, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLAN_TO_WATCH],
-    [MediaType.ANIME]: [Status.WATCHING, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLAN_TO_WATCH],
-    [MediaType.MOVIES]: [Status.COMPLETED, Status.PLAN_TO_WATCH],
-    [MediaType.GAMES]: [Status.PLAYING, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_PLAY],
-    [MediaType.BOOKS]: [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ],
-    [MediaType.MANGA]: [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ],
+    [MediaType.SERIES]: tvStatuses,
+    [MediaType.ANIME]: tvStatuses,
+    [MediaType.MOVIES]: movieStatuses,
+    [MediaType.GAMES]: gameStatuses,
+    [MediaType.BOOKS]: bookStatuses,
+    [MediaType.MANGA]: mangaStatuses,
 };
 
 const validateStatusForMediaType = (mediaType: MediaType, status: Status, ctx: z.RefinementCtx, path: (string | number)[]) => {

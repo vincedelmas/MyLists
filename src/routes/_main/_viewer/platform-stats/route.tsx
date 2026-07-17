@@ -4,7 +4,7 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {DashboardContent} from "@/lib/client/media-stats/DashboardContent";
+import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
 import {platformStatsOptions} from "@/lib/client/react-query/query-options";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 

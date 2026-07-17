@@ -1,7 +1,7 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {moviesFinalListInsertSchema, MoviesImportPayload, moviesImportPayloadSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {moviesFinalListInsertSchema, MoviesImportPayload, moviesImportPayloadSchema} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
 import {MovieLibraryCommands} from "@/lib/server/domain/media/movies/library/movie-library.commands";
 
 

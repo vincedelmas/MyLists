@@ -17,8 +17,8 @@ import {createMoviesIngestionService, createTmdbMoviesProvider} from "@/lib/serv
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {MovieCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/movies/catalog/movie-catalog-refresh-candidates.query";
 import {MovieLibraryCsvExportQuery} from "@/lib/server/domain/media/movies/library/movie-library-csv-export.query";
-import {MovieStatsContributionQuery} from "@/lib/server/domain/media/movies/library/movie-stats-contribution.query";
-import {LibraryStatsRebuildCommand} from "@/lib/server/domain/media/shared/library/library-stats-rebuild.command";
+import {getMovieStatsContributions} from "@/lib/server/domain/media/movies/library/movie-stats-contributions";
+import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
@@ -47,7 +47,6 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.MOVIES);
     const refreshCandidates = new MovieCatalogRefreshCandidatesQuery();
     const statsRead = new MovieStatsReadRepository();
-    const statsRebuild = new LibraryStatsRebuildCommand(MediaType.MOVIES, new MovieStatsContributionQuery());
     const csvExport = new MovieLibraryCsvExportQuery();
     const tags = new LibraryTagsQuery(MediaType.MOVIES);
     const upcomingNotifications = new MovieUpcomingNotificationCommand(list, NotificationsRepository);
@@ -103,7 +102,7 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
             },
             stats: {
                 read: statsRead,
-                rebuild: () => statsRebuild.rebuild(),
+                rebuild: createLibraryStatsRebuild({ kind: MediaType.MOVIES, getContributions: getMovieStatsContributions }),
             },
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),

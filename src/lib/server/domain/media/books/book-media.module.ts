@@ -16,8 +16,8 @@ import {createBooksIngestionService, createGBooksBooksProvider} from "@/lib/serv
 import {createBooksMatcher} from "@/lib/server/domain/media/books/imports/books.matcher";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {BookLibraryCsvExportQuery} from "@/lib/server/domain/media/books/library/book-library-csv-export.query";
-import {BookStatsContributionQuery} from "@/lib/server/domain/media/books/library/book-stats-contribution.query";
-import {LibraryStatsRebuildCommand} from "@/lib/server/domain/media/shared/library/library-stats-rebuild.command";
+import {getBookStatsContributions} from "@/lib/server/domain/media/books/library/book-stats-contributions";
+import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
@@ -42,7 +42,6 @@ export const setupBookMediaModule = (
     const ingestion = createBooksIngestionService(catalogCommands, external);
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.BOOKS);
     const statsRead = new BookStatsReadRepository();
-    const statsRebuild = new LibraryStatsRebuildCommand(MediaType.BOOKS, new BookStatsContributionQuery());
     const csvExport = new BookLibraryCsvExportQuery();
     const tags = new LibraryTagsQuery(MediaType.BOOKS);
 
@@ -70,7 +69,7 @@ export const setupBookMediaModule = (
             },
             stats: {
                 read: statsRead,
-                rebuild: () => statsRebuild.rebuild(),
+                rebuild: createLibraryStatsRebuild({ kind: MediaType.BOOKS, getContributions: getBookStatsContributions }),
             },
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),

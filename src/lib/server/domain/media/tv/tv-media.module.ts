@@ -19,8 +19,8 @@ import {CatalogCoverStorage} from "@/lib/server/domain/media/shared/catalog/cata
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {TvCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/tv/catalog/tv-catalog-refresh-candidates.query";
 import {TvLibraryCsvExportQuery} from "@/lib/server/domain/media/tv/library/tv-library-csv-export.query";
-import {TvStatsContributionQuery} from "@/lib/server/domain/media/tv/library/tv-stats-contribution.query";
-import {LibraryStatsRebuildCommand} from "@/lib/server/domain/media/shared/library/library-stats-rebuild.command";
+import {getTvStatsContributions} from "@/lib/server/domain/media/tv/library/tv-stats-contributions";
+import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
@@ -57,7 +57,6 @@ export const setupTvMediaModule = <K extends TvMediaType>(
     const refreshIdentity = new CatalogRefreshIdentityQuery(kind);
     const refreshCandidates = new TvCatalogRefreshCandidatesQuery(kind);
     const statsRead = new TvStatsReadRepository(kind);
-    const statsRebuild = new LibraryStatsRebuildCommand(kind, new TvStatsContributionQuery(kind));
     const csvExport = new TvLibraryCsvExportQuery(kind);
     const tags = new LibraryTagsQuery(kind);
     const upcomingNotifications = new TvUpcomingNotificationCommand(kind, list, NotificationsRepository);
@@ -122,7 +121,10 @@ export const setupTvMediaModule = <K extends TvMediaType>(
             },
             stats: {
                 read: statsRead,
-                rebuild: () => statsRebuild.rebuild(),
+                rebuild: createLibraryStatsRebuild({
+                    kind,
+                    getContributions: () => getTvStatsContributions(kind),
+                }),
             },
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),

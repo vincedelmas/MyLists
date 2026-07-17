@@ -16,8 +16,8 @@ import {createMangaMatcher} from "@/lib/server/domain/media/manga/imports/manga.
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {MangaCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/manga/catalog/manga-catalog-refresh-candidates.query";
 import {MangaLibraryCsvExportQuery} from "@/lib/server/domain/media/manga/library/manga-library-csv-export.query";
-import {MangaStatsContributionQuery} from "@/lib/server/domain/media/manga/library/manga-stats-contribution.query";
-import {LibraryStatsRebuildCommand} from "@/lib/server/domain/media/shared/library/library-stats-rebuild.command";
+import {getMangaStatsContributions} from "@/lib/server/domain/media/manga/library/manga-stats-contributions";
+import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
@@ -43,7 +43,6 @@ export const setupMangaMediaModule = (
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.MANGA);
     const refreshCandidates = new MangaCatalogRefreshCandidatesQuery();
     const statsRead = new MangaStatsReadRepository();
-    const statsRebuild = new LibraryStatsRebuildCommand(MediaType.MANGA, new MangaStatsContributionQuery());
     const csvExport = new MangaLibraryCsvExportQuery();
     const tags = new LibraryTagsQuery(MediaType.MANGA);
     const ingestion = createMangaIngestionService(catalogCommands, external, {
@@ -74,7 +73,7 @@ export const setupMangaMediaModule = (
             },
             stats: {
                 read: statsRead,
-                rebuild: () => statsRebuild.rebuild(),
+                rebuild: createLibraryStatsRebuild({ kind: MediaType.MANGA, getContributions: getMangaStatsContributions }),
             },
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),

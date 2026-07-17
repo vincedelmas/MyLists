@@ -17,8 +17,8 @@ import {GameLibraryRepository} from "@/lib/server/domain/media/games/library/gam
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {GameCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/games/catalog/game-catalog-refresh-candidates.query";
 import {GameLibraryCsvExportQuery} from "@/lib/server/domain/media/games/library/game-library-csv-export.query";
-import {GameStatsContributionQuery} from "@/lib/server/domain/media/games/library/game-stats-contribution.query";
-import {LibraryStatsRebuildCommand} from "@/lib/server/domain/media/shared/library/library-stats-rebuild.command";
+import {getGameStatsContributions} from "@/lib/server/domain/media/games/library/game-stats-contributions";
+import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
@@ -42,7 +42,6 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.GAMES);
     const refreshCandidates = new GameCatalogRefreshCandidatesQuery();
     const statsRead = new GameStatsReadRepository();
-    const statsRebuild = new LibraryStatsRebuildCommand(MediaType.GAMES, new GameStatsContributionQuery());
     const csvExport = new GameLibraryCsvExportQuery();
     const tags = new LibraryTagsQuery(MediaType.GAMES);
 
@@ -93,7 +92,7 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
             },
             stats: {
                 read: statsRead,
-                rebuild: () => statsRebuild.rebuild(),
+                rebuild: createLibraryStatsRebuild({ kind: MediaType.GAMES, getContributions: getGameStatsContributions }),
             },
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),

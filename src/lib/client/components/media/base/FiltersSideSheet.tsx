@@ -1,23 +1,23 @@
 import React, {useRef, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {ChevronDown, ChevronUp, CircleHelp, LoaderCircle, X} from "lucide-react";
 import type {MediaListArgs} from "@/lib/schemas";
-import type {MediaListFiltersResult} from "@/lib/contracts/media/lists";
-import {GamesPlatformsEnum, JobType, MediaType} from "@/lib/utils/enums";
-import {formatLocaleName} from "@/lib/utils/text-formatting";
+import {assertNever} from "@/lib/utils/assert-never";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
+import {formatLocaleName} from "@/lib/utils/text-formatting";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import type {MediaListFiltersResult} from "@/lib/contracts/media/lists";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
+import {GamesPlatformsEnum, JobType, MediaType} from "@/lib/utils/enums";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
+import {ChevronDown, ChevronUp, CircleHelp, LoaderCircle, X} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {filterSearchOptions, listFiltersOptions} from "@/lib/client/react-query/query-options";
 import {Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle} from "@/lib/client/components/ui/sheet";
-import {assertNever} from "@/lib/utils/assert-never";
 
 
 interface FiltersSideSheetProps {
@@ -107,38 +107,46 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
                         <fieldset disabled={isPending} className="space-y-6">
                             {error ?
                                 <div className="flex items-center justify-center h-[70vh]">
-                                    <EmptyState icon={X} message={error.message} className="text-destructive"/>
+                                    <EmptyState
+                                        icon={X}
+                                        message={error.message}
+                                        className="text-destructive"
+                                    />
                                 </div>
-                                : isPending ?
+                                :
+                                isPending ?
                                     <div className="flex items-center justify-center h-[70vh]">
-                                        <LoaderCircle className="size-10 animate-spin"/>
+                                        <LoaderCircle
+                                            className="size-10 animate-spin"
+                                        />
                                     </div>
-                                    : listFilters &&
-                                        <div className="pl-4 space-y-6">
-                                            <CheckboxGroup
-                                                title="Genres"
-                                                items={listFilters.genres}
-                                                onChange={(value) => handleRegisterChange({ key: "genres", value })}
-                                                defaultChecked={(value) => filters.genres?.includes(value) ?? false}
-                                            />
-                                            <FamilyFilters
-                                                data={listFilters}
-                                                filters={filters}
-                                                username={username}
-                                                onChange={handleRegisterChange}
-                                            />
-                                            <MiscellaneousFilters
-                                                filters={filters}
-                                                isCurrent={isCurrent}
-                                                onChange={handleBooleanChange}
-                                            />
-                                            <CheckboxGroup
-                                                title="Tags"
-                                                items={listFilters.tags}
-                                                onChange={(value) => handleRegisterChange({ key: "tags", value })}
-                                                defaultChecked={(value) => filters.tags?.includes(value) ?? false}
-                                            />
-                                        </div>
+                                    :
+                                    listFilters &&
+                                    <div className="pl-4 space-y-6">
+                                        <CheckboxGroup
+                                            title="Genres"
+                                            items={listFilters.genres}
+                                            onChange={(value) => handleRegisterChange({ key: "genres", value })}
+                                            defaultChecked={(value) => filters.genres?.includes(value) ?? false}
+                                        />
+                                        <FiltersByKind
+                                            data={listFilters}
+                                            filters={filters}
+                                            username={username}
+                                            onChange={handleRegisterChange}
+                                        />
+                                        <MiscellaneousFilters
+                                            filters={filters}
+                                            isCurrent={isCurrent}
+                                            onChange={handleBooleanChange}
+                                        />
+                                        <CheckboxGroup
+                                            title="Tags"
+                                            items={listFilters.tags}
+                                            onChange={(value) => handleRegisterChange({ key: "tags", value })}
+                                            defaultChecked={(value) => filters.tags?.includes(value) ?? false}
+                                        />
+                                    </div>
                             }
                         </fieldset>
                     </form>
@@ -154,38 +162,57 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
 };
 
 
-const togglePendingValue = <T extends string>(values: T[] | undefined, value: T): T[] | undefined => {
+const togglePendingValue = <T extends string>(values: T[] | undefined, value: T) => {
     if (!values) return [value];
+
     const next = values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
     return next.length > 0 ? next : undefined;
 };
 
 
-interface FamilyFiltersProps {
-    data: MediaListFiltersResult;
-    filters: MediaListArgs;
+interface FiltersByKindProps {
     username: string;
+    filters: MediaListArgs;
+    data: MediaListFiltersResult;
     onChange: (change: SupplementalFilterChange) => void;
 }
 
 
-const FamilyFilters = ({ data, filters, username, onChange }: FamilyFiltersProps) => {
+const FiltersByKind = ({ data, filters, username, onChange }: FiltersByKindProps) => {
     switch (data.kind) {
         case MediaType.SERIES:
         case MediaType.ANIME:
             return (
                 <>
-                    <SearchFilter title="Actors" job={JobType.ACTOR} username={username} mediaType={data.kind}
-                        dataList={filters.actors ?? []} onToggle={(value) => onChange({ key: "actors", value })}/>
-                    <SearchFilter title="Creators" job={JobType.CREATOR} username={username} mediaType={data.kind}
-                        dataList={filters.creators ?? []} onToggle={(value) => onChange({ key: "creators", value })}/>
-                    <SearchFilter title="Networks" job={JobType.PLATFORM} username={username} mediaType={data.kind}
-                        dataList={filters.networks ?? []} onToggle={(value) => onChange({ key: "networks", value })}/>
+                    <SearchFilter
+                        title="Actors"
+                        job={JobType.ACTOR}
+                        username={username}
+                        mediaType={data.kind}
+                        dataList={filters.actors ?? []}
+                        onToggle={(value) => onChange({ key: "actors", value })}
+                    />
+                    <SearchFilter
+                        title="Creators"
+                        username={username}
+                        job={JobType.CREATOR}
+                        mediaType={data.kind}
+                        dataList={filters.creators ?? []}
+                        onToggle={(value) => onChange({ key: "creators", value })}
+                    />
+                    <SearchFilter
+                        title="Networks"
+                        username={username}
+                        mediaType={data.kind}
+                        job={JobType.PLATFORM}
+                        dataList={filters.networks ?? []}
+                        onToggle={(value) => onChange({ key: "networks", value })}
+                    />
                     <CheckboxGroup
                         title="Countries"
                         items={data.langs}
-                        render={(name) => formatLocaleName(name, "region")}
                         onChange={(value) => onChange({ key: "langs", value })}
+                        render={(name) => formatLocaleName(name, "region")}
                         defaultChecked={(value) => filters.langs?.includes(value) ?? false}
                     />
                 </>
@@ -193,15 +220,27 @@ const FamilyFilters = ({ data, filters, username, onChange }: FamilyFiltersProps
         case MediaType.MOVIES:
             return (
                 <>
-                    <SearchFilter title="Actors" job={JobType.ACTOR} username={username} mediaType={MediaType.MOVIES}
-                        dataList={filters.actors ?? []} onToggle={(value) => onChange({ key: "actors", value })}/>
-                    <SearchFilter title="Directors" job={JobType.CREATOR} username={username} mediaType={MediaType.MOVIES}
-                        dataList={filters.directors ?? []} onToggle={(value) => onChange({ key: "directors", value })}/>
+                    <SearchFilter
+                        title="Actors"
+                        job={JobType.ACTOR}
+                        username={username}
+                        mediaType={MediaType.MOVIES}
+                        dataList={filters.actors ?? []}
+                        onToggle={(value) => onChange({ key: "actors", value })}
+                    />
+                    <SearchFilter
+                        title="Directors"
+                        username={username}
+                        job={JobType.CREATOR}
+                        mediaType={MediaType.MOVIES}
+                        dataList={filters.directors ?? []}
+                        onToggle={(value) => onChange({ key: "directors", value })}
+                    />
                     <CheckboxGroup
                         title="Languages"
                         items={data.langs}
-                        render={(name) => formatLocaleName(name, "language")}
                         onChange={(value) => onChange({ key: "langs", value })}
+                        render={(name) => formatLocaleName(name, "language")}
                         defaultChecked={(value) => filters.langs?.includes(value) ?? false}
                     />
                 </>
@@ -209,8 +248,14 @@ const FamilyFilters = ({ data, filters, username, onChange }: FamilyFiltersProps
         case MediaType.GAMES:
             return (
                 <>
-                    <SearchFilter title="Companies" job={JobType.CREATOR} username={username} mediaType={MediaType.GAMES}
-                        dataList={filters.companies ?? []} onToggle={(value) => onChange({ key: "companies", value })}/>
+                    <SearchFilter
+                        title="Companies"
+                        username={username}
+                        job={JobType.CREATOR}
+                        mediaType={MediaType.GAMES}
+                        dataList={filters.companies ?? []}
+                        onToggle={(value) => onChange({ key: "companies", value })}
+                    />
                     <CheckboxGroup
                         title="Platforms"
                         items={data.platforms}
@@ -222,13 +267,19 @@ const FamilyFilters = ({ data, filters, username, onChange }: FamilyFiltersProps
         case MediaType.BOOKS:
             return (
                 <>
-                    <SearchFilter title="Authors" job={JobType.CREATOR} username={username} mediaType={MediaType.BOOKS}
-                        dataList={filters.authors ?? []} onToggle={(value) => onChange({ key: "authors", value })}/>
+                    <SearchFilter
+                        title="Authors"
+                        username={username}
+                        job={JobType.CREATOR}
+                        mediaType={MediaType.BOOKS}
+                        dataList={filters.authors ?? []}
+                        onToggle={(value) => onChange({ key: "authors", value })}
+                    />
                     <CheckboxGroup
                         title="Languages"
                         items={data.langs}
-                        render={(name) => formatLocaleName(name, "language")}
                         onChange={(value) => onChange({ key: "langs", value })}
+                        render={(name) => formatLocaleName(name, "language")}
                         defaultChecked={(value) => filters.langs?.includes(value) ?? false}
                     />
                 </>
@@ -236,10 +287,22 @@ const FamilyFilters = ({ data, filters, username, onChange }: FamilyFiltersProps
         case MediaType.MANGA:
             return (
                 <>
-                    <SearchFilter title="Authors" job={JobType.CREATOR} username={username} mediaType={MediaType.MANGA}
-                        dataList={filters.authors ?? []} onToggle={(value) => onChange({ key: "authors", value })}/>
-                    <SearchFilter title="Publishers" job={JobType.PUBLISHER} username={username} mediaType={MediaType.MANGA}
-                        dataList={filters.publishers ?? []} onToggle={(value) => onChange({ key: "publishers", value })}/>
+                    <SearchFilter
+                        title="Authors"
+                        username={username}
+                        job={JobType.CREATOR}
+                        mediaType={MediaType.MANGA}
+                        dataList={filters.authors ?? []}
+                        onToggle={(value) => onChange({ key: "authors", value })}
+                    />
+                    <SearchFilter
+                        title="Publishers"
+                        username={username}
+                        job={JobType.PUBLISHER}
+                        mediaType={MediaType.MANGA}
+                        dataList={filters.publishers ?? []}
+                        onToggle={(value) => onChange({ key: "publishers", value })}
+                    />
                 </>
             );
         default:
@@ -249,8 +312,8 @@ const FamilyFilters = ({ data, filters, username, onChange }: FamilyFiltersProps
 
 
 interface MiscellaneousFiltersProps {
-    filters: MediaListArgs;
     isCurrent: boolean;
+    filters: MediaListArgs;
     onChange: (key: "favorite" | "comment" | "hideCommon", value: boolean) => void;
 }
 
@@ -259,13 +322,25 @@ const MiscellaneousFilters = ({ filters, isCurrent, onChange }: MiscellaneousFil
     <div className="space-y-2">
         <h3 className="font-medium">Miscellaneous</h3>
         <div className="grid grid-cols-2 gap-2">
-            <FilterCheckbox id="favoriteCheck" label="Favorites" checked={filters.favorite}
-                onChange={(checked) => onChange("favorite", checked)}/>
-            <FilterCheckbox id="commentCheck" label="Comments" checked={filters.comment}
-                onChange={(checked) => onChange("comment", checked)}/>
+            <FilterCheckbox
+                label="Favorites"
+                id="favoriteCheck"
+                checked={filters.favorite}
+                onChange={(checked) => onChange("favorite", checked)}
+            />
+            <FilterCheckbox
+                label="Comments"
+                id="commentCheck"
+                checked={filters.comment}
+                onChange={(checked) => onChange("comment", checked)}
+            />
             {!isCurrent &&
-                <FilterCheckbox id="commonCheck" label="Hide Common" checked={filters.hideCommon}
-                    onChange={(checked) => onChange("hideCommon", checked)}/>
+                <FilterCheckbox
+                    id="commonCheck"
+                    label="Hide Common"
+                    checked={filters.hideCommon}
+                    onChange={(checked) => onChange("hideCommon", checked)}
+                />
             }
         </div>
     </div>
@@ -282,22 +357,28 @@ interface FilterCheckboxProps {
 
 const FilterCheckbox = ({ id, label, checked, onChange }: FilterCheckboxProps) => (
     <div className="flex items-center space-x-2">
-        <Checkbox id={id} defaultChecked={checked} onCheckedChange={(value) => onChange(!!value)}/>
-        <label htmlFor={id} className="text-sm cursor-pointer">{label}</label>
+        <Checkbox
+            id={id}
+            defaultChecked={checked}
+            onCheckedChange={(value) => onChange(!!value)}
+        />
+        <label htmlFor={id} className="text-sm cursor-pointer">
+            {label}
+        </label>
     </div>
 );
 
 
 interface CheckboxGroupProps<T extends string> {
     title: string;
-    render?: (name: T) => string;
     items: { name: T }[];
+    render?: (name: T) => string;
     onChange: (value: T) => void;
     defaultChecked: (value: T) => boolean;
 }
 
 
-const CheckboxGroup = <T extends string,>({ title, items, onChange, defaultChecked, render }: CheckboxGroupProps<T>) => {
+const CheckboxGroup = <T extends string, >({ title, items, onChange, defaultChecked, render }: CheckboxGroupProps<T>) => {
     const initVisibleItems = 14;
     const [showAll, setShowAll] = useState(false);
     const visibleItems = showAll ? items : items.slice(0, initVisibleItems);
@@ -307,7 +388,9 @@ const CheckboxGroup = <T extends string,>({ title, items, onChange, defaultCheck
             <h3 className="font-medium">{title}</h3>
             <div className="grid grid-cols-2 gap-2">
                 {visibleItems.length === 0 ?
-                    <div className="text-muted-foreground text-sm">Nothing to display.</div>
+                    <div className="text-muted-foreground text-sm">
+                        Nothing to display.
+                    </div>
                     : visibleItems.map((item) =>
                         <div key={item.name} className="flex items-center space-x-2">
                             <Checkbox
@@ -323,7 +406,13 @@ const CheckboxGroup = <T extends string,>({ title, items, onChange, defaultCheck
                 }
             </div>
             {items.length > initVisibleItems &&
-                <Button type="button" variant="outline" size="xs" onClick={() => setShowAll((value) => !value)} className="mt-1">
+                <Button
+                    size="xs"
+                    type="button"
+                    className="mt-1"
+                    variant="outline"
+                    onClick={() => setShowAll((value) => !value)}
+                >
                     {showAll
                         ? <>Less <ChevronUp className="size-3.5"/></>
                         : <>More <ChevronDown className="size-3.5"/></>
@@ -427,8 +516,13 @@ const SearchFilter = ({ mediaType, username, job, title, dataList, onToggle }: S
                 {selectedData.map((item) =>
                     <Badge key={item} className="mt-2 bg-neutral-800 h-8 px-4 text-sm gap-2" variant="outline">
                         {item}
-                        <Button type="button" size="iconBare" variant="invisible" className="hover:opacity-80 -mr-1"
-                            onClick={() => handleRemoveData(item)}>
+                        <Button
+                            type="button"
+                            size="iconBare"
+                            variant="invisible"
+                            className="hover:opacity-80 -mr-1"
+                            onClick={() => handleRemoveData(item)}
+                        >
                             <X className="h-4 w-4"/>
                         </Button>
                     </Badge>

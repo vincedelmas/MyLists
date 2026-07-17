@@ -1,13 +1,7 @@
 import * as z from "zod";
-import {GamesPlatformsEnum, JobType, Status} from "@/lib/utils/enums";
 import {mediaListRequestSchema} from "@/lib/contracts/media/lists";
-import {
-    mediaTypeFieldSchema,
-    optionalCoercedBooleanFieldSchema,
-    optionalSearchFieldSchema,
-    paginationSchema,
-    sortingFieldSchema,
-} from "@/lib/schemas/common.schema";
+import {GamesPlatformsEnum, JobType, Status} from "@/lib/utils/enums";
+import {mediaTypeFieldSchema, optionalCoercedBooleanFieldSchema, optionalSearchFieldSchema, paginationSchema, sortingFieldSchema} from "@/lib/schemas/common.schema";
 
 
 export type MediaListArgs = z.infer<typeof mediaListArgsSchema>;

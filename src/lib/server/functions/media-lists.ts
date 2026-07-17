@@ -105,6 +105,7 @@ export const getMediaListFilters = createServerFn({ method: "GET" })
     .validator(mediaListFiltersSchema)
     .handler(async ({ data: { mediaType }, context: { mediaListAccessScope } }) => {
         const container = await getContainer();
+
         if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
             return validateMediaListFiltersResult(await container.media.lists.tv[mediaType].getListFilters(mediaListAccessScope));
         }
@@ -120,6 +121,7 @@ export const getMediaListFilters = createServerFn({ method: "GET" })
         if (mediaType === MediaType.MANGA) {
             return validateMediaListFiltersResult(await container.media.lists.manga.getListFilters(mediaListAccessScope));
         }
+
         throw new Error(`Unsupported media type: ${mediaType}`);
     });
 

@@ -2,8 +2,7 @@ import {eq, sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {bookProgress, catalogItem, libraryEntry} from "@/lib/server/database/schema";
-import {GetLibraryStatsContributions} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
-import {libraryStatsContributionBase} from "@/lib/server/domain/media/shared/library/library-stats-contribution.shared";
+import {GetLibraryStatsContributions, libraryStatsContributionBase} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 
 
 export const getBookStatsContributions = (() => {

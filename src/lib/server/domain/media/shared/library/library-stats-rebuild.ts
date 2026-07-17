@@ -1,7 +1,7 @@
 import {eq, sql} from "drizzle-orm";
 import {MediaType, Status} from "@/lib/utils/enums";
-import {libraryStats} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {libraryEntry, libraryStats} from "@/lib/server/database/schema";
 
 
 export type GetLibraryStatsContributions = (...args: any) => Promise<LibraryStatsContribution[]>;
@@ -85,6 +85,13 @@ export const aggregateLibraryStats = (rows: LibraryStatsContribution[]): Library
     });
 };
 
+export const libraryStatsContributionBase = {
+    userId: libraryEntry.userId,
+    status: libraryEntry.status,
+    rating: libraryEntry.rating,
+    comment: libraryEntry.comment,
+    favorite: libraryEntry.favorite,
+};
 
 const replaceLibraryStats = async (kind: MediaType, aggregates: LibraryStatsAggregate[]) => {
     await getDbClient()

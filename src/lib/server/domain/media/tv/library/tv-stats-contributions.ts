@@ -2,8 +2,7 @@ import {eq, sql} from "drizzle-orm";
 import {TvMediaType} from "@/lib/types/media-kind.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {catalogItem, libraryEntry, tvDetails, tvProgress} from "@/lib/server/database/schema";
-import {GetLibraryStatsContributions} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
-import {libraryStatsContributionBase} from "@/lib/server/domain/media/shared/library/library-stats-contribution.shared";
+import {GetLibraryStatsContributions, libraryStatsContributionBase} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 
 
 export const getTvStatsContributions = ((kind: TvMediaType) => {

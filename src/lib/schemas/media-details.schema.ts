@@ -1,12 +1,10 @@
 import * as z from "zod";
 import {JobType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas/common.schema";
+import {catalogEditRequestSchema} from "@/lib/contracts/media/catalog-edit";
 
 
 export type UpdateBookCoverInput = z.input<typeof updateBookCoverSchema>;
-export type EditMediaDetailsPayload = z.infer<typeof editMediaDetailsPayloadSchema>;
-
-
 export const mediaDetailsSchema = mediaTypeMediaIdSchema;
 
 export const mediaCommunityActivitySchema = mediaDetailsSchema.extend({
@@ -22,12 +20,7 @@ export const refreshMediaDetailsSchema = mediaTypeMediaIdSchema;
 
 export const mediaDetailsToEditSchema = mediaTypeMediaIdSchema;
 
-export const editMediaDetailsPayloadSchema = z.record(z.string(), z.any());
-
-export const editMediaDetailsSchema = mediaTypeMediaIdSchema.extend({
-    payload: editMediaDetailsPayloadSchema,
-});
-
+export const editMediaDetailsSchema = catalogEditRequestSchema;
 export const updateBookCoverSchema = z.object({
     imageUrl: z.url().trim().optional(),
     mediaId: coercedPositiveIntFieldSchema,

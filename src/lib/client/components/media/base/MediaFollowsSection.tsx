@@ -1,18 +1,16 @@
 import {Activity} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
 import {Card} from "@/lib/client/components/ui/card";
 import {MediaFollowsDetails} from "@/lib/types/query.options.types";
 import {MediaFollowCard} from "@/lib/client/components/media/base/MediaFollowCard";
 
 
 interface MediaFollowsSectionProps {
-    mediaType: MediaType;
     isAnonymous?: boolean;
     followsData: MediaFollowsDetails;
 }
 
 
-export function MediaFollowsSection({ followsData, mediaType, isAnonymous }: MediaFollowsSectionProps) {
+export function MediaFollowsSection({ followsData, isAnonymous }: MediaFollowsSectionProps) {
     return (
         <Card className="bg-popover p-0 h-fit min-w-0">
             <div className="p-4 border-b">
@@ -27,7 +25,6 @@ export function MediaFollowsSection({ followsData, mediaType, isAnonymous }: Med
                         <MediaFollowCard
                             key={follow.name}
                             followData={follow}
-                            mediaType={mediaType}
                         />
                     )
                     :

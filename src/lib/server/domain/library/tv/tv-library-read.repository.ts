@@ -5,8 +5,9 @@ import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {TvMediaType} from "@/lib/types/media-kind.types";
+import {TvCommunityActivityPage} from "@/lib/contracts/media/community";
 import {TvLibraryEntry, TvLibraryRepository} from "@/lib/server/domain/library/tv/tv-library.repository";
-import {consumedEpisodeCount, toLegacyRedo2, totalTvRewatchCount} from "@/lib/server/domain/library/tv/tv-progress";
+import {consumedEpisodeCount, totalTvRewatchCount} from "@/lib/server/domain/library/tv/tv-progress";
 import {
     followers,
     catalogItem,
@@ -20,10 +21,10 @@ import {
 
 
 /** Projects the TV library into the detail-page contract. */
-export class TvLibraryReadRepository {
+export class TvLibraryReadRepository<K extends TvMediaType = TvMediaType> {
     private readonly library = new TvLibraryRepository();
 
-    constructor(private readonly kind: TvMediaType) {}
+    constructor(private readonly kind: K) {}
 
     async getUserMediaHistory(userId: number, catalogItemId: number) {
         const rows = await getDbClient()
@@ -50,7 +51,7 @@ export class TvLibraryReadRepository {
         return rows.map((row) => ({
             ...row,
             id: row.id,
-            payload: row.payload ? { old_value: row.payload.oldValue as any, new_value: row.payload.newValue as any } : null,
+            payload: row.payload,
         }));
     }
 
@@ -108,7 +109,7 @@ export class TvLibraryReadRepository {
         return results.filter((result): result is NonNullable<typeof result> => !!result);
     }
 
-    async getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType) {
+    async getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType): Promise<TvCommunityActivityPage<K>> {
         const pagination = resolvePagination({
             page: search.page,
             perPage: search.perPage,
@@ -174,16 +175,18 @@ export class TvLibraryReadRepository {
             if (!entry) return;
             const userMedia = await this.toUserMedia(entry, catalogItemId, row.ratingSystem, false);
             return {
+                kind: this.kind,
                 id: row.userId,
                 name: row.name,
                 image: row.image,
                 ratingSystem: row.ratingSystem,
-                userMedia: { ...userMedia, comment: null },
+                userMedia: { ...userMedia, kind: this.kind, comment: null },
             };
         }));
         const total = allRows.length;
 
         return {
+            kind: this.kind,
             page: pagination.page,
             items: items.filter((item): item is NonNullable<typeof item> => !!item),
             total,
@@ -229,9 +232,8 @@ export class TvLibraryReadRepository {
             lastUpdated: entry.updatedAt,
             currentSeason: entry.progress.currentSeason,
             currentEpisode: entry.progress.currentEpisode,
-            redo: totalTvRewatchCount(entry.progress),
-            total: consumedEpisodeCount(entry.progress, entry.seasons),
-            redo2: toLegacyRedo2(entry.progress, entry.seasons),
+            watchedEpisodes: entry.progress.watchedEpisodes,
+            rewatches: entry.progress.rewatches,
         };
 
         return { ...userMedia, ratingSystem, tags: tags ?? [] };

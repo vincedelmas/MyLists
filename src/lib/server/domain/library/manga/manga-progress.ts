@@ -87,6 +87,25 @@ export const replaceMangaRereads = (
 };
 
 
+/** Re-derives catalog-dependent totals while preserving valid unknown-length progress. */
+export const reconcileMangaChapters = (
+    current: MangaProgressState,
+    chapters: number | null,
+): MangaProgressState => {
+    if (chapters === null) return current;
+    const knownChapters = requireKnownChapters(chapters);
+    const currentChapter = current.status === Status.COMPLETED
+        ? knownChapters
+        : Math.min(current.currentChapter, knownChapters);
+
+    return {
+        ...current,
+        currentChapter,
+        totalChaptersRead: currentChapter + (current.rereadCount * knownChapters),
+    };
+};
+
+
 export const importMangaProgress = (
     status: Status,
     currentChapter: number,

@@ -2,12 +2,12 @@ import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {booksFinalListInsertSchema, BooksImportPayload, booksImportPayloadSchema} from "@/lib/server/domain/imports/import-media.schemas";
-import {BookLibraryWriter} from "@/lib/server/domain/library/books/book-library.writer";
+import {BookLibraryCommands} from "@/lib/server/domain/library/books/book-library.commands";
 import {BookCatalogIngestionRepository} from "@/lib/server/domain/catalog/books/book-catalog-ingestion.repository";
 
 
 export class BooksImportListWriter implements ImportListWriter {
-    constructor(private catalog: BookCatalogIngestionRepository, private libraryWriter: BookLibraryWriter) {
+    constructor(private catalog: BookCatalogIngestionRepository, private libraryCommands: BookLibraryCommands) {
     }
 
     async addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]> {
@@ -24,7 +24,7 @@ export class BooksImportListWriter implements ImportListWriter {
             userBooks.push(booksFinalListInsertSchema.parse({ userId, mediaId, ...fullPayload }));
         }
 
-        await this.libraryWriter.importRows(userBooks);
+        await this.libraryCommands.importRows(userBooks);
 
         return matches.map(({ item, mediaId }) => ({
             itemId: item.id,

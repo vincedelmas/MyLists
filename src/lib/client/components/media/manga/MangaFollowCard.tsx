@@ -1,15 +1,12 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyFollowCardProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayChapters} from "@/lib/client/components/media/base/DisplayChapters";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {BaseMediaFollowCard} from "@/lib/client/components/media/base/BaseMediaFollowCard";
 
 
-type MangaFollowCardProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaFollowCard"]>[number];
-
-
-export const MangaFollowCard = ({ followData, rating, showComment }: MangaFollowCardProps<typeof MediaType.MANGA>) => {
+export const MangaFollowCard = ({ followData, rating, showComment }: FamilyFollowCardProps<typeof MediaType.MANGA>) => {
     return (
         <BaseMediaFollowCard
             rating={rating}
@@ -17,7 +14,7 @@ export const MangaFollowCard = ({ followData, rating, showComment }: MangaFollow
             showComment={showComment}
             redoDisplay={
                 <DisplayRedoValue
-                    redoValue={followData.userMedia.redo}
+                    redoValue={followData.userMedia.rereadCount}
                 />
             }
             mediaDetailsDisplay={

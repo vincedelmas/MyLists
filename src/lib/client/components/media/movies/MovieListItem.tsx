@@ -1,20 +1,17 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyListItemProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 
 
-type MovieListItemProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaListCard"]>[number];
-
-
-export const MovieListItem = (props: MovieListItemProps<typeof MediaType.MOVIES>) => {
+export const MovieListItem = (props: FamilyListItemProps<typeof MediaType.MOVIES>) => {
     return (
         <BaseMediaListItem
             {...props}
-            redoDisplay={!!props.userMedia.redo &&
+            redoDisplay={props.userMedia.rewatchCount > 0 &&
                 <DisplayRedoValue
-                    redoValue={props.userMedia.redo}
+                    redoValue={props.userMedia.rewatchCount}
                 />
             }
         />

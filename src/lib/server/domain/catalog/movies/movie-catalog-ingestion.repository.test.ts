@@ -10,14 +10,18 @@ import {UpsertMovieWithDetails} from "@/lib/server/domain/catalog/catalog-ingest
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
-vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
+vi.mock("@/lib/server/database/async-storage", () => ({
+    getDbClient: () => dbContext.db,
+    withTransaction: (action: () => Promise<unknown>) => action(),
+}));
 
 const { MovieCatalogIngestionRepository } = await import("./movie-catalog-ingestion.repository");
+const { MovieCatalogIngestionCommand } = await import("./movie-catalog-ingestion.command");
 const { MovieLibraryRepository } = await import("@/lib/server/domain/library/movies/movie-library.repository");
-const { MovieLibraryService } = await import("@/lib/server/domain/library/movies/movie-library.service");
+const { MovieLibraryCommands } = await import("@/lib/server/domain/library/movies/movie-library.commands");
 
 
-describe("v2 movie ingestion adapter", () => {
+describe("movie catalog ingestion command", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -52,15 +56,15 @@ describe("v2 movie ingestion adapter", () => {
         } satisfies ExternalMediaProvider<UpsertMovieWithDetails>;
         const ingestion = createMediaIngestionService({
             provider,
-            repository: new MovieCatalogIngestionRepository(),
+            repository: new MovieCatalogIngestionCommand(new MovieCatalogIngestionRepository()),
         });
         const catalogItemId = await ingestion.storeFromExternal(777);
         expect(await ingestion.storeFromExternal(777)).toBe(catalogItemId);
         expect(provider.details.getDetails).toHaveBeenCalledTimes(1);
 
-        const library = new MovieLibraryService(new MovieLibraryRepository());
+        const library = new MovieLibraryCommands(new MovieLibraryRepository());
         await library.add({ userId: 42, catalogItemId, status: Status.COMPLETED });
-        await library.replaceRewatches({ userId: 42, catalogItemId, redo: 1 });
+        await library.replaceRewatches({ userId: 42, catalogItemId, rewatchCount: 1 });
         provider.details.getDetails = vi.fn(async () => details(120));
         await ingestion.refreshFromExternal(777);
 

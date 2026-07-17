@@ -101,6 +101,12 @@ export class EditorialCollectionsWriteRepository {
         }).where(eq(editorialCollection.id, collectionId));
     }
 
+    incrementViewCount(collectionId: number) {
+        return getDbClient().update(editorialCollection).set({
+            viewCount: sql`${editorialCollection.viewCount} + 1`,
+        }).where(eq(editorialCollection.id, collectionId));
+    }
+
     async deleteCollection(collectionId: number) {
         await getDbClient().delete(editorialCollection).where(eq(editorialCollection.id, collectionId));
     }

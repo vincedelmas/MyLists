@@ -3,35 +3,45 @@ import {WcfService} from "@/lib/server/domain/which-came-first/wcf.service";
 import {MediadleService} from "@/lib/server/domain/mediadle/mediadle.service";
 import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
-import {AchievementsService} from "@/lib/server/domain/achievements/achievements.service";
-import {FeatureVotesService} from "@/lib/server/domain/feature-votes/feature-votes.service";
-import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
+import {AchievementsQuery} from "@/lib/server/domain/achievements/achievements.query";
+import {AchievementCommands} from "@/lib/server/domain/achievements/achievement.commands";
+import {FeatureVotesQuery} from "@/lib/server/domain/feature-votes/feature-votes.query";
+import {FeatureVoteCommands} from "@/lib/server/domain/feature-votes/feature-vote.commands";
+import {NotificationsQuery} from "@/lib/server/domain/notifications/notifications.query";
+import {NotificationCommands} from "@/lib/server/domain/notifications/notification.commands";
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {
     InactiveAccountRepository,
-    InactiveAccountService,
     UserActivityService,
     UserProfileRepository,
-    UserProfileService,
     UserRepository,
-    UserService,
-    UserSimilarityRepository,
-    UserSimilarityService,
-    UserStatsService,
-    UserUpdatesService
+    UserStatsService
 } from "@/lib/server/domain/user";
-import {EditorialCollectionsReadService} from "@/lib/server/domain/collections/editorial-collections-read.service";
-import {EditorialCollectionsCommandService} from "@/lib/server/domain/collections/editorial-collections-command.service";
-import {SocialGraphReadService} from "@/lib/server/domain/social/social-graph-read.service";
-import {SocialGraphCommandService} from "@/lib/server/domain/social/social-graph-command.service";
-import {ProfileReadService} from "@/lib/server/domain/profile/profile-read.service";
+import {EditorialCollectionsQuery} from "@/lib/server/domain/collections/editorial-collections.query";
+import {EditorialCollectionCommands} from "@/lib/server/domain/collections/editorial-collection.commands";
+import {SocialGraphQuery} from "@/lib/server/domain/social/social-graph.query";
+import {SocialGraphCommands} from "@/lib/server/domain/social/social-graph.commands";
+import {ProfileOverviewQuery} from "@/lib/server/domain/profile/profile-overview.query";
+import {ProfileUpdatesQuery} from "@/lib/server/domain/profile/profile-updates.query";
+import {ProfileUpdatesCommand} from "@/lib/server/domain/profile/profile-updates.command";
 import {TasteMatchesReadService} from "@/lib/server/domain/discovery/taste-matches-read.service";
 import {HallOfFameReadService} from "@/lib/server/domain/discovery/hall-of-fame-read.service";
 import {MediadleMovieCatalogRepository} from "@/lib/server/domain/mediadle/mediadle-movie-catalog";
 import {WcfMediaCatalogRepository} from "@/lib/server/domain/which-came-first/wcf-media-catalog";
 import {ProfileChannelAccessRepository} from "@/lib/server/domain/access/profile-channel-access.repository";
+import {AccountQuery} from "@/lib/server/domain/user/account.query";
+import {AccountSettingsCommands} from "@/lib/server/domain/user/account-settings.commands";
+import {AccountDeletionCommands} from "@/lib/server/domain/user/account-deletion.commands";
+import {AdminAccountsQuery} from "@/lib/server/domain/user/admin-accounts.query";
+import {AdminAccountCommands} from "@/lib/server/domain/user/admin-account.commands";
+import {ProfileViewCommands} from "@/lib/server/domain/user/profile-view.commands";
+import {InactiveAccountsQuery} from "@/lib/server/domain/user/inactive-accounts.query";
+import {InactiveAccountCommands} from "@/lib/server/domain/user/inactive-account.commands";
+import {ProfileCustomizationQuery} from "@/lib/server/domain/profile/profile-customization.query";
+import {ProfileCustomizationCommands} from "@/lib/server/domain/profile/profile-customization.commands";
+import {ProfileHighlightsQuery} from "@/lib/server/domain/profile/profile-highlights.query";
 
 
 export function setupUserModule(mediaModule: MediaModule) {
@@ -44,82 +54,108 @@ export function setupUserModule(mediaModule: MediaModule) {
     const achievementsRepository = AchievementsRepository;
     const featureVotesRepository = FeatureVotesRepository;
     const notificationsRepository = NotificationsRepository;
-    const userSimilarityRepository = UserSimilarityRepository;
     const inactiveAccountRepository = InactiveAccountRepository;
 
     // User Services
-    const inactiveAccountService = new InactiveAccountService(inactiveAccountRepository);
+    const inactiveAccountsQuery = new InactiveAccountsQuery(inactiveAccountRepository);
+    const inactiveAccountCommands = new InactiveAccountCommands(inactiveAccountRepository);
+    const accountQuery = new AccountQuery(userRepository);
+    const accountSettingsCommands = new AccountSettingsCommands(userRepository);
+    const accountDeletionCommands = new AccountDeletionCommands(inactiveAccountCommands, userRepository);
+    const adminAccountsQuery = new AdminAccountsQuery(userRepository);
+    const adminAccountCommands = new AdminAccountCommands(accountDeletionCommands, userRepository);
+    const profileViewCommands = new ProfileViewCommands(new ProfileChannelAccessRepository(), userRepository);
     const mediadleService = new MediadleService(mediadleRepository, new MediadleMovieCatalogRepository());
-    const userUpdatesService = new UserUpdatesService();
-    const userService = new UserService(
-        userRepository,
-        inactiveAccountService,
-    );
-    const achievementsService = new AchievementsService(achievementsRepository);
-    const notificationsService = new NotificationsService(notificationsRepository);
-    const userSimilarityService = new UserSimilarityService(userSimilarityRepository);
+    const profileUpdatesQuery = new ProfileUpdatesQuery();
+    const profileUpdatesCommand = new ProfileUpdatesCommand();
+    const achievementsQuery = new AchievementsQuery(undefined, achievementsRepository);
+    const achievementCommands = new AchievementCommands(achievementsRepository);
+    const notificationsQuery = new NotificationsQuery(notificationsRepository);
+    const notificationCommands = new NotificationCommands(notificationsRepository);
     const whichCameFirstService = new WcfService(whichCameFirstRepository, new WcfMediaCatalogRepository());
-    const userProfileService = new UserProfileService(userProfileRepository);
-    const featureVotesService = new FeatureVotesService(featureVotesRepository, notificationsService);
+    const profileHighlights = new ProfileHighlightsQuery();
+    const profileCustomizationQuery = new ProfileCustomizationQuery(userProfileRepository, profileHighlights);
+    const profileCustomizationCommands = new ProfileCustomizationCommands(userProfileRepository);
+    const featureVotesQuery = new FeatureVotesQuery(featureVotesRepository);
+    const featureVoteCommands = new FeatureVoteCommands(featureVotesRepository, notificationCommands);
     const userActivityService = new UserActivityService();
-    const editorialCollectionsReader = new EditorialCollectionsReadService();
-    const editorialCollectionsCommands = new EditorialCollectionsCommandService();
-    const socialGraphReader = new SocialGraphReadService();
-    const socialGraphCommands = new SocialGraphCommandService();
+    const editorialCollectionsQuery = new EditorialCollectionsQuery();
+    const editorialCollectionsCommands = new EditorialCollectionCommands();
+    const socialGraphQuery = new SocialGraphQuery();
+    const socialGraphCommands = new SocialGraphCommands();
     const userStatsService = new UserStatsService(
         userActivityService,
-        mediaModule.features.tvStatsReaders,
-        mediaModule.features.movieStatsReader,
-        mediaModule.features.gameStatsReader,
-        mediaModule.features.bookStatsReader,
-        mediaModule.features.mangaStatsReader,
+        mediaModule.media.stats.tv,
+        mediaModule.media.stats.movies,
+        mediaModule.media.stats.games,
+        mediaModule.media.stats.books,
+        mediaModule.media.stats.manga,
     );
-    const profileReader = new ProfileReadService(
+    const profileOverview = new ProfileOverviewQuery(
         userStatsService,
-        userProfileService,
-        userUpdatesService,
-        achievementsService,
-        socialGraphReader,
+        profileHighlights,
+        profileUpdatesQuery,
+        achievementsQuery,
+        socialGraphQuery,
     );
     const tasteMatchesReader = new TasteMatchesReadService();
     const hallOfFameReader = new HallOfFameReadService();
     const profileChannelAccess = new ProfileChannelAccessRepository();
 
     return {
-        repositories: {
-            user: userRepository,
-            mediadle: mediadleRepository,
-            userProfile: userProfileRepository,
-            achievements: achievementsRepository,
-            featureVotes: featureVotesRepository,
-            notifications: notificationsRepository,
-            whichCameFirst: whichCameFirstRepository,
-            userSimilarity: userSimilarityRepository,
-            inactiveAccount: inactiveAccountRepository,
+        account: {
+            query: accountQuery,
+            settings: accountSettingsCommands,
+            deletion: accountDeletionCommands,
+            adminQuery: adminAccountsQuery,
+            adminCommands: adminAccountCommands,
+            profileViews: profileViewCommands,
         },
-        services: {
-            user: userService,
+        inactiveAccounts: {
+            query: inactiveAccountsQuery,
+            commands: inactiveAccountCommands,
+        },
+        profile: {
+            overview: profileOverview,
+            updates: {
+                query: profileUpdatesQuery,
+                commands: profileUpdatesCommand,
+            },
+            channels: profileChannelAccess,
+            customization: {
+                query: profileCustomizationQuery,
+                commands: profileCustomizationCommands,
+            },
+        },
+        social: {
+            query: socialGraphQuery,
+            commands: socialGraphCommands,
+        },
+        collections: {
+            query: editorialCollectionsQuery,
+            commands: editorialCollectionsCommands,
+        },
+        discovery: {
+            tasteMatches: tasteMatchesReader,
+            hallOfFame: hallOfFameReader,
+        },
+        activity: userActivityService,
+        stats: userStatsService,
+        achievements: {
+            query: achievementsQuery,
+            commands: achievementCommands,
+        },
+        notifications: {
+            query: notificationsQuery,
+            commands: notificationCommands,
+        },
+        featureVotes: {
+            query: featureVotesQuery,
+            commands: featureVoteCommands,
+        },
+        games: {
             mediadle: mediadleService,
-            userStats: userStatsService,
-            userProfile: userProfileService,
-            userUpdates: userUpdatesService,
-            userActivity: userActivityService,
-            achievements: achievementsService,
-            featureVotes: featureVotesService,
-            notifications: notificationsService,
-            userSimilarity: userSimilarityService,
             whichCameFirst: whichCameFirstService,
-            inactiveAccount: inactiveAccountService,
-        },
-        features: {
-            editorialCollectionsReader,
-            editorialCollectionsCommands,
-            socialGraphReader,
-            socialGraphCommands,
-            profileReader,
-            tasteMatchesReader,
-            hallOfFameReader,
-            profileChannelAccess,
         },
     };
 }

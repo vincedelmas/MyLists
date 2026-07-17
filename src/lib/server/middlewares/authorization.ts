@@ -17,9 +17,7 @@ export const resolveTargetUserMiddleware = createMiddleware({ type: "function" }
     })
     .server(async ({ next, data: { username }, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
-
-        const targetUser = await userService.getUserByUsername(username);
+        const targetUser = await container.account.query.findByUsername(username);
         if (!targetUser) {
             throw notFound();
         }
@@ -42,7 +40,7 @@ export const authorizationMiddleware = createMiddleware({ type: "function" })
             && !!currentUser && currentUser.id !== targetUser.id && currentUser.role !== RoleType.ADMIN;
 
         const followStatus = needsFollowLookup
-            ? container.features.socialGraphReader.getFollowingStatus(currentUser.id, targetUser.id)
+            ? container.social.query.getFollowingStatus(currentUser.id, targetUser.id)
             : undefined;
 
         const decision = decideLibraryAccess({
@@ -74,7 +72,7 @@ export const mediaListAuthorizationMiddleware = createMiddleware({ type: "functi
     .validator(mediaTypeUsernameSchema)
     .server(async ({ next, data: { mediaType }, context }) => {
         const container = await getContainer();
-        const mediaTypeEnabled = await container.features.profileChannelAccess.isEnabled(context.user.id, mediaType);
+        const mediaTypeEnabled = await container.profile.channels.isEnabled(context.user.id, mediaType);
         const decision = decideMediaListAccess({
             allowed: true,
             scope: context.libraryAccessScope,

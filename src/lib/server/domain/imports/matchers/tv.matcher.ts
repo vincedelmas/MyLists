@@ -7,7 +7,7 @@ import {TvImportListWriter} from "@/lib/server/domain/imports/list-writers/tv-im
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
-import {TvLibraryWriter} from "@/lib/server/domain/library/tv/tv-library.writer";
+import {TvLibraryCommands} from "@/lib/server/domain/library/tv/tv-library.commands";
 import {TvCatalogIngestionRepository} from "@/lib/server/domain/catalog/tv/tv-catalog-ingestion.repository";
 
 
@@ -16,7 +16,7 @@ export const createTvMatcher = (
     catalog: TvCatalogIngestionRepository,
     tvProvider: ExternalMediaProvider<UpsertTvWithDetails>,
     tvIngestion: MediaIngestionService<UpsertTvWithDetails>,
-    libraryWriter: TvLibraryWriter,
+    libraryCommands: TvLibraryCommands,
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.TMDB, catalog),
@@ -25,5 +25,5 @@ export const createTvMatcher = (
     externalMatchers: [
         new ExternalTMDBTvMatcher(mediaType, tvProvider, tvIngestion),
     ],
-    listWriter: new TvImportListWriter(catalog, mediaType, libraryWriter),
+    listWriter: new TvImportListWriter(catalog, mediaType, libraryCommands),
 });

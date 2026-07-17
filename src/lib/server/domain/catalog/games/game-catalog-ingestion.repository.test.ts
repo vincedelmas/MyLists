@@ -10,12 +10,16 @@ import {UpsertGameWithDetails} from "@/lib/server/domain/catalog/catalog-ingesti
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
-vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
+vi.mock("@/lib/server/database/async-storage", () => ({
+    getDbClient: () => dbContext.db,
+    withTransaction: (action: () => Promise<unknown>) => action(),
+}));
 
 const { GameCatalogIngestionRepository } = await import("./game-catalog-ingestion.repository");
+const { GameCatalogIngestionCommand } = await import("./game-catalog-ingestion.command");
 
 
-describe("v2 game ingestion adapter", () => {
+describe("game catalog ingestion command", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -42,7 +46,7 @@ describe("v2 game ingestion adapter", () => {
         } satisfies ExternalMediaProvider<UpsertGameWithDetails>;
         const ingestion = createMediaIngestionService({
             provider,
-            repository: new GameCatalogIngestionRepository(),
+            repository: new GameCatalogIngestionCommand(new GameCatalogIngestionRepository()),
         });
 
         const catalogItemId = await ingestion.storeFromExternal(777);

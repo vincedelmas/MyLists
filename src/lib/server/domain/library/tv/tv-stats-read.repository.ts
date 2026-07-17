@@ -34,7 +34,7 @@ import {
 } from "@/lib/server/database/schema";
 
 
-/** Reads precomputed TV aggregates without depending on the legacy per-media settings row. */
+/** Reads precomputed TV aggregates from the canonical profile-channel model. */
 export class TvStatsReadRepository {
     constructor(private readonly kind: TvMediaType) {}
 

@@ -1,16 +1,12 @@
 import React from "react";
 import {Link} from "@tanstack/react-router";
-import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type TvDetailsProps<T extends MediaType> = Parameters<NonNullable<MediaConfig[T]["extraSections"]>>[number];
-
-
-export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<TvMediaType>) => {
+export const TvExtraSections = ({ mediaType, media }: FamilyDetailsProps<TvMediaType>) => {
     const cleanedActors = (media.actors ?? []).filter((a) => a.name !== null);
 
     return (
@@ -32,18 +28,18 @@ export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<TvMediaType
                     </div>
                 </section>
             }
-            {(media.epsPerSeason && media.epsPerSeason.length > 0) &&
+            {media.seasons.length > 0 &&
                 <section>
                     <MediaSectionTitle title="Season Breakdown">
                         {media.totalEpisodes} Episodes
                     </MediaSectionTitle>
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 overflow-y-auto scrollbar-thin max-h-68">
-                        {media.epsPerSeason.map((s) =>
+                        {media.seasons.map((season) =>
                             <MediaExtraGrid
-                                key={`season-${s.season}`}
-                                name={`Season ${s.season}`}
-                                initials={`S${zeroPad(s.season)}`}
-                                subname={`${s.episodes} Episodes`}
+                                key={`season-${season.seasonNumber}`}
+                                name={`Season ${season.seasonNumber}`}
+                                initials={`S${zeroPad(season.seasonNumber)}`}
+                                subname={`${season.episodeCount} Episodes`}
                             />
                         )}
                     </div>

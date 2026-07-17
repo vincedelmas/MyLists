@@ -7,14 +7,14 @@ export const getUserAchievements = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .handler(async ({ context: { user } }) => {
         const container = await getContainer();
-        const achievementsService = container.services.achievements;
+        const achievementsQuery = container.achievements.query;
 
-        const result = await achievementsService.getUserAchievements(user.id);
-        const summary = await achievementsService.getUserAchievementStats(user.id);
+        const result = await achievementsQuery.getUserAchievements(user.id);
+        const summary = await achievementsQuery.getUserAchievementStats(user.id);
 
         return {
             result,
             summary,
-            userActivatedMediaTypes: await container.features.profileChannelAccess.getEnabledKinds(user.id),
+            userActivatedMediaTypes: await container.profile.channels.getEnabledKinds(user.id),
         };
     });

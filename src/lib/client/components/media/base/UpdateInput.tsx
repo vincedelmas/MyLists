@@ -7,13 +7,12 @@ import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutatio
 interface UpdateInputProps {
     initValue: number | null;
     total: number | null | undefined;
-    payloadName: "actualPage" | "currentChapter";
     updateInput: ReturnType<typeof useUpdateUserMediaMutation>;
     updateType: typeof UpdateType.PAGE | typeof UpdateType.CHAPTER;
 }
 
 
-export const UpdateInput = ({ total, initValue, updateInput, payloadName, updateType }: UpdateInputProps) => {
+export const UpdateInput = ({ total, initValue, updateInput, updateType }: UpdateInputProps) => {
     const [currentValue, setCurrentValue] = useState(initValue?.toString() ?? "0");
 
     const validateAndMutate = () => {
@@ -35,11 +34,9 @@ export const UpdateInput = ({ total, initValue, updateInput, payloadName, update
             return;
         }
 
-        updateInput.mutate({
-            payload: {
-                type: updateType,
-                [payloadName]: parsed,
-            },
+        updateInput.mutate({ payload: updateType === UpdateType.PAGE
+            ? { type: UpdateType.PAGE, currentPage: parsed }
+            : { type: UpdateType.CHAPTER, currentChapter: parsed }
         });
     };
 

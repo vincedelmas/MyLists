@@ -9,5 +9,5 @@ export const getHallOfFame = createServerFn({ method: "GET" })
     .validator(hallOfFameSearchSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.features.hallOfFameReader.getHallOfFame(data, currentUser?.id);
+        return container.discovery.hallOfFame.getHallOfFame(data, currentUser?.id);
     });

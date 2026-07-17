@@ -9,7 +9,6 @@ import {
     positionFromWatchedEpisodes,
     reconcileTvSeasons,
     replaceTvRewatches,
-    toLegacyRedo2,
     TvSeasonDefinition,
 } from "./tv-progress";
 
@@ -53,7 +52,7 @@ describe("TV progress model", () => {
         expect(() => moveTvProgress(initial, { seasonNumber: 2, episodeNumber: 9 }, seasons)).toThrow("Invalid episode");
     });
 
-    it("normalizes rewatches as season rows and derives the legacy array", () => {
+    it("normalizes rewatches as season rows", () => {
         const initial = createInitialTvProgress(Status.COMPLETED, seasons);
         const updated = replaceTvRewatches(initial, [
             { seasonNumber: 3, count: 2 },
@@ -65,7 +64,6 @@ describe("TV progress model", () => {
             { seasonNumber: 1, count: 1 },
             { seasonNumber: 3, count: 2 },
         ]);
-        expect(toLegacyRedo2(updated, seasons)).toEqual([1, 0, 2]);
         expect(consumedEpisodeCount(updated, seasons)).toBe(62);
     });
 

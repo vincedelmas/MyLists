@@ -1,18 +1,14 @@
 import React from "react";
-import {MediaType} from "@/lib/utils/enums";
 import {Calendar, Clock, Tv} from "lucide-react";
 import {extractYear} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {MediaUnderItem, MediaUnderRating} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type TvDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["underTitle"]>[number];
-
-
-export const TvUnderTitle = ({ media }: TvDetailsProps<TvMediaType>) => {
+export const TvUnderTitle = ({ media }: FamilyDetailsProps<TvMediaType>) => {
     return (
         <>
             <MediaUnderRating

@@ -21,7 +21,7 @@ export class ProfileUpdatesRepository {
             .orderBy(desc(libraryChange.occurredAt))
             .limit(limit);
 
-        return rows.map(toLegacyUpdate);
+        return rows;
     }
 
     static async getUserUpdatesPaginated(filters: SimpleSearch, userId?: number) {
@@ -54,7 +54,7 @@ export class ProfileUpdatesRepository {
                     .orderBy(desc(libraryChange.occurredAt))
                     .offset(offset)
                     .limit(limit);
-                return rows.map(toLegacyUpdate);
+                return rows;
             },
         });
         
@@ -91,7 +91,7 @@ export class ProfileUpdatesRepository {
             .orderBy(desc(libraryChange.occurredAt))
             .limit(limit);
 
-        return rows.map(toLegacyUpdate);
+        return rows;
     }
 
     static async deleteUserUpdates(userId: number, updateIds: number[], returnData: boolean) {
@@ -186,16 +186,3 @@ const baseUpdateQuery = (includeUsername = false) => getDbClient()
     ))
     .leftJoin(user, eq(user.id, libraryEntry.userId))
     .$dynamic();
-
-
-// TODO: Clean there are old_value and oldValue in db !
-const toLegacyUpdate = <T extends { id: number; payload: { oldValue?: unknown; newValue?: unknown; old_value?: unknown; new_value?: unknown } | null }>(row: T) => {
-    const { payload, ...rest } = row;
-    return {
-        ...rest,
-        payload: payload ? {
-            old_value: (Object.hasOwn(payload, "oldValue") ? payload.oldValue : payload.old_value) as any,
-            new_value: (Object.hasOwn(payload, "newValue") ? payload.newValue : payload.new_value) as any,
-        } : null,
-    };
-};

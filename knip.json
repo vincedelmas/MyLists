@@ -15,6 +15,9 @@
     "project": [
         "src/**/*.{ts,tsx}"
     ],
+    "ignoreDependencies": [
+        "pino-pretty"
+    ],
     "vite": {
         "config": [
             "vite.config.ts",

@@ -1,4 +1,4 @@
-import {and, eq, inArray} from "drizzle-orm";
+import {and, asc, eq, inArray} from "drizzle-orm";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {catalogGenre, catalogItem, catalogItemGenre, mangaDetails,} from "@/lib/server/database/schema";
@@ -22,7 +22,14 @@ export class MangaCatalogAdminRepository {
     async getEditableFields(catalogItemId: number) {
         const row = this.findById(catalogItemId);
         if (!row) return;
+        const genres = await getDbClient()
+            .select({ name: catalogGenre.name })
+            .from(catalogItemGenre)
+            .innerJoin(catalogGenre, eq(catalogGenre.id, catalogItemGenre.genreId))
+            .where(eq(catalogItemGenre.catalogItemId, catalogItemId))
+            .orderBy(asc(catalogGenre.name));
         return {
+            kind: MediaType.MANGA,
             fields: {
                 name: row.name,
                 releaseDate: row.releaseDate,
@@ -30,6 +37,7 @@ export class MangaCatalogAdminRepository {
                 publishers: row.publisher,
                 synopsis: row.synopsis,
                 lockStatus: row.locked,
+                genres,
             },
         };
     }
@@ -52,15 +60,17 @@ export class MangaCatalogAdminRepository {
         if (hasDefinedCatalogFields(detailFields)) {
             await getDbClient().update(mangaDetails).set(detailFields).where(eq(mangaDetails.catalogItemId, catalogItemId));
         }
-        if (edit.genres?.length) {
+        if (edit.genres !== undefined) {
             const names = [...new Set(edit.genres.map((name) => name.trim()).filter(Boolean))];
-            await getDbClient().insert(catalogGenre).values(names.map((name) => ({ name }))).onConflictDoNothing();
-            const genres = await getDbClient().select().from(catalogGenre).where(inArray(catalogGenre.name, names));
             await getDbClient().delete(catalogItemGenre).where(eq(catalogItemGenre.catalogItemId, catalogItemId));
-            await getDbClient().insert(catalogItemGenre).values(genres.map(({ id }) => ({
-                catalogItemId,
-                genreId: id,
-            }))).onConflictDoNothing();
+            if (names.length > 0) {
+                await getDbClient().insert(catalogGenre).values(names.map((name) => ({ name }))).onConflictDoNothing();
+                const genres = await getDbClient().select().from(catalogGenre).where(inArray(catalogGenre.name, names));
+                await getDbClient().insert(catalogItemGenre).values(genres.map(({ id }) => ({
+                    catalogItemId,
+                    genreId: id,
+                }))).onConflictDoNothing();
+            }
         }
         return true;
     }

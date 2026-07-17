@@ -4,6 +4,7 @@ import {
     changeMangaStatus,
     createInitialMangaProgress,
     importMangaProgress,
+    reconcileMangaChapters,
     replaceMangaChapter,
     replaceMangaRereads,
 } from "./manga-progress";
@@ -22,7 +23,7 @@ describe("manga progress", () => {
         expect(() => replaceMangaRereads(reading, 1, null)).toThrow(/without chapters/);
     });
 
-    it("keeps the legacy status and reread transition behavior for known lengths", () => {
+    it("keeps the established status and reread transition behavior for known lengths", () => {
         const reread = replaceMangaRereads({
             status: Status.COMPLETED,
             currentChapter: 201,
@@ -55,6 +56,23 @@ describe("manga progress", () => {
             currentChapter: 19,
             rereadCount: 1,
             totalChaptersRead: 38,
+        });
+    });
+
+    it("reconciles known chapter totals and preserves progress when the total becomes unknown", () => {
+        const completed = importMangaProgress(Status.COMPLETED, 400, 1, 800);
+        expect(reconcileMangaChapters(completed, 412)).toEqual({
+            status: Status.COMPLETED,
+            currentChapter: 412,
+            rereadCount: 1,
+            totalChaptersRead: 824,
+        });
+        expect(reconcileMangaChapters(completed, null)).toBe(completed);
+        expect(reconcileMangaChapters(importMangaProgress(Status.READING, 450, 2, 1_250), 300)).toEqual({
+            status: Status.READING,
+            currentChapter: 300,
+            rereadCount: 2,
+            totalChaptersRead: 900,
         });
     });
 });

@@ -4,6 +4,7 @@ import {
     changeBookStatus,
     createInitialBookProgress,
     importBookProgress,
+    reconcileBookPages,
     replaceBookPage,
     replaceBookRereads,
 } from "./book-progress";
@@ -57,6 +58,21 @@ describe("book progress", () => {
             currentPage: 50,
             rereadCount: 2,
             totalPagesRead: 300,
+        });
+    });
+
+    it("reconciles completed and in-progress entries when catalog pages change", () => {
+        expect(reconcileBookPages(importBookProgress(Status.COMPLETED, 400, 1, 800), 412)).toEqual({
+            status: Status.COMPLETED,
+            currentPage: 412,
+            rereadCount: 1,
+            totalPagesRead: 824,
+        });
+        expect(reconcileBookPages(importBookProgress(Status.READING, 450, 2, 1_250), 300)).toEqual({
+            status: Status.READING,
+            currentPage: 300,
+            rereadCount: 2,
+            totalPagesRead: 900,
         });
     });
 

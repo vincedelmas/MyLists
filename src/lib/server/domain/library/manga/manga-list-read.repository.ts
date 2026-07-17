@@ -12,7 +12,8 @@ import {
     sql,
 } from "drizzle-orm";
 import {alias} from "drizzle-orm/sqlite-core";
-import {MediaListArgs, SimpleSearch} from "@/lib/schemas";
+import {SimpleSearch} from "@/lib/schemas";
+import {MangaListArgs, MangaListPage} from "@/lib/contracts/media/lists";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -67,7 +68,7 @@ export class MangaListReadRepository {
         return { timeSpent: stats?.timeSpent ?? 0 };
     }
 
-    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: MediaListArgs) {
+    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: MangaListArgs): Promise<MangaListPage> {
         const ownerId = access.ownerId;
         const { page, perPage, offset, limit } = resolvePagination(args);
         const sorting = resolveSorting(args.sorting, MANGA_LIST_SORTS, "Title A-Z");
@@ -86,8 +87,8 @@ export class MangaListReadRepository {
                 addedAt: libraryEntry.addedAt,
                 lastUpdated: libraryEntry.updatedAt,
                 currentChapter: mangaProgress.currentChapter,
-                redo: mangaProgress.rereadCount,
-                total: mangaProgress.totalChaptersRead,
+                rereadCount: mangaProgress.rereadCount,
+                totalChaptersRead: mangaProgress.totalChaptersRead,
                 chapters: mangaDetails.chapters,
                 mediaName: catalogItem.name,
                 imageCover: catalogItem.imageCover,
@@ -109,6 +110,7 @@ export class MangaListReadRepository {
         const items = await this.hydrateItems(rows, currentUserId, ownerId);
         const totalItems = totalRow?.value ?? 0;
         return {
+            kind: MediaType.MANGA,
             items,
             pagination: {
                 page,
@@ -134,7 +136,7 @@ export class MangaListReadRepository {
                 .where(and(eq(libraryTag.userId, ownerId), eq(libraryTag.kind, MediaType.MANGA)))
                 .orderBy(asc(libraryTag.name)),
         ]);
-        return { genres, tags };
+        return { kind: MediaType.MANGA, genres, tags };
     }
 
     async getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
@@ -207,7 +209,7 @@ export class MangaListReadRepository {
         };
     }
 
-    private buildConditions(currentUserId: number | undefined, ownerId: number, args: MediaListArgs) {
+    private buildConditions(currentUserId: number | undefined, ownerId: number, args: MangaListArgs) {
         const conditions: SQL[] = [eq(libraryEntry.userId, ownerId), eq(catalogItem.kind, MediaType.MANGA)];
         if (args.search) conditions.push(like(catalogItem.name, `%${args.search}%`));
         if (args.favorite) conditions.push(eq(libraryEntry.favorite, true));
@@ -279,6 +281,7 @@ export class MangaListReadRepository {
             if (!isMangaStatus(row.status)) throw new Error(`Invalid manga library status: ${row.status}`);
             return {
                 ...row,
+                kind: MediaType.MANGA,
                 customCover: customCover ? getImageUrl("manga-covers", customCover) : null,
                 imageCover: getImageUrl("manga-covers", customCover ?? imageCover),
                 tags: tags.filter((tag) => tag.libraryEntryId === row.id)

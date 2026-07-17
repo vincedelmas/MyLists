@@ -42,7 +42,11 @@ const useFormField = () => {
 }
 
 
-const FormField = <TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({ ...props }: ControllerProps<TFieldValues, TName>) => {
+const FormField = <
+    TFieldValues extends FieldValues = FieldValues,
+    TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+    TTransformedValues = TFieldValues,
+>({ ...props }: ControllerProps<TFieldValues, TName, TTransformedValues>) => {
     return (
         <FormFieldContext value={{ name: props.name }}>
             <Controller {...props}/>

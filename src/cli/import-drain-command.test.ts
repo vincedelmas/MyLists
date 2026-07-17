@@ -37,7 +37,7 @@ describe("runImportDrainCommand", () => {
     it("drains imports with the container import processor", async () => {
         const importProcessor = {};
 
-        getContainer.mockResolvedValue({ services: { importProcessor } });
+        getContainer.mockResolvedValue({ imports: { processor: importProcessor } });
         drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 2 });
 
         await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
@@ -54,7 +54,7 @@ describe("runImportDrainCommand", () => {
     it("does not recompute stats when no import job was processed", async () => {
         const importProcessor = {};
 
-        getContainer.mockResolvedValue({ services: { importProcessor } });
+        getContainer.mockResolvedValue({ imports: { processor: importProcessor } });
         drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 0 });
 
         await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 0, processedJobs: 0 });
@@ -65,7 +65,7 @@ describe("runImportDrainCommand", () => {
     it("recomputes stats when a job failed during processing", async () => {
         const importProcessor = {};
 
-        getContainer.mockResolvedValue({ services: { importProcessor } });
+        getContainer.mockResolvedValue({ imports: { processor: importProcessor } });
         drainImportJobs.mockResolvedValue({ failedJobs: 1, processedJobs: 0 });
 
         await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 1, processedJobs: 0 });

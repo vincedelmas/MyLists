@@ -6,7 +6,7 @@ import {ExternalJikanMangaMatcher} from "@/lib/server/domain/imports/matchers/ex
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {MangaImportListWriter} from "@/lib/server/domain/imports/list-writers/manga-import-list.writer";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
-import {MangaLibraryWriter} from "@/lib/server/domain/library/manga/manga-library.writer";
+import {MangaLibraryCommands} from "@/lib/server/domain/library/manga/manga-library.commands";
 import {MangaCatalogIngestionRepository} from "@/lib/server/domain/catalog/manga/manga-catalog-ingestion.repository";
 
 
@@ -14,7 +14,7 @@ export const createMangaMatcher = (
     catalog: MangaCatalogIngestionRepository,
     mangaProvider: ExternalMediaProvider<UpsertMangaWithDetails>,
     mangaIngestion: MediaIngestionService<UpsertMangaWithDetails>,
-    libraryWriter: MangaLibraryWriter,
+    libraryCommands: MangaLibraryCommands,
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.MANGA, catalog),
@@ -23,5 +23,5 @@ export const createMangaMatcher = (
     externalMatchers: [
         new ExternalJikanMangaMatcher(mangaProvider, mangaIngestion),
     ],
-    listWriter: new MangaImportListWriter(catalog, libraryWriter),
+    listWriter: new MangaImportListWriter(catalog, libraryCommands),
 });

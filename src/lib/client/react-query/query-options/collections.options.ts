@@ -1,6 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {queryOptions} from "@tanstack/react-query";
-import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
+import type {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import {
     getCommunityCollections,
     getEditCollectionDetails,
@@ -39,6 +39,7 @@ export const communityCollectionsOptions = (search: CommunitySearch) => queryOpt
 export const mediaCommunityCollectionsOptions = (mediaId: number, mediaType: MediaType) => queryOptions({
     queryKey: viewerScopedKey(["details", "collections", "community", mediaType, mediaId]),
     queryFn: () => getMediaCommunityCollections({ data: { mediaId, mediaType } }),
+    meta: { errorToastMessage: "Community collections could not be loaded." },
 });
 
 

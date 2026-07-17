@@ -45,7 +45,7 @@ export class TvCatalogAdminRepository {
             .innerJoin(tvDetails, eq(tvDetails.catalogItemId, catalogItem.id))
             .where(eq(catalogItem.id, catalogItemId))
             .get();
-        return fields ? { fields } : undefined;
+        return fields ? { kind: this.kind, fields } : undefined;
     }
 
     async updateEditableFields(catalogItemId: number, edit: TvCatalogEdit) {

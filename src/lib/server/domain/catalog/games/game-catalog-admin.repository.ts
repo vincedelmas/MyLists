@@ -26,6 +26,7 @@ export class GameCatalogAdminRepository {
         const row = await this.findById(catalogItemId);
         if (!row) return;
         return {
+            kind: MediaType.GAMES,
             fields: {
                 name: row.name,
                 gameEngine: row.gameEngine,
@@ -105,4 +106,3 @@ export class GameCatalogAdminRepository {
             )).get();
     }
 }
-

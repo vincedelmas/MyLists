@@ -17,7 +17,8 @@ import {
     sql,
 } from "drizzle-orm";
 import {alias} from "drizzle-orm/sqlite-core";
-import {MediaListArgs, SimpleSearch} from "@/lib/schemas";
+import {SimpleSearch} from "@/lib/schemas";
+import {GameListArgs, GameListPage} from "@/lib/contracts/media/lists";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -73,7 +74,7 @@ export class GameListReadRepository {
         return { timeSpent: stats?.timeSpent ?? 0 };
     }
 
-    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: MediaListArgs) {
+    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: GameListArgs): Promise<GameListPage> {
         const ownerId = access.ownerId;
         const { page, perPage, offset, limit } = resolvePagination(args);
         const sorting = resolveSorting(args.sorting, GAME_LIST_SORTS, "Playtime +");
@@ -113,6 +114,7 @@ export class GameListReadRepository {
         const items = await this.hydrateItems(rows, currentUserId, ownerId);
         const totalItems = totalRow?.value ?? 0;
         return {
+            kind: MediaType.GAMES,
             items,
             pagination: {
                 page,
@@ -146,7 +148,7 @@ export class GameListReadRepository {
                     isNotNull(gameProgress.platform),
                 )),
         ]);
-        return { genres, tags, platforms: platforms as { name: NonNullable<typeof gameProgress.$inferSelect.platform> }[] };
+        return { kind: MediaType.GAMES, genres, tags, platforms: platforms as { name: NonNullable<typeof gameProgress.$inferSelect.platform> }[] };
     }
 
     async getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
@@ -240,7 +242,7 @@ export class GameListReadRepository {
             })));
     }
 
-    private buildConditions(currentUserId: number | undefined, ownerId: number, args: MediaListArgs) {
+    private buildConditions(currentUserId: number | undefined, ownerId: number, args: GameListArgs) {
         const conditions: SQL[] = [eq(libraryEntry.userId, ownerId), eq(catalogItem.kind, MediaType.GAMES)];
         if (args.search) conditions.push(like(catalogItem.name, `%${args.search}%`));
         if (args.favorite) conditions.push(eq(libraryEntry.favorite, true));
@@ -313,6 +315,7 @@ export class GameListReadRepository {
             if (!isGameStatus(row.status)) throw new Error(`Invalid game library status: ${row.status}`);
             return {
                 ...row,
+                kind: MediaType.GAMES,
                 customCover: customCover ? getImageUrl("games-covers", customCover) : null,
                 imageCover: getImageUrl("games-covers", customCover ?? imageCover),
                 tags: tags.filter((tag) => tag.libraryEntryId === row.id)

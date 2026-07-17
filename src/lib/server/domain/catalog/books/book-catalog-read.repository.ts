@@ -116,7 +116,7 @@ export class BookCatalogReadRepository {
     }
 
     async getMediaJobDetails(job: JobType, name: string, offset: number, limit: number, viewerId?: number) {
-        if (job !== JobType.CREATOR) return { items: [], total: 0, pages: 0 };
+        if (job !== JobType.CREATOR) return { kind: MediaType.BOOKS, items: [], total: 0, pages: 0 };
         const matchingIds = getDbClient().select({ catalogItemId: bookAuthor.catalogItemId }).from(bookAuthor)
             .where(like(bookAuthor.name, `%${name}%`));
         const conditions = and(eq(catalogItem.kind, MediaType.BOOKS), inArray(catalogItem.id, matchingIds));
@@ -142,6 +142,7 @@ export class BookCatalogReadRepository {
         const viewerCatalogIds = new Set(viewerEntries.map(({ catalogItemId }) => catalogItemId));
         const total = totalRow?.value ?? 0;
         return {
+            kind: MediaType.BOOKS,
             items: rows.map(({ catalogItemId, imageCover, ...row }) => ({
                 ...row,
                 imageCover: getImageUrl("books-covers", imageCover),

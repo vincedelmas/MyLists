@@ -15,20 +15,20 @@ export const Payload = ({ update, username }: PayloadProps) => {
     const { payload, mediaType, updateType } = update;
     if (!payload) return null;
 
-    const oldValue = payload.old_value;
-    const newValue = payload.new_value;
+    const { oldValue, newValue } = payload;
 
     switch (updateType) {
         case UpdateType.STATUS:
             return (
                 <PayloadLayout
-                    oldVal={oldValue}
-                    newVal={newValue}
+                    oldVal={formatChangeValue(oldValue)}
+                    newVal={formatChangeValue(newValue)}
                     username={username}
                 />
             );
 
         case UpdateType.TV:
+            if (!isNumberPair(oldValue) || !isNumberPair(newValue)) return null;
             return (
                 <PayloadLayout
                     username={username}
@@ -38,6 +38,7 @@ export const Payload = ({ update, username }: PayloadProps) => {
             );
 
         case UpdateType.REDO: {
+            if (typeof oldValue !== "number" || typeof newValue !== "number") return null;
             const name = mediaType === MediaType.BOOKS ? "Re-read" : "Re-watched";
             const suffix = mediaType === MediaType.SERIES || mediaType === MediaType.ANIME ? "x S." : "x";
             return (
@@ -50,6 +51,7 @@ export const Payload = ({ update, username }: PayloadProps) => {
         }
 
         case UpdateType.PLAYTIME:
+            if (typeof oldValue !== "number" || typeof newValue !== "number") return null;
             return (
                 <PayloadLayout
                     username={username}
@@ -79,6 +81,16 @@ export const Payload = ({ update, username }: PayloadProps) => {
         default:
             return null;
     }
+};
+
+
+const isNumberPair = (value: unknown): value is [number, number] =>
+    Array.isArray(value) && value.length === 2 && value.every((item) => typeof item === "number");
+
+const formatChangeValue = (value: unknown): React.ReactNode => {
+    if (value === null || typeof value === "string" || typeof value === "number") return value;
+    if (typeof value === "boolean") return String(value);
+    return JSON.stringify(value);
 };
 
 

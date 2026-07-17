@@ -12,7 +12,8 @@ import {
     sql,
 } from "drizzle-orm";
 import {alias} from "drizzle-orm/sqlite-core";
-import {MediaListArgs, SimpleSearch} from "@/lib/schemas";
+import {SimpleSearch} from "@/lib/schemas";
+import {BookListArgs, BookListPage} from "@/lib/contracts/media/lists";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -67,7 +68,7 @@ export class BookListReadRepository {
         return { timeSpent: stats?.timeSpent ?? 0 };
     }
 
-    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: MediaListArgs) {
+    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: BookListArgs): Promise<BookListPage> {
         const ownerId = access.ownerId;
         const { page, perPage, offset, limit } = resolvePagination(args);
         const sorting = resolveSorting(args.sorting, BOOK_LIST_SORTS, "Title A-Z");
@@ -85,9 +86,9 @@ export class BookListReadRepository {
                 customCover: libraryEntry.customCover,
                 addedAt: libraryEntry.addedAt,
                 lastUpdated: libraryEntry.updatedAt,
-                actualPage: bookProgress.currentPage,
-                redo: bookProgress.rereadCount,
-                total: bookProgress.totalPagesRead,
+                currentPage: bookProgress.currentPage,
+                rereadCount: bookProgress.rereadCount,
+                totalPagesRead: bookProgress.totalPagesRead,
                 pages: bookDetails.pages,
                 mediaName: catalogItem.name,
                 imageCover: catalogItem.imageCover,
@@ -109,6 +110,7 @@ export class BookListReadRepository {
         const items = await this.hydrateItems(rows, currentUserId, ownerId);
         const totalItems = totalRow?.value ?? 0;
         return {
+            kind: MediaType.BOOKS,
             items,
             pagination: {
                 page,
@@ -142,7 +144,7 @@ export class BookListReadRepository {
                     isNotNull(bookDetails.language),
                 )),
         ]);
-        return { genres, tags, langs: langs as { name: string }[] };
+        return { kind: MediaType.BOOKS, genres, tags, langs: langs as { name: string }[] };
     }
 
     async getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
@@ -202,7 +204,7 @@ export class BookListReadRepository {
         };
     }
 
-    private buildConditions(currentUserId: number | undefined, ownerId: number, args: MediaListArgs) {
+    private buildConditions(currentUserId: number | undefined, ownerId: number, args: BookListArgs) {
         const conditions: SQL[] = [eq(libraryEntry.userId, ownerId), eq(catalogItem.kind, MediaType.BOOKS)];
         if (args.search) conditions.push(like(catalogItem.name, `%${args.search}%`));
         if (args.favorite) conditions.push(eq(libraryEntry.favorite, true));
@@ -274,6 +276,7 @@ export class BookListReadRepository {
             if (!isBookStatus(row.status)) throw new Error(`Invalid book library status: ${row.status}`);
             return {
                 ...row,
+                kind: MediaType.BOOKS,
                 customCover: customCover ? getImageUrl("books-covers", customCover) : null,
                 imageCover: getImageUrl("books-covers", customCover ?? imageCover),
                 tags: tags.filter((tag) => tag.libraryEntryId === row.id)

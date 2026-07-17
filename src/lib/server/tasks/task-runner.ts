@@ -19,7 +19,7 @@ export const runTask = async <T extends TaskName>(options: RunTaskOptions<T>) =>
     const taskId = randomUUID();
     const task = getTask(taskName)!;
     const container = await getContainer();
-    const adminService = container.services.admin;
+    const adminService = container.admin;
     const { ctx, finalize } = createTaskContext({ taskId, taskName, triggeredBy });
 
     let status: TaskStatus = "completed";

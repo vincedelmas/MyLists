@@ -1,16 +1,17 @@
-import {MediaType} from "@/lib/utils/enums";
-import {MediaDetails} from "@/lib/types/query.options.types";
-import {MediaComponent} from "@/lib/client/components/media/base/MediaComponent";
+import type {ReactNode} from "react";
 import {BookCoverEditDialog} from "@/lib/client/components/media/base/BookCoverEditDialog";
 
 
 interface MediaHeroProps {
-    media: MediaDetails;
-    mediaType: MediaType;
+    media: { id: number; name: string; imageCover: string };
+    overTitle: ReactNode;
+    underTitle: ReactNode;
+    alternateTitle?: string | null;
+    allowDefaultBookCoverEdit?: boolean;
 }
 
 
-export function MediaHero({ media, mediaType }: MediaHeroProps) {
+export function MediaHero({ media, overTitle, underTitle, alternateTitle, allowDefaultBookCoverEdit }: MediaHeroProps) {
     const backdropStyle = {
         filter: "blur(20px)",
         backgroundSize: "cover",
@@ -33,7 +34,7 @@ export function MediaHero({ media, mediaType }: MediaHeroProps) {
                             src={media.imageCover}
                             className="w-full h-full object-cover"
                         />
-                        {mediaType === MediaType.BOOKS && media.imageCover.endsWith("default.jpg") &&
+                        {allowDefaultBookCoverEdit && media.imageCover.endsWith("default.jpg") &&
                             <BookCoverEditDialog
                                 mediaId={media.id}
                                 mediaName={media.name}
@@ -42,26 +43,18 @@ export function MediaHero({ media, mediaType }: MediaHeroProps) {
                     </div>
                     <div className="flex-1 w-full space-y-4">
                         <div className="flex flex-wrap gap-2 mb-2">
-                            <MediaComponent
-                                media={media}
-                                name="overTitle"
-                                mediaType={mediaType}
-                            />
+                            {overTitle}
                         </div>
                         <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-primary drop-shadow-lg">
                             {media.name}
                         </h1>
-                        {"originalName" in media && media.originalName && media.originalName !== media.name &&
+                        {alternateTitle && alternateTitle !== media.name &&
                             <div className="text-sm italic text-muted-foreground">
-                                <span className="font-medium">{media.originalName}</span>
+                                <span className="font-medium">{alternateTitle}</span>
                             </div>
                         }
                         <div className="flex items-center flex-wrap gap-y-2 gap-x-6 text-sm text-primary font-medium">
-                            <MediaComponent
-                                media={media}
-                                name="underTitle"
-                                mediaType={mediaType}
-                            />
+                            {underTitle}
                         </div>
                     </div>
                 </div>

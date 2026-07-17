@@ -4,16 +4,11 @@ import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaIngestionRepository} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertMovieWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
-import {MovieLibraryService} from "@/lib/server/domain/library/movies/movie-library.service";
-import {MovieLibraryRepository} from "@/lib/server/domain/library/movies/movie-library.repository";
 import {catalogGenre, catalogItem, catalogItemGenre, movieActor, movieDetails,} from "@/lib/server/database/schema";
 
 
 /** Adapter from the retained TMDB movie transformer into the concrete movie catalog. */
 export class MovieCatalogIngestionRepository implements MediaIngestionRepository<UpsertMovieWithDetails> {
-    private readonly libraryRepository = new MovieLibraryRepository();
-    private readonly libraryService = new MovieLibraryService(this.libraryRepository);
-
     async findByApiId(apiId: number | string) {
         return getDbClient().select({ id: catalogItem.id, apiId: catalogItem.primaryExternalId })
             .from(catalogItem).where(and(
@@ -56,11 +51,6 @@ export class MovieCatalogIngestionRepository implements MediaIngestionRepository
 
     private async persist(details: UpsertMovieWithDetails, mode: "store" | "refresh") {
         const apiId = String(details.mediaData.apiId);
-        const existing = await this.findByApiId(apiId);
-        const previousEntries = existing && mode === "refresh"
-            ? await this.libraryRepository.findEntriesByCatalogItem(existing.id)
-            : [];
-
         const [item] = await getDbClient().insert(catalogItem).values({
             kind: MediaType.MOVIES,
             primaryProvider: "tmdb",
@@ -120,7 +110,6 @@ export class MovieCatalogIngestionRepository implements MediaIngestionRepository
             this.syncActors(item.id, details.actorsData, mode),
             this.syncGenres(item.id, details.genresData, mode),
         ]);
-        if (previousEntries.length > 0) await this.libraryService.reconcileCatalogMetadata(previousEntries);
         return item.id;
     }
 

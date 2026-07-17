@@ -6,7 +6,7 @@ import {drainImportJobs} from "@/lib/server/domain/imports/import-drain";
 
 export const runImportDrainCommand = async () => {
     const container = await getContainer();
-    const result = await drainImportJobs(container.services.importProcessor);
+    const result = await drainImportJobs(container.imports.processor);
 
     logger.info({ processedJobs: result.processedJobs, failedJobs: result.failedJobs }, "Import drain finished");
 

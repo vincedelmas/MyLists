@@ -93,8 +93,8 @@ function RouteComponent() {
                         <div className="max-w-100">
                             <UserMediaDetails
                                 userMedia={userMedia}
-                                mediaType={MediaType.MOVIES}
                                 queryOption={detailsQuery}
+                                progressMetadata={{ kind: MediaType.MOVIES }}
                             />
                         </div>
                     }

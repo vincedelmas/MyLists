@@ -23,11 +23,11 @@ export const postGeneralSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator((data) => generalSettingsSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
     .handler(async ({ data, context: { currentUser } }) => {
-        const userService = await getContainer().then((c) => c.services.user);
+        const container = await getContainer();
         const updatesToApply: Partial<typeof user.$inferInsert> = { privacy: data.privacy };
 
         if (data.username !== currentUser.name.trim()) {
-            await userService.findUserByName(data.username);
+            await container.account.query.assertUsernameAvailable(data.username);
             updatesToApply.name = data.username;
         }
 
@@ -49,7 +49,7 @@ export const postGeneralSettings = createServerFn({ method: "POST" })
             updatesToApply.backgroundImage = backgroundImageName;
         }
 
-        await userService.updateUserSettings(currentUser.id, updatesToApply);
+        await container.account.settings.update(currentUser.id, updatesToApply);
     });
 
 
@@ -58,8 +58,7 @@ export const postMediaListSettings = createServerFn({ method: "POST" })
     .validator(mediaListSettingsSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
-        const userStatsService = container.services.userStats;
+        const userStatsService = container.stats;
 
         const toUpdateInUserStats: Partial<Record<MediaType, boolean>> = {
             anime: data.anime,
@@ -74,7 +73,7 @@ export const postMediaListSettings = createServerFn({ method: "POST" })
             searchSelector: data.searchSelector,
         }
 
-        await userService.updateUserSettings(currentUser.id, toUpdateInUser);
+        await container.account.settings.update(currentUser.id, toUpdateInUser);
         await userStatsService.updateUserMediaListSettings(currentUser.id, toUpdateInUserStats);
 
         // Re compute user's overview stats
@@ -85,11 +84,11 @@ export const postMediaListSettings = createServerFn({ method: "POST" })
 export const getProfileCustomSettings = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
-        const userProfileService = await getContainer().then((c) => c.services.userProfile);
+        const query = await getContainer().then((c) => c.profile.customization.query);
 
         const [previews, settings] = await Promise.all([
-            userProfileService.resolveHighlightedMedia(currentUser.id),
-            userProfileService.getHighlightedMediaSettings(currentUser.id),
+            query.resolveHighlightedMedia(currentUser.id),
+            query.getHighlightedMediaSettings(currentUser.id),
         ]);
 
         return { previews, settings };
@@ -100,8 +99,8 @@ export const getProfileCustomSearch = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(highlightedMediaSearchSchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const userProfileService = await getContainer().then((c) => c.services.userProfile);
-        return userProfileService.searchHighlightedMedia(currentUser.id, data.tab, data.query);
+        const query = await getContainer().then((c) => c.profile.customization.query);
+        return query.searchHighlightedMedia(currentUser.id, data.tab, data.query);
     });
 
 
@@ -109,8 +108,8 @@ export const postProfileCustomSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(highlightedMediaSettingsSchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const userProfileService = await getContainer().then((c) => c.services.userProfile);
-        return userProfileService.saveHighlightedMediaSettings(currentUser.id, data);
+        const commands = await getContainer().then((c) => c.profile.customization.commands);
+        return commands.saveHighlightedMediaSettings(currentUser.id, data);
     });
 
 
@@ -143,14 +142,14 @@ export const postPasswordSettings = createServerFn({ method: "POST" })
 export const postDeleteUserAccount = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.deleteUserAccount({ userId: currentUser.id, type: "manual" });
+        const deletion = await getContainer().then((c) => c.account.deletion);
+        return deletion.delete({ userId: currentUser.id, type: "manual" });
     });
 
 
 export const postUpdateFeatureFlag = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.updateFeatureFlag(currentUser.id);
+        const settings = await getContainer().then((c) => c.account.settings);
+        return settings.updateFeatureFlag(currentUser.id);
     });

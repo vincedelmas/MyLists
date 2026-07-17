@@ -6,14 +6,14 @@ import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/interna
 import {ExternalIGDBGamesMatcher} from "@/lib/server/domain/imports/matchers/external-game.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {GamesImportListWriter} from "@/lib/server/domain/imports/list-writers/games-import-list.writer";
-import {GameLibraryWriter} from "@/lib/server/domain/library/games/game-library.writer";
+import {GameLibraryCommands} from "@/lib/server/domain/library/games/game-library.commands";
 import {GameCatalogIngestionRepository} from "@/lib/server/domain/catalog/games/game-catalog-ingestion.repository";
 
 
 export const createGamesMatcher = (
     catalog: GameCatalogIngestionRepository,
     gamesIngestion: MediaIngestionService<UpsertGameWithDetails>,
-    libraryWriter: GameLibraryWriter,
+    libraryCommands: GameLibraryCommands,
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.IGDB, catalog),
@@ -22,5 +22,5 @@ export const createGamesMatcher = (
     externalMatchers: [
         new ExternalIGDBGamesMatcher(gamesIngestion),
     ],
-    listWriter: new GamesImportListWriter(libraryWriter),
+    listWriter: new GamesImportListWriter(libraryCommands),
 });

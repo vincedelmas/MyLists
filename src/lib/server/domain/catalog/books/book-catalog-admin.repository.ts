@@ -21,7 +21,7 @@ export type BookCatalogEdit = Partial<{
 
 export class BookCatalogAdminRepository {
     async getEditableFields(catalogItemId: number) {
-        const row = this.findById(catalogItemId);
+        const row = await this.findById(catalogItemId);
         if (!row) return;
 
         const authors = await getDbClient()
@@ -31,6 +31,7 @@ export class BookCatalogAdminRepository {
             .orderBy(asc(bookAuthor.position), asc(bookAuthor.id));
 
         return {
+            kind: MediaType.BOOKS,
             fields: {
                 name: row.name,
                 pages: row.pages,
@@ -39,7 +40,7 @@ export class BookCatalogAdminRepository {
                 lockStatus: row.locked,
                 publishers: row.publisher,
                 releaseDate: row.releaseDate,
-                authors: authors.map(({ name }) => name).join(","),
+                authors,
             },
         };
     }
@@ -146,20 +147,22 @@ export class BookCatalogAdminRepository {
                 .where(eq(bookDetails.catalogItemId, catalogItemId));
         }
 
-        if (edit.authors?.length) {
+        if (edit.authors !== undefined) {
             const names = [...new Set(edit.authors.map((name) => name.trim()).filter(Boolean))];
 
             await getDbClient()
                 .delete(bookAuthor)
                 .where(eq(bookAuthor.catalogItemId, catalogItemId));
 
-            await getDbClient()
-                .insert(bookAuthor)
-                .values(names.map((name, index) => ({
-                    name,
-                    catalogItemId,
-                    position: index + 1,
-                })));
+            if (names.length > 0) {
+                await getDbClient()
+                    .insert(bookAuthor)
+                    .values(names.map((name, index) => ({
+                        name,
+                        catalogItemId,
+                        position: index + 1,
+                    })));
+            }
         }
 
         return true;

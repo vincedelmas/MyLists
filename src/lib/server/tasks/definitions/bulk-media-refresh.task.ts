@@ -14,7 +14,7 @@ export const bulkMediaRefreshTask = defineTask({
     }),
     handler: async (ctx, input) => {
         const container = await getContainer();
-        const registry = container.registries.ingestionServices;
+        const registry = container.catalog.ingestion;
 
         const mediaTypes = input.mediaTypes;
         const typesToProcess = mediaTypes && mediaTypes.length > 0 ? mediaTypes : Object.values(MediaType);

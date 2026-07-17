@@ -9,16 +9,16 @@ import {GameStatsReadRepository} from "@/lib/server/domain/library/games/game-st
 import {BookStatsReadRepository} from "@/lib/server/domain/library/books/book-stats-read.repository";
 import {MangaStatsReadRepository} from "@/lib/server/domain/library/manga/manga-stats-read.repository";
 import {StatsSummaryReadService} from "@/lib/server/domain/stats/stats-summary-read.service";
-import {ProfileUpdatesReadService} from "@/lib/server/domain/profile/profile-updates-read.service";
-import {AchievementsReadService} from "@/lib/server/domain/achievements/achievements-read.service";
+import {ProfileUpdatesQuery} from "@/lib/server/domain/profile/profile-updates.query";
+import {AchievementsQuery} from "@/lib/server/domain/achievements/achievements.query";
 import {StatsSummaryRepository} from "@/lib/server/domain/stats/stats-summary.repository";
 import {ProfileChannelAccessRepository} from "@/lib/server/domain/access/profile-channel-access.repository";
 
 
 export class UserStatsService {
     private readonly summary = new StatsSummaryReadService();
-    private readonly updates = new ProfileUpdatesReadService();
-    private readonly achievements = new AchievementsReadService();
+    private readonly updates = new ProfileUpdatesQuery();
+    private readonly achievements = new AchievementsQuery();
     private readonly profileChannels = new ProfileChannelAccessRepository();
 
     constructor(

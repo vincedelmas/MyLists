@@ -12,6 +12,7 @@ import {
 } from "@/lib/server/database/schema";
 import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
 
 
 /** Persistence shared by concrete family repositories; it contains no progress rules. */
@@ -69,7 +70,7 @@ export class LibraryCommonRepository {
         });
     }
 
-    async recordChange(entryId: number, updateType: UpdateType, oldValue: unknown, newValue: unknown, occurredAt?: string) {
+    async recordChange(entryId: number, updateType: UpdateType, oldValue: LibraryChangeValue, newValue: LibraryChangeValue, occurredAt?: string) {
         const [change] = await getDbClient().insert(libraryChange).values({
             libraryEntryId: entryId,
             updateType,

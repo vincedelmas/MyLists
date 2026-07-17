@@ -25,20 +25,20 @@ export const changeMovieStatus = (_current: MovieProgressState, status: Status):
     createInitialMovieProgress(status);
 
 
-export const replaceMovieRewatches = (current: MovieProgressState, redo: number): MovieProgressState => {
+export const replaceMovieRewatches = (current: MovieProgressState, rewatchCount: number): MovieProgressState => {
     if (current.status !== Status.COMPLETED) {
         throw new FormattedError("A planned movie cannot have rewatches.");
     }
-    if (!Number.isInteger(redo) || redo < 0 || redo > REDO_MAX) {
+    if (!Number.isInteger(rewatchCount) || rewatchCount < 0 || rewatchCount > REDO_MAX) {
         throw new FormattedError(`A movie cannot be re-watched more than ${REDO_MAX} times.`);
     }
-    return { ...current, watchCount: redo + 1 };
+    return { ...current, watchCount: rewatchCount + 1 };
 };
 
 
-export const importMovieProgress = (status: Status, redo: number): MovieProgressState => {
+export const importMovieProgress = (status: Status, rewatchCount: number): MovieProgressState => {
     const initial = createInitialMovieProgress(status);
-    return initial.status === Status.COMPLETED ? replaceMovieRewatches(initial, redo) : initial;
+    return initial.status === Status.COMPLETED ? replaceMovieRewatches(initial, rewatchCount) : initial;
 };
 
 

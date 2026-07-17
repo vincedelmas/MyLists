@@ -18,9 +18,9 @@ export const getMoviesColumns = (props: ColumnConfigProps): ColumnDef<ExtractLis
                     <CommonInfoTableCell
                         userMedia={original}
                     />
-                    {!!original.redo &&
+                    {original.rewatchCount > 0 &&
                         <DisplayRedoValue
-                            redoValue={original.redo}
+                            redoValue={original.rewatchCount}
                         />
                     }
                 </div>

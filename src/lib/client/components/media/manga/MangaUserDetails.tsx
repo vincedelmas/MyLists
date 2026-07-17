@@ -1,42 +1,25 @@
 import React from "react";
-import {useQueryClient} from "@tanstack/react-query";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
-import {UpdateRedo} from "@/lib/client/components/media/base/UpdateRedo";
+import {FamilyEntryEditorProps} from "@/lib/client/components/media/family-component.types";
+import {UpdateRepeatCount} from "@/lib/client/components/media/base/UpdateRepeatCount";
 import {UpdateInput} from "@/lib/client/components/media/base/UpdateInput";
 import {UpdateRating} from "@/lib/client/components/media/base/UpdateRating";
 import {UpdateStatus} from "@/lib/client/components/media/base/UpdateStatus";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-type MangaUserDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaUserDetails"]>[0];
+type MangaUserDetailsProps = FamilyEntryEditorProps<typeof MediaType.MANGA> & { chapters: number | null };
 
 
-export const MangaUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: MangaUserDetailsProps<typeof MediaType.MANGA>) => {
-    const queryClient = useQueryClient();
+export const MangaUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions, chapters }: MangaUserDetailsProps) => {
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, mutationOptions);
-    const mediaData = getMediaData()!;
-
-    function getMediaData(): { chapters: number | null } | undefined {
-        if (queryOption.queryKey[0] === "details") {
-            const apiData = queryClient.getQueryData(queryOption.queryKey);
-            if (apiData && "chapters" in apiData.media) {
-                return apiData.media;
-            }
-        }
-        else if (queryOption.queryKey[0] === "userList") {
-            const apiData = queryClient.getQueryData(queryOption.queryKey);
-            const media = apiData?.results.items.find((item) => item.mediaId === userMedia.mediaId);
-            return media && "chapters" in media ? media : undefined;
-        }
-    }
 
     return (
         <>
             <UpdateStatus
                 mediaType={mediaType}
                 status={userMedia.status}
-                completable={!!mediaData.chapters}
+                completable={!!chapters}
                 updateStatus={updateUserMediaMutation}
             />
             {userMedia.status !== Status.PLAN_TO_READ &&
@@ -44,8 +27,7 @@ export const MangaUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
                     <div className="flex justify-between items-center">
                         <div>Chapters</div>
                         <UpdateInput
-                            total={mediaData.chapters}
-                            payloadName={"currentChapter"}
+                            total={chapters}
                             updateType={UpdateType.CHAPTER}
                             initValue={userMedia.currentChapter}
                             updateInput={updateUserMediaMutation}
@@ -62,11 +44,12 @@ export const MangaUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
                     </div>
                 </>
             }
-            {(userMedia.status !== Status.PLAN_TO_READ && mediaData.chapters) &&
-                <UpdateRedo
+            {(userMedia.status !== Status.PLAN_TO_READ && chapters) &&
+                <UpdateRepeatCount
                     name={"Re-read"}
-                    redo={userMedia.redo}
-                    updateRedo={updateUserMediaMutation}
+                    count={userMedia.rereadCount}
+                    family="reading"
+                    mutation={updateUserMediaMutation}
                 />
             }
         </>

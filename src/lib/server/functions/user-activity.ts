@@ -20,7 +20,7 @@ export const getMonthlyActivityStats = createServerFn({ method: "GET" })
     .validator(monthlyActivityStatsSchema)
     .handler(async ({ data, context: { user, libraryAccessScope } }) => {
         const container = await getContainer();
-        return container.services.userActivity.getMonthlyActivityStats(user.id, data, libraryAccessScope);
+        return container.activity.getMonthlyActivityStats(user.id, data, libraryAccessScope);
     });
 
 
@@ -29,7 +29,7 @@ export const getMonthlyActivity = createServerFn({ method: "GET" })
     .validator(monthlyActivitySchema)
     .handler(async ({ data, context: { user, libraryAccessScope } }) => {
         const container = await getContainer();
-        return container.services.userActivity.getMonthlyActivity(user.id, data, libraryAccessScope);
+        return container.activity.getMonthlyActivity(user.id, data, libraryAccessScope);
     });
 
 
@@ -45,7 +45,7 @@ export const postUpdateActivity = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(updateActivitySchema)
     .handler(async ({ data: { activityId, payload }, context: { currentUser } }) => {
-        const userActivityService = await getContainer().then(c => c.services.userActivity);
+        const userActivityService = await getContainer().then(c => c.activity);
         return userActivityService.updateActivity(currentUser.id, activityId, payload);
     });
 
@@ -54,7 +54,7 @@ export const postAddActivity = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(addActivitySchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const userActivityService = await getContainer().then(c => c.services.userActivity);
+        const userActivityService = await getContainer().then(c => c.activity);
         await userActivityService.addActivity(currentUser.id, data);
     });
 
@@ -63,7 +63,7 @@ export const postDeleteActivity = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(deleteActivitySchema)
     .handler(async ({ data: { activityId }, context: { currentUser } }) => {
-        const userActivityService = await getContainer().then(c => c.services.userActivity);
+        const userActivityService = await getContainer().then(c => c.activity);
         await userActivityService.deleteActivity(currentUser.id, activityId);
     });
 
@@ -72,6 +72,6 @@ export const postBulkHideActivity = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(bulkHideActivitySchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const userActivityService = await getContainer().then(c => c.services.userActivity);
+        const userActivityService = await getContainer().then(c => c.activity);
         return userActivityService.bulkHideActivity(currentUser.id, data);
     });

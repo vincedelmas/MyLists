@@ -9,7 +9,7 @@ export const postCreateImportJob = createServerFn({ method: "POST" })
     .validator((data) => importUploadSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
     .handler(async ({ data: { file, source }, context: { currentUser } }) => {
         const container = await getContainer();
-        const importService = container.services.imports;
+        const importService = container.imports.jobs;
         const job = await importService.createImportJob(currentUser.id, source, await file.text());
 
         return {
@@ -30,7 +30,7 @@ export const postDeleteImportJob = createServerFn({ method: "POST" })
     .validator(importJobIdSchema)
     .handler(async ({ data: { jobId }, context: { currentUser } }) => {
         const container = await getContainer();
-        const importService = container.services.imports;
+        const importService = container.imports.jobs;
         return importService.deleteImportJob(currentUser.id, jobId);
     });
 
@@ -40,7 +40,7 @@ export const getImportJob = createServerFn({ method: "GET" })
     .validator(importJobIdSchema)
     .handler(async ({ data: { jobId }, context: { currentUser } }) => {
         const container = await getContainer();
-        const importService = container.services.imports;
+        const importService = container.imports.jobs;
         const { job, jobsAhead } = await importService.getImportJob(currentUser.id, jobId);
 
         return {
@@ -66,7 +66,7 @@ export const getAllUserJobs = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const container = await getContainer();
-        const importService = container.services.imports;
+        const importService = container.imports.jobs;
         return importService.getAllUserJobs(currentUser.id);
     });
 
@@ -76,6 +76,6 @@ export const getImportJobIssues = createServerFn({ method: "GET" })
     .validator(importJobIssuesSchema)
     .handler(async ({ data: { jobId, page, perPage }, context: { currentUser } }) => {
         const container = await getContainer();
-        const importService = container.services.imports;
+        const importService = container.imports.jobs;
         return importService.getImportIssues(currentUser.id, jobId, page, perPage);
     });

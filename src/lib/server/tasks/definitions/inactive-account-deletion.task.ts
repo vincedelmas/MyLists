@@ -18,16 +18,16 @@ export const inactiveAccountDeletionTask = defineTask({
     }),
     handler: async (ctx, input) => {
         const container = await getContainer();
-        const userService = container.services.user;
-        const inactiveAccountService = container.services.inactiveAccount;
+        const inactiveAccountQuery = container.inactiveAccounts.query;
+        const inactiveAccountCommands = container.inactiveAccounts.commands;
 
         await ctx.step("mark-resurrected-users", async () => {
-            const resurrectedCount = await inactiveAccountService.markResurrectedUsers();
+            const resurrectedCount = await inactiveAccountCommands.markResurrectedUsers();
             ctx.metric("accounts.resurrected", resurrectedCount);
         });
 
         await ctx.step("send-warning-emails", async () => {
-            const targets = await inactiveAccountService.getWarningTargets(input.maxEmailsPerRun, 3);
+            const targets = await inactiveAccountQuery.getWarningTargets(input.maxEmailsPerRun, 3);
             ctx.metric("accounts.warning.targets", targets.length);
 
             for (const target of targets) {
@@ -44,7 +44,7 @@ export const inactiveAccountDeletionTask = defineTask({
                         link: `${clientEnv.VITE_BASE_URL}/reactivate-account?token=${token}`,
                     });
 
-                    await inactiveAccountService.warningSent({
+                    await inactiveAccountCommands.warningSent({
                         warningTokenHash,
                         userId: target.userId,
                         username: target.username,
@@ -58,7 +58,7 @@ export const inactiveAccountDeletionTask = defineTask({
                 catch (err) {
                     const errorMessage = err instanceof Error ? err.message : String(err);
 
-                    await inactiveAccountService.warningFailed({
+                    await inactiveAccountCommands.warningFailed({
                         errorMessage,
                         userId: target.userId,
                         username: target.username,
@@ -78,11 +78,11 @@ export const inactiveAccountDeletionTask = defineTask({
         });
 
         await ctx.step("delete-due-accounts", async () => {
-            const targets = await inactiveAccountService.getDeletionTargets(3);
+            const targets = await inactiveAccountQuery.getDeletionTargets(3);
             ctx.metric("accounts.deletion.targets", targets.length);
 
             for (const target of targets) {
-                const deleted = await userService.deleteUserAccount({
+                const deleted = await container.account.deletion.delete({
                     type: "inactive",
                     userId: target.userId,
                     username: target.username,

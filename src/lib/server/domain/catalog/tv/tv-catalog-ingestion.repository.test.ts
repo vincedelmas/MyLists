@@ -14,15 +14,17 @@ const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 
 vi.mock("@/lib/server/database/async-storage", () => ({
     getDbClient: () => dbContext.db,
+    withTransaction: (action: () => Promise<unknown>) => action(),
 }));
 
 
 const { TvCatalogIngestionRepository } = await import("./tv-catalog-ingestion.repository");
+const { TvCatalogIngestionCommand } = await import("./tv-catalog-ingestion.command");
 const { TvLibraryRepository } = await import("@/lib/server/domain/library/tv/tv-library.repository");
-const { TvLibraryService } = await import("@/lib/server/domain/library/tv/tv-library.service");
+const { TvLibraryCommands } = await import("@/lib/server/domain/library/tv/tv-library.commands");
 
 
-describe("v2 TV ingestion adapter", () => {
+describe("TV catalog ingestion command", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -53,11 +55,11 @@ describe("v2 TV ingestion adapter", () => {
         const animeProvider = provider(MediaType.ANIME, details({ name: "Anime", apiId: 777 }));
         const seriesIngestion = createMediaIngestionService({
             provider: seriesProvider,
-            repository: new TvCatalogIngestionRepository(MediaType.SERIES),
+            repository: new TvCatalogIngestionCommand(new TvCatalogIngestionRepository(MediaType.SERIES)),
         });
         const animeIngestion = createMediaIngestionService({
             provider: animeProvider,
-            repository: new TvCatalogIngestionRepository(MediaType.ANIME),
+            repository: new TvCatalogIngestionCommand(new TvCatalogIngestionRepository(MediaType.ANIME)),
         });
 
         const seriesId = await seriesIngestion.storeFromExternal(777);
@@ -77,10 +79,13 @@ describe("v2 TV ingestion adapter", () => {
         const initial = details({ name: "Changing Series", apiId: 888, duration: 45 });
         const externalProvider = provider(MediaType.SERIES, initial);
         const catalogRepository = new TvCatalogIngestionRepository(MediaType.SERIES);
-        const ingestion = createMediaIngestionService({ provider: externalProvider, repository: catalogRepository });
+        const ingestion = createMediaIngestionService({
+            provider: externalProvider,
+            repository: new TvCatalogIngestionCommand(catalogRepository),
+        });
         const catalogItemId = await ingestion.storeFromExternal(888);
 
-        const library = new TvLibraryService(new TvLibraryRepository());
+        const library = new TvLibraryCommands(new TvLibraryRepository());
         await library.add({ userId: 42, catalogItemId, status: Status.COMPLETED });
         await library.replaceRewatches({
             userId: 42,

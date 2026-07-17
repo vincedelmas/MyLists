@@ -17,6 +17,7 @@ import {
 import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {TvProgressState, TvSeasonDefinition} from "@/lib/server/domain/library/tv/tv-progress";
+import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
 
 
 export type TvLibraryEntry = {
@@ -296,7 +297,7 @@ export class TvLibraryRepository {
             });
     }
 
-    async recordChange(entryId: number, updateType: UpdateType, oldValue: unknown, newValue: unknown, occurredAt?: string) {
+    async recordChange(entryId: number, updateType: UpdateType, oldValue: LibraryChangeValue, newValue: LibraryChangeValue, occurredAt?: string) {
         const [change] = await getDbClient().insert(libraryChange).values({
             libraryEntryId: entryId,
             updateType,

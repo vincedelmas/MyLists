@@ -4,15 +4,12 @@ import {MediaType} from "@/lib/utils/enums";
 import {ChevronDown, ChevronUp} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {SimilarMediaCard} from "@/lib/client/components/media/base/SimilarMedia";
 import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type MoviesDetailsProps<T extends MediaType> = Parameters<NonNullable<MediaConfig[T]["extraSections"]>>[number];
-
-
-export const MoviesExtraSections = ({ mediaType, media }: MoviesDetailsProps<typeof MediaType.MOVIES>) => {
+export const MoviesExtraSections = ({ mediaType, media }: FamilyDetailsProps<typeof MediaType.MOVIES>) => {
     const INITIAL_COUNT = 5;
     const collection = media.collection ?? [];
     const isBelowSm = useBreakpoint("sm");

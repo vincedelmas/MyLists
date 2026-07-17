@@ -8,8 +8,8 @@ import {publicAuthMiddleware, requiredAuthAndAdminRoleMiddleware, requiredAuthMi
 export const getFeatureVotes = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
-        const featureVotesService = await getContainer().then((c) => c.services.featureVotes);
-        return featureVotesService.getFeatureVotes(currentUser?.id);
+        const query = await getContainer().then((c) => c.featureVotes.query);
+        return query.getFeatureVotes(currentUser?.id);
     });
 
 
@@ -17,8 +17,8 @@ export const postCreateFeatureRequest = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(postFeatureRequestSchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const featureVotesService = await getContainer().then((c) => c.services.featureVotes);
-        await featureVotesService.createFeatureRequest(currentUser.id, data);
+        const commands = await getContainer().then((c) => c.featureVotes.commands);
+        await commands.createFeatureRequest(currentUser.id, data);
     });
 
 
@@ -26,8 +26,8 @@ export const postToggleFeatureVote = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(postFeatureVoteSchema)
     .handler(async ({ data: { featureId }, context: { currentUser } }) => {
-        const featureVotesService = await getContainer().then((c) => c.services.featureVotes);
-        await featureVotesService.toggleFeatureVote(featureId, currentUser.id);
+        const commands = await getContainer().then((c) => c.featureVotes.commands);
+        await commands.toggleFeatureVote(featureId, currentUser.id);
     });
 
 
@@ -35,8 +35,8 @@ export const postAdminUpdateFeatureStatus = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminRoleMiddleware, transactionMiddleware])
     .validator(postFeatureStatusSchema)
     .handler(async ({ data, context: { currentUser } }) => {
-        const featureVotesService = await getContainer().then((c) => c.services.featureVotes);
-        await featureVotesService.updateFeatureStatus(data, currentUser.id);
+        const commands = await getContainer().then((c) => c.featureVotes.commands);
+        await commands.updateFeatureStatus(data, currentUser.id);
     });
 
 
@@ -44,6 +44,6 @@ export const postAdminDeleteFeatureRequest = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminRoleMiddleware, transactionMiddleware])
     .validator(postFeatureDeleteSchema)
     .handler(async ({ data }) => {
-        const featureVotesService = await getContainer().then((c) => c.services.featureVotes);
-        await featureVotesService.deleteFeatureRequest(data.featureId);
+        const commands = await getContainer().then((c) => c.featureVotes.commands);
+        await commands.deleteFeatureRequest(data.featureId);
     });

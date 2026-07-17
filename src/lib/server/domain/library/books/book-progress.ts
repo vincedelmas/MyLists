@@ -97,6 +97,21 @@ export const replaceBookRereads = (current: BookProgressState, rereadCount: numb
 };
 
 
+/** Re-derives catalog-dependent totals without creating a user progress event. */
+export const reconcileBookPages = (current: BookProgressState, pages: number): BookProgressState => {
+    const pageCount = requireCatalogPages(pages);
+    const currentPage = current.status === Status.COMPLETED
+        ? pageCount
+        : current.currentPage === null ? null : Math.min(current.currentPage, pageCount);
+
+    return {
+        ...current,
+        currentPage,
+        totalPagesRead: (currentPage ?? 0) + (current.rereadCount * pageCount),
+    };
+};
+
+
 const requireBookStatus = (status: Status): BookStatus => {
     if (!isBookStatus(status)) throw new FormattedError("Status is not valid for books.");
     return status;

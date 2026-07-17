@@ -6,6 +6,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {MovieLibraryEntry, MovieLibraryRepository} from "@/lib/server/domain/library/movies/movie-library.repository";
 import {movieRedoCount} from "@/lib/server/domain/library/movies/movie-progress";
+import {MovieCommunityActivityPage} from "@/lib/contracts/media/community";
 import {
     catalogItem,
     followers,
@@ -47,7 +48,7 @@ export class MovieLibraryReadRepository {
         return rows.map((row) => ({
             ...row,
             id: row.id,
-            payload: row.payload ? { old_value: row.payload.oldValue as any, new_value: row.payload.newValue as any } : null,
+            payload: row.payload,
         }));
     }
 
@@ -90,7 +91,7 @@ export class MovieLibraryReadRepository {
         return results.filter((result): result is NonNullable<typeof result> => !!result);
     }
 
-    async getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType) {
+    async getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType): Promise<MovieCommunityActivityPage> {
         const pagination = resolvePagination({
             page: search.page,
             perPage: search.perPage,
@@ -148,16 +149,18 @@ export class MovieLibraryReadRepository {
             if (!entry) return;
             const userMedia = await this.toUserMedia(entry, catalogItemId, row.ratingSystem, false);
             return {
+                kind: MediaType.MOVIES,
                 id: row.userId,
                 name: row.name,
                 image: row.image,
                 ratingSystem: row.ratingSystem,
-                userMedia: { ...userMedia, comment: null },
+                userMedia: { ...userMedia, kind: MediaType.MOVIES, comment: null },
             };
         }));
         const total = allRows.length;
 
         return {
+            kind: MediaType.MOVIES,
             page: pagination.page,
             items: items.filter((item): item is NonNullable<typeof item> => !!item),
             total,
@@ -200,8 +203,8 @@ export class MovieLibraryReadRepository {
             customCover: entry.customCover ? getImageUrl("movies-covers", entry.customCover) : null,
             addedAt: entry.addedAt,
             lastUpdated: entry.updatedAt,
-            redo: movieRedoCount(entry.progress),
-            total: entry.progress.watchCount,
+            rewatchCount: movieRedoCount(entry.progress),
+            watchCount: entry.progress.watchCount,
         };
         return { ...userMedia, ratingSystem, tags: tags ?? [] };
     }

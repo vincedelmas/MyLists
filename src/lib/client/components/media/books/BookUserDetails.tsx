@@ -1,35 +1,18 @@
 import React from "react";
-import {useQueryClient} from "@tanstack/react-query";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
-import {UpdateRedo} from "@/lib/client/components/media/base/UpdateRedo";
+import {FamilyEntryEditorProps} from "@/lib/client/components/media/family-component.types";
+import {UpdateRepeatCount} from "@/lib/client/components/media/base/UpdateRepeatCount";
 import {UpdateInput} from "@/lib/client/components/media/base/UpdateInput";
 import {UpdateRating} from "@/lib/client/components/media/base/UpdateRating";
 import {UpdateStatus} from "@/lib/client/components/media/base/UpdateStatus";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-type BooksUserDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaUserDetails"]>[0];
+type BooksUserDetailsProps = FamilyEntryEditorProps<typeof MediaType.BOOKS> & { pages: number };
 
 
-export const BooksUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: BooksUserDetailsProps<typeof MediaType.BOOKS>) => {
-    const queryClient = useQueryClient();
+export const BooksUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions, pages }: BooksUserDetailsProps) => {
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, mutationOptions);
-    const mediaData = getMediaData()!;
-
-    function getMediaData(): { pages: number } | undefined {
-        if (queryOption.queryKey[0] === "details") {
-            const apiData = queryClient.getQueryData(queryOption.queryKey);
-            if (apiData && "pages" in apiData.media) {
-                return apiData.media;
-            }
-        }
-        else if (queryOption.queryKey[0] === "userList") {
-            const apiData = queryClient.getQueryData(queryOption.queryKey);
-            const media = apiData?.results.items.find((item) => item.mediaId === userMedia.mediaId);
-            return media && "pages" in media ? media : undefined;
-        }
-    }
 
     return (
         <>
@@ -43,11 +26,10 @@ export const BooksUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
                     <div className="flex justify-between items-center">
                         <div>Pages</div>
                         <UpdateInput
-                            total={mediaData.pages}
-                            payloadName={"actualPage"}
+                            total={pages}
                             updateType={UpdateType.PAGE}
-                            initValue={userMedia.actualPage}
-                            key={userMedia.actualPage ?? "null"}
+                            initValue={userMedia.currentPage}
+                            key={userMedia.currentPage ?? "null"}
                             updateInput={updateUserMediaMutation}
                         />
                     </div>
@@ -62,10 +44,11 @@ export const BooksUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
                 </>
             }
             {userMedia.status !== Status.PLAN_TO_READ &&
-                <UpdateRedo
+                <UpdateRepeatCount
                     name={"Re-read"}
-                    redo={userMedia.redo}
-                    updateRedo={updateUserMediaMutation}
+                    count={userMedia.rereadCount}
+                    family="reading"
+                    mutation={updateUserMediaMutation}
                 />
             }
         </>

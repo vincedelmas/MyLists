@@ -11,7 +11,7 @@ import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
 import {createTvMatcher} from "@/lib/server/domain/imports/matchers/tv.matcher";
 import {ApiProviderType, ImportItemStatus, ImportJobStatus, ImportSource, MediaType, Status} from "@/lib/utils/enums";
-import {TvLibraryWriter} from "@/lib/server/domain/library/tv/tv-library.writer";
+import {TvLibraryCommands} from "@/lib/server/domain/library/tv/tv-library.commands";
 import {TvCatalogIngestionRepository} from "@/lib/server/domain/catalog/tv/tv-catalog-ingestion.repository";
 
 
@@ -68,7 +68,7 @@ describe("TV import processing", () => {
         const importService = new ImportService(ImportRepository);
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.SERIES, createTvMatcher(
-            MediaType.SERIES, new TvCatalogIngestionRepository(MediaType.SERIES), {} as any, {} as any, new TvLibraryWriter(),
+            MediaType.SERIES, new TvCatalogIngestionRepository(MediaType.SERIES), {} as any, {} as any, new TvLibraryCommands(),
         ));
         const processor = new ImportJobProcessor(importService, matcherRegistry);
 

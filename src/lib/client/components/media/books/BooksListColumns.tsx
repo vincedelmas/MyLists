@@ -18,9 +18,9 @@ export const getBooksColumns = (props: ColumnConfigProps): ColumnDef<ExtractList
                     <CommonInfoTableCell
                         userMedia={original}
                     />
-                    {!!original.redo &&
+                    {original.rereadCount > 0 &&
                         <DisplayRedoValue
-                            redoValue={original.redo}
+                            redoValue={original.rereadCount}
                         />
                     }
                 </div>

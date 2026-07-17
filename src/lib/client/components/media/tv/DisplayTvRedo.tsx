@@ -5,15 +5,14 @@ import {zeroPad} from "@/lib/utils/number-formatting";
 
 
 interface DisplayTvRedoProps {
-    redoValues: number[];
+    rewatches: { seasonNumber: number; count: number }[];
 }
 
 
-export const DisplayTvRedo = ({ redoValues }: DisplayTvRedoProps) => {
-    const maxCount = Math.max(...redoValues);
-    const totalRedo = redoValues.reduce((a, b) => a + b, 0);
+export const DisplayTvRedo = ({ rewatches }: DisplayTvRedoProps) => {
+    const totalRedo = rewatches.reduce((total, item) => total + item.count, 0);
 
-    if (maxCount === 0) return null;
+    if (totalRedo === 0) return null;
 
     return (
         <Popover>
@@ -26,13 +25,13 @@ export const DisplayTvRedo = ({ redoValues }: DisplayTvRedoProps) => {
             <PopoverContent className="w-40 px-5 pt-3 pb-3 max-h-52.5 overflow-auto" align="center">
                 <div className=" grid gap-3">
                     <div className="space-y-2">
-                        {redoValues.map((season, idx) => (
-                            <div key={idx} className="flex gap-3 items-center justify-between">
+                        {rewatches.map(({ seasonNumber, count }) => (
+                            <div key={seasonNumber} className="flex gap-3 items-center justify-between">
                                 <div className="text-sm font-medium leading-none">
-                                    Season {zeroPad(idx + 1)}
+                                    Season {zeroPad(seasonNumber)}
                                 </div>
                                 <div className="text-sm font-medium">
-                                    {season}x
+                                    {count}x
                                 </div>
                             </div>
                         ))}

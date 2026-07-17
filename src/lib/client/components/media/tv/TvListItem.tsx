@@ -1,22 +1,18 @@
-import {MediaType} from "@/lib/utils/enums";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyListItemProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayTvRedo} from "@/lib/client/components/media/tv/DisplayTvRedo";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsAndSeasons";
 
 
-type TvListItemProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaListCard"]>[number];
-
-
-export const TvListItem = (props: TvListItemProps<TvMediaType>) => {
+export const TvListItem = (props: FamilyListItemProps<TvMediaType>) => {
     return (
         <BaseMediaListItem
             {...props}
             redoDisplay={
-                props.userMedia.redo2.reduce((a, c) => a + c, 0) > 0 &&
+                props.userMedia.rewatches.length > 0 &&
                 <DisplayTvRedo
-                    redoValues={props.userMedia.redo2}
+                    rewatches={props.userMedia.rewatches}
                 />
             }
             mediaDetailsDisplay={

@@ -227,12 +227,6 @@ export const consumedEpisodeCount = (state: TvProgressState, seasons: TvSeasonDe
 export const totalTvRewatchCount = (state: TvProgressState) => state.rewatches.reduce((total, item) => total + item.count, 0);
 
 
-export const toLegacyRedo2 = (state: TvProgressState, seasons: TvSeasonDefinition[]) => {
-    const counts = new Map(state.rewatches.map(({ seasonNumber, count }) => [seasonNumber, count]));
-    return normalizeSeasons(seasons).map(({ seasonNumber }) => counts.get(seasonNumber) ?? 0);
-};
-
-
 const availableEpisodeCount = (seasons: TvSeasonDefinition[]) => seasons.reduce((total, season) => total + season.episodeCount, 0);
 
 

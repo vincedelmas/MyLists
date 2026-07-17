@@ -16,9 +16,9 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { UserService } = await import("@/lib/server/domain/user/user.service");
+const { AccountDeletionCommands } = await import("@/lib/server/domain/user/account-deletion.commands");
 const { UserRepository } = await import("@/lib/server/domain/user/user.repository");
-const { InactiveAccountService } = await import("@/lib/server/domain/user/inactive-account.service");
+const { InactiveAccountCommands } = await import("@/lib/server/domain/user/inactive-account.commands");
 const { InactiveAccountRepository } = await import("@/lib/server/domain/user/inactive-account.repository");
 
 
@@ -152,9 +152,9 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
     });
 
     it("deletes users through the service only when the inactive lifecycle guard passes", async () => {
-        const service = new UserService(
+        const commands = new AccountDeletionCommands(
+            new InactiveAccountCommands(InactiveAccountRepository),
             UserRepository,
-            new InactiveAccountService(InactiveAccountRepository),
         );
 
         const inactiveUserId = await insertUser({ id: 42, updatedAt: "2024-01-01 00:00:00" });
@@ -173,14 +173,14 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
             deletionScheduledAt: "2024-02-01 00:00:00",
         });
 
-        await expect(service.deleteUserAccount({
+        await expect(commands.delete({
             type: "inactive",
             userId: inactiveUserId,
             username: "inactive-user",
             lifecycleId: inactiveLifecycleId,
         })).resolves.toBe(true);
 
-        await expect(service.deleteUserAccount({
+        await expect(commands.delete({
             type: "inactive",
             userId: activeAgainUserId,
             username: "active-again-user",

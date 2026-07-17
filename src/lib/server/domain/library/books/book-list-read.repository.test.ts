@@ -11,13 +11,13 @@ vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbCon
 
 const { BookListReadRepository } = await import("./book-list-read.repository");
 const { BookLibraryRepository } = await import("./book-library.repository");
-const { BookLibraryService } = await import("./book-library.service");
+const { BookLibraryCommands } = await import("./book-library.commands");
 
 
 const ownerScope = { ownerId: 42, actorId: 50, reason: "public", mediaTypeEnabled: true } as const;
 
 
-describe("v2 book list read repository", () => {
+describe("book list read repository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -43,9 +43,9 @@ describe("v2 book list read repository", () => {
             mediaId: 1000,
             mediaName: "Alpha",
             status: Status.READING,
-            actualPage: 40,
-            redo: 2,
-            total: 640,
+            currentPage: 40,
+            rereadCount: 2,
+            totalPagesRead: 640,
             common: true,
             tags: [{ name: "comfort" }],
         });
@@ -64,7 +64,7 @@ describe("v2 book list read repository", () => {
     it("serves the header from channel state and normalized 1.7-minute page totals", async () => {
         const repository = new BookListReadRepository();
         expect(await repository.getListHeader(42)).toBeUndefined();
-        const library = new BookLibraryService(new BookLibraryRepository());
+        const library = new BookLibraryCommands(new BookLibraryRepository());
         await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 1_768 });
     });
@@ -81,6 +81,7 @@ describe("v2 book list read repository", () => {
         });
         expect(filtered.items.map(({ mediaName }) => mediaName)).toEqual(["Alpha"]);
         expect(await repository.getListFilters(ownerScope)).toEqual({
+            kind: MediaType.BOOKS,
             genres: [{ name: "Fantasy" }],
             tags: [{ name: "comfort" }],
             langs: [{ name: "en" }, { name: "fr" }],
@@ -125,7 +126,7 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
     ]);
 
     const repository = new BookLibraryRepository();
-    const library = new BookLibraryService(repository);
+    const library = new BookLibraryCommands(repository);
     const alpha = await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.READING, currentPage: 40, rereadCount: 2, totalPagesRead: 640, rating: 8 });
     await library.updateCustomCover({ userId: 42, catalogItemId: 1000, customCover: "custom.jpg" });
     await repository.common.editTag({ userId: 42, kind: MediaType.BOOKS, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });

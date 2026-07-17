@@ -47,7 +47,7 @@ export class TvCatalogReadRepository {
 
         if (!details) return;
 
-        const [actors, genres, networks, epsPerSeason] = await Promise.all([
+        const [actors, genres, networks, seasons] = await Promise.all([
             getDbClient()
                 .select({ id: tvActor.id, name: tvActor.name })
                 .from(tvActor)
@@ -65,7 +65,7 @@ export class TvCatalogReadRepository {
                 .where(eq(tvNetwork.catalogItemId, details.catalogItemId))
                 .orderBy(tvNetwork.name),
             getDbClient()
-                .select({ season: tvSeason.seasonNumber, episodes: tvSeason.episodeCount })
+                .select({ seasonNumber: tvSeason.seasonNumber, episodeCount: tvSeason.episodeCount })
                 .from(tvSeason)
                 .where(eq(tvSeason.catalogItemId, details.catalogItemId))
                 .orderBy(tvSeason.seasonNumber),
@@ -78,7 +78,7 @@ export class TvCatalogReadRepository {
             actors,
             genres,
             networks,
-            epsPerSeason,
+            seasons,
             apiId: Number(apiId),
             imageCover: getImageUrl(`${this.kind}-covers`, imageCover),
             providerData: {
@@ -149,7 +149,7 @@ export class TvCatalogReadRepository {
                 .where(like(tvDetails.createdBy, `%${name}%`));
         }
         else {
-            return { items: [], total: 0, pages: 0 };
+            return { kind: this.kind, items: [], total: 0, pages: 0 };
         }
 
         const conditions = and(eq(catalogItem.kind, this.kind), inArray(catalogItem.id, matchingIds));
@@ -188,6 +188,7 @@ export class TvCatalogReadRepository {
         const viewerCatalogIds = new Set(viewerEntries.map(({ catalogItemId }) => catalogItemId));
 
         return {
+            kind: this.kind,
             total,
             pages: Math.ceil(total / limit),
             items: rows.map(({ catalogItemId, imageCover, ...row }) => ({

@@ -21,22 +21,12 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
-    const updateTagNames = (newTagsList: (Tag | undefined)[]) => {
+    const updateTagNames = (_newTagsList: (Tag | undefined)[]) => {
         if (queryOption.queryKey[0] === "details") {
             void queryClient.invalidateQueries({ queryKey: queryOption.queryKey });
         }
         else if (queryOption.queryKey[0] === "userList") {
-            queryClient.setQueryData(queryOption.queryKey, (oldData) => {
-                if (!oldData) return;
-                return {
-                    ...oldData,
-                    results: Object.assign({}, oldData.results, {
-                        items: oldData.results.items.map((m) =>
-                            m.mediaId === mediaId ? Object.assign({}, m, { tags: newTagsList }) : m
-                        )
-                    }),
-                };
-            });
+            void queryClient.invalidateQueries({ queryKey: queryOption.queryKey });
         }
     };
 

@@ -5,6 +5,7 @@ import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {MangaLibraryEntry, MangaLibraryRepository} from "@/lib/server/domain/library/manga/manga-library.repository";
+import {MangaCommunityActivityPage} from "@/lib/contracts/media/community";
 import {
     catalogItem,
     followers,
@@ -43,7 +44,7 @@ export class MangaLibraryReadRepository {
         return rows.map((row) => ({
             ...row,
             id: row.id,
-            payload: row.payload ? { old_value: row.payload.oldValue as any, new_value: row.payload.newValue as any } : null,
+            payload: row.payload,
         }));
     }
 
@@ -85,7 +86,7 @@ export class MangaLibraryReadRepository {
         return results.filter((result): result is NonNullable<typeof result> => !!result);
     }
 
-    async getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType) {
+    async getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType): Promise<MangaCommunityActivityPage> {
         const pagination = resolvePagination({ page: search.page, perPage: search.perPage, defaultPerPage: 8, maxPerPage: 50 });
         const audienceCondition = viewerId
             ? sql`(
@@ -133,15 +134,17 @@ export class MangaLibraryReadRepository {
             if (!entry) return;
             const userMedia = await this.toUserMedia(entry, catalogItemId, row.ratingSystem, false);
             return {
+                kind: MediaType.MANGA,
                 id: row.userId,
                 name: row.name,
                 image: row.image,
                 ratingSystem: row.ratingSystem,
-                userMedia: { ...userMedia, comment: null },
+                userMedia: { ...userMedia, kind: MediaType.MANGA, comment: null },
             };
         }));
         const total = allRows.length;
         return {
+            kind: MediaType.MANGA,
             page: pagination.page,
             items: items.filter((item): item is NonNullable<typeof item> => !!item),
             total,
@@ -183,8 +186,8 @@ export class MangaLibraryReadRepository {
             addedAt: entry.addedAt,
             lastUpdated: entry.updatedAt,
             currentChapter: entry.progress.currentChapter,
-            redo: entry.progress.rereadCount,
-            total: entry.progress.totalChaptersRead,
+            rereadCount: entry.progress.rereadCount,
+            totalChaptersRead: entry.progress.totalChaptersRead,
         };
         return { ...userMedia, ratingSystem, tags: tags ?? [] };
     }

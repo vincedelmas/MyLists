@@ -7,8 +7,8 @@ import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsA
 import {ColumnConfigProps, getBaseColumns} from "@/lib/client/components/media/base/BaseListTable";
 
 
-export const getTvColumns = (props: ColumnConfigProps): ColumnDef<ExtractListByType<TvMediaType>>[] => {
-    const base = getBaseColumns<ExtractListByType<TvMediaType>>(props);
+export const getTvColumns = <T extends TvMediaType>(props: ColumnConfigProps): ColumnDef<ExtractListByType<T>>[] => {
+    const base = getBaseColumns<ExtractListByType<T>>(props);
 
     base.splice(2, 0, {
         id: "progress",
@@ -30,7 +30,7 @@ export const getTvColumns = (props: ColumnConfigProps): ColumnDef<ExtractListByT
                 <CommonInfoTableCell
                     userMedia={original}
                 />
-                {original.redo2.reduce((a, c) => a + c, 0) > 0 && <DisplayTvRedo redoValues={original.redo2}/>}
+                {original.rewatches.length > 0 && <DisplayTvRedo rewatches={original.rewatches}/>} 
             </div>
         ),
     });

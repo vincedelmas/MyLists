@@ -10,11 +10,26 @@ import {ApiClientModule, setupApiClientsModule} from "@/lib/server/core/containe
 interface AppContainer {
     cacheManager: CacheManager;
     apiClients: ApiClientModule;
-    repositories: UserModule["repositories"] & ImportModule["repositories"];
-    services: UserModule["services"] & ImportModule["services"] & AdminModule["services"];
-    registries: ImportModule["registries"] & ProviderModule["registries"];
+    imports: ImportModule;
+    stats: UserModule["stats"];
+    games: UserModule["games"];
+    admin: AdminModule["admin"];
+    media: MediaModule["media"];
+    social: UserModule["social"];
+    account: UserModule["account"];
+    profile: UserModule["profile"];
     library: MediaModule["library"];
-    features: MediaModule["features"] & UserModule["features"] & ProviderModule["features"];
+    activity: UserModule["activity"];
+    discovery: UserModule["discovery"];
+    collections: UserModule["collections"];
+    featureVotes: UserModule["featureVotes"];
+    achievements: UserModule["achievements"];
+    notifications: UserModule["notifications"];
+    inactiveAccounts: UserModule["inactiveAccounts"];
+    catalog: {
+        ingestion: ProviderModule["ingestion"];
+        externalProviders: ProviderModule["externalProviders"];
+    };
 }
 
 
@@ -26,7 +41,7 @@ async function initContainer(): Promise<AppContainer> {
     const clientsModule = await setupApiClientsModule();
 
     const mediaModule = setupMediaModule();
-    const adminService = setupAdminModule();
+    const adminModule = setupAdminModule();
     const userModule = setupUserModule(mediaModule);
     const providerModule = setupProviderModule(clientsModule);
 
@@ -35,24 +50,25 @@ async function initContainer(): Promise<AppContainer> {
     return {
         cacheManager,
         apiClients: clientsModule,
-        repositories: {
-            ...userModule.repositories,
-            ...importModule.repositories,
-        },
-        services: {
-            ...userModule.services,
-            ...importModule.services,
-            ...adminService.services,
-        },
-        registries: {
-            ...importModule.registries,
-            ...providerModule.registries,
-        },
         library: mediaModule.library,
-        features: {
-            ...mediaModule.features,
-            ...userModule.features,
-            ...providerModule.features,
+        media: mediaModule.media,
+        account: userModule.account,
+        inactiveAccounts: userModule.inactiveAccounts,
+        profile: userModule.profile,
+        social: userModule.social,
+        collections: userModule.collections,
+        discovery: userModule.discovery,
+        activity: userModule.activity,
+        stats: userModule.stats,
+        achievements: userModule.achievements,
+        notifications: userModule.notifications,
+        featureVotes: userModule.featureVotes,
+        games: userModule.games,
+        admin: adminModule.admin,
+        imports: importModule,
+        catalog: {
+            externalProviders: providerModule.externalProviders,
+            ingestion: providerModule.ingestion,
         },
     };
 }

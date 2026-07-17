@@ -121,7 +121,7 @@ export class GameCatalogReadRepository {
 
     async getMediaJobDetails(job: JobType, name: string, offset: number, limit: number, viewerId?: number) {
         const matchingIds = this.jobCatalogIds(job, name);
-        if (!matchingIds) return { items: [], total: 0, pages: 0 };
+        if (!matchingIds) return { kind: MediaType.GAMES, items: [], total: 0, pages: 0 };
         const conditions = and(eq(catalogItem.kind, MediaType.GAMES), inArray(catalogItem.id, matchingIds));
         const [rows, totalRow] = await Promise.all([
             getDbClient().selectDistinct({
@@ -145,6 +145,7 @@ export class GameCatalogReadRepository {
         const viewerCatalogIds = new Set(viewerEntries.map(({ catalogItemId }) => catalogItemId));
         const total = totalRow?.value ?? 0;
         return {
+            kind: MediaType.GAMES,
             items: rows.map(({ catalogItemId, imageCover, ...row }) => ({
                 ...row,
                 imageCover: getImageUrl("games-covers", imageCover),

@@ -1,7 +1,6 @@
-import {MediaType, Status} from "@/lib/utils/enums";
-import {useQueryClient} from "@tanstack/react-query";
+import {Status} from "@/lib/utils/enums";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyEntryEditorProps} from "@/lib/client/components/media/family-component.types";
 import {UpdateTvRedo} from "@/lib/client/components/media/tv/UpdateTvRedo";
 import {UpdateRating} from "@/lib/client/components/media/base/UpdateRating";
 import {UpdateStatus} from "@/lib/client/components/media/base/UpdateStatus";
@@ -9,25 +8,13 @@ import {UpdateSeasonsEps} from "@/lib/client/components/media/tv/UpdateSeasonsEp
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-type TvUserDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaUserDetails"]>[number];
+type TvUserDetailsProps = FamilyEntryEditorProps<TvMediaType> & {
+    seasons: { seasonNumber: number; episodeCount: number }[];
+};
 
 
-export const TvUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: TvUserDetailsProps<TvMediaType>) => {
-    const queryClient = useQueryClient();
+export const TvUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions, seasons }: TvUserDetailsProps) => {
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, mutationOptions);
-    const mediaData = getMediaData()!;
-    const epsPerSeason = "epsPerSeason" in mediaData ? mediaData.epsPerSeason : undefined;
-
-    function getMediaData() {
-        if (queryOption.queryKey[0] === "details") {
-            const apiData = queryClient.getQueryData(queryOption.queryKey);
-            return apiData?.media;
-        }
-        else if (queryOption.queryKey[0] === "userList") {
-            const apiData = queryClient.getQueryData(queryOption.queryKey);
-            return apiData?.results.items.find((m) => m.mediaId === userMedia.mediaId);
-        }
-    }
 
     return (
         <>
@@ -38,7 +25,7 @@ export const TvUserDetails = ({ userMedia, mediaType, queryOption, mutationOptio
             />
             {(userMedia.status !== Status.PLAN_TO_WATCH && userMedia.status !== Status.RANDOM) &&
                 <UpdateSeasonsEps
-                    epsPerSeason={epsPerSeason!}
+                    seasons={seasons}
                     currentSeason={userMedia.currentSeason}
                     currentEpisode={userMedia.currentEpisode}
                     onUpdateMutation={updateUserMediaMutation}
@@ -58,7 +45,8 @@ export const TvUserDetails = ({ userMedia, mediaType, queryOption, mutationOptio
                 <div className="flex justify-between items-center">
                     <div>Re-watched</div>
                     <UpdateTvRedo
-                        redoValues={userMedia.redo2}
+                        rewatches={userMedia.rewatches}
+                        seasons={seasons}
                         onUpdateMutation={updateUserMediaMutation}
                     />
                 </div>

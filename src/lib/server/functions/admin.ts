@@ -47,8 +47,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
         const container = await getContainer();
-        const userService = container.services.user;
-        return userService.getUserOverviewForAdmin();
+        return container.account.adminQuery.getOverview();
     });
 
 
@@ -56,7 +55,7 @@ export const getAdminMediaOverview = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
         const container = await getContainer();
-        const adminService = container.services.admin;
+        const adminService = container.admin;
         return adminService.getMediaOverviewForAdmin();
     });
 
@@ -64,7 +63,7 @@ export const getAdminMediaOverview = createServerFn({ method: "GET" })
 export const getAdminCollectionsOverview = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
-        const adminService = await getContainer().then((c) => c.services.admin);
+        const adminService = await getContainer().then((c) => c.admin);
         return adminService.getCollectionsOverviewForAdmin();
     });
 
@@ -73,7 +72,7 @@ export const getAdminAllCollections = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(searchTypeSchema)
     .handler(async ({ data }) => {
-        const adminService = await getContainer().then((c) => c.services.admin);
+        const adminService = await getContainer().then((c) => c.admin);
         return adminService.getPaginatedCollectionsForAdmin(data);
     });
 
@@ -82,8 +81,8 @@ export const getAdminAllUsers = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(searchTypeSchema)
     .handler(async ({ data }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.getPaginatedUsersForAdmin(data);
+        const query = await getContainer().then((c) => c.account.adminQuery);
+        return query.getPaginated(data);
     });
 
 
@@ -91,16 +90,16 @@ export const getAdminInactiveAccountDeletions = createServerFn({ method: "GET" }
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(searchTypeSchema)
     .handler(async ({ data }) => {
-        const inactiveAccountService = await getContainer().then((c) => c.services.inactiveAccount);
-        return inactiveAccountService.getAdminOverview(data);
+        const query = await getContainer().then((c) => c.inactiveAccounts.query);
+        return query.getAdminOverview(data);
     });
 
 
 export const getAdminAchievements = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
-        const achievementService = await getContainer().then((c) => c.services.achievements);
-        return achievementService.getAllAchievements();
+        const query = await getContainer().then((c) => c.achievements.query);
+        return query.getAllAchievements();
     });
 
 
@@ -108,7 +107,7 @@ export const getAdminMediadleStats = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(searchTypeSchema)
     .handler(async ({ data }) => {
-        const mediadleService = await getContainer().then((c) => c.services.mediadle);
+        const mediadleService = await getContainer().then((c) => c.games.mediadle);
         return mediadleService.getAllUsersStatsForAdmin(data);
     });
 
@@ -116,7 +115,7 @@ export const getAdminMediadleStats = createServerFn({ method: "GET" })
 export const getAdminWhichCameFirstStats = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
-        const whichCameFirstService = await getContainer().then((c) => c.services.whichCameFirst);
+        const whichCameFirstService = await getContainer().then((c) => c.games.whichCameFirst);
         return whichCameFirstService.getAdminStats();
     });
 
@@ -125,8 +124,8 @@ export const postAdminUpdateUser = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminPostUpdateUserSchema)
     .handler(async ({ data: { userId, payload } }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.updateUserForAdmin(userId, payload);
+        const commands = await getContainer().then((c) => c.account.adminCommands);
+        return commands.update(userId, payload);
     });
 
 
@@ -134,8 +133,8 @@ export const postAdminUpdateAchievement = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminUpdateAchievementSchema)
     .handler(async ({ data: { achievementId, name, description } }) => {
-        const achievementService = await getContainer().then((c) => c.services.achievements);
-        return achievementService.updateAchievementForAdmin(achievementId, name, description);
+        const commands = await getContainer().then((c) => c.achievements.commands);
+        return commands.updateAchievementForAdmin(achievementId, name, description);
     });
 
 
@@ -143,8 +142,8 @@ export const postAdminUpdateTiers = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminPostUpdateTiersSchema)
     .handler(async ({ data: { tiers } }) => {
-        const achievementService = await getContainer().then((c) => c.services.achievements);
-        return achievementService.updateTiersForAdmin(tiers);
+        const commands = await getContainer().then((c) => c.achievements.commands);
+        return commands.updateTiersForAdmin(tiers);
     });
 
 
@@ -173,7 +172,7 @@ export const postAdminTriggerTask = createServerFn({ method: "POST" })
 export const getAdminArchivedTasks = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
-        const adminService = await getContainer().then((c) => c.services.admin);
+        const adminService = await getContainer().then((c) => c.admin);
         return adminService.getArchivedTasksForAdmin();
     });
 
@@ -182,7 +181,7 @@ export const postAdminDeleteArchivedTask = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminDeleteArchivedTaskSchema)
     .handler(async ({ data: { taskId } }) => {
-        const adminService = await getContainer().then((c) => c.services.admin);
+        const adminService = await getContainer().then((c) => c.admin);
         return adminService.deleteArchivedTaskForAdmin(taskId);
     });
 
@@ -191,7 +190,7 @@ export const getAdminMediaRefreshStats = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminRefreshSchema)
     .handler(async ({ data }) => {
-        const adminService = await getContainer().then((c) => c.services.admin);
+        const adminService = await getContainer().then((c) => c.admin);
         return adminService.getMediaRefreshStats(data);
     });
 
@@ -200,7 +199,7 @@ export const getAdminApiMonitoringStats = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminApiMonitoringSchema)
     .handler(async ({ data }) => {
-        const adminService = await getContainer().then((c) => c.services.admin);
+        const adminService = await getContainer().then((c) => c.admin);
         return adminService.getApiMonitoringStats(data);
     });
 
@@ -209,8 +208,8 @@ export const getAdminAllUpdatesHistory = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(searchTypeSchema)
     .handler(async ({ data }) => {
-        const userUpdatesService = await getContainer().then((c) => c.services.userUpdates);
-        return userUpdatesService.getUserUpdatesPaginated(data);
+        const updates = await getContainer().then((c) => c.profile.updates.query);
+        return updates.getUserUpdatesPaginated(data);
     });
 
 

@@ -5,6 +5,7 @@ import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {BookLibraryEntry, BookLibraryRepository} from "@/lib/server/domain/library/books/book-library.repository";
+import {BookCommunityActivityPage} from "@/lib/contracts/media/community";
 import {
     catalogItem,
     followers,
@@ -43,7 +44,7 @@ export class BookLibraryReadRepository {
         return rows.map((row) => ({
             ...row,
             id: row.id,
-            payload: row.payload ? { old_value: row.payload.oldValue as any, new_value: row.payload.newValue as any } : null,
+            payload: row.payload,
         }));
     }
 
@@ -85,7 +86,7 @@ export class BookLibraryReadRepository {
         return results.filter((result): result is NonNullable<typeof result> => !!result);
     }
 
-    async getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType) {
+    async getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType): Promise<BookCommunityActivityPage> {
         const pagination = resolvePagination({ page: search.page, perPage: search.perPage, defaultPerPage: 8, maxPerPage: 50 });
         const audienceCondition = viewerId
             ? sql`(
@@ -133,15 +134,17 @@ export class BookLibraryReadRepository {
             if (!entry) return;
             const userMedia = await this.toUserMedia(entry, catalogItemId, row.ratingSystem, false);
             return {
+                kind: MediaType.BOOKS,
                 id: row.userId,
                 name: row.name,
                 image: row.image,
                 ratingSystem: row.ratingSystem,
-                userMedia: { ...userMedia, comment: null },
+                userMedia: { ...userMedia, kind: MediaType.BOOKS, comment: null },
             };
         }));
         const total = allRows.length;
         return {
+            kind: MediaType.BOOKS,
             page: pagination.page,
             items: items.filter((item): item is NonNullable<typeof item> => !!item),
             total,
@@ -182,9 +185,9 @@ export class BookLibraryReadRepository {
             customCover: entry.customCover ? getImageUrl("books-covers", entry.customCover) : null,
             addedAt: entry.addedAt,
             lastUpdated: entry.updatedAt,
-            actualPage: entry.progress.currentPage,
-            redo: entry.progress.rereadCount,
-            total: entry.progress.totalPagesRead,
+            currentPage: entry.progress.currentPage,
+            rereadCount: entry.progress.rereadCount,
+            totalPagesRead: entry.progress.totalPagesRead,
         };
         return { ...userMedia, ratingSystem, tags: tags ?? [] };
     }

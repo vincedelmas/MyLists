@@ -12,8 +12,8 @@ export const getUserStats = createServerFn({ method: "GET" })
     .validator(userStatsInputSchema)
     .handler(async ({ data: { activeTab }, context: { user, libraryAccessScope } }) => {
         const container = await getContainer();
-        const userStatsService = container.services.userStats;
-        const activatedMediaTypes = await container.features.profileChannelAccess.getEnabledKinds(user.id);
+        const userStatsService = container.stats;
+        const activatedMediaTypes = await container.profile.channels.getEnabledKinds(user.id);
 
         if (activeTab !== "overview" && !activatedMediaTypes.includes(activeTab)) {
             throw new FormattedError("MediaType not activated");

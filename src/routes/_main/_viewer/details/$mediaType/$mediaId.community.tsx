@@ -68,7 +68,6 @@ function MediaCommunityActivityPage() {
                     <CommunityActivityList
                         variant="viewAll"
                         items={apiData.items}
-                        mediaType={mediaType}
                     />
                     <Pagination
                         totalPages={apiData.pages}

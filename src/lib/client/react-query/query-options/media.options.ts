@@ -1,4 +1,4 @@
-import {Pagination, SearchType} from "@/lib/schemas";
+import type {Pagination, SearchType} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {getTrendsMedia} from "@/lib/server/functions/trends";
@@ -57,6 +57,7 @@ export const mediaCommunityActivityOptions = (
 ) => queryOptions({
     queryKey: mediaCommunityActivityKey(mediaId, mediaType, viewerId, search),
     queryFn: () => getMediaCommunityActivity({ data: { mediaId, mediaType, search } }),
+    meta: { errorToastMessage: "Community activity could not be loaded." },
 });
 
 
@@ -65,6 +66,7 @@ export const gameCompatiblePlatformsOptions = (mediaId: number, enabled: boolean
     queryFn: () => getGameCompatiblePlatforms({ data: { mediaType: MediaType.GAMES, mediaId } }),
     staleTime: 10 * 60 * 1000,
     enabled,
+    meta: { errorToastMessage: "Compatible game platforms could not be loaded." },
 });
 
 
@@ -85,6 +87,7 @@ export const editMediaDetailsOptions = (mediaType: MediaType, mediaId: number) =
 export const jobDetailsOptions = (mediaType: MediaType, job: JobType, name: string, pagination: Pagination) => queryOptions({
     queryKey: viewerScopedKey(["jobDetails", mediaType, job, name, pagination]),
     queryFn: () => getJobDetails({ data: { mediaType, job, name, pagination } }),
+    meta: { errorToastMessage: "Contributor details could not be loaded." },
 });
 
 

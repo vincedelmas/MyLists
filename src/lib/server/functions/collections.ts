@@ -2,6 +2,10 @@ import {RoleType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
+import {
+    validateCollectionSummaries,
+    validateCommunityCollectionsPage,
+} from "@/lib/contracts/media/projections";
 import {resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
 import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
@@ -21,7 +25,9 @@ export const getCommunityCollections = createServerFn({ method: "GET" })
     .validator(communityCollectionsSchema)
     .handler(async ({ data: { search, page, mediaType } }) => {
         const container = await getContainer();
-        return container.features.editorialCollectionsReader.getPublicCollections({ search, page, mediaType });
+        return validateCommunityCollectionsPage(
+            await container.collections.query.getPublicCollections({ search, page, mediaType }),
+        );
     });
 
 
@@ -30,7 +36,9 @@ export const getMediaCommunityCollections = createServerFn({ method: "GET" })
     .validator(mediaCommunityCollectionsSchema)
     .handler(async ({ data: { mediaId, mediaType } }) => {
         const container = await getContainer();
-        return container.features.editorialCollectionsReader.getMediaCommunityCollections(mediaId, mediaType);
+        return validateCollectionSummaries(
+            await container.collections.query.getMediaCommunityCollections(mediaId, mediaType),
+        );
     });
 
 
@@ -39,8 +47,10 @@ export const getReadCollectionDetails = createServerFn({ method: "GET" })
     .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.features.editorialCollectionsReader
+        const details = await container.collections.query
             .getCollectionDetails(collectionId, "read", currentUser?.id, currentUser?.role as RoleType | null);
+        await container.collections.commands.recordView(collectionId);
+        return details;
     });
 
 
@@ -49,13 +59,13 @@ export const getPaginatedUserCollections = createServerFn({ method: "GET" })
     .validator(userCollectionsSearchSchema)
     .handler(async ({ data: { search, page, mediaType }, context: { targetUser, currentUser } }) => {
         const container = await getContainer();
-        return container.features.editorialCollectionsReader.getPaginatedUserCollections(
+        return validateCommunityCollectionsPage(await container.collections.query.getPaginatedUserCollections(
             targetUser.id,
             targetUser.privacy,
             { search, page, mediaType },
             currentUser?.id,
             currentUser?.role as RoleType | null,
-        );
+        ));
     });
 
 
@@ -64,7 +74,7 @@ export const getUserCollectionMemberships = createServerFn({ method: "GET" })
     .validator(collectionMediaMembershipsSchema)
     .handler(async ({ data: { mediaId, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.features.editorialCollectionsReader.getUserCollectionMemberships(currentUser.id, mediaId, mediaType);
+        return container.collections.query.getUserCollectionMemberships(currentUser.id, mediaId, mediaType);
     });
 
 
@@ -73,8 +83,10 @@ export const getEditCollectionDetails = createServerFn({ method: "GET" })
     .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.features.editorialCollectionsReader
+        const details = await container.collections.query
             .getCollectionDetails(collectionId, "edit", currentUser?.id, currentUser?.role as RoleType | null);
+        await container.collections.commands.recordView(collectionId);
+        return details;
     });
 
 
@@ -83,7 +95,7 @@ export const postCreateCollection = createServerFn({ method: "POST" })
     .validator(createCollectionSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        const collectionId = await container.features.editorialCollectionsCommands.create({ ...data, ownerId: currentUser.id });
+        const collectionId = await container.collections.commands.create({ ...data, ownerId: currentUser.id });
 
         return { id: collectionId };
     });
@@ -94,7 +106,7 @@ export const postUpdateCollection = createServerFn({ method: "POST" })
     .validator(updateCollectionSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        await container.features.editorialCollectionsCommands.update({ ...data, actorId: currentUser.id, actorRole: currentUser.role as RoleType });
+        await container.collections.commands.update({ ...data, actorId: currentUser.id, actorRole: currentUser.role as RoleType });
     });
 
 
@@ -103,7 +115,7 @@ export const postAddMediaToCollection = createServerFn({ method: "POST" })
     .validator(collectionMediaItemActionSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        await container.features.editorialCollectionsCommands.addItem({ ...data, actorId: currentUser.id });
+        await container.collections.commands.addItem({ ...data, actorId: currentUser.id });
     });
 
 
@@ -112,7 +124,7 @@ export const postRemoveMediaFromCollection = createServerFn({ method: "POST" })
     .validator(collectionMediaItemActionSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        await container.features.editorialCollectionsCommands.removeItem({ ...data, actorId: currentUser.id });
+        await container.collections.commands.removeItem({ ...data, actorId: currentUser.id });
     });
 
 
@@ -121,7 +133,7 @@ export const postDeleteCollection = createServerFn({ method: "POST" })
     .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
-        await container.features.editorialCollectionsCommands.delete(collectionId, currentUser.id, currentUser.role as RoleType);
+        await container.collections.commands.delete(collectionId, currentUser.id, currentUser.role as RoleType);
     });
 
 
@@ -130,7 +142,7 @@ export const postToggleCollectionLike = createServerFn({ method: "POST" })
     .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
-        await container.features.editorialCollectionsCommands.toggleLike(collectionId, currentUser.id);
+        await container.collections.commands.toggleLike(collectionId, currentUser.id);
     });
 
 
@@ -139,5 +151,5 @@ export const postCopyCollection = createServerFn({ method: "POST" })
     .validator(collectionIdSchema)
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.features.editorialCollectionsCommands.copy(collectionId, currentUser.id);
+        return container.collections.commands.copy(collectionId, currentUser.id);
     });

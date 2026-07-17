@@ -1,20 +1,10 @@
-import {toast} from "sonner";
-import {useForm} from "react-hook-form";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {splitIntoColumns} from "@/lib/utils/arrays";
-import {capitalize} from "@/lib/utils/text-formatting";
-import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Textarea} from "@/lib/client/components/ui/textarea";
-import {FormError} from "@/lib/client/components/forms/FormError";
-import {createFileRoute, useRouter} from "@tanstack/react-router";
+import {createFileRoute} from "@tanstack/react-router";
+import {capitalize} from "@/lib/utils/text-formatting";
+import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options";
-import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {useEditMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
-import {EditMediaDetailsPayload, editMediaDetailsPayloadSchema, mediaTypeMediaIdSchema} from "@/lib/schemas";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {CatalogEditFamilyBoundary} from "@/lib/client/features/catalog-edit/CatalogEditFamilyBoundary";
 
 
 export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$mediaId")({
@@ -25,111 +15,19 @@ export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$m
             return result.data;
         },
     },
-    loader: ({ context: { queryClient }, params: { mediaType, mediaId } }) => {
-        return queryClient.ensureQueryData(editMediaDetailsOptions(mediaType, mediaId));
-    },
+    loader: ({ context: { queryClient }, params: { mediaType, mediaId } }) =>
+        queryClient.ensureQueryData(editMediaDetailsOptions(mediaType, mediaId)),
     component: MediaEditPage,
 });
 
 
 function MediaEditPage() {
-    const { history } = useRouter();
     const { mediaType, mediaId } = Route.useParams();
-    const editMediaMutation = useEditMediaMutation({ noErrorToast: true });
     const apiData = useSuspenseQuery(editMediaDetailsOptions(mediaType, mediaId)).data;
 
-    const form = useForm<EditMediaDetailsPayload>({
-        resolver: zodResolver(editMediaDetailsPayloadSchema),
-        defaultValues: {
-            imageCover: undefined,
-            ...apiData.fields,
-        }
-    });
-    const parts = splitIntoColumns(Object.entries(apiData.fields), 3);
-
-    const onSubmit = (submittedData: EditMediaDetailsPayload) => {
-        const payload = { ...submittedData };
-
-        if (payload?.lockStatus === "false") {
-            payload.lockStatus = false;
-        }
-        else if (payload?.lockStatus === "true") {
-            payload.lockStatus = true;
-        }
-
-        editMediaMutation.mutate({ data: { mediaType, mediaId, payload } }, {
-            onError: (error) => {
-                handleServerFormErrors(form, error);
-            },
-            onSuccess: async () => {
-                history.go(-1);
-                toast.success("Media successfully updated!");
-            },
-        });
-    };
-
-    const renderField = (myForm: any, fieldEntry: [string, any]) => {
-        const [key, _] = fieldEntry;
-
-        return (
-            <FormField
-                key={key}
-                name={key}
-                control={myForm.control}
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>{capitalize(key.replaceAll("_", " "))}</FormLabel>
-                        <FormControl>
-                            {key === "synopsis"
-                                ? <Textarea {...field} className="h-60"/>
-                                : <Input {...field}/>
-                            }
-                        </FormControl>
-                        <FormMessage/>
-                    </FormItem>
-                )}
-            />
-        );
-    };
-
     return (
-        <PageTitle title={`Edit ${capitalize(mediaType)} Details`} subtitle={`Update the media information`}>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-5 mx-auto w-full">
-                    <fieldset disabled={editMediaMutation.isPending} className="space-y-5">
-                        <div className="grid grid-cols-3 gap-8 max-sm:grid-cols-1">
-                            <div className="space-y-4">
-                                <FormField
-                                    name="imageCover"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>ImageCover URL</FormLabel>
-                                            <FormControl>
-                                                <Input {...field}/>
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
-                                    )}
-                                />
-                                {parts[0].map(array => renderField(form, array))}
-                            </div>
-                            <div className="space-y-4">
-                                {parts[1].map(array => renderField(form, array))}
-                            </div>
-                            <div className="space-y-4">
-                                {parts[2].map(arr => renderField(form, arr))}
-                            </div>
-                        </div>
-                    </fieldset>
-                    <FormError/>
-                    <div className="flex justify-end">
-                        <FormSubmitButton isLoading={editMediaMutation.isPending}>
-                            Save Changes
-                        </FormSubmitButton>
-                    </div>
-                </form>
-            </Form>
+        <PageTitle title={`Edit ${capitalize(apiData.kind)} Details`} subtitle="Update the media information">
+            <CatalogEditFamilyBoundary mediaId={mediaId} data={apiData}/>
         </PageTitle>
     );
 }

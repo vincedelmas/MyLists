@@ -4,14 +4,11 @@ import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type GamesDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]>[number];
-
-
-export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps<typeof MediaType.GAMES>) => {
+export const GamesInfoGrid = ({ mediaType, media }: FamilyDetailsProps<typeof MediaType.GAMES>) => {
     const publishers = media.companies ? media.companies.filter((c) => c.publisher) : [];
     const developers = media.companies ? media.companies.filter((c) => c.developer) : [];
 

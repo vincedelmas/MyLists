@@ -6,16 +6,23 @@ import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {historyOptions} from "@/lib/client/react-query/query-options";
 import {TagsLists} from "@/lib/client/components/media/base/TagsLists";
-import {ExtractUserMediaByType, UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
+import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {UpdateComment} from "@/lib/client/components/media/base/UpdateComment";
 import {HistoryDetails} from "@/lib/client/components/media/base/HistoryDetails";
 import {UpdateFavorite} from "@/lib/client/components/media/base/UpdateFavorite";
 import {BacklogModeSystem} from "@/lib/client/components/media/base/BacklogModeSystem";
 import {CustomCoverTabContent} from "@/lib/client/components/media/base/CustomCoverTab";
-import {UserMediaSpecificDetails} from "@/lib/client/components/media/base/UserMediaSpecificDetails";
+import {TvUserDetails} from "@/lib/client/components/media/tv/TvUserDetails";
+import {MoviesUserDetails} from "@/lib/client/components/media/movies/MoviesUserDetails";
+import {GamesUserDetails} from "@/lib/client/components/media/games/GamesUserDetails";
+import {BooksUserDetails} from "@/lib/client/components/media/books/BookUserDetails";
+import {MangaUserDetails} from "@/lib/client/components/media/manga/MangaUserDetails";
+import type {FamilyProgressMetadata} from "@/lib/client/components/media/family-component.types";
+import {assertNever} from "@/lib/utils/assert-never";
 import {
     useRemoveMediaFromListMutation,
+    UpdateUserMediaMutationOptions,
     UserMediaQueryOption,
     useUpdateCustomCoverMutation,
     useUpdateUserMediaMutation
@@ -23,20 +30,26 @@ import {
 
 
 interface UserMediaDetailsProps {
-    mediaType: MediaType;
-    queryOption: UserMediaQueryOption;
     userMedia: UserMedia | UserMediaItem;
+    progressMetadata: FamilyProgressMetadata;
+    queryOption: UserMediaQueryOption;
 }
 
 
-export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMediaDetailsProps) => {
+export const UserMediaDetails = ({ userMedia, queryOption, progressMetadata }: UserMediaDetailsProps) => {
+    const mediaType = userMedia.kind;
     const confirm = useConfirm();
     const queryClient = useQueryClient();
     const [backlogDate, setBacklogDate] = useState("");
     const [backlogMode, setBacklogMode] = useState(false);
     const history = useQuery(historyOptions(mediaType, userMedia.mediaId)).data;
     const removeMediaFromListMutation = useRemoveMediaFromListMutation(queryOption);
-    const updateCustomCoverMutation = useUpdateCustomCoverMutation(queryOption, { noErrorToast: true });
+    const updateCustomCoverMutation = useUpdateCustomCoverMutation(
+        mediaType,
+        userMedia.mediaId,
+        queryOption,
+        { noErrorToast: true },
+    );
     const [activeTab, setActiveTab] = useState<"progress" | "history" | "custom">("progress");
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, {
         backlogMode,
@@ -95,10 +108,10 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMedi
                     />
 
                     <div className={(backlogMode && !backlogDate) ? "pointer-events-none opacity-40 space-y-2" : "space-y-2"}>
-                        <UserMediaSpecificDetails
-                            mediaType={mediaType}
-                            userMedia={userMedia as ExtractUserMediaByType<typeof mediaType>}
+                        <FamilyProgressEditor
+                            userMedia={userMedia}
                             queryOption={queryOption}
+                            progressMetadata={progressMetadata}
                             mutationOptions={{ backlogMode, loggedAt: backlogMode ? backlogDate : undefined }}
                         />
                     </div>
@@ -141,4 +154,44 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMedi
             </Button>
         </Card>
     );
+};
+
+
+interface FamilyProgressEditorProps {
+    userMedia: UserMedia | UserMediaItem;
+    progressMetadata: FamilyProgressMetadata;
+    queryOption: UserMediaQueryOption;
+    mutationOptions: UpdateUserMediaMutationOptions;
+}
+
+
+const FamilyProgressEditor = ({ userMedia, queryOption, progressMetadata, mutationOptions }: FamilyProgressEditorProps) => {
+    switch (userMedia.kind) {
+        case MediaType.SERIES: {
+            if (progressMetadata.kind !== MediaType.SERIES) throw new Error("Series progress metadata does not match its entry.");
+            return <TvUserDetails mediaType={MediaType.SERIES} userMedia={userMedia} queryOption={queryOption}
+                mutationOptions={mutationOptions} seasons={progressMetadata.seasons}/>;
+        }
+        case MediaType.ANIME: {
+            if (progressMetadata.kind !== MediaType.ANIME) throw new Error("Anime progress metadata does not match its entry.");
+            return <TvUserDetails mediaType={MediaType.ANIME} userMedia={userMedia} queryOption={queryOption}
+                mutationOptions={mutationOptions} seasons={progressMetadata.seasons}/>;
+        }
+        case MediaType.MOVIES:
+            if (progressMetadata.kind !== MediaType.MOVIES) throw new Error("Movie progress metadata does not match its entry.");
+            return <MoviesUserDetails mediaType={MediaType.MOVIES} userMedia={userMedia} queryOption={queryOption} mutationOptions={mutationOptions}/>;
+        case MediaType.GAMES:
+            if (progressMetadata.kind !== MediaType.GAMES) throw new Error("Game progress metadata does not match its entry.");
+            return <GamesUserDetails mediaType={MediaType.GAMES} userMedia={userMedia} queryOption={queryOption} mutationOptions={mutationOptions}/>;
+        case MediaType.BOOKS:
+            if (progressMetadata.kind !== MediaType.BOOKS) throw new Error("Book progress metadata does not match its entry.");
+            return <BooksUserDetails mediaType={MediaType.BOOKS} userMedia={userMedia} queryOption={queryOption}
+                mutationOptions={mutationOptions} pages={progressMetadata.pages}/>;
+        case MediaType.MANGA:
+            if (progressMetadata.kind !== MediaType.MANGA) throw new Error("Manga progress metadata does not match its entry.");
+            return <MangaUserDetails mediaType={MediaType.MANGA} userMedia={userMedia} queryOption={queryOption}
+                mutationOptions={mutationOptions} chapters={progressMetadata.chapters}/>;
+        default:
+            return assertNever(userMedia, "media entry family");
+    }
 };

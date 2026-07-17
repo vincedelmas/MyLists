@@ -149,7 +149,8 @@ export const libraryEntryTag = sqliteTable("library_entry_tag", {
 ]);
 
 
-export type LibraryChangePayload = { oldValue: unknown; newValue: unknown };
+export type LibraryChangeValue = null | boolean | number | string | LibraryChangeValue[] | { [key: string]: LibraryChangeValue };
+export type LibraryChangePayload = { oldValue: LibraryChangeValue; newValue: LibraryChangeValue };
 
 
 export const libraryChange = sqliteTable("library_change", {

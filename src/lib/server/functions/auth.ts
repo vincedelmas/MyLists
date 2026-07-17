@@ -14,9 +14,9 @@ export const getCurrentUser = createServerFn({ method: "GET" })
             return null;
         }
 
-        const userService = await getContainer().then((c) => c.services.user);
+        const account = await getContainer().then((c) => c.account.query);
         const userId = Number(session.user.id);
-        const settings = await userService.getMinimalUserSettings(userId);
+        const settings = await account.getMinimalSettings(userId);
 
         return {
             ...session.user,

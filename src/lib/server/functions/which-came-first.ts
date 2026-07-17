@@ -6,7 +6,7 @@ import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 
 const getWhichCameFirstService = async () => {
     const container = await getContainer();
-    return container.services.whichCameFirst;
+    return container.games.whichCameFirst;
 };
 import {abandonWhichCameFirstRunSchema, answerWhichCameFirstRoundSchema, startWhichCameFirstRunSchema} from "@/lib/schemas";
 

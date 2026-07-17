@@ -199,11 +199,6 @@ export class EditorialCollectionsReadRepository {
         )).get();
     }
 
-    async incrementViewCount(collectionId: number) {
-        await getDbClient().update(editorialCollection).set({
-            viewCount: sql`${editorialCollection.viewCount} + 1`,
-        }).where(eq(editorialCollection.id, collectionId));
-    }
 }
 
 

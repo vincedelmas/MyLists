@@ -103,9 +103,9 @@ function ListsOnboarding() {
                         mediaType={MediaType.MOVIES}
                         userMedia={apiData.results.items[0]}
                         queryOption={mediaListOptions(MediaType.MOVIES, "DemoProfile", {})}
-                        redoDisplay={"redo" in apiData.results.items[0] && !!apiData.results.items[0].redo &&
+                        redoDisplay={apiData.results.items[0].kind === MediaType.MOVIES && apiData.results.items[0].rewatchCount > 0 &&
                             <DisplayRedoValue
-                                redoValue={apiData.results.items[0].redo}
+                                redoValue={apiData.results.items[0].rewatchCount}
                             />
                         }
                     />

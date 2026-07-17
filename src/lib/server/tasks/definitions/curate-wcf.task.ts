@@ -10,7 +10,7 @@ export const curateWCFTask = defineTask({
     inputSchema: z.object({}),
     handler: async (ctx) => {
         const container = await getContainer();
-        const whichCameFirstService = container.services.whichCameFirst;
+        const whichCameFirstService = container.games.whichCameFirst;
         const counts = await whichCameFirstService.curatePool();
 
         for (const row of counts) {

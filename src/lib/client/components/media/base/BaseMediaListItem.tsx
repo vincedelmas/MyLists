@@ -97,7 +97,6 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
             </MediaCard>
 
             <UserMediaEditDialog
-                mediaType={mediaType}
                 userMedia={userMedia}
                 dialogOpen={dialogOpen}
                 queryOption={queryOption}

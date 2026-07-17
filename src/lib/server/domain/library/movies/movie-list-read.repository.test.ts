@@ -11,7 +11,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbCon
 
 const { MovieListReadRepository } = await import("./movie-list-read.repository");
 const { MovieLibraryRepository } = await import("./movie-library.repository");
-const { MovieLibraryService } = await import("./movie-library.service");
+const { MovieLibraryCommands } = await import("./movie-library.commands");
 
 
 const ownerScope = {
@@ -22,7 +22,7 @@ const ownerScope = {
 } as const;
 
 
-describe("v2 movie list read repository", () => {
+describe("movie list read repository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -48,8 +48,8 @@ describe("v2 movie list read repository", () => {
             mediaId: 1000,
             mediaName: "Alpha",
             status: Status.COMPLETED,
-            total: 2,
-            redo: 1,
+            watchCount: 2,
+            rewatchCount: 1,
             common: true,
             tags: [{ name: "comfort" }],
         });
@@ -57,14 +57,14 @@ describe("v2 movie list read repository", () => {
     });
 
     it("sorts by canonical rewatches with stable movie IDs", async () => {
-        const library = new MovieLibraryService(new MovieLibraryRepository());
-        await library.replaceRewatches({ userId: 42, catalogItemId: 1001, redo: 2 });
+        const library = new MovieLibraryCommands(new MovieLibraryRepository());
+        await library.replaceRewatches({ userId: 42, catalogItemId: 1001, rewatchCount: 2 });
         const result = await new MovieListReadRepository().getMediaList(42, ownerScope, {
             page: 1,
             perPage: 3,
             sorting: "Re-Watched",
         });
-        expect(result.items.map(({ mediaName, redo }) => [mediaName, redo])).toEqual([
+        expect(result.items.map(({ mediaName, rewatchCount }) => [mediaName, rewatchCount])).toEqual([
             ["Beta", 2],
             ["Alpha", 1],
             ["Gamma", 0],
@@ -74,7 +74,7 @@ describe("v2 movie list read repository", () => {
     it("serves the intentional public header from channel state and normalized stats", async () => {
         const repository = new MovieListReadRepository();
         expect(await repository.getListHeader(42)).toBeUndefined();
-        const library = new MovieLibraryService(new MovieLibraryRepository());
+        const library = new MovieLibraryCommands(new MovieLibraryRepository());
         await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 290 });
         await library.synchronizeProfileChannel({ userId: 42, enabled: false, views: 4 });
@@ -99,6 +99,7 @@ describe("v2 movie list read repository", () => {
     it("returns only filter/search values represented in the owner's movie list", async () => {
         const repository = new MovieListReadRepository();
         expect(await repository.getListFilters(ownerScope)).toEqual({
+            kind: MediaType.MOVIES,
             genres: [{ name: "Drama" }],
             tags: [{ name: "comfort" }],
             langs: [{ name: "en" }, { name: "fr" }],
@@ -157,9 +158,9 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
     await db.insert(schema.movieActor).values({ catalogItemId: 1000, name: "Lead" });
 
     const repository = new MovieLibraryRepository();
-    const library = new MovieLibraryService(repository);
+    const library = new MovieLibraryCommands(repository);
     const alpha = await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
-    await library.replaceRewatches({ userId: 42, catalogItemId: 1000, redo: 1 });
+    await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatchCount: 1 });
     await library.updateCustomCover({ userId: 42, catalogItemId: 1000, customCover: "custom.jpg" });
     await repository.common.editTag({ userId: 42, kind: MediaType.MOVIES, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
     await library.add({ userId: 42, catalogItemId: 1001, status: Status.COMPLETED });

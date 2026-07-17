@@ -7,11 +7,16 @@ import {ExternalMediaProviderRegistry, MediaIngestionServiceRegistry} from "@/li
 import {createBooksIngestionService, createGBooksBooksProvider} from "@/lib/server/api-providers/gbooks-books.provider";
 import {createAnimeIngestionService, createSeriesIngestionService, createTmdbAnimeProvider, createTmdbSeriesProvider} from "@/lib/server/api-providers/tmdb-tv.provider";
 import {TvCatalogIngestionRepository} from "@/lib/server/domain/catalog/tv/tv-catalog-ingestion.repository";
+import {TvCatalogIngestionCommand} from "@/lib/server/domain/catalog/tv/tv-catalog-ingestion.command";
 import {MovieCatalogIngestionRepository} from "@/lib/server/domain/catalog/movies/movie-catalog-ingestion.repository";
+import {MovieCatalogIngestionCommand} from "@/lib/server/domain/catalog/movies/movie-catalog-ingestion.command";
 import {GameCatalogIngestionRepository} from "@/lib/server/domain/catalog/games/game-catalog-ingestion.repository";
+import {GameCatalogIngestionCommand} from "@/lib/server/domain/catalog/games/game-catalog-ingestion.command";
 import {BookCatalogIngestionRepository} from "@/lib/server/domain/catalog/books/book-catalog-ingestion.repository";
 import {MangaCatalogIngestionRepository} from "@/lib/server/domain/catalog/manga/manga-catalog-ingestion.repository";
 import {CatalogRefreshCandidateRepository} from "@/lib/server/domain/catalog/catalog-refresh-candidate.repository";
+import {BookCatalogIngestionCommand} from "@/lib/server/domain/catalog/books/book-catalog-ingestion.command";
+import {MangaCatalogIngestionCommand} from "@/lib/server/domain/catalog/manga/manga-catalog-ingestion.command";
 
 
 export function setupProviderModule(apiClientModule: ApiClientModule) {
@@ -31,10 +36,16 @@ export function setupProviderModule(apiClientModule: ApiClientModule) {
 
     const seriesCatalog = new TvCatalogIngestionRepository(MediaType.SERIES);
     const animeCatalog = new TvCatalogIngestionRepository(MediaType.ANIME);
+    const seriesCatalogCommands = new TvCatalogIngestionCommand(seriesCatalog);
+    const animeCatalogCommands = new TvCatalogIngestionCommand(animeCatalog);
     const movieCatalog = new MovieCatalogIngestionRepository();
+    const movieCatalogCommands = new MovieCatalogIngestionCommand(movieCatalog);
     const gameCatalog = new GameCatalogIngestionRepository();
+    const gameCatalogCommands = new GameCatalogIngestionCommand(gameCatalog);
     const bookCatalog = new BookCatalogIngestionRepository();
+    const bookCatalogCommands = new BookCatalogIngestionCommand(bookCatalog);
     const mangaCatalog = new MangaCatalogIngestionRepository();
+    const mangaCatalogCommands = new MangaCatalogIngestionCommand(mangaCatalog);
     const refreshCandidates = new CatalogRefreshCandidateRepository();
     const refreshSources = {
         series: {
@@ -56,33 +67,33 @@ export function setupProviderModule(apiClientModule: ApiClientModule) {
 
     const ingestionServices = {
         series: createSeriesIngestionService(
-            seriesCatalog,
+            seriesCatalogCommands,
             externalProviders.series,
             refreshSources.series,
         ),
         anime: createAnimeIngestionService(
             apiClients.jikan,
-            animeCatalog,
+            animeCatalogCommands,
             externalProviders.anime,
             refreshSources.anime,
         ),
         movies: createMoviesIngestionService(
-            movieCatalog,
+            movieCatalogCommands,
             externalProviders.movies,
             refreshSources.movies,
         ),
         games: createGamesIngestionService(
             apiClients.hltb,
-            gameCatalog,
+            gameCatalogCommands,
             externalProviders.games,
             refreshSources.games,
         ),
         books: createBooksIngestionService(
-            bookCatalog,
+            bookCatalogCommands,
             externalProviders.books,
         ),
         manga: createMangaIngestionService(
-            mangaCatalog,
+            mangaCatalogCommands,
             externalProviders.manga,
             refreshSources.manga,
         ),
@@ -92,20 +103,15 @@ export function setupProviderModule(apiClientModule: ApiClientModule) {
     });
 
     return {
-        registries: {
-            externalProviders: ExternalMediaProviderRegistry,
-            ingestionServices: MediaIngestionServiceRegistry,
-        },
-        features: {
-            refreshCandidates,
-            catalogs: {
-                series: seriesCatalog,
-                anime: animeCatalog,
-                movies: movieCatalog,
-                games: gameCatalog,
-                books: bookCatalog,
-                manga: mangaCatalog,
-            },
+        externalProviders: ExternalMediaProviderRegistry,
+        ingestion: MediaIngestionServiceRegistry,
+        importCatalogs: {
+            series: seriesCatalog,
+            anime: animeCatalog,
+            movies: movieCatalog,
+            games: gameCatalog,
+            books: bookCatalog,
+            manga: mangaCatalog,
         },
     }
 }

@@ -2,8 +2,6 @@ import {and, count, eq, lte, sql} from "drizzle-orm";
 import {getImageFilename} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType} from "@/lib/utils/enums";
-import {MovieLibraryRepository} from "@/lib/server/domain/library/movies/movie-library.repository";
-import {MovieLibraryService} from "@/lib/server/domain/library/movies/movie-library.service";
 import {catalogItem, movieDetails} from "@/lib/server/database/schema";
 import {hasDefinedCatalogFields} from "@/lib/server/domain/catalog/catalog-admin-fields";
 
@@ -27,9 +25,6 @@ export type MovieCatalogEdit = Partial<{
 
 /** Manager edit boundary for the canonical movie catalog. */
 export class MovieCatalogAdminRepository {
-    private readonly libraryRepository = new MovieLibraryRepository();
-    private readonly library = new MovieLibraryService(this.libraryRepository);
-
     async getEditableFields(catalogItemId: number) {
         const fields = await getDbClient()
             .select({
@@ -50,7 +45,7 @@ export class MovieCatalogAdminRepository {
             .innerJoin(movieDetails, eq(movieDetails.catalogItemId, catalogItem.id))
             .where(eq(catalogItem.id, catalogItemId))
             .get();
-        return fields ? { fields } : undefined;
+        return fields ? { kind: MediaType.MOVIES, fields } : undefined;
     }
 
     async lockOldMovies() {
@@ -71,14 +66,14 @@ export class MovieCatalogAdminRepository {
     }
 
     async updateEditableFields(catalogItemId: number, edit: MovieCatalogEdit) {
-        const previousEntries = await this.libraryRepository.findEntriesByCatalogItem(catalogItemId);
         const catalogFields = {
             name: edit.name,
-            releaseDate: edit.releaseDate,
             synopsis: edit.synopsis,
             locked: edit.lockStatus,
+            releaseDate: edit.releaseDate,
             imageCover: edit.imageCover ? getImageFilename(edit.imageCover) : undefined,
         };
+
         const detailFields = {
             originalName: edit.originalName,
             directorName: edit.directorName,
@@ -95,7 +90,6 @@ export class MovieCatalogAdminRepository {
         if (hasDefinedCatalogFields(detailFields)) {
             await getDbClient().update(movieDetails).set(detailFields).where(eq(movieDetails.catalogItemId, catalogItemId));
         }
-        if (edit.duration !== undefined) await this.library.reconcileCatalogMetadata(previousEntries);
         return true;
     }
 }

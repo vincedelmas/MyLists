@@ -6,13 +6,14 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/l
 interface UpdateSeasonsEpsProps {
     currentSeason: number,
     currentEpisode: number,
-    epsPerSeason: { season: number, episodes: number }[],
+    seasons: { seasonNumber: number, episodeCount: number }[],
     onUpdateMutation: ReturnType<typeof useUpdateUserMediaMutation>,
 }
 
 
-export const UpdateSeasonsEps = ({ onUpdateMutation, epsPerSeason, currentSeason, currentEpisode }: UpdateSeasonsEpsProps) => {
-    const episodes = [...Array(epsPerSeason[currentSeason - 1].episodes).keys()].map(v => (v + 1).toString());
+export const UpdateSeasonsEps = ({ onUpdateMutation, seasons, currentSeason, currentEpisode }: UpdateSeasonsEpsProps) => {
+    const episodeCount = seasons.find(({ seasonNumber }) => seasonNumber === currentSeason)?.episodeCount ?? 0;
+    const episodes = [...Array(episodeCount).keys()].map(v => (v + 1).toString());
 
     const handleSeasonUpdate = (season: string) => {
         onUpdateMutation.mutate({ payload: { currentSeason: parseInt(season), type: UpdateType.TV } });
@@ -32,9 +33,9 @@ export const UpdateSeasonsEps = ({ onUpdateMutation, epsPerSeason, currentSeason
                         <SelectValue/>
                     </SelectTrigger>
                     <SelectContent>
-                        {epsPerSeason.map((item) =>
-                            <SelectItem key={item.season} value={item.season.toString()}>
-                                {item.season}
+                        {seasons.map((item) =>
+                            <SelectItem key={item.seasonNumber} value={item.seasonNumber.toString()}>
+                                {item.seasonNumber}
                             </SelectItem>
                         )}
                     </SelectContent>
@@ -59,4 +60,3 @@ export const UpdateSeasonsEps = ({ onUpdateMutation, epsPerSeason, currentSeason
         </>
     );
 };
-

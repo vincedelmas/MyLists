@@ -11,13 +11,13 @@ vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbCon
 
 const { MangaListReadRepository } = await import("./manga-list-read.repository");
 const { MangaLibraryRepository } = await import("./manga-library.repository");
-const { MangaLibraryService } = await import("./manga-library.service");
+const { MangaLibraryCommands } = await import("./manga-library.commands");
 
 
 const ownerScope = { ownerId: 42, actorId: 50, reason: "public", mediaTypeEnabled: true } as const;
 
 
-describe("v2 manga list read repository", () => {
+describe("manga list read repository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -44,8 +44,8 @@ describe("v2 manga list read repository", () => {
             mediaName: "Alpha",
             status: Status.READING,
             currentChapter: 40,
-            redo: 2,
-            total: 640,
+            rereadCount: 2,
+            totalChaptersRead: 640,
             common: true,
             tags: [{ name: "comfort" }],
         });
@@ -64,7 +64,7 @@ describe("v2 manga list read repository", () => {
     it("serves the header from channel state and normalized seven-minute chapter totals", async () => {
         const repository = new MangaListReadRepository();
         expect(await repository.getListHeader(42)).toBeUndefined();
-        const library = new MangaLibraryService(new MangaLibraryRepository());
+        const library = new MangaLibraryCommands(new MangaLibraryRepository());
         await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 7_280 });
     });
@@ -81,6 +81,7 @@ describe("v2 manga list read repository", () => {
         });
         expect(filtered.items.map(({ mediaName }) => mediaName)).toEqual(["Alpha"]);
         expect(await repository.getListFilters(ownerScope)).toEqual({
+            kind: MediaType.MANGA,
             genres: [{ name: "Fantasy" }],
             tags: [{ name: "comfort" }],
         });
@@ -128,7 +129,7 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
     ]);
 
     const repository = new MangaLibraryRepository();
-    const library = new MangaLibraryService(repository);
+    const library = new MangaLibraryCommands(repository);
     const alpha = await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.READING, currentChapter: 40, rereadCount: 2, totalChaptersRead: 640, rating: 8 });
     await library.updateCustomCover({ userId: 42, catalogItemId: 1000, customCover: "custom.jpg" });
     await repository.common.editTag({ userId: 42, kind: MediaType.MANGA, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });

@@ -2,13 +2,10 @@ import React from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {Link} from "@tanstack/react-router";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
 
 
-type MangaDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["overTitle"]>[number];
-
-
-export const MangaOverTitle = ({ mediaType, media }: MangaDetailsProps<typeof MediaType.MANGA>) => {
+export const MangaOverTitle = ({ mediaType, media }: FamilyDetailsProps<typeof MediaType.MANGA>) => {
     const hasAuthors = (media.authors?.length ?? 0) > 0;
 
     return (

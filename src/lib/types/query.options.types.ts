@@ -1,13 +1,14 @@
 import {MediaType} from "@/lib/utils/enums";
-import {TvMediaType} from "@/lib/types/media-kind.types";
+import type {
+    ListPagination as MediaListPagination,
+    MediaListItem,
+} from "@/lib/contracts/media/lists";
+import type {MediaDetailsPage} from "@/lib/contracts/media/details";
+import type {LibraryHistory} from "@/lib/contracts/media/projections";
 import {adminOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {
     achievementOptions,
     hallOfFameOptions,
-    historyOptions,
-    listFiltersOptions,
-    mediaDetailsOptions,
-    mediaListOptions,
     profileHeaderOptions,
     profileOptions,
     tasteMatchesOptions,
@@ -17,11 +18,8 @@ import {
 
 // --- Inferred Query Options Types -----------------------------------------------------
 type ProfileOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof profileOptions>["queryFn"]>>>;
-type MediaListOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaListOptions>["queryFn"]>>>;
-type MediaDetailsOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaDetailsOptions>["queryFn"]>>>;
-export type HistoryOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof historyOptions>["queryFn"]>>>;
+export type HistoryOptionsType = LibraryHistory;
 export type ProfileHeaderOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof profileHeaderOptions>["queryFn"]>>>;
-export type ListFiltersOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof listFiltersOptions>["queryFn"]>>>;
 export type AchCard = Awaited<ReturnType<NonNullable<ReturnType<typeof achievementOptions>["queryFn"]>>>["result"][number];
 export type AchSummary = Awaited<ReturnType<NonNullable<ReturnType<typeof achievementOptions>["queryFn"]>>>["summary"][MediaType];
 export type HofUserData = Awaited<ReturnType<NonNullable<ReturnType<typeof hallOfFameOptions>["queryFn"]>>>["items"][number];
@@ -32,51 +30,25 @@ export type AdminUserOverview = Awaited<ReturnType<NonNullable<typeof adminOverv
 
 
 // --- User Media Details Types ----------------------------------------------------
-export type UserMedia = NonNullable<MediaDetailsOptionsType["userMedia"]>;
-export type ExtractUserMediaByType<T extends MediaType> =
-    T extends typeof MediaType.GAMES ? Extract<UserMedia, { playtime: any }> :
-        T extends TvMediaType ? Extract<UserMedia, { currentSeason: any }> :
-            T extends typeof MediaType.BOOKS ? Extract<UserMedia, { actualPage: any }> :
-                T extends typeof MediaType.MANGA ? Extract<UserMedia, { currentChapter: any }> :
-                    T extends typeof MediaType.MOVIES ? Exclude<UserMedia, { playtime: any } | { currentSeason: any } | { actualPage: any } | { currentChapter: any }> :
-                        never;
+export type UserMedia = NonNullable<MediaDetailsPage["userMedia"]>;
+export type ExtractUserMediaByType<T extends MediaType> = T extends MediaType ? Extract<UserMedia, { kind: T }> : never;
 
 
 // --- Media Details Types ---------------------------------------------------------
-export type MediaDetails = MediaDetailsOptionsType["media"];
-export type MediaFollowsDetails = MediaDetailsOptionsType["followsData"];
-export type ExtractMediaDetailsByType<T extends MediaType> =
-    T extends typeof MediaType.GAMES ? Extract<MediaDetails, { gameEngine: any }> :
-        T extends TvMediaType ? Extract<MediaDetails, { totalEpisodes: any }> :
-            T extends typeof MediaType.BOOKS ? Extract<MediaDetails, { pages: any }> :
-                T extends typeof MediaType.MANGA ? Extract<MediaDetails, { chapters: any }> :
-                    T extends typeof MediaType.MOVIES ? Extract<MediaDetails, { tagline: any }> :
-                        never;
+export type MediaDetails = MediaDetailsPage["media"];
+export type MediaFollowsDetails = MediaDetailsPage["followsData"];
+export type ExtractMediaDetailsByType<T extends MediaType> = T extends MediaType ? Extract<MediaDetails, { kind: T }> : never;
 
 
 // --- Follows List Types -----------------------------------------------------------
-export type FollowData = MediaDetailsOptionsType["followsData"][number];
-type FollowUserMedia = FollowData["userMedia"];
-export type ExtractFollowByType<T extends MediaType> = FollowData & { userMedia: ExtractFollowUserMediaByType<T> }
-type ExtractFollowUserMediaByType<T extends MediaType> =
-    T extends typeof MediaType.GAMES ? Extract<FollowUserMedia, { playtime: any }> :
-        T extends TvMediaType ? Extract<FollowUserMedia, { currentSeason: any }> :
-            T extends typeof MediaType.BOOKS ? Extract<FollowUserMedia, { actualPage: any }> :
-                T extends typeof MediaType.MANGA ? Extract<FollowUserMedia, { currentChapter: any }> :
-                    T extends typeof MediaType.MOVIES ? Exclude<FollowUserMedia, { playtime: any } | { currentSeason: any } | { actualPage: any }> :
-                        never;
+export type FollowData = MediaDetailsPage["followsData"][number];
+export type ExtractFollowByType<T extends MediaType> = T extends MediaType ? Extract<FollowData, { kind: T }> : never;
 
 
 // --- Media List Types -------------------------------------------------------------
-export type ListPagination = MediaListOptionsType["results"]["pagination"];
-export type UserMediaItem = MediaListOptionsType["results"]["items"][number];
-export type ExtractListByType<T extends MediaType> =
-    T extends typeof MediaType.GAMES ? Extract<UserMediaItem, { playtime: any }> :
-        T extends typeof MediaType.BOOKS ? Extract<UserMediaItem, { actualPage: any }> :
-            T extends typeof MediaType.MANGA ? Extract<UserMediaItem, { currentChapter: any }> :
-                T extends TvMediaType ? Extract<UserMediaItem, { currentSeason: any }> :
-                    T extends typeof MediaType.MOVIES ? Exclude<UserMediaItem, { playtime: any } | { currentSeason: any } | { actualPage: any }> :
-                        never;
+export type ListPagination = MediaListPagination;
+export type UserMediaItem = MediaListItem;
+export type ExtractListByType<T extends MediaType> = T extends MediaType ? Extract<UserMediaItem, { kind: T }> : never;
 
 
 // --- Types for ProfileOptions ------------------------------------------------------

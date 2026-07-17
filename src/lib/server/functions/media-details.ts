@@ -4,6 +4,10 @@ import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
+import {validateMediaDetailsPage} from "@/lib/contracts/media/details";
+import {validateCommunityActivityPage} from "@/lib/contracts/media/community";
+import {validateCatalogEditFields} from "@/lib/contracts/media/catalog-edit";
+import {validateCompatibleGamePlatforms, validateJobDetailsPage} from "@/lib/contracts/media/projections";
 import {isAtLeastRole, MediaType, RoleType} from "@/lib/utils/enums";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {publicAuthMiddleware, requiredAuthAndManagerRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
@@ -26,69 +30,29 @@ export const getMediaDetails = createServerFn({ method: "GET" })
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
         if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
-            const result = await container.features.tvDetailsReaders[mediaType].getMediaAndUserDetails(currentUser?.id, mediaId);
+            const result = await container.media.details.queries[mediaType].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return {
-                similarMedia: result.similarMedia,
-                media: { ...result.media, kind: mediaType },
-                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
-                followsData: result.followsData.map((follow) => ({
-                    ...follow,
-                    userMedia: { ...follow.userMedia, kind: mediaType },
-                })),
-            };
+            return validateMediaDetailsPage(result);
         }
         if (mediaType === MediaType.MOVIES) {
-            const result = await container.features.movieDetailsReader.getMediaAndUserDetails(currentUser?.id, mediaId);
+            const result = await container.media.details.queries[MediaType.MOVIES].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return {
-                similarMedia: result.similarMedia,
-                media: { ...result.media, kind: mediaType },
-                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
-                followsData: result.followsData.map((follow) => ({
-                    ...follow,
-                    userMedia: { ...follow.userMedia, kind: mediaType },
-                })),
-            };
+            return validateMediaDetailsPage(result);
         }
         if (mediaType === MediaType.GAMES) {
-            const result = await container.features.gameDetailsReader.getMediaAndUserDetails(currentUser?.id, mediaId);
+            const result = await container.media.details.queries[MediaType.GAMES].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return {
-                similarMedia: result.similarMedia,
-                media: { ...result.media, kind: mediaType },
-                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
-                followsData: result.followsData.map((follow) => ({
-                    ...follow,
-                    userMedia: { ...follow.userMedia, kind: mediaType },
-                })),
-            };
+            return validateMediaDetailsPage(result);
         }
         if (mediaType === MediaType.BOOKS) {
-            const result = await container.features.bookDetailsReader.getMediaAndUserDetails(currentUser?.id, mediaId);
+            const result = await container.media.details.queries[MediaType.BOOKS].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return {
-                similarMedia: result.similarMedia,
-                media: { ...result.media, kind: mediaType },
-                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
-                followsData: result.followsData.map((follow) => ({
-                    ...follow,
-                    userMedia: { ...follow.userMedia, kind: mediaType },
-                })),
-            };
+            return validateMediaDetailsPage(result);
         }
         if (mediaType === MediaType.MANGA) {
-            const result = await container.features.mangaDetailsReader.getMediaAndUserDetails(currentUser?.id, mediaId);
+            const result = await container.media.details.queries[MediaType.MANGA].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return {
-                similarMedia: result.similarMedia,
-                media: { ...result.media, kind: mediaType },
-                userMedia: result.userMedia ? { ...result.userMedia, kind: mediaType } : null,
-                followsData: result.followsData.map((follow) => ({
-                    ...follow,
-                    userMedia: { ...follow.userMedia, kind: mediaType },
-                })),
-            };
+            return validateMediaDetailsPage(result);
         }
         throw new Error(`Unsupported media type: ${mediaType}`);
     });
@@ -100,24 +64,24 @@ export const getMediaCommunityActivity = createServerFn({ method: "GET" })
     .handler(async ({ data: { mediaType, mediaId, search }, context: { currentUser } }) => {
         const container = await getContainer();
         if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
-            return container.features.tvDetailsReaders[mediaType]
-                .getCommunityActivity(currentUser?.id, mediaId, search);
+            return validateCommunityActivityPage(await container.library.readers[mediaType]
+                .getCommunityActivity(currentUser?.id, mediaId, search));
         }
         if (mediaType === MediaType.MOVIES) {
-            return container.features.movieDetailsReader
-                .getCommunityActivity(currentUser?.id, mediaId, search);
+            return validateCommunityActivityPage(await container.library.readers[MediaType.MOVIES]
+                .getCommunityActivity(currentUser?.id, mediaId, search));
         }
         if (mediaType === MediaType.GAMES) {
-            return container.features.gameDetailsReader
-                .getCommunityActivity(currentUser?.id, mediaId, search);
+            return validateCommunityActivityPage(await container.library.readers[MediaType.GAMES]
+                .getCommunityActivity(currentUser?.id, mediaId, search));
         }
         if (mediaType === MediaType.BOOKS) {
-            return container.features.bookDetailsReader
-                .getCommunityActivity(currentUser?.id, mediaId, search);
+            return validateCommunityActivityPage(await container.library.readers[MediaType.BOOKS]
+                .getCommunityActivity(currentUser?.id, mediaId, search));
         }
         if (mediaType === MediaType.MANGA) {
-            return container.features.mangaDetailsReader
-                .getCommunityActivity(currentUser?.id, mediaId, search);
+            return validateCommunityActivityPage(await container.library.readers[MediaType.MANGA]
+                .getCommunityActivity(currentUser?.id, mediaId, search));
         }
         throw new Error(`Unsupported media type: ${mediaType}`);
     });
@@ -128,7 +92,7 @@ export const resolveExternalMedia = createServerFn({ method: "POST" })
     .validator(externalMediaResolveSchema)
     .handler(async ({ data: { mediaType, apiId } }) => {
         const container = await getContainer();
-        const ingestionService = container.registries.ingestionServices.get(mediaType);
+        const ingestionService = container.catalog.ingestion.get(mediaType);
         const mediaId = await ingestionService.storeFromExternal(apiId);
         return { mediaId };
     });
@@ -139,25 +103,33 @@ export const getJobDetails = createServerFn({ method: "GET" })
     .validator(jobDetailsSchema)
     .handler(async ({ data: { mediaType, job, name, pagination }, context: { currentUser } }) => {
         const container = await getContainer();
+        const page = pagination.page ?? 1;
+        const perPage = pagination.perPage ?? 24;
+        const offset = (page - 1) * perPage;
         if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
-            return container.features.tvDetailsReaders[mediaType]
-                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+            const result = await container.media.catalog.readers[mediaType]
+                .getMediaJobDetails(job, name, offset, perPage, currentUser?.id);
+            return validateJobDetailsPage(result);
         }
         if (mediaType === MediaType.MOVIES) {
-            return container.features.movieDetailsReader
-                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+            const result = await container.media.catalog.readers[MediaType.MOVIES]
+                .getMediaJobDetails(job, name, offset, perPage, currentUser?.id);
+            return validateJobDetailsPage(result);
         }
         if (mediaType === MediaType.GAMES) {
-            return container.features.gameDetailsReader
-                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+            const result = await container.media.catalog.readers[MediaType.GAMES]
+                .getMediaJobDetails(job, name, offset, perPage, currentUser?.id);
+            return validateJobDetailsPage(result);
         }
         if (mediaType === MediaType.BOOKS) {
-            return container.features.bookDetailsReader
-                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+            const result = await container.media.catalog.readers[MediaType.BOOKS]
+                .getMediaJobDetails(job, name, offset, perPage, currentUser?.id);
+            return validateJobDetailsPage(result);
         }
         if (mediaType === MediaType.MANGA) {
-            return container.features.mangaDetailsReader
-                .getMediaJobDetails(job, name, pagination, currentUser?.id);
+            const result = await container.media.catalog.readers[MediaType.MANGA]
+                .getMediaJobDetails(job, name, offset, perPage, currentUser?.id);
+            return validateJobDetailsPage(result);
         }
         throw new Error(`Unsupported media type: ${mediaType}`);
     });
@@ -168,15 +140,15 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
     .validator(refreshMediaDetailsSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
-        const adminService = container.services.admin;
+        const adminService = container.admin;
         const isManagerOrAbove = isAtLeastRole(currentUser.role as RoleType, RoleType.MANAGER);
-        const ingestionService = container.registries.ingestionServices.get(mediaType);
+        const ingestionService = container.catalog.ingestion.get(mediaType);
 
         if (!isManagerOrAbove && mediaType === MediaType.BOOKS) {
             throw new FormattedError("Unauthorized to refresh book metadata.");
         }
 
-        const media = container.features.catalogRefreshCandidates.getItemIdentity(mediaType, mediaId);
+        const media = container.media.catalog.refreshCandidates.getItemIdentity(mediaType, mediaId);
         if (!media) throw new FormattedError("Media not found, cannot refresh metadata.");
 
         if (!isManagerOrAbove && media.lastApiUpdate) {
@@ -205,7 +177,9 @@ export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
             throw new FormattedError("Platform lookup is only available for games ;).");
         }
 
-        return container.features.gameDetailsReader.getCompatiblePlatforms(mediaId);
+        return validateCompatibleGamePlatforms(
+            await container.media.catalog.readers[MediaType.GAMES].getCompatiblePlatforms(mediaId),
+        );
     });
 
 
@@ -214,7 +188,7 @@ export const postUpdateBookCover = createServerFn({ method: "POST" })
     .validator((data) => updateBookCoverSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
     .handler(async ({ data: { mediaId, imageUrl, imageFile } }) => {
         const container = await getContainer();
-        await container.features.bookCoverContribution.contribute(mediaId, { imageUrl, imageFile });
+        await container.media.catalog.bookCover.contribute(mediaId, { imageUrl, imageFile });
     });
 
 
@@ -224,17 +198,42 @@ export const getMediaDetailsToEdit = createServerFn({ method: "GET" })
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();
 
-        const result = await container.features.catalogAdminReaders[mediaType].getEditableFields(mediaId);
-        if (!result) throw notFound();
+        if (mediaType === MediaType.SERIES) {
+            const result = await container.media.catalog.adminReaders[MediaType.SERIES].getEditableFields(mediaId);
+            if (!result) throw notFound();
+            return validateCatalogEditFields(result);
+        }
+        if (mediaType === MediaType.ANIME) {
+            const result = await container.media.catalog.adminReaders[MediaType.ANIME].getEditableFields(mediaId);
+            if (!result) throw notFound();
+            return validateCatalogEditFields(result);
+        }
+        if (mediaType === MediaType.MOVIES) {
+            const result = await container.media.catalog.adminReaders[MediaType.MOVIES].getEditableFields(mediaId);
+            if (!result) throw notFound();
+            return validateCatalogEditFields(result);
+        }
+        if (mediaType === MediaType.GAMES) {
+            const result = await container.media.catalog.adminReaders[MediaType.GAMES].getEditableFields(mediaId);
+            if (!result) throw notFound();
+            return validateCatalogEditFields(result);
+        }
+        if (mediaType === MediaType.BOOKS) {
+            const result = await container.media.catalog.adminReaders[MediaType.BOOKS].getEditableFields(mediaId);
+            if (!result) throw notFound();
+            return validateCatalogEditFields(result);
+        }
 
-        return result;
+        const result = await container.media.catalog.adminReaders[MediaType.MANGA].getEditableFields(mediaId);
+        if (!result) throw notFound();
+        return validateCatalogEditFields(result);
     });
 
 
 export const postEditMediaDetails = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndManagerRoleMiddleware, transactionMiddleware])
     .validator(editMediaDetailsSchema)
-    .handler(async ({ data: { mediaType, mediaId, payload } }) => {
+    .handler(async ({ data }) => {
         const container = await getContainer();
-        await container.features.catalogManagerEditor.update(mediaType, mediaId, payload);
+        await container.media.catalog.edit.update(data);
     });

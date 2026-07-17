@@ -9,5 +9,5 @@ export const getTasteMatches = createServerFn({ method: "GET" })
     .validator(tasteMatchesSearchSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.features.tasteMatchesReader.getTasteMatches(currentUser.id, data);
+        return container.discovery.tasteMatches.getTasteMatches(currentUser.id, data);
     });

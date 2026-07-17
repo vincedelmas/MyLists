@@ -1,12 +1,12 @@
 import * as z from "zod";
 import {GamesPlatformsEnum, JobType, Status} from "@/lib/utils/enums";
+import {mediaListRequestSchema} from "@/lib/contracts/media/lists";
 import {
     mediaTypeFieldSchema,
     optionalCoercedBooleanFieldSchema,
     optionalSearchFieldSchema,
     paginationSchema,
     sortingFieldSchema,
-    usernameFieldSchema
 } from "@/lib/schemas/common.schema";
 
 
@@ -20,8 +20,6 @@ const mediaListArgsSchema = paginationSchema.extend({
     favorite: optionalCoercedBooleanFieldSchema,
     hideCommon: optionalCoercedBooleanFieldSchema,
     status: z.array(z.enum(Status)).optional().catch(undefined),
-    currentUserId: z.coerce.number().int().optional().catch(undefined),
-    userId: z.coerce.number().int().optional().catch(undefined),
     genres: z.array(z.string()).optional().catch(undefined),
     tags: z.array(z.string()).optional().catch(undefined),
     langs: z.array(z.string()).optional().catch(undefined),
@@ -39,11 +37,7 @@ export const mediaListSearchSchema = mediaListArgsSchema.extend({
     view: z.enum(["grid", "list"]).optional().catch(undefined),
 });
 
-export const mediaListSchema = z.object({
-    args: mediaListArgsSchema,
-    username: usernameFieldSchema,
-    mediaType: mediaTypeFieldSchema,
-});
+export const mediaListSchema = mediaListRequestSchema;
 
 export const mediaListFiltersSchema = z.looseObject({
     mediaType: mediaTypeFieldSchema,

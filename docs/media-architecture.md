@@ -1,5 +1,8 @@
 # Media architecture
 
+The follow-up application-layer and frontend work is specified in
+[Application-layer and media UI rewrite](application-layer-rewrite/README.md).
+
 The application uses one direct media implementation. There is no v1/v2 runtime
 switch, dual write, shadow read, or feature flag. Database migration `0055`
 backfills the canonical model and cuts the application over; migration `0056`

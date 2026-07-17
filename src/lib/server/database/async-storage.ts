@@ -17,6 +17,9 @@ export const getDbClient = () => {
 
 
 export const withTransaction = async <T>(action: (tx: TransactionClient) => Promise<T>) => {
+    const activeTransaction = dbTransactionLocalStorage.getStore();
+    if (activeTransaction) return action(activeTransaction);
+
     const result = await db.transaction(async (tx) => {
         const handlerResult = await dbTransactionLocalStorage.run(tx, async () => await action(tx));
         return handlerResult;

@@ -16,7 +16,8 @@ import {
     sql,
 } from "drizzle-orm";
 import {alias} from "drizzle-orm/sqlite-core";
-import {MediaListArgs, SimpleSearch} from "@/lib/schemas";
+import {SimpleSearch} from "@/lib/schemas";
+import {MovieListArgs, MovieListPage} from "@/lib/contracts/media/lists";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -71,7 +72,7 @@ export class MovieListReadRepository {
         return { timeSpent: stats?.timeSpent ?? 0 };
     }
 
-    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: MediaListArgs) {
+    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: MovieListArgs): Promise<MovieListPage> {
         const ownerId = access.ownerId;
         const { page, perPage, offset, limit } = resolvePagination(args);
         const sorting = resolveSorting(args.sorting, MOVIE_LIST_SORTS, "Title A-Z");
@@ -116,6 +117,7 @@ export class MovieListReadRepository {
         const items = await this.hydrateItems(rows, currentUserId, ownerId);
         const totalItems = totalRow?.value ?? 0;
         return {
+            kind: MediaType.MOVIES,
             items,
             pagination: {
                 page,
@@ -156,7 +158,7 @@ export class MovieListReadRepository {
                 ))
                 .orderBy(asc(movieDetails.originalLanguage)),
         ]);
-        return { genres, tags, langs: langs as { name: string }[] };
+        return { kind: MediaType.MOVIES, genres, tags, langs: langs as { name: string }[] };
     }
 
     async getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
@@ -272,7 +274,7 @@ export class MovieListReadRepository {
             })));
     }
 
-    private buildConditions(currentUserId: number | undefined, ownerId: number, args: MediaListArgs) {
+    private buildConditions(currentUserId: number | undefined, ownerId: number, args: MovieListArgs) {
         const conditions: SQL[] = [
             eq(libraryEntry.userId, ownerId),
             eq(catalogItem.kind, MediaType.MOVIES),
@@ -369,10 +371,11 @@ export class MovieListReadRepository {
             };
             return {
                 ...row,
+                kind: MediaType.MOVIES,
                 customCover: customCover ? getImageUrl("movies-covers", customCover) : null,
                 imageCover: getImageUrl("movies-covers", customCover ?? imageCover),
-                redo: movieRedoCount(progress),
-                total: watchCount,
+                rewatchCount: movieRedoCount(progress),
+                watchCount,
                 tags: tags.filter((tag) => tag.libraryEntryId === row.id).map(({ id, name: tagName }) => ({ id, name: tagName })),
                 common: commonIds.has(catalogItemId),
             };

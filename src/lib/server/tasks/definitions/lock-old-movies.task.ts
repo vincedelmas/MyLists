@@ -11,7 +11,7 @@ export const lockOldMoviesTask = defineTask({
     handler: async (ctx) => {
         const container = await getContainer();
         await ctx.step("lock-movies", async () => {
-            const totalMoviesLocked = await container.features.movieCatalogAdmin.lockOldMovies();
+            const totalMoviesLocked = await container.media.catalog.maintenance.movies.lockOldMovies();
 
             ctx.metric("movies.locked", totalMoviesLocked);
 

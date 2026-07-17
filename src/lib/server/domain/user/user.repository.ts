@@ -358,7 +358,11 @@ export class UserRepository {
     }
 
     static async findByUsername(username: string) {
-        return getDbClient().select().from(user).where(eq(user.name, username)).get() ?? null;
+        return getDbClient()
+            .select()
+            .from(user)
+            .where(eq(user.name, username))
+            .get() ?? null;
     }
 
     static async updateShowOnboarding(userId: number) {

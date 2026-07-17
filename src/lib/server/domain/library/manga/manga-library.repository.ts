@@ -26,6 +26,16 @@ export type MangaLibraryEntry = {
 export class MangaLibraryRepository {
     readonly common = new LibraryCommonRepository();
 
+    async findEntriesByCatalogItem(catalogItemId: number) {
+        const owners = await getDbClient()
+            .select({ userId: libraryEntry.userId })
+            .from(libraryEntry)
+            .innerJoin(mangaProgress, eq(mangaProgress.libraryEntryId, libraryEntry.id))
+            .where(eq(libraryEntry.catalogItemId, catalogItemId));
+        const entries = await Promise.all(owners.map(({ userId }) => this.findEntry(userId, catalogItemId)));
+        return entries.filter((entry): entry is MangaLibraryEntry => !!entry);
+    }
+
     async findEntry(userId: number, catalogItemId: number): Promise<MangaLibraryEntry | undefined> {
         const row = await getDbClient().select({
             ...getTableColumns(libraryEntry),

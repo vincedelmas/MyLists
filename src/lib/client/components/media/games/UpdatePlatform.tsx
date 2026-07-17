@@ -20,14 +20,15 @@ export const UpdatePlatform = ({ platform, mediaId, updatePlatform, disabled = f
     const { data, isLoading } = useQuery(gameCompatiblePlatformsOptions(mediaId, open));
 
     const compatiblePlatforms = data?.map((p) => p.name) ?? [];
-    const availablePlatforms = compatiblePlatforms.length > 0 ? compatiblePlatforms : isLoading ? [] : Object.values(GamesPlatformsEnum);
+    const availablePlatforms = compatiblePlatforms.length > 0 ? compatiblePlatforms : isLoading ? [] : gamePlatforms;
 
     const selectedPlatformIsMissing = platform && !availablePlatforms.includes(platform);
     const allPlatforms = [DEFAULT_DASH_FALLBACK, ...(selectedPlatformIsMissing ? [platform] : []), ...availablePlatforms];
 
     const handleSelect = (value: string) => {
         if (disabled) return;
-        const valueToSend = value === DEFAULT_DASH_FALLBACK ? null : value as GamesPlatformsEnum;
+        if (value !== DEFAULT_DASH_FALLBACK && !isGamePlatform(value)) return;
+        const valueToSend = value === DEFAULT_DASH_FALLBACK ? null : value;
         updatePlatform.mutate({ payload: { platform: valueToSend, type: UpdateType.PLATFORM } });
     };
 
@@ -60,3 +61,9 @@ export const UpdatePlatform = ({ platform, mediaId, updatePlatform, disabled = f
         </div>
     );
 };
+
+
+const gamePlatforms = Object.values(GamesPlatformsEnum);
+
+const isGamePlatform = (value: string): value is GamesPlatformsEnum =>
+    gamePlatforms.some((platform) => platform === value);

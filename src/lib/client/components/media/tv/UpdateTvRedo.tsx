@@ -9,34 +9,44 @@ import {Credenza, CredenzaContent, CredenzaDescription, CredenzaFooter, Credenza
 
 
 interface UpdateTvRedoProps {
-    redoValues: number[];
+    rewatches: { seasonNumber: number; count: number }[];
+    seasons: { seasonNumber: number; episodeCount: number }[];
     onUpdateMutation: ReturnType<typeof useUpdateUserMediaMutation>;
 }
 
 
-export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps) => {
+export const UpdateTvRedo = ({ onUpdateMutation, rewatches, seasons }: UpdateTvRedoProps) => {
     const [open, setOpen] = useState(false);
-    const [draftRedo, setDraftRedo] = useState<number[]>([]);
-    const totalRedo = redoValues.reduce((a, b) => a + b, 0);
+    const [draftRewatches, setDraftRewatches] = useState<{ seasonNumber: number; count: number }[]>([]);
+    const totalRedo = rewatches.reduce((total, item) => total + item.count, 0);
 
     const onOpenChange = (open: boolean) => {
         setOpen(open);
         if (open) {
-            setDraftRedo([...redoValues]);
+            const counts = new Map(rewatches.map(({ seasonNumber, count }) => [seasonNumber, count]));
+            setDraftRewatches(seasons.map(({ seasonNumber }) => ({
+                seasonNumber,
+                count: counts.get(seasonNumber) ?? 0,
+            })));
         }
     };
 
-    const updateSeason = (idx: number, value: number) => {
-        setDraftRedo(prev => prev.map((s, i) => i === idx ? Math.min(REDO_MAX, Math.max(0, s + value)) : s));
+    const updateSeason = (seasonNumber: number, value: number) => {
+        setDraftRewatches((previous) => previous.map((item) => item.seasonNumber === seasonNumber
+            ? { ...item, count: Math.min(REDO_MAX, Math.max(0, item.count + value)) }
+            : item));
     };
 
     const updateAllSeasons = (value: number) => {
-        setDraftRedo(prev => prev.map((s) => Math.min(REDO_MAX, Math.max(0, s + value))));
+        setDraftRewatches((previous) => previous.map((item) => ({
+            ...item,
+            count: Math.min(REDO_MAX, Math.max(0, item.count + value)),
+        })));
     };
 
     const onUpdateRedoValues = () => {
         setOpen(false);
-        onUpdateMutation.mutate({ payload: { redo2: draftRedo, type: UpdateType.REDO } });
+        onUpdateMutation.mutate({ payload: { rewatches: draftRewatches, type: UpdateType.REDO } });
     };
 
     return (
@@ -67,7 +77,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                     size="bare"
                                     variant="invisible"
                                     onClick={() => updateAllSeasons(-1)}
-                                    disabled={draftRedo.every((s) => s <= 0)}
+                                    disabled={draftRewatches.every(({ count }) => count <= 0)}
                                 >
                                     <MinusCircle className="size-5"/>
                                 </Button>
@@ -75,7 +85,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                     size="bare"
                                     variant="invisible"
                                     onClick={() => updateAllSeasons(1)}
-                                    disabled={draftRedo.every((s) => s >= REDO_MAX)}
+                                    disabled={draftRewatches.every(({ count }) => count >= REDO_MAX)}
                                 >
                                     <PlusCircle className="size-5"/>
                                 </Button>
@@ -83,28 +93,28 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                         </div>
                         <Separator className="mb-3"/>
                         <div className="overflow-y-auto scrollbar-thin max-h-73">
-                            {draftRedo.map((season, idx) =>
-                                <div key={idx} className="flex justify-between items-center px-3">
+                            {draftRewatches.map(({ seasonNumber, count }) =>
+                                <div key={seasonNumber} className="flex justify-between items-center px-3">
                                     <div className="flex items-center gap-6">
                                         <div className="font-semibold">
-                                            Season {idx + 1}:
+                                            Season {seasonNumber}:
                                         </div>
-                                        <div>{season}x</div>
+                                        <div>{count}x</div>
                                     </div>
                                     <div className="flex gap-3 items-center">
                                         <Button
                                             size="bare"
                                             variant="invisible"
-                                            disabled={season <= 0}
-                                            onClick={() => updateSeason(idx, -1)}
+                                            disabled={count <= 0}
+                                            onClick={() => updateSeason(seasonNumber, -1)}
                                         >
                                             <MinusCircle className="size-5"/>
                                         </Button>
                                         <Button
                                             size="bare"
                                             variant="invisible"
-                                            disabled={season >= REDO_MAX}
-                                            onClick={() => updateSeason(idx, 1)}
+                                            disabled={count >= REDO_MAX}
+                                            onClick={() => updateSeason(seasonNumber, 1)}
                                         >
                                             <PlusCircle className="size-5"/>
                                         </Button>

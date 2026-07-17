@@ -9,7 +9,7 @@ import {FormError} from "@/lib/client/components/forms/FormError";
 import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {UpdateUserCustomCoverInput, updateUserCustomCoverSchema} from "@/lib/schemas";
+import {UpdateUserCustomCoverInput, updateUserCustomCoverSchema} from "@/lib/contracts/media/library";
 import {useUpdateCustomCoverMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 

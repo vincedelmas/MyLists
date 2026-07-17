@@ -34,7 +34,7 @@ function JobInfoPage() {
     const navigate = Route.useNavigate();
     const { mediaType, job, name } = Route.useParams();
     const apiData = useSuspenseQuery(jobDetailsOptions(mediaType, job, name, filters)).data;
-    const isMediaTypeActive = currentUser?.settings.some((s) => s.mediaType === mediaType && s.active) ?? false;
+    const isMediaTypeActive = currentUser?.settings.some((s) => s.mediaType === apiData.kind && s.active) ?? false;
 
     const onPageChange = async (newPage: number) => {
         await navigate({ search: { page: newPage } });
@@ -47,7 +47,7 @@ function JobInfoPage() {
         >
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-4">
                 {apiData.items.map((item) =>
-                    <MediaCard key={item.mediaId} mediaType={mediaType} item={item}>
+                    <MediaCard key={item.mediaId} mediaType={apiData.kind} item={item}>
                         <div className="absolute bottom-0 w-full space-y-1 rounded-b-sm p-3">
                             <div className="flex w-full items-center justify-between space-x-2 max-sm:text-sm">
                                 <h3 className="grow truncate font-semibold text-primary" title={item.mediaName}>

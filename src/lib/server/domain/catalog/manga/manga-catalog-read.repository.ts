@@ -107,7 +107,7 @@ export class MangaCatalogReadRepository {
             : job === JobType.PUBLISHER
                 ? and(eq(catalogItem.kind, MediaType.MANGA), like(mangaDetails.publisher, `%${name}%`))
                 : undefined;
-        if (!conditions) return { items: [], total: 0, pages: 0 };
+        if (!conditions) return { kind: MediaType.MANGA, items: [], total: 0, pages: 0 };
         const [rows, totalRow] = await Promise.all([
             getDbClient().selectDistinct({
                 catalogItemId: catalogItem.id,
@@ -133,6 +133,7 @@ export class MangaCatalogReadRepository {
         const viewerCatalogIds = new Set(viewerEntries.map(({ catalogItemId }) => catalogItemId));
         const total = totalRow?.value ?? 0;
         return {
+            kind: MediaType.MANGA,
             items: rows.map(({ catalogItemId, imageCover, ...row }) => ({
                 ...row,
                 imageCover: getImageUrl("manga-covers", imageCover),

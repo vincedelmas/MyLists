@@ -11,15 +11,14 @@ export const getSearchResults = createServerFn({ method: "GET" })
     .validator(navbarSearchSchema)
     .handler(async ({ data: { query, page, apiProvider }, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
-        const providers = container.registries.externalProviders;
+        const providers = container.catalog.externalProviders;
 
         if (query === "") {
             return { hasNextPage: false, data: [] };
         }
 
         if (apiProvider === ApiProviderType.USERS) {
-            return userService.searchUsers(query, page);
+            return container.account.query.search(query, page);
         }
 
         if (!currentUser) {
@@ -42,7 +41,7 @@ export const getSearchResults = createServerFn({ method: "GET" })
             const apiResults = await providers.get(MediaType.BOOKS).search.search(query, page);
 
             if (page === 1) {
-                const dbResults = await container.features.bookCatalogReader.searchByName(query);
+                const dbResults = await container.media.catalog.readers[MediaType.BOOKS].searchByName(query);
 
                 const dbApiIds = new Set(dbResults.map((r) => String(r.id)));
                 const filteredApiResults = apiResults.data.filter((r) => !dbApiIds.has(String(r.id)));

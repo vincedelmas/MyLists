@@ -11,13 +11,13 @@ vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbCon
 
 const { GameListReadRepository } = await import("./game-list-read.repository");
 const { GameLibraryRepository } = await import("./game-library.repository");
-const { GameLibraryService } = await import("./game-library.service");
+const { GameLibraryCommands } = await import("./game-library.commands");
 
 
 const ownerScope = { ownerId: 42, actorId: 50, reason: "public", mediaTypeEnabled: true } as const;
 
 
-describe("v2 game list read repository", () => {
+describe("game list read repository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -63,7 +63,7 @@ describe("v2 game list read repository", () => {
     it("serves the public list header from channel state and normalized playtime stats", async () => {
         const repository = new GameListReadRepository();
         expect(await repository.getListHeader(42)).toBeUndefined();
-        const library = new GameLibraryService(new GameLibraryRepository());
+        const library = new GameLibraryCommands(new GameLibraryRepository());
         await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 720 });
     });
@@ -84,6 +84,7 @@ describe("v2 game list read repository", () => {
     it("returns owner-represented platforms, genres, tags and developer search values", async () => {
         const repository = new GameListReadRepository();
         expect(await repository.getListFilters(ownerScope)).toEqual({
+            kind: MediaType.GAMES,
             genres: [{ name: "Role-playing" }],
             tags: [{ name: "comfort" }],
             platforms: [{ name: "PC" }, { name: "Switch" }],
@@ -133,7 +134,7 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
     ]);
 
     const repository = new GameLibraryRepository();
-    const library = new GameLibraryService(repository);
+    const library = new GameLibraryCommands(repository);
     const alpha = await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.PLAYING, playtime: 600, platform: "PC", rating: 8 });
     await library.updateCustomCover({ userId: 42, catalogItemId: 1000, customCover: "custom.jpg" });
     await repository.common.editTag({ userId: 42, kind: MediaType.GAMES, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });

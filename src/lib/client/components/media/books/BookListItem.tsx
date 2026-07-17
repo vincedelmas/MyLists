@@ -1,28 +1,25 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyListItemProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayPages} from "@/lib/client/components/media/base/DisplayPages";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 
 
-type BookListItemProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaListCard"]>[number];
-
-
-export const BookListItem = (props: BookListItemProps<typeof MediaType.BOOKS>) => {
+export const BookListItem = (props: FamilyListItemProps<typeof MediaType.BOOKS>) => {
     return (
         <BaseMediaListItem
             {...props}
-            redoDisplay={!!props.userMedia.redo &&
+            redoDisplay={props.userMedia.rereadCount > 0 &&
                 <DisplayRedoValue
-                    redoValue={props.userMedia.redo}
+                    redoValue={props.userMedia.rereadCount}
                 />
             }
             mediaDetailsDisplay={
                 <DisplayPages
                     total={props.userMedia.pages}
                     status={props.userMedia.status}
-                    currentPage={props.userMedia.actualPage}
+                    currentPage={props.userMedia.currentPage}
                 />
             }
         />

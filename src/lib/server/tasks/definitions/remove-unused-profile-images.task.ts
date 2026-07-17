@@ -15,15 +15,15 @@ export const removeUnusedProfileImagesTask = defineTask({
     }),
     handler: async (ctx, input) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const accountQuery = container.account.query;
         const baseUploadsLocation = serverEnv.BASE_UPLOADS_LOCATION;
 
         const cleanupSteps = [{
             name: "profile-covers",
-            getDbFilenames: () => userService.getProfileImageFilenames(),
+            getDbFilenames: () => accountQuery.getProfileImageFilenames(),
         }, {
             name: "profile-back-covers",
-            getDbFilenames: () => userService.getBackgroundImageFilenames(),
+            getDbFilenames: () => accountQuery.getBackgroundImageFilenames(),
         }];
 
         for (const step of cleanupSteps) {

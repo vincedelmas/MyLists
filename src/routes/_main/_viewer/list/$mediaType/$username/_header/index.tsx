@@ -7,12 +7,10 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Header} from "@/lib/client/components/media/base/Header";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {Pagination} from "@/lib/client/components/general/Pagination";
-import {MediaGrid} from "@/lib/client/components/media/base/MediaGrid";
-import {MediaTable} from "@/lib/client/components/media/base/MediaTable";
 import {AppliedFilters} from "@/lib/client/components/media/base/AppliedFilters";
 import {FiltersSideSheet} from "@/lib/client/components/media/base/FiltersSideSheet";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import {MediaListFamilyBoundary} from "@/lib/client/features/media-list/MediaListFamilyBoundary";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/")({
@@ -32,9 +30,10 @@ function MediaList() {
     const { username, mediaType } = Route.useParams();
     const allStatuses = statusUtils.byMediaType(mediaType);
     const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
-    const { userData, ...apiData } = useSuspenseQuery(mediaListOptions(mediaType, username, filters)).data;
+    const queryOption = mediaListOptions(mediaType, username, filters);
+    const apiData = useSuspenseQuery(queryOption).data;
 
-    const isCurrent = (currentUser?.id === userData.id);
+    const isCurrent = (currentUser?.id === apiData.userData.id);
     const isGrid = filters.view ? filters.view === "grid" : (currentUser?.gridListView ?? true);
 
     const handleGridToggle = () => {
@@ -45,38 +44,8 @@ function MediaList() {
     };
 
     const handleFilterChange = (newFilters: Partial<MediaListArgs>) => {
-        const page = newFilters.page || 1;
         void navigate({
-            search: (prev) => {
-                const updatedSearch = { ...prev };
-
-                Object.entries(newFilters).forEach(([key, item]) => {
-                    const typedKey = key as keyof MediaListArgs;
-                    const prevValue = prev[typedKey];
-
-                    if (item === false || item === null || (Array.isArray(item) && item.length === 0)) {
-                        delete updatedSearch[typedKey];
-                    }
-                    else if (Array.isArray(prevValue) && Array.isArray(item)) {
-                        const oldSet = new Set(prevValue);
-                        const newSet = new Set(item);
-                        const toAdd = item.filter((i) => !oldSet.has(i));
-                        const toKeep = prevValue.filter((i) => !newSet.has(i));
-                        const merged = [...toKeep, ...toAdd];
-                        if (merged.length === 0) {
-                            delete updatedSearch[typedKey];
-                        }
-                        else {
-                            updatedSearch[typedKey] = merged as any;
-                        }
-                    }
-                    else {
-                        updatedSearch[typedKey] = item as any;
-                    }
-                });
-
-                return { ...updatedSearch, page };
-            },
+            search: (prev) => mergeListSearch(prev, newFilters),
             resetScroll: false,
         });
     };
@@ -100,34 +69,15 @@ function MediaList() {
                 onFilterRemove={(filters) => handleFilterChange(filters)}
             />
             <div className="animate-in fade-in duration-500 mt-2">
-                {isGrid ?
-                    <MediaGrid
-                        isCurrent={isCurrent}
-                        mediaType={mediaType}
-                        mediaItems={apiData.results.items}
-                        queryOption={mediaListOptions(mediaType, username, filters)}
-                    />
-                    :
-                    <MediaTable
-                        filters={filters}
-                        mediaType={mediaType}
-                        isCurrent={isCurrent}
-                        results={apiData.results}
-                        queryOption={mediaListOptions(mediaType, username, filters)}
-                        onChangePage={(filters) => handleFilterChange(filters)}
-                    />
-                }
+                <MediaListFamilyBoundary
+                    page={apiData.results}
+                    filters={filters}
+                    isCurrent={isCurrent}
+                    isGrid={isGrid}
+                    queryOption={queryOption}
+                    onChangePage={handleFilterChange}
+                />
             </div>
-
-            {isGrid &&
-                <div className="mt-8">
-                    <Pagination
-                        currentPage={apiData.results.pagination.page}
-                        totalPages={apiData.results.pagination.totalPages}
-                        onChangePage={(page) => handleFilterChange({ page })}
-                    />
-                </div>
-            }
 
             {filtersPanelOpen &&
                 <FiltersSideSheet
@@ -142,3 +92,43 @@ function MediaList() {
         </PageTitle>
     );
 }
+
+
+const mergeListSearch = (
+    current: MediaListArgs & { view?: "grid" | "list" },
+    changes: Partial<MediaListArgs>,
+): MediaListArgs & { view?: "grid" | "list" } => ({
+    ...current,
+    page: changes.page ?? 1,
+    perPage: changes.perPage ?? current.perPage,
+    sorting: changes.sorting ?? current.sorting,
+    search: changes.search === undefined ? current.search : changes.search || undefined,
+    favorite: changes.favorite === undefined ? current.favorite : changes.favorite || undefined,
+    comment: changes.comment === undefined ? current.comment : changes.comment || undefined,
+    hideCommon: changes.hideCommon === undefined ? current.hideCommon : changes.hideCommon || undefined,
+    status: toggleFilterValues(current.status, changes.status),
+    genres: toggleFilterValues(current.genres, changes.genres),
+    tags: toggleFilterValues(current.tags, changes.tags),
+    langs: toggleFilterValues(current.langs, changes.langs),
+    directors: toggleFilterValues(current.directors, changes.directors),
+    publishers: toggleFilterValues(current.publishers, changes.publishers),
+    actors: toggleFilterValues(current.actors, changes.actors),
+    authors: toggleFilterValues(current.authors, changes.authors),
+    companies: toggleFilterValues(current.companies, changes.companies),
+    networks: toggleFilterValues(current.networks, changes.networks),
+    creators: toggleFilterValues(current.creators, changes.creators),
+    platforms: toggleFilterValues(current.platforms, changes.platforms),
+});
+
+
+const toggleFilterValues = <T extends string>(current: T[] | undefined, changes: T[] | undefined): T[] | undefined => {
+    if (changes === undefined) return current;
+    if (changes.length === 0) return undefined;
+
+    const changedValues = new Set(changes);
+    const currentValues = new Set(current ?? []);
+    const retained = (current ?? []).filter((value) => !changedValues.has(value));
+    const added = changes.filter((value) => !currentValues.has(value));
+    const result = [...retained, ...added];
+    return result.length > 0 ? result : undefined;
+};

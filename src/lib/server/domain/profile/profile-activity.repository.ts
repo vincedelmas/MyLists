@@ -5,13 +5,7 @@ import {PaginatedActivityFilter} from "@/lib/types/activity.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {LibraryAccessScope} from "@/lib/server/domain/access/library-access.policy";
-import {
-    catalogItem,
-    libraryActivity,
-    libraryEntry,
-    profileMediaChannel,
-    user,
-} from "@/lib/server/database/schema";
+import {catalogItem, libraryActivity, libraryEntry, profileMediaChannel, user,} from "@/lib/server/database/schema";
 import {and, asc, count, desc, eq, gt, gte, inArray, isNull, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
 import {dateFromUTCInput, monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 

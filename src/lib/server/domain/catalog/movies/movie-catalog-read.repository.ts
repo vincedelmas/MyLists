@@ -112,7 +112,7 @@ export class MovieCatalogReadRepository {
 
     async getMediaJobDetails(job: JobType, name: string, offset: number, limit: number, viewerId?: number) {
         const matchingIds = this.jobCatalogIds(job, name);
-        if (!matchingIds) return { items: [], total: 0, pages: 0 };
+        if (!matchingIds) return { kind: MediaType.MOVIES, items: [], total: 0, pages: 0 };
         const conditions = and(
             eq(catalogItem.kind, MediaType.MOVIES),
             inArray(catalogItem.id, matchingIds),
@@ -148,6 +148,7 @@ export class MovieCatalogReadRepository {
         const total = totalRow?.value ?? 0;
 
         return {
+            kind: MediaType.MOVIES,
             items: rows.map(({ catalogItemId, imageCover, ...row }) => ({
                 ...row,
                 imageCover: getImageUrl("movies-covers", imageCover),

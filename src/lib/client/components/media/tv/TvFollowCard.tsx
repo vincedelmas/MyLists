@@ -1,15 +1,11 @@
-import {MediaType} from "@/lib/utils/enums";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyFollowCardProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayTvRedo} from "@/lib/client/components/media/tv/DisplayTvRedo";
 import {BaseMediaFollowCard} from "@/lib/client/components/media/base/BaseMediaFollowCard";
 import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsAndSeasons";
 
 
-type TvFollowCardProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaFollowCard"]>[number];
-
-
-export const TvFollowCard = ({ followData, rating, showComment }: TvFollowCardProps<TvMediaType>) => {
+export const TvFollowCard = ({ followData, rating, showComment }: FamilyFollowCardProps<TvMediaType>) => {
     return (
         <BaseMediaFollowCard
             rating={rating}
@@ -17,7 +13,7 @@ export const TvFollowCard = ({ followData, rating, showComment }: TvFollowCardPr
             showComment={showComment}
             redoDisplay={
                 <DisplayTvRedo
-                    redoValues={followData.userMedia.redo2}
+                    rewatches={followData.userMedia.rewatches}
                 />
             }
             mediaDetailsDisplay={

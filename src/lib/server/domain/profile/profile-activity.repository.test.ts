@@ -91,7 +91,7 @@ describe("cross-family normalized profile activity", () => {
         ]);
     });
 
-    it("adds, edits, moves, hides, and deletes activity by native v2 identity", async () => {
+    it("adds, edits, moves, hides, and deletes activity by canonical identity", async () => {
         const created = await ProfileActivityRepository.addActivity(1, {
             mediaType: MediaType.SERIES,
             mediaId: 10,

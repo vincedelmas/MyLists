@@ -2,10 +2,8 @@ import {getImageFilename} from "@/lib/utils/image-url";
 import {TvMediaType} from "@/lib/types/media-kind.types";
 import {and, eq, inArray, notInArray, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {TvLibraryService} from "@/lib/server/domain/library/tv/tv-library.service";
 import {MediaIngestionRepository} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertTvWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
-import {TvLibraryRepository} from "@/lib/server/domain/library/tv/tv-library.repository";
 import {catalogGenre, catalogItem, catalogItemGenre, tvActor, tvDetails, tvNetwork, tvSeason,} from "@/lib/server/database/schema";
 
 
@@ -13,13 +11,7 @@ import {catalogGenre, catalogItem, catalogItemGenre, tvActor, tvDetails, tvNetwo
  * Adapter from the retained TMDB provider/transformer contract to the canonical TV catalog.
  */
 export class TvCatalogIngestionRepository implements MediaIngestionRepository<UpsertTvWithDetails> {
-    private readonly libraryService: TvLibraryService;
-    private readonly libraryRepository: TvLibraryRepository;
-
-    constructor(readonly kind: TvMediaType) {
-        this.libraryRepository = new TvLibraryRepository();
-        this.libraryService = new TvLibraryService(this.libraryRepository);
-    }
+    constructor(readonly kind: TvMediaType) {}
 
     async findByApiId(apiId: number | string) {
         return getDbClient()
@@ -93,12 +85,6 @@ export class TvCatalogIngestionRepository implements MediaIngestionRepository<Up
 
     private async persist(details: UpsertTvWithDetails, mode: "store" | "refresh") {
         const apiId = String(details.mediaData.apiId);
-        const existing = await this.findByApiId(apiId);
-
-        const previousEntries = existing && mode === "refresh"
-            ? await this.libraryRepository.findEntriesByCatalogItem(existing.id)
-            : [];
-
         const [item] = await getDbClient()
             .insert(catalogItem)
             .values({
@@ -175,10 +161,6 @@ export class TvCatalogIngestionRepository implements MediaIngestionRepository<Up
             this.syncGenres(item.id, details.genresData, mode),
             this.syncSeasons(item.id, details.seasonsData, mode),
         ]);
-
-        if (previousEntries.length > 0) {
-            await this.libraryService.reconcileCatalogMetadata(previousEntries);
-        }
 
         return item.id;
     }

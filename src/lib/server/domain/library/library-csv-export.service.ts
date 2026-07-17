@@ -16,7 +16,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/parsers/mylists.parser";
 
 
-/** Produces the portable v1 CSV contract from the canonical catalog/library model. */
+/** Produces the portable CSV export contract from the canonical catalog/library model. */
 export class LibraryCsvExportService {
     async export(userId: number, mediaType: MediaType) {
         const base = {

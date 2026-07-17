@@ -1,21 +1,18 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {FamilyListItemProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayChapters} from "@/lib/client/components/media/base/DisplayChapters";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 
 
-type MangaListItemProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaListCard"]>[number];
-
-
-export const MangaListItem = (props: MangaListItemProps<typeof MediaType.MANGA>) => {
+export const MangaListItem = (props: FamilyListItemProps<typeof MediaType.MANGA>) => {
     return (
         <BaseMediaListItem
             {...props}
-            redoDisplay={!!props.userMedia.redo &&
+            redoDisplay={props.userMedia.rereadCount > 0 &&
                 <DisplayRedoValue
-                    redoValue={props.userMedia.redo}
+                    redoValue={props.userMedia.rereadCount}
                 />
             }
             mediaDetailsDisplay={

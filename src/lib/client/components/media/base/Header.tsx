@@ -159,19 +159,19 @@ interface StatusComponentProps {
 
 
 const StatusComponent = ({ filters, allStatuses, onStatusChange, className }: StatusComponentProps) => {
-    const activeStatus = filters.status?.[0] ?? "All Media";
-    const allStatusesWithAll = ["All Media", ...allStatuses];
+    const activeStatus = filters.status?.[0] ?? ALL_MEDIA;
+    const allStatusesWithAll: StatusChoice[] = [ALL_MEDIA, ...allStatuses];
 
-    const handleStatusChange = (status: string) => {
-        if (status === "All Media") {
+    const handleStatusChange = (status: StatusChoice) => {
+        if (status === ALL_MEDIA) {
             return onStatusChange({ status: [] });
         }
-        onStatusChange({ status: [...(filters.status || []), status as Status] });
+        onStatusChange({ status: [...(filters.status || []), status] });
     };
 
-    const checkIfChecked = (status: string) => {
-        if (status === "All Media" && activeStatus === "All Media") return true;
-        return filters.status ? filters.status.includes(status as Status) : false;
+    const checkIfChecked = (status: StatusChoice) => {
+        if (status === ALL_MEDIA) return activeStatus === ALL_MEDIA;
+        return filters.status?.includes(status) ?? false;
     }
 
     return (
@@ -199,6 +199,10 @@ const StatusComponent = ({ filters, allStatuses, onStatusChange, className }: St
         </DropdownMenu>
     );
 };
+
+
+const ALL_MEDIA = "All Media" as const;
+type StatusChoice = Status | typeof ALL_MEDIA;
 
 
 interface SortComponentProps {

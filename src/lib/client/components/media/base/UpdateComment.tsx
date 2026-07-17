@@ -57,7 +57,7 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
     const handleSave = (onSuccess?: () => void) => {
         if (content === comment || isOverLimit) return;
 
-        updateComment.mutate({ payload: { comment: comment, type: UpdateType.COMMENT } }, {
+        updateComment.mutate({ payload: { comment: comment ?? null, type: UpdateType.COMMENT } }, {
             onSuccess: () => {
                 setIsEditing(false);
                 setIsDialogEditing(false);

@@ -12,8 +12,8 @@ export const createMediaNotificationsTask = defineTask({
     handler: async (ctx) => {
         const container = await getContainer();
         const mediaTypes = mediaTypeUtils.getTypesForNotifications();
-        const notificationsService = container.services.notifications;
-        const catalog = container.features.upcomingMediaCatalog;
+        const notificationCommands = container.notifications.commands;
+        const catalog = container.media.upcoming;
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`process-${mediaType}`, async () => {
@@ -25,7 +25,7 @@ export const createMediaNotificationsTask = defineTask({
                     return;
                 }
 
-                await notificationsService.createMediaNotifications(mediaType, allMediaToNotify);
+                await notificationCommands.createMediaNotifications(mediaType, allMediaToNotify);
             })
         }
     },

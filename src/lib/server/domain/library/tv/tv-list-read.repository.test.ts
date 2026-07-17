@@ -17,7 +17,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { TvListReadRepository } = await import("./tv-list-read.repository");
 const { TvLibraryRepository } = await import("./tv-library.repository");
-const { TvLibraryService } = await import("./tv-library.service");
+const { TvLibraryCommands } = await import("./tv-library.commands");
 
 
 const ownerScope = {
@@ -28,7 +28,7 @@ const ownerScope = {
 } as const;
 
 
-describe("v2 TV list read repository", () => {
+describe("TV list read repository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -57,18 +57,17 @@ describe("v2 TV list read repository", () => {
             mediaName: "Alpha",
             currentSeason: 1,
             currentEpisode: 10,
-            total: 20,
-            redo: 1,
-            redo2: [1],
+            watchedEpisodes: 10,
+            rewatches: [{ seasonNumber: 1, count: 1 }],
             common: true,
             tags: [{ name: "comfort" }],
-            epsPerSeason: [{ season: 1, episodes: 10 }],
+            seasons: [{ seasonNumber: 1, episodeCount: 10 }],
         });
         expect(result.items[0].imageCover).toMatch(/series-covers\/custom\.jpg$/);
     });
 
     it("sorts rewatched entries from normalized per-season counts", async () => {
-        const library = new TvLibraryService(new TvLibraryRepository());
+        const library = new TvLibraryCommands(new TvLibraryRepository());
         await library.replaceRewatches({ userId: 42, catalogItemId: 1001, rewatches: [{ seasonNumber: 1, count: 2 }] });
 
         const result = await new TvListReadRepository(MediaType.SERIES).getMediaList(42, ownerScope, {
@@ -77,7 +76,10 @@ describe("v2 TV list read repository", () => {
             sorting: "Re-watched",
         });
 
-        expect(result.items.map(({ mediaName, redo }) => [mediaName, redo])).toEqual([
+        expect(result.items.map(({ mediaName, rewatches }) => [
+            mediaName,
+            rewatches.reduce((total, item) => total + item.count, 0),
+        ])).toEqual([
             ["Beta", 2],
             ["Alpha", 1],
             ["Gamma", 0],
@@ -88,7 +90,7 @@ describe("v2 TV list read repository", () => {
         const repository = new TvListReadRepository(MediaType.SERIES);
         expect(await repository.getListHeader(42)).toBeUndefined();
 
-        const library = new TvLibraryService(new TvLibraryRepository());
+        const library = new TvLibraryCommands(new TvLibraryRepository());
         await library.synchronizeProfileChannel({ userId: 42, kind: MediaType.SERIES, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 924 });
 
@@ -115,6 +117,7 @@ describe("v2 TV list read repository", () => {
     it("returns only filter values represented in this owner's TV list", async () => {
         const filters = await new TvListReadRepository(MediaType.SERIES).getListFilters(ownerScope);
         expect(filters).toEqual({
+            kind: MediaType.SERIES,
             genres: [{ name: "Drama" }],
             tags: [{ name: "comfort" }],
             langs: [{ name: "JP" }, { name: "US" }],
@@ -195,7 +198,7 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
     await db.insert(schema.tvNetwork).values({ catalogItemId: 1000, name: "Network" });
 
     const repository = new TvLibraryRepository();
-    const library = new TvLibraryService(repository);
+    const library = new TvLibraryCommands(repository);
     const alpha = await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
     await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatches: [{ seasonNumber: 1, count: 1 }] });
     await library.updateCustomCover({ userId: 42, catalogItemId: 1000, customCover: "custom.jpg" });

@@ -15,13 +15,14 @@ import {
     sql,
 } from "drizzle-orm";
 import {alias} from "drizzle-orm/sqlite-core";
-import {MediaListArgs, SimpleSearch} from "@/lib/schemas";
+import {SimpleSearch} from "@/lib/schemas";
+import {TvListArgs, TvListPage} from "@/lib/contracts/media/lists";
 import {JobType, Status} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {consumedEpisodeCount, toLegacyRedo2, totalTvRewatchCount, TvProgressState} from "@/lib/server/domain/library/tv/tv-progress";
+import {TvProgressState} from "@/lib/server/domain/library/tv/tv-progress";
 import {
     catalogGenre,
     catalogItem,
@@ -58,8 +59,8 @@ export const TV_LIST_SORTS = [
 
 
 /** Concrete series/anime list query; no generic media repository inheritance. */
-export class TvListReadRepository {
-    constructor(private readonly kind: TvMediaType) {}
+export class TvListReadRepository<K extends TvMediaType = TvMediaType> {
+    constructor(private readonly kind: K) {}
 
     async getListHeader(userId: number) {
         const channel = await getDbClient()
@@ -76,7 +77,7 @@ export class TvListReadRepository {
         return { timeSpent: stats?.timeSpent ?? 0 };
     }
 
-    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: MediaListArgs) {
+    async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: TvListArgs): Promise<TvListPage<K>> {
         const ownerId = access.ownerId;
         const { page, perPage, offset, limit } = resolvePagination(args);
         const sorting = resolveSorting(args.sorting, TV_LIST_SORTS, "Title A-Z");
@@ -131,6 +132,7 @@ export class TvListReadRepository {
         const totalItems = totalRow?.value ?? 0;
 
         return {
+            kind: this.kind,
             items,
             pagination: {
                 page,
@@ -172,7 +174,7 @@ export class TvListReadRepository {
                 .orderBy(asc(tvDetails.originCountry)),
         ]);
 
-        return { genres, tags, langs: langs as { name: string }[] };
+        return { kind: this.kind, genres, tags, langs: langs as { name: string }[] };
     }
 
     async getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
@@ -319,7 +321,7 @@ export class TvListReadRepository {
             })));
     }
 
-    private buildConditions(currentUserId: number | undefined, ownerId: number, args: MediaListArgs) {
+    private buildConditions(currentUserId: number | undefined, ownerId: number, args: TvListArgs) {
         const conditions: SQL[] = [
             eq(libraryEntry.userId, ownerId),
             eq(catalogItem.kind, this.kind),
@@ -395,6 +397,8 @@ export class TvListReadRepository {
         imageCover: string;
         customCover: string | null;
         status: TvProgressState["status"];
+        currentSeason: number;
+        currentEpisode: number;
     }>(rows: TRow[], currentUserId: number | undefined, ownerId: number) {
         if (rows.length === 0) return [];
         const entryIds = rows.map(({ id }) => id);
@@ -427,20 +431,20 @@ export class TvListReadRepository {
                 .map(({ seasonNumber, count: rewatchCount }) => ({ seasonNumber, count: rewatchCount }));
             const progress: TvProgressState = {
                 status: row.status,
-                currentSeason: (row as any).currentSeason,
-                currentEpisode: (row as any).currentEpisode,
+                currentSeason: row.currentSeason,
+                currentEpisode: row.currentEpisode,
                 watchedEpisodes,
                 rewatches: itemRewatches,
             };
 
             return {
                 ...row,
+                kind: this.kind,
                 customCover: customCover ? getImageUrl(`${this.kind}-covers`, customCover) : null,
                 imageCover: getImageUrl(`${this.kind}-covers`, customCover ?? imageCover),
-                redo: totalTvRewatchCount(progress),
-                total: consumedEpisodeCount(progress, itemSeasons),
-                redo2: toLegacyRedo2(progress, itemSeasons),
-                epsPerSeason: itemSeasons.map(({ seasonNumber: season, episodeCount: episodes }) => ({ season, episodes })),
+                watchedEpisodes: progress.watchedEpisodes,
+                rewatches: progress.rewatches,
+                seasons: itemSeasons,
                 tags: tags.filter((tag) => tag.libraryEntryId === row.id).map(({ id, name: tagName }) => ({ id, name: tagName })),
                 common: commonIds.has(catalogItemId),
             };

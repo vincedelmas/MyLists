@@ -11,16 +11,15 @@ export const postFollow = createServerFn({ method: "POST" })
     .validator(followUserSchema)
     .handler(async ({ data: { targetUserId }, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
 
         if (currentUser.id === targetUserId) {
             throw new FormattedError("You cannot follow yourself ;)");
         }
 
-        const targetUser = await userService.getUserById(targetUserId);
+        const targetUser = await container.account.query.findById(targetUserId);
         if (!targetUser) throw notFound();
 
-        await container.features.socialGraphCommands.follow(currentUser.id, targetUser);
+        await container.social.commands.follow(currentUser.id, targetUser);
     });
 
 
@@ -34,7 +33,7 @@ export const postUnfollow = createServerFn({ method: "POST" })
             throw new FormattedError("You cannot unfollow yourself ;)");
         }
 
-        await container.features.socialGraphCommands.unfollow(currentUser.id, targetUserId);
+        await container.social.commands.unfollow(currentUser.id, targetUserId);
     });
 
 
@@ -48,7 +47,7 @@ export const postRespondToFollowRequest = createServerFn({ method: "POST" })
             throw new FormattedError("You cannot do that ;)");
         }
 
-        await container.features.socialGraphCommands.respondToRequest(currentUser.id, followerId, action);
+        await container.social.commands.respondToRequest(currentUser.id, followerId, action);
     });
 
 
@@ -62,5 +61,5 @@ export const postRemoveFollower = createServerFn({ method: "POST" })
             throw new FormattedError("You cannot do that ;)");
         }
 
-        await container.features.socialGraphCommands.removeFollower(currentUser.id, followerId);
+        await container.social.commands.removeFollower(currentUser.id, followerId);
     });

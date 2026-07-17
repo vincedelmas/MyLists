@@ -3,7 +3,6 @@ import {MediaType} from "@/lib/utils/enums";
 
 export type CoverType = `${MediaType}-covers` | "profile-covers" | "profile-back-covers";
 
-export type NameObj = { name: string };
 
 export type SimpleMedia = {
     mediaId: number,

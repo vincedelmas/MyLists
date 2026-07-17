@@ -4,8 +4,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
-import {ExtractFollowByType} from "@/lib/types/query.options.types";
-import {mediaConfig} from "@/lib/client/components/media/media-config";
+import type {CommunityActivityItem} from "@/lib/contracts/media/community";
 import {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
 import {formatMinutes, formatNumber} from "@/lib/utils/number-formatting";
 import {MediaFollowCard} from "@/lib/client/components/media/base/MediaFollowCard";
@@ -14,10 +13,7 @@ import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetails
 import {ChevronDown, CircleHelp, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-
-
-type MediaCommunityActivityQuery = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaCommunityActivityOptions>["queryFn"]>>>;
-type CommunityActivityItem = MediaCommunityActivityQuery["items"][number];
+import {assertNever} from "@/lib/utils/assert-never";
 
 
 interface CommunityActivityProps {
@@ -66,7 +62,6 @@ export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivity
 
             <CommunityActivityList
                 items={visibleItems}
-                mediaType={mediaType}
             />
 
             {apiData.total > visibleItems.length &&
@@ -92,7 +87,7 @@ interface CommunityActivityStatsProps {
 export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivityStatsProps) => {
     if (!stats.total) return null;
 
-    const activityConfig = mediaConfig[mediaType].communityActivity;
+    const activityConfig = getCommunityActivityPresentation(mediaType);
     const extraValue = stats[activityConfig.extraMetric];
 
     const formattedExtraValue = activityConfig.extraMetric === "totalPlaytime"
@@ -144,25 +139,42 @@ export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivitySt
 };
 
 
+const getCommunityActivityPresentation = (mediaType: MediaType) => {
+    switch (mediaType) {
+        case MediaType.SERIES:
+        case MediaType.ANIME:
+        case MediaType.MOVIES:
+            return { countLabel: "Watched", extraMetric: "totalRedo" as const };
+        case MediaType.GAMES:
+            return { countLabel: "Played", extraMetric: "totalPlaytime" as const };
+        case MediaType.BOOKS:
+        case MediaType.MANGA:
+            return { countLabel: "Read", extraMetric: "totalRedo" as const };
+        default:
+            return assertNever(mediaType, "community activity family");
+    }
+};
+
+
 interface CommunityActivityListProps {
-    mediaType: MediaType,
     items: CommunityActivityItem[],
     variant?: "details" | "viewAll",
 }
 
 
-export const CommunityActivityList = ({ items, mediaType, variant = "details" }: CommunityActivityListProps) => {
+export const CommunityActivityList = ({ items, variant = "details" }: CommunityActivityListProps) => {
     return (
         <div className={cn("grid gap-2", variant === "viewAll" ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
             {items.map((follow) =>
                 <div key={follow.id} className="rounded-lg border bg-popover/20">
-                    <MediaFollowCard
-                        showComment={false}
-                        mediaType={mediaType}
-                        followData={follow as ExtractFollowByType<MediaType>}
-                    />
+                    <CommunityFollowCard follow={follow}/>
                 </div>
             )}
         </div>
     );
+};
+
+
+const CommunityFollowCard = ({ follow }: { follow: CommunityActivityItem }) => {
+    return <MediaFollowCard showComment={false} followData={follow}/>;
 };

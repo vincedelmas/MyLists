@@ -14,9 +14,10 @@ export const calculateAchievementsTask = defineTask({
     }),
     handler: async (ctx, input) => {
         const container = await getContainer();
-        const achievementsService = container.services.achievements;
+        const achievementsQuery = container.achievements.query;
+        const achievementCommands = container.achievements.commands;
         const calculator = new AchievementCalculationRepository();
-        const allAchievements = await achievementsService.getAllAchievements();
+        const allAchievements = await achievementsQuery.getAllAchievements();
 
         const mediaTypes = input.mediaTypes;
         const typesToProcess = mediaTypes && mediaTypes.length > 0 ? mediaTypes : Object.values(MediaType);
@@ -29,7 +30,7 @@ export const calculateAchievementsTask = defineTask({
 
                 for (const achievement of mediaAchievements) {
                     try {
-                        await achievementsService.calculateAchievementFromCte(
+                        await achievementCommands.calculateAchievementFromCte(
                             achievement,
                             calculator.getAchievementCte(achievement),
                         );
@@ -46,7 +47,7 @@ export const calculateAchievementsTask = defineTask({
         }
 
         await ctx.step("calculate-rarity", async () => {
-            await achievementsService.calculateAllAchievementsRarity();
+            await achievementCommands.calculateAllAchievementsRarity();
         });
     },
 });

@@ -61,7 +61,7 @@ export const BaseMediaFollowCard = ({ followData, rating, redoDisplay, mediaDeta
                         rating={rating}
                     />
 
-                    {!!followData.userMedia.favorite &&
+                    {followData.userMedia.favorite &&
                         <DisplayFavorite
                             isFavorite={followData.userMedia.favorite}
                         />

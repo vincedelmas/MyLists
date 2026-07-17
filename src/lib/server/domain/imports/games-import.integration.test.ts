@@ -22,7 +22,7 @@ const { ImportRepository } = await import("@/lib/server/domain/imports/import.re
 const { createGamesMatcher } = await import("@/lib/server/domain/imports/matchers/games.matcher");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
 const { MediaMatcherRegistry } = await import("@/lib/server/domain/imports/matchers/media-matcher.registry");
-const { GameLibraryWriter } = await import("@/lib/server/domain/library/games/game-library.writer");
+const { GameLibraryCommands } = await import("@/lib/server/domain/library/games/game-library.commands");
 const { GameCatalogIngestionRepository } = await import("@/lib/server/domain/catalog/games/game-catalog-ingestion.repository");
 
 
@@ -66,7 +66,7 @@ describe("games import processing", () => {
         matcherRegistry.register(MediaType.GAMES, createGamesMatcher(
             new GameCatalogIngestionRepository(),
             { storeBatchFromExternal: vi.fn() } as any,
-            new GameLibraryWriter(),
+            new GameLibraryCommands(),
         ));
         const processor = new ImportJobProcessor(importService, matcherRegistry);
 

@@ -13,8 +13,8 @@ import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-m
 
 
 export function setupImportModule(mediaModule: MediaModule, providerModule: ProviderModule) {
-    const externalProviderRegistry = providerModule.registries.externalProviders;
-    const ingestionServiceRegistry = providerModule.registries.ingestionServices;
+    const externalProviderRegistry = providerModule.externalProviders;
+    const ingestionServiceRegistry = providerModule.ingestion;
 
     const importRepository = ImportRepository;
     const importService = new ImportService(importRepository);
@@ -22,40 +22,40 @@ export function setupImportModule(mediaModule: MediaModule, providerModule: Prov
     const matchersService = {
         series: createTvMatcher(
             MediaType.SERIES,
-            providerModule.features.catalogs.series,
+            providerModule.importCatalogs.series,
             externalProviderRegistry.get(MediaType.SERIES),
             ingestionServiceRegistry.get(MediaType.SERIES),
-            mediaModule.features.tvLibraryWriter,
+            mediaModule.library.commands[MediaType.SERIES],
         ),
         anime: createTvMatcher(
             MediaType.ANIME,
-            providerModule.features.catalogs.anime,
+            providerModule.importCatalogs.anime,
             externalProviderRegistry.get(MediaType.ANIME),
             ingestionServiceRegistry.get(MediaType.ANIME),
-            mediaModule.features.tvLibraryWriter,
+            mediaModule.library.commands[MediaType.ANIME],
         ),
         movies: createMoviesMatcher(
-            providerModule.features.catalogs.movies,
+            providerModule.importCatalogs.movies,
             externalProviderRegistry.get(MediaType.MOVIES),
             ingestionServiceRegistry.get(MediaType.MOVIES),
-            mediaModule.features.movieLibraryWriter,
+            mediaModule.library.commands[MediaType.MOVIES],
         ),
         games: createGamesMatcher(
-            providerModule.features.catalogs.games,
+            providerModule.importCatalogs.games,
             ingestionServiceRegistry.get(MediaType.GAMES),
-            mediaModule.features.gameLibraryWriter,
+            mediaModule.library.commands[MediaType.GAMES],
         ),
         books: createBooksMatcher(
-            providerModule.features.catalogs.books,
+            providerModule.importCatalogs.books,
             externalProviderRegistry.get(MediaType.BOOKS),
             ingestionServiceRegistry.get(MediaType.BOOKS),
-            mediaModule.features.bookLibraryWriter,
+            mediaModule.library.commands[MediaType.BOOKS],
         ),
         manga: createMangaMatcher(
-            providerModule.features.catalogs.manga,
+            providerModule.importCatalogs.manga,
             externalProviderRegistry.get(MediaType.MANGA),
             ingestionServiceRegistry.get(MediaType.MANGA),
-            mediaModule.features.mangaLibraryWriter,
+            mediaModule.library.commands[MediaType.MANGA],
         ),
     }
     Object.entries(matchersService).forEach(([key, service]) => {
@@ -65,16 +65,9 @@ export function setupImportModule(mediaModule: MediaModule, providerModule: Prov
     const importProcessor = new ImportJobProcessor(importService, MediaMatcherRegistry);
 
     return {
-        repositories: {
-            imports: importRepository,
-        },
-        services: {
-            importProcessor,
-            imports: importService,
-        },
-        registries: {
-            importMatcher: MediaMatcherRegistry,
-        },
+        jobs: importService,
+        processor: importProcessor,
+        matchers: MediaMatcherRegistry,
     };
 }
 

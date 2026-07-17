@@ -5,7 +5,7 @@ import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {Copy, Eye, Heart, Layers, MoreVertical, Pen, Trash2} from "lucide-react";
-import {communityCollectionsOptions} from "@/lib/client/react-query/query-options";
+import type {CollectionSummary} from "@/lib/contracts/media/projections";
 import {useDeleteCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 
@@ -13,7 +13,7 @@ import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 interface CollectionCardProps {
     showOwner?: boolean;
     showMediaType?: boolean;
-    collection: Awaited<ReturnType<NonNullable<ReturnType<typeof communityCollectionsOptions>["queryFn"]>>>["items"][number];
+    collection: CollectionSummary;
 }
 
 

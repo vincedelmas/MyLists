@@ -5,9 +5,7 @@ import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
 export function setupAdminModule() {
     const adminRepository = AdminRepository;
     return {
-        services: {
-            admin: new AdminService(adminRepository),
-        },
+        admin: new AdminService(adminRepository),
     };
 }
 

@@ -9,13 +9,19 @@ import {MediaType} from "@/lib/utils/enums";
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
-const { CatalogRefreshCandidateRepository } = await import("./catalog-refresh-candidate.repository");
+const { TvCatalogRefreshCandidatesQuery } = await import("./tv/tv-catalog-refresh-candidates.query");
+const { MovieCatalogRefreshCandidatesQuery } = await import("./movies/movie-catalog-refresh-candidates.query");
+const { GameCatalogRefreshCandidatesQuery } = await import("./games/game-catalog-refresh-candidates.query");
+const { MangaCatalogRefreshCandidatesQuery } = await import("./manga/manga-catalog-refresh-candidates.query");
 
 
 describe("normalized catalog refresh candidates", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
-    let repository: InstanceType<typeof CatalogRefreshCandidateRepository>;
+    let tv: InstanceType<typeof TvCatalogRefreshCandidatesQuery>;
+    let movies: InstanceType<typeof MovieCatalogRefreshCandidatesQuery>;
+    let games: InstanceType<typeof GameCatalogRefreshCandidatesQuery>;
+    let manga: InstanceType<typeof MangaCatalogRefreshCandidatesQuery>;
 
     beforeEach(() => {
         sqlite = new Database(":memory:");
@@ -23,7 +29,10 @@ describe("normalized catalog refresh candidates", () => {
         dbContext.db = db;
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
-        repository = new CatalogRefreshCandidateRepository();
+        tv = new TvCatalogRefreshCandidatesQuery(MediaType.SERIES);
+        movies = new MovieCatalogRefreshCandidatesQuery();
+        games = new GameCatalogRefreshCandidatesQuery();
+        manga = new MangaCatalogRefreshCandidatesQuery();
     });
 
     afterEach(() => {
@@ -47,9 +56,9 @@ describe("normalized catalog refresh candidates", () => {
             { catalogItemId: 5 },
         ]);
 
-        await expect(repository.getTvCandidateApiIds(MediaType.SERIES, [1, 2, 4, 5]))
+        await expect(tv.getCandidateApiIds([1, 2, 4, 5]))
             .resolves.toEqual(expect.arrayContaining([1, 3]));
-        await expect(repository.getTvCandidateApiIds(MediaType.SERIES, [1, 2, 4, 5]))
+        await expect(tv.getCandidateApiIds([1, 2, 4, 5]))
             .resolves.toHaveLength(2);
     });
 
@@ -69,9 +78,9 @@ describe("normalized catalog refresh candidates", () => {
             { catalogItemId: 16, productionStatus: "Publishing" },
         ]);
 
-        await expect(repository.getMovieCandidateApiIds()).resolves.toEqual([10]);
-        await expect(repository.getGameCandidateApiIds()).resolves.toEqual([12]);
-        await expect(repository.getMangaCandidateApiIds()).resolves.toEqual([14]);
+        await expect(movies.getCandidateApiIds()).resolves.toEqual([10]);
+        await expect(games.getCandidateApiIds()).resolves.toEqual([12]);
+        await expect(manga.getCandidateApiIds()).resolves.toEqual([14]);
     });
 });
 

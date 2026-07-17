@@ -11,7 +11,7 @@ import {catalogItem, followers, libraryChange, libraryEntry, libraryEntryTag, li
 
 /** Projects the game library into the detail-page contract. */
 export class GameLibraryReadRepository {
-    private readonly library = new GameLibraryRepository();
+    constructor(private readonly library = new GameLibraryRepository()) {}
 
     async getUserMediaHistory(userId: number, catalogItemId: number) {
         const rows = await getDbClient()

@@ -1,18 +1,12 @@
 import {MediaType} from "@/lib/utils/enums";
-import {TvMediaType} from "@/lib/types/media-kind.types";
 import {ActivityService} from "@/lib/server/domain/activity/activity.service";
-import {isTvKind} from "@/lib/server/domain/library/tv/tv-library-read.repository";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {ProfileUpdatesQuery} from "@/lib/server/domain/profile/profile-updates.query";
 import {AchievementsQuery} from "@/lib/server/domain/achievements/achievements.query";
 import {StatsSummaryRepository} from "@/lib/server/domain/stats/stats-summary.repository";
 import {StatsSummaryReadService} from "@/lib/server/domain/stats/stats-summary-read.service";
-import {TvStatsReadRepository} from "@/lib/server/domain/library/tv/tv-stats-read.repository";
-import {GameStatsReadRepository} from "@/lib/server/domain/library/games/game-stats-read.repository";
-import {BookStatsReadRepository} from "@/lib/server/domain/library/books/book-stats-read.repository";
-import {MangaStatsReadRepository} from "@/lib/server/domain/library/manga/manga-stats-read.repository";
-import {MovieStatsReadRepository} from "@/lib/server/domain/library/movies/movie-stats-read.repository";
 import {ProfileChannelAccessRepository} from "@/lib/server/domain/access/profile-channel-access.repository";
+import {MediaModuleRegistry} from "@/lib/server/core/container/media/media-module.registry";
 
 
 export class UserStatsService {
@@ -23,11 +17,7 @@ export class UserStatsService {
 
     constructor(
         private activityService: ActivityService,
-        private tvStatsReaders?: Record<TvMediaType, TvStatsReadRepository>,
-        private movieStatsReader?: MovieStatsReadRepository,
-        private gameStatsReader?: GameStatsReadRepository,
-        private bookStatsReader?: BookStatsReadRepository,
-        private mangaStatsReader?: MangaStatsReadRepository,
+        private readonly media: MediaModuleRegistry,
     ) {
     }
 
@@ -66,26 +56,13 @@ export class UserStatsService {
 
     async userAdvancedMediaStats(userId: number, mediaType: MediaType, access?: MediaListAccessScope) {
         if (!access) throw new Error("Media stats access scope is required");
-        const useTv = isTvKind(mediaType);
-        const preComputedMediaStats = useTv
-            ? await this.tvStatsReaders![mediaType].getAggregatedMediaStats({ type: "library", access: access! })
-            : mediaType === MediaType.MOVIES
-                ? await this.movieStatsReader!.getAggregatedMediaStats({ type: "library", access: access! })
-                : mediaType === MediaType.GAMES
-                    ? await this.gameStatsReader!.getAggregatedMediaStats({ type: "library", access: access! })
-                    : mediaType === MediaType.BOOKS
-                        ? await this.bookStatsReader!.getAggregatedMediaStats({ type: "library", access: access! })
-                        : await this.mangaStatsReader!.getAggregatedMediaStats({ type: "library", access: access! });
+        const stats = this.media.get(mediaType).library.stats.read;
+        const preComputedMediaStats = await stats.getAggregatedMediaStats({ type: "library", access });
         const activityByMonth = await this.activityService.getActivityStatsByMonth({ userId, mediaType });
-        const specificMediaStats = useTv
-            ? await this.tvStatsReaders![mediaType].getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated)
-            : mediaType === MediaType.MOVIES
-                ? await this.movieStatsReader!.getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated)
-                : mediaType === MediaType.GAMES
-                    ? await this.gameStatsReader!.getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated)
-                    : mediaType === MediaType.BOOKS
-                        ? await this.bookStatsReader!.getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated)
-                        : await this.mangaStatsReader!.getAdvancedMediaStats({ type: "library", access: access! }, preComputedMediaStats.avgRated);
+        const specificMediaStats = await stats.getAdvancedMediaStats(
+            { type: "library", access },
+            preComputedMediaStats.avgRated,
+        );
         const mediaUpdatesPerMonthStats = await this.updates.mediaUpdatesStatsPerMonth({ mediaType, userId });
 
         return {
@@ -116,25 +93,12 @@ export class UserStatsService {
     }
 
     async platformMediaAdvancedStats(mediaType: MediaType) {
-        const useTv = isTvKind(mediaType);
-        const platformPreComputedStats = useTv
-            ? await this.tvStatsReaders![mediaType].getAggregatedMediaStats({ type: "platform" })
-            : mediaType === MediaType.MOVIES
-                ? await this.movieStatsReader!.getAggregatedMediaStats({ type: "platform" })
-                : mediaType === MediaType.GAMES
-                    ? await this.gameStatsReader!.getAggregatedMediaStats({ type: "platform" })
-                    : mediaType === MediaType.BOOKS
-                        ? await this.bookStatsReader!.getAggregatedMediaStats({ type: "platform" })
-                        : await this.mangaStatsReader!.getAggregatedMediaStats({ type: "platform" });
-        const specificMediaStats = useTv
-            ? await this.tvStatsReaders![mediaType].getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated)
-            : mediaType === MediaType.MOVIES
-                ? await this.movieStatsReader!.getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated)
-                : mediaType === MediaType.GAMES
-                    ? await this.gameStatsReader!.getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated)
-                    : mediaType === MediaType.BOOKS
-                        ? await this.bookStatsReader!.getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated)
-                        : await this.mangaStatsReader!.getAdvancedMediaStats({ type: "platform" }, platformPreComputedStats.avgRated);
+        const stats = this.media.get(mediaType).library.stats.read;
+        const platformPreComputedStats = await stats.getAggregatedMediaStats({ type: "platform" });
+        const specificMediaStats = await stats.getAdvancedMediaStats(
+            { type: "platform" },
+            platformPreComputedStats.avgRated,
+        );
         const activityByMonth = await this.activityService.getActivityStatsByMonth({ mediaType, excludeBulkImports: true });
         const mediaUpdatesPerMonthStats = await this.updates.mediaUpdatesStatsPerMonth({ mediaType, excludeBulkImports: true });
 

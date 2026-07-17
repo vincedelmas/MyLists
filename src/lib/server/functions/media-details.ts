@@ -5,6 +5,7 @@ import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {isAtLeastRole, MediaType, RoleType} from "@/lib/utils/enums";
+import {assertNever} from "@/lib/utils/assert-never";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {publicAuthMiddleware, requiredAuthAndManagerRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
@@ -77,11 +78,11 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
         const isManagerOrAbove = isAtLeastRole(currentUser.role as RoleType, RoleType.MANAGER);
         const mediaModule = container.media.get(mediaType);
 
-        if (!isManagerOrAbove && mediaType === MediaType.BOOKS) {
-            throw new FormattedError("Unauthorized to refresh book metadata.");
+        if (!isManagerOrAbove && !mediaModule.catalog.refresh.selfServiceAllowed) {
+            throw new FormattedError(`Unauthorized to refresh ${mediaType} metadata.`);
         }
 
-        const media = mediaModule.catalog.refreshIdentity.get(mediaId);
+        const media = mediaModule.catalog.refresh.identity.get(mediaId);
         if (!media) throw new FormattedError("Media not found, cannot refresh metadata.");
 
         if (!isManagerOrAbove && media.lastApiUpdate) {
@@ -141,5 +142,28 @@ export const postEditMediaDetails = createServerFn({ method: "POST" })
     .validator(editMediaDetailsSchema)
     .handler(async ({ data }) => {
         const container = await getContainer();
-        await container.mediaShared.catalogEdit.update(data);
+        let updated: boolean;
+
+        switch (data.mediaType) {
+            case MediaType.SERIES:
+            case MediaType.ANIME:
+                updated = await container.media.get(data.mediaType).catalog.edit.update(data.mediaId, data.payload);
+                break;
+            case MediaType.MOVIES:
+                updated = await container.media.get(MediaType.MOVIES).catalog.edit.update(data.mediaId, data.payload);
+                break;
+            case MediaType.GAMES:
+                updated = await container.media.get(MediaType.GAMES).catalog.edit.update(data.mediaId, data.payload);
+                break;
+            case MediaType.BOOKS:
+                updated = await container.media.get(MediaType.BOOKS).catalog.edit.update(data.mediaId, data.payload);
+                break;
+            case MediaType.MANGA:
+                updated = await container.media.get(MediaType.MANGA).catalog.edit.update(data.mediaId, data.payload);
+                break;
+            default:
+                return assertNever(data, "catalog edit request");
+        }
+
+        if (!updated) throw notFound();
     });

@@ -2,7 +2,6 @@ import {notFound} from "@tanstack/react-router";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
-import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry} from "@/lib/types/imports.types";
 
@@ -10,15 +9,10 @@ import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry} from "@/lib/
 const OUTCOME_BATCH_SIZE = 200;
 const ACTIVE_IMPORT_ERROR = "You already have an import in progress. Wait for it to finish before starting another.";
 
-const importParserRegistry: ImportParserRegistry = {
-    [ImportSource.MYLISTS]: parseMyListsCsv,
-};
-
-
 export class ImportService {
     constructor(
         private repository: typeof ImportRepository,
-        private parsers: ImportParserRegistry = importParserRegistry,
+        private parsers: ImportParserRegistry = {},
     ) {
     }
 

@@ -2,14 +2,6 @@ import * as z from "zod";
 import {parse} from "csv-parse/sync";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType,} from "@/lib/utils/enums";
-import {
-    animeMyListsCSVRowSchema,
-    booksMyListsCSVRowSchema,
-    gamesMyListsCSVRowSchema,
-    mangaMyListsCSVRowSchema,
-    moviesMyListsCSVRowSchema,
-    seriesMyListsCSVRowSchema,
-} from "@/lib/server/domain/imports/import-media.schemas";
 
 
 const MYLISTS_CSV_MAX_ROWS = 3000;
@@ -31,14 +23,9 @@ const parseCsvRecords = (csv: string) => {
 };
 
 
-const mediaRowValidatorMap = {
-    [MediaType.SERIES]: seriesMyListsCSVRowSchema,
-    [MediaType.ANIME]: animeMyListsCSVRowSchema,
-    [MediaType.MOVIES]: moviesMyListsCSVRowSchema,
-    [MediaType.GAMES]: gamesMyListsCSVRowSchema,
-    [MediaType.BOOKS]: booksMyListsCSVRowSchema,
-    [MediaType.MANGA]: mangaMyListsCSVRowSchema,
-} satisfies Record<MediaType, z.ZodTypeAny>;
+export interface MyListsCsvSchemaSource {
+    get(kind: MediaType): z.ZodTypeAny;
+}
 
 
 const parseApiProvider = (value: string | undefined) => {
@@ -47,7 +34,7 @@ const parseApiProvider = (value: string | undefined) => {
 };
 
 
-export const parseMyListsCsv = (csv: string): ParsedImport => {
+export const createMyListsCsvParser = (schemas: MyListsCsvSchemaSource) => (csv: string): ParsedImport => {
     const records = parseCsvRecords(csv);
     if (records.length === 0) {
         throw new Error("The CSV file is empty");
@@ -67,7 +54,7 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
     const firstRawRow = Object.fromEntries(headers.map((header, cellIdx) => [header, rows[0][cellIdx] ?? ""]));
     const result = z.enum(MediaType).safeParse(firstRawRow.mediaType);
     if (!result.success) throw new Error("The CSV file does not contain a valid media type");
-    const mediaZodValidator = mediaRowValidatorMap[result.data];
+    const mediaZodValidator = schemas.get(result.data);
 
     const items = rows.map((cells, idx) => {
         const rowNumber = idx + 2;
@@ -93,7 +80,15 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
             } satisfies ParsedImportItem;
         }
 
-        const row = parsedRow.data;
+        const row = parsedRow.data as {
+            mediaName: string;
+            mediaType: MediaType;
+            releaseDate: string | null;
+            externalApiId: string;
+            externalApiSource: ApiProviderType;
+            formatVersion: string;
+            [key: string]: unknown;
+        };
         const { mediaName, mediaType, releaseDate, externalApiId, externalApiSource, formatVersion: _formatVersion, ...payload } = row;
 
         return {

@@ -2,7 +2,6 @@ import {z} from "zod";
 import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
-import {AchievementCalculationRepository} from "@/lib/server/domain/achievements/achievement-calculation.repository";
 
 
 export const calculateAchievementsTask = defineTask({
@@ -16,7 +15,6 @@ export const calculateAchievementsTask = defineTask({
         const container = await getContainer();
         const achievementsQuery = container.achievements.query;
         const achievementCommands = container.achievements.commands;
-        const calculator = new AchievementCalculationRepository();
         const allAchievements = await achievementsQuery.getAllAchievements();
 
         const mediaTypes = input.mediaTypes;
@@ -25,6 +23,7 @@ export const calculateAchievementsTask = defineTask({
         for (const mediaType of typesToProcess) {
             await ctx.step(`calculate-${mediaType}`, async () => {
                 const mediaAchievements = allAchievements.filter((ach) => ach.mediaType === mediaType);
+                const calculator = container.media.get(mediaType).achievements.calculator;
 
                 ctx.metric(`${mediaType}.count`, mediaAchievements.length);
 

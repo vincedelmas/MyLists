@@ -6,8 +6,10 @@ import {MovieDetailsPage} from "@/lib/contracts/media/details";
 
 /** Complete read boundary for the movie detail page. */
 export class MovieDetailsQuery {
-    private readonly catalog = new MovieCatalogReadRepository();
-    private readonly library = new MovieLibraryReadRepository();
+    constructor(
+        private readonly catalog = new MovieCatalogReadRepository(),
+        private readonly library = new MovieLibraryReadRepository(),
+    ) {}
 
     async getMediaAndUserDetails(viewerId: number | undefined, catalogItemId: number): Promise<MovieDetailsPage | undefined> {
         const media = await this.catalog.findDetails(catalogItemId);

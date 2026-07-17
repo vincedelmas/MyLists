@@ -1,8 +1,27 @@
 import {describe, expect, it} from "vitest";
-import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {createMyListsCsvParser} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
+import {
+    animeMyListsCSVRowSchema,
+    booksMyListsCSVRowSchema,
+    gamesMyListsCSVRowSchema,
+    mangaMyListsCSVRowSchema,
+    moviesMyListsCSVRowSchema,
+    seriesMyListsCSVRowSchema,
+} from "@/lib/server/domain/imports/import-media.schemas";
 
 import {COMMENT_MAX_LENGTH} from "@/lib/utils/constants";
+
+
+const rowSchemas = {
+    [MediaType.SERIES]: seriesMyListsCSVRowSchema,
+    [MediaType.ANIME]: animeMyListsCSVRowSchema,
+    [MediaType.MOVIES]: moviesMyListsCSVRowSchema,
+    [MediaType.GAMES]: gamesMyListsCSVRowSchema,
+    [MediaType.BOOKS]: booksMyListsCSVRowSchema,
+    [MediaType.MANGA]: mangaMyListsCSVRowSchema,
+};
+const parseMyListsCsv = createMyListsCsvParser({ get: (kind) => rowSchemas[kind] });
 
 
 const toCsv = (rows: Record<string, string>[]) => {

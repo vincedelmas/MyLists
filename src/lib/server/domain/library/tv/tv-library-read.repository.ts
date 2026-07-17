@@ -1,5 +1,5 @@
 import {and, asc, desc, eq, ne, sql} from "drizzle-orm";
-import {MediaType, PrivacyType, SocialState, Status} from "@/lib/utils/enums";
+import {PrivacyType, SocialState, Status} from "@/lib/utils/enums";
 import {SearchType} from "@/lib/schemas";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -22,9 +22,10 @@ import {
 
 /** Projects the TV library into the detail-page contract. */
 export class TvLibraryReadRepository<K extends TvMediaType = TvMediaType> {
-    private readonly library = new TvLibraryRepository();
-
-    constructor(private readonly kind: K) {}
+    constructor(
+        private readonly kind: K,
+        private readonly library = new TvLibraryRepository(),
+    ) {}
 
     async getUserMediaHistory(userId: number, catalogItemId: number) {
         const rows = await getDbClient()
@@ -239,8 +240,3 @@ export class TvLibraryReadRepository<K extends TvMediaType = TvMediaType> {
         return { ...userMedia, ratingSystem, tags: tags ?? [] };
     }
 }
-
-
-export const isTvKind = (kind: string): kind is TvMediaType => (
-    kind === MediaType.SERIES || kind === MediaType.ANIME
-);

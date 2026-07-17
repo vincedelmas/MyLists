@@ -6,8 +6,10 @@ import {MangaDetailsPage} from "@/lib/contracts/media/details";
 
 /** Complete read boundary for the manga detail page. */
 export class MangaDetailsQuery {
-    private readonly catalog = new MangaCatalogReadRepository();
-    private readonly library = new MangaLibraryReadRepository();
+    constructor(
+        private readonly catalog = new MangaCatalogReadRepository(),
+        private readonly library = new MangaLibraryReadRepository(),
+    ) {}
 
     async getMediaAndUserDetails(viewerId: number | undefined, catalogItemId: number): Promise<MangaDetailsPage | undefined> {
         const media = await this.catalog.findDetails(catalogItemId);

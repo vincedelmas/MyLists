@@ -3,22 +3,6 @@ import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {seriesAchievements} from "@/lib/server/domain/achievements/seeds/series.seed";
-import {animeAchievements} from "@/lib/server/domain/achievements/seeds/anime.seed";
-import {moviesAchievements} from "@/lib/server/domain/achievements/seeds/movies.seed";
-import {gamesAchievements} from "@/lib/server/domain/achievements/seeds/games.seed";
-import {booksAchievements} from "@/lib/server/domain/achievements/seeds/books.seed";
-import {mangaAchievements} from "@/lib/server/domain/achievements/seeds/manga.seed";
-
-
-const achievementDefinitions = {
-    [MediaType.SERIES]: seriesAchievements,
-    [MediaType.ANIME]: animeAchievements,
-    [MediaType.MOVIES]: moviesAchievements,
-    [MediaType.GAMES]: gamesAchievements,
-    [MediaType.BOOKS]: booksAchievements,
-    [MediaType.MANGA]: mangaAchievements,
-};
 
 
 export const seedAchievementsTask = defineTask({
@@ -33,7 +17,7 @@ export const seedAchievementsTask = defineTask({
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`seed-${mediaType}`, async () => {
-                const achievementsDef = achievementDefinitions[mediaType];
+                const achievementsDef = container.media.get(mediaType).achievements.definitions;
 
                 const definitionCount = Object.keys(achievementsDef).length;
                 ctx.metric(`${mediaType}.definitions_found`, definitionCount);

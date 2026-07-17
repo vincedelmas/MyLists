@@ -4,7 +4,7 @@ import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
 
 
-type ActivityMediaConfig = {
+export type ActivityMediaDefinition = {
     longUnit?: string;
     inputStep: number;
     shortUnit?: string;
@@ -14,53 +14,57 @@ type ActivityMediaConfig = {
 }
 
 
-const activityMediaConfig: Record<MediaType, ActivityMediaConfig> = {
-    [MediaType.SERIES]: {
+export const tvActivityDefinition: ActivityMediaDefinition = {
         inputStep: 1,
         shortUnit: "eps",
         longUnit: "Episodes",
         toStoredValue: identity,
         toDisplayValue: identity,
         calculateTime: (specificGained, duration = 20) => specificGained * duration,
-    },
-    [MediaType.ANIME]: {
-        inputStep: 1,
-        shortUnit: "eps",
-        longUnit: "Episodes",
-        toStoredValue: identity,
-        toDisplayValue: identity,
-        calculateTime: (specificGained, duration = 20) => specificGained * duration,
-    },
-    [MediaType.MOVIES]: {
+};
+
+export const movieActivityDefinition: ActivityMediaDefinition = {
         inputStep: 1,
         toStoredValue: identity,
         toDisplayValue: identity,
         calculateTime: (specificGained, duration = 100) => specificGained * duration,
-    },
-    [MediaType.GAMES]: {
+};
+
+export const gameActivityDefinition: ActivityMediaDefinition = {
         shortUnit: "h.",
         inputStep: 0.25,
         longUnit: "Hours Played",
         calculateTime: identity,
         toStoredValue: (hours) => hours * 60,
         toDisplayValue: (minutes) => Math.round((minutes / 60) * 100) / 100,
-    },
-    [MediaType.BOOKS]: {
+};
+
+export const bookActivityDefinition: ActivityMediaDefinition = {
         inputStep: 1,
         shortUnit: "p.",
         longUnit: "Pages Read",
         toStoredValue: identity,
         toDisplayValue: identity,
         calculateTime: (specificGained) => specificGained * 1.7,
-    },
-    [MediaType.MANGA]: {
+};
+
+export const mangaActivityDefinition: ActivityMediaDefinition = {
         inputStep: 1,
         shortUnit: "ch.",
         longUnit: "Chapters Read",
         toStoredValue: identity,
         toDisplayValue: identity,
         calculateTime: (specificGained) => specificGained * 7,
-    },
+};
+
+
+const activityMediaConfig: Record<MediaType, ActivityMediaDefinition> = {
+    [MediaType.SERIES]: tvActivityDefinition,
+    [MediaType.ANIME]: tvActivityDefinition,
+    [MediaType.MOVIES]: movieActivityDefinition,
+    [MediaType.GAMES]: gameActivityDefinition,
+    [MediaType.BOOKS]: bookActivityDefinition,
+    [MediaType.MANGA]: mangaActivityDefinition,
 };
 
 
@@ -83,11 +87,6 @@ export const toActivityDisplayValue = (mediaType: MediaType, value: number) => {
 
 export const toActivityStoredValue = (mediaType: MediaType, value: number) => {
     return activityMediaConfig[mediaType].toStoredValue(Number(value));
-};
-
-
-export const calculateActivityTime = (mediaType: MediaType, specificGained: number, duration?: number) => {
-    return activityMediaConfig[mediaType].calculateTime(specificGained, duration);
 };
 
 

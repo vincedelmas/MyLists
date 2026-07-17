@@ -2,6 +2,9 @@ import {BookCatalogAdminRepository, BookCatalogEdit} from "@/lib/server/domain/c
 import {BookLibraryCommands} from "@/lib/server/domain/library/books/book-library.commands";
 import {BookLibraryRepository} from "@/lib/server/domain/library/books/book-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {MediaType} from "@/lib/utils/enums";
+import {BookCatalogEditPayload} from "@/lib/contracts/media/catalog-edit";
+import {CatalogCoverStorage, relationNames} from "@/lib/server/domain/catalog/catalog-edit.shared";
 
 
 export class BookCatalogEditCommand {
@@ -9,7 +12,17 @@ export class BookCatalogEditCommand {
         private readonly catalog: BookCatalogAdminRepository,
         private readonly library = new BookLibraryRepository(),
         private readonly libraryCommands = new BookLibraryCommands(library),
+        private readonly coverStorage = new CatalogCoverStorage(MediaType.BOOKS),
     ) {}
+
+    async update(catalogItemId: number, payload: BookCatalogEditPayload) {
+        const imageCover = await this.coverStorage.save(payload.imageCover);
+        return this.updateEditableFields(catalogItemId, {
+            ...payload,
+            imageCover,
+            authors: relationNames(payload.authors),
+        });
+    }
 
     updateEditableFields(catalogItemId: number, edit: BookCatalogEdit) {
         return withTransaction(async () => {

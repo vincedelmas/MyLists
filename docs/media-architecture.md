@@ -22,9 +22,12 @@ service:
   list channels.
 - `domain/imports` maps provider records and delegates writes to the same concrete
   library rules used by interactive mutations.
-- The existing API clients, transformers, providers, and import parsers remain
-  the external-data boundary. Resolving external media may intentionally ingest
-  a missing catalog item for an anonymous details request.
+- API clients and provider transformers form the external-data boundary.
+  Transformers normalize raw provider responses into a canonical snapshot for
+  one media family; that family's ingestion repository persists the snapshot.
+  Import matching and CSV row schemas are composed by the same media module.
+  Resolving external media may intentionally ingest a missing catalog item for
+  an anonymous details request.
 
 TV and anime share catalog and progress mechanics where their behavior is truly
 the same, while remaining distinct media channels. The other families keep
@@ -37,14 +40,49 @@ media abstraction.
 The container assembles one concrete capability module for each `MediaType` and
 publishes them through a single immutable, type-indexed registry. A module owns
 its catalog queries and commands, library queries and commands, external
-provider and ingestion pipeline, and import matcher. Repositories remain private
-to the module composition unless an operational capability must be exposed.
+provider and ingestion pipeline, import matcher and schema, achievement policy,
+activity projection, and any optional product capabilities. Repositories remain
+private to the module composition unless an operational capability must be
+exposed.
 
 Common capabilities with the same contract, such as library history, may be
 dispatched directly through `registry.get(mediaType)`. Family-specific payloads,
 such as progress updates and list query arguments, remain discriminated and use
 exhaustive narrowing. The registry is composition, not a replacement base media
 service.
+
+### Capability ownership
+
+The module object is the capability matrix. Required capabilities can be called
+directly:
+
+```ts
+registry.get(mediaType).library.read.getUserMediaHistory(userId, mediaId);
+```
+
+Optional capabilities exist only on participating modules and are discovered
+from registry values. There is no second list that must be kept in sync.
+
+| Capability | Owning modules |
+| --- | --- |
+| Catalog edit, ingestion, refresh identity, maintenance | All |
+| Library commands, reads, CSV, stats, tags, covers | All |
+| Imports, achievements, activity | All |
+| Coming next | Series, anime, movies, games |
+| Upcoming notifications | Series, anime, movies |
+| Which Came First | Series, anime, movies, games, manga |
+| Mediadle | Movies |
+
+A media module owns decisions such as editable fields, popularity thresholds,
+refresh permission, notification deduplication, CSV columns, stat contribution,
+and achievement definitions. Shared code may provide a reusable mechanism—for
+example cover storage, the stats rebuild engine, or a bound catalog projection—
+but receives the media-owned policy or data source through composition.
+
+Cross-media services and scheduled tasks orchestrate capabilities obtained from
+the registry; they do not inspect family tables or select a family repository.
+An exhaustive switch is still appropriate at a transport boundary when a
+discriminated request contains genuinely different family payloads.
 
 ## Canonical persistence
 

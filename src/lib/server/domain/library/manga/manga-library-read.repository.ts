@@ -20,7 +20,7 @@ import {
 
 /** Projects the manga library into the detail-page contract. */
 export class MangaLibraryReadRepository {
-    private readonly library = new MangaLibraryRepository();
+    constructor(private readonly library = new MangaLibraryRepository()) {}
 
     async getUserMediaHistory(userId: number, catalogItemId: number) {
         const rows = await getDbClient().select({

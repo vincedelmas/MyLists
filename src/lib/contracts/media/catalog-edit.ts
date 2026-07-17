@@ -157,7 +157,6 @@ export const catalogEditFieldsSchema = z.discriminatedUnion("kind", [
     mangaCatalogEditFieldsSchema,
 ]);
 
-export type CatalogEditRequest = z.infer<typeof catalogEditRequestSchema>;
 export type CatalogEditFields = z.infer<typeof catalogEditFieldsSchema>;
 export type TvCatalogEditPayloadInput = z.input<typeof tvCatalogEditPayloadSchema>;
 export type TvCatalogEditPayload = z.output<typeof tvCatalogEditPayloadSchema>;

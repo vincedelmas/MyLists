@@ -1,7 +1,7 @@
 import {z} from "zod";
-import {mediaTypeUtils} from "@/lib/utils/media-mapping";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
+import {supportsUpcomingNotifications} from "@/lib/server/domain/notifications/upcoming-notification-capability";
 
 
 export const createMediaNotificationsTask = defineTask({
@@ -11,20 +11,19 @@ export const createMediaNotificationsTask = defineTask({
     inputSchema: z.object({}),
     handler: async (ctx) => {
         const container = await getContainer();
-        const mediaTypes = mediaTypeUtils.getTypesForNotifications();
-        const notificationCommands = container.notifications.commands;
+        const mediaModules = container.media.values().filter(supportsUpcomingNotifications);
 
-        for (const mediaType of mediaTypes) {
-            await ctx.step(`process-${mediaType}`, async () => {
-                const allMediaToNotify = await container.media.get(mediaType).library.upcoming.forNotifications();
+        for (const mediaModule of mediaModules) {
+            await ctx.step(`process-${mediaModule.kind}`, async () => {
+                const allMediaToNotify = await mediaModule.notifications.upcoming.candidates();
 
-                ctx.metric(`${mediaType}.found`, allMediaToNotify.length);
+                ctx.metric(`${mediaModule.kind}.found`, allMediaToNotify.length);
                 if (allMediaToNotify.length === 0) {
-                    ctx.info(`No upcoming ${mediaType} found to notify.`);
+                    ctx.info(`No upcoming ${mediaModule.kind} found to notify.`);
                     return;
                 }
 
-                await notificationCommands.createMediaNotifications(mediaType, allMediaToNotify);
+                await mediaModule.notifications.upcoming.create(allMediaToNotify);
             })
         }
     },

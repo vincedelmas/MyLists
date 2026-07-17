@@ -12,47 +12,86 @@ import {BookCatalogEditCommand} from "@/lib/server/domain/catalog/books/book-cat
 import {BookCatalogIngestionRepository} from "@/lib/server/domain/catalog/books/book-catalog-ingestion.repository";
 import {BookCatalogIngestionCommand} from "@/lib/server/domain/catalog/books/book-catalog-ingestion.command";
 import {BookCoverContributionCommand} from "@/lib/server/domain/catalog/books/book-cover-contribution.command";
-import {CatalogRefreshCandidateRepository} from "@/lib/server/domain/catalog/catalog-refresh-candidate.repository";
 import {createBooksIngestionService, createGBooksBooksProvider} from "@/lib/server/api-providers/gbooks-books.provider";
 import {createBooksMatcher} from "@/lib/server/domain/imports/matchers/books.matcher";
+import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/catalog/catalog-refresh-identity.query";
+import {BookLibraryCsvExportQuery} from "@/lib/server/domain/library/books/book-library-csv-export.query";
+import {BookStatsContributionQuery} from "@/lib/server/domain/library/books/book-stats-contribution.query";
+import {LibraryStatsRebuildCommand} from "@/lib/server/domain/library/library-stats-rebuild.command";
+import {LibraryTagsQuery} from "@/lib/server/domain/library/library-tags.query";
+import {LibraryCustomCoverCommand} from "@/lib/server/domain/library/library-custom-cover.command";
+import {createCatalogMaintenance} from "@/lib/server/domain/catalog/catalog-maintenance";
+import {booksMyListsCSVRowSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {booksAchievements} from "@/lib/server/domain/achievements/seeds/books.seed";
+import {BookAchievementCalculator} from "@/lib/server/domain/achievements/book-achievement-calculator";
+import {bookActivityDefinition} from "@/lib/utils/activity-utils";
+import {CatalogActivityQuery} from "@/lib/server/domain/activity/catalog-activity.query";
 
 
 export const setupBookMediaModule = (
     apiClients: ApiClientModule,
-    refreshCandidates: CatalogRefreshCandidateRepository,
 ) => {
     const libraryRepository = new BookLibraryRepository();
     const libraryCommands = new BookLibraryCommands(libraryRepository);
+    const libraryRead = new BookLibraryReadRepository(libraryRepository);
     const catalogRepository = new BookCatalogIngestionRepository();
     const catalogCommands = new BookCatalogIngestionCommand(catalogRepository, libraryRepository, libraryCommands);
     const catalogRead = new BookCatalogReadRepository();
     const catalogAdmin = new BookCatalogAdminRepository();
     const external = createGBooksBooksProvider(apiClients.gBook);
     const ingestion = createBooksIngestionService(catalogCommands, external);
+    const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.BOOKS);
+    const statsRead = new BookStatsReadRepository();
+    const statsRebuild = new LibraryStatsRebuildCommand(MediaType.BOOKS, new BookStatsContributionQuery());
+    const csvExport = new BookLibraryCsvExportQuery();
+    const tags = new LibraryTagsQuery(MediaType.BOOKS);
 
     return {
         kind: MediaType.BOOKS,
         catalog: {
-            details: new BookDetailsQuery(catalogRead),
+            details: new BookDetailsQuery(catalogRead, libraryRead),
             read: catalogRead,
             admin: catalogAdmin,
             edit: new BookCatalogEditCommand(catalogAdmin, libraryRepository, libraryCommands),
             ingestion,
             contributeCover: new BookCoverContributionCommand(catalogAdmin),
-            refreshIdentity: {
-                get: (catalogItemId: number) => refreshCandidates.getItemIdentity(MediaType.BOOKS, catalogItemId),
+            refresh: {
+                identity: refreshIdentity,
+                selfServiceAllowed: false,
             },
+            maintenance: createCatalogMaintenance(MediaType.BOOKS),
         },
         library: {
             commands: libraryCommands,
-            read: new BookLibraryReadRepository(),
+            read: libraryRead,
             list: new BookListReadRepository(),
-            stats: new BookStatsReadRepository(),
+            export: {
+                csv: (userId: number) => csvExport.export(userId),
+            },
+            stats: {
+                read: statsRead,
+                rebuild: () => statsRebuild.rebuild(),
+            },
+            tags: {
+                getNames: (userId: number) => tags.getNames(userId),
+                edit: (params: Parameters<BookLibraryCommands["editTag"]>[0]) => libraryCommands.editTag(params),
+            },
+            covers: new LibraryCustomCoverCommand(MediaType.BOOKS, libraryRead, libraryCommands),
         },
         external,
         imports: {
             matcher: createBooksMatcher(catalogRepository, external, ingestion, libraryCommands),
+            csv: {
+                rowSchema: booksMyListsCSVRowSchema,
+            },
+        },
+        achievements: {
+            definitions: booksAchievements,
+            calculator: new BookAchievementCalculator(),
+        },
+        activity: {
+            definition: bookActivityDefinition,
+            catalog: new CatalogActivityQuery(MediaType.BOOKS),
         },
     } as const;
 };
-

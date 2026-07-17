@@ -6,7 +6,7 @@ import {setupMediaModule} from "@/lib/server/core/container/media.module";
 
 describe("media module composition", () => {
     it("registers one complete, type-specific capability module per media kind", () => {
-        const { registry } = setupMediaModule({} as ApiClientModule);
+        const registry = setupMediaModule({} as ApiClientModule);
 
         expect(registry.values().map(({ kind }) => kind)).toEqual(expect.arrayContaining(Object.values(MediaType)));
         expect(registry.values()).toHaveLength(Object.values(MediaType).length);
@@ -16,5 +16,25 @@ describe("media module composition", () => {
         expect(registry.get(MediaType.GAMES).catalog.read.getCompatiblePlatforms).toBeTypeOf("function");
         expect(registry.get(MediaType.BOOKS).catalog.contributeCover.contribute).toBeTypeOf("function");
         expect(registry.get(MediaType.MANGA).catalog.ingestion.refreshFromExternal).toBeTypeOf("function");
+        expect(registry.get(MediaType.MOVIES).library.export.csv).toBeTypeOf("function");
+        expect(registry.get(MediaType.GAMES).library.stats.rebuild).toBeTypeOf("function");
+        expect(registry.get(MediaType.BOOKS).catalog.maintenance.orphans.find).toBeTypeOf("function");
+        expect(registry.get(MediaType.MANGA).achievements.calculator.getAchievementCte).toBeTypeOf("function");
+        expect(registry.get(MediaType.SERIES).activity.catalog.getMediaDetailsByIds).toBeTypeOf("function");
+    });
+
+    it("makes optional capabilities visible through module composition", () => {
+        const registry = setupMediaModule({} as ApiClientModule);
+
+        expect(registry.get(MediaType.MOVIES).features.mediadle.pickEligibleId).toBeTypeOf("function");
+        expect(registry.get(MediaType.GAMES).features.whichCameFirst.getPopularMediaRefs).toBeTypeOf("function");
+        expect("features" in registry.get(MediaType.BOOKS)).toBe(false);
+
+        expect(registry.get(MediaType.ANIME).notifications.upcoming.create).toBeTypeOf("function");
+        expect("notifications" in registry.get(MediaType.GAMES)).toBe(false);
+        expect(registry.get(MediaType.GAMES).library.upcoming.forOwner).toBeTypeOf("function");
+
+        expect(registry.get(MediaType.BOOKS).catalog.refresh.selfServiceAllowed).toBe(false);
+        expect(registry.get(MediaType.MANGA).catalog.refresh.selfServiceAllowed).toBe(true);
     });
 });

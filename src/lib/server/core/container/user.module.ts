@@ -22,8 +22,6 @@ import {ProfileUpdatesQuery} from "@/lib/server/domain/profile/profile-updates.q
 import {ProfileUpdatesCommand} from "@/lib/server/domain/profile/profile-updates.command";
 import {TasteMatchesReadService} from "@/lib/server/domain/discovery/taste-matches-read.service";
 import {HallOfFameReadService} from "@/lib/server/domain/discovery/hall-of-fame-read.service";
-import {MediadleMovieCatalogRepository} from "@/lib/server/domain/mediadle/mediadle-movie-catalog";
-import {WcfMediaCatalogRepository} from "@/lib/server/domain/which-came-first/wcf-media-catalog";
 import {ProfileChannelAccessRepository} from "@/lib/server/domain/access/profile-channel-access.repository";
 import {AccountQuery} from "@/lib/server/domain/user/account.query";
 import {AccountSettingsCommands} from "@/lib/server/domain/user/account-settings.commands";
@@ -61,35 +59,28 @@ export function setupUserModule(mediaModule: MediaModule) {
     const adminAccountsQuery = new AdminAccountsQuery(userRepository);
     const adminAccountCommands = new AdminAccountCommands(accountDeletionCommands, userRepository);
     const profileViewCommands = new ProfileViewCommands(new ProfileChannelAccessRepository(), userRepository);
-    const mediadleService = new MediadleService(mediadleRepository, new MediadleMovieCatalogRepository());
+    const mediadleService = new MediadleService(
+        mediadleRepository,
+        mediaModule.get(MediaType.MOVIES).features.mediadle,
+    );
     const profileUpdatesQuery = new ProfileUpdatesQuery();
     const profileUpdatesCommand = new ProfileUpdatesCommand();
     const achievementsQuery = new AchievementsQuery(undefined, achievementsRepository);
     const achievementCommands = new AchievementCommands(achievementsRepository);
     const notificationsQuery = new NotificationsQuery(notificationsRepository);
     const notificationCommands = new NotificationCommands(notificationsRepository);
-    const whichCameFirstService = new WcfService(whichCameFirstRepository, new WcfMediaCatalogRepository());
+    const whichCameFirstService = new WcfService(whichCameFirstRepository, mediaModule);
     const profileHighlights = new ProfileHighlightsQuery();
     const profileCustomizationQuery = new ProfileCustomizationQuery(userProfileRepository, profileHighlights);
     const profileCustomizationCommands = new ProfileCustomizationCommands(userProfileRepository);
     const featureVotesQuery = new FeatureVotesQuery(featureVotesRepository);
     const featureVoteCommands = new FeatureVoteCommands(featureVotesRepository, notificationCommands);
-    const activityService = new ActivityService();
+    const activityService = new ActivityService(mediaModule);
     const editorialCollectionsQuery = new EditorialCollectionsQuery();
     const editorialCollectionsCommands = new EditorialCollectionCommands();
     const socialGraphQuery = new SocialGraphQuery();
     const socialGraphCommands = new SocialGraphCommands();
-    const userStatsService = new UserStatsService(
-        activityService,
-        {
-            [MediaType.SERIES]: mediaModule.registry.get(MediaType.SERIES).library.stats,
-            [MediaType.ANIME]: mediaModule.registry.get(MediaType.ANIME).library.stats,
-        },
-        mediaModule.registry.get(MediaType.MOVIES).library.stats,
-        mediaModule.registry.get(MediaType.GAMES).library.stats,
-        mediaModule.registry.get(MediaType.BOOKS).library.stats,
-        mediaModule.registry.get(MediaType.MANGA).library.stats,
-    );
+    const userStatsService = new UserStatsService(activityService, mediaModule);
     const profileOverview = new ProfileOverviewQuery(
         userStatsService,
         profileHighlights,

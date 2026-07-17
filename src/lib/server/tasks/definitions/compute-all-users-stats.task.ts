@@ -17,7 +17,7 @@ export const computeAllUsersStatsTask = defineTask({
         for (const mediaType of mediaTypes) {
             await ctx.step(`stats-${mediaType}`, async () => {
                 await withTransaction(async () => {
-                    const userCount = await container.library.statsRebuilder.rebuild(mediaType);
+                    const userCount = await container.media.get(mediaType).library.stats.rebuild();
 
                     if (userCount === 0) {
                         ctx.warn(`No users found with ${mediaType} data to compute.`);

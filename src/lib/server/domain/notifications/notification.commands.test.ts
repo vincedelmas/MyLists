@@ -3,6 +3,7 @@ import {MediaType, Status} from "@/lib/utils/enums";
 import {NotificationCommands} from "./notification.commands";
 import {NotificationsQuery} from "./notifications.query";
 import type {NotificationsRepository} from "./notifications.repository";
+import {TvUpcomingNotificationCommand} from "@/lib/server/domain/library/tv/tv-upcoming-notification.command";
 
 
 const createRepository = () => ({
@@ -21,9 +22,13 @@ describe("notification capabilities", () => {
             releaseDate: "2026-07-24",
             season: 2,
         });
-        const commands = new NotificationCommands(repository as unknown as typeof NotificationsRepository);
+        const commands = new TvUpcomingNotificationCommand(
+            MediaType.SERIES,
+            {} as never,
+            repository as unknown as typeof NotificationsRepository,
+        );
 
-        await commands.createMediaNotifications(MediaType.SERIES, [{
+        await commands.create([{
             date: "2026-07-24",
             episodeToAir: 4,
             imageCover: "cover.jpg",
@@ -45,9 +50,13 @@ describe("notification capabilities", () => {
             releaseDate: "2026-07-24",
             season: 2,
         });
-        const commands = new NotificationCommands(repository as unknown as typeof NotificationsRepository);
+        const commands = new TvUpcomingNotificationCommand(
+            MediaType.ANIME,
+            {} as never,
+            repository as unknown as typeof NotificationsRepository,
+        );
 
-        await commands.createMediaNotifications(MediaType.ANIME, [{
+        await commands.create([{
             date: "2026-07-24",
             episodeToAir: 4,
             imageCover: "cover.jpg",

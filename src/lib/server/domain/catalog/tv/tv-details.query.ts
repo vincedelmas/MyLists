@@ -6,13 +6,11 @@ import {TvLibraryReadRepository} from "@/lib/server/domain/library/tv/tv-library
 
 /** Complete read boundary for the series/anime detail page. */
 export class TvDetailsQuery<K extends TvMediaType> {
-    private readonly catalog: TvCatalogReadRepository;
-    private readonly library: TvLibraryReadRepository;
-
-    constructor(private readonly kind: K) {
-        this.catalog = new TvCatalogReadRepository(kind);
-        this.library = new TvLibraryReadRepository(kind);
-    }
+    constructor(
+        private readonly kind: K,
+        private readonly catalog = new TvCatalogReadRepository(kind),
+        private readonly library = new TvLibraryReadRepository(kind),
+    ) {}
 
     async getMediaAndUserDetails(viewerId: number | undefined, catalogItemId: number): Promise<TvDetailsPage<K> | undefined> {
         const media = await this.catalog.findDetails(catalogItemId);

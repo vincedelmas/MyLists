@@ -14,7 +14,7 @@ interface AppContainer {
     games: UserModule["games"];
     admin: AdminModule["admin"];
     social: UserModule["social"];
-    media: MediaModule["registry"];
+    media: MediaModule;
     account: UserModule["account"];
     profile: UserModule["profile"];
     activity: UserModule["activity"];
@@ -22,10 +22,8 @@ interface AppContainer {
     collections: UserModule["collections"];
     featureVotes: UserModule["featureVotes"];
     achievements: UserModule["achievements"];
-    library: MediaModule["shared"]["library"];
     notifications: UserModule["notifications"];
     inactiveAccounts: UserModule["inactiveAccounts"];
-    mediaShared: Omit<MediaModule["shared"], "library">;
 }
 
 
@@ -40,16 +38,12 @@ async function initContainer(): Promise<AppContainer> {
     const mediaModule = setupMediaModule(clientsModule);
 
     const userModule = setupUserModule(mediaModule);
-    const importModule = setupImportModule(mediaModule.registry);
+    const importModule = setupImportModule(mediaModule);
 
     return {
         cacheManager,
         apiClients: clientsModule,
-        library: mediaModule.shared.library,
-        media: mediaModule.registry,
-        mediaShared: {
-            catalogEdit: mediaModule.shared.catalogEdit,
-        },
+        media: mediaModule,
         account: userModule.account,
         inactiveAccounts: userModule.inactiveAccounts,
         profile: userModule.profile,

@@ -118,7 +118,7 @@ export const getDownloadListAsCSV = createServerFn({ method: "GET" })
     .validator(downloadListAsCsvSchema)
     .handler(async ({ data: { selectedList }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.library.csvExport.export(currentUser.id, selectedList);
+        return container.media.get(selectedList).library.export.csv(currentUser.id);
     });
 
 

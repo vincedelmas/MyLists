@@ -2,13 +2,13 @@ import {SearchType} from "@/lib/schemas";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {pixelateImage} from "@/lib/utils/image-pixelation";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
-import {MediadleMovieCatalog} from "@/lib/server/domain/mediadle/mediadle-movie-catalog";
+import {MovieMediadleQuery} from "@/lib/server/domain/catalog/movies/movie-mediadle.query";
 
 
 export class MediadleService {
     constructor(
         private repository: typeof MediadleRepository,
-        private movieCatalog: MediadleMovieCatalog,
+        private movieCatalog: MovieMediadleQuery,
     ) {
     }
 

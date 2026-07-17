@@ -6,8 +6,10 @@ import {GameDetailsPage} from "@/lib/contracts/media/details";
 
 /** Complete read boundary for the game detail page. */
 export class GameDetailsQuery {
-    private readonly catalog = new GameCatalogReadRepository();
-    private readonly library = new GameLibraryReadRepository();
+    constructor(
+        private readonly catalog = new GameCatalogReadRepository(),
+        private readonly library = new GameLibraryReadRepository(),
+    ) {}
 
     async getMediaAndUserDetails(viewerId: number | undefined, catalogItemId: number): Promise<GameDetailsPage | undefined> {
         const media = await this.catalog.findDetails(catalogItemId);

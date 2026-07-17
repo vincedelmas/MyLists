@@ -1,12 +1,9 @@
 import * as z from "zod";
-import {GamesPlatformsEnum, MediaType, PrivacyType, UpdateType} from "@/lib/utils/enums";
+import {MediaType, PrivacyType, UpdateType} from "@/lib/utils/enums";
 
 
 export type LibraryHistory = z.infer<typeof libraryHistorySchema>;
-export type JobDetailsPage = z.infer<typeof jobDetailsPageSchema>;
 export type CollectionSummary = z.infer<typeof collectionSummarySchema>;
-export type CompatibleGamePlatforms = z.infer<typeof compatibleGamePlatformsSchema>;
-export type CommunityCollectionsPage = z.infer<typeof communityCollectionsPageSchema>;
 
 
 const libraryChangePayloadSchema = z.strictObject({
@@ -67,10 +64,6 @@ const communityCollectionsPageSchema = z.strictObject({
     items: z.array(collectionSummarySchema),
 });
 
-const compatibleGamePlatformsSchema = z.array(z.strictObject({
-    name: z.enum(GamesPlatformsEnum),
-}));
-
 const jobDetailsPage = <K extends MediaType>(kind: K) => {
     return z.strictObject({
         kind: z.literal(kind),
@@ -81,6 +74,8 @@ const jobDetailsPage = <K extends MediaType>(kind: K) => {
 }
 
 export const libraryHistorySchema = z.array(libraryHistoryItemSchema);
+export const validateCollectionSummaries = (value: unknown) => z.array(collectionSummarySchema).parse(value);
+export const validateCommunityCollectionsPage = (value: unknown) => communityCollectionsPageSchema.parse(value);
 
 export const jobDetailsPageSchema = z.discriminatedUnion("kind", [
     jobDetailsPage(MediaType.SERIES),

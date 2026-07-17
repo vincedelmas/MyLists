@@ -3,8 +3,8 @@ import path from "path";
 import * as fs from "fs";
 import {serverEnv} from "@/env/server";
 import {MediaType} from "@/lib/utils/enums";
+import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
-import {CatalogCoverReferenceRepository} from "@/lib/server/domain/catalog/catalog-cover-reference.repository";
 
 
 export const removeUnusedMediaCoversTask = defineTask({
@@ -16,7 +16,7 @@ export const removeUnusedMediaCoversTask = defineTask({
         mediaTypes: z.array(z.enum(MediaType)).optional().describe("Media types to clean (all if omitted)"),
     }),
     handler: async (ctx, input) => {
-        const catalogReferences = new CatalogCoverReferenceRepository();
+        const container = await getContainer();
         const baseUploadsLocation = serverEnv.BASE_UPLOADS_LOCATION;
 
         const mediaTypes = input.mediaTypes;
@@ -34,7 +34,7 @@ export const removeUnusedMediaCoversTask = defineTask({
                     return;
                 }
 
-                const references = await catalogReferences.getReferences(mediaType);
+                const references = await container.media.get(mediaType).catalog.maintenance.covers.getReferences();
                 const dbCoverFilenames = references.catalog;
                 const dbCustomCoverFilenames = references.custom;
                 const dbCoverSet = new Set([...dbCoverFilenames, ...dbCustomCoverFilenames]);

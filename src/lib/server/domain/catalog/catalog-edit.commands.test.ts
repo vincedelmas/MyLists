@@ -4,7 +4,13 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 import {MediaType} from "@/lib/utils/enums";
-import {catalogEditRequestSchema} from "@/lib/contracts/media/catalog-edit";
+import {
+    bookCatalogEditPayloadSchema,
+    gameCatalogEditPayloadSchema,
+    mangaCatalogEditPayloadSchema,
+    movieCatalogEditPayloadSchema,
+    tvCatalogEditPayloadSchema,
+} from "@/lib/contracts/media/catalog-edit";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -13,20 +19,27 @@ vi.mock("@/lib/server/database/async-storage", () => ({
     withTransaction: (action: () => Promise<unknown>) => action(),
 }));
 
-const {CatalogEditCommands} = await import("./catalog-edit.commands");
 const {TvCatalogAdminRepository} = await import("./tv/tv-catalog-admin.repository");
+const {TvCatalogEditCommand} = await import("./tv/tv-catalog-edit.command");
 const {MovieCatalogAdminRepository} = await import("./movies/movie-catalog-admin.repository");
 const {MovieCatalogEditCommand} = await import("./movies/movie-catalog-edit.command");
 const {GameCatalogAdminRepository} = await import("./games/game-catalog-admin.repository");
 const {GameCatalogEditCommand} = await import("./games/game-catalog-edit.command");
 const {BookCatalogAdminRepository} = await import("./books/book-catalog-admin.repository");
+const {BookCatalogEditCommand} = await import("./books/book-catalog-edit.command");
 const {MangaCatalogAdminRepository} = await import("./manga/manga-catalog-admin.repository");
+const {MangaCatalogEditCommand} = await import("./manga/manga-catalog-edit.command");
 
 
 describe("normalized catalog manager edits", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
-    let commands: InstanceType<typeof CatalogEditCommands>;
+    let series: InstanceType<typeof TvCatalogEditCommand>;
+    let anime: InstanceType<typeof TvCatalogEditCommand>;
+    let movies: InstanceType<typeof MovieCatalogEditCommand>;
+    let games: InstanceType<typeof GameCatalogEditCommand>;
+    let books: InstanceType<typeof BookCatalogEditCommand>;
+    let manga: InstanceType<typeof MangaCatalogEditCommand>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
@@ -35,16 +48,12 @@ describe("normalized catalog manager edits", () => {
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
 
-        commands = new CatalogEditCommands(
-            {
-                [MediaType.SERIES]: new TvCatalogAdminRepository(MediaType.SERIES),
-                [MediaType.ANIME]: new TvCatalogAdminRepository(MediaType.ANIME),
-            },
-            new MovieCatalogEditCommand(new MovieCatalogAdminRepository()),
-            new GameCatalogEditCommand(new GameCatalogAdminRepository()),
-            new BookCatalogAdminRepository(),
-            new MangaCatalogAdminRepository(),
-        );
+        series = new TvCatalogEditCommand(new TvCatalogAdminRepository(MediaType.SERIES));
+        anime = new TvCatalogEditCommand(new TvCatalogAdminRepository(MediaType.ANIME));
+        movies = new MovieCatalogEditCommand(new MovieCatalogAdminRepository());
+        games = new GameCatalogEditCommand(new GameCatalogAdminRepository());
+        books = new BookCatalogEditCommand(new BookCatalogAdminRepository());
+        manga = new MangaCatalogEditCommand(new MangaCatalogAdminRepository());
 
         await db.insert(schema.catalogItem).values([
             catalog(101, MediaType.SERIES, "tmdb"),
@@ -74,12 +83,12 @@ describe("normalized catalog manager edits", () => {
     });
 
     it("normalizes form values through explicit family commands", async () => {
-        await commands.update(catalogEditRequestSchema.parse({ mediaType: MediaType.SERIES, mediaId: 101, payload: { name: "Edited Series", duration: "50", lockStatus: "true" } }));
-        await commands.update(catalogEditRequestSchema.parse({ mediaType: MediaType.ANIME, mediaId: 102, payload: { name: "Edited Anime" } }));
-        await commands.update(catalogEditRequestSchema.parse({ mediaType: MediaType.MOVIES, mediaId: 103, payload: { duration: "120", budget: "1000" } }));
-        await commands.update(catalogEditRequestSchema.parse({ mediaType: MediaType.GAMES, mediaId: 104, payload: { gameEngine: "Engine", hltbMainTime: "" } }));
-        await commands.update(catalogEditRequestSchema.parse({ mediaType: MediaType.BOOKS, mediaId: 105, payload: { pages: "400", authors: [{ name: "Secondary" }, { name: "Primary" }] } }));
-        await commands.update(catalogEditRequestSchema.parse({ mediaType: MediaType.MANGA, mediaId: 106, payload: { chapters: "", publishers: "Publisher", genres: [{ name: "Drama" }] } }));
+        await series.update(101, tvCatalogEditPayloadSchema.parse({ name: "Edited Series", duration: "50", lockStatus: "true" }));
+        await anime.update(102, tvCatalogEditPayloadSchema.parse({ name: "Edited Anime" }));
+        await movies.update(103, movieCatalogEditPayloadSchema.parse({ duration: "120", budget: "1000" }));
+        await games.update(104, gameCatalogEditPayloadSchema.parse({ gameEngine: "Engine", hltbMainTime: "" }));
+        await books.update(105, bookCatalogEditPayloadSchema.parse({ pages: "400", authors: [{ name: "Secondary" }, { name: "Primary" }] }));
+        await manga.update(106, mangaCatalogEditPayloadSchema.parse({ chapters: "", publishers: "Publisher", genres: [{ name: "Drama" }] }));
 
         await expect(db.select().from(schema.catalogItem)).resolves.toEqual(expect.arrayContaining([
             expect.objectContaining({ id: 101, name: "Edited Series", locked: true }),
@@ -113,8 +122,8 @@ describe("normalized catalog manager edits", () => {
         await db.insert(schema.catalogGenre).values({ id: 1, name: "Drama" });
         await db.insert(schema.catalogItemGenre).values({ catalogItemId: 106, genreId: 1 });
 
-        await commands.update(catalogEditRequestSchema.parse({ mediaType: MediaType.BOOKS, mediaId: 105, payload: { authors: [] } }));
-        await commands.update(catalogEditRequestSchema.parse({ mediaType: MediaType.MANGA, mediaId: 106, payload: { genres: [] } }));
+        await books.update(105, bookCatalogEditPayloadSchema.parse({ authors: [] }));
+        await manga.update(106, mangaCatalogEditPayloadSchema.parse({ genres: [] }));
 
         await expect(db.select().from(schema.bookAuthor)).resolves.toEqual([]);
         await expect(db.select().from(schema.catalogItemGenre)).resolves.toEqual([]);

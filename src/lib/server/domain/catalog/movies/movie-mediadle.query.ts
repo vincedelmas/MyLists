@@ -12,7 +12,7 @@ type MediadleMovie = {
 };
 
 
-export interface MediadleMovieCatalog {
+export interface MovieMediadleQuery {
     findById(mediaId: number): Promise<MediadleMovie | undefined>;
 
     searchSuggestions(query: string, limit?: number): Promise<Array<{ id: number; name: string }>>;
@@ -23,7 +23,8 @@ export interface MediadleMovieCatalog {
 }
 
 
-export class MediadleMovieCatalogRepository implements MediadleMovieCatalog {
+/** Movie-owned selection and lookup policy for the Mediadle game. */
+export class MovieMediadleCatalogQuery implements MovieMediadleQuery {
     async findById(mediaId: number) {
         const row = getDbClient().select({
             id: catalogItem.id,

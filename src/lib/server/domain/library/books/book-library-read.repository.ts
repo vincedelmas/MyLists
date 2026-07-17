@@ -20,7 +20,7 @@ import {
 
 /** Projects the book library into the detail-page contract. */
 export class BookLibraryReadRepository {
-    private readonly library = new BookLibraryRepository();
+    constructor(private readonly library = new BookLibraryRepository()) {}
 
     async getUserMediaHistory(userId: number, catalogItemId: number) {
         const rows = await getDbClient().select({

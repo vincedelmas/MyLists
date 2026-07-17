@@ -1,20 +1,14 @@
-import {and, asc, eq} from "drizzle-orm";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
-import {libraryTag} from "@/lib/server/database/schema";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getContainer} from "@/lib/server/core/container";
-import {CoverType} from "@/lib/types/media-common.types";
-import {MediaType, TagAction} from "@/lib/utils/enums";
-import {getDbClient} from "@/lib/server/database/async-storage";
+import {MediaType} from "@/lib/utils/enums";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
-import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     addMediaToListSchema,
     deleteUserUpdatesSchema,
     editUserTagSchema,
-    type UpdateUserCustomCover,
     updateUserCustomCoverSchema,
     updateUserMediaSchema,
     userTagNamesSchema,
@@ -87,10 +81,7 @@ export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
     })
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        await requireUserMedia(container, currentUser.id, data.mediaType, data.mediaId);
-        const customCover = await prepareCustomCover(data);
-        await updateCustomCover(container, currentUser.id, data.mediaType, data.mediaId, customCover);
-        return requireUserMedia(container, currentUser.id, data.mediaType, data.mediaId);
+        return container.media.get(data.mediaType).library.covers.update(currentUser.id, data);
     });
 
 
@@ -117,13 +108,8 @@ export const getUserTagNames = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(userTagNamesSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser } }) => {
-        return getDbClient()
-            .select({ name: libraryTag.name })
-            .from(libraryTag)
-            .where(and(
-                eq(libraryTag.userId, currentUser.id),
-                eq(libraryTag.kind, mediaType),
-            )).orderBy(asc(libraryTag.name));
+        const container = await getContainer();
+        return container.media.get(mediaType).library.tags.getNames(currentUser.id);
     });
 
 
@@ -132,7 +118,12 @@ export const postEditUserTag = createServerFn({ method: "POST" })
     .validator(editUserTagSchema)
     .handler(async ({ data: { mediaType, mediaId, tag, action }, context: { currentUser } }) => {
         const container = await getContainer();
-        return editTag(container, { userId: currentUser.id, mediaType, mediaId, action, tag });
+        return container.media.get(mediaType).library.tags.edit({
+            userId: currentUser.id,
+            mediaId,
+            action,
+            tag,
+        });
     });
 
 
@@ -140,44 +131,6 @@ type Container = Awaited<ReturnType<typeof getContainer>>;
 
 const removeMedia = (container: Container, userId: number, mediaType: MediaType, mediaId: number) => {
     return container.media.get(mediaType).library.commands.remove({ userId, catalogItemId: mediaId });
-};
-
-const editTag = (container: Container, params: { userId: number; mediaType: MediaType; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) => {
-    const { userId, mediaType, mediaId, action, tag } = params;
-    switch (mediaType) {
-        case MediaType.SERIES:
-        case MediaType.ANIME:
-            return container.media.get(mediaType).library.commands.editTag({ userId, kind: mediaType, mediaId, action, tag });
-        case MediaType.MOVIES:
-        case MediaType.GAMES:
-        case MediaType.BOOKS:
-        case MediaType.MANGA:
-            return container.media.get(mediaType).library.commands.editTag({ userId, mediaId, action, tag });
-        default:
-            return assertNever(mediaType);
-    }
-};
-
-const updateCustomCover = (container: Container, userId: number, mediaType: MediaType, mediaId: number, customCover: string | null) => {
-    return container.media.get(mediaType).library.commands.updateCustomCover({ userId, catalogItemId: mediaId, customCover });
-};
-
-const requireUserMedia = async (container: Container, userId: number, mediaType: MediaType, mediaId: number) => {
-    const result = await container.media.get(mediaType).library.read.findUserMedia(userId, mediaId);
-    if (!result) throw new FormattedError("Media not in your list");
-    return result;
-};
-
-const prepareCustomCover = async (payload: UpdateUserCustomCover) => {
-    if (payload.remove) return null;
-    const dirSaveName: CoverType = `${payload.mediaType}-covers`;
-    const customCover = payload.imageFile
-        ? await saveUploadedImage({ dirSaveName, file: payload.imageFile })
-        : await saveImageFromUrl({ dirSaveName, imageUrl: payload.imageUrl });
-    if (!customCover || customCover === "default.jpg") {
-        throw new FormattedError("Could not update the custom cover. Please choose another one.");
-    }
-    return customCover;
 };
 
 const assertNever = (value: never): never => {

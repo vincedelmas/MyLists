@@ -1,7 +1,7 @@
 import {createServerFn} from "@tanstack/react-start";
-import {mediaTypeUtils} from "@/lib/utils/media-mapping";
 import {getContainer} from "@/lib/server/core/container";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {supportsUpcomingMedia} from "@/lib/server/domain/library/upcoming-media-capability";
 
 
 export const getComingNextMedia = createServerFn({ method: "GET" })
@@ -9,12 +9,14 @@ export const getComingNextMedia = createServerFn({ method: "GET" })
     .handler(async ({ context: { currentUser } }) => {
         const container = await getContainer()
         const activeMediaTypes = new Set(await container.profile.channels.getEnabledKinds(currentUser.id));
-        const mediaTypes = mediaTypeUtils.getComingNextTypes().filter((mediaType) => activeMediaTypes.has(mediaType));
+        const mediaModules = container.media.values()
+            .filter(supportsUpcomingMedia)
+            .filter((mediaModule) => activeMediaTypes.has(mediaModule.kind));
 
         const comingNextData = await Promise.all(
-            mediaTypes.map(async (mediaType) => {
-                const items = await container.media.get(mediaType).library.upcoming.forOwner(currentUser.id);
-                return ({ items, mediaType });
+            mediaModules.map(async (mediaModule) => {
+                const items = await mediaModule.library.upcoming.forOwner(currentUser.id);
+                return ({ items, mediaType: mediaModule.kind });
             })
         );
 

@@ -21,7 +21,7 @@ import {
 
 /** Projects the movie library into the detail-page contract. */
 export class MovieLibraryReadRepository {
-    private readonly library = new MovieLibraryRepository();
+    constructor(private readonly library = new MovieLibraryRepository()) {}
 
     async getUserMediaHistory(userId: number, catalogItemId: number) {
         const rows = await getDbClient()

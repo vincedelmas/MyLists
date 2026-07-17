@@ -6,9 +6,10 @@ import {BookDetailsPage} from "@/lib/contracts/media/details";
 
 /** Complete read boundary for the book detail page. */
 export class BookDetailsQuery {
-    private readonly library = new BookLibraryReadRepository();
-
-    constructor(private readonly catalog = new BookCatalogReadRepository()) {}
+    constructor(
+        private readonly catalog = new BookCatalogReadRepository(),
+        private readonly library = new BookLibraryReadRepository(),
+    ) {}
 
     async getMediaAndUserDetails(viewerId: number | undefined, catalogItemId: number): Promise<BookDetailsPage | undefined> {
         const media = await this.catalog.findDetails(catalogItemId);

@@ -11,47 +11,94 @@ import {MangaCatalogAdminRepository} from "@/lib/server/domain/catalog/manga/man
 import {MangaCatalogEditCommand} from "@/lib/server/domain/catalog/manga/manga-catalog-edit.command";
 import {MangaCatalogIngestionRepository} from "@/lib/server/domain/catalog/manga/manga-catalog-ingestion.repository";
 import {MangaCatalogIngestionCommand} from "@/lib/server/domain/catalog/manga/manga-catalog-ingestion.command";
-import {CatalogRefreshCandidateRepository} from "@/lib/server/domain/catalog/catalog-refresh-candidate.repository";
 import {createJikanMangaProvider, createMangaIngestionService} from "@/lib/server/api-providers/jikan-manga.provider";
 import {createMangaMatcher} from "@/lib/server/domain/imports/matchers/manga.matcher";
+import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/catalog/catalog-refresh-identity.query";
+import {MangaCatalogRefreshCandidatesQuery} from "@/lib/server/domain/catalog/manga/manga-catalog-refresh-candidates.query";
+import {MangaLibraryCsvExportQuery} from "@/lib/server/domain/library/manga/manga-library-csv-export.query";
+import {MangaStatsContributionQuery} from "@/lib/server/domain/library/manga/manga-stats-contribution.query";
+import {LibraryStatsRebuildCommand} from "@/lib/server/domain/library/library-stats-rebuild.command";
+import {LibraryTagsQuery} from "@/lib/server/domain/library/library-tags.query";
+import {LibraryCustomCoverCommand} from "@/lib/server/domain/library/library-custom-cover.command";
+import {createCatalogMaintenance} from "@/lib/server/domain/catalog/catalog-maintenance";
+import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/imports/import-media.schemas";
+import {mangaAchievements} from "@/lib/server/domain/achievements/seeds/manga.seed";
+import {MangaAchievementCalculator} from "@/lib/server/domain/achievements/manga-achievement-calculator";
+import {MangaWcfQuery} from "@/lib/server/domain/catalog/manga/manga-wcf.query";
+import {mangaActivityDefinition} from "@/lib/utils/activity-utils";
+import {CatalogActivityQuery} from "@/lib/server/domain/activity/catalog-activity.query";
 
 
 export const setupMangaMediaModule = (
     apiClients: ApiClientModule,
-    refreshCandidates: CatalogRefreshCandidateRepository,
 ) => {
     const libraryRepository = new MangaLibraryRepository();
     const libraryCommands = new MangaLibraryCommands(libraryRepository);
+    const libraryRead = new MangaLibraryReadRepository(libraryRepository);
+    const catalogRead = new MangaCatalogReadRepository();
     const catalogRepository = new MangaCatalogIngestionRepository();
     const catalogCommands = new MangaCatalogIngestionCommand(catalogRepository, libraryRepository, libraryCommands);
     const catalogAdmin = new MangaCatalogAdminRepository();
     const external = createJikanMangaProvider(apiClients.jikan);
+    const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.MANGA);
+    const refreshCandidates = new MangaCatalogRefreshCandidatesQuery();
+    const statsRead = new MangaStatsReadRepository();
+    const statsRebuild = new LibraryStatsRebuildCommand(MediaType.MANGA, new MangaStatsContributionQuery());
+    const csvExport = new MangaLibraryCsvExportQuery();
+    const tags = new LibraryTagsQuery(MediaType.MANGA);
     const ingestion = createMangaIngestionService(catalogCommands, external, {
-        getCandidateApiIds: () => refreshCandidates.getMangaCandidateApiIds(),
+        getCandidateApiIds: () => refreshCandidates.getCandidateApiIds(),
     });
 
     return {
         kind: MediaType.MANGA,
         catalog: {
-            details: new MangaDetailsQuery(),
-            read: new MangaCatalogReadRepository(),
+            details: new MangaDetailsQuery(catalogRead, libraryRead),
+            read: catalogRead,
             admin: catalogAdmin,
             edit: new MangaCatalogEditCommand(catalogAdmin, libraryRepository, libraryCommands),
             ingestion,
-            refreshIdentity: {
-                get: (catalogItemId: number) => refreshCandidates.getItemIdentity(MediaType.MANGA, catalogItemId),
+            refresh: {
+                identity: refreshIdentity,
+                candidates: refreshCandidates,
+                selfServiceAllowed: true,
             },
+            maintenance: createCatalogMaintenance(MediaType.MANGA),
         },
         library: {
             commands: libraryCommands,
-            read: new MangaLibraryReadRepository(),
+            read: libraryRead,
             list: new MangaListReadRepository(),
-            stats: new MangaStatsReadRepository(),
+            export: {
+                csv: (userId: number) => csvExport.export(userId),
+            },
+            stats: {
+                read: statsRead,
+                rebuild: () => statsRebuild.rebuild(),
+            },
+            tags: {
+                getNames: (userId: number) => tags.getNames(userId),
+                edit: (params: Parameters<MangaLibraryCommands["editTag"]>[0]) => libraryCommands.editTag(params),
+            },
+            covers: new LibraryCustomCoverCommand(MediaType.MANGA, libraryRead, libraryCommands),
         },
         external,
         imports: {
             matcher: createMangaMatcher(catalogRepository, external, ingestion, libraryCommands),
+            csv: {
+                rowSchema: mangaMyListsCSVRowSchema,
+            },
+        },
+        achievements: {
+            definitions: mangaAchievements,
+            calculator: new MangaAchievementCalculator(),
+        },
+        features: {
+            whichCameFirst: new MangaWcfQuery(),
+        },
+        activity: {
+            definition: mangaActivityDefinition,
+            catalog: new CatalogActivityQuery(MediaType.MANGA),
         },
     } as const;
 };
-

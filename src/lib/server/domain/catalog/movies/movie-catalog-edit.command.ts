@@ -2,6 +2,9 @@ import {MovieCatalogAdminRepository, MovieCatalogEdit} from "@/lib/server/domain
 import {MovieLibraryCommands} from "@/lib/server/domain/library/movies/movie-library.commands";
 import {MovieLibraryRepository} from "@/lib/server/domain/library/movies/movie-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {MediaType} from "@/lib/utils/enums";
+import {MovieCatalogEditPayload} from "@/lib/contracts/media/catalog-edit";
+import {CatalogCoverStorage} from "@/lib/server/domain/catalog/catalog-edit.shared";
 
 
 export class MovieCatalogEditCommand {
@@ -9,7 +12,13 @@ export class MovieCatalogEditCommand {
         private readonly catalog: MovieCatalogAdminRepository,
         private readonly library = new MovieLibraryRepository(),
         private readonly libraryCommands = new MovieLibraryCommands(library),
+        private readonly coverStorage = new CatalogCoverStorage(MediaType.MOVIES),
     ) {}
+
+    async update(catalogItemId: number, payload: MovieCatalogEditPayload) {
+        const imageCover = await this.coverStorage.save(payload.imageCover);
+        return this.updateEditableFields(catalogItemId, { ...payload, imageCover });
+    }
 
     getEditableFields(catalogItemId: number) {
         return this.catalog.getEditableFields(catalogItemId);

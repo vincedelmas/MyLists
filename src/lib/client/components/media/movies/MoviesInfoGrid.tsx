@@ -5,11 +5,11 @@ import {formatDate} from "@/lib/utils/date-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatCurrency} from "@/lib/utils/number-formatting";
 import {formatLocaleName} from "@/lib/utils/text-formatting";
-import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
+import {KindDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-export const MoviesInfoGrid = ({ mediaType, media }: FamilyDetailsProps<typeof MediaType.MOVIES>) => {
+export const MoviesInfoGrid = ({ mediaType, media }: KindDetailsProps<typeof MediaType.MOVIES>) => {
     return (
         <>
             <MediaInfoGridItem label="Directed By">

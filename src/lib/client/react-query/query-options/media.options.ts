@@ -12,15 +12,11 @@ import {
     getMediaDetailsToEdit,
     resolveExternalMedia
 } from "@/lib/server/functions/media-details";
-import {
-    mediaCommunityActivityKey,
-    mediaDetailsKey,
-    ViewerCacheIdentity,
-} from "@/lib/client/react-query/query-options/media.keys";
+import {mediaCommunityActivityKey, mediaDetailsKey, ViewerCacheId,} from "@/lib/client/react-query/query-options/media.keys";
 import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
 
 export {mediaDetailsRootKey} from "@/lib/client/react-query/query-options/media.keys";
-export type {ViewerCacheIdentity} from "@/lib/client/react-query/query-options/media.keys";
+export type {ViewerCacheId} from "@/lib/client/react-query/query-options/media.keys";
 
 
 export const upcomingOptions = () => queryOptions({
@@ -42,7 +38,7 @@ export const mediaExternalOptions = (mediaType: MediaType, apiId: string) => que
 })
 
 
-export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number, viewerId: ViewerCacheIdentity) => queryOptions({
+export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number, viewerId: ViewerCacheId) => queryOptions({
     queryKey: mediaDetailsKey(mediaType, mediaId, viewerId),
     queryFn: () => getMediaDetails({ data: { mediaType, mediaId } }),
     staleTime: 3 * 1000,
@@ -52,7 +48,7 @@ export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number, viewe
 export const mediaCommunityActivityOptions = (
     mediaId: number,
     mediaType: MediaType,
-    viewerId: ViewerCacheIdentity,
+    viewerId: ViewerCacheId,
     search: Pagination = { page: 1, perPage: 8 },
 ) => queryOptions({
     queryKey: mediaCommunityActivityKey(mediaId, mediaType, viewerId, search),

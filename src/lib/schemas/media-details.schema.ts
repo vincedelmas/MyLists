@@ -1,13 +1,12 @@
 import * as z from "zod";
 import {JobType} from "@/lib/utils/enums";
-import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas/common.schema";
 import {catalogEditRequestSchema} from "@/lib/contracts/media/catalog-edit";
+import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas/common.schema";
 
 
 export type UpdateBookCoverInput = z.input<typeof updateBookCoverSchema>;
-export const mediaDetailsSchema = mediaTypeMediaIdSchema;
 
-export const mediaCommunityActivitySchema = mediaDetailsSchema.extend({
+export const mediaCommunityActivitySchema = mediaTypeMediaIdSchema.extend({
     search: paginationSchema,
 });
 

@@ -1,17 +1,7 @@
 import * as z from "zod";
-import {
-    GamesPlatformsEnum,
-    MediaType,
-    RatingSystemType,
-    Status,
-} from "@/lib/utils/enums";
-import {
-    optionalCoercedBooleanFieldSchema,
-    optionalSearchFieldSchema,
-    paginationSchema,
-    sortingFieldSchema,
-    usernameFieldSchema,
-} from "@/lib/schemas/common.schema";
+import {GamesPlatformsEnum, MediaType, RatingSystemType, Status,} from "@/lib/utils/enums";
+import {optionalCoercedBooleanFieldSchema, optionalSearchFieldSchema, paginationSchema, sortingFieldSchema, usernameFieldSchema,} from "@/lib/schemas/common.schema";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
 const optionalStringArray = z.array(z.string()).optional();
@@ -113,7 +103,7 @@ const commonListItemShape = {
     common: z.boolean(),
 };
 
-const tvListItem = <K extends typeof MediaType.SERIES | typeof MediaType.ANIME>(kind: K) => z.object({
+const tvListItem = <K extends TvMediaType>(kind: K) => z.object({
     ...commonListItemShape,
     kind: z.literal(kind),
     currentSeason: z.number().int().positive(),
@@ -227,9 +217,9 @@ export type MovieListPage = z.infer<typeof movieListPageSchema>;
 export type GameListPage = z.infer<typeof gameListPageSchema>;
 export type BookListPage = z.infer<typeof bookListPageSchema>;
 export type MangaListPage = z.infer<typeof mangaListPageSchema>;
-type TvListItem<K extends typeof MediaType.SERIES | typeof MediaType.ANIME> =
+type TvListItem<K extends TvMediaType> =
     Omit<SeriesListItem, "kind"> & { kind: K };
-export type TvListPage<K extends typeof MediaType.SERIES | typeof MediaType.ANIME> = {
+export type TvListPage<K extends TvMediaType> = {
     kind: K;
     items: TvListItem<K>[];
     pagination: ListPagination;

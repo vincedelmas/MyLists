@@ -1,11 +1,11 @@
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {FamilyListItemProps} from "@/lib/client/components/media/family-component.types";
+import {KindListItemProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayTvRedo} from "@/lib/client/components/media/tv/DisplayTvRedo";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsAndSeasons";
 
 
-export const TvListItem = (props: FamilyListItemProps<TvMediaType>) => {
+export const TvListItem = (props: KindListItemProps<TvMediaType>) => {
     return (
         <BaseMediaListItem
             {...props}

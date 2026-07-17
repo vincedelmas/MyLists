@@ -2,11 +2,11 @@ import React from "react";
 import {Link} from "@tanstack/react-router";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
+import {KindDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-export const TvExtraSections = ({ mediaType, media }: FamilyDetailsProps<TvMediaType>) => {
+export const TvExtraSections = ({ mediaType, media }: KindDetailsProps<TvMediaType>) => {
     const cleanedActors = (media.actors ?? []).filter((a) => a.name !== null);
 
     return (

@@ -1,11 +1,12 @@
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {MediaType, TagAction} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {UpdatePayload} from "@/lib/types/user-media.types";
-import {MediaType, TagAction} from "@/lib/utils/enums";
 import {mediaTypeMediaIdSchema, SimpleSearch} from "@/lib/schemas";
-import {loggedActivityUpdateTypes, updateUserMediaSchema} from "@/lib/contracts/media/library";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
+import {loggedActivityUpdateTypes, updateUserMediaSchema} from "@/lib/contracts/media/library";
+import {invalidateLibraryMutationEffects} from "@/lib/client/react-query/query-mutations/library-cache-effects";
 import {allUpdatesOptions, historyOptions, mediaDetailsOptions, mediaListOptions, profileOptions, tagNamesOptions} from "@/lib/client/react-query/query-options";
 import {
     postAddMediaToList,
@@ -15,10 +16,10 @@ import {
     postUpdateUserCustomCover,
     postUpdateUserMedia
 } from "@/lib/server/functions/user-media";
-import {invalidateLibraryMutationEffects} from "@/lib/client/react-query/query-mutations/library-cache-effects";
 
 
 export type UserMediaQueryOption = ReturnType<typeof mediaDetailsOptions> | ReturnType<typeof mediaListOptions>;
+
 
 export type UpdateUserMediaMutationOptions = {
     loggedAt?: string;
@@ -128,9 +129,7 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
 
             // Check frontend side
             const result = updateUserMediaSchema.safeParse({ payload: payloadWithDate, mediaType, mediaId });
-            if (!result.success) {
-                throw new FormattedError(result.error.issues[0].message);
-            }
+            if (!result.success) throw new FormattedError(result.error.issues[0].message);
 
             return postUpdateUserMedia({ data: result.data });
         },
@@ -138,24 +137,19 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
             const activityUpdate = loggedActivityUpdateTypes.has(variables.payload.type);
 
             await invalidateLibraryMutationEffects(queryClient, {
-                effect: "update",
-                mediaType,
                 mediaId,
+                mediaType,
+                effect: "update",
                 viewerName: currentUser?.name,
-                sourceQueryKey: queryOption.queryKey,
                 recordsActivity: activityUpdate,
+                sourceQueryKey: queryOption.queryKey,
             });
         },
     });
 };
 
 
-export const useUpdateCustomCoverMutation = (
-    mediaType: MediaType,
-    mediaId: number,
-    queryOption: UserMediaQueryOption,
-    meta?: MutationMeta,
-) => {
+export const useUpdateCustomCoverMutation = (mediaType: MediaType, mediaId: number, queryOption: UserMediaQueryOption, meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({

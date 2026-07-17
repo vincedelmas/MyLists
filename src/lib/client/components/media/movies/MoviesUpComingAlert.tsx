@@ -1,10 +1,10 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
+import {KindDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {UpComingAlert} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-export const MoviesUpComingAlert = ({ media }: FamilyDetailsProps<typeof MediaType.MOVIES>) => {
+export const MoviesUpComingAlert = ({ media }: KindDetailsProps<typeof MediaType.MOVIES>) => {
     return (
         <UpComingAlert
             title="Movie Premiere"

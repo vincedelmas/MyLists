@@ -6,14 +6,14 @@ import {
     addMediaToListSchema,
     deleteUserUpdatesSchema,
     editUserTagSchema,
+    type UpdateUserCustomCover,
     updateUserCustomCoverSchema,
+    type UpdateUserMedia,
     updateUserMediaSchema,
     userTagNamesSchema,
-    type UpdateUserCustomCover,
-    type UpdateUserMedia,
 } from "@/lib/contracts/media/library";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, Status, TagAction} from "@/lib/utils/enums";
 import {validateLibraryHistory} from "@/lib/contracts/media/projections";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {libraryTag} from "@/lib/server/database/schema";
@@ -21,7 +21,6 @@ import {and, asc, eq} from "drizzle-orm";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {CoverType} from "@/lib/types/media-common.types";
-import {TagAction, Status} from "@/lib/utils/enums";
 
 
 export const getUserMediaHistory = createServerFn({ method: "GET" })
@@ -135,8 +134,9 @@ const addMedia = (container: Container, params: { userId: number; mediaType: Med
     }
 };
 
-const updateMedia = (container: Container, params: { userId: number } & UpdateUserMedia) => {
+const updateMedia = (container: Container, params: UpdateUserMedia & { userId: number }) => {
     const { userId, mediaId } = params;
+
     switch (params.mediaType) {
         case MediaType.SERIES:
         case MediaType.ANIME:

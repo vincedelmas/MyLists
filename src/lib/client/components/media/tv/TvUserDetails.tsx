@@ -1,15 +1,18 @@
 import {Status} from "@/lib/utils/enums";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {FamilyEntryEditorProps} from "@/lib/client/components/media/family-component.types";
 import {UpdateTvRedo} from "@/lib/client/components/media/tv/UpdateTvRedo";
 import {UpdateRating} from "@/lib/client/components/media/base/UpdateRating";
 import {UpdateStatus} from "@/lib/client/components/media/base/UpdateStatus";
 import {UpdateSeasonsEps} from "@/lib/client/components/media/tv/UpdateSeasonsEps";
+import {KindEntryEditorProps} from "@/lib/client/components/media/family-component.types";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-type TvUserDetailsProps = FamilyEntryEditorProps<TvMediaType> & {
-    seasons: { seasonNumber: number; episodeCount: number }[];
+type TvUserDetailsProps = KindEntryEditorProps<TvMediaType> & {
+    seasons: {
+        seasonNumber: number;
+        episodeCount: number;
+    }[];
 };
 
 

@@ -4,11 +4,11 @@ import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
+import {KindDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-export const MangaInfoGrid = ({ mediaType, media }: FamilyDetailsProps<typeof MediaType.MANGA>) => {
+export const MangaInfoGrid = ({ mediaType, media }: KindDetailsProps<typeof MediaType.MANGA>) => {
     return (
         <>
             <MediaInfoGridItem label="Prod. Status">

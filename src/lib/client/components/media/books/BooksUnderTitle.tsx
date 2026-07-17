@@ -3,11 +3,11 @@ import {MediaType} from "@/lib/utils/enums";
 import {BookOpen, Calendar} from "lucide-react";
 import {extractYear} from "@/lib/utils/date-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
+import {KindDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {MediaUnderItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-export const BooksUnderTitle = ({ media }: FamilyDetailsProps<typeof MediaType.BOOKS>) => {
+export const BooksUnderTitle = ({ media }: KindDetailsProps<typeof MediaType.BOOKS>) => {
     return (
         <>
             <MediaUnderItem icon={Calendar}>

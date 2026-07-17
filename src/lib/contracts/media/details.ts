@@ -1,201 +1,230 @@
 import * as z from "zod";
 import {GamesPlatformsEnum, MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
-const namedEntitySchema = z.object({ id: z.number().int().positive(), name: z.string() }).strict();
-const providerDataSchema = z.object({ name: z.string(), url: z.string() }).strict();
-const relatedMediaSchema = z.object({
-    mediaId: z.number().int().positive(),
+const providerDataSchema = z.strictObject({
+    url: z.string(),
+    name: z.string(),
+});
+
+const namedEntitySchema = z.strictObject({
+    name: z.string(),
+    id: z.number().int().positive(),
+});
+
+const relatedMediaSchema = z.strictObject({
     mediaName: z.string(),
     mediaCover: z.string(),
-}).strict();
-const tvSeasonSchema = z.object({
+    mediaId: z.number().int().positive(),
+});
+
+const tvSeasonSchema = z.strictObject({
     seasonNumber: z.number().int().positive(),
     episodeCount: z.number().int().nonnegative(),
-}).strict();
-const tvSeasonRewatchSchema = z.object({
-    seasonNumber: z.number().int().positive(),
+});
+
+const tvSeasonRewatchSchema = z.strictObject({
     count: z.number().int().nonnegative(),
-}).strict();
+    seasonNumber: z.number().int().positive(),
+});
 
 const commonCatalogShape = {
     id: z.number().int().positive(),
     name: z.string(),
-    releaseDate: z.string().nullable(),
-    synopsis: z.string().nullable(),
     imageCover: z.string(),
     lockStatus: z.boolean(),
     addedAt: z.string().nullable(),
+    synopsis: z.string().nullable(),
+    releaseDate: z.string().nullable(),
     lastApiUpdate: z.string().nullable(),
     genres: z.array(namedEntitySchema),
     providerData: providerDataSchema,
 };
 
-const tvCatalogDetails = <K extends typeof MediaType.SERIES | typeof MediaType.ANIME>(kind: K) => z.object({
-    ...commonCatalogShape,
-    kind: z.literal(kind),
-    apiId: z.number(),
-    homepage: z.string().nullable(),
-    createdBy: z.string().nullable(),
-    voteCount: z.number().nullable(),
-    popularity: z.number().nullable(),
-    lastAirDate: z.string().nullable(),
-    voteAverage: z.number().nullable(),
-    originalName: z.string().nullable(),
-    totalSeasons: z.number().int().nonnegative(),
-    totalEpisodes: z.number().int().nonnegative(),
-    originCountry: z.string().nullable(),
-    prodStatus: z.string().nullable(),
-    seasonToAir: z.number().int().nullable(),
-    episodeToAir: z.number().int().nullable(),
-    duration: z.number().int().nonnegative(),
-    nextEpisodeToAir: z.string().nullable(),
-    actors: z.array(namedEntitySchema),
-    networks: z.array(namedEntitySchema),
-    seasons: z.array(tvSeasonSchema),
-}).strict();
+const tvCatalogDetails = <K extends TvMediaType>(kind: K) => {
+    return z.strictObject({
+        ...commonCatalogShape,
+        apiId: z.number(),
+        kind: z.literal(kind),
+        homepage: z.string().nullable(),
+        createdBy: z.string().nullable(),
+        voteCount: z.number().nullable(),
+        popularity: z.number().nullable(),
+        prodStatus: z.string().nullable(),
+        lastAirDate: z.string().nullable(),
+        voteAverage: z.number().nullable(),
+        originalName: z.string().nullable(),
+        originCountry: z.string().nullable(),
+        nextEpisodeToAir: z.string().nullable(),
+        duration: z.number().int().nonnegative(),
+        seasonToAir: z.number().int().nullable(),
+        episodeToAir: z.number().int().nullable(),
+        totalSeasons: z.number().int().nonnegative(),
+        totalEpisodes: z.number().int().nonnegative(),
+        seasons: z.array(tvSeasonSchema),
+        actors: z.array(namedEntitySchema),
+        networks: z.array(namedEntitySchema),
+    });
+}
 
 const seriesCatalogDetailsSchema = tvCatalogDetails(MediaType.SERIES);
+
 const animeCatalogDetailsSchema = tvCatalogDetails(MediaType.ANIME);
-const movieCatalogDetailsSchema = z.object({
+
+const movieCatalogDetailsSchema = z.strictObject({
     ...commonCatalogShape,
-    kind: z.literal(MediaType.MOVIES),
     apiId: z.number(),
-    originalName: z.string().nullable(),
-    homepage: z.string().nullable(),
-    duration: z.number().int().nonnegative(),
-    originalLanguage: z.string().nullable(),
-    voteAverage: z.number().nullable(),
-    voteCount: z.number().nullable(),
-    popularity: z.number().nullable(),
-    budget: z.number().nonnegative().nullable(),
-    revenue: z.number().nonnegative().nullable(),
     tagline: z.string().nullable(),
-    collectionId: z.number().int().nullable(),
+    homepage: z.string().nullable(),
+    voteCount: z.number().nullable(),
+    kind: z.literal(MediaType.MOVIES),
+    popularity: z.number().nullable(),
+    voteAverage: z.number().nullable(),
+    originalName: z.string().nullable(),
     directorName: z.string().nullable(),
     compositorName: z.string().nullable(),
+    originalLanguage: z.string().nullable(),
+    duration: z.number().int().nonnegative(),
+    collectionId: z.number().int().nullable(),
+    budget: z.number().nonnegative().nullable(),
+    revenue: z.number().nonnegative().nullable(),
     actors: z.array(namedEntitySchema),
     collection: z.array(relatedMediaSchema),
-}).strict();
-const gameCatalogDetailsSchema = z.object({
+});
+
+const gameCatalogDetailsSchema = z.strictObject({
     ...commonCatalogShape,
-    kind: z.literal(MediaType.GAMES),
     apiId: z.number(),
-    gameEngine: z.string().nullable(),
-    gameModes: z.string().nullable(),
-    playerPerspective: z.string().nullable(),
-    voteAverage: z.number().nullable(),
-    voteCount: z.number().nullable(),
     igdbUrl: z.string().nullable(),
+    kind: z.literal(MediaType.GAMES),
+    gameModes: z.string().nullable(),
+    voteCount: z.number().nullable(),
+    gameEngine: z.string().nullable(),
+    steamApiId: z.string().nullable(),
+    voteAverage: z.number().nullable(),
+    playerPerspective: z.string().nullable(),
+    collectionId: z.number().int().nullable(),
     hltbMainTime: z.number().nonnegative().nullable(),
     hltbMainAndExtraTime: z.number().nonnegative().nullable(),
     hltbTotalCompleteTime: z.number().nonnegative().nullable(),
-    steamApiId: z.string().nullable(),
-    collectionId: z.number().int().nullable(),
     platforms: z.array(namedEntitySchema),
-    companies: z.array(z.object({
-        id: z.number().int().positive(),
+    collection: z.array(relatedMediaSchema),
+    companies: z.array(z.strictObject({
         name: z.string(),
         developer: z.boolean(),
         publisher: z.boolean(),
-    }).strict()),
-    collection: z.array(relatedMediaSchema),
-}).strict();
-export const bookCatalogDetailsSchema = z.object({
+        id: z.number().int().positive(),
+    })),
+});
+
+const mangaCatalogDetailsSchema = z.strictObject({
     ...commonCatalogShape,
-    kind: z.literal(MediaType.BOOKS),
-    apiId: z.string(),
-    pages: z.number().int().nonnegative(),
-    language: z.string().nullable(),
-    publishers: z.string().nullable(),
-    authors: z.array(namedEntitySchema),
-}).strict();
-const mangaCatalogDetailsSchema = z.object({
-    ...commonCatalogShape,
-    kind: z.literal(MediaType.MANGA),
     apiId: z.number(),
-    originalName: z.string().nullable(),
-    chapters: z.number().int().nonnegative().nullable(),
-    prodStatus: z.string().nullable(),
     siteUrl: z.string().nullable(),
     endDate: z.string().nullable(),
-    volumes: z.number().int().nonnegative().nullable(),
-    voteAverage: z.number().nullable(),
+    kind: z.literal(MediaType.MANGA),
     voteCount: z.number().nullable(),
+    prodStatus: z.string().nullable(),
     popularity: z.number().nullable(),
     publishers: z.string().nullable(),
+    voteAverage: z.number().nullable(),
+    originalName: z.string().nullable(),
+    volumes: z.number().int().nonnegative().nullable(),
+    chapters: z.number().int().nonnegative().nullable(),
+    authors: z.array(namedEntitySchema),
+});
+
+export const bookCatalogDetailsSchema = z.strictObject({
+    ...commonCatalogShape,
+    apiId: z.string(),
+    language: z.string().nullable(),
+    kind: z.literal(MediaType.BOOKS),
+    publishers: z.string().nullable(),
+    pages: z.number().int().nonnegative(),
     authors: z.array(namedEntitySchema),
 }).strict();
 
 const commonLibraryEntryShape = {
+    favorite: z.boolean(),
+    status: z.enum(Status),
+    comment: z.string().nullable(),
+    addedAt: z.string().nullable(),
     id: z.number().int().positive(),
+    lastUpdated: z.string().nullable(),
+    customCover: z.string().nullable(),
     userId: z.number().int().positive(),
     mediaId: z.number().int().positive(),
-    status: z.enum(Status),
-    favorite: z.boolean(),
-    comment: z.string().nullable(),
-    rating: z.number().min(0).max(10).nullable(),
-    customCover: z.string().nullable(),
-    addedAt: z.string().nullable(),
-    lastUpdated: z.string().nullable(),
     ratingSystem: z.enum(RatingSystemType),
     tags: z.array(z.object({ name: z.string() }).strict()),
+    rating: z.number().min(0).max(10).nullable(),
 };
 
-const tvLibraryEntry = <K extends typeof MediaType.SERIES | typeof MediaType.ANIME>(kind: K) => z.object({
-    ...commonLibraryEntryShape,
-    kind: z.literal(kind),
-    currentSeason: z.number().int().positive(),
-    currentEpisode: z.number().int().nonnegative(),
-    watchedEpisodes: z.number().int().nonnegative(),
-    rewatches: z.array(tvSeasonRewatchSchema),
-}).strict();
+const tvLibraryEntry = <K extends TvMediaType>(kind: K) => {
+    return z.strictObject({
+        ...commonLibraryEntryShape,
+        kind: z.literal(kind),
+        rewatches: z.array(tvSeasonRewatchSchema),
+        currentSeason: z.number().int().positive(),
+        currentEpisode: z.number().int().nonnegative(),
+        watchedEpisodes: z.number().int().nonnegative(),
+    });
+}
 
 export const seriesLibraryEntrySchema = tvLibraryEntry(MediaType.SERIES);
+
 export const animeLibraryEntrySchema = tvLibraryEntry(MediaType.ANIME);
-export const movieLibraryEntrySchema = z.object({
+
+export const movieLibraryEntrySchema = z.strictObject({
     ...commonLibraryEntryShape,
     kind: z.literal(MediaType.MOVIES),
-    rewatchCount: z.number().int().nonnegative(),
     watchCount: z.number().int().nonnegative(),
-}).strict();
-export const gameLibraryEntrySchema = z.object({
+    rewatchCount: z.number().int().nonnegative(),
+});
+
+export const gameLibraryEntrySchema = z.strictObject({
     ...commonLibraryEntryShape,
     kind: z.literal(MediaType.GAMES),
     playtime: z.number().nonnegative(),
     platform: z.enum(GamesPlatformsEnum).nullable(),
-}).strict();
-export const bookLibraryEntrySchema = z.object({
+});
+
+export const bookLibraryEntrySchema = z.strictObject({
     ...commonLibraryEntryShape,
     kind: z.literal(MediaType.BOOKS),
-    currentPage: z.number().int().nonnegative().nullable(),
     rereadCount: z.number().int().nonnegative(),
     totalPagesRead: z.number().int().nonnegative(),
-}).strict();
-export const mangaLibraryEntrySchema = z.object({
+    currentPage: z.number().int().nonnegative().nullable(),
+});
+
+export const mangaLibraryEntrySchema = z.strictObject({
     ...commonLibraryEntryShape,
     kind: z.literal(MediaType.MANGA),
-    currentChapter: z.number().int().nonnegative(),
     rereadCount: z.number().int().nonnegative(),
+    currentChapter: z.number().int().nonnegative(),
     totalChaptersRead: z.number().int().nonnegative(),
-}).strict();
+});
 
-const followEntry = <K extends MediaType, S extends z.ZodType>(kind: K, userMedia: S) => z.object({
-    kind: z.literal(kind),
-    id: z.number().int().positive(),
-    name: z.string(),
-    image: z.string().nullable(),
-    ratingSystem: z.enum(RatingSystemType),
-    userMedia,
-}).strict();
+const followEntry = <K extends MediaType, S extends z.ZodType>(kind: K, userMedia: S) => {
+    return z.strictObject({
+        userMedia,
+        name: z.string(),
+        kind: z.literal(kind),
+        image: z.string().nullable(),
+        id: z.number().int().positive(),
+        ratingSystem: z.enum(RatingSystemType),
+    });
+}
 
-const detailsPage = <K extends MediaType, M extends z.ZodType, U extends z.ZodType>(kind: K, media: M, userMedia: U) => z.object({
-    kind: z.literal(kind),
-    media,
-    userMedia: userMedia.nullable(),
-    followsData: z.array(followEntry(kind, userMedia)),
-    similarMedia: z.array(relatedMediaSchema),
-}).strict();
+const detailsPage = <K extends MediaType, M extends z.ZodType, U extends z.ZodType>(kind: K, media: M, userMedia: U) => {
+    return z.strictObject({
+        media,
+        kind: z.literal(kind),
+        userMedia: userMedia.nullable(),
+        similarMedia: z.array(relatedMediaSchema),
+        followsData: z.array(followEntry(kind, userMedia)),
+    });
+}
 
 const seriesDetailsPageSchema = detailsPage(MediaType.SERIES, seriesCatalogDetailsSchema, seriesLibraryEntrySchema);
 const animeDetailsPageSchema = detailsPage(MediaType.ANIME, animeCatalogDetailsSchema, animeLibraryEntrySchema);
@@ -220,7 +249,7 @@ export type MovieDetailsPage = z.infer<typeof movieDetailsPageSchema>;
 export type GameDetailsPage = z.infer<typeof gameDetailsPageSchema>;
 export type BookDetailsPage = z.infer<typeof bookDetailsPageSchema>;
 export type MangaDetailsPage = z.infer<typeof mangaDetailsPageSchema>;
-export type TvDetailsPage<K extends typeof MediaType.SERIES | typeof MediaType.ANIME> = {
+export type TvDetailsPage<K extends TvMediaType> = {
     kind: K;
     media: Omit<SeriesDetailsPage["media"], "kind"> & { kind: K };
     userMedia: (Omit<NonNullable<SeriesDetailsPage["userMedia"]>, "kind"> & { kind: K }) | null;
@@ -229,9 +258,4 @@ export type TvDetailsPage<K extends typeof MediaType.SERIES | typeof MediaType.A
         userMedia: Omit<SeriesDetailsPage["followsData"][number]["userMedia"], "kind"> & { kind: K };
     }>;
     similarMedia: SeriesDetailsPage["similarMedia"];
-};
-
-export const validateMediaDetailsPage = <T extends MediaDetailsPage>(value: T): T => {
-    if (process.env.NODE_ENV !== "production") mediaDetailsPageSchema.parse(value);
-    return value;
 };

@@ -1,5 +1,5 @@
 import type {QueryClient, QueryKey} from "@tanstack/react-query";
-import type {ViewerCacheIdentity} from "./viewer-cache";
+import type {ViewerCacheIdentity} from "@/lib/client/react-query/query-options/viewer-cache";
 
 
 /** Drops every prior-principal payload while retaining the freshly fetched session. */

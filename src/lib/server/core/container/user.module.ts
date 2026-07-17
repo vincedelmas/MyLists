@@ -12,13 +12,7 @@ import {NotificationCommands} from "@/lib/server/domain/notifications/notificati
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
-import {
-    InactiveAccountRepository,
-    UserActivityService,
-    UserProfileRepository,
-    UserRepository,
-    UserStatsService
-} from "@/lib/server/domain/user";
+import {InactiveAccountRepository, UserActivityService, UserProfileRepository, UserRepository, UserStatsService} from "@/lib/server/domain/user";
 import {EditorialCollectionsQuery} from "@/lib/server/domain/collections/editorial-collections.query";
 import {EditorialCollectionCommands} from "@/lib/server/domain/collections/editorial-collection.commands";
 import {SocialGraphQuery} from "@/lib/server/domain/social/social-graph.query";

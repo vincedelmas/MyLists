@@ -1,31 +1,23 @@
 import type {ReactNode} from "react";
 import {MediaType, type Status} from "@/lib/utils/enums";
-import type {
-    ExtractFollowByType,
-    ExtractListByType,
-    ExtractMediaDetailsByType,
-    ExtractUserMediaByType,
-} from "@/lib/types/query.options.types";
+import type {ExtractFollowByType, ExtractListByType, ExtractMediaDetailsByType, ExtractUserMediaByType,} from "@/lib/types/query.options.types";
 import type {mediaListOptions} from "@/lib/client/react-query/query-options";
-import type {
-    UpdateUserMediaMutationOptions,
-    UserMediaQueryOption,
-} from "@/lib/client/react-query/query-mutations/user-media.mutations";
+import type {UpdateUserMediaMutationOptions, UserMediaQueryOption,} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-export type FamilyDetailsProps<K extends MediaType> = {
+export type KindDetailsProps<K extends MediaType> = {
     mediaType: K;
     media: ExtractMediaDetailsByType<K>;
 };
 
-export type FamilyEntryEditorProps<K extends MediaType> = {
+export type KindEntryEditorProps<K extends MediaType> = {
     mediaType: K;
     queryOption: UserMediaQueryOption;
-    userMedia: ExtractUserMediaByType<K> | ExtractListByType<K>;
     mutationOptions?: UpdateUserMediaMutationOptions;
+    userMedia: ExtractUserMediaByType<K> | ExtractListByType<K>;
 };
 
-export type FamilyProgressMetadata =
+export type KindProgressMetadata =
     | { kind: typeof MediaType.SERIES; seasons: { seasonNumber: number; episodeCount: number }[] }
     | { kind: typeof MediaType.ANIME; seasons: { seasonNumber: number; episodeCount: number }[] }
     | { kind: typeof MediaType.MOVIES }
@@ -33,19 +25,19 @@ export type FamilyProgressMetadata =
     | { kind: typeof MediaType.BOOKS; pages: number }
     | { kind: typeof MediaType.MANGA; chapters: number | null };
 
-export type FamilyFollowCardProps<K extends MediaType> = {
-    showComment?: boolean;
+export type KindFollowCardProps<K extends MediaType> = {
     rating: ReactNode;
+    showComment?: boolean;
     followData: ExtractFollowByType<K>;
 };
 
-export type FamilyListItemProps<K extends MediaType> = {
+export type KindListItemProps<K extends MediaType> = {
     mediaType: K;
+    rating: ReactNode;
     isCurrent: boolean;
     isConnected: boolean;
-    isMediaTypeActive: boolean;
     allStatuses: Status[];
-    rating: ReactNode;
+    isMediaTypeActive: boolean;
     userMedia: ExtractListByType<K>;
     queryOption: ReturnType<typeof mediaListOptions>;
 };

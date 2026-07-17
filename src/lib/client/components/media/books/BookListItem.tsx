@@ -1,12 +1,12 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {FamilyListItemProps} from "@/lib/client/components/media/family-component.types";
+import {KindListItemProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayPages} from "@/lib/client/components/media/base/DisplayPages";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 
 
-export const BookListItem = (props: FamilyListItemProps<typeof MediaType.BOOKS>) => {
+export const BookListItem = (props: KindListItemProps<typeof MediaType.BOOKS>) => {
     return (
         <BaseMediaListItem
             {...props}

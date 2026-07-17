@@ -4,19 +4,17 @@ import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
-import {validateMediaDetailsPage} from "@/lib/contracts/media/details";
-import {validateCommunityActivityPage} from "@/lib/contracts/media/community";
-import {validateCatalogEditFields} from "@/lib/contracts/media/catalog-edit";
-import {validateCompatibleGamePlatforms, validateJobDetailsPage} from "@/lib/contracts/media/projections";
 import {isAtLeastRole, MediaType, RoleType} from "@/lib/utils/enums";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
+import {validateCatalogEditFields} from "@/lib/contracts/media/catalog-edit";
+import {validateCommunityActivityPage} from "@/lib/contracts/media/community";
+import {validateCompatibleGamePlatforms, validateJobDetailsPage} from "@/lib/contracts/media/projections";
 import {publicAuthMiddleware, requiredAuthAndManagerRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     editMediaDetailsSchema,
     externalMediaResolveSchema,
     jobDetailsSchema,
     mediaCommunityActivitySchema,
-    mediaDetailsSchema,
     mediaDetailsToEditSchema,
     mediaTypeMediaIdSchema,
     refreshMediaDetailsSchema,
@@ -26,34 +24,36 @@ import {
 
 export const getMediaDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware, transactionMiddleware])
-    .validator(mediaDetailsSchema)
+    .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
+
         if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
             const result = await container.media.details.queries[mediaType].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return validateMediaDetailsPage(result);
+            return result;
         }
         if (mediaType === MediaType.MOVIES) {
             const result = await container.media.details.queries[MediaType.MOVIES].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return validateMediaDetailsPage(result);
+            return result;
         }
         if (mediaType === MediaType.GAMES) {
             const result = await container.media.details.queries[MediaType.GAMES].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return validateMediaDetailsPage(result);
+            return result;
         }
         if (mediaType === MediaType.BOOKS) {
             const result = await container.media.details.queries[MediaType.BOOKS].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return validateMediaDetailsPage(result);
+            return result;
         }
         if (mediaType === MediaType.MANGA) {
             const result = await container.media.details.queries[MediaType.MANGA].getMediaAndUserDetails(currentUser?.id, mediaId);
             if (!result) throw notFound();
-            return validateMediaDetailsPage(result);
+            return result;
         }
+
         throw new Error(`Unsupported media type: ${mediaType}`);
     });
 

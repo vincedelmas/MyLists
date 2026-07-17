@@ -1,10 +1,10 @@
 import {MediaType} from "@/lib/utils/enums";
-import {FamilyFollowCardProps} from "@/lib/client/components/media/family-component.types";
+import {KindFollowCardProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayPlaytime} from "@/lib/client/components/media/games/DisplayPlaytime";
 import {BaseMediaFollowCard} from "@/lib/client/components/media/base/BaseMediaFollowCard";
 
 
-export const GameFollowCard = ({ followData, rating, showComment }: FamilyFollowCardProps<typeof MediaType.GAMES>) => {
+export const GameFollowCard = ({ followData, rating, showComment }: KindFollowCardProps<typeof MediaType.GAMES>) => {
     return (
         <BaseMediaFollowCard
             rating={rating}

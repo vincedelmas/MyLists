@@ -1,8 +1,10 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {UpdateUserMedia} from "@/lib/contracts/media/library";
-import {MovieFinalListInsert} from "@/lib/server/domain/imports/import-media.schemas";
+import {withTransaction} from "@/lib/server/database/async-storage";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
+import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
+import {MovieFinalListInsert} from "@/lib/server/domain/imports/import-media.schemas";
 import {MovieLibraryEntry, MovieLibraryRepository} from "@/lib/server/domain/library/movies/movie-library.repository";
 import {
     changeMovieStatus,
@@ -12,8 +14,9 @@ import {
     movieRedoCount,
     replaceMovieRewatches,
 } from "@/lib/server/domain/library/movies/movie-progress";
-import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
-import {withTransaction} from "@/lib/server/database/async-storage";
+
+
+type MovieUpdatePayload = Extract<UpdateUserMedia, { mediaType: typeof MediaType.MOVIES }>["payload"];
 
 
 /** Canonical movie library mutation boundary. */
@@ -21,11 +24,12 @@ export class MovieLibraryCommands {
     constructor(private readonly repository = new MovieLibraryRepository()) {
     }
 
-    async update(params: { userId: number; mediaId: number; payload: Extract<UpdateUserMedia, { mediaType: typeof MediaType.MOVIES }>["payload"] }) {
+    async update(params: { userId: number; mediaId: number; payload: MovieUpdatePayload }) {
         const common = { userId: params.userId, catalogItemId: params.mediaId };
+
         switch (params.payload.type) {
             case UpdateType.STATUS:
-                if (!params.payload.status) throw new Error("Movie status payload is missing status.");
+                if (!params.payload.status) return;
                 return this.changeStatus({ ...common, status: params.payload.status, loggedAt: params.payload.loggedAt });
             case UpdateType.REDO:
                 return this.replaceRewatches({ ...common, rewatchCount: params.payload.rewatchCount, loggedAt: params.payload.loggedAt });

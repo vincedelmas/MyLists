@@ -2,9 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {catalogItem, mangaDetails, tvDetails} from "@/lib/server/database/schema";
 import {and, eq, gte, inArray, isNotNull, isNull, lte, or, sql} from "drizzle-orm";
-
-
-type TvKind = typeof MediaType.SERIES | typeof MediaType.ANIME;
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
 /**
@@ -23,7 +21,7 @@ export class CatalogRefreshCandidateRepository {
             .get();
     }
 
-    async getTvCandidateApiIds(kind: TvKind, changedApiIds: (number | string)[]) {
+    async getTvCandidateApiIds(kind: TvMediaType, changedApiIds: (number | string)[]) {
         const changedExternalIds = changedApiIds.map(String);
 
         const changedAndStale = changedExternalIds.length > 0

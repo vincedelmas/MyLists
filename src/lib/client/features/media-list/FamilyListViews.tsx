@@ -18,7 +18,7 @@ import {getGamesColumns} from "@/lib/client/components/media/games/GamesListColu
 import {getBooksColumns} from "@/lib/client/components/media/books/BooksListColumns";
 import {getMangaColumns} from "@/lib/client/components/media/manga/MangaListColumns";
 import type {UserMediaItem} from "@/lib/types/query.options.types";
-import type {FamilyListItemProps} from "@/lib/client/components/media/family-component.types";
+import type {KindListItemProps} from "@/lib/client/components/media/family-component.types";
 import type {mediaListOptions} from "@/lib/client/react-query/query-options";
 import type {
     AnimeListPage,
@@ -50,21 +50,21 @@ type SharedListViewProps<T extends UserMediaItem, A extends TvListArgs | MovieLi
 }, A> & {
     kind: T["kind"];
     getColumns: (props: ColumnConfigProps) => ColumnDef<T>[];
-    renderCard: (item: T, props: Omit<FamilyListItemProps<T["kind"]>, "userMedia">) => ReactNode;
+    renderCard: (item: T, props: Omit<KindListItemProps<T["kind"]>, "userMedia">) => ReactNode;
 };
 
 
 const SharedListView = <T extends UserMediaItem, A extends TvListArgs | MovieListArgs | GameListArgs | BookListArgs | MangaListArgs>({
-    page,
-    kind,
-    filters,
-    isCurrent,
-    isGrid,
-    queryOption,
-    getColumns,
-    renderCard,
-    onChangePage,
-}: SharedListViewProps<T, A>) => {
+                                                                                                                                         page,
+                                                                                                                                         kind,
+                                                                                                                                         filters,
+                                                                                                                                         isCurrent,
+                                                                                                                                         isGrid,
+                                                                                                                                         queryOption,
+                                                                                                                                         getColumns,
+                                                                                                                                         renderCard,
+                                                                                                                                         onChangePage,
+                                                                                                                                     }: SharedListViewProps<T, A>) => {
     const { currentUser } = useAuth();
     const isConnected = !!currentUser;
     const allStatuses = statusUtils.byMediaType(kind);

@@ -8,6 +8,7 @@ import {
     movieLibraryEntrySchema,
     seriesLibraryEntrySchema,
 } from "@/lib/contracts/media/details";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
 const communityActivityStatsSchema = z.object({
@@ -63,7 +64,7 @@ export type MovieCommunityActivityPage = z.infer<typeof movieCommunityActivitySc
 export type GameCommunityActivityPage = z.infer<typeof gameCommunityActivitySchema>;
 export type BookCommunityActivityPage = z.infer<typeof bookCommunityActivitySchema>;
 export type MangaCommunityActivityPage = z.infer<typeof mangaCommunityActivitySchema>;
-export type TvCommunityActivityPage<K extends typeof MediaType.SERIES | typeof MediaType.ANIME> = {
+export type TvCommunityActivityPage<K extends TvMediaType> = {
     kind: K;
     page: number;
     items: Array<Omit<SeriesCommunityActivityPage["items"][number], "kind" | "userMedia"> & {

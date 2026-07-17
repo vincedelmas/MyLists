@@ -2,10 +2,10 @@ import React from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {Link} from "@tanstack/react-router";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
+import {KindDetailsProps} from "@/lib/client/components/media/family-component.types";
 
 
-export const BooksOverTitle = ({ mediaType, media }: FamilyDetailsProps<typeof MediaType.BOOKS>) => {
+export const BooksOverTitle = ({ mediaType, media }: KindDetailsProps<typeof MediaType.BOOKS>) => {
     return (
         <>
             {media.authors?.slice(0, 3).map((author) =>

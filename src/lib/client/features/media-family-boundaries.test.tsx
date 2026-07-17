@@ -1,8 +1,8 @@
 import {renderToStaticMarkup} from "react-dom/server";
 import {describe, expect, it, vi} from "vitest";
 import {MediaType} from "@/lib/utils/enums";
-import {mediaDetailsPageSchema, type MediaDetailsPage} from "@/lib/contracts/media/details";
-import {catalogEditFieldsSchema, type CatalogEditFields} from "@/lib/contracts/media/catalog-edit";
+import {type MediaDetailsPage, mediaDetailsPageSchema} from "@/lib/contracts/media/details";
+import {type CatalogEditFields, catalogEditFieldsSchema} from "@/lib/contracts/media/catalog-edit";
 import type {MediaListPage} from "@/lib/contracts/media/lists";
 
 
@@ -30,10 +30,10 @@ vi.mock("@/lib/client/features/catalog-edit/FamilyCatalogEditForms", () => ({
     MangaCatalogEditForm: () => <div data-surface="catalog" data-family="manga"/>,
 }));
 
-const {MediaDetailsFamilyBoundary} = await import("./media-details/MediaDetailsFamilyBoundary");
-const {MediaListFamilyBoundary} = await import("./media-list/MediaListFamilyBoundary");
-const {CatalogEditFamilyBoundary} = await import("./catalog-edit/CatalogEditFamilyBoundary");
-const detailsQueryOption: React.ComponentProps<typeof MediaDetailsFamilyBoundary>["queryOption"] = undefined!;
+const { MediaDetailsKindBoundary } = await import("./media-details/MediaDetailsKindBoundary");
+const { MediaListFamilyBoundary } = await import("./media-list/MediaListFamilyBoundary");
+const { CatalogEditFamilyBoundary } = await import("./catalog-edit/CatalogEditFamilyBoundary");
+const detailsQueryOption: React.ComponentProps<typeof MediaDetailsKindBoundary>["queryOption"] = undefined!;
 const listQueryOption: React.ComponentProps<typeof MediaListFamilyBoundary>["queryOption"] = undefined!;
 
 
@@ -42,7 +42,7 @@ describe("rendered media-family boundaries", () => {
         it(`renders the concrete ${kind} details, list, and catalog-edit branches`, () => {
             const details = detailsFixture(kind);
             const detailsHtml = renderToStaticMarkup(
-                <MediaDetailsFamilyBoundary details={details} queryOption={detailsQueryOption}/>,
+                <MediaDetailsKindBoundary details={details} queryOption={detailsQueryOption}/>,
             );
             const listHtml = renderToStaticMarkup(
                 <MediaListFamilyBoundary
@@ -144,27 +144,37 @@ const catalogFixture = (kind: MediaType): CatalogEditFields => {
     switch (kind) {
         case MediaType.SERIES:
         case MediaType.ANIME:
-            return catalogEditFieldsSchema.parse({ kind, fields: {
-                ...common, originalName: null, lastAirDate: null, homepage: null, createdBy: null,
-                duration: 24, originCountry: null, prodStatus: null,
-            } });
+            return catalogEditFieldsSchema.parse({
+                kind, fields: {
+                    ...common, originalName: null, lastAirDate: null, homepage: null, createdBy: null,
+                    duration: 24, originCountry: null, prodStatus: null,
+                }
+            });
         case MediaType.MOVIES:
-            return catalogEditFieldsSchema.parse({ kind, fields: {
-                ...common, originalName: null, directorName: null, duration: 120, budget: null,
-                revenue: null, tagline: null, originalLanguage: null, homepage: null,
-            } });
+            return catalogEditFieldsSchema.parse({
+                kind, fields: {
+                    ...common, originalName: null, directorName: null, duration: 120, budget: null,
+                    revenue: null, tagline: null, originalLanguage: null, homepage: null,
+                }
+            });
         case MediaType.GAMES:
-            return catalogEditFieldsSchema.parse({ kind, fields: {
-                ...common, gameEngine: null, gameModes: null, playerPerspective: null,
-                hltbMainTime: null, hltbMainAndExtraTime: null, hltbTotalCompleteTime: null,
-            } });
+            return catalogEditFieldsSchema.parse({
+                kind, fields: {
+                    ...common, gameEngine: null, gameModes: null, playerPerspective: null,
+                    hltbMainTime: null, hltbMainAndExtraTime: null, hltbTotalCompleteTime: null,
+                }
+            });
         case MediaType.BOOKS:
-            return catalogEditFieldsSchema.parse({ kind, fields: {
-                ...common, pages: 240, language: null, publishers: null, authors: [],
-            } });
+            return catalogEditFieldsSchema.parse({
+                kind, fields: {
+                    ...common, pages: 240, language: null, publishers: null, authors: [],
+                }
+            });
         case MediaType.MANGA:
-            return catalogEditFieldsSchema.parse({ kind, fields: {
-                ...common, chapters: null, publishers: null, genres: [],
-            } });
+            return catalogEditFieldsSchema.parse({
+                kind, fields: {
+                    ...common, chapters: null, publishers: null, genres: [],
+                }
+            });
     }
 };

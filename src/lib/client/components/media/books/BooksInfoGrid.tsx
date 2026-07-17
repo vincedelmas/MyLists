@@ -5,11 +5,11 @@ import {extractYear} from "@/lib/utils/date-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {formatLocaleName} from "@/lib/utils/text-formatting";
-import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
+import {KindDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-export const BooksInfoGrid = ({ mediaType, media }: FamilyDetailsProps<typeof MediaType.BOOKS>) => {
+export const BooksInfoGrid = ({ mediaType, media }: KindDetailsProps<typeof MediaType.BOOKS>) => {
     return (
         <>
             <MediaInfoGridItem label="Authored By">

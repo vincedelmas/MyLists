@@ -1,36 +1,34 @@
-import type {QueryClient, QueryKey} from "@tanstack/react-query";
 import {MediaType} from "@/lib/utils/enums";
+import type {QueryClient, QueryKey} from "@tanstack/react-query";
 import {mediaDetailsRootKey} from "@/lib/client/react-query/query-options/media.keys";
 
 
 export type LibraryMutationEffect = "add" | "remove" | "update" | "cover" | "tag";
 
 interface LibraryMutationEffectInput {
-    effect: LibraryMutationEffect;
-    mediaType: MediaType;
     mediaId?: number;
     viewerName?: string;
+    mediaType: MediaType;
     sourceQueryKey?: QueryKey;
     recordsActivity?: boolean;
+    effect: LibraryMutationEffect;
 }
 
 
 /** Query prefixes owned by a concrete library command effect. */
-export const libraryMutationInvalidationKeys = ({
-    effect,
-    mediaType,
-    mediaId,
-    viewerName,
-    sourceQueryKey,
-    recordsActivity = false,
-}: LibraryMutationEffectInput): QueryKey[] => {
+export const libraryMutationInvalidationKeys = (props: LibraryMutationEffectInput): QueryKey[] => {
+    const { effect, mediaType, mediaId, viewerName, sourceQueryKey, recordsActivity = false } = props;
+
     const presentation: QueryKey[] = [
         ...(sourceQueryKey ? [sourceQueryKey] : []),
-        ...(mediaId === undefined ? [["details", mediaType] as QueryKey] : [mediaDetailsRootKey(mediaType, mediaId)]),
+        ...(mediaId === undefined
+            ? [["details", mediaType] as QueryKey]
+            : [mediaDetailsRootKey(mediaType, mediaId)]),
         ["userList", mediaType],
     ];
 
     if (effect === "cover") return presentation;
+
     if (effect === "tag") {
         return [
             ...presentation,
@@ -47,6 +45,7 @@ export const libraryMutationInvalidationKeys = ({
         ]),
         ["upcoming"],
     ];
+
     if (!viewerName) return entryEffects;
 
     return [
@@ -60,10 +59,6 @@ export const libraryMutationInvalidationKeys = ({
 };
 
 
-export const invalidateLibraryMutationEffects = async (
-    queryClient: QueryClient,
-    input: LibraryMutationEffectInput,
-) => {
-    await Promise.all(libraryMutationInvalidationKeys(input)
-        .map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+export const invalidateLibraryMutationEffects = async (queryClient: QueryClient, input: LibraryMutationEffectInput) => {
+    await Promise.all(libraryMutationInvalidationKeys(input).map(queryKey => queryClient.invalidateQueries({ queryKey })));
 };

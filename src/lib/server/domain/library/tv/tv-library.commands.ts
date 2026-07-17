@@ -10,20 +10,20 @@ import {
     consumedEpisodeCount,
     createInitialTvProgress,
     moveTvProgress,
-    replaceTvRewatches,
     reconcileTvSeasons,
+    replaceTvRewatches,
     totalTvRewatchCount,
     TvProgressState,
     TvSeasonRewatchState,
 } from "@/lib/server/domain/library/tv/tv-progress";
-
-
-type TvKind = typeof MediaType.SERIES | typeof MediaType.ANIME;
+import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
 /** Canonical TV/anime library mutation boundary. */
 export class TvLibraryCommands {
-    constructor(private repository = new TvLibraryRepository()) {}
+    constructor(private repository = new TvLibraryRepository()) {
+    }
 
     async update(params: { userId: number; mediaId: number; payload: Extract<UpdateUserMedia, { mediaType: typeof MediaType.SERIES }>["payload"] }) {
         const common = { userId: params.userId, catalogItemId: params.mediaId };
@@ -58,7 +58,7 @@ export class TvLibraryCommands {
         }
     }
 
-    async importRows(_kind: TvKind, rows: TvFinalListInsert[]) {
+    async importRows(_kind: TvMediaType, rows: TvFinalListInsert[]) {
         return withTransaction(async () => {
             for (const row of rows) {
                 if (row.total === undefined) throw new Error("Materialized TV import row is missing total progress.");
@@ -81,7 +81,7 @@ export class TvLibraryCommands {
         });
     }
 
-    async editTag(params: { userId: number; kind: TvKind; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
+    async editTag(params: { userId: number; kind: TvMediaType; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
         const libraryEntryId = params.mediaId
             ? (await this.get(params.userId, params.mediaId))?.id
             : undefined;
@@ -371,4 +371,3 @@ const entryMetrics = (entry?: TvLibraryEntry) => {
         favorited: Number(entry.favorite),
     };
 };
-import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";

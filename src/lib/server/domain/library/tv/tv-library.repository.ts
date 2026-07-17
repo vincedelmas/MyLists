@@ -18,13 +18,14 @@ import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {TvProgressState, TvSeasonDefinition} from "@/lib/server/domain/library/tv/tv-progress";
 import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
 export type TvLibraryEntry = {
     id: number;
     userId: number;
     catalogItemId: number;
-    kind: typeof MediaType.SERIES | typeof MediaType.ANIME;
+    kind: TvMediaType;
     name: string;
     episodeDurationMinutes: number;
     favorite: boolean;
@@ -116,7 +117,7 @@ export class TvLibraryRepository {
             .get();
 
         if (!row || (row.kind !== MediaType.SERIES && row.kind !== MediaType.ANIME)) return;
-        return row as typeof row & { kind: typeof MediaType.SERIES | typeof MediaType.ANIME };
+        return row as typeof row & { kind: TvMediaType };
     }
 
     async getSeasons(catalogItemId: number): Promise<TvSeasonDefinition[]> {
@@ -197,7 +198,7 @@ export class TvLibraryRepository {
 
     async editTag(params: {
         userId: number;
-        kind: typeof MediaType.SERIES | typeof MediaType.ANIME;
+        kind: TvMediaType;
         action: TagAction;
         name: string;
         oldName?: string;

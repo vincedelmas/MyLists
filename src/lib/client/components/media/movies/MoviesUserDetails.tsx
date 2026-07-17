@@ -1,12 +1,12 @@
 import {MediaType, Status} from "@/lib/utils/enums";
-import {FamilyEntryEditorProps} from "@/lib/client/components/media/family-component.types";
+import {KindEntryEditorProps} from "@/lib/client/components/media/family-component.types";
 import {UpdateRepeatCount} from "@/lib/client/components/media/base/UpdateRepeatCount";
 import {UpdateRating} from "@/lib/client/components/media/base/UpdateRating";
 import {UpdateStatus} from "@/lib/client/components/media/base/UpdateStatus";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-export const MoviesUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: FamilyEntryEditorProps<typeof MediaType.MOVIES>) => {
+export const MoviesUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: KindEntryEditorProps<typeof MediaType.MOVIES>) => {
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, mutationOptions);
 
     return (

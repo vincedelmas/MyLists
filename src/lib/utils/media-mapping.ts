@@ -1,4 +1,5 @@
 import {ApiProviderType, MediaType, Status} from "@/lib/utils/enums";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
 export const mediaTypeToApiProvider = (mediaType: MediaType) => {
@@ -38,10 +39,10 @@ export const statusUtils = {
 
 
 export const mediaTypeUtils = {
-    getTypesForNotifications: (): (typeof MediaType.SERIES | typeof MediaType.ANIME | typeof MediaType.MOVIES)[] => (
+    getTypesForNotifications: (): (TvMediaType | typeof MediaType.MOVIES)[] => (
         [MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES]
     ),
-    getComingNextTypes: (): (typeof MediaType.SERIES | typeof MediaType.ANIME | typeof MediaType.MOVIES | typeof MediaType.GAMES)[] => (
+    getComingNextTypes: (): (TvMediaType | typeof MediaType.MOVIES | typeof MediaType.GAMES)[] => (
         [MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GAMES]
     ),
 };

@@ -15,6 +15,7 @@ import {
     importTotalSchema,
     nullableImportProgressSchema,
 } from "@/lib/server/domain/imports/import-list-validation";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
 const parseRedo2 = (value: unknown) => {
@@ -65,7 +66,7 @@ const redo2Schema = z.preprocess(
 );
 
 
-const tvPayloadFor = (kind: typeof MediaType.SERIES | typeof MediaType.ANIME) => z.object({
+const tvPayloadFor = (kind: TvMediaType) => z.object({
     ...importedCommonShape,
     status: importStatusSchema(kind),
     currentSeason: importPositiveProgressSchema,

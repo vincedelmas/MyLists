@@ -1,11 +1,11 @@
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {FamilyFollowCardProps} from "@/lib/client/components/media/family-component.types";
+import {KindFollowCardProps} from "@/lib/client/components/media/family-component.types";
 import {DisplayTvRedo} from "@/lib/client/components/media/tv/DisplayTvRedo";
 import {BaseMediaFollowCard} from "@/lib/client/components/media/base/BaseMediaFollowCard";
 import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsAndSeasons";
 
 
-export const TvFollowCard = ({ followData, rating, showComment }: FamilyFollowCardProps<TvMediaType>) => {
+export const TvFollowCard = ({ followData, rating, showComment }: KindFollowCardProps<TvMediaType>) => {
     return (
         <BaseMediaFollowCard
             rating={rating}

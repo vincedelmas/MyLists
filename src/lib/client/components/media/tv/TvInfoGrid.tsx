@@ -5,11 +5,11 @@ import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatLocaleName} from "@/lib/utils/text-formatting";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {FamilyDetailsProps} from "@/lib/client/components/media/family-component.types";
+import {KindDetailsProps} from "@/lib/client/components/media/family-component.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-export const TvInfoGrid = ({ mediaType, media }: FamilyDetailsProps<TvMediaType>) => {
+export const TvInfoGrid = ({ mediaType, media }: KindDetailsProps<TvMediaType>) => {
     const creators = media.createdBy?.split(", ").map((c) => ({ name: c })) || [];
 
     return (

@@ -7,6 +7,7 @@ import {MediaType, Status} from "@/lib/utils/enums";
 import {UpsertTvWithDetails} from "@/lib/server/domain/catalog/catalog-ingestion.types";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -121,7 +122,7 @@ describe("TV catalog ingestion command", () => {
 });
 
 
-const provider = (mediaType: typeof MediaType.SERIES | typeof MediaType.ANIME, transformed: UpsertTvWithDetails) => ({
+const provider = (mediaType: TvMediaType, transformed: UpsertTvWithDetails) => ({
     source: "tmdb" as const,
     mediaType,
     search: { search: vi.fn() },
@@ -130,11 +131,11 @@ const provider = (mediaType: typeof MediaType.SERIES | typeof MediaType.ANIME, t
 
 
 const details = ({
-    apiId,
-    name,
-    duration = 45,
-    seasons = [{ season: 1, episodes: 12 }, { season: 2, episodes: 8 }],
-}: {
+                     apiId,
+                     name,
+                     duration = 45,
+                     seasons = [{ season: 1, episodes: 12 }, { season: 2, episodes: 8 }],
+                 }: {
     apiId: number;
     name: string;
     duration?: number;

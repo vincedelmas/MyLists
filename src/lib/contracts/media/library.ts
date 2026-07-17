@@ -3,6 +3,8 @@ import {isValidActivityDate} from "@/lib/utils/activity-utils";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 import {COMMENT_MAX_LENGTH, MIN_ACTIVITY_DATE, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
+
+
 export type UpdateUserMedia = z.infer<typeof updateUserMediaSchema>;
 export type UpdateUserCustomCover = z.infer<typeof updateUserCustomCoverSchema>;
 export type UpdateUserCustomCoverInput = z.input<typeof updateUserCustomCoverSchema>;
@@ -40,7 +42,6 @@ const validateStatusForMediaType = (mediaType: MediaType, status: Status, ctx: z
     }
 };
 
-
 export const updateUserCustomCoverSchema = z.object({
     mediaType: mediaTypeFieldSchema,
     imageUrl: z.url().trim().optional(),
@@ -73,68 +74,103 @@ export const addMediaToListSchema = z.object({
     validateStatusForMediaType(data.mediaType, data.status, ctx, ["status"]);
 });
 
-const ratingPayload = z.object({ type: z.literal(UpdateType.RATING), rating: z.number().min(0).max(10).nullable() }).strict();
-const commentPayload = z.object({
+const ratingPayload = z.strictObject({
+    type: z.literal(UpdateType.RATING),
+    rating: z.number().min(0).max(10).nullable(),
+});
+
+const commentPayload = z.strictObject({
     type: z.literal(UpdateType.COMMENT),
     comment: z.string().max(COMMENT_MAX_LENGTH, `Comment cannot exceed ${COMMENT_MAX_LENGTH} characters`).nullable(),
-}).strict();
-const favoritePayload = z.object({ type: z.literal(UpdateType.FAVORITE), favorite: z.boolean() }).strict();
-const statusPayload = z.object({ type: z.literal(UpdateType.STATUS), status: z.enum(Status), loggedAt: loggedAtSchema }).strict();
-const movieRewatchPayload = z.object({
+});
+
+const favoritePayload = z.strictObject({
+    favorite: z.boolean(),
+    type: z.literal(UpdateType.FAVORITE),
+});
+
+const statusPayload = z.strictObject({
+    status: z.enum(Status),
+    loggedAt: loggedAtSchema,
+    type: z.literal(UpdateType.STATUS),
+});
+
+const movieRewatchPayload = z.strictObject({
+    loggedAt: loggedAtSchema,
     type: z.literal(UpdateType.REDO),
     rewatchCount: z.number().int().min(0).max(REDO_MAX),
+});
+
+const rereadPayload = z.strictObject({
     loggedAt: loggedAtSchema,
-}).strict();
-const rereadPayload = z.object({
     type: z.literal(UpdateType.REDO),
     rereadCount: z.number().int().min(0).max(REDO_MAX),
-    loggedAt: loggedAtSchema,
-}).strict();
+});
+
 const commonPayloads = [ratingPayload, commentPayload, favoritePayload, statusPayload] as const;
 
 const tvPayload = z.discriminatedUnion("type", [
     ...commonPayloads,
-    z.object({
+    z.strictObject({
+        loggedAt: loggedAtSchema,
         type: z.literal(UpdateType.TV),
         currentSeason: z.number().int().min(1).max(PROGRESS_MAX).optional(),
         currentEpisode: z.number().int().min(0).max(PROGRESS_MAX).optional(),
-        loggedAt: loggedAtSchema,
-    }).strict().refine((payload) => payload.currentSeason !== undefined || payload.currentEpisode !== undefined, {
+    }).refine((payload) => payload.currentSeason !== undefined || payload.currentEpisode !== undefined, {
         message: "Provide a season or episode.",
     }),
-    z.object({
+    z.strictObject({
+        loggedAt: loggedAtSchema,
         type: z.literal(UpdateType.REDO),
-        rewatches: z.array(z.object({
+        rewatches: z.array(z.strictObject({
             seasonNumber: z.number().int().positive(),
             count: z.number().int().min(0).max(REDO_MAX),
-        }).strict()),
-        loggedAt: loggedAtSchema,
-    }).strict(),
+        })),
+    }),
 ]);
+
 const moviePayload = z.discriminatedUnion("type", [...commonPayloads, movieRewatchPayload]);
+
 const gamePayload = z.discriminatedUnion("type", [
     ...commonPayloads,
-    z.object({ type: z.literal(UpdateType.PLAYTIME), playtime: z.number().min(0).max(PLAYTIME_MAX_MINUTES), loggedAt: loggedAtSchema }).strict(),
-    z.object({ type: z.literal(UpdateType.PLATFORM), platform: z.enum(GamesPlatformsEnum).nullable() }).strict(),
+    z.strictObject({
+        loggedAt: loggedAtSchema,
+        type: z.literal(UpdateType.PLAYTIME),
+        playtime: z.number().min(0).max(PLAYTIME_MAX_MINUTES),
+    }),
+    z.strictObject({
+        type: z.literal(UpdateType.PLATFORM),
+        platform: z.enum(GamesPlatformsEnum).nullable()
+    }),
 ]);
+
 const bookPayload = z.discriminatedUnion("type", [
     ...commonPayloads,
     rereadPayload,
-    z.object({ type: z.literal(UpdateType.PAGE), currentPage: z.number().int().min(0).max(PROGRESS_MAX), loggedAt: loggedAtSchema }).strict(),
+    z.strictObject({
+        loggedAt: loggedAtSchema,
+        type: z.literal(UpdateType.PAGE),
+        currentPage: z.number().int().min(0).max(PROGRESS_MAX),
+    }),
 ]);
+
 const mangaPayload = z.discriminatedUnion("type", [
     ...commonPayloads,
     rereadPayload,
-    z.object({ type: z.literal(UpdateType.CHAPTER), currentChapter: z.number().int().min(0).max(PROGRESS_MAX), loggedAt: loggedAtSchema }).strict(),
+    z.strictObject({
+        loggedAt: loggedAtSchema,
+        type: z.literal(UpdateType.CHAPTER),
+        currentChapter: z.number().int().min(0).max(PROGRESS_MAX),
+    }),
 ]);
 
 export const updateUserMediaSchema = z.discriminatedUnion("mediaType", [
-    z.object({ mediaType: z.literal(MediaType.SERIES), mediaId: coercedPositiveIntFieldSchema, payload: tvPayload }).strict(),
-    z.object({ mediaType: z.literal(MediaType.ANIME), mediaId: coercedPositiveIntFieldSchema, payload: tvPayload }).strict(),
-    z.object({ mediaType: z.literal(MediaType.MOVIES), mediaId: coercedPositiveIntFieldSchema, payload: moviePayload }).strict(),
-    z.object({ mediaType: z.literal(MediaType.GAMES), mediaId: coercedPositiveIntFieldSchema, payload: gamePayload }).strict(),
-    z.object({ mediaType: z.literal(MediaType.BOOKS), mediaId: coercedPositiveIntFieldSchema, payload: bookPayload }).strict(),
-    z.object({ mediaType: z.literal(MediaType.MANGA), mediaId: coercedPositiveIntFieldSchema, payload: mangaPayload }).strict(),
+    z.strictObject({ mediaType: z.literal(MediaType.SERIES), mediaId: coercedPositiveIntFieldSchema, payload: tvPayload }),
+    z.strictObject({ mediaType: z.literal(MediaType.ANIME), mediaId: coercedPositiveIntFieldSchema, payload: tvPayload }),
+    z.strictObject({ mediaType: z.literal(MediaType.MOVIES), mediaId: coercedPositiveIntFieldSchema, payload: moviePayload }),
+    z.strictObject({ mediaType: z.literal(MediaType.GAMES), mediaId: coercedPositiveIntFieldSchema, payload: gamePayload }),
+    z.strictObject({ mediaType: z.literal(MediaType.BOOKS), mediaId: coercedPositiveIntFieldSchema, payload: bookPayload }),
+    z.strictObject({ mediaType: z.literal(MediaType.MANGA), mediaId: coercedPositiveIntFieldSchema, payload: mangaPayload }),
 ]).superRefine((data, ctx) => {
     if (!("status" in data.payload)) return;
     validateStatusForMediaType(data.mediaType, data.payload.status, ctx, ["payload", "status"]);

@@ -3,11 +3,15 @@ import {BookCoverEditDialog} from "@/lib/client/components/media/base/BookCoverE
 
 
 interface MediaHeroProps {
-    media: { id: number; name: string; imageCover: string };
     overTitle: ReactNode;
     underTitle: ReactNode;
     alternateTitle?: string | null;
     allowDefaultBookCoverEdit?: boolean;
+    media: {
+        id: number;
+        name: string;
+        imageCover: string;
+    };
 }
 
 

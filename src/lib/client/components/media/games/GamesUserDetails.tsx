@@ -1,6 +1,6 @@
 import React from "react";
 import {MediaType, Status} from "@/lib/utils/enums";
-import {FamilyEntryEditorProps} from "@/lib/client/components/media/family-component.types";
+import {KindEntryEditorProps} from "@/lib/client/components/media/family-component.types";
 import {UpdateRating} from "@/lib/client/components/media/base/UpdateRating";
 import {UpdateStatus} from "@/lib/client/components/media/base/UpdateStatus";
 import {UpdatePlatform} from "@/lib/client/components/media/games/UpdatePlatform";
@@ -8,7 +8,7 @@ import {UpdatePlaytime} from "@/lib/client/components/media/games/UpdatePlaytime
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-export const GamesUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: FamilyEntryEditorProps<typeof MediaType.GAMES>) => {
+export const GamesUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: KindEntryEditorProps<typeof MediaType.GAMES>) => {
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, mutationOptions);
 
     return (

@@ -1,6 +1,6 @@
 import React from "react";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import {FamilyEntryEditorProps} from "@/lib/client/components/media/family-component.types";
+import {KindEntryEditorProps} from "@/lib/client/components/media/family-component.types";
 import {UpdateRepeatCount} from "@/lib/client/components/media/base/UpdateRepeatCount";
 import {UpdateInput} from "@/lib/client/components/media/base/UpdateInput";
 import {UpdateRating} from "@/lib/client/components/media/base/UpdateRating";
@@ -8,7 +8,7 @@ import {UpdateStatus} from "@/lib/client/components/media/base/UpdateStatus";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-type BooksUserDetailsProps = FamilyEntryEditorProps<typeof MediaType.BOOKS> & { pages: number };
+type BooksUserDetailsProps = KindEntryEditorProps<typeof MediaType.BOOKS> & { pages: number };
 
 
 export const BooksUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions, pages }: BooksUserDetailsProps) => {

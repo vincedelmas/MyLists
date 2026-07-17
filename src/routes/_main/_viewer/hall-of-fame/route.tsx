@@ -1,5 +1,5 @@
 import {UserX} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {createFileRoute} from "@tanstack/react-router";
@@ -59,7 +59,7 @@ function HallOfFamePage() {
                                 <SelectContent>
                                     <SelectItem value="normalized">Normalized</SelectItem>
                                     <SelectItem value="profile">Profile</SelectItem>
-                                    {Object.values(MediaType).map((mt) =>
+                                    {MEDIA_TYPES.map((mt) =>
                                         <SelectItem key={mt} value={mt}>
                                             {capitalize(mt)}
                                         </SelectItem>

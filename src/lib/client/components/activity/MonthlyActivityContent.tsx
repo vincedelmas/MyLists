@@ -6,7 +6,7 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {LayoutGrid, Plus, Settings2} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
-import {ActivityKind, MediaType} from "@/lib/utils/enums";
+import {ActivityKind, MediaType, sortByMediaType} from "@/lib/utils/enums";
 import {ActivityEditor} from "@/lib/types/activity.types";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {Separator} from "@/lib/client/components/ui/separator";
@@ -59,7 +59,10 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
 
     const activeMediaTypes = fixedMediaType
         ? [fixedMediaType]
-        : currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? apiData.mediaTypes;
+        : currentUser
+            ? sortByMediaType(currentUser.settings.filter(s => s.active), ({ mediaType }) => mediaType)
+                .map(({ mediaType }) => mediaType)
+            : sortByMediaType(apiData.mediaTypes, (mediaType) => mediaType);
 
     const handleFilterChange = (next: Partial<ActivitySearch>) => {
         updateFilters({ page: 1, ...next, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) });
@@ -117,7 +120,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                             <span>All Types</span>
                                         </div>
                                     </SelectItem>
-                                    {apiData.mediaTypes.map((mediaType) =>
+                                    {sortByMediaType(apiData.mediaTypes, (mediaType) => mediaType).map((mediaType) =>
                                         <SelectItem key={mediaType} value={mediaType}>
                                             <div className="flex items-center gap-2 capitalize">
                                                 <MainThemeIcon type={mediaType}/>

@@ -1,5 +1,5 @@
 import {and, eq, sql} from "drizzle-orm";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {profileMediaChannel} from "@/lib/server/database/schema";
 
@@ -58,6 +58,6 @@ export class ProfileChannelAccessRepository {
 
         const enabled = new Set(rows.map(({ kind }) => kind));
 
-        return Object.values(MediaType).filter((kind) => enabled.has(kind));
+        return MEDIA_TYPES.filter((kind) => enabled.has(kind));
     }
 }

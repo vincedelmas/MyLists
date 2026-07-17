@@ -14,7 +14,7 @@ import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
-import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
+import {ApiProviderType, MEDIA_TYPES, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
@@ -109,7 +109,7 @@ function MediaListFormPage() {
         });
     };
 
-    const mediaTypesForExport = Object.values(MediaType).map((mediaType) => ({
+    const mediaTypesForExport = MEDIA_TYPES.map((mediaType) => ({
         label: `${capitalize(mediaType)} List`,
         value: mediaType,
     }));

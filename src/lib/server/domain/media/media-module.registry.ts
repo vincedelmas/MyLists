@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {setupTvMediaModule} from "@/lib/server/domain/media/tv/tv-media.module";
 import {setupGameMediaModule} from "@/lib/server/domain/media/games/game-media.module";
 import {setupBookMediaModule} from "@/lib/server/domain/media/books/book-media.module";
@@ -10,8 +10,8 @@ export interface MediaModuleMap {
     [MediaType.SERIES]: ReturnType<typeof setupTvMediaModule<typeof MediaType.SERIES>>;
     [MediaType.ANIME]: ReturnType<typeof setupTvMediaModule<typeof MediaType.ANIME>>;
     [MediaType.MOVIES]: ReturnType<typeof setupMovieMediaModule>;
-    [MediaType.GAMES]: ReturnType<typeof setupGameMediaModule>;
     [MediaType.BOOKS]: ReturnType<typeof setupBookMediaModule>;
+    [MediaType.GAMES]: ReturnType<typeof setupGameMediaModule>;
     [MediaType.MANGA]: ReturnType<typeof setupMangaMediaModule>;
 }
 
@@ -31,6 +31,6 @@ export class MediaModuleRegistry {
     }
 
     values(): MediaModule[] {
-        return Object.values(this.modules);
+        return MEDIA_TYPES.map((kind) => this.modules[kind]);
     }
 }

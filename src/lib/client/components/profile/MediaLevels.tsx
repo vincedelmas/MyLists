@@ -1,5 +1,5 @@
 import {Link} from "@tanstack/react-router";
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, sortByMediaType} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -27,7 +27,7 @@ export const MediaLevels = ({ username, settings }: MediaLevelsProps) => {
             </CardHeader>
             <CardContent>
                 <div className="space-y-6">
-                    {settings.filter((s) => s.active).map((data) =>
+                    {sortByMediaType(settings.filter((s) => s.active), ({ mediaType }) => mediaType).map((data) =>
                         <MediaLevelBar
                             username={username}
                             key={data.mediaType}

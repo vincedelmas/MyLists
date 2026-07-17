@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {UserProfileRepository} from "@/lib/server/domain/user/user-profile.repository";
 import {ProfileHighlightsRepository} from "@/lib/server/domain/profile/profile-highlights.repository";
 import {
@@ -21,7 +21,7 @@ export class ProfileHighlightsQuery {
     }
 
     async resolveHighlightedMedia(userId: number) {
-        const mediaTypes = Object.values(MediaType);
+        const mediaTypes = MEDIA_TYPES;
         const settings = normalizeHighlightedMediaSettings(await this.settingsRepository.getHighlightedMediaSettings(userId));
         const activeMediaTypes = new Set(await this.repository.getActiveMediaTypes(userId));
         const overviewPool: HighlightedMediaResolvedItem[] = [];
@@ -84,7 +84,7 @@ export class ProfileHighlightsQuery {
         query: string,
     ): Promise<HighlightedMediaSearchItem[]> {
         const perTypeLimit = tab === "overview" ? 4 : 10;
-        const targetMediaTypes = tab === "overview" ? Object.values(MediaType) : [tab];
+        const targetMediaTypes = tab === "overview" ? MEDIA_TYPES : [tab];
         const results = await Promise.all(targetMediaTypes.map(async (mediaType) =>
             (await this.repository.searchUserListByName(userId, mediaType, query, perTypeLimit)).map((media) => ({
                 ...media,

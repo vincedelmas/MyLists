@@ -1,5 +1,5 @@
 import {TasteMatchesSearch} from "@/lib/schemas";
-import {MediaType, PrivacyType, SocialState} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType, PrivacyType, SocialState} from "@/lib/utils/enums";
 import {UserSimilarityRepository} from "@/lib/server/domain/user/user-similarity.repository";
 import {calculateTasteSimilarity, emptyRatingAggregate, mergeRatingAggregates, RatingAggregate} from "@/lib/utils/taste-similarity";
 
@@ -14,7 +14,7 @@ export class UserSimilarityService {
         "findCandidateAggregates" | "getCandidateProfiles" | "getSharedFavMedia">) {
     }
 
-    async getTasteMatches(currentUserId: number, filters: TasteMatchesSearch, activeMediaTypes: MediaType[] = Object.values(MediaType)) {
+    async getTasteMatches(currentUserId: number, filters: TasteMatchesSearch, activeMediaTypes: MediaType[] = [...MEDIA_TYPES]) {
         const search = filters.search?.toLocaleLowerCase() ?? "";
         const activeTab = filters.activeTab !== "all" && activeMediaTypes.includes(filters.activeTab) ? filters.activeTab : "all";
         const selectedMediaTypes = activeTab === "all" ? activeMediaTypes : [activeTab];
@@ -72,7 +72,7 @@ export class UserSimilarityService {
                     totalRatings: profile.totalRatings ?? 0,
                     similarity: calculateTasteSimilarity(stats.overall),
                     followStatus: profile.followStatus ? { status: profile.followStatus } : null,
-                    perMedia: Object.values(MediaType).map((mediaType) => {
+                    perMedia: MEDIA_TYPES.map((mediaType) => {
                         const aggregate = stats.perMedia[mediaType];
                         if (!aggregate || aggregate.count < MINIMUM_PER_MEDIA_RATINGS) return null;
 

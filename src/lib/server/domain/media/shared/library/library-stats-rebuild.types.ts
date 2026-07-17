@@ -2,14 +2,14 @@ import {Status} from "@/lib/utils/enums";
 
 
 export type LibraryStatsContribution = {
+    redo: number;
     userId: number;
     status: Status;
-    favorite: boolean;
-    comment: string | null;
-    rating: number | null;
-    timeSpent: number;
-    redo: number;
     specific: number;
+    favorite: boolean;
+    timeSpent: number;
+    rating: number | null;
+    comment: string | null;
 };
 
 
@@ -20,14 +20,14 @@ export interface LibraryStatsContributionQuery {
 
 export type LibraryStatsAggregate = {
     userId: number;
-    statusCounts: Partial<Record<Status, number>>;
     ratingSum: number;
+    totalRedo: number;
     totalEntries: number;
     entriesRated: number;
-    averageRating: number | null;
-    timeSpentMinutes: number;
-    totalRedo: number;
     totalSpecific: number;
+    timeSpentMinutes: number;
     entriesCommented: number;
     entriesFavorited: number;
+    averageRating: number | null;
+    statusCounts: Partial<Record<Status, number>>;
 };

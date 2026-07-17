@@ -1,6 +1,6 @@
 import {toast} from "sonner";
 import {useForm} from "react-hook-form";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, sortByMediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
@@ -30,7 +30,9 @@ function ActivityCleanupSettings() {
     const today = toDateInputValue(new Date());
     const bulkMutation = useBulkHideActivityMutation({ noErrorToast: true });
     const accountCreatedAt = currentUser?.createdAt ? toDateInputValue(currentUser.createdAt) : today;
-    const availableMediaTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? Object.values(MediaType);
+    const availableMediaTypes = currentUser
+        ? sortByMediaType(currentUser.settings.filter(s => s.active), ({ mediaType }) => mediaType).map(({ mediaType }) => mediaType)
+        : MEDIA_TYPES;
     const form = useForm<BulkHideActivityInput, unknown, BulkHideActivity>({
         resolver: zodResolver(bulkHideActivitySchema),
         values: {

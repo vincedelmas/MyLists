@@ -12,7 +12,7 @@ import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {libraryStats, profileMediaChannel, user as userTable} from "@/lib/server/database/schema";
-import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, MEDIA_TYPES, MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 
 
 const getAuthConfig = createServerOnlyFn(() => betterAuth({
@@ -48,7 +48,7 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
                     };
                 },
                 after: async (user) => {
-                    const mediaTypes = Object.values(MediaType);
+                    const mediaTypes = MEDIA_TYPES;
                     const userMediaSettingsData = mediaTypes.map((mt) => ({
                         mediaType: mt,
                         userId: Number(user.id),

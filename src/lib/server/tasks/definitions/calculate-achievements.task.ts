@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 
@@ -18,7 +18,7 @@ export const calculateAchievementsTask = defineTask({
         const allAchievements = await achievementsQuery.getAllAchievements();
 
         const mediaTypes = input.mediaTypes;
-        const typesToProcess = mediaTypes && mediaTypes.length > 0 ? mediaTypes : Object.values(MediaType);
+        const typesToProcess = mediaTypes && mediaTypes.length > 0 ? mediaTypes : MEDIA_TYPES;
 
         for (const mediaType of typesToProcess) {
             await ctx.step(`calculate-${mediaType}`, async () => {

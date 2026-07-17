@@ -2,7 +2,7 @@ import {z} from "zod";
 import path from "path";
 import * as fs from "fs";
 import {serverEnv} from "@/env/server";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 
@@ -20,7 +20,7 @@ export const removeUnusedMediaCoversTask = defineTask({
         const baseUploadsLocation = serverEnv.BASE_UPLOADS_LOCATION;
 
         const mediaTypes = input.mediaTypes;
-        const typesToProcess = mediaTypes && mediaTypes.length > 0 ? mediaTypes : Object.values(MediaType);
+        const typesToProcess = mediaTypes && mediaTypes.length > 0 ? mediaTypes : MEDIA_TYPES;
 
         for (const mediaType of typesToProcess) {
             await ctx.step(`cleanup-${mediaType}`, async () => {

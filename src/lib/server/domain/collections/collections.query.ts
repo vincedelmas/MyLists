@@ -4,14 +4,14 @@ import {UnauthorizedError} from "@/lib/utils/error-classes";
 import {isAtLeastRole, MediaType, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
 import {decideCollectionAccess} from "@/lib/server/domain/access/collection-access.policy";
 import {CollectionCatalogCardRepository} from "@/lib/server/domain/collections/collection-catalog-card.repository";
-import {EditorialCollectionsReadRepository} from "@/lib/server/domain/collections/editorial-collections-read.repository";
+import {CollectionsReadRepository} from "@/lib/server/domain/collections/collections-read.repository";
 import {SocialGraphQuery} from "@/lib/server/domain/social/social-graph.query";
 
 
-export class EditorialCollectionsQuery {
+export class CollectionsQuery {
     constructor(
         private readonly social = new SocialGraphQuery(),
-        private readonly repository = new EditorialCollectionsReadRepository(),
+        private readonly repository = new CollectionsReadRepository(),
         private readonly cards = new CollectionCatalogCardRepository(),
     ) {}
 
@@ -95,7 +95,7 @@ export class EditorialCollectionsQuery {
         return visibleTypes;
     }
 
-    private async enrichWithPreviews(collections: Awaited<ReturnType<EditorialCollectionsReadRepository["getUserCollections"]>>) {
+    private async enrichWithPreviews(collections: Awaited<ReturnType<CollectionsReadRepository["getUserCollections"]>>) {
         if (collections.length === 0) return [];
         const catalogIdsByPreviewKey = new Map<string, number>();
         const catalogItemIds = new Set<number>();

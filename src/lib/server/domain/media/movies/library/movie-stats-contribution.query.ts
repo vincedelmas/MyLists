@@ -8,12 +8,14 @@ import {libraryStatsContributionBase} from "@/lib/server/domain/media/shared/lib
 export class MovieStatsContributionQuery {
     getContributions() {
         const watchCount = sql<number>`COALESCE(${movieProgress.watchCount}, 0)`;
-        return getDbClient().select({
-            ...libraryStatsContributionBase,
-            timeSpent: sql<number>`${watchCount} * COALESCE(${movieDetails.durationMinutes}, 0)`,
-            redo: sql<number>`MAX(${watchCount} - 1, 0)`,
-            specific: watchCount,
-        }).from(libraryEntry)
+
+        return getDbClient()
+            .select({
+                ...libraryStatsContributionBase,
+                specific: watchCount,
+                timeSpent: sql<number>`${watchCount} * COALESCE(${movieDetails.durationMinutes}, 0)`,
+                redo: sql<number>`MAX(${watchCount} - 1, 0)`,
+            }).from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
             .leftJoin(movieProgress, eq(movieProgress.libraryEntryId, libraryEntry.id))
             .leftJoin(movieDetails, eq(movieDetails.catalogItemId, catalogItem.id))

@@ -3,7 +3,7 @@ import {drizzle} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
-import {MediaType, PrivacyType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType, PrivacyType} from "@/lib/utils/enums";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -42,14 +42,14 @@ describe("normalized Hall of Fame", () => {
             4: [MediaType.SERIES, MediaType.MOVIES],
         };
         await db.insert(schema.profileMediaChannel).values(Object.keys(times).flatMap((id) =>
-            Object.values(MediaType).map((kind) => ({
+            MEDIA_TYPES.map((kind) => ({
                 userId: Number(id),
                 kind,
                 enabled: enabled[Number(id)].includes(kind),
             })),
         ));
         await db.insert(schema.libraryStats).values(Object.keys(times).flatMap((id) =>
-            Object.values(MediaType).map((kind) => ({
+            MEDIA_TYPES.map((kind) => ({
                 userId: Number(id),
                 kind,
                 timeSpentMinutes: times[Number(id)][kind] ?? 0,

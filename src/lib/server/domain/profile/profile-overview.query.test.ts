@@ -82,8 +82,8 @@ describe("profile overview query", () => {
                 createdAt: "2026-01-01 00:00:00",
                 backgroundImage: "default.jpg",
                 userMediaSettings: [
-                    { active: false, timeSpent: 45 },
                     { active: true, timeSpent: 120 },
+                    { active: false, timeSpent: 45 },
                 ],
             },
             social: {
@@ -114,8 +114,8 @@ describe("profile overview query", () => {
                 name: owner.name,
                 privacy,
                 userMediaSettings: [
-                    { active: false, timeSpent: 45 },
                     { active: true, timeSpent: 120 },
+                    { active: false, timeSpent: 45 },
                 ],
             },
         });
@@ -137,8 +137,8 @@ describe("profile overview query", () => {
                 userData: {
                     id: 1,
                     userMediaSettings: [
-                        { mediaType: MediaType.MANGA, active: false, timeSpent: 45 },
                         { mediaType: MediaType.SERIES, active: true, timeSpent: 120 },
+                        { mediaType: MediaType.MANGA, active: false, timeSpent: 45 },
                     ],
                 },
             });

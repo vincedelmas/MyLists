@@ -1,4 +1,5 @@
 import {cn} from "@/lib/utils/classnames";
+import {sortByMediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {HighlightedMediaTab, PROFILE_MAX_HIGHLIGHTED_MEDIA} from "@/lib/types/profile-custom.types";
@@ -13,7 +14,10 @@ interface ProfileSidebarTabsProps {
 
 export const ProfileSidebarTabs = ({ activeTab, setActiveTab, allFormValues }: ProfileSidebarTabsProps) => {
     const { currentUser } = useAuth();
-    const activeMediaTypes = currentUser!.settings.filter((s) => s.active).map((s) => s.mediaType);
+    const activeMediaTypes = sortByMediaType(
+        currentUser!.settings.filter((s) => s.active),
+        ({ mediaType }) => mediaType,
+    ).map(({ mediaType }) => mediaType);
     const allTabs = ["overview", ...activeMediaTypes] as const;
 
     return (

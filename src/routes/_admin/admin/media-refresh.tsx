@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -54,14 +54,13 @@ function MediaRefreshPage() {
     const navigate = Route.useNavigate();
     const apiData = useSuspenseQuery(adminMediaRefreshOptions(filters)).data;
 
-    const mediaTypes = Object.values(MediaType);
+    const mediaTypes = MEDIA_TYPES;
     const { topRange = "all", dailyRange = "30d" } = filters;
     const totalsByRoleMap = new Map(apiData.totalsByRole.map((row) => [row.role, Number(row.count)]));
     const totalsByTypeMap = new Map(apiData.totalsByType.map((row) => [row.mediaType, Number(row.count)]));
 
     const mediaTypeRows = mediaTypes
-        .map((mt) => ({ mediaType: mt, count: totalsByTypeMap.get(mt) ?? 0 }))
-        .sort((a, b) => b.count - a.count);
+        .map((mt) => ({ mediaType: mt, count: totalsByTypeMap.get(mt) ?? 0 }));
 
     const roleRows = Array.from(totalsByRoleMap.entries())
         .map(([role, count]) => ({ role, count }))

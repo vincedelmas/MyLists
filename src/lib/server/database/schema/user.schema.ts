@@ -17,9 +17,9 @@ import {
     profileMediaChannel,
 } from "@/lib/server/database/schema/library.schema";
 import {
-    editorialCollection,
-    editorialCollectionLike,
-} from "@/lib/server/database/schema/editorial.schema";
+    collection,
+    collectionLike,
+} from "@/lib/server/database/schema/collections.schema";
 
 
 export const followers = sqliteTable("followers", {
@@ -60,8 +60,8 @@ export const userRelations = relations(user, ({ many }) => ({
     libraryActivities: many(libraryActivity),
     libraryStats: many(libraryStats),
     libraryTags: many(libraryTag),
-    editorialCollections: many(editorialCollection),
-    editorialCollectionLikes: many(editorialCollectionLike),
+    collections: many(collection),
+    collectionLikes: many(collectionLike),
     followers_followedId: many(followers, {
         relationName: "followers_followedId_user_id",
     }),

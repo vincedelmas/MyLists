@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 
 
 export type ProfileCustomKey = "highlightedMedia";
@@ -9,7 +9,7 @@ export const PROFILE_MAX_HIGHLIGHTED_MEDIA = 7;
 
 export const HIGHLIGHTED_MEDIA_DEFAULT_TITLE = "Highlighted Media";
 
-export const HIGHLIGHTED_MEDIA_TABS = ["overview", ...Object.values(MediaType)] as const;
+export const HIGHLIGHTED_MEDIA_TABS = ["overview", ...MEDIA_TYPES] as const;
 
 
 export interface HighlightedMediaRef {

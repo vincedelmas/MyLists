@@ -1,4 +1,4 @@
-import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
+import {AchievementDifficulty, compareMediaTypes, MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {AchievementsReadRepository} from "@/lib/server/domain/achievements/achievements-read.repository";
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 
@@ -31,7 +31,7 @@ export class AchievementsQuery {
 
     async getUserAchievementStats(userId: number) {
         const { completedResult, totalAchievementsResult } = await this.repository.getUserAchievementStats(userId);
-        const mediaTypes = Object.values(MediaType);
+        const mediaTypes = MEDIA_TYPES;
         const difficulties = Object.values(AchievementDifficulty);
         const totals = new Map(totalAchievementsResult.map(({ mediaType, total }) => [mediaType, total]));
         const completed = new Map(completedResult.map((item) => [`${item.mediaType}-${item.difficulty}`, item.count]));
@@ -78,6 +78,6 @@ export class AchievementsQuery {
                     completedAt: userProgress?.completedAt ?? null,
                 })),
             };
-        }).sort((left, right) => left.mediaType.localeCompare(right.mediaType) || left.name.localeCompare(right.name));
+        }).sort((left, right) => compareMediaTypes(left.mediaType, right.mediaType) || left.name.localeCompare(right.name));
     }
 }

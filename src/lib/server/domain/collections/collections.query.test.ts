@@ -14,15 +14,15 @@ vi.mock("@/lib/server/database/async-storage", () => ({
     withTransaction: (action: (db: unknown) => Promise<unknown>) => action(dbContext.db),
 }));
 
-const { EditorialCollectionsQuery } = await import("./editorial-collections.query");
-const { EditorialCollectionCommands } = await import("./editorial-collection.commands");
+const { CollectionsQuery } = await import("./collections.query");
+const { CollectionCommands } = await import("./collection.commands");
 
 
-describe("editorial collections query", () => {
+describe("collections query", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
     let followingStatus: SocialState | undefined;
-    let service: InstanceType<typeof EditorialCollectionsQuery>;
+    let service: InstanceType<typeof CollectionsQuery>;
 
     beforeEach(async () => {
         followingStatus = undefined;
@@ -40,22 +40,22 @@ describe("editorial collections query", () => {
             { id: 1001, kind: MediaType.MANGA, primaryProvider: "jikan", primaryExternalId: "701", name: "Second", imageCover: "second.jpg", releaseDate: null },
         ]);
         await db.insert(schema.libraryEntry).values({ userId: 20, catalogItemId: 1000, status: Status.READING });
-        await db.insert(schema.editorialCollection).values([
+        await db.insert(schema.collection).values([
             { id: 1, ownerId: 10, title: "Public", kind: MediaType.MANGA, visibility: PrivacyType.PUBLIC, ordered: true, viewCount: 4 },
             { id: 2, ownerId: 10, title: "Profile", kind: MediaType.MANGA, visibility: PrivacyType.RESTRICTED },
             { id: 3, ownerId: 10, title: "Only me", kind: MediaType.MANGA, visibility: PrivacyType.PRIVATE },
         ]);
-        await db.insert(schema.editorialCollectionItem).values([
+        await db.insert(schema.collectionItem).values([
             { collectionId: 1, catalogItemId: 1000, position: 1, annotation: "Best" },
             { collectionId: 1, catalogItemId: 1001, position: 3 },
             { collectionId: 2, catalogItemId: 1000, position: 1 },
             { collectionId: 3, catalogItemId: 1000, position: 1 },
         ]);
-        await db.insert(schema.editorialCollectionLike).values({ collectionId: 1, userId: 20 });
+        await db.insert(schema.collectionLike).values({ collectionId: 1, userId: 20 });
         const userService = {
             getFollowingStatus: vi.fn(async () => followingStatus ? { status: followingStatus } : undefined),
         };
-        service = new EditorialCollectionsQuery(userService as any);
+        service = new CollectionsQuery(userService as any);
     });
 
     afterEach(() => {
@@ -74,9 +74,9 @@ describe("editorial collections query", () => {
                 { mediaId: 1001, mediaName: "Second", orderIndex: 3, annotation: null, inUserList: false },
             ],
         });
-        expect((await db.select().from(schema.editorialCollection).where(eq(schema.editorialCollection.id, 1)).get())?.viewCount).toBe(4);
-        await new EditorialCollectionCommands().recordView(1);
-        expect((await db.select().from(schema.editorialCollection).where(eq(schema.editorialCollection.id, 1)).get())?.viewCount).toBe(5);
+        expect((await db.select().from(schema.collection).where(eq(schema.collection.id, 1)).get())?.viewCount).toBe(4);
+        await new CollectionCommands().recordView(1);
+        expect((await db.select().from(schema.collection).where(eq(schema.collection.id, 1)).get())?.viewCount).toBe(5);
     });
 
     it("applies the private-owner audience only to profile-only collections", async () => {

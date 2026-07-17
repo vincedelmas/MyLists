@@ -1,9 +1,9 @@
 import {and, eq, inArray, max, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {
-    editorialCollection,
-    editorialCollectionItem,
-    editorialCollectionLike,
+    collection,
+    collectionItem,
+    collectionLike,
     catalogItem,
 } from "@/lib/server/database/schema";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
@@ -17,7 +17,7 @@ export type CollectionItemSnapshot = {
 };
 
 
-export class EditorialCollectionsWriteRepository {
+export class CollectionsWriteRepository {
     createCollection(params: {
         ownerId: number;
         title: string;
@@ -26,7 +26,7 @@ export class EditorialCollectionsWriteRepository {
         visibility: PrivacyType;
         ordered: boolean;
     }) {
-        return getDbClient().insert(editorialCollection).values(params).returning({ id: editorialCollection.id }).get();
+        return getDbClient().insert(collection).values(params).returning({ id: collection.id }).get();
     }
 
     updateCollection(collectionId: number, values: {
@@ -35,10 +35,10 @@ export class EditorialCollectionsWriteRepository {
         visibility: PrivacyType;
         ordered: boolean;
     }) {
-        return getDbClient().update(editorialCollection).set({
+        return getDbClient().update(collection).set({
             ...values,
             updatedAt: sql`CURRENT_TIMESTAMP`,
-        }).where(eq(editorialCollection.id, collectionId));
+        }).where(eq(collection.id, collectionId));
     }
 
     async replaceItems(collectionId: number, kind: MediaType, items: Array<{ mediaId: number; annotation?: string | null }>) {
@@ -48,9 +48,9 @@ export class EditorialCollectionsWriteRepository {
             orderIndex: index + 1,
             createdAt: new Date().toISOString(),
         })));
-        await getDbClient().delete(editorialCollectionItem).where(eq(editorialCollectionItem.collectionId, collectionId));
+        await getDbClient().delete(collectionItem).where(eq(collectionItem.collectionId, collectionId));
         if (mapped.length) {
-            await getDbClient().insert(editorialCollectionItem).values(mapped.map((item) => ({
+            await getDbClient().insert(collectionItem).values(mapped.map((item) => ({
                 collectionId,
                 catalogItemId: item.catalogItemId,
                 position: item.orderIndex,
@@ -62,9 +62,9 @@ export class EditorialCollectionsWriteRepository {
 
     async addItem(collectionId: number, kind: MediaType, mediaId: number) {
         const [mapped] = await this.resolveItems(kind, [{ mediaId, annotation: null, orderIndex: 1, createdAt: new Date().toISOString() }]);
-        const position = (await getDbClient().select({ value: max(editorialCollectionItem.position) })
-            .from(editorialCollectionItem).where(eq(editorialCollectionItem.collectionId, collectionId)).get())?.value ?? 0;
-        await getDbClient().insert(editorialCollectionItem).values({
+        const position = (await getDbClient().select({ value: max(collectionItem.position) })
+            .from(collectionItem).where(eq(collectionItem.collectionId, collectionId)).get())?.value ?? 0;
+        await getDbClient().insert(collectionItem).values({
             collectionId,
             catalogItemId: mapped.catalogItemId,
             position: position + 1,
@@ -73,42 +73,42 @@ export class EditorialCollectionsWriteRepository {
 
     async removeItem(collectionId: number, kind: MediaType, mediaId: number) {
         const [mapped] = await this.resolveItems(kind, [{ mediaId, annotation: null, orderIndex: 1, createdAt: new Date().toISOString() }]);
-        await getDbClient().delete(editorialCollectionItem).where(and(
-            eq(editorialCollectionItem.collectionId, collectionId),
-            eq(editorialCollectionItem.catalogItemId, mapped.catalogItemId),
+        await getDbClient().delete(collectionItem).where(and(
+            eq(collectionItem.collectionId, collectionId),
+            eq(collectionItem.catalogItemId, mapped.catalogItemId),
         ));
     }
 
     async toggleLike(collectionId: number, userId: number) {
-        const existing = await getDbClient().select().from(editorialCollectionLike).where(and(
-            eq(editorialCollectionLike.collectionId, collectionId),
-            eq(editorialCollectionLike.userId, userId),
+        const existing = await getDbClient().select().from(collectionLike).where(and(
+            eq(collectionLike.collectionId, collectionId),
+            eq(collectionLike.userId, userId),
         )).get();
         if (existing) {
-            await getDbClient().delete(editorialCollectionLike).where(and(
-                eq(editorialCollectionLike.collectionId, collectionId),
-                eq(editorialCollectionLike.userId, userId),
+            await getDbClient().delete(collectionLike).where(and(
+                eq(collectionLike.collectionId, collectionId),
+                eq(collectionLike.userId, userId),
             ));
             return false;
         }
-        await getDbClient().insert(editorialCollectionLike).values({ collectionId, userId });
+        await getDbClient().insert(collectionLike).values({ collectionId, userId });
         return true;
     }
 
     incrementCopyCount(collectionId: number) {
-        return getDbClient().update(editorialCollection).set({
-            copiedCount: sql`${editorialCollection.copiedCount} + 1`,
-        }).where(eq(editorialCollection.id, collectionId));
+        return getDbClient().update(collection).set({
+            copiedCount: sql`${collection.copiedCount} + 1`,
+        }).where(eq(collection.id, collectionId));
     }
 
     incrementViewCount(collectionId: number) {
-        return getDbClient().update(editorialCollection).set({
-            viewCount: sql`${editorialCollection.viewCount} + 1`,
-        }).where(eq(editorialCollection.id, collectionId));
+        return getDbClient().update(collection).set({
+            viewCount: sql`${collection.viewCount} + 1`,
+        }).where(eq(collection.id, collectionId));
     }
 
     async deleteCollection(collectionId: number) {
-        await getDbClient().delete(editorialCollection).where(eq(editorialCollection.id, collectionId));
+        await getDbClient().delete(collection).where(eq(collection.id, collectionId));
     }
 
     private async resolveItems(kind: MediaType, items: CollectionItemSnapshot[]) {

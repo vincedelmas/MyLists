@@ -13,8 +13,8 @@ export function setupMediaModule(apiClients: ApiClientModule) {
         [MediaType.SERIES]: setupTvMediaModule(MediaType.SERIES, { tmdb: apiClients.tmdb, jikan: apiClients.jikan }),
         [MediaType.ANIME]: setupTvMediaModule(MediaType.ANIME, { tmdb: apiClients.tmdb, jikan: apiClients.jikan }),
         [MediaType.MOVIES]: setupMovieMediaModule(apiClients.tmdb),
-        [MediaType.GAMES]: setupGameMediaModule({ igdb: apiClients.igdb, hltb: apiClients.hltb }),
         [MediaType.BOOKS]: setupBookMediaModule(apiClients.gBook),
+        [MediaType.GAMES]: setupGameMediaModule({ igdb: apiClients.igdb, hltb: apiClients.hltb }),
         [MediaType.MANGA]: setupMangaMediaModule(apiClients.jikan),
     };
     return new MediaModuleRegistry(modules);

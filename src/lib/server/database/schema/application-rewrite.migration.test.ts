@@ -97,6 +97,70 @@ describe("application rewrite migration rehearsal", () => {
             .toBeNull();
         expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);
     });
+
+    it("renames collection tables and normalizes legacy library change keys without losing data", () => {
+        const preRenameMigrations = createBaselineMigrationFolder(56);
+        try {
+            sqlite.run("PRAGMA foreign_keys = OFF");
+            migrate(drizzle(sqlite), { migrationsFolder: preRenameMigrations });
+            sqlite.run("PRAGMA foreign_keys = ON");
+
+            sqlite.exec(`
+                INSERT INTO user (
+                    id, name, email, created_at, updated_at, email_verified, privacy
+                ) VALUES (
+                    1, 'collection-owner', 'owner@example.com',
+                    '2025-01-01 00:00:00', '2025-01-01 00:00:00', 1, 'public'
+                );
+
+                INSERT INTO catalog_item (
+                    id, kind, primary_provider, primary_external_id, name, image_cover
+                ) VALUES (10, 'movies', 'tmdb', '100', 'Preserved Movie', 'movie.jpg');
+
+                INSERT INTO library_entry (id, user_id, catalog_item_id, status)
+                VALUES (20, 1, 10, 'Completed');
+
+                INSERT INTO library_change (id, library_entry_id, update_type, payload)
+                VALUES (30, 20, 'rating', '{"old_value":6,"new_value":8}');
+
+                INSERT INTO editorial_collection (
+                    id, owner_id, title, kind, visibility, ordered, view_count, copied_count
+                ) VALUES (40, 1, 'Preserved Collection', 'movies', 'public', 1, 7, 2);
+
+                INSERT INTO editorial_collection_item (collection_id, catalog_item_id, position, annotation)
+                VALUES (40, 10, 1, 'Keep this note');
+
+                INSERT INTO editorial_collection_like (collection_id, user_id)
+                VALUES (40, 1);
+            `);
+
+            sqlite.run("PRAGMA foreign_keys = OFF");
+            migrate(drizzle(sqlite), { migrationsFolder: "./drizzle" });
+            sqlite.run("PRAGMA foreign_keys = ON");
+
+            expect(sqlite.query("SELECT title, view_count, copied_count FROM collection WHERE id = 40").get()).toEqual({
+                title: "Preserved Collection",
+                view_count: 7,
+                copied_count: 2,
+            });
+            expect(sqlite.query("SELECT catalog_item_id, position, annotation FROM collection_item WHERE collection_id = 40").get()).toEqual({
+                catalog_item_id: 10,
+                position: 1,
+                annotation: "Keep this note",
+            });
+            expect(sqlite.query("SELECT user_id FROM collection_like WHERE collection_id = 40").get()).toEqual({ user_id: 1 });
+
+            const payload = sqlite.query("SELECT payload FROM library_change WHERE id = 30").get() as { payload: string };
+            expect(JSON.parse(payload.payload)).toEqual({ oldValue: 6, newValue: 8 });
+
+            expect(sqlite.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'editorial_collection'").get())
+                .toBeNull();
+            expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);
+        }
+        finally {
+            fs.rmSync(preRenameMigrations, { recursive: true, force: true });
+        }
+    });
 });
 
 

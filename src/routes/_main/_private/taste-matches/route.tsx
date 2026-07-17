@@ -1,5 +1,5 @@
 import {UsersRound} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, sortByMediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -36,7 +36,10 @@ function TasteMatchesPage() {
     const apiData = useSuspenseQuery(tasteMatchesOptions(filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<TasteMatchesSearch>({ search });
 
-    const activeMediaTypes = currentUser?.settings.filter(({ active }) => active).map(({ mediaType }) => mediaType) ?? [];
+    const activeMediaTypes = sortByMediaType(
+        currentUser?.settings.filter(({ active }) => active) ?? [],
+        ({ mediaType }) => mediaType,
+    ).map(({ mediaType }) => mediaType);
     const currentActiveTab = activeTab !== "all" && activeMediaTypes.includes(activeTab) ? activeTab : "all";
 
     const handleSortChange = (value: TasteMatchesSearch["sorting"]) => {

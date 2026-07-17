@@ -3,7 +3,7 @@ export * from "./user.schema";
 export * from "./api-tokens.schema";
 export * from "./catalog.schema";
 export * from "./library.schema";
-export * from "./editorial.schema";
+export * from "./collections.schema";
 export * from "./mediadle.schema";
 export * from "./wcf.schema";
 export * from "./achievements.schema";

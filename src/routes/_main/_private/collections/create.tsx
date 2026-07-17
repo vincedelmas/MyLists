@@ -2,7 +2,7 @@ import {useState} from "react";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {createFileRoute} from "@tanstack/react-router";
-import {MediaType, PrivacyType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {CreateCollection, createCollectionSchema} from "@/lib/schemas";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_main/_private/collections/create")({
 
 function CollectionCreatePage() {
     const navigate = Route.useNavigate();
-    const mediaTypes = Object.values(MediaType);
+    const mediaTypes = MEDIA_TYPES;
     const createMutation = useCreateCollectionMutation({ noErrorToast: true });
     const [mediaType, setMediaType] = useState<MediaType | null>(null);
     const [step, setStep] = useState<"mediaType" | "editor">("mediaType");

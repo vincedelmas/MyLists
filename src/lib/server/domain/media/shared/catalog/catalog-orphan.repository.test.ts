@@ -28,14 +28,14 @@ describe("normalized catalog orphan discovery", () => {
         await db.insert(schema.libraryEntry).values({
             id: 1, userId: 1, catalogItemId: 101, status: Status.COMPLETED,
         });
-        await db.insert(schema.editorialCollection).values({
+        await db.insert(schema.collection).values({
             id: 1,
             ownerId: 1,
             kind: MediaType.MOVIES,
             title: "Retained collection",
             visibility: PrivacyType.PUBLIC,
         });
-        await db.insert(schema.editorialCollectionItem).values({
+        await db.insert(schema.collectionItem).values({
             collectionId: 1, catalogItemId: 102, position: 1,
         });
     });
@@ -45,7 +45,7 @@ describe("normalized catalog orphan discovery", () => {
         dbContext.db = undefined;
     });
 
-    it("retains catalog items referenced by either a library or an editorial collection", async () => {
+    it("retains catalog items referenced by either a library or an collection", async () => {
         const repository = new CatalogOrphanRepository();
         await expect(repository.getOrphanedIds(MediaType.MOVIES)).resolves.toEqual([103]);
         await expect(repository.getOrphanedIds(MediaType.BOOKS)).resolves.toEqual([]);
@@ -72,4 +72,3 @@ const catalog = (id: number) => ({
     primaryProvider: "tmdb" as const,
     primaryExternalId: String(id),
 });
-

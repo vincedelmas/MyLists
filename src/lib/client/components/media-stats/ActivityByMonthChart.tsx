@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, sortByMediaType} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {formatNumber} from "@/lib/utils/number-formatting";
@@ -67,9 +67,10 @@ export function ActivityByMonthChart({ title, data, mediaTypes, mediaType, stack
 function ActivityTooltip({ active, payload, label, mediaTypes }: any & { mediaTypes: MediaType[] }) {
     if (!active || !payload?.length) return null;
 
-    const rows = payload
-        .filter((entry: any) => Number(entry.value) > 0)
-        .sort((a: any, b: any) => Number(b.value) - Number(a.value));
+    const rows = sortByMediaType(
+        payload.filter((entry: any) => Number(entry.value) > 0),
+        (entry: any) => entry.dataKey as MediaType,
+    );
 
     return (
         <div className="rounded-md bg-gray-800 px-4 py-2 text-sm text-white">

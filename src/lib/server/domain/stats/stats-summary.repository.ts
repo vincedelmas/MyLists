@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, sortByMediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, count, countDistinct, eq, inArray, SQL, sql, sum} from "drizzle-orm";
 import {libraryStats, libraryTag, profileMediaChannel, user} from "@/lib/server/database/schema";
@@ -42,7 +42,8 @@ export class StatsSummaryRepository {
             .innerJoin(profileMediaChannel, and(
                 eq(profileMediaChannel.kind, libraryStats.kind),
                 eq(profileMediaChannel.userId, libraryStats.userId),
-            )).where(and(eq(libraryStats.userId, userId), eq(profileMediaChannel.enabled, true)));
+            )).where(and(eq(libraryStats.userId, userId), eq(profileMediaChannel.enabled, true)))
+            .then((rows) => sortByMediaType(rows, ({ mediaType }) => mediaType));
     }
 
     static async getPreComputedStatsSummary({ userId }: { userId?: number }) {
@@ -95,7 +96,7 @@ export class StatsSummaryRepository {
         return {
             totalUsers,
             statusCountsList,
-            mediaTimeDistribution,
+            mediaTimeDistribution: sortByMediaType(mediaTimeDistribution, ({ name }) => name),
             preComputedStats: {
                 totalRedo: stats.totalRedo ?? 0,
                 totalRated: stats.totalRated ?? 0,

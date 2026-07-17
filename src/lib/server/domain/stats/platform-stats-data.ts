@@ -1,7 +1,7 @@
 import {StatsActiveTab} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {AdvancedMediaStats} from "@/lib/types/stats.types";
-import {MediaType, RatingSystemType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, RatingSystemType} from "@/lib/utils/enums";
 
 
 export const getPlatformStatsData = async (activeTab: StatsActiveTab) => {
@@ -13,7 +13,7 @@ export const getPlatformStatsData = async (activeTab: StatsActiveTab) => {
             ...platformStats,
             mediaType: undefined,
             ratingSystem: RatingSystemType.SCORE,
-            activatedMediaTypes: Object.values(MediaType),
+            activatedMediaTypes: [...MEDIA_TYPES],
         };
     }
 
@@ -22,6 +22,6 @@ export const getPlatformStatsData = async (activeTab: StatsActiveTab) => {
         ...mediaStats,
         mediaType: activeTab,
         ratingSystem: RatingSystemType.SCORE,
-        activatedMediaTypes: Object.values(MediaType),
+        activatedMediaTypes: [...MEDIA_TYPES],
     } as AdvancedMediaStats;
 };

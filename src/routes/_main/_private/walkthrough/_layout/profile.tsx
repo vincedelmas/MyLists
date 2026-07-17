@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, sortByMediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -28,7 +28,10 @@ export const Route = createFileRoute("/_main/_private/walkthrough/_layout/profil
 function ProfileOnboarding() {
     const apiData = useSuspenseQuery(profileOptions(username)).data;
     const [activeTab, setActiveTab] = useState<MediaType | "overview">("overview");
-    const activeMediaTypes = apiData.userData.userMediaSettings.filter((s) => s.active).map((s) => s.mediaType);
+    const activeMediaTypes = sortByMediaType(
+        apiData.userData.userMediaSettings.filter((s) => s.active),
+        ({ mediaType }) => mediaType,
+    ).map(({ mediaType }) => mediaType);
 
     const mediaTabs: TabItem<MediaType | "overview">[] = [
         {

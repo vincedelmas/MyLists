@@ -1,5 +1,5 @@
 import React from "react";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {ListOrdered, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
@@ -32,7 +32,7 @@ function UserCollectionsPage() {
     const filters = Route.useSearch();
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
-    const mediaTypes = Object.values(MediaType);
+    const mediaTypes = MEDIA_TYPES;
     const { page = 1, search = "", mediaType } = filters;
     const apiData = useSuspenseQuery(paginatedUserCollectionsOptions({ username, ...filters })).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<UserCollectionsSearch>({ search });

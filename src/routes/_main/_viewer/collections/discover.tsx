@@ -1,5 +1,5 @@
 import {cn} from "@/lib/utils/classnames";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {BookOpen, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_main/_viewer/collections/discover")({
 function CollectionsDiscoverPage() {
     const { isAnonymous } = useAuth();
     const filters = Route.useSearch();
-    const mediaTypes = Object.values(MediaType);
+    const mediaTypes = MEDIA_TYPES;
     const { page = 1, search = "", mediaType } = filters;
     const apiData = useSuspenseQuery(communityCollectionsOptions(filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<CommunitySearch>({ search });

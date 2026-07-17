@@ -400,6 +400,13 @@
       "when": 1784228834713,
       "tag": "0056_remove_v1_media_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1784320796723,
+      "tag": "0057_collection_names_and_library_change_payload",
+      "breakpoints": true
     }
   ]
 }

@@ -4,15 +4,15 @@ import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
 import {MediaType, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
 import {decideCollectionAccess} from "@/lib/server/domain/access/collection-access.policy";
 import {SocialGraphQuery} from "@/lib/server/domain/social/social-graph.query";
-import {EditorialCollectionsReadRepository} from "@/lib/server/domain/collections/editorial-collections-read.repository";
-import {EditorialCollectionsWriteRepository} from "@/lib/server/domain/collections/editorial-collections-write.repository";
+import {CollectionsReadRepository} from "@/lib/server/domain/collections/collections-read.repository";
+import {CollectionsWriteRepository} from "@/lib/server/domain/collections/collections-write.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";
 
 
-export class EditorialCollectionCommands {
+export class CollectionCommands {
     constructor(
-        private readonly reads = new EditorialCollectionsReadRepository(),
-        private readonly writes = new EditorialCollectionsWriteRepository(),
+        private readonly reads = new CollectionsReadRepository(),
+        private readonly writes = new CollectionsWriteRepository(),
         private readonly social = new SocialGraphQuery(),
     ) {}
 

@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType, sortByMediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {LibraryAccessScope} from "@/lib/server/domain/access/library-access.policy";
@@ -16,7 +16,7 @@ export class ActivityService {
 
     async getMonthlyActivityStats(filters: MonthlyActivityStatsFilters, access?: LibraryAccessScope) {
         const timeBucket = `${filters.year}-${zeroPad(filters.month)}`;
-        const mediaTypes = filters.mediaType ? [filters.mediaType] : Object.values(MediaType);
+        const mediaTypes: MediaType[] = filters.mediaType ? [filters.mediaType] : [...MEDIA_TYPES];
         if (!access) throw new FormattedError("Activity access scope is required");
         const activities = await this.repository.getStatsActivities(access, mediaTypes, timeBucket);
         const mediaDetailsByType = await this._getMediaDurationsByType(activities);
@@ -46,8 +46,7 @@ export class ActivityService {
                 timeGained: activityRecord[mt].timeGained,
                 specificTotal: activityRecord[mt].specificTotal,
             }))
-            .filter((stat) => stat.timeGained > 0 || stat.specificTotal > 0)
-            .sort((a, b) => b.timeGained - a.timeGained);
+            .filter((stat) => stat.timeGained > 0 || stat.specificTotal > 0);
 
         return {
             mediaStats,
@@ -58,7 +57,7 @@ export class ActivityService {
 
     async getMonthlyActivity(userId: number, filters: MonthlyActivityFilters, access?: LibraryAccessScope) {
         const timeBucket = `${filters.year}-${zeroPad(filters.month)}`;
-        const mediaTypes = filters.activeTab === "all" ? Object.values(MediaType) : [filters.activeTab];
+        const mediaTypes: MediaType[] = filters.activeTab === "all" ? [...MEDIA_TYPES] : [filters.activeTab];
 
         const mediaIdsByType = filters.search?.trim()
             ? await this._searchActivityMediaIds(userId, mediaTypes, filters.search.trim())
@@ -102,7 +101,7 @@ export class ActivityService {
 
         const items = rows.sort((a, b) => compareDateInputs(b.lastUpdate, a.lastUpdate));
 
-        return { ...result, items, mediaTypes: availableMediaTypes };
+        return { ...result, items, mediaTypes: sortByMediaType(availableMediaTypes, (mediaType) => mediaType) };
     }
 
     async addActivity(userId: number, payload: AddActivity) {
@@ -129,7 +128,7 @@ export class ActivityService {
     }
 
     async getActivityStatsByMonth(filters: { userId?: number, mediaType?: MediaType, startYear?: number, excludeBulkImports?: boolean } = {}) {
-        const mediaTypes = filters.mediaType ? [filters.mediaType] : Object.values(MediaType);
+        const mediaTypes: MediaType[] = filters.mediaType ? [filters.mediaType] : [...MEDIA_TYPES];
         const startMonth = `${filters.startYear ?? 2026}-01`;
         const activities = await this.repository.getActivityStatsByMonth({
             userId: filters.userId,

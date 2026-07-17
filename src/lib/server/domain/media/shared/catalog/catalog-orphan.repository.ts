@@ -1,7 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, asc, eq, inArray, isNull, notExists} from "drizzle-orm";
-import {catalogItem, editorialCollectionItem, libraryEntry,} from "@/lib/server/database/schema";
+import {catalogItem, collectionItem, libraryEntry,} from "@/lib/server/database/schema";
 
 
 export class CatalogOrphanRepository {
@@ -16,9 +16,9 @@ export class CatalogOrphanRepository {
                 isNull(libraryEntry.id),
                 eq(catalogItem.kind, kind),
                 notExists(db
-                    .select({ catalogItemId: editorialCollectionItem.catalogItemId })
-                    .from(editorialCollectionItem)
-                    .where(eq(editorialCollectionItem.catalogItemId, catalogItem.id))
+                    .select({ catalogItemId: collectionItem.catalogItemId })
+                    .from(collectionItem)
+                    .where(eq(collectionItem.catalogItemId, catalogItem.id))
                 ),
             ))
             .orderBy(asc(catalogItem.id));

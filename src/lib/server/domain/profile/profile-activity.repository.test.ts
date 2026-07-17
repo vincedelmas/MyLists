@@ -4,7 +4,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {eq} from "drizzle-orm";
 import * as schema from "@/lib/server/database/schema";
-import {MediaType, PrivacyType, Status} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType, PrivacyType, Status} from "@/lib/utils/enums";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -74,7 +74,7 @@ describe("cross-family normalized profile activity", () => {
             .resolves.toEqual([MediaType.SERIES]);
         await expect(ActivityRepository.getStatsActivities(
             access,
-            Object.values(MediaType),
+            [...MEDIA_TYPES],
             "2026-03",
         )).resolves.toEqual([
             { mediaId: 12, mediaType: MediaType.SERIES, specificGained: 1 },

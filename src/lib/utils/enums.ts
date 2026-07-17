@@ -55,6 +55,33 @@ export const MediaType = {
 export type MediaType = (typeof MediaType)[keyof typeof MediaType];
 
 
+/** Canonical display and processing order for media families. */
+export const MEDIA_TYPES = [
+    MediaType.SERIES,
+    MediaType.ANIME,
+    MediaType.MOVIES,
+    MediaType.BOOKS,
+    MediaType.GAMES,
+    MediaType.MANGA,
+] as const satisfies readonly MediaType[];
+
+
+const MEDIA_TYPE_INDEX = new Map<MediaType, number>(
+    MEDIA_TYPES.map((mediaType, index) => [mediaType, index]),
+);
+
+
+export const compareMediaTypes = (left: MediaType, right: MediaType): number => {
+    return (MEDIA_TYPE_INDEX.get(left) ?? MEDIA_TYPES.length)
+        - (MEDIA_TYPE_INDEX.get(right) ?? MEDIA_TYPES.length);
+};
+
+
+export const sortByMediaType = <T>(items: readonly T[], select: (item: T) => MediaType): T[] => {
+    return [...items].sort((left, right) => compareMediaTypes(select(left), select(right)));
+};
+
+
 export const ActivityKind = {
     ALL: "all",
     COMPLETED: "completed",

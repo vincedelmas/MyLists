@@ -1,6 +1,6 @@
 import {serverEnv} from "@/env/server";
 import {SearchType} from "@/lib/schemas";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {logger} from "@/lib/server/core/logger";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
@@ -27,7 +27,7 @@ export class AdminService {
     }
 
     async getMediaOverviewForAdmin() {
-        const mediaStats = await Promise.all(Object.values(MediaType).map(async (mediaType) => ({
+        const mediaStats = await Promise.all(MEDIA_TYPES.map(async (mediaType) => ({
             mediaType,
             ...await AdminMediaOverviewRepository.getUserMediaAddedAndUpdated(mediaType),
         })));
@@ -68,7 +68,7 @@ export class AdminService {
     async getMediaRefreshStats({ dailyRange = "30d", topRange = "all", recentPage = 1 }: AdminMediaRefreshStatsParams = {}) {
         const mediaRefreshRangeDays = { "30d": 30, "90d": 90, "1y": 365, all: null };
 
-        const mediaTypes = Object.values(MediaType);
+        const mediaTypes = [...MEDIA_TYPES];
         const topDays = mediaRefreshRangeDays[topRange];
         const dailyDays = mediaRefreshRangeDays[dailyRange];
         const today = new Date(new Date().setUTCHours(0, 0, 0, 0));
@@ -95,7 +95,7 @@ export class AdminService {
                 mediaType,
                 count: Number(rawTotalsByType.find((row) => row.mediaType === mediaType)?.count ?? 0),
             }))
-            .filter((row) => row.count > 0).sort((a, b) => b.count - a.count);
+            .filter((row) => row.count > 0);
 
         const activeDays = summary.firstRefreshDate
             ? Math.max(1, Math.floor((today.getTime() - new Date(`${summary.firstRefreshDate}T00:00:00.000Z`).getTime()) / (24 * 60 * 60 * 1000)) + 1)

@@ -1,7 +1,7 @@
 import * as z from "zod";
 import {parse} from "csv-parse/sync";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
-import {ApiProviderType, ImportItemStatus, MediaType,} from "@/lib/utils/enums";
+import {ApiProviderType, ImportItemStatus, MEDIA_TYPES, MediaType,} from "@/lib/utils/enums";
 
 
 const MYLISTS_CSV_MAX_ROWS = 3000;
@@ -75,7 +75,7 @@ export const createMyListsCsvParser = (schemas: MyListsCsvSchemaSource) => (csv:
                 releaseDate: rawRow.releaseDate?.trim() || null,
                 externalApiId: rawRow.externalApiId?.trim() || null,
                 externalApiSource: parseApiProvider(rawRow.externalApiSource),
-                mediaType: Object.values(MediaType).find(mt => mt === rawRow.mediaType?.trim()) ?? null,
+                mediaType: MEDIA_TYPES.find(mt => mt === rawRow.mediaType?.trim()) ?? null,
                 statusReason: parsedRow.error.issues.map(i => `${i.path.join(".") || "row"}: ${i.message}`).join("; "),
             } satisfies ParsedImportItem;
         }

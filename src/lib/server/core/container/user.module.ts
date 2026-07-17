@@ -13,8 +13,8 @@ import {AchievementsRepository} from "@/lib/server/domain/achievements/achieveme
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {InactiveAccountRepository, UserProfileRepository, UserRepository, UserStatsService} from "@/lib/server/domain/user";
-import {EditorialCollectionsQuery} from "@/lib/server/domain/collections/editorial-collections.query";
-import {EditorialCollectionCommands} from "@/lib/server/domain/collections/editorial-collection.commands";
+import {CollectionsQuery} from "@/lib/server/domain/collections/collections.query";
+import {CollectionCommands} from "@/lib/server/domain/collections/collection.commands";
 import {SocialGraphQuery} from "@/lib/server/domain/social/social-graph.query";
 import {SocialGraphCommands} from "@/lib/server/domain/social/social-graph.commands";
 import {ProfileOverviewQuery} from "@/lib/server/domain/profile/profile-overview.query";
@@ -76,8 +76,8 @@ export function setupUserModule(mediaModule: MediaModule) {
     const featureVotesQuery = new FeatureVotesQuery(featureVotesRepository);
     const featureVoteCommands = new FeatureVoteCommands(featureVotesRepository, notificationCommands);
     const activityService = new ActivityService(mediaModule);
-    const editorialCollectionsQuery = new EditorialCollectionsQuery();
-    const editorialCollectionsCommands = new EditorialCollectionCommands();
+    const collectionsQuery = new CollectionsQuery();
+    const collectionsCommands = new CollectionCommands();
     const socialGraphQuery = new SocialGraphQuery();
     const socialGraphCommands = new SocialGraphCommands();
     const userStatsService = new UserStatsService(activityService, mediaModule);
@@ -122,8 +122,8 @@ export function setupUserModule(mediaModule: MediaModule) {
             commands: socialGraphCommands,
         },
         collections: {
-            query: editorialCollectionsQuery,
-            commands: editorialCollectionsCommands,
+            query: collectionsQuery,
+            commands: collectionsCommands,
         },
         discovery: {
             tasteMatches: tasteMatchesReader,

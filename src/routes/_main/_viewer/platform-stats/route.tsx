@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_main/_viewer/platform-stats")({
 function PlatformStatsPage() {
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
-    const mediaTypes = Object.values(MediaType);
+    const mediaTypes = MEDIA_TYPES;
     const apiData = useSuspenseQuery(platformStatsOptions(activeTab)).data;
 
     const handleTabChange = async (value: StatsActiveTab) => {

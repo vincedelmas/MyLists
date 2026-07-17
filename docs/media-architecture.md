@@ -19,7 +19,7 @@ service:
   activity projection, module composition, and optional product capabilities.
 - `domain/media/shared` contains mechanisms reused by multiple families without
   choosing media-specific policy.
-- `domain/collections` owns editorial collections independently from personal
+- `domain/collections` owns collections independently from personal
   list channels.
 - `domain/imports` maps provider records and delegates writes to the same concrete
   library rules used by interactive mutations.
@@ -49,6 +49,10 @@ exposed.
 The family setup functions and registry live under `domain/media`. The core
 container remains the application composition root and supplies each family
 only the external API clients it requires.
+
+All cross-media iteration and presentation follows the canonical `MEDIA_TYPES`
+order: series, anime, movies, books, games, then manga. Database and provider
+results must be normalized to that order before they are exposed to callers.
 
 Common capabilities with the same contract, such as library history, may be
 dispatched directly through `registry.get(mediaType)`. Family-specific payloads,
@@ -121,8 +125,8 @@ Concrete progress tables, tags, history, and `library_activity` attach to that
 entry or catalog identity. `profile_media_channel` controls whether a personal
 list family is active without deleting its data.
 
-`editorial_collection`, `editorial_collection_item`, and
-`editorial_collection_like` are a separate aggregate. Disabling a personal list
+`collection`, `collection_item`, and
+`collection_like` are a separate aggregate. Disabling a personal list
 channel does not hide or invalidate collections.
 
 ## Visibility rules

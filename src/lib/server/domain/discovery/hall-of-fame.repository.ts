@@ -1,5 +1,5 @@
 import {HallOfFameSearch} from "@/lib/schemas";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES, MediaType} from "@/lib/utils/enums";
 import {alias} from "drizzle-orm/sqlite-core";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
@@ -10,7 +10,7 @@ import {libraryStats, profileMediaChannel, user} from "@/lib/server/database/sch
 export class HallOfFameRepository {
     static async getRankingData(filters: HallOfFameSearch, userId?: number) {
         const { search = "" } = filters;
-        const mediaTypes = Object.values(MediaType);
+        const mediaTypes = MEDIA_TYPES;
         const sorting = resolveSorting(filters.sorting, ["normalized", "profile", ...mediaTypes] as const, "normalized");
         const { page, perPage, offset, limit } = resolvePagination({
             defaultPerPage: 10,

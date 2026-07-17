@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {MediaType} from "@/lib/utils/enums";
+import {MEDIA_TYPES} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 import {withTransaction} from "@/lib/server/database/async-storage";
@@ -12,7 +12,7 @@ export const computeAllUsersStatsTask = defineTask({
     inputSchema: z.object({}),
     handler: async (ctx) => {
         const container = await getContainer();
-        const mediaTypes = Object.values(MediaType);
+        const mediaTypes = MEDIA_TYPES;
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`stats-${mediaType}`, async () => {

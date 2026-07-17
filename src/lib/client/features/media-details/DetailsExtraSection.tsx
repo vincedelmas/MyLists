@@ -1,4 +1,4 @@
-import {Component, Suspense, type ErrorInfo, type ReactNode} from "react";
+import {Component, type ErrorInfo, type ReactNode, Suspense} from "react";
 
 
 interface DetailsExtraSectionProps {
@@ -16,16 +16,23 @@ export const DetailsExtraSection = ({ title, children }: DetailsExtraSectionProp
 );
 
 
-export const DetailsExtraLoading = ({ title }: { title: string }) => (
-    <section aria-label={`Loading ${title}`} className="min-h-24 animate-pulse rounded-lg border border-app-accent/20 bg-muted/20"/>
-);
+const DetailsExtraLoading = ({ title }: { title: string }) => {
+    return (
+        <section
+            aria-label={`Loading ${title}`}
+            className="min-h-24 animate-pulse rounded-lg border border-app-accent/20 bg-muted/20"
+        />
+    );
+}
 
 
-export const DetailsExtraErrorFallback = ({ title }: { title: string }) => (
-    <section role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-muted-foreground">
-        {title} is temporarily unavailable.
-    </section>
-);
+export const DetailsExtraErrorFallback = ({ title }: { title: string }) => {
+    return (
+        <section role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-muted-foreground">
+            {title} is temporarily unavailable.
+        </section>
+    );
+}
 
 
 class DetailsExtraErrorBoundary extends Component<DetailsExtraSectionProps, { failed: boolean }> {

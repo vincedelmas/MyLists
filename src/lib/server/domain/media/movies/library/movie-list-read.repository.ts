@@ -1,12 +1,13 @@
-import {and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, like, lte, notInArray, or, SQL, sql,} from "drizzle-orm";
-import {alias} from "drizzle-orm/sqlite-core";
 import {SimpleSearch} from "@/lib/schemas";
-import {MovieListArgs, MovieListPage} from "@/lib/contracts/media/lists";
-import {JobType, MediaType, Status} from "@/lib/utils/enums";
+import {alias} from "drizzle-orm/sqlite-core";
 import {getImageUrl} from "@/lib/utils/image-url";
+import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {MovieListArgs, MovieListPage} from "@/lib/contracts/media/lists";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
+import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {movieRedoCount} from "@/lib/server/domain/media/movies/library/movie-progress";
+import {and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, like, lte, notInArray, or, SQL, sql} from "drizzle-orm";
 import {
     catalogGenre,
     catalogItem,
@@ -21,7 +22,6 @@ import {
     profileMediaChannel,
     user,
 } from "@/lib/server/database/schema";
-import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 
 
 export const MOVIE_LIST_SORTS = [
@@ -39,20 +39,26 @@ export const MOVIE_LIST_SORTS = [
 ] as const;
 
 
-/** Concrete movie list query. Movie progress and filters remain movie-specific. */
 export class MovieListReadRepository {
     async getListHeader(userId: number) {
-        const channel = await getDbClient()
+        const channel = getDbClient()
             .select({ enabled: profileMediaChannel.enabled })
             .from(profileMediaChannel)
-            .where(and(eq(profileMediaChannel.userId, userId), eq(profileMediaChannel.kind, MediaType.MOVIES)))
-            .get();
+            .where(and(
+                eq(profileMediaChannel.userId, userId),
+                eq(profileMediaChannel.kind, MediaType.MOVIES),
+            )).get();
+
         if (!channel?.enabled) return;
-        const stats = await getDbClient()
+
+        const stats = getDbClient()
             .select({ timeSpent: libraryStats.timeSpentMinutes })
             .from(libraryStats)
-            .where(and(eq(libraryStats.userId, userId), eq(libraryStats.kind, MediaType.MOVIES)))
-            .get();
+            .where(and(
+                eq(libraryStats.userId, userId),
+                eq(libraryStats.kind, MediaType.MOVIES),
+            )).get();
+
         return { timeSpent: stats?.timeSpent ?? 0 };
     }
 

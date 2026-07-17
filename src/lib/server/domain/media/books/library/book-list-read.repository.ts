@@ -1,12 +1,13 @@
-import {and, asc, count, desc, eq, inArray, isNotNull, like, notInArray, SQL, sql,} from "drizzle-orm";
-import {alias} from "drizzle-orm/sqlite-core";
 import {SimpleSearch} from "@/lib/schemas";
-import {BookListArgs, BookListPage} from "@/lib/contracts/media/lists";
-import {JobType, MediaType, Status} from "@/lib/utils/enums";
+import {alias} from "drizzle-orm/sqlite-core";
 import {getImageUrl} from "@/lib/utils/image-url";
+import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {BookListArgs, BookListPage} from "@/lib/contracts/media/lists";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {isBookStatus} from "@/lib/server/domain/media/books/library/book-progress";
+import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {and, asc, count, desc, eq, inArray, isNotNull, like, notInArray, SQL, sql} from "drizzle-orm";
 import {
     bookAuthor,
     bookDetails,
@@ -21,7 +22,6 @@ import {
     profileMediaChannel,
     user,
 } from "@/lib/server/database/schema";
-import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 
 
 export const BOOK_LIST_SORTS = [
@@ -39,20 +39,26 @@ export const BOOK_LIST_SORTS = [
 ] as const;
 
 
-/** Concrete book list query; progress totals remain entry-owned historical data. */
 export class BookListReadRepository {
     async getListHeader(userId: number) {
-        const channel = await getDbClient().select({ enabled: profileMediaChannel.enabled })
-            .from(profileMediaChannel).where(and(
+        const channel = getDbClient()
+            .select({ enabled: profileMediaChannel.enabled })
+            .from(profileMediaChannel)
+            .where(and(
                 eq(profileMediaChannel.userId, userId),
                 eq(profileMediaChannel.kind, MediaType.BOOKS),
             )).get();
+
         if (!channel?.enabled) return;
-        const stats = await getDbClient().select({ timeSpent: libraryStats.timeSpentMinutes })
-            .from(libraryStats).where(and(
+
+        const stats = getDbClient()
+            .select({ timeSpent: libraryStats.timeSpentMinutes })
+            .from(libraryStats)
+            .where(and(
                 eq(libraryStats.userId, userId),
                 eq(libraryStats.kind, MediaType.BOOKS),
             )).get();
+
         return { timeSpent: stats?.timeSpent ?? 0 };
     }
 

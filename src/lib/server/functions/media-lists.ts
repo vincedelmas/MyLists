@@ -1,10 +1,10 @@
+import {MediaType} from "@/lib/utils/enums";
 import {notFound} from "@tanstack/react-router";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
+import {MediaListPage, validateMediaListFiltersResult, validateMediaListPage} from "@/lib/contracts/media/lists";
 import {mediaListAuthorizationMiddleware, resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
 import {mediaListFiltersSchema, mediaListSchema, mediaListSearchFiltersSchema, mediaTypeUsernameSchema, simpleSearchSchema} from "@/lib/schemas";
-import {MediaType} from "@/lib/utils/enums";
-import {MediaListPage, validateMediaListFiltersResult, validateMediaListPage} from "@/lib/contracts/media/lists";
 
 
 export const getUserListHeaderSF = createServerFn({ method: "GET" })
@@ -12,11 +12,12 @@ export const getUserListHeaderSF = createServerFn({ method: "GET" })
     .validator(mediaTypeUsernameSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser, targetUser } }) => {
         const container = await getContainer();
+
         const header = await container.media.get(mediaType).library.list.getListHeader(targetUser.id);
         if (!header) throw notFound();
 
         if (currentUser && currentUser.id !== targetUser.id) {
-            await container.account.profileViews.recordMediaChannelView(targetUser.id, mediaType);
+            container.account.profileViews.recordMediaChannelView(targetUser.id, mediaType);
         }
 
         return header;

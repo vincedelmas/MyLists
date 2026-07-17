@@ -38,7 +38,11 @@ interface CreateLibraryStatsRebuildOptions {
 }
 
 
-/** Generic aggregation engine; each media module supplies its own contribution policy. */
+/**
+ * Generic aggregation engine; each media module supplies its own contribution policy.
+ * Rebuild the aggregated stats of libraryStats for all users (used in tasks every day)
+ * as a fallback if delta calculation is wrong or something happens :D.
+ * */
 export const createLibraryStatsRebuild = ({ kind, getContributions }: CreateLibraryStatsRebuildOptions) => {
     return async () => {
         const mediaContributions = await getContributions();

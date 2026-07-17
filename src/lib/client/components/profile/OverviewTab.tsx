@@ -6,9 +6,9 @@ import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {Clock, ClockAlert, MoveRight, Star} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
-import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
-import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
-import {DistributionContainer} from "@/lib/client/components/user-profile/ProfileDistrib";
+import {SimpleStatCard} from "@/lib/client/components/profile/SimpleStatCard";
+import {HighlightedMedia} from "@/lib/client/components/profile/HighlightedMedia";
+import {DistributionContainer} from "@/lib/client/components/profile/ProfileDistrib";
 import {MediaGlobalSummaryType, PerMediaSummaryType} from "@/lib/types/query.options.types";
 
 

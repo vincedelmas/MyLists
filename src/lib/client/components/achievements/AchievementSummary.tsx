@@ -3,7 +3,7 @@ import {cn} from "@/lib/utils/classnames";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {getDifficultyColors} from "@/lib/utils/theme-utils";
 import {AchSummary} from "@/lib/types/query.options.types";
-import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
+import {SimpleStatCard} from "@/lib/client/components/profile/SimpleStatCard";
 
 
 interface AchievementSummaryProps {

@@ -13,7 +13,7 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CountdownTimer} from "@/lib/client/components/moviedle/CountdownTimer";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
-import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
+import {SimpleStatCard} from "@/lib/client/components/profile/SimpleStatCard";
 import {Card, CardContent, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {useMoviedleGuessMutation} from "@/lib/client/react-query/query-mutations/mediadle.mutations";
 import {dailyMediadleOptions, mediadleSuggestionsOptions,} from "@/lib/client/react-query/query-options";

@@ -5,7 +5,7 @@ import {formatDate} from "@/lib/utils/date-formatting";
 import {useNavigate, useSearch} from "@tanstack/react-router";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {allUserJobsOptions} from "@/lib/client/react-query/query-options";
-import {SelectedImportJob} from "@/lib/client/components/user-settings/SelectedImportJob";
+import {SelectedImportJob} from "@/lib/client/components/settings/SelectedImportJob";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 

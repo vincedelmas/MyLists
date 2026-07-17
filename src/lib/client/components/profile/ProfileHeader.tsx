@@ -7,7 +7,7 @@ import {formatLevel} from "@/lib/utils/number-formatting";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
+import {FollowButton} from "@/lib/client/components/profile/FollowButton";
 import {ProfileHeaderOptionsType, UserDataType} from "@/lib/types/query.options.types";
 
 

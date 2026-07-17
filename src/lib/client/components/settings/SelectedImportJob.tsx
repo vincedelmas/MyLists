@@ -5,7 +5,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {importJobOptions} from "@/lib/client/react-query/query-options";
-import {ImportJobIssuesTable} from "@/lib/client/components/user-settings/ImportJobIssuesTable";
+import {ImportJobIssuesTable} from "@/lib/client/components/settings/ImportJobIssuesTable";
 import {useDeleteImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
 import {AlertTriangle, CheckCircle2, Clock3, ListRestart, Loader2, RefreshCw, Trash2} from "lucide-react";
 

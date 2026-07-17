@@ -4,15 +4,15 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
-import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
+import {MediaLevels} from "@/lib/client/components/profile/MediaLevels";
+import {OverviewTab} from "@/lib/client/components/profile/OverviewTab";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
-import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab";
-import {ProfileFollows} from "@/lib/client/components/user-profile/ProfileFollows";
+import {MediaStatsTab} from "@/lib/client/components/profile/MediaStatsTab";
+import {ProfileFollows} from "@/lib/client/components/profile/ProfileFollows";
 import {profileOptions} from "@/lib/client/react-query/query-options";
-import {OnboardingModal} from "@/lib/client/components/user-profile/OnboardingModal";
-import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
-import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
+import {OnboardingModal} from "@/lib/client/components/profile/OnboardingModal";
+import {AchievementsCard} from "@/lib/client/components/profile/AchievementCard";
+import {FollowsUpdates, UserUpdates} from "@/lib/client/components/profile/UserUpdates";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/")({

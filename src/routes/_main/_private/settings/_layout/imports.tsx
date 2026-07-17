@@ -8,7 +8,7 @@ import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {FileSpreadsheet, Info, TriangleAlert, UploadCloud} from "lucide-react";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {importSearchSchema, ImportUploadFormValues, importUploadSchema} from "@/lib/schemas";
-import {ExistingImportsPanel} from "@/lib/client/components/user-settings/ExistingImportsPanel";
+import {ExistingImportsPanel} from "@/lib/client/components/settings/ExistingImportsPanel";
 import {Form, FormControl, FormField, FormItem, FormMessage} from "@/lib/client/components/ui/form";
 import {useCreateImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
 

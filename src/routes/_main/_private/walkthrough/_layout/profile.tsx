@@ -3,13 +3,13 @@ import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
-import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
+import {OverviewTab} from "@/lib/client/components/profile/OverviewTab";
+import {MediaLevels} from "@/lib/client/components/profile/MediaLevels";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
-import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab";
+import {MediaStatsTab} from "@/lib/client/components/profile/MediaStatsTab";
 import {profileOptions} from "@/lib/client/react-query/query-options";
-import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
-import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
+import {AchievementsCard} from "@/lib/client/components/profile/AchievementCard";
+import {FollowsUpdates, UserUpdates} from "@/lib/client/components/profile/UserUpdates";
 import {Activity, ArrowBigUpDash, ArrowUp10, Award, ChartNoAxesColumn, LayoutGrid, User} from "lucide-react";
 import {OnboardingContainer, OnboardingDemoBox, OnboardingNote, OnboardingSection, OnboardingSubSection} from "@/lib/client/components/onboarding/OnBoardingShared";
 

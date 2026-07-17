@@ -1,7 +1,7 @@
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Outlet} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {ProfileHeader} from "@/lib/client/components/user-profile/ProfileHeader";
+import {ProfileHeader} from "@/lib/client/components/profile/ProfileHeader";
 import {profileHeaderOptions} from "@/lib/client/react-query/query-options";
 
 

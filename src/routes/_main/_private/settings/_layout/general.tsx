@@ -9,7 +9,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
 import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
-import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
+import {ImageCropper} from "@/lib/client/components/settings/ImageCropper";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";

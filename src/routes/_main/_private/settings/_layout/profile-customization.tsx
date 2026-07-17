@@ -11,8 +11,8 @@ import {FormError} from "@/lib/client/components/forms/FormError";
 import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {profileCustomOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {TabCustomContent} from "@/lib/client/components/user-settings/TabCustomContent";
-import {ProfileSidebarTabs} from "@/lib/client/components/user-settings/ProfileSidebarTabs";
+import {TabCustomContent} from "@/lib/client/components/settings/TabCustomContent";
+import {ProfileSidebarTabs} from "@/lib/client/components/settings/ProfileSidebarTabs";
 import {useProfileCustomMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {HIGHLIGHTED_MEDIA_TABS, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab,} from "@/lib/types/profile-custom.types";
 

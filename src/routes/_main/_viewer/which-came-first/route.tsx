@@ -9,7 +9,7 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {WCF_MAX_ROUNDS, WCF_MEDIA_TYPES} from "@/lib/schemas/wcf.schema";
-import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
+import {SimpleStatCard} from "@/lib/client/components/profile/SimpleStatCard";
 import {dateFromUTCInput, extractDate, formatDate} from "@/lib/utils/date-formatting";
 import {whichCameFirstOptions} from "@/lib/client/react-query/query-options/wcf.options";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";

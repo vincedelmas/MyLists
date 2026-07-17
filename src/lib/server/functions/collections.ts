@@ -2,12 +2,9 @@ import {RoleType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
-import {
-    validateCollectionSummaries,
-    validateCommunityCollectionsPage,
-} from "@/lib/contracts/media/projections";
 import {resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
 import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {validateCollectionSummaries, validateCommunityCollectionsPage} from "@/lib/contracts/media/projections";
 import {
     collectionIdSchema,
     collectionMediaItemActionSchema,

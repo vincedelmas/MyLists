@@ -7,9 +7,9 @@ import {PerMediaSummaryType} from "@/lib/types/query.options.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {BarChart3, ChartNoAxesColumn, MoveRight, Star} from "lucide-react";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
-import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
-import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
-import {DistributionContainer} from "@/lib/client/components/user-profile/ProfileDistrib";
+import {SimpleStatCard} from "@/lib/client/components/profile/SimpleStatCard";
+import {HighlightedMedia} from "@/lib/client/components/profile/HighlightedMedia";
+import {DistributionContainer} from "@/lib/client/components/profile/ProfileDistrib";
 
 
 interface MediaStatsTabProps {

@@ -9,7 +9,7 @@ import {TasteMatch} from "@/lib/types/query.options.types";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
-import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
+import {FollowButton} from "@/lib/client/components/profile/FollowButton";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 

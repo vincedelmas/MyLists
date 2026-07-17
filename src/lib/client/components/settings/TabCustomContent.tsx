@@ -4,7 +4,7 @@ import {Label} from "@/lib/client/components/ui/label";
 import {Controller, useFormContext, useWatch} from "react-hook-form";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
-import {CuratedMediaManager} from "@/lib/client/components/user-settings/CuratedMediaManager";
+import {CuratedMediaManager} from "@/lib/client/components/settings/CuratedMediaManager";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab} from "@/lib/types/profile-custom.types";
 

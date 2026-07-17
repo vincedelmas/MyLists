@@ -74,7 +74,7 @@ export const UserMediaDetails = ({ userMedia, queryOption, progressMetadata }: U
         },
         {
             id: "history",
-            label: `History (${history?.length})`,
+            label: `History (${history?.length ?? 0})`,
         },
         {
             id: "custom",

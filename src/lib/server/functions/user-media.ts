@@ -28,6 +28,7 @@ export const getUserMediaHistory = createServerFn({ method: "GET" })
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
+
         if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
             return validateLibraryHistory(await container.library.readers[mediaType].getUserMediaHistory(currentUser.id, mediaId));
         }

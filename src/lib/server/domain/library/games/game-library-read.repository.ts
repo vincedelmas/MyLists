@@ -6,16 +6,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {GameLibraryEntry, GameLibraryRepository} from "@/lib/server/domain/library/games/game-library.repository";
 import {GameCommunityActivityPage} from "@/lib/contracts/media/community";
-import {
-    catalogItem,
-    followers,
-    libraryChange,
-    libraryEntry,
-    libraryEntryTag,
-    libraryTag,
-    profileMediaChannel,
-    user,
-} from "@/lib/server/database/schema";
+import {catalogItem, followers, libraryChange, libraryEntry, libraryEntryTag, libraryTag, profileMediaChannel, user,} from "@/lib/server/database/schema";
 
 
 /** Projects the game library into the detail-page contract. */
@@ -23,16 +14,17 @@ export class GameLibraryReadRepository {
     private readonly library = new GameLibraryRepository();
 
     async getUserMediaHistory(userId: number, catalogItemId: number) {
-        const rows = await getDbClient().select({
-            id: libraryChange.id,
-            userId: libraryEntry.userId,
-            mediaId: catalogItem.id,
-            mediaName: catalogItem.name,
-            mediaType: catalogItem.kind,
-            updateType: libraryChange.updateType,
-            payload: libraryChange.payload,
-            timestamp: libraryChange.occurredAt,
-        }).from(libraryChange)
+        const rows = await getDbClient()
+            .select({
+                id: libraryChange.id,
+                mediaId: catalogItem.id,
+                userId: libraryEntry.userId,
+                mediaName: catalogItem.name,
+                mediaType: catalogItem.kind,
+                payload: libraryChange.payload,
+                timestamp: libraryChange.occurredAt,
+                updateType: libraryChange.updateType,
+            }).from(libraryChange)
             .innerJoin(libraryEntry, eq(libraryEntry.id, libraryChange.libraryEntryId))
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
             .where(and(
@@ -41,6 +33,7 @@ export class GameLibraryReadRepository {
                 eq(catalogItem.id, catalogItemId),
             ))
             .orderBy(desc(libraryChange.occurredAt), desc(libraryChange.id));
+
         return rows.map((row) => ({
             ...row,
             id: row.id,

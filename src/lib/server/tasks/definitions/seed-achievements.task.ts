@@ -13,7 +13,7 @@ export const seedAchievementsTask = defineTask({
     handler: async (ctx) => {
         const mediaTypes = MEDIA_TYPES;
         const container = await getContainer();
-        const achievementCommands = container.achievements.commands;
+        const achievements = container.achievements;
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`seed-${mediaType}`, async () => {
@@ -28,7 +28,7 @@ export const seedAchievementsTask = defineTask({
                 }
 
                 await withTransaction(async () => {
-                    await achievementCommands.seedAchievements(achievementsDef);
+                    await achievements.seedAchievements(achievementsDef);
                 });
 
                 ctx.metric(`${mediaType}.seeded`, definitionCount);

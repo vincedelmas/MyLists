@@ -98,8 +98,8 @@ export const getAdminInactiveAccountDeletions = createServerFn({ method: "GET" }
 export const getAdminAchievements = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
-        const query = await getContainer().then((c) => c.achievements.query);
-        return query.getAllAchievements();
+        const achievements = await getContainer().then((c) => c.achievements);
+        return achievements.getAllAchievements();
     });
 
 
@@ -133,8 +133,8 @@ export const postAdminUpdateAchievement = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminUpdateAchievementSchema)
     .handler(async ({ data: { achievementId, name, description } }) => {
-        const commands = await getContainer().then((c) => c.achievements.commands);
-        return commands.updateAchievementForAdmin(achievementId, name, description);
+        const achievements = await getContainer().then((c) => c.achievements);
+        return achievements.updateAchievementForAdmin(achievementId, name, description);
     });
 
 
@@ -142,8 +142,8 @@ export const postAdminUpdateTiers = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminPostUpdateTiersSchema)
     .handler(async ({ data: { tiers } }) => {
-        const commands = await getContainer().then((c) => c.achievements.commands);
-        return commands.updateTiersForAdmin(tiers);
+        const achievements = await getContainer().then((c) => c.achievements);
+        return achievements.updateTiersForAdmin(tiers);
     });
 
 

@@ -9,7 +9,7 @@ import {AchievementDifficulty, MediaType, PrivacyType} from "@/lib/utils/enums";
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
-const { AchievementsQuery } = await import("./achievements.query");
+const { AchievementService } = await import("./achievement.service");
 
 
 describe("normalized achievement reads", () => {
@@ -55,16 +55,15 @@ describe("normalized achievement reads", () => {
     });
 
     it("publishes progress only for enabled personal media channels", async () => {
-        const reader = new AchievementsQuery();
-        await expect(reader.getActiveMediaTypes(1)).resolves.toEqual([MediaType.SERIES]);
-        await expect(reader.getAchievementsDetails(1)).resolves.toEqual([
+        await expect(AchievementService.getActiveMediaTypes(1)).resolves.toEqual([MediaType.SERIES]);
+        await expect(AchievementService.getAchievementsDetails(1)).resolves.toEqual([
             expect.objectContaining({ id: 10, name: "series achievement", difficulty: AchievementDifficulty.BRONZE }),
         ]);
-        expect((await reader.getUserAchievements(1)).map(({ mediaType }) => mediaType)).toEqual([MediaType.SERIES]);
-        await expect(reader.getDifficultySummary(1)).resolves.toEqual([
+        expect((await AchievementService.getUserAchievements(1)).map(({ mediaType }) => mediaType)).toEqual([MediaType.SERIES]);
+        await expect(AchievementService.getDifficultySummary(1)).resolves.toEqual([
             { count: 1, difficulty: AchievementDifficulty.BRONZE },
         ]);
-        await expect(reader.getUserAchievementStats(1)).resolves.toMatchObject({
+        await expect(AchievementService.getUserAchievementStats(1)).resolves.toMatchObject({
             series: expect.arrayContaining([{ tier: "total", count: "1/1" }]),
             movies: expect.arrayContaining([{ tier: "total", count: "0/0" }]),
             all: expect.arrayContaining([{ tier: "total", count: "1/1" }]),

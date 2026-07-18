@@ -3,13 +3,11 @@ import {WcfService} from "@/lib/server/domain/which-came-first/wcf.service";
 import {MediadleService} from "@/lib/server/domain/mediadle/mediadle.service";
 import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
-import {AchievementsQuery} from "@/lib/server/domain/achievements/achievements.query";
-import {AchievementCommands} from "@/lib/server/domain/achievements/achievement.commands";
+import {AchievementService} from "@/lib/server/domain/achievements/achievement.service";
 import {FeatureVotesQuery} from "@/lib/server/domain/feature-votes/feature-votes.query";
 import {FeatureVoteCommands} from "@/lib/server/domain/feature-votes/feature-vote.commands";
 import {NotificationsQuery} from "@/lib/server/domain/notifications/notifications.query";
 import {NotificationCommands} from "@/lib/server/domain/notifications/notification.commands";
-import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {InactiveAccountRepository, UserProfileRepository, UserRepository, UserStatsService} from "@/lib/server/domain/user";
@@ -45,7 +43,6 @@ export function setupUserModule(mediaModule: MediaModule) {
     const mediadleRepository = MediadleRepository;
     const whichCameFirstRepository = WcfRepository;
     const userProfileRepository = UserProfileRepository;
-    const achievementsRepository = AchievementsRepository;
     const featureVotesRepository = FeatureVotesRepository;
     const notificationsRepository = NotificationsRepository;
     const inactiveAccountRepository = InactiveAccountRepository;
@@ -62,8 +59,6 @@ export function setupUserModule(mediaModule: MediaModule) {
     const mediadleService = new MediadleService(mediadleRepository, mediaModule.get(MediaType.MOVIES).features.mediadle);
     const profileUpdatesQuery = new ProfileUpdatesQuery();
     const profileUpdatesCommand = new ProfileUpdatesCommand();
-    const achievementsQuery = new AchievementsQuery(undefined, achievementsRepository);
-    const achievementCommands = new AchievementCommands(achievementsRepository);
     const notificationsQuery = new NotificationsQuery(notificationsRepository);
     const notificationCommands = new NotificationCommands(notificationsRepository);
     const whichCameFirstService = new WcfService(whichCameFirstRepository, mediaModule);
@@ -82,7 +77,7 @@ export function setupUserModule(mediaModule: MediaModule) {
         userStatsService,
         profileHighlights,
         profileUpdatesQuery,
-        achievementsQuery,
+        AchievementService,
         socialGraphQuery,
     );
     const tasteMatchesReader = new TasteMatchesReadService();
@@ -128,10 +123,7 @@ export function setupUserModule(mediaModule: MediaModule) {
         },
         activity: activityService,
         stats: userStatsService,
-        achievements: {
-            query: achievementsQuery,
-            commands: achievementCommands,
-        },
+        achievements: AchievementService,
         notifications: {
             query: notificationsQuery,
             commands: notificationCommands,

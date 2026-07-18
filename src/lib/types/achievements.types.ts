@@ -1,8 +1,8 @@
 import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
-import {AchievementsQuery} from "@/lib/server/domain/achievements/achievements.query";
+import type {AchievementRepository} from "@/lib/server/domain/achievements/achievement.repository";
 
 
-export type Achievement = Awaited<ReturnType<AchievementsQuery["getAllAchievements"]>>[number];
+export type Achievement = Awaited<ReturnType<typeof AchievementRepository.getAllAchievements>>[number];
 
 
 export type AchievementSeedData = {

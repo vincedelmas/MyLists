@@ -3,7 +3,7 @@ import {UserStatsService} from "@/lib/server/domain/user/user-stats.service";
 import {ProfileHighlightsQuery} from "@/lib/server/domain/profile/profile-highlights.query";
 import {ProfileUpdatesQuery} from "@/lib/server/domain/profile/profile-updates.query";
 import {LibraryAccessScope} from "@/lib/server/domain/access/library-access.policy";
-import {AchievementsQuery} from "@/lib/server/domain/achievements/achievements.query";
+import {AchievementService} from "@/lib/server/domain/achievements/achievement.service";
 import {ProfileReadRepository} from "@/lib/server/domain/profile/profile-read.repository";
 import {SocialGraphQuery} from "@/lib/server/domain/social/social-graph.query";
 
@@ -17,7 +17,7 @@ export class ProfileOverviewQuery {
         private readonly stats: UserStatsService,
         private readonly highlights: ProfileHighlightsQuery,
         private readonly updates: ProfileUpdatesQuery,
-        private readonly achievements: AchievementsQuery,
+        private readonly achievements: typeof AchievementService,
         private readonly social: SocialGraphQuery,
         private readonly repository = new ProfileReadRepository(),
     ) {

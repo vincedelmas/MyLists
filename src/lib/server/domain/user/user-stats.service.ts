@@ -2,7 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {ActivityService} from "@/lib/server/domain/activity/activity.service";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {ProfileUpdatesQuery} from "@/lib/server/domain/profile/profile-updates.query";
-import {AchievementsQuery} from "@/lib/server/domain/achievements/achievements.query";
+import {AchievementService} from "@/lib/server/domain/achievements/achievement.service";
 import {StatsSummaryRepository} from "@/lib/server/domain/stats/stats-summary.repository";
 import {StatsSummaryReadService} from "@/lib/server/domain/stats/stats-summary-read.service";
 import {ProfileChannelAccessRepository} from "@/lib/server/domain/access/profile-channel-access.repository";
@@ -12,7 +12,7 @@ import {MediaModuleRegistry} from "@/lib/server/domain/media/media-module.regist
 export class UserStatsService {
     private readonly summary = new StatsSummaryReadService();
     private readonly updates = new ProfileUpdatesQuery();
-    private readonly achievements = new AchievementsQuery();
+    private readonly achievements = AchievementService;
     private readonly profileChannels = new ProfileChannelAccessRepository();
 
     constructor(

@@ -8,7 +8,16 @@ import {and, asc, count, desc, eq, inArray, max, notInArray, SQL, sql} from "dri
 import {achievement, achievementTier, profileMediaChannel, user, userAchievement} from "@/lib/server/database/schema";
 
 
-export class AchievementsRepository {
+const tierOrder = sql<number>`CASE ${achievementTier.difficulty}
+    WHEN 'bronze' THEN 1
+    WHEN 'silver' THEN 2
+    WHEN 'gold' THEN 3
+    WHEN 'platinum' THEN 4
+    ELSE 0
+END`;
+
+
+export class AchievementRepository {
     static async getActiveMediaTypes(userId: number) {
         return getDbClient()
             .select({ mediaType: profileMediaChannel.kind })
@@ -17,10 +26,160 @@ export class AchievementsRepository {
             .then((rows) => rows.map(({ mediaType }) => mediaType));
     }
 
+    static async getDifficultySummary(userId: number) {
+        const highestTier = getDbClient()
+            .select({
+                achievementId: userAchievement.achievementId,
+                maxTierOrder: max(tierOrder).as("maxTierOrder"),
+            }).from(userAchievement)
+            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
+            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .innerJoin(profileMediaChannel, and(
+                eq(profileMediaChannel.userId, userAchievement.userId),
+                eq(profileMediaChannel.kind, achievement.mediaType),
+                eq(profileMediaChannel.enabled, true),
+            ))
+            .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
+            .groupBy(userAchievement.achievementId)
+            .as("highest_achievement_tier");
+
+        return getDbClient()
+            .select({
+                count: count(),
+                difficulty: achievementTier.difficulty,
+            }).from(achievementTier)
+            .innerJoin(highestTier, and(
+                eq(achievementTier.achievementId, highestTier.achievementId),
+                eq(tierOrder, highestTier.maxTierOrder),
+            ))
+            .groupBy(achievementTier.difficulty)
+            .orderBy(tierOrder);
+    }
+
+    static getAchievementsDetails(userId: number, limit = 3) {
+        return getDbClient()
+            .select({
+                id: achievement.id,
+                name: achievement.name,
+                description: achievement.description,
+                difficulty: achievementTier.difficulty,
+                completedAt: userAchievement.completedAt,
+            }).from(userAchievement)
+            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
+            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .innerJoin(profileMediaChannel, and(
+                eq(profileMediaChannel.userId, userAchievement.userId),
+                eq(profileMediaChannel.kind, achievement.mediaType),
+                eq(profileMediaChannel.enabled, true),
+            ))
+            .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
+            .orderBy(desc(userAchievement.completedAt))
+            .limit(limit);
+    }
+
+    static async countPlatinumAchievements(userId?: number) {
+        const conditions = [
+            eq(userAchievement.completed, true),
+            eq(achievementTier.difficulty, AchievementDifficulty.PLATINUM),
+        ];
+        if (userId !== undefined) conditions.push(eq(userAchievement.userId, userId));
+
+        return getDbClient()
+            .select({ value: count() })
+            .from(userAchievement)
+            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
+            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .innerJoin(profileMediaChannel, and(
+                eq(profileMediaChannel.userId, userAchievement.userId),
+                eq(profileMediaChannel.kind, achievement.mediaType),
+                eq(profileMediaChannel.enabled, true),
+            )).where(and(...conditions))
+            .get()?.value ?? 0;
+    }
+
+    static async getUserAchievementStats(userId: number) {
+        const activeMediaTypes = await this.getActiveMediaTypes(userId);
+        if (activeMediaTypes.length === 0) {
+            return {
+                completedResult: [],
+                totalAchievementsResult: [],
+            };
+        }
+
+        const highestTier = getDbClient()
+            .select({
+                mediaType: achievement.mediaType,
+                achievementId: userAchievement.achievementId,
+                maxTierOrder: max(tierOrder).as("maxTierOrder"),
+            }).from(userAchievement)
+            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
+            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+            .where(and(
+                eq(userAchievement.userId, userId),
+                eq(userAchievement.completed, true),
+                inArray(achievement.mediaType, activeMediaTypes),
+            ))
+            .groupBy(achievement.mediaType, userAchievement.achievementId)
+            .as("achievement_stats_highest_tier");
+
+        const completedResult = await getDbClient()
+            .select({
+                mediaType: highestTier.mediaType,
+                count: count().as("count"),
+                difficulty: achievementTier.difficulty,
+            }).from(achievementTier)
+            .innerJoin(highestTier, and(
+                eq(achievementTier.achievementId, highestTier.achievementId),
+                eq(tierOrder, highestTier.maxTierOrder),
+            ))
+            .groupBy(highestTier.mediaType, achievementTier.difficulty)
+            .orderBy(highestTier.mediaType, tierOrder);
+
+        const totalAchievementsResult = await getDbClient()
+            .select({
+                total: count().as("total"),
+                mediaType: achievement.mediaType,
+            }).from(achievement)
+            .where(inArray(achievement.mediaType, activeMediaTypes))
+            .groupBy(achievement.mediaType);
+
+        return { completedResult, totalAchievementsResult };
+    }
+
+    static getUserAchievements(userId: number) {
+        return getDbClient()
+            .select({
+                tier: achievementTier,
+                achievement,
+                userProgress: userAchievement,
+            }).from(achievement)
+            .innerJoin(achievementTier, eq(achievement.id, achievementTier.achievementId))
+            .innerJoin(profileMediaChannel, and(
+                eq(profileMediaChannel.userId, userId),
+                eq(profileMediaChannel.kind, achievement.mediaType),
+                eq(profileMediaChannel.enabled, true),
+            ))
+            .leftJoin(userAchievement, and(
+                eq(achievementTier.id, userAchievement.tierId),
+                eq(userAchievement.userId, userId),
+            ))
+            .orderBy(achievement.id, tierOrder);
+    }
+
+    static getAllAchievements() {
+        return getDbClient().query.achievement.findMany({
+            orderBy: asc(achievement.id),
+            with: {
+                tiers: {
+                    orderBy: tierOrder,
+                },
+            },
+        });
+    }
+
     static async seedAchievements(achievementsDef: readonly AchievementSeedData[]) {
         const tx = getDbClient();
 
-        // Upsert achievements and tiers
         await Promise.all(achievementsDef.map(async (achievementData) => {
             const [syncedAchievement] = await tx
                 .insert(achievement)
@@ -64,15 +223,17 @@ export class AchievementsRepository {
                 });
         }));
 
-        // Remove orphaned achievements and tiers
         const mediaType = achievementsDef[0].mediaType;
-        const achCodeNames = achievementsDef.map((ach) => ach.codeName);
+        const achievementCodeNames = achievementsDef.map(({ codeName }) => codeName);
 
         const orphanedAchievementIds = await tx
             .select({ id: achievement.id })
             .from(achievement)
-            .where(and(eq(achievement.mediaType, mediaType), notInArray(achievement.codeName, achCodeNames)))
-            .then((rows) => rows.map((r) => r.id));
+            .where(and(
+                eq(achievement.mediaType, mediaType),
+                notInArray(achievement.codeName, achievementCodeNames),
+            ))
+            .then((rows) => rows.map(({ id }) => id));
 
         if (orphanedAchievementIds.length > 0) {
             await tx
@@ -81,11 +242,11 @@ export class AchievementsRepository {
         }
     }
 
-    static async updateAchievementForAdmin(achId: number, name: string, description: string) {
+    static async updateAchievementForAdmin(achievementId: number, name: string, description: string) {
         await getDbClient()
             .update(achievement)
             .set({ name, description })
-            .where(eq(achievement.id, achId));
+            .where(eq(achievement.id, achievementId));
     }
 
     static async updateTiersForAdmin(tiers: AchievementTier[]) {
@@ -99,178 +260,14 @@ export class AchievementsRepository {
         });
     }
 
-    static async getDifficultySummary(userId: number) {
-        const tierOrder = this._getSQLTierOrdering();
-
-        const subq = getDbClient()
-            .select({
-                achievementId: userAchievement.achievementId,
-                maxTierOrder: max(tierOrder).as("maxTierOrder"),
-            })
-            .from(userAchievement)
-            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .innerJoin(profileMediaChannel, and(
-                eq(profileMediaChannel.userId, userAchievement.userId),
-                eq(profileMediaChannel.kind, achievement.mediaType),
-                eq(profileMediaChannel.enabled, true),
-            ))
-            .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
-            .groupBy(userAchievement.achievementId)
-            .as("subq");
-
-        const results = await getDbClient()
-            .select({
-                count: count(),
-                difficulty: achievementTier.difficulty,
-            })
-            .from(achievementTier)
-            .innerJoin(subq, and(eq(achievementTier.achievementId, subq.achievementId), eq(tierOrder, subq.maxTierOrder)))
-            .groupBy(achievementTier.difficulty)
-            .orderBy(tierOrder);
-
-        return results;
-    }
-
-    static async getAchievementsDetails(userId: number, limit = 3) {
-        const results = await getDbClient()
-            .select({
-                id: achievement.id,
-                name: achievement.name,
-                description: achievement.description,
-                difficulty: achievementTier.difficulty,
-                completedAt: userAchievement.completedAt,
-            })
-            .from(userAchievement)
-            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .innerJoin(profileMediaChannel, and(
-                eq(profileMediaChannel.userId, userAchievement.userId),
-                eq(profileMediaChannel.kind, achievement.mediaType),
-                eq(profileMediaChannel.enabled, true),
-            ))
-            .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
-            .orderBy(desc(userAchievement.completedAt))
-            .limit(limit);
-
-        return results;
-    }
-
-    static async countPlatinumAchievements(userId?: number) {
-        const forUser = userId ? eq(userAchievement.userId, userId) : undefined;
-
-        const result = getDbClient()
-            .select({ count: count() })
-            .from(userAchievement)
-            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .innerJoin(profileMediaChannel, and(
-                eq(profileMediaChannel.userId, userAchievement.userId),
-                eq(profileMediaChannel.kind, achievement.mediaType),
-                eq(profileMediaChannel.enabled, true),
-            ))
-            .where(and(
-                forUser,
-                eq(userAchievement.completed, true),
-                eq(achievementTier.difficulty, AchievementDifficulty.PLATINUM),
-            ))
-            .get();
-
-        return result?.count ?? 0;
-    }
-
-    static async getUserAchievementStats(userId: number) {
-        const tierOrder = this._getSQLTierOrdering();
-
-        const activeMediaTypes = await getDbClient()
-            .select({ mediaType: profileMediaChannel.kind })
-            .from(profileMediaChannel)
-            .where(and(eq(profileMediaChannel.userId, userId), eq(profileMediaChannel.enabled, true)))
-            .then((rows) => rows.map((r) => r.mediaType));
-
-        const subq = getDbClient()
-            .select({
-                mediaType: achievement.mediaType,
-                achievementId: userAchievement.achievementId,
-                maxTierOrder: max(tierOrder).as("maxTierOrder"),
-            })
-            .from(userAchievement)
-            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .where(and(
-                eq(userAchievement.userId, userId),
-                eq(userAchievement.completed, true),
-                inArray(achievement.mediaType, activeMediaTypes),
-            ))
-            .groupBy(achievement.mediaType, userAchievement.achievementId)
-            .as("subq");
-
-        const completedResult = await getDbClient()
-            .select({
-                mediaType: subq.mediaType,
-                count: count().as("count"),
-                difficulty: achievementTier.difficulty,
-            })
-            .from(achievementTier)
-            .innerJoin(subq, and(eq(achievementTier.achievementId, subq.achievementId), eq(tierOrder, subq.maxTierOrder)))
-            .groupBy(subq.mediaType, achievementTier.difficulty)
-            .orderBy(subq.mediaType, tierOrder);
-
-        const totalAchievementsResult = await getDbClient()
-            .select({
-                total: count().as("total"),
-                mediaType: achievement.mediaType,
-            })
-            .from(achievement)
-            .where(inArray(achievement.mediaType, activeMediaTypes))
-            .groupBy(achievement.mediaType);
-
-        return { completedResult, totalAchievementsResult };
-    }
-
-    static async getUserAchievements(userId: number) {
-        const tierOrder = this._getSQLTierOrdering();
-
-        const results = await getDbClient()
-            .select({
-                tier: achievementTier,
-                achievement: achievement,
-                userProgress: userAchievement,
-            })
-            .from(achievement)
-            .innerJoin(achievementTier, eq(achievement.id, achievementTier.achievementId))
-            .innerJoin(profileMediaChannel, and(
-                eq(profileMediaChannel.userId, userId),
-                eq(profileMediaChannel.kind, achievement.mediaType),
-                eq(profileMediaChannel.enabled, true),
-            ))
-            .leftJoin(userAchievement, and(eq(achievementTier.id, userAchievement.tierId), eq(userAchievement.userId, userId)))
-            .orderBy(achievement.id, tierOrder);
-
-        return results;
-    }
-
-    static async getAllAchievements() {
-        const tierOrder = this._getSQLTierOrdering();
-
-        return getDbClient().query.achievement.findMany({
-            orderBy: asc(achievement.id),
-            with: {
-                tiers: {
-                    orderBy: tierOrder,
-                },
-            },
-        });
-    }
-
-    static async updateAchievement(tier: AchievementTier, cte: StatsCTE, completed: SQL, count: SQL, progress: SQL, completedAt: SQL) {
+    static async updateAchievement(tier: AchievementTier, cte: StatsCTE, completed: SQL, countValue: SQL, progress: SQL, completedAt: SQL) {
         await getDbClient()
             .update(userAchievement)
             .set({
-                count: count,
-                progress: progress,
-                completed: completed,
-                completedAt: completedAt,
+                progress,
+                completed,
+                completedAt,
+                count: countValue,
                 lastCalculatedAt: sql`datetime('now')`,
             }).from(cte)
             .where(and(
@@ -280,23 +277,23 @@ export class AchievementsRepository {
             ));
     }
 
-    static async insertAchievement(tier: AchievementTier, cte: StatsCTE, completed: SQL, count: SQL, progress: SQL) {
+    static async insertAchievement(tier: AchievementTier, cte: StatsCTE, completed: SQL, countValue: SQL, progress: SQL) {
         getDbClient().run(sql`
             INSERT INTO ${userAchievement} (
-                tier_id, 
-                user_id, 
-                achievement_id, 
-                count, 
-                progress, 
-                completed, 
-                completed_at, 
+                tier_id,
+                user_id,
+                achievement_id,
+                count,
+                progress,
+                completed,
+                completed_at,
                 last_calculated_at
             )
-            SELECT 
+            SELECT
                 ${tier.id},
                 calculation.user_id,
                 ${tier.achievementId},
-                ${count},
+                ${countValue},
                 ${progress},
                 ${completed},
                 CASE WHEN ${completed} THEN datetime('now') ELSE NULL END,
@@ -318,7 +315,7 @@ export class AchievementsRepository {
             .where(eq(user.emailVerified, true))
             .get();
 
-        const raritySubq = getDbClient()
+        const raritySubquery = getDbClient()
             .select({
                 tierId: userAchievement.tierId,
                 count: count(userAchievement.userId).as("count"),
@@ -326,24 +323,12 @@ export class AchievementsRepository {
             .from(userAchievement)
             .where(eq(userAchievement.completed, true))
             .groupBy(userAchievement.tierId)
-            .as("rarity_subq");
+            .as("rarity_subquery");
 
         await getDbClient()
             .update(achievementTier)
-            .set({
-                rarity: sql`COALESCE((100.0 * ${raritySubq.count} / ${totalActiveUsers?.count ?? 0}), 0)`,
-            })
-            .from(raritySubq)
-            .where(eq(achievementTier.id, raritySubq.tierId));
-    }
-
-    private static _getSQLTierOrdering() {
-        return sql<number>`CASE ${achievementTier.difficulty}
-            WHEN 'bronze' THEN 1
-            WHEN 'silver' THEN 2
-            WHEN 'gold' THEN 3
-            WHEN 'platinum' THEN 4
-            ELSE 0
-        END`;
+            .set({ rarity: sql`COALESCE((100.0 * ${raritySubquery.count} / ${totalActiveUsers?.count ?? 0}), 0)` })
+            .from(raritySubquery)
+            .where(eq(achievementTier.id, raritySubquery.tierId));
     }
 }

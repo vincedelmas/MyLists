@@ -7,10 +7,10 @@ export const getUserAchievements = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .handler(async ({ context: { user } }) => {
         const container = await getContainer();
-        const achievementsQuery = container.achievements.query;
+        const achievements = container.achievements;
 
-        const result = await achievementsQuery.getUserAchievements(user.id);
-        const summary = await achievementsQuery.getUserAchievementStats(user.id);
+        const result = await achievements.getUserAchievements(user.id);
+        const summary = await achievements.getUserAchievementStats(user.id);
 
         return {
             result,

@@ -22,7 +22,7 @@ import {MovieStatsReadRepository} from "@/lib/server/domain/media/movies/library
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {MovieLibraryReadRepository} from "@/lib/server/domain/media/movies/library/movie-library-read.repository";
 import {MovieCatalogReadRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-read.repository";
-import {MovieLibraryCsvExportQuery} from "@/lib/server/domain/media/movies/library/movie-library-csv-export.query";
+import {exportMovieLibraryCsv} from "@/lib/server/domain/media/movies/library/movie-library-csv-export";
 import {MovieWcfPoolSource} from "@/lib/server/domain/media/movies/features/which-came-first/movie-wcf-pool-source";
 import {MovieCatalogAdminRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-admin.repository";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
@@ -40,7 +40,6 @@ import {MovieUpcomingNotificationSource} from "@/lib/server/domain/media/movies/
 export const setupMovieMediaModule = (tmdb: TmdbApi) => {
     const list = new MovieListReadRepository();
     const statsRead = new MovieStatsReadRepository();
-    const csvExport = new MovieLibraryCsvExportQuery();
     const tags = new LibraryTagsQuery(MediaType.MOVIES);
     const catalogRead = new MovieCatalogReadRepository();
     const catalogAdmin = new MovieCatalogAdminRepository();
@@ -79,7 +78,7 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
             commands: libraryCommands,
             read: libraryRead,
             export: {
-                csv: (userId: number) => csvExport.export(userId),
+                csv: exportMovieLibraryCsv,
             },
             stats: {
                 read: statsRead,

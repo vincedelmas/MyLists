@@ -15,7 +15,7 @@ import {BookCoverContributionCommand} from "@/lib/server/domain/media/books/cata
 import {createBooksIngestionService, createGBooksBooksProvider} from "@/lib/server/domain/media/books/external/gbooks-books.provider";
 import {createBooksMatcher} from "@/lib/server/domain/media/books/imports/books.matcher";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
-import {BookLibraryCsvExportQuery} from "@/lib/server/domain/media/books/library/book-library-csv-export.query";
+import {exportBookLibraryCsv} from "@/lib/server/domain/media/books/library/book-library-csv-export";
 import {getBookStatsContributions} from "@/lib/server/domain/media/books/library/book-stats-contributions";
 import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
@@ -42,7 +42,6 @@ export const setupBookMediaModule = (
     const ingestion = createBooksIngestionService(catalogCommands, external);
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.BOOKS);
     const statsRead = new BookStatsReadRepository();
-    const csvExport = new BookLibraryCsvExportQuery();
     const tags = new LibraryTagsQuery(MediaType.BOOKS);
 
     return {
@@ -65,7 +64,7 @@ export const setupBookMediaModule = (
             read: libraryRead,
             list: new BookListReadRepository(),
             export: {
-                csv: (userId: number) => csvExport.export(userId),
+                csv: exportBookLibraryCsv,
             },
             stats: {
                 read: statsRead,

@@ -16,7 +16,7 @@ import {createGamesMatcher} from "@/lib/server/domain/media/games/imports/games.
 import {GameLibraryRepository} from "@/lib/server/domain/media/games/library/game-library.repository";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {GameCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/games/catalog/game-catalog-refresh-candidates.query";
-import {GameLibraryCsvExportQuery} from "@/lib/server/domain/media/games/library/game-library-csv-export.query";
+import {exportGameLibraryCsv} from "@/lib/server/domain/media/games/library/game-library-csv-export";
 import {getGameStatsContributions} from "@/lib/server/domain/media/games/library/game-stats-contributions";
 import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
@@ -43,7 +43,6 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.GAMES);
     const refreshCandidates = new GameCatalogRefreshCandidatesQuery();
     const statsRead = new GameStatsReadRepository();
-    const csvExport = new GameLibraryCsvExportQuery();
     const tags = new LibraryTagsQuery(MediaType.GAMES);
 
     const external = createIgdbGamesProvider(clients.igdb);
@@ -90,7 +89,7 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
             commands: libraryCommands,
             read: libraryRead,
             export: {
-                csv: (userId: number) => csvExport.export(userId),
+                csv: exportGameLibraryCsv,
             },
             stats: {
                 read: statsRead,

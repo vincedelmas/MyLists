@@ -15,7 +15,7 @@ import {createJikanMangaProvider, createMangaIngestionService} from "@/lib/serve
 import {createMangaMatcher} from "@/lib/server/domain/media/manga/imports/manga.matcher";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {MangaCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/manga/catalog/manga-catalog-refresh-candidates.query";
-import {MangaLibraryCsvExportQuery} from "@/lib/server/domain/media/manga/library/manga-library-csv-export.query";
+import {exportMangaLibraryCsv} from "@/lib/server/domain/media/manga/library/manga-library-csv-export";
 import {getMangaStatsContributions} from "@/lib/server/domain/media/manga/library/manga-stats-contributions";
 import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
@@ -44,7 +44,6 @@ export const setupMangaMediaModule = (
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.MANGA);
     const refreshCandidates = new MangaCatalogRefreshCandidatesQuery();
     const statsRead = new MangaStatsReadRepository();
-    const csvExport = new MangaLibraryCsvExportQuery();
     const tags = new LibraryTagsQuery(MediaType.MANGA);
     const ingestion = createMangaIngestionService(catalogCommands, external, {
         getCandidateApiIds: () => refreshCandidates.getCandidateApiIds(),
@@ -70,7 +69,7 @@ export const setupMangaMediaModule = (
             read: libraryRead,
             list: new MangaListReadRepository(),
             export: {
-                csv: (userId: number) => csvExport.export(userId),
+                csv: exportMangaLibraryCsv,
             },
             stats: {
                 read: statsRead,

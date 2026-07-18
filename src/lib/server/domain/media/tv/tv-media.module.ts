@@ -18,7 +18,7 @@ import {createAnimeIngestionService, createSeriesIngestionService, createTmdbAni
 import {CatalogCoverStorage} from "@/lib/server/domain/media/shared/catalog/catalog-edit.shared";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {TvCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/tv/catalog/tv-catalog-refresh-candidates.query";
-import {TvLibraryCsvExportQuery} from "@/lib/server/domain/media/tv/library/tv-library-csv-export.query";
+import {exportTvLibraryCsv} from "@/lib/server/domain/media/tv/library/tv-library-csv-export";
 import {getTvStatsContributions} from "@/lib/server/domain/media/tv/library/tv-stats-contributions";
 import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
@@ -59,7 +59,6 @@ export const setupTvMediaModule = <K extends TvMediaType>(
     const refreshIdentity = new CatalogRefreshIdentityQuery(kind);
     const refreshCandidates = new TvCatalogRefreshCandidatesQuery(kind);
     const statsRead = new TvStatsReadRepository(kind);
-    const csvExport = new TvLibraryCsvExportQuery(kind);
     const tags = new LibraryTagsQuery(kind);
 
     const external = (kind === MediaType.ANIME)
@@ -120,7 +119,7 @@ export const setupTvMediaModule = <K extends TvMediaType>(
             commands: libraryCommands,
             read: libraryRead,
             export: {
-                csv: (userId: number) => csvExport.export(userId),
+                csv: (userId: number) => exportTvLibraryCsv(kind, userId),
             },
             stats: {
                 read: statsRead,

@@ -17,7 +17,7 @@ export const seedAchievementsTask = defineTask({
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`seed-${mediaType}`, async () => {
-                const achievementsDef = container.media.get(mediaType).achievements.definitions;
+                const achievementsDef = container.media.get(mediaType).contributions.achievements.definitions;
 
                 const definitionCount = Object.keys(achievementsDef).length;
                 ctx.metric(`${mediaType}.definitions_found`, definitionCount);

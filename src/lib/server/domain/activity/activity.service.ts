@@ -30,7 +30,7 @@ export class ActivityService {
             const mediaDetails = mediaDetailsByType.get(entry.mediaType)?.get(entry.mediaId);
             if (!mediaDetails) continue;
 
-            const timeGained = this.media.get(entry.mediaType).activity.definition
+            const timeGained = this.media.get(entry.mediaType).contributions.activity.definition
                 .calculateTime(entry.specificGained, mediaDetails.duration ?? undefined);
             const aggStats = activityRecord[entry.mediaType];
 
@@ -94,7 +94,7 @@ export class ActivityService {
                 isCompleted: activity.isCompleted,
                 mediaCover: mediaDetails.imageCover,
                 specificGained: activity.specificGained,
-                timeGained: this.media.get(activity.mediaType).activity.definition
+                timeGained: this.media.get(activity.mediaType).contributions.activity.definition
                     .calculateTime(activity.specificGained, mediaDetails.duration),
             });
         }
@@ -150,7 +150,7 @@ export class ActivityService {
             const mediaDetails = mediaDetailsByType.get(activity.mediaType)?.get(activity.mediaId);
             if (!mediaDetails) continue;
 
-            const timeGained = this.media.get(activity.mediaType).activity.definition
+            const timeGained = this.media.get(activity.mediaType).contributions.activity.definition
                 .calculateTime(activity.specificGained, mediaDetails.duration ?? undefined) / 60;
 
             monthData.total += timeGained;
@@ -189,7 +189,7 @@ export class ActivityService {
                 return;
             }
 
-            const mediaDetails = await this.media.get(mediaType).activity.catalog.getMediaDetailsByIds(mediaIds);
+            const mediaDetails = await this.media.get(mediaType).contributions.activity.catalog.getMediaDetailsByIds(mediaIds);
             mediaDetailsByType.set(mediaType, new Map(mediaDetails.map((m) => [m.id, m])));
         }));
 
@@ -205,7 +205,7 @@ export class ActivityService {
                 .filter((activity) => activity.mediaType === mediaType)
                 .map((activity) => activity.mediaId);
 
-            const durations = await this.media.get(mediaType).activity.catalog.getMediaDurationsByIds(mediaIds);
+            const durations = await this.media.get(mediaType).contributions.activity.catalog.getMediaDurationsByIds(mediaIds);
             durationsByType.set(mediaType, new Map(durations.map((media) => [media.id, media])));
         }));
 
@@ -214,7 +214,7 @@ export class ActivityService {
 
     private async _searchActivityMediaIds(userId: number, mediaTypes: MediaType[], search: string) {
         const entries = await Promise.all(mediaTypes.map(async (mediaType) => {
-            const results = await this.media.get(mediaType).activity.catalog.searchUserListByName(userId, search, 20);
+            const results = await this.media.get(mediaType).contributions.activity.catalog.searchUserListByName(userId, search, 20);
 
             return [mediaType, results.map((result) => result.mediaId)] as const;
         }));

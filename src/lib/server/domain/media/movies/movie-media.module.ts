@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {TmdbApi} from "@/lib/server/api-providers/api";
 import {UpComingMedia} from "@/lib/types/notifications.types";
+import type {MediadleEligibility} from "@/lib/server/domain/mediadle/mediadle.service";
 import {createMoviesMatcher} from "@/lib/server/domain/media/movies/imports/movies.matcher";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {moviesAchievements} from "@/lib/server/domain/media/movies/achievements/movies.seed";
@@ -19,7 +20,7 @@ import {MovieListReadRepository} from "@/lib/server/domain/media/movies/library/
 import {getMovieStatsContributions} from "@/lib/server/domain/media/movies/library/movie-stats-contributions";
 import {MovieStatsReadRepository} from "@/lib/server/domain/media/movies/library/movie-stats-read.repository";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
-import {MovieMediadleCatalogQuery} from "@/lib/server/domain/media/movies/features/mediadle/movie-mediadle.query";
+import {MovieMediadleEligibility} from "@/lib/server/domain/media/movies/features/mediadle/movie-mediadle.eligibility";
 import {MovieLibraryReadRepository} from "@/lib/server/domain/media/movies/library/movie-library-read.repository";
 import {MovieCatalogReadRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-read.repository";
 import {MovieActivityDurationQuery} from "@/lib/server/domain/media/movies/activity/movie-activity-duration.query";
@@ -60,26 +61,8 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
     return {
         kind: MediaType.MOVIES,
         external,
-        imports: {
-            matcher: createMoviesMatcher(catalogRepository, external, ingestion, libraryCommands),
-            csv: {
-                rowSchema: moviesMyListsCSVRowSchema,
-            },
-        },
-        achievements: {
-            definitions: moviesAchievements,
-            calculator: MovieAchievementCalculator satisfies AchievementCalculator,
-        },
-        features: {
-            whichCameFirst: new MovieWcfQuery(),
-            mediadle: new MovieMediadleCatalogQuery(),
-        },
         notifications: {
             upcoming: upcomingNotifications,
-        },
-        activity: {
-            definition: movieActivityDefinition,
-            catalog: new CatalogActivityQuery(MediaType.MOVIES, new MovieActivityDurationQuery()),
         },
         catalog: {
             ingestion,
@@ -117,6 +100,28 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
                 async forNotifications(): Promise<UpComingMedia[]> {
                     return list.getUpcomingMediaForNotifications();
                 },
+            },
+        },
+        contributions: {
+            imports: {
+                matcher: createMoviesMatcher(catalogRepository, external, ingestion, libraryCommands),
+                csv: {
+                    rowSchema: moviesMyListsCSVRowSchema,
+                },
+            },
+            achievements: {
+                definitions: moviesAchievements,
+                calculator: MovieAchievementCalculator satisfies AchievementCalculator,
+            },
+            activity: {
+                definition: movieActivityDefinition,
+                catalog: new CatalogActivityQuery(MediaType.MOVIES, new MovieActivityDurationQuery()),
+            },
+            whichCameFirst: {
+                catalog: new MovieWcfQuery(),
+            },
+            mediadle: {
+                eligibility: MovieMediadleEligibility satisfies MediadleEligibility,
             },
         },
     } as const;

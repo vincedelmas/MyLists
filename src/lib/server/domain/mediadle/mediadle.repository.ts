@@ -4,10 +4,32 @@ import {paginate} from "@/lib/server/database/pagination";
 import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, count, desc, eq, getTableColumns, isNotNull, like, sql} from "drizzle-orm";
-import {dailyMediadle, mediadleStats, user, userMediadleProgress} from "@/lib/server/database/schema";
+import {catalogItem, dailyMediadle, mediadleStats, user, userMediadleProgress} from "@/lib/server/database/schema";
 
 
 export class MediadleRepository {
+    static async findMediaById(kind: MediaType, mediaId: number) {
+        return getDbClient()
+            .select({
+                id: catalogItem.id,
+                name: catalogItem.name,
+                imageCover: catalogItem.imageCover,
+            }).from(catalogItem)
+            .where(and(eq(catalogItem.kind, kind), eq(catalogItem.id, mediaId)))
+            .get();
+    }
+
+    static async searchMedia(kind: MediaType, query: string, limit = 20) {
+        return getDbClient()
+            .select({
+                id: catalogItem.id,
+                name: catalogItem.name,
+            }).from(catalogItem)
+            .where(and(eq(catalogItem.kind, kind), like(catalogItem.name, `%${query.toLowerCase()}%`)))
+            .orderBy(catalogItem.name)
+            .limit(limit);
+    }
+
     static async getAllUsersStatsForAdmin(data: SearchType) {
         const search = data.search ?? "";
 
@@ -44,35 +66,38 @@ export class MediadleRepository {
         return { items, total, pages };
     }
 
-    static async getTodayMoviedle() {
+    static async getTodayMediadle(kind: MediaType) {
         const today = toDateInputValue(new Date(), { timeZone: "utc" });
 
         return getDbClient()
             .select()
             .from(dailyMediadle)
-            .where(sql`${dailyMediadle.date} >= ${today}`)
+            .where(and(
+                eq(dailyMediadle.mediaType, kind),
+                sql`${dailyMediadle.date} >= ${today}`,
+            ))
             .get();
     }
 
-    static async getUsedMediadleIds(limit: number) {
+    static async getUsedMediaIds(kind: MediaType, limit: number) {
         return getDbClient()
             .select({ mediaId: dailyMediadle.mediaId })
             .from(dailyMediadle)
-            .where(eq(dailyMediadle.mediaType, MediaType.MOVIES))
+            .where(eq(dailyMediadle.mediaType, kind))
             .limit(limit)
             .then((res) => res.map((r) => r.mediaId));
     }
 
-    static async createDailyMoviedle(mediaId: number) {
-        const [newMoviedle] = await getDbClient()
+    static async createDailyMediadle(kind: MediaType, mediaId: number) {
+        const [newMediadle] = await getDbClient()
             .insert(dailyMediadle)
             .values({
                 mediaId,
-                mediaType: MediaType.MOVIES,
+                mediaType: kind,
                 date: toDateInputValue(new Date(), { timeZone: "utc" }),
             }).returning();
 
-        return newMoviedle;
+        return newMediadle;
     }
 
     static async getUserProgress(userId: number, mediadleId: number) {

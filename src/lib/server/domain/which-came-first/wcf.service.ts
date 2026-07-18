@@ -17,7 +17,8 @@ export class WcfService {
 
     async curatePool() {
         for (const mediaType of WCF_MEDIA_TYPES) {
-            const popularMediaRefs = await this.media.get(mediaType).features.whichCameFirst.getPopularMediaRefs();
+            const popularMediaRefs = await this.media.get(mediaType)
+                .contributions.whichCameFirst.catalog.getPopularMediaRefs();
             await this.repository.syncCuratedPool(mediaType, popularMediaRefs);
         }
 
@@ -215,7 +216,7 @@ export class WcfService {
 
     private async _getMedia(mediaType: MediaType, mediaId: number) {
         if (!isWcfMediaType(mediaType)) return;
-        return this.media.get(mediaType).features.whichCameFirst.findById(mediaId);
+        return this.media.get(mediaType).contributions.whichCameFirst.catalog.findById(mediaId);
     }
 
     private async _createNextRound(activeRun: ActiveRun) {

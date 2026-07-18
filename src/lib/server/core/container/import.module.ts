@@ -11,13 +11,13 @@ export function setupImportModule(mediaRegistry: MediaModuleRegistry) {
     const jobs = new ImportService(ImportRepository, {
         [ImportSource.MYLISTS]: createMyListsCsvParser({
             get(kind: MediaType) {
-                return mediaRegistry.get(kind).imports.csv.rowSchema;
+                return mediaRegistry.get(kind).contributions.imports.csv.rowSchema;
             },
         }),
     });
     const matchers: MediaMatcherSource = {
         get(mediaType: MediaType) {
-            return mediaRegistry.get(mediaType).imports.matcher;
+            return mediaRegistry.get(mediaType).contributions.imports.matcher;
         },
     };
 

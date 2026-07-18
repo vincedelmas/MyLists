@@ -5,16 +5,6 @@
 
 ---
 
-### Achievements:
-
-- don't see the point of commands + query, could be merged i think
-- can stay as a class i think, quite a few methods, would be messy as a function
-
-### Achievements calculator:
-
-- does it really need to be a class?
-- does it really need to extends a base class?
-
 ### Mediadle
 
 - MovieMediadleCatalogQuery -> Don't think it need to be a class...

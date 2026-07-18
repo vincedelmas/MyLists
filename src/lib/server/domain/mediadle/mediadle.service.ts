@@ -1,14 +1,21 @@
 import {SearchType} from "@/lib/schemas";
+import {MediaType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {getImageUrl} from "@/lib/utils/image-url";
 import {pixelateImage} from "@/lib/utils/image-pixelation";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
-import {MovieMediadleCatalogQuery} from "@/lib/server/domain/media/movies/features/mediadle/movie-mediadle.query";
+
+
+export interface MediadleEligibility {
+    pickEligibleId(excludedMediaIds: number[]): Promise<number | undefined>;
+}
 
 
 export class MediadleService {
     constructor(
         private repository: typeof MediadleRepository,
-        private movieCatalog: MovieMediadleCatalogQuery,
+        private kind: MediaType,
+        private eligibility: MediadleEligibility,
     ) {
     }
 
@@ -26,22 +33,22 @@ export class MediadleService {
     }
 
     async getDailyMediadleData(userId?: number) {
-        let dailyMediadle = await this.repository.getTodayMoviedle();
+        let dailyMediadle = await this.repository.getTodayMediadle(this.kind);
 
         if (!dailyMediadle) {
-            const excludedMediaIds = await this.repository.getUsedMediadleIds(200);
+            const excludedMediaIds = await this.repository.getUsedMediaIds(this.kind, 200);
 
-            const mediaId = await this.movieCatalog.pickEligibleId(excludedMediaIds);
-            if (!mediaId) throw new FormattedError("No movies found to create a daily mediadle.");
+            const mediaId = await this.eligibility.pickEligibleId(excludedMediaIds);
+            if (!mediaId) throw new FormattedError(`No eligible ${this.kind} found to create a daily mediadle.`);
 
-            dailyMediadle = await this.repository.createDailyMoviedle(mediaId);
+            dailyMediadle = await this.repository.createDailyMediadle(this.kind, mediaId);
         }
 
-        const selectedMovie = await this.movieCatalog.findById(dailyMediadle.mediaId);
-        if (!selectedMovie) throw new Error("mediaId for mediadle not found");
+        const selectedMedia = await this.getMediaById(dailyMediadle.mediaId);
+        if (!selectedMedia) throw new Error("Media for daily Mediadle not found.");
 
         let userData = undefined;
-        if (userId) {
+        if (userId !== undefined) {
             const userStats = await this.getUserMediadleStats(userId);
             let userProgress = await this.repository.getUserProgress(userId, dailyMediadle.id);
             if (!userProgress) {
@@ -60,10 +67,10 @@ export class MediadleService {
         const isCompleted = userData ? userData.completed : false;
 
         const pixelationLevel = Math.min(dailyMediadle.pixelationLevels, currentAttempts + 1);
-        const pixelatedCover = await pixelateImage(selectedMovie.imageCover, pixelationLevel);
+        const pixelatedCover = await pixelateImage(selectedMedia.imageCover, pixelationLevel);
 
         const result = isCompleted
-            ? { mediaId: dailyMediadle.mediaId, nonPixelatedCover: selectedMovie.imageCover }
+            ? { mediaId: dailyMediadle.mediaId, nonPixelatedCover: selectedMedia.imageCover }
             : null;
 
         return {
@@ -76,21 +83,21 @@ export class MediadleService {
     }
 
     searchSuggestions(query: string) {
-        return this.movieCatalog.searchSuggestions(query);
+        return this.repository.searchMedia(this.kind, query);
     }
 
     async addMediadleGuess(userId: number, guess: string) {
-        const dailyMediadle = await this.repository.getTodayMoviedle();
+        const dailyMediadle = await this.repository.getTodayMediadle(this.kind);
         if (!dailyMediadle) throw new FormattedError("Today's mediadle not found");
 
         const progress = await this.repository.getUserProgress(userId, dailyMediadle.id);
         if (!progress) throw new FormattedError("Progress not found");
         if (progress.completed) throw new FormattedError("Mediadle already completed");
 
-        const selectedMovie = await this.movieCatalog.findById(dailyMediadle.mediaId);
-        if (!selectedMovie) throw new Error("mediaId for mediadle not found");
+        const selectedMedia = await this.getMediaById(dailyMediadle.mediaId);
+        if (!selectedMedia) throw new Error("Media for daily Mediadle not found.");
 
-        const correct = selectedMovie.name.toLowerCase().trim() === guess.toLowerCase().trim();
+        const correct = selectedMedia.name.toLowerCase().trim() === guess.toLowerCase().trim();
         const potentialAttempts = progress.attempts + 1;
         const isCompleted = correct || (potentialAttempts >= dailyMediadle.pixelationLevels);
 
@@ -108,6 +115,16 @@ export class MediadleService {
             completed: isCompleted,
             attempts: updatedProgress.attempts!,
             maxAttempts: dailyMediadle.pixelationLevels!,
+        };
+    }
+
+    private async getMediaById(mediaId: number) {
+        const media = await this.repository.findMediaById(this.kind, mediaId);
+        if (!media) return;
+
+        return {
+            ...media,
+            imageCover: getImageUrl(`${this.kind}-covers`, media.imageCover),
         };
     }
 }

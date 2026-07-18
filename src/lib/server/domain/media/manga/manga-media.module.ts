@@ -83,22 +83,24 @@ export const setupMangaMediaModule = (
             covers: new LibraryCustomCoverCommand(MediaType.MANGA, libraryRead, libraryCommands),
         },
         external,
-        imports: {
-            matcher: createMangaMatcher(catalogRepository, external, ingestion, libraryCommands),
-            csv: {
-                rowSchema: mangaMyListsCSVRowSchema,
+        contributions: {
+            imports: {
+                matcher: createMangaMatcher(catalogRepository, external, ingestion, libraryCommands),
+                csv: {
+                    rowSchema: mangaMyListsCSVRowSchema,
+                },
             },
-        },
-        achievements: {
-            definitions: mangaAchievements,
-            calculator: MangaAchievementCalculator satisfies AchievementCalculator,
-        },
-        features: {
-            whichCameFirst: new MangaWcfQuery(),
-        },
-        activity: {
-            definition: mangaActivityDefinition,
-            catalog: new CatalogActivityQuery(MediaType.MANGA),
+            achievements: {
+                definitions: mangaAchievements,
+                calculator: MangaAchievementCalculator satisfies AchievementCalculator,
+            },
+            activity: {
+                definition: mangaActivityDefinition,
+                catalog: new CatalogActivityQuery(MediaType.MANGA),
+            },
+            whichCameFirst: {
+                catalog: new MangaWcfQuery(),
+            },
         },
     } as const;
 };

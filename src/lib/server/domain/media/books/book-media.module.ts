@@ -79,19 +79,21 @@ export const setupBookMediaModule = (
             covers: new LibraryCustomCoverCommand(MediaType.BOOKS, libraryRead, libraryCommands),
         },
         external,
-        imports: {
-            matcher: createBooksMatcher(catalogRepository, external, ingestion, libraryCommands),
-            csv: {
-                rowSchema: booksMyListsCSVRowSchema,
+        contributions: {
+            imports: {
+                matcher: createBooksMatcher(catalogRepository, external, ingestion, libraryCommands),
+                csv: {
+                    rowSchema: booksMyListsCSVRowSchema,
+                },
             },
-        },
-        achievements: {
-            definitions: booksAchievements,
-            calculator: BookAchievementCalculator satisfies AchievementCalculator,
-        },
-        activity: {
-            definition: bookActivityDefinition,
-            catalog: new CatalogActivityQuery(MediaType.BOOKS),
+            achievements: {
+                definitions: booksAchievements,
+                calculator: BookAchievementCalculator satisfies AchievementCalculator,
+            },
+            activity: {
+                definition: bookActivityDefinition,
+                catalog: new CatalogActivityQuery(MediaType.BOOKS),
+            },
         },
     } as const;
 };

@@ -54,22 +54,24 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
     return {
         kind: MediaType.GAMES,
         external,
-        imports: {
-            matcher: createGamesMatcher(catalogRepository, ingestion, libraryCommands),
-            csv: {
-                rowSchema: gamesMyListsCSVRowSchema,
+        contributions: {
+            imports: {
+                matcher: createGamesMatcher(catalogRepository, ingestion, libraryCommands),
+                csv: {
+                    rowSchema: gamesMyListsCSVRowSchema,
+                },
             },
-        },
-        achievements: {
-            definitions: gamesAchievements,
-            calculator: GameAchievementCalculator satisfies AchievementCalculator,
-        },
-        features: {
-            whichCameFirst: new GameWcfQuery(),
-        },
-        activity: {
-            definition: gameActivityDefinition,
-            catalog: new CatalogActivityQuery(MediaType.GAMES),
+            achievements: {
+                definitions: gamesAchievements,
+                calculator: GameAchievementCalculator satisfies AchievementCalculator,
+            },
+            activity: {
+                definition: gameActivityDefinition,
+                catalog: new CatalogActivityQuery(MediaType.GAMES),
+            },
+            whichCameFirst: {
+                catalog: new GameWcfQuery(),
+            },
         },
         catalog: {
             ingestion,

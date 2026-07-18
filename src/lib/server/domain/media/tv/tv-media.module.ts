@@ -80,25 +80,27 @@ export const setupTvMediaModule = <K extends TvMediaType>(
     return {
         kind,
         external,
-        imports: {
-            matcher: createTvMatcher(kind, catalogRepository, external, ingestion, libraryCommands),
-            csv: {
-                rowSchema: kind === MediaType.SERIES ? seriesMyListsCSVRowSchema : animeMyListsCSVRowSchema,
+        contributions: {
+            imports: {
+                matcher: createTvMatcher(kind, catalogRepository, external, ingestion, libraryCommands),
+                csv: {
+                    rowSchema: kind === MediaType.SERIES ? seriesMyListsCSVRowSchema : animeMyListsCSVRowSchema,
+                },
             },
-        },
-        achievements: {
-            definitions: kind === MediaType.SERIES ? seriesAchievements : animeAchievements,
-            calculator: TvAchievementCalculator satisfies AchievementCalculator,
-        },
-        features: {
-            whichCameFirst: new TvWcfQuery(kind),
+            achievements: {
+                definitions: kind === MediaType.SERIES ? seriesAchievements : animeAchievements,
+                calculator: TvAchievementCalculator satisfies AchievementCalculator,
+            },
+            activity: {
+                definition: tvActivityDefinition,
+                catalog: new CatalogActivityQuery(kind, new TvActivityDurationQuery(kind)),
+            },
+            whichCameFirst: {
+                catalog: new TvWcfQuery(kind),
+            },
         },
         notifications: {
             upcoming: upcomingNotifications,
-        },
-        activity: {
-            definition: tvActivityDefinition,
-            catalog: new CatalogActivityQuery(kind, new TvActivityDurationQuery(kind)),
         },
         catalog: {
             ingestion,

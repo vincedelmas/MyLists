@@ -56,7 +56,11 @@ export function setupUserModule(mediaModule: MediaModule) {
     const adminAccountsQuery = new AdminAccountsQuery(userRepository);
     const adminAccountCommands = new AdminAccountCommands(accountDeletionCommands, userRepository);
     const profileViewCommands = new ProfileViewCommands(new ProfileChannelAccessRepository(), userRepository);
-    const mediadleService = new MediadleService(mediadleRepository, mediaModule.get(MediaType.MOVIES).features.mediadle);
+    const mediadleService = new MediadleService(
+        mediadleRepository,
+        MediaType.MOVIES,
+        mediaModule.get(MediaType.MOVIES).contributions.mediadle.eligibility,
+    );
     const profileUpdatesQuery = new ProfileUpdatesQuery();
     const profileUpdatesCommand = new ProfileUpdatesCommand();
     const notificationsQuery = new NotificationsQuery(notificationsRepository);

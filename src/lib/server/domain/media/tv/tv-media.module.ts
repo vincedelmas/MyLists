@@ -34,8 +34,8 @@ import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.servi
 import {TvUpcomingNotificationCommand} from "@/lib/server/domain/media/tv/features/notifications/tv-upcoming-notification.command";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {tvActivityDefinition} from "@/lib/server/domain/media/tv/activity/tv-activity.definition";
-import {CatalogActivityQuery} from "@/lib/server/domain/media/shared/activity/catalog-activity.query";
-import {TvActivityDurationQuery} from "@/lib/server/domain/media/tv/activity/tv-activity-duration.query";
+import {TvActivityDurationSource} from "@/lib/server/domain/media/tv/activity/tv-activity-duration.source";
+import type {ActivityDurationSource} from "@/lib/types/activity.types";
 
 
 export const setupTvMediaModule = <K extends TvMediaType>(
@@ -94,7 +94,7 @@ export const setupTvMediaModule = <K extends TvMediaType>(
             },
             activity: {
                 definition: tvActivityDefinition,
-                catalog: new CatalogActivityQuery(kind, new TvActivityDurationQuery(kind)),
+                durationSource: new TvActivityDurationSource(kind) satisfies ActivityDurationSource,
             },
             whichCameFirst: {
                 pool: new TvWcfPoolSource(kind) satisfies WcfPoolSource,

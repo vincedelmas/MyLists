@@ -8,7 +8,6 @@ import {moviesAchievements} from "@/lib/server/domain/media/movies/achievements/
 import {MovieDetailsQuery} from "@/lib/server/domain/media/movies/catalog/movie-details.query";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {MovieLibraryCommands} from "@/lib/server/domain/media/movies/library/movie-library.commands";
-import {CatalogActivityQuery} from "@/lib/server/domain/media/shared/activity/catalog-activity.query";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
 import {MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";
@@ -24,7 +23,8 @@ import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/librar
 import {MovieMediadleEligibility} from "@/lib/server/domain/media/movies/features/mediadle/movie-mediadle.eligibility";
 import {MovieLibraryReadRepository} from "@/lib/server/domain/media/movies/library/movie-library-read.repository";
 import {MovieCatalogReadRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-read.repository";
-import {MovieActivityDurationQuery} from "@/lib/server/domain/media/movies/activity/movie-activity-duration.query";
+import {MovieActivityDurationSource} from "@/lib/server/domain/media/movies/activity/movie-activity-duration.source";
+import type {ActivityDurationSource} from "@/lib/types/activity.types";
 import {MovieLibraryCsvExportQuery} from "@/lib/server/domain/media/movies/library/movie-library-csv-export.query";
 import {MovieCatalogAdminRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-admin.repository";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
@@ -116,7 +116,7 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
             },
             activity: {
                 definition: movieActivityDefinition,
-                catalog: new CatalogActivityQuery(MediaType.MOVIES, new MovieActivityDurationQuery()),
+                durationSource: MovieActivityDurationSource satisfies ActivityDurationSource,
             },
             whichCameFirst: {
                 pool: MovieWcfPoolSource satisfies WcfPoolSource,

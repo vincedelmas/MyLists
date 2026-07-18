@@ -28,7 +28,6 @@ import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achie
 import {MangaWcfPoolSource} from "@/lib/server/domain/media/manga/features/which-came-first/manga-wcf-pool-source";
 import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import {mangaActivityDefinition} from "@/lib/server/domain/media/manga/activity/manga-activity.definition";
-import {CatalogActivityQuery} from "@/lib/server/domain/media/shared/activity/catalog-activity.query";
 
 
 export const setupMangaMediaModule = (
@@ -97,7 +96,6 @@ export const setupMangaMediaModule = (
             },
             activity: {
                 definition: mangaActivityDefinition,
-                catalog: new CatalogActivityQuery(MediaType.MANGA),
             },
             whichCameFirst: {
                 pool: MangaWcfPoolSource satisfies WcfPoolSource,

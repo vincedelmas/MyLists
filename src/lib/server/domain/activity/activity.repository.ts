@@ -6,7 +6,7 @@ import {PaginatedActivityFilter} from "@/lib/types/activity.types";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {LibraryAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {dateFromUTCInput, monthBucketFromDateInput} from "@/lib/utils/date-formatting";
-import {and, asc, count, desc, eq, gt, gte, inArray, isNull, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
+import {and, asc, count, desc, eq, gt, gte, inArray, isNull, like, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
 import {catalogItem, libraryActivity, libraryEntry, profileMediaChannel, user} from "@/lib/server/database/schema";
 
 
@@ -16,6 +16,34 @@ const mediaId = sql<number>`${libraryActivity.catalogItemId}`;
 
 
 export class ActivityRepository {
+    static async getMediaByIds(kind: MediaType, mediaIds: number[]) {
+        const uniqueIds = [...new Set(mediaIds)];
+        if (uniqueIds.length === 0) return [];
+
+        return getDbClient().select({
+            id: catalogItem.id,
+            name: catalogItem.name,
+            imageCover: catalogItem.imageCover,
+            releaseDate: catalogItem.releaseDate,
+        }).from(catalogItem).where(and(
+            eq(catalogItem.kind, kind),
+            inArray(catalogItem.id, uniqueIds),
+        ));
+    }
+
+    static searchUserListByName(kind: MediaType, userId: number, query: string, limit: number) {
+        return getDbClient().select({ mediaId: catalogItem.id })
+            .from(libraryEntry)
+            .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
+            .where(and(
+                eq(libraryEntry.userId, userId),
+                eq(catalogItem.kind, kind),
+                like(catalogItem.name, `%${query}%`),
+            ))
+            .orderBy(catalogItem.name)
+            .limit(limit);
+    }
+
     static async addActivity(userId: number, payload: {
         mediaType: MediaType;
         mediaId: number;

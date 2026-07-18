@@ -20,7 +20,7 @@ describe("media module composition", () => {
         expect(registry.get(MediaType.GAMES).library.stats.rebuild).toBeTypeOf("function");
         expect(registry.get(MediaType.BOOKS).catalog.maintenance.orphans.find).toBeTypeOf("function");
         expect(registry.get(MediaType.MANGA).contributions.achievements.calculator.getAchievementCte).toBeTypeOf("function");
-        expect(registry.get(MediaType.SERIES).contributions.activity.catalog.getMediaDetailsByIds).toBeTypeOf("function");
+        expect(registry.get(MediaType.SERIES).contributions.activity.durationSource.getByIds).toBeTypeOf("function");
     });
 
     it("makes optional capabilities visible through module composition", () => {

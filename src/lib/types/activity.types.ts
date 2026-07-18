@@ -52,6 +52,27 @@ export type ActivityMediaRef = {
 };
 
 
+export type ActivityMediaDuration = {
+    id: number;
+    duration: number | null;
+};
+
+
+export interface ActivityDurationSource {
+    getByIds(mediaIds: number[]): Promise<ActivityMediaDuration[]>;
+}
+
+
+export type ActivityMediaDefinition = {
+    longUnit?: string;
+    inputStep: number;
+    shortUnit?: string;
+    toStoredValue: (value: number) => number;
+    toDisplayValue: (value: number) => number;
+    calculateTime: (specificGained: number, duration?: number) => number;
+};
+
+
 export type MonthlyActivityChartDatum = {
     month: string;
     total: number;

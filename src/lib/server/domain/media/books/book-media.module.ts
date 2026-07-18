@@ -26,7 +26,6 @@ import {booksAchievements} from "@/lib/server/domain/media/books/achievements/bo
 import {BookAchievementCalculator} from "@/lib/server/domain/media/books/achievements/book-achievement-calculator";
 import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
 import {bookActivityDefinition} from "@/lib/server/domain/media/books/activity/book-activity.definition";
-import {CatalogActivityQuery} from "@/lib/server/domain/media/shared/activity/catalog-activity.query";
 
 
 export const setupBookMediaModule = (
@@ -92,7 +91,6 @@ export const setupBookMediaModule = (
             },
             activity: {
                 definition: bookActivityDefinition,
-                catalog: new CatalogActivityQuery(MediaType.BOOKS),
             },
         },
     } as const;

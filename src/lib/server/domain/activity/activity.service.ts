@@ -1,23 +1,35 @@
-import {MEDIA_TYPES, MediaType, sortByMediaType} from "@/lib/utils/enums";
+import {getImageUrl} from "@/lib/utils/image-url";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {MEDIA_TYPES, MediaType, sortByMediaType} from "@/lib/utils/enums";
 import {LibraryAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {ActivityRepository} from "@/lib/server/domain/activity/activity.repository";
 import {MediaModuleRegistry} from "@/lib/server/domain/media/media-module.registry";
 import {calendarDateRangeToISOString, compareDateInputs} from "@/lib/utils/date-formatting";
 import {AddActivity, MonthlyActivityFilters, MonthlyActivityStatsFilters, UpdateActivity} from "@/lib/schemas";
-import {ActivityEditor as ActivityEditorRow, ActivityMediaRef, MediaInfo, MonthlyActivityChartDatum, WrappedActivityResult} from "@/lib/types/activity.types";
+import {
+    ActivityDurationSource,
+    ActivityEditor as ActivityEditorRow,
+    ActivityMediaDuration,
+    ActivityMediaRef,
+    MediaInfo,
+    MonthlyActivityChartDatum,
+    WrappedActivityResult
+} from "@/lib/types/activity.types";
 
 
 export class ActivityService {
     private readonly repository = ActivityRepository;
 
-    constructor(private readonly media: MediaModuleRegistry) {}
+    constructor(private readonly media: MediaModuleRegistry) {
+    }
 
     async getMonthlyActivityStats(filters: MonthlyActivityStatsFilters, access?: LibraryAccessScope) {
+        if (!access) throw new FormattedError("Activity access scope is required");
+
         const timeBucket = `${filters.year}-${zeroPad(filters.month)}`;
         const mediaTypes: MediaType[] = filters.mediaType ? [filters.mediaType] : [...MEDIA_TYPES];
-        if (!access) throw new FormattedError("Activity access scope is required");
+
         const activities = await this.repository.getStatsActivities(access, mediaTypes, timeBucket);
         const mediaDetailsByType = await this._getMediaDurationsByType(activities);
 
@@ -30,10 +42,11 @@ export class ActivityService {
             const mediaDetails = mediaDetailsByType.get(entry.mediaType)?.get(entry.mediaId);
             if (!mediaDetails) continue;
 
-            const timeGained = this.media.get(entry.mediaType).contributions.activity.definition
-                .calculateTime(entry.specificGained, mediaDetails.duration ?? undefined);
             const aggStats = activityRecord[entry.mediaType];
-
+            const timeGained = this.media
+                .get(entry.mediaType).contributions.activity.definition
+                .calculateTime(entry.specificGained, mediaDetails.duration ?? undefined);
+            
             aggStats.count += 1;
             aggStats.timeGained += timeGained;
             aggStats.specificTotal += entry.specificGained;
@@ -189,7 +202,19 @@ export class ActivityService {
                 return;
             }
 
-            const mediaDetails = await this.media.get(mediaType).contributions.activity.catalog.getMediaDetailsByIds(mediaIds);
+            const [mediaRows, durations] = await Promise.all([
+                this.repository.getMediaByIds(mediaType, mediaIds),
+                this._getDurations(mediaType, mediaIds),
+            ]);
+
+            const durationById = new Map(durations.map((row) => [row.id, row.duration]));
+            const mediaDetails: MediaInfo[] = mediaRows.map((row) => ({
+                ...row,
+                duration: durationById.get(row.id) ?? undefined,
+                releaseDate: row.releaseDate ?? "",
+                imageCover: getImageUrl(`${mediaType}-covers`, row.imageCover),
+                customCover: null,
+            }));
             mediaDetailsByType.set(mediaType, new Map(mediaDetails.map((m) => [m.id, m])));
         }));
 
@@ -205,7 +230,7 @@ export class ActivityService {
                 .filter((activity) => activity.mediaType === mediaType)
                 .map((activity) => activity.mediaId);
 
-            const durations = await this.media.get(mediaType).contributions.activity.catalog.getMediaDurationsByIds(mediaIds);
+            const durations = await this._getDurations(mediaType, mediaIds);
             durationsByType.set(mediaType, new Map(durations.map((media) => [media.id, media])));
         }));
 
@@ -214,11 +239,26 @@ export class ActivityService {
 
     private async _searchActivityMediaIds(userId: number, mediaTypes: MediaType[], search: string) {
         const entries = await Promise.all(mediaTypes.map(async (mediaType) => {
-            const results = await this.media.get(mediaType).contributions.activity.catalog.searchUserListByName(userId, search, 20);
+            const results = await this.repository.searchUserListByName(mediaType, userId, search, 20);
 
             return [mediaType, results.map((result) => result.mediaId)] as const;
         }));
 
         return Object.fromEntries(entries) as Partial<Record<MediaType, number[]>>;
+    }
+
+    private _getDurations(mediaType: MediaType, mediaIds: number[]): Promise<ActivityMediaDuration[]> {
+        const uniqueIds = [...new Set(mediaIds)];
+        if (uniqueIds.length === 0) return Promise.resolve([]);
+
+        const source = this._getDurationSource(mediaType);
+        return source
+            ? source.getByIds(uniqueIds)
+            : Promise.resolve(uniqueIds.map((id) => ({ id, duration: null })));
+    }
+
+    private _getDurationSource(mediaType: MediaType): ActivityDurationSource | undefined {
+        const activity = this.media.get(mediaType).contributions.activity;
+        return "durationSource" in activity ? activity.durationSource : undefined;
     }
 }

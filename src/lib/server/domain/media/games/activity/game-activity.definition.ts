@@ -1,4 +1,4 @@
-import {ActivityMediaDefinition} from "@/lib/server/domain/media/shared/activity/activity-media-definition";
+import {ActivityMediaDefinition} from "@/lib/types/activity.types";
 
 
 export const gameActivityDefinition: ActivityMediaDefinition = {

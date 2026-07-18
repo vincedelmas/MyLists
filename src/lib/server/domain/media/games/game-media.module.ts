@@ -29,7 +29,6 @@ import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achie
 import {GameWcfPoolSource} from "@/lib/server/domain/media/games/features/which-came-first/game-wcf-pool-source";
 import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import {gameActivityDefinition} from "@/lib/server/domain/media/games/activity/game-activity.definition";
-import {CatalogActivityQuery} from "@/lib/server/domain/media/shared/activity/catalog-activity.query";
 
 
 export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) => {
@@ -68,7 +67,6 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
             },
             activity: {
                 definition: gameActivityDefinition,
-                catalog: new CatalogActivityQuery(MediaType.GAMES),
             },
             whichCameFirst: {
                 pool: GameWcfPoolSource satisfies WcfPoolSource,

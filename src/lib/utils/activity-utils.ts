@@ -2,7 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
-import {ActivityMediaDefinition} from "@/lib/server/domain/media/shared/activity/activity-media-definition";
+import {ActivityMediaDefinition} from "@/lib/types/activity.types";
 import {tvActivityDefinition} from "@/lib/server/domain/media/tv/activity/tv-activity.definition";
 import {movieActivityDefinition} from "@/lib/server/domain/media/movies/activity/movie-activity.definition";
 import {gameActivityDefinition} from "@/lib/server/domain/media/games/activity/game-activity.definition";

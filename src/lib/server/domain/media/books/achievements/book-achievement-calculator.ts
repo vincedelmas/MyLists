@@ -3,16 +3,14 @@ import {Achievement} from "@/lib/types/achievements.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, count, countDistinct, eq, gte, lte, max} from "drizzle-orm";
 import {bookAuthor, bookDetails, catalogItem, libraryEntry} from "@/lib/server/database/schema";
-import {MediaAchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
+import {AchievementCalculationHelpers} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
 
 
-export class BookAchievementCalculator extends MediaAchievementCalculator {
-    constructor() {
-        super(MediaType.BOOKS);
-    }
+export class BookAchievementCalculator {
+    private static readonly helper = AchievementCalculationHelpers;
 
-    getAchievementCte(achievement: Achievement, userId?: number) {
-        const common = this.getCommonAchievementCte(achievement, userId);
+    static getAchievementCte(achievement: Achievement, userId?: number) {
+        const common = this.helper.getCommonAchievementCte(MediaType.BOOKS, achievement, userId);
         if (common) return common;
 
         switch (achievement.codeName) {
@@ -20,7 +18,7 @@ export class BookAchievementCalculator extends MediaAchievementCalculator {
             case "young_adult_books":
             case "crime_books":
             case "fantasy_books":
-                return this.countCompletedGenre(String(achievement.value), userId);
+                return this.helper.countCompletedGenre(MediaType.BOOKS, String(achievement.value), userId);
             case "short_books":
             case "long_books":
                 return this.countDuration(achievement, userId);
@@ -29,11 +27,11 @@ export class BookAchievementCalculator extends MediaAchievementCalculator {
             case "lang_books":
                 return this.countLanguages(userId);
             default:
-                return this.unsupported(achievement);
+                return this.helper.unsupported(MediaType.BOOKS, achievement);
         }
     }
 
-    private countDuration(achievement: Achievement, userId?: number) {
+    private static countDuration(achievement: Achievement, userId?: number) {
         const threshold = Number(achievement.value);
 
         const condition = achievement.codeName.includes("long")
@@ -48,11 +46,16 @@ export class BookAchievementCalculator extends MediaAchievementCalculator {
             .from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
             .innerJoin(bookDetails, eq(bookDetails.catalogItemId, catalogItem.id))
-            .where(and(eq(catalogItem.kind, this.kind), eq(libraryEntry.status, Status.COMPLETED), condition, this.forUser(userId)))
+            .where(and(
+                eq(catalogItem.kind, MediaType.BOOKS),
+                eq(libraryEntry.status, Status.COMPLETED),
+                condition,
+                this.helper.forUser(userId),
+            ))
             .groupBy(libraryEntry.userId).as("calculation");
     }
 
-    private maxAuthor(userId?: number) {
+    private static maxAuthor(userId?: number) {
         const grouped = getDbClient()
             .select({
                 userId: libraryEntry.userId,
@@ -61,7 +64,11 @@ export class BookAchievementCalculator extends MediaAchievementCalculator {
             .from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
             .innerJoin(bookAuthor, eq(bookAuthor.catalogItemId, catalogItem.id))
-            .where(and(eq(catalogItem.kind, this.kind), eq(libraryEntry.status, Status.COMPLETED), this.forUser(userId)))
+            .where(and(
+                eq(catalogItem.kind, MediaType.BOOKS),
+                eq(libraryEntry.status, Status.COMPLETED),
+                this.helper.forUser(userId),
+            ))
             .groupBy(libraryEntry.userId, bookAuthor.name).as("grouped_book_author");
 
         return getDbClient()
@@ -72,7 +79,7 @@ export class BookAchievementCalculator extends MediaAchievementCalculator {
             .groupBy(grouped.userId).as("calculation");
     }
 
-    private countLanguages(userId?: number) {
+    private static countLanguages(userId?: number) {
         return getDbClient()
             .select({
                 userId: libraryEntry.userId,
@@ -81,7 +88,11 @@ export class BookAchievementCalculator extends MediaAchievementCalculator {
             .from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
             .innerJoin(bookDetails, eq(bookDetails.catalogItemId, catalogItem.id))
-            .where(and(eq(catalogItem.kind, this.kind), eq(libraryEntry.status, Status.COMPLETED), this.forUser(userId)))
+            .where(and(
+                eq(catalogItem.kind, MediaType.BOOKS),
+                eq(libraryEntry.status, Status.COMPLETED),
+                this.helper.forUser(userId),
+            ))
             .groupBy(libraryEntry.userId).as("calculation");
     }
 }

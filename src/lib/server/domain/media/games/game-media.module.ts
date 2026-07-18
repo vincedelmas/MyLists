@@ -25,6 +25,7 @@ import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/imports/game-import.schemas";
 import {gamesAchievements} from "@/lib/server/domain/media/games/achievements/games.seed";
 import {GameAchievementCalculator} from "@/lib/server/domain/media/games/achievements/game-achievement-calculator";
+import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
 import {GameWcfQuery} from "@/lib/server/domain/media/games/features/which-came-first/game-wcf.query";
 import {gameActivityDefinition} from "@/lib/server/domain/media/games/activity/game-activity.definition";
 import {CatalogActivityQuery} from "@/lib/server/domain/media/shared/activity/catalog-activity.query";
@@ -61,7 +62,7 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
         },
         achievements: {
             definitions: gamesAchievements,
-            calculator: new GameAchievementCalculator(),
+            calculator: GameAchievementCalculator satisfies AchievementCalculator,
         },
         features: {
             whichCameFirst: new GameWcfQuery(),

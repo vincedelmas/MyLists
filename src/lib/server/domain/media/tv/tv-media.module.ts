@@ -28,6 +28,7 @@ import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/
 import {seriesAchievements} from "@/lib/server/domain/media/tv/achievements/series.seed";
 import {animeAchievements} from "@/lib/server/domain/media/tv/achievements/anime.seed";
 import {TvAchievementCalculator} from "@/lib/server/domain/media/tv/achievements/tv-achievement-calculator";
+import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
 import {TvWcfQuery} from "@/lib/server/domain/media/tv/features/which-came-first/tv-wcf.query";
 import {TvUpcomingNotificationCommand} from "@/lib/server/domain/media/tv/features/notifications/tv-upcoming-notification.command";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
@@ -87,7 +88,7 @@ export const setupTvMediaModule = <K extends TvMediaType>(
         },
         achievements: {
             definitions: kind === MediaType.SERIES ? seriesAchievements : animeAchievements,
-            calculator: new TvAchievementCalculator(kind),
+            calculator: TvAchievementCalculator satisfies AchievementCalculator,
         },
         features: {
             whichCameFirst: new TvWcfQuery(kind),

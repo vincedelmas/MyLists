@@ -24,6 +24,7 @@ import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog
 import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/imports/manga-import.schemas";
 import {mangaAchievements} from "@/lib/server/domain/media/manga/achievements/manga.seed";
 import {MangaAchievementCalculator} from "@/lib/server/domain/media/manga/achievements/manga-achievement-calculator";
+import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
 import {MangaWcfQuery} from "@/lib/server/domain/media/manga/features/which-came-first/manga-wcf.query";
 import {mangaActivityDefinition} from "@/lib/server/domain/media/manga/activity/manga-activity.definition";
 import {CatalogActivityQuery} from "@/lib/server/domain/media/shared/activity/catalog-activity.query";
@@ -90,7 +91,7 @@ export const setupMangaMediaModule = (
         },
         achievements: {
             definitions: mangaAchievements,
-            calculator: new MangaAchievementCalculator(),
+            calculator: MangaAchievementCalculator satisfies AchievementCalculator,
         },
         features: {
             whichCameFirst: new MangaWcfQuery(),

@@ -25,7 +25,8 @@ import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/imports/
 import {mangaAchievements} from "@/lib/server/domain/media/manga/achievements/manga.seed";
 import {MangaAchievementCalculator} from "@/lib/server/domain/media/manga/achievements/manga-achievement-calculator";
 import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
-import {MangaWcfQuery} from "@/lib/server/domain/media/manga/features/which-came-first/manga-wcf.query";
+import {MangaWcfPoolSource} from "@/lib/server/domain/media/manga/features/which-came-first/manga-wcf-pool-source";
+import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import {mangaActivityDefinition} from "@/lib/server/domain/media/manga/activity/manga-activity.definition";
 import {CatalogActivityQuery} from "@/lib/server/domain/media/shared/activity/catalog-activity.query";
 
@@ -99,7 +100,7 @@ export const setupMangaMediaModule = (
                 catalog: new CatalogActivityQuery(MediaType.MANGA),
             },
             whichCameFirst: {
-                catalog: new MangaWcfQuery(),
+                pool: MangaWcfPoolSource satisfies WcfPoolSource,
             },
         },
     } as const;

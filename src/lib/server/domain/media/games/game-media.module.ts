@@ -26,7 +26,8 @@ import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/imports/
 import {gamesAchievements} from "@/lib/server/domain/media/games/achievements/games.seed";
 import {GameAchievementCalculator} from "@/lib/server/domain/media/games/achievements/game-achievement-calculator";
 import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
-import {GameWcfQuery} from "@/lib/server/domain/media/games/features/which-came-first/game-wcf.query";
+import {GameWcfPoolSource} from "@/lib/server/domain/media/games/features/which-came-first/game-wcf-pool-source";
+import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import {gameActivityDefinition} from "@/lib/server/domain/media/games/activity/game-activity.definition";
 import {CatalogActivityQuery} from "@/lib/server/domain/media/shared/activity/catalog-activity.query";
 
@@ -70,7 +71,7 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
                 catalog: new CatalogActivityQuery(MediaType.GAMES),
             },
             whichCameFirst: {
-                catalog: new GameWcfQuery(),
+                pool: GameWcfPoolSource satisfies WcfPoolSource,
             },
         },
         catalog: {

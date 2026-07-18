@@ -29,7 +29,8 @@ import {seriesAchievements} from "@/lib/server/domain/media/tv/achievements/seri
 import {animeAchievements} from "@/lib/server/domain/media/tv/achievements/anime.seed";
 import {TvAchievementCalculator} from "@/lib/server/domain/media/tv/achievements/tv-achievement-calculator";
 import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
-import {TvWcfQuery} from "@/lib/server/domain/media/tv/features/which-came-first/tv-wcf.query";
+import {TvWcfPoolSource} from "@/lib/server/domain/media/tv/features/which-came-first/tv-wcf-pool-source";
+import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import {TvUpcomingNotificationCommand} from "@/lib/server/domain/media/tv/features/notifications/tv-upcoming-notification.command";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {tvActivityDefinition} from "@/lib/server/domain/media/tv/activity/tv-activity.definition";
@@ -96,7 +97,7 @@ export const setupTvMediaModule = <K extends TvMediaType>(
                 catalog: new CatalogActivityQuery(kind, new TvActivityDurationQuery(kind)),
             },
             whichCameFirst: {
-                catalog: new TvWcfQuery(kind),
+                pool: new TvWcfPoolSource(kind) satisfies WcfPoolSource,
             },
         },
         notifications: {

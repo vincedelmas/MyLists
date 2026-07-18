@@ -27,7 +27,7 @@ describe("media module composition", () => {
         const registry = setupMediaModule({} as ApiClientModule);
 
         expect(registry.get(MediaType.MOVIES).contributions.mediadle.eligibility.pickEligibleId).toBeTypeOf("function");
-        expect(registry.get(MediaType.GAMES).contributions.whichCameFirst.catalog.getPopularMediaRefs).toBeTypeOf("function");
+        expect(registry.get(MediaType.GAMES).contributions.whichCameFirst.pool.getPopularMediaRefs).toBeTypeOf("function");
         expect("features" in registry.get(MediaType.BOOKS)).toBe(false);
 
         expect(registry.get(MediaType.ANIME).notifications.upcoming.create).toBeTypeOf("function");

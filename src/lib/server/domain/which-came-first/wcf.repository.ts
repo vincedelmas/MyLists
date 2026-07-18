@@ -1,10 +1,10 @@
 import {MediaType} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
-import {WCF_MAX_ROUNDS} from "@/lib/schemas/wcf.schema";
+import {WCF_MAX_ROUNDS} from "@/lib/utils/constants";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {and, desc, eq, gt, inArray, isNull, or, sql} from "drizzle-orm";
-import {user, whichCameFirstMedia, whichCameFirstRounds, whichCameFirstRuns} from "@/lib/server/database/schema";
+import {and, desc, eq, gt, inArray, isNotNull, isNull, lte, ne, or, SQL, sql} from "drizzle-orm";
+import {catalogItem, user, whichCameFirstMedia, whichCameFirstRounds, whichCameFirstRuns} from "@/lib/server/database/schema";
 
 
 type WcfPair = {
@@ -17,7 +17,29 @@ type WcfPair = {
 };
 
 
+/** Common WCF requirements composed with each media's popularity policy. */
+export const wcfEligibility = (kind: MediaType, popularity: SQL) => and(
+    eq(catalogItem.kind, kind),
+    popularity,
+    isNotNull(catalogItem.releaseDate),
+    ne(catalogItem.imageCover, "default.jpg"),
+    ne(catalogItem.releaseDate, ""),
+    lte(catalogItem.releaseDate, sql`date('now')`),
+);
+
+
 export class WcfRepository {
+    static async findMediaById(kind: MediaType, mediaId: number) {
+        return getDbClient()
+            .select({
+                name: catalogItem.name,
+                imageCover: catalogItem.imageCover,
+            })
+            .from(catalogItem)
+            .where(and(eq(catalogItem.kind, kind), eq(catalogItem.id, mediaId)))
+            .get();
+    }
+
     static async syncCuratedPool(mediaType: MediaType, mediaRefs: { id: number; releaseDate: string }[]) {
         await getDbClient()
             .delete(whichCameFirstMedia)

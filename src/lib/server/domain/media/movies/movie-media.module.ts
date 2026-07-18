@@ -13,7 +13,8 @@ import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
 import {MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";
 import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
-import {MovieWcfQuery} from "@/lib/server/domain/media/movies/features/which-came-first/movie-wcf.query";
+import {MovieWcfPoolSource} from "@/lib/server/domain/media/movies/features/which-came-first/movie-wcf-pool-source";
+import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import {movieActivityDefinition} from "@/lib/server/domain/media/movies/activity/movie-activity.definition";
 import {MovieCatalogEditCommand} from "@/lib/server/domain/media/movies/catalog/movie-catalog-edit.command";
 import {MovieListReadRepository} from "@/lib/server/domain/media/movies/library/movie-list-read.repository";
@@ -118,7 +119,7 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
                 catalog: new CatalogActivityQuery(MediaType.MOVIES, new MovieActivityDurationQuery()),
             },
             whichCameFirst: {
-                catalog: new MovieWcfQuery(),
+                pool: MovieWcfPoolSource satisfies WcfPoolSource,
             },
             mediadle: {
                 eligibility: MovieMediadleEligibility satisfies MediadleEligibility,

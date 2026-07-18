@@ -1,18 +1,18 @@
 import {and, eq} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
-import {CoverType} from "@/lib/types/media-common.types";
 import {getImageUrl} from "@/lib/utils/image-url";
-import {getDbClient} from "@/lib/server/database/async-storage";
+import {CoverType} from "@/lib/types/media-common.types";
 import {catalogItem} from "@/lib/server/database/schema";
+import {getDbClient} from "@/lib/server/database/async-storage";
 
 
 export type WcfMediaRef = { id: number; releaseDate: string };
 
 type WcfMediaCard = {
-    mediaId: number;
-    mediaType: MediaType;
     name: string;
+    mediaId: number;
     imageCover: string;
+    mediaType: MediaType;
 };
 
 
@@ -25,13 +25,19 @@ export interface WcfMediaCapability {
 
 /** Shared card projection; each media capability still owns its eligibility policy. */
 export class WcfMediaCardQuery {
-    constructor(private readonly kind: MediaType) {}
+    constructor(private readonly kind: MediaType) {
+    }
 
     async findById(mediaId: number) {
-        const row = await getDbClient().select({ name: catalogItem.name, imageCover: catalogItem.imageCover })
+        const row = getDbClient()
+            .select({
+                name: catalogItem.name,
+                imageCover: catalogItem.imageCover,
+            })
             .from(catalogItem)
             .where(and(eq(catalogItem.kind, this.kind), eq(catalogItem.id, mediaId)))
             .get();
+
         if (!row) return;
 
         return {

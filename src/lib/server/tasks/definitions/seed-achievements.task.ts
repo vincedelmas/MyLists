@@ -11,8 +11,8 @@ export const seedAchievementsTask = defineTask({
     description: "Seed achievement definitions for all media types",
     inputSchema: z.object({}),
     handler: async (ctx) => {
-        const container = await getContainer();
         const mediaTypes = MEDIA_TYPES;
+        const container = await getContainer();
         const achievementCommands = container.achievements.commands;
 
         for (const mediaType of mediaTypes) {

@@ -10,6 +10,7 @@ import {dailyMediadle, mediadleStats, user, userMediadleProgress} from "@/lib/se
 export class MediadleRepository {
     static async getAllUsersStatsForAdmin(data: SearchType) {
         const search = data.search ?? "";
+
         const { items, total, pages } = await paginate({
             page: data.page,
             perPage: data.perPage,
@@ -53,7 +54,7 @@ export class MediadleRepository {
             .get();
     }
 
-    static async getUsedMovieIds(limit: number) {
+    static async getUsedMediadleIds(limit: number) {
         return getDbClient()
             .select({ mediaId: dailyMediadle.mediaId })
             .from(dailyMediadle)
@@ -78,8 +79,10 @@ export class MediadleRepository {
         return getDbClient()
             .select()
             .from(userMediadleProgress)
-            .where(and(eq(userMediadleProgress.userId, userId), eq(userMediadleProgress.dailyMediadleId, mediadleId)))
-            .get();
+            .where(and(
+                eq(userMediadleProgress.userId, userId),
+                eq(userMediadleProgress.dailyMediadleId, mediadleId),
+            )).get();
     }
 
     static async createUserProgress(userId: number, mediadleId: number) {
@@ -91,8 +94,7 @@ export class MediadleRepository {
                 succeeded: false,
                 completed: false,
                 dailyMediadleId: mediadleId,
-            })
-            .returning()
+            }).returning()
 
         return newUserProgress;
     }

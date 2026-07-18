@@ -1,10 +1,14 @@
 import {asc, eq, gte} from "drizzle-orm";
-import {TvMediaType} from "@/lib/types/media-kind.types";
 import {MediaType} from "@/lib/utils/enums";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {catalogItem, tvDetails} from "@/lib/server/database/schema";
-import {WcfMediaCapability, WcfMediaCardQuery, WcfMediaRef} from "@/lib/server/domain/which-came-first/wcf-media-capability";
 import {wcfEligibility} from "@/lib/server/domain/which-came-first/wcf-eligibility";
+import {WcfMediaCapability, WcfMediaCardQuery, WcfMediaRef} from "@/lib/server/domain/which-came-first/wcf-media-capability";
+
+
+const MINIMUM_ANIME_VOTES = 50;
+const MINIMUM_SERIES_VOTES = 300;
 
 
 export class TvWcfQuery implements WcfMediaCapability {
@@ -15,8 +19,15 @@ export class TvWcfQuery implements WcfMediaCapability {
     }
 
     getPopularMediaRefs() {
-        const minimumVotes = this.kind === MediaType.SERIES ? 300 : 50;
-        return getDbClient().select({ id: catalogItem.id, releaseDate: catalogItem.releaseDate })
+        const minimumVotes = this.kind === MediaType.SERIES
+            ? MINIMUM_SERIES_VOTES
+            : MINIMUM_ANIME_VOTES;
+
+        return getDbClient()
+            .select({
+                id: catalogItem.id,
+                releaseDate: catalogItem.releaseDate,
+            })
             .from(tvDetails)
             .innerJoin(catalogItem, eq(catalogItem.id, tvDetails.catalogItemId))
             .where(wcfEligibility(this.kind, gte(tvDetails.voteCount, minimumVotes)))

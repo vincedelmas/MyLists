@@ -10,7 +10,8 @@ import {achievement, achievementTier, profileMediaChannel, user, userAchievement
 
 export class AchievementsRepository {
     static async getActiveMediaTypes(userId: number) {
-        return getDbClient().select({ mediaType: profileMediaChannel.kind })
+        return getDbClient()
+            .select({ mediaType: profileMediaChannel.kind })
             .from(profileMediaChannel)
             .where(and(eq(profileMediaChannel.userId, userId), eq(profileMediaChannel.enabled, true)))
             .then((rows) => rows.map(({ mediaType }) => mediaType));
@@ -74,7 +75,9 @@ export class AchievementsRepository {
             .then((rows) => rows.map((r) => r.id));
 
         if (orphanedAchievementIds.length > 0) {
-            await tx.delete(achievement).where(inArray(achievement.id, orphanedAchievementIds));
+            await tx
+                .delete(achievement)
+                .where(inArray(achievement.id, orphanedAchievementIds));
         }
     }
 

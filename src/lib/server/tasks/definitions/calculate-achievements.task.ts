@@ -29,10 +29,7 @@ export const calculateAchievementsTask = defineTask({
 
                 for (const achievement of mediaAchievements) {
                     try {
-                        await achievementCommands.calculateAchievementFromCte(
-                            achievement,
-                            calculator.getAchievementCte(achievement),
-                        );
+                        await achievementCommands.calculateAchievementFromCte(achievement, calculator.getAchievementCte(achievement));
                         ctx.increment(`${mediaType}.processed`);
                     }
                     catch (err) {

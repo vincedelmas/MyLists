@@ -30,9 +30,9 @@ describe("media module composition", () => {
         expect(registry.get(MediaType.GAMES).contributions.whichCameFirst.pool.getPopularMediaRefs).toBeTypeOf("function");
         expect("features" in registry.get(MediaType.BOOKS)).toBe(false);
 
-        expect(registry.get(MediaType.ANIME).notifications.upcoming.create).toBeTypeOf("function");
-        expect("notifications" in registry.get(MediaType.GAMES)).toBe(false);
-        expect(registry.get(MediaType.GAMES).library.upcoming.forOwner).toBeTypeOf("function");
+        expect(registry.get(MediaType.ANIME).contributions.notifications.upcoming.getCandidates).toBeTypeOf("function");
+        expect("notifications" in registry.get(MediaType.GAMES).contributions).toBe(false);
+        expect(registry.get(MediaType.GAMES).library.upcoming).toBeTypeOf("function");
 
         expect(registry.get(MediaType.BOOKS).catalog.refresh.selfServiceAllowed).toBe(false);
         expect(registry.get(MediaType.MANGA).catalog.refresh.selfServiceAllowed).toBe(true);

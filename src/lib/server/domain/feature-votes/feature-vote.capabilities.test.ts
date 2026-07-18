@@ -3,7 +3,7 @@ import {FeatureStatus, SocialNotifType} from "@/lib/utils/enums";
 import {FeatureVoteCommands} from "./feature-vote.commands";
 import {FeatureVotesQuery} from "./feature-votes.query";
 import type {FeatureVotesRepository} from "./feature-votes.repository";
-import type {NotificationCommands} from "@/lib/server/domain/notifications/notification.commands";
+import {NotificationService} from "@/lib/server/domain/notifications/notification.service";
 
 
 const createRepository = () => ({
@@ -62,7 +62,7 @@ describe("feature vote capabilities", () => {
         const notifications = createNotifications();
         const commands = new FeatureVoteCommands(
             repository as unknown as typeof FeatureVotesRepository,
-            notifications as unknown as NotificationCommands,
+            notifications as unknown as typeof NotificationService,
         );
         repository.findFeatureWithUserVote
             .mockResolvedValueOnce({ feature: { status: FeatureStatus.PLANNED }, existingVote: undefined })
@@ -77,9 +77,10 @@ describe("feature vote capabilities", () => {
 
     it("rejects votes for completed features", async () => {
         const repository = createRepository();
+        const notifications = createNotifications();
         const commands = new FeatureVoteCommands(
             repository as unknown as typeof FeatureVotesRepository,
-            createNotifications() as unknown as NotificationCommands,
+            notifications as unknown as typeof NotificationService,
         );
         repository.findFeatureWithUserVote.mockResolvedValue({
             existingVote: undefined,
@@ -95,7 +96,7 @@ describe("feature vote capabilities", () => {
         const notifications = createNotifications();
         const commands = new FeatureVoteCommands(
             repository as unknown as typeof FeatureVotesRepository,
-            notifications as unknown as NotificationCommands,
+            notifications as unknown as typeof NotificationService,
         );
         repository.getFeatureRequest.mockResolvedValue({
             adminComment: null,

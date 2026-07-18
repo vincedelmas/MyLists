@@ -9,7 +9,7 @@ export const getNotifications = createServerFn({ method: "GET" })
     .validator(notificationSchema)
     .handler(async ({ data: { type }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.notifications.query.getLastNotifications(currentUser.id, type);
+        return container.notifications.getLastNotifications(currentUser.id, type);
     });
 
 
@@ -17,7 +17,7 @@ export const getNotificationsCount = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const container = await getContainer();
-        return container.notifications.query.countUnreadNotifications(currentUser.id);
+        return container.notifications.countUnreadNotifications(currentUser.id);
     });
 
 
@@ -26,7 +26,7 @@ export const markAllNotifAsRead = createServerFn({ method: "POST" })
     .validator(notificationSchema)
     .handler(async ({ data: { type }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.notifications.commands.markAllAsRead(currentUser.id, type);
+        return container.notifications.markAllAsRead(currentUser.id, type);
     });
 
 
@@ -35,5 +35,5 @@ export const postDeleteSocialNotif = createServerFn({ method: "POST" })
     .validator(notificationIdSchema)
     .handler(async ({ data: { notificationId }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.notifications.commands.deleteSocialNotif(currentUser.id, notificationId);
+        return container.notifications.deleteSocialNotification(currentUser.id, notificationId);
     });

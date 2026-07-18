@@ -1,6 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {UpComingMedia} from "@/lib/types/notifications.types";
+import type {UpComingMedia} from "@/lib/types/notifications.types";
 import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {TvDetailsQuery} from "@/lib/server/domain/media/tv/catalog/tv-details.query";
 import {createTvMatcher} from "@/lib/server/domain/media/tv/imports/tv.matcher";
@@ -31,8 +31,8 @@ import {TvAchievementCalculator} from "@/lib/server/domain/media/tv/achievements
 import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
 import {TvWcfPoolSource} from "@/lib/server/domain/media/tv/features/which-came-first/tv-wcf-pool-source";
 import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
-import {TvUpcomingNotificationCommand} from "@/lib/server/domain/media/tv/features/notifications/tv-upcoming-notification.command";
-import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
+import {TvUpcomingNotificationSource} from "@/lib/server/domain/media/tv/features/notifications/tv-upcoming-notification.source";
+import type {UpcomingNotificationSource} from "@/lib/server/domain/notifications/notification.service";
 import {tvActivityDefinition} from "@/lib/server/domain/media/tv/activity/tv-activity.definition";
 import {TvActivityDurationSource} from "@/lib/server/domain/media/tv/activity/tv-activity-duration.source";
 import type {ActivityDurationSource} from "@/lib/types/activity.types";
@@ -61,7 +61,6 @@ export const setupTvMediaModule = <K extends TvMediaType>(
     const statsRead = new TvStatsReadRepository(kind);
     const csvExport = new TvLibraryCsvExportQuery(kind);
     const tags = new LibraryTagsQuery(kind);
-    const upcomingNotifications = new TvUpcomingNotificationCommand(kind, list, NotificationsRepository);
 
     const external = (kind === MediaType.ANIME)
         ? createTmdbAnimeProvider(clients.tmdb)
@@ -99,9 +98,9 @@ export const setupTvMediaModule = <K extends TvMediaType>(
             whichCameFirst: {
                 pool: new TvWcfPoolSource(kind) satisfies WcfPoolSource,
             },
-        },
-        notifications: {
-            upcoming: upcomingNotifications,
+            notifications: {
+                upcoming: new TvUpcomingNotificationSource(kind) satisfies UpcomingNotificationSource,
+            },
         },
         catalog: {
             ingestion,
@@ -137,13 +136,8 @@ export const setupTvMediaModule = <K extends TvMediaType>(
                 },
             },
             covers: new LibraryCustomCoverCommand(kind, libraryRead, libraryCommands),
-            upcoming: {
-                async forOwner(ownerId: number): Promise<UpComingMedia[]> {
-                    return list.getUpcomingMedia({ ownerId, actorId: ownerId, reason: "owner", mediaTypeEnabled: true });
-                },
-                async forNotifications(): Promise<UpComingMedia[]> {
-                    return list.getUpcomingMediaForNotifications();
-                },
+            async upcoming(ownerId: number): Promise<UpComingMedia[]> {
+                return list.getUpcomingMedia({ ownerId, actorId: ownerId, reason: "owner", mediaTypeEnabled: true });
             },
         },
     } as const;

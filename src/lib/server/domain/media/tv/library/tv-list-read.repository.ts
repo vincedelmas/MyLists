@@ -1,4 +1,4 @@
-import {and, asc, count, desc, eq, gte, inArray, isNotNull, like, lte, max, notInArray, SQL, sql,} from "drizzle-orm";
+import {and, asc, count, desc, eq, gte, inArray, isNotNull, like, max, notInArray, SQL, sql,} from "drizzle-orm";
 import {alias} from "drizzle-orm/sqlite-core";
 import {SimpleSearch} from "@/lib/schemas";
 import {TvListArgs, TvListPage} from "@/lib/contracts/media/lists";
@@ -260,14 +260,6 @@ export class TvListReadRepository<K extends TvMediaType = TvMediaType> {
     }
 
     async getUpcomingMedia(access: MediaListAccessScope) {
-        return this.queryUpcomingMedia(access.ownerId, false);
-    }
-
-    async getUpcomingMediaForNotifications() {
-        return this.queryUpcomingMedia(undefined, true);
-    }
-
-    private async queryUpcomingMedia(ownerId: number | undefined, maxAWeek: boolean) {
         const lastEpisode = getDbClient()
             .select({
                 catalogItemId: tvSeason.catalogItemId,
@@ -295,10 +287,9 @@ export class TvListReadRepository<K extends TvMediaType = TvMediaType> {
             .innerJoin(lastEpisode, eq(lastEpisode.catalogItemId, catalogItem.id))
             .where(and(
                 eq(catalogItem.kind, this.kind),
-                ownerId !== undefined ? eq(libraryEntry.userId, ownerId) : undefined,
+                eq(libraryEntry.userId, access.ownerId),
                 notInArray(libraryEntry.status, [Status.DROPPED, Status.RANDOM]),
                 gte(tvDetails.nextEpisodeAirDate, sql`date('now')`),
-                maxAWeek ? lte(tvDetails.nextEpisodeAirDate, sql`date('now', '+7 days')`) : undefined,
             ))
             .orderBy(asc(tvDetails.nextEpisodeAirDate))
             .then((rows) => rows.map(({ imageCover, ...row }) => ({

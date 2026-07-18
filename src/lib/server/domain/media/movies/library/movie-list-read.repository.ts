@@ -7,7 +7,7 @@ import {MovieListArgs, MovieListPage} from "@/lib/contracts/media/lists";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {movieRedoCount} from "@/lib/server/domain/media/movies/library/movie-progress";
-import {and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, like, lte, notInArray, or, SQL, sql} from "drizzle-orm";
+import {and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, like, notInArray, or, SQL, sql} from "drizzle-orm";
 import {
     catalogGenre,
     catalogItem,
@@ -233,14 +233,6 @@ export class MovieListReadRepository {
     }
 
     getUpcomingMedia(access: MediaListAccessScope) {
-        return this.queryUpcomingMedia(access.ownerId, false);
-    }
-
-    getUpcomingMediaForNotifications() {
-        return this.queryUpcomingMedia(undefined, true);
-    }
-
-    private queryUpcomingMedia(ownerId: number | undefined, maxAWeek: boolean) {
         return getDbClient()
             .select({
                 mediaId: catalogItem.id,
@@ -254,10 +246,8 @@ export class MovieListReadRepository {
             .innerJoin(libraryEntry, eq(libraryEntry.catalogItemId, catalogItem.id))
             .where(and(
                 eq(catalogItem.kind, MediaType.MOVIES),
-                ownerId !== undefined ? eq(libraryEntry.userId, ownerId) : undefined,
-                maxAWeek
-                    ? and(gte(catalogItem.releaseDate, sql`date('now')`), lte(catalogItem.releaseDate, sql`date('now', '+7 days')`))
-                    : or(isNull(catalogItem.releaseDate), gte(catalogItem.releaseDate, sql`date('now')`)),
+                eq(libraryEntry.userId, access.ownerId),
+                or(isNull(catalogItem.releaseDate), gte(catalogItem.releaseDate, sql`date('now')`)),
             ))
             .orderBy(asc(catalogItem.releaseDate), asc(catalogItem.id))
             .then((rows) => rows.map(({ imageCover, ...row }) => ({

@@ -4,7 +4,7 @@ import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import type {MediaModule} from "@/lib/server/domain/media/media-module.registry"
 
 
-type UpcomingMediaModule = Extract<MediaModule, { library: { upcoming: { forOwner: unknown } } }>;
+type UpcomingMediaModule = Extract<MediaModule, { library: { upcoming: unknown } }>;
 
 const supportsUpcomingMedia = (mediaModule: MediaModule): mediaModule is UpcomingMediaModule => {
     return "upcoming" in mediaModule.library;
@@ -22,7 +22,7 @@ export const getComingNextMedia = createServerFn({ method: "GET" })
 
         const comingNextData = await Promise.all(
             mediaModules.map(async (mediaModule) => {
-                const items = await mediaModule.library.upcoming.forOwner(currentUser.id);
+                const items = await mediaModule.library.upcoming(currentUser.id);
                 return ({ items, mediaType: mediaModule.kind });
             })
         );

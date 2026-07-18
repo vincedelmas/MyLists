@@ -91,7 +91,7 @@ export const postRemoveMediaFromList = createServerFn({ method: "POST" })
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
         await removeMedia(container, currentUser.id, mediaType, mediaId);
-        await container.notifications.commands.deleteUserMediaNotifications(currentUser.id, mediaType, mediaId);
+        await container.notifications.deleteUserMediaNotifications(currentUser.id, mediaType, mediaId);
     });
 
 

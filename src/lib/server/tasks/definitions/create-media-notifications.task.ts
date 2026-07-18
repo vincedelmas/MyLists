@@ -2,13 +2,14 @@ import {z} from "zod";
 import {getContainer} from "@/lib/server/core/container";
 import {defineTask} from "@/lib/server/tasks/define-task";
 import {MediaModule} from "@/lib/server/domain/media/media-module.registry";
+import {UpcomingNotificationSource} from "@/lib/server/domain/notifications/notification.service";
 
 
-type UpcomingNotificationMediaModule = Extract<MediaModule, { notifications: { upcoming: unknown } }>;
+type UpcomingNotificationMediaModule = Extract<MediaModule, { contributions: { notifications: { upcoming: UpcomingNotificationSource } } }>;
 
 
 const supportsUpcomingNotifications = (mediaModule: MediaModule): mediaModule is UpcomingNotificationMediaModule => {
-    return "notifications" in mediaModule;
+    return "notifications" in mediaModule.contributions;
 }
 
 
@@ -23,7 +24,7 @@ export const createMediaNotificationsTask = defineTask({
 
         for (const mediaModule of mediaModules) {
             await ctx.step(`process-${mediaModule.kind}`, async () => {
-                const allMediaToNotify = await mediaModule.notifications.upcoming.candidates();
+                const allMediaToNotify = await mediaModule.contributions.notifications.upcoming.getCandidates();
 
                 ctx.metric(`${mediaModule.kind}.found`, allMediaToNotify.length);
                 if (allMediaToNotify.length === 0) {
@@ -31,7 +32,7 @@ export const createMediaNotificationsTask = defineTask({
                     return;
                 }
 
-                await mediaModule.notifications.upcoming.create(allMediaToNotify);
+                await container.notifications.createUpcomingMediaNotifications(mediaModule.kind, allMediaToNotify);
             })
         }
     },

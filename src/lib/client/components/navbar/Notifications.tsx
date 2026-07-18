@@ -5,7 +5,7 @@ import {SocialNotifType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
-import {NotifTab} from "@/lib/types/notifications.types";
+import {NotificationTab} from "@/lib/types/notifications.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -28,10 +28,10 @@ export const Notifications = () => {
     const isBelowLg = useBreakpoint("lg");
     const [open, setOpen] = useState(false);
     const { data: counts } = useQuery(notificationsCountOptions());
-    const [activeTab, setActiveTab] = useState<NotifTab>("media");
+    const [activeTab, setActiveTab] = useState<NotificationTab>("media");
     const { data: notifications, isLoading } = useQuery(notificationsOptions(open, activeTab));
 
-    const handleMarkAsRead = async (type: NotifTab) => {
+    const handleMarkAsRead = async (type: NotificationTab) => {
         const unreadCount = (type === "social") ? counts?.social : counts?.media;
         if (unreadCount && unreadCount > 0) {
             mutation.mutate({ data: { type } });
@@ -40,7 +40,7 @@ export const Notifications = () => {
 
     const handleTabChange = async (newTab: string) => {
         await handleMarkAsRead(activeTab);
-        setActiveTab(newTab as NotifTab);
+        setActiveTab(newTab as NotificationTab);
     };
 
     const handleOpenChange = async (isOpen: boolean) => {

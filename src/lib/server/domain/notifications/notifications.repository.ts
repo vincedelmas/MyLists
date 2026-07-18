@@ -1,7 +1,7 @@
-import {NotifTab} from "@/lib/types/notifications.types";
 import {and, desc, eq, inArray, sql} from "drizzle-orm";
 import {MediaType, SocialNotifType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {NotificationTab} from "@/lib/types/notifications.types";
 import {mediaNotifications, socialNotifications} from "@/lib/server/database/schema";
 
 
@@ -37,7 +37,7 @@ export class NotificationsRepository {
             ));
     }
 
-    static async deleteSocialNotif(userId: number, notificationId: number) {
+    static async deleteSocialNotification(userId: number, notificationId: number) {
         await getDbClient()
             .delete(socialNotifications)
             .where(and(eq(socialNotifications.userId, userId), eq(socialNotifications.id, notificationId)));
@@ -82,7 +82,7 @@ export class NotificationsRepository {
 
     // --- Both notifications ---------------------------
 
-    static async getLastNotifications(userId: number, type: NotifTab, limit = 8) {
+    static async getLastNotifications(userId: number, type: NotificationTab, limit = 8) {
         if (type === "social") {
             return getDbClient().query.socialNotifications.findMany({
                 where: eq(socialNotifications.userId, userId),
@@ -122,7 +122,7 @@ export class NotificationsRepository {
         };
     }
 
-    static async markAllAsRead(userId: number, type: NotifTab) {
+    static async markAllAsRead(userId: number, type: NotificationTab) {
         const table = type === "social" ? socialNotifications : mediaNotifications;
 
         await getDbClient()

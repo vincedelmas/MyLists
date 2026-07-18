@@ -1,5 +1,5 @@
 import {queryOptions} from "@tanstack/react-query";
-import {NotifTab} from "@/lib/types/notifications.types";
+import {NotificationTab} from "@/lib/types/notifications.types";
 import {getNotifications, getNotificationsCount} from "@/lib/server/functions/notifications";
 import {viewerScopedKey} from "@/lib/client/react-query/query-options/viewer-cache";
 
@@ -12,7 +12,7 @@ export const notificationsCountOptions = () => queryOptions({
 });
 
 
-export const notificationsOptions = (open: boolean, activeTab: NotifTab) => queryOptions({
+export const notificationsOptions = (open: boolean, activeTab: NotificationTab) => queryOptions({
     queryKey: viewerScopedKey(["notifications", activeTab]),
     queryFn: () => getNotifications({ data: { type: activeTab } }),
     meta: { errorToastMessage: "An error occurred fetching the notifications." },

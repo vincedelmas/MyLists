@@ -13,7 +13,7 @@ export const removeAllOrphansMediaTask = defineTask({
     handler: async (ctx) => {
         const container = await getContainer();
         const mediaTypes = MEDIA_TYPES;
-        const notificationCommands = container.notifications.commands;
+        const notifications = container.notifications;
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`remove-${mediaType}`, async () => {
@@ -24,7 +24,7 @@ export const removeAllOrphansMediaTask = defineTask({
                     ctx.metric(`${mediaType}.removed`, mediaIdsToRemove.length);
 
                     // Remove in other services
-                    await notificationCommands.deleteMediaNotifications(mediaType, mediaIdsToRemove);
+                    await notifications.deleteMediaNotifications(mediaType, mediaIdsToRemove);
                     await container.games.whichCameFirst.deletePoolMedia(mediaType, mediaIdsToRemove);
 
                     await catalogOrphans.delete(mediaIdsToRemove);

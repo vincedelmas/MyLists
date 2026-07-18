@@ -1,15 +1,10 @@
 import {z} from "zod";
 import {MediaType} from "@/lib/utils/enums";
+
 export {WCF_MAX_ROUNDS} from "@/lib/utils/constants";
 
 
 export const WCF_MEDIA_TYPES = [MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GAMES, MediaType.MANGA] as const;
-export type WcfMediaType = typeof WCF_MEDIA_TYPES[number];
-
-
-export const isWcfMediaType = (mediaType: MediaType): mediaType is WcfMediaType => {
-    return WCF_MEDIA_TYPES.some((supportedType) => supportedType === mediaType);
-};
 
 
 export const startWhichCameFirstRunSchema = z.object({

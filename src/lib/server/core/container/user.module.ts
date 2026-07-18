@@ -6,10 +6,8 @@ import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.reposito
 import {AchievementService} from "@/lib/server/domain/achievements/achievement.service";
 import {FeatureVotesQuery} from "@/lib/server/domain/feature-votes/feature-votes.query";
 import {FeatureVoteCommands} from "@/lib/server/domain/feature-votes/feature-vote.commands";
-import {NotificationsQuery} from "@/lib/server/domain/notifications/notifications.query";
-import {NotificationCommands} from "@/lib/server/domain/notifications/notification.commands";
+import {NotificationService} from "@/lib/server/domain/notifications/notification.service";
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
-import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {InactiveAccountRepository, UserProfileRepository, UserRepository, UserStatsService} from "@/lib/server/domain/user";
 import {CollectionsQuery} from "@/lib/server/domain/collections/collections.query";
 import {CollectionCommands} from "@/lib/server/domain/collections/collection.commands";
@@ -44,7 +42,6 @@ export function setupUserModule(mediaModule: MediaModule) {
     const whichCameFirstRepository = WcfRepository;
     const userProfileRepository = UserProfileRepository;
     const featureVotesRepository = FeatureVotesRepository;
-    const notificationsRepository = NotificationsRepository;
     const inactiveAccountRepository = InactiveAccountRepository;
 
     // User Services
@@ -63,14 +60,12 @@ export function setupUserModule(mediaModule: MediaModule) {
     );
     const profileUpdatesQuery = new ProfileUpdatesQuery();
     const profileUpdatesCommand = new ProfileUpdatesCommand();
-    const notificationsQuery = new NotificationsQuery(notificationsRepository);
-    const notificationCommands = new NotificationCommands(notificationsRepository);
     const whichCameFirstService = new WcfService(whichCameFirstRepository, mediaModule);
     const profileHighlights = new ProfileHighlightsQuery();
     const profileCustomizationQuery = new ProfileCustomizationQuery(userProfileRepository, profileHighlights);
     const profileCustomizationCommands = new ProfileCustomizationCommands(userProfileRepository);
     const featureVotesQuery = new FeatureVotesQuery(featureVotesRepository);
-    const featureVoteCommands = new FeatureVoteCommands(featureVotesRepository, notificationCommands);
+    const featureVoteCommands = new FeatureVoteCommands(featureVotesRepository, NotificationService);
     const activityService = new ActivityService(mediaModule);
     const collectionsQuery = new CollectionsQuery();
     const collectionsCommands = new CollectionCommands();
@@ -128,10 +123,7 @@ export function setupUserModule(mediaModule: MediaModule) {
         activity: activityService,
         stats: userStatsService,
         achievements: AchievementService,
-        notifications: {
-            query: notificationsQuery,
-            commands: notificationCommands,
-        },
+        notifications: NotificationService,
         featureVotes: {
             query: featureVotesQuery,
             commands: featureVoteCommands,

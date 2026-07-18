@@ -1,40 +1,40 @@
 import {MediaType} from "@/lib/utils/enums";
 import {TmdbApi} from "@/lib/server/api-providers/api";
-import {UpComingMedia} from "@/lib/types/notifications.types";
+import type {UpComingMedia} from "@/lib/types/notifications.types";
+import type {ActivityDurationSource} from "@/lib/types/activity.types";
+import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import type {MediadleEligibility} from "@/lib/server/domain/mediadle/mediadle.service";
 import {createMoviesMatcher} from "@/lib/server/domain/media/movies/imports/movies.matcher";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {moviesAchievements} from "@/lib/server/domain/media/movies/achievements/movies.seed";
 import {MovieDetailsQuery} from "@/lib/server/domain/media/movies/catalog/movie-details.query";
-import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {MovieLibraryCommands} from "@/lib/server/domain/media/movies/library/movie-library.commands";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
+import type {UpcomingNotificationSource} from "@/lib/server/domain/notifications/notification.service";
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
 import {MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";
 import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
-import {MovieWcfPoolSource} from "@/lib/server/domain/media/movies/features/which-came-first/movie-wcf-pool-source";
-import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import {movieActivityDefinition} from "@/lib/server/domain/media/movies/activity/movie-activity.definition";
 import {MovieCatalogEditCommand} from "@/lib/server/domain/media/movies/catalog/movie-catalog-edit.command";
 import {MovieListReadRepository} from "@/lib/server/domain/media/movies/library/movie-list-read.repository";
 import {getMovieStatsContributions} from "@/lib/server/domain/media/movies/library/movie-stats-contributions";
 import {MovieStatsReadRepository} from "@/lib/server/domain/media/movies/library/movie-stats-read.repository";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
-import {MovieMediadleEligibility} from "@/lib/server/domain/media/movies/features/mediadle/movie-mediadle.eligibility";
 import {MovieLibraryReadRepository} from "@/lib/server/domain/media/movies/library/movie-library-read.repository";
 import {MovieCatalogReadRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-read.repository";
-import {MovieActivityDurationSource} from "@/lib/server/domain/media/movies/activity/movie-activity-duration.source";
-import type {ActivityDurationSource} from "@/lib/types/activity.types";
 import {MovieLibraryCsvExportQuery} from "@/lib/server/domain/media/movies/library/movie-library-csv-export.query";
+import {MovieWcfPoolSource} from "@/lib/server/domain/media/movies/features/which-came-first/movie-wcf-pool-source";
 import {MovieCatalogAdminRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-admin.repository";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
+import {MovieActivityDurationSource} from "@/lib/server/domain/media/movies/activity/movie-activity-duration.source";
 import {MovieAchievementCalculator} from "@/lib/server/domain/media/movies/achievements/movie-achievement-calculator";
 import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
 import {MovieCatalogIngestionCommand} from "@/lib/server/domain/media/movies/catalog/movie-catalog-ingestion.command";
+import {MovieMediadleEligibility} from "@/lib/server/domain/media/movies/features/mediadle/movie-mediadle.eligibility";
 import {MovieCatalogIngestionRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-ingestion.repository";
 import {MovieCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/movies/catalog/movie-catalog-refresh-candidates.query";
 import {createMoviesIngestionService, createTmdbMoviesProvider} from "@/lib/server/domain/media/movies/external/tmdb-movies.provider";
-import {MovieUpcomingNotificationCommand} from "@/lib/server/domain/media/movies/features/notifications/movie-upcoming-notification.command";
+import {MovieUpcomingNotificationSource} from "@/lib/server/domain/media/movies/features/notifications/movie-upcoming-notification.source";
 
 
 export const setupMovieMediaModule = (tmdb: TmdbApi) => {
@@ -50,7 +50,6 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
     const libraryCommands = new MovieLibraryCommands(libraryRepository);
     const libraryRead = new MovieLibraryReadRepository(libraryRepository);
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.MOVIES);
-    const upcomingNotifications = new MovieUpcomingNotificationCommand(list, NotificationsRepository);
     const catalogEdit = new MovieCatalogEditCommand(catalogAdmin, libraryRepository, libraryCommands);
     const catalogCommands = new MovieCatalogIngestionCommand(catalogRepository, libraryRepository, libraryCommands);
 
@@ -62,9 +61,6 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
     return {
         kind: MediaType.MOVIES,
         external,
-        notifications: {
-            upcoming: upcomingNotifications,
-        },
         catalog: {
             ingestion,
             edit: catalogEdit,
@@ -94,13 +90,8 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
                 edit: (params: Parameters<MovieLibraryCommands["editTag"]>[0]) => libraryCommands.editTag(params),
             },
             covers: new LibraryCustomCoverCommand(MediaType.MOVIES, libraryRead, libraryCommands),
-            upcoming: {
-                async forOwner(ownerId: number): Promise<UpComingMedia[]> {
-                    return list.getUpcomingMedia({ ownerId, actorId: ownerId, reason: "owner", mediaTypeEnabled: true });
-                },
-                async forNotifications(): Promise<UpComingMedia[]> {
-                    return list.getUpcomingMediaForNotifications();
-                },
+            async upcoming(ownerId: number): Promise<UpComingMedia[]> {
+                return list.getUpcomingMedia({ ownerId, actorId: ownerId, reason: "owner", mediaTypeEnabled: true });
             },
         },
         contributions: {
@@ -123,6 +114,9 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
             },
             mediadle: {
                 eligibility: MovieMediadleEligibility satisfies MediadleEligibility,
+            },
+            notifications: {
+                upcoming: MovieUpcomingNotificationSource satisfies UpcomingNotificationSource,
             },
         },
     } as const;

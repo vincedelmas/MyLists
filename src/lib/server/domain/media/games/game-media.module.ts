@@ -1,5 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
+import type {UpComingMedia} from "@/lib/types/notifications.types";
 import {GameDetailsQuery} from "@/lib/server/domain/media/games/catalog/game-details.query";
 import {GameLibraryCommands} from "@/lib/server/domain/media/games/library/game-library.commands";
 import {GameLibraryReadRepository} from "@/lib/server/domain/media/games/library/game-library-read.repository";
@@ -12,7 +13,6 @@ import {GameCatalogIngestionRepository} from "@/lib/server/domain/media/games/ca
 import {GameCatalogIngestionCommand} from "@/lib/server/domain/media/games/catalog/game-catalog-ingestion.command";
 import {createGamesIngestionService, createIgdbGamesProvider} from "@/lib/server/domain/media/games/external/igdb-games.provider";
 import {createGamesMatcher} from "@/lib/server/domain/media/games/imports/games.matcher";
-import {UpComingMedia} from "@/lib/types/notifications.types";
 import {GameLibraryRepository} from "@/lib/server/domain/media/games/library/game-library.repository";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {GameCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/games/catalog/game-catalog-refresh-candidates.query";
@@ -101,10 +101,8 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
                 edit: (params: Parameters<GameLibraryCommands["editTag"]>[0]) => libraryCommands.editTag(params),
             },
             covers: new LibraryCustomCoverCommand(MediaType.GAMES, libraryRead, libraryCommands),
-            upcoming: {
-                async forOwner(ownerId: number): Promise<UpComingMedia[]> {
-                    return list.getUpcomingMedia({ ownerId, actorId: ownerId, reason: "owner", mediaTypeEnabled: true });
-                },
+            async upcoming(ownerId: number): Promise<UpComingMedia[]> {
+                return list.getUpcomingMedia({ ownerId, actorId: ownerId, reason: "owner", mediaTypeEnabled: true });
             },
         },
     } as const;

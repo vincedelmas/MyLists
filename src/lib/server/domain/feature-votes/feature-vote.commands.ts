@@ -1,6 +1,6 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import {FeatureStatus, SocialNotifType} from "@/lib/utils/enums";
-import {NotificationCommands} from "@/lib/server/domain/notifications/notification.commands";
+import {NotificationService} from "@/lib/server/domain/notifications/notification.service";
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 
 
@@ -8,8 +8,9 @@ import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-
 export class FeatureVoteCommands {
     constructor(
         private readonly repository: typeof FeatureVotesRepository,
-        private readonly notifications: NotificationCommands,
-    ) {}
+        private readonly notifications: typeof NotificationService,
+    ) {
+    }
 
     async createFeatureRequest(userId: number, params: { title: string; description?: string | null }) {
         const { duplicate, featureId } = await this.repository.createFeatureRequest({

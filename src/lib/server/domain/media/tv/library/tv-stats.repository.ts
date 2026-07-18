@@ -1,22 +1,9 @@
-import {
-    and,
-    asc,
-    count,
-    countDistinct,
-    desc,
-    eq,
-    gte,
-    isNotNull,
-    ne,
-    notInArray,
-    SQL,
-    sql,
-    sum,
-} from "drizzle-orm";
-import {getDbClient} from "@/lib/server/database/async-storage";
-import {TvMediaType} from "@/lib/types/media-kind.types";
 import {Status} from "@/lib/utils/enums";
+import {TvMediaType} from "@/lib/types/media-kind.types";
+import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {and, asc, count, countDistinct, desc, eq, gte, isNotNull, ne, notInArray, SQL, sql, sum} from "drizzle-orm";
+import {libraryStatsContributionBase, rebuildLibraryStats} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {
     catalogGenre,
     catalogItem,
@@ -34,9 +21,15 @@ import {
 } from "@/lib/server/database/schema";
 
 
-/** Reads precomputed TV aggregates from the canonical profile-channel model. */
-export class TvStatsReadRepository {
-    constructor(private readonly kind: TvMediaType) {}
+/** TV aggregate, advanced, and materialized library statistics. */
+export class TvStatsRepository {
+    constructor(private readonly kind: TvMediaType) {
+    }
+
+    async rebuild() {
+        const tvContributions = await this.getRebuildContributions();
+        return rebuildLibraryStats(this.kind, tvContributions);
+    }
 
     async getAggregatedMediaStats(scope: TvStatsReadScope) {
         const userId = scope.type === "library" ? scope.access.ownerId : undefined;
@@ -133,6 +126,31 @@ export class TvStatsReadRepository {
             actorsStats,
             countriesStats,
         };
+    }
+
+    private getRebuildContributions() {
+        const rewatches = sql<number>`COALESCE((
+            SELECT SUM(rewatch.count * season.episode_count)
+            FROM tv_season_rewatch rewatch
+            INNER JOIN tv_season season
+                ON season.catalog_item_id = rewatch.catalog_item_id
+                AND season.season_number = rewatch.season_number
+            WHERE rewatch.library_entry_id = ${libraryEntry.id}
+        ), 0)`;
+
+        const watchedEpisodes = sql<number>`COALESCE(${tvProgress.watchedEpisodes}, 0) + ${rewatches}`;
+
+        return getDbClient()
+            .select({
+                ...libraryStatsContributionBase,
+                specific: watchedEpisodes,
+                timeSpent: sql<number>`${watchedEpisodes} * COALESCE(${tvDetails.episodeDurationMinutes}, 0)`,
+                redo: sql<number>`COALESCE((SELECT SUM(count) FROM tv_season_rewatch WHERE library_entry_id = ${libraryEntry.id}), 0)`,
+            }).from(libraryEntry)
+            .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
+            .leftJoin(tvProgress, eq(tvProgress.libraryEntryId, libraryEntry.id))
+            .leftJoin(tvDetails, eq(tvDetails.catalogItemId, catalogItem.id))
+            .where(eq(catalogItem.kind, this.kind));
     }
 
     private async computeRatingStats(userId?: number) {

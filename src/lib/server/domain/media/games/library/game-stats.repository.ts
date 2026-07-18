@@ -1,13 +1,15 @@
-import {and, asc, count, countDistinct, desc, eq, gte, isNotNull, ne, SQL, sql} from "drizzle-orm";
-import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType, Status} from "@/lib/utils/enums";
+import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {and, asc, count, countDistinct, desc, eq, gte, isNotNull, ne, SQL, sql} from "drizzle-orm";
+import {libraryStatsContributionBase, rebuildLibraryStats} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {
-    mangaAuthor,
-    mangaDetails,
     catalogGenre,
     catalogItem,
     catalogItemGenre,
+    gameCompany,
+    gameDetails,
+    gameProgress,
     libraryEntry,
     libraryStats,
     libraryTag,
@@ -15,13 +17,18 @@ import {
 } from "@/lib/server/database/schema";
 
 
-/** Manga aggregate and advanced statistics over exact stored totals and catalog metadata. */
-export class MangaStatsReadRepository {
-    async getAggregatedMediaStats(scope: MangaStatsReadScope) {
+/** Game aggregate, advanced, and materialized library statistics. */
+export class GameStatsRepository {
+    static async rebuild() {
+        const gamesContributions = await this.getRebuildContributions();
+        return rebuildLibraryStats(MediaType.GAMES, gamesContributions);
+    }
+
+    static async getAggregatedMediaStats(scope: GameStatsReadScope) {
         const userId = scope.type === "library" ? scope.access.ownerId : undefined;
         const conditions = [
-            eq(libraryStats.kind, MediaType.MANGA),
-            eq(profileMediaChannel.kind, MediaType.MANGA),
+            eq(libraryStats.kind, MediaType.GAMES),
+            eq(profileMediaChannel.kind, MediaType.GAMES),
             eq(profileMediaChannel.enabled, true),
         ];
         if (userId !== undefined) conditions.push(eq(libraryStats.userId, userId));
@@ -79,7 +86,7 @@ export class MangaStatsReadRepository {
         };
     }
 
-    async getAdvancedMediaStats(scope: MangaStatsReadScope, mediaAvgRating: number | null) {
+    static async getAdvancedMediaStats(scope: GameStatsReadScope, mediaAvgRating: number | null) {
         const userId = scope.type === "library" ? scope.access.ownerId : undefined;
         const [
             ratings,
@@ -88,17 +95,23 @@ export class MangaStatsReadRepository {
             genresStats,
             avgDuration,
             durationDistrib,
+            developersStats,
             publishersStats,
-            authorsStats,
+            platformsStats,
+            enginesStats,
+            perspectivesStats,
         ] = await Promise.all([
             this.computeRatingStats(userId),
             this.computeTotalTags(userId),
             this.computeReleaseDateStats(userId),
             this.computeGenreAffinity(mediaAvgRating, userId),
-            this.computeAverageChapters(userId),
-            this.computeChapterDistribution(userId),
-            this.computeDetailsAffinity(mangaDetails.publisher, mediaAvgRating, userId),
-            this.computeAuthorAffinity(mediaAvgRating, userId),
+            this.computeAveragePlaytime(userId),
+            this.computePlaytimeDistribution(userId),
+            this.computeCompanyAffinity(true, mediaAvgRating, userId),
+            this.computeCompanyAffinity(false, mediaAvgRating, userId),
+            this.computeProgressAffinity(gameProgress.platform, mediaAvgRating, userId),
+            this.computeDetailsAffinity(gameDetails.gameEngine, mediaAvgRating, userId),
+            this.computeDetailsAffinity(gameDetails.playerPerspective, mediaAvgRating, userId),
         ]);
         return {
             ratings,
@@ -107,12 +120,28 @@ export class MangaStatsReadRepository {
             releaseDates,
             avgDuration,
             durationDistrib,
+            developersStats,
             publishersStats,
-            authorsStats,
+            platformsStats,
+            enginesStats,
+            perspectivesStats,
         };
     }
 
-    private async computeRatingStats(userId?: number) {
+    private static getRebuildContributions() {
+        return getDbClient()
+            .select({
+                ...libraryStatsContributionBase,
+                redo: sql<number>`0`,
+                specific: sql<number>`0`,
+                timeSpent: sql<number>`COALESCE(${gameProgress.playtimeMinutes}, 0)`,
+            }).from(libraryEntry)
+            .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
+            .leftJoin(gameProgress, eq(gameProgress.libraryEntryId, libraryEntry.id))
+            .where(eq(catalogItem.kind, MediaType.GAMES));
+    }
+
+    private static async computeRatingStats(userId?: number) {
         const rows = await getDbClient().select({ rating: libraryEntry.rating, count: count(libraryEntry.rating) })
             .from(libraryEntry).innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
             .where(and(...this.entryConditions(userId), isNotNull(libraryEntry.rating)))
@@ -126,14 +155,14 @@ export class MangaStatsReadRepository {
         return buckets;
     }
 
-    private async computeTotalTags(userId?: number) {
-        const conditions = [eq(libraryTag.kind, MediaType.MANGA)];
+    private static async computeTotalTags(userId?: number) {
+        const conditions = [eq(libraryTag.kind, MediaType.GAMES)];
         if (userId !== undefined) conditions.push(eq(libraryTag.userId, userId));
         return getDbClient().select({ value: countDistinct(libraryTag.name) })
             .from(libraryTag).where(and(...conditions)).get()?.value ?? 0;
     }
 
-    private computeReleaseDateStats(userId?: number) {
+    private static computeReleaseDateStats(userId?: number) {
         const decade = sql<number>`(CAST(strftime('%Y', ${catalogItem.releaseDate}) AS INTEGER) / 10) * 10`;
         return getDbClient().select({ name: decade, value: count(catalogItem.id) }).from(catalogItem)
             .innerJoin(libraryEntry, eq(libraryEntry.catalogItemId, catalogItem.id))
@@ -141,25 +170,25 @@ export class MangaStatsReadRepository {
             .groupBy(decade).orderBy(asc(decade));
     }
 
-    private async computeAverageChapters(userId?: number) {
-        return getDbClient().select({ value: sql<number | null>`AVG(${mangaDetails.chapters})` })
+    private static async computeAveragePlaytime(userId?: number) {
+        return getDbClient().select({ value: sql<number | null>`AVG(${gameProgress.playtimeMinutes} / 60)` })
             .from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
-            .innerJoin(mangaDetails, eq(mangaDetails.catalogItemId, catalogItem.id))
-            .where(and(...this.consumedConditions(userId), isNotNull(mangaDetails.chapters))).get()?.value ?? null;
+            .innerJoin(gameProgress, eq(gameProgress.libraryEntryId, libraryEntry.id))
+            .where(and(...this.consumedConditions(userId))).get()?.value ?? null;
     }
 
-    private computeChapterDistribution(userId?: number) {
-        const bucket = sql<number>`floor(${mangaDetails.chapters} / 50.0) * 50`;
+    private static computePlaytimeDistribution(userId?: number) {
+        const bucket = sql<number>`floor(log(max(${gameProgress.playtimeMinutes} / 60, 1)) / log(2))`;
         return getDbClient().select({ name: bucket, value: count(catalogItem.id) }).from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
-            .innerJoin(mangaDetails, eq(mangaDetails.catalogItemId, catalogItem.id))
-            .where(and(...this.consumedConditions(userId), isNotNull(mangaDetails.chapters)))
+            .innerJoin(gameProgress, eq(gameProgress.libraryEntryId, libraryEntry.id))
+            .where(and(...this.consumedConditions(userId)))
             .groupBy(bucket).orderBy(asc(bucket))
-            .then((rows) => rows.map((row) => ({ name: String(row.name), value: row.value })));
+            .then((rows) => rows.map((row) => ({ name: String(Math.pow(2, row.name)), value: row.value })));
     }
 
-    private async computeGenreAffinity(mediaAvgRating: number | null, userId?: number) {
+    private static async computeGenreAffinity(mediaAvgRating: number | null, userId?: number) {
         const expressions = affinityExpressions(catalogGenre.name, mediaAvgRating);
         const rows = await getDbClient().select({ ...expressions.selection, name: catalogGenre.name })
             .from(libraryEntry)
@@ -172,20 +201,24 @@ export class MangaStatsReadRepository {
         return formatAffinity(rows);
     }
 
-    private async computeAuthorAffinity(mediaAvgRating: number | null, userId?: number) {
-        const expressions = affinityExpressions(mangaAuthor.name, mediaAvgRating);
-        const rows = await getDbClient().select({ ...expressions.selection, name: mangaAuthor.name })
+    private static async computeCompanyAffinity(developer: boolean, mediaAvgRating: number | null, userId?: number) {
+        const expressions = affinityExpressions(gameCompany.name, mediaAvgRating);
+        const rows = await getDbClient().select({ ...expressions.selection, name: gameCompany.name })
             .from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
-            .innerJoin(mangaAuthor, eq(mangaAuthor.catalogItemId, catalogItem.id))
-            .where(and(...this.consumedConditions(userId), isNotNull(mangaAuthor.name)))
-            .groupBy(mangaAuthor.name).having(gte(count(mangaAuthor.name), 3))
+            .innerJoin(gameCompany, eq(gameCompany.catalogItemId, catalogItem.id))
+            .where(and(
+                ...this.consumedConditions(userId),
+                isNotNull(gameCompany.name),
+                developer ? eq(gameCompany.developer, true) : eq(gameCompany.publisher, true),
+            ))
+            .groupBy(gameCompany.name).having(gte(count(gameCompany.name), 3))
             .orderBy(desc(expressions.affinity)).limit(10);
         return formatAffinity(rows);
     }
 
-    private async computeDetailsAffinity(
-        metric: typeof mangaDetails.publisher,
+    private static async computeProgressAffinity(
+        metric: typeof gameProgress.platform,
         mediaAvgRating: number | null,
         userId?: number,
     ) {
@@ -193,26 +226,42 @@ export class MangaStatsReadRepository {
         const rows = await getDbClient().select({ ...expressions.selection, name: metric })
             .from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
-            .innerJoin(mangaDetails, eq(mangaDetails.catalogItemId, catalogItem.id))
+            .innerJoin(gameProgress, eq(gameProgress.libraryEntryId, libraryEntry.id))
             .where(and(...this.consumedConditions(userId), isNotNull(metric)))
             .groupBy(metric).having(gte(count(metric), 3))
             .orderBy(desc(expressions.affinity)).limit(10);
         return formatAffinity(rows);
     }
 
-    private entryConditions(userId?: number): SQL[] {
-        const conditions: SQL[] = [eq(catalogItem.kind, MediaType.MANGA)];
+    private static async computeDetailsAffinity(
+        metric: typeof gameDetails.gameEngine | typeof gameDetails.playerPerspective,
+        mediaAvgRating: number | null,
+        userId?: number,
+    ) {
+        const expressions = affinityExpressions(metric, mediaAvgRating);
+        const rows = await getDbClient().select({ ...expressions.selection, name: metric })
+            .from(libraryEntry)
+            .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
+            .innerJoin(gameDetails, eq(gameDetails.catalogItemId, catalogItem.id))
+            .where(and(...this.consumedConditions(userId), isNotNull(metric)))
+            .groupBy(metric).having(gte(count(metric), 3))
+            .orderBy(desc(expressions.affinity)).limit(10);
+        return formatAffinity(rows);
+    }
+
+    private static entryConditions(userId?: number): SQL[] {
+        const conditions: SQL[] = [eq(catalogItem.kind, MediaType.GAMES)];
         if (userId !== undefined) conditions.push(eq(libraryEntry.userId, userId));
         return conditions;
     }
 
-    private consumedConditions(userId?: number): SQL[] {
-        return [...this.entryConditions(userId), ne(libraryEntry.status, Status.PLAN_TO_READ)];
+    private static consumedConditions(userId?: number): SQL[] {
+        return [...this.entryConditions(userId), ne(libraryEntry.status, Status.PLAN_TO_PLAY)];
     }
 }
 
 
-export type MangaStatsReadScope =
+export type GameStatsReadScope =
     | { type: "library"; access: MediaListAccessScope }
     | { type: "platform" };
 

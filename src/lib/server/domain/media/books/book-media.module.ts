@@ -4,7 +4,7 @@ import {BookLibraryCommands} from "@/lib/server/domain/media/books/library/book-
 import {BookLibraryRepository} from "@/lib/server/domain/media/books/library/book-library.repository";
 import {BookLibraryReadRepository} from "@/lib/server/domain/media/books/library/book-library-read.repository";
 import {BookListReadRepository} from "@/lib/server/domain/media/books/library/book-list-read.repository";
-import {BookStatsReadRepository} from "@/lib/server/domain/media/books/library/book-stats-read.repository";
+import {BookStatsRepository} from "@/lib/server/domain/media/books/library/book-stats.repository";
 import {BookDetailsQuery} from "@/lib/server/domain/media/books/catalog/book-details.query";
 import {BookCatalogReadRepository} from "@/lib/server/domain/media/books/catalog/book-catalog-read.repository";
 import {BookCatalogAdminRepository} from "@/lib/server/domain/media/books/catalog/book-catalog-admin.repository";
@@ -16,8 +16,6 @@ import {createBooksIngestionService, createGBooksBooksProvider} from "@/lib/serv
 import {createBooksMatcher} from "@/lib/server/domain/media/books/imports/books.matcher";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {exportBookLibraryCsv} from "@/lib/server/domain/media/books/library/book-library-csv-export";
-import {getBookStatsContributions} from "@/lib/server/domain/media/books/library/book-stats-contributions";
-import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
@@ -41,7 +39,6 @@ export const setupBookMediaModule = (
     const external = createGBooksBooksProvider(gBooks);
     const ingestion = createBooksIngestionService(catalogCommands, external);
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.BOOKS);
-    const statsRead = new BookStatsReadRepository();
     const tags = new LibraryTagsQuery(MediaType.BOOKS);
 
     return {
@@ -66,10 +63,7 @@ export const setupBookMediaModule = (
             export: {
                 csv: exportBookLibraryCsv,
             },
-            stats: {
-                read: statsRead,
-                rebuild: createLibraryStatsRebuild({ kind: MediaType.BOOKS, getContributions: getBookStatsContributions }),
-            },
+            stats: BookStatsRepository,
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),
                 edit: (params: Parameters<BookLibraryCommands["editTag"]>[0]) => libraryCommands.editTag(params),

@@ -13,12 +13,10 @@ import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog
 import type {UpcomingNotificationSource} from "@/lib/server/domain/notifications/notification.service";
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
 import {MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";
-import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {movieActivityDefinition} from "@/lib/server/domain/media/movies/activity/movie-activity.definition";
 import {MovieCatalogEditCommand} from "@/lib/server/domain/media/movies/catalog/movie-catalog-edit.command";
 import {MovieListReadRepository} from "@/lib/server/domain/media/movies/library/movie-list-read.repository";
-import {getMovieStatsContributions} from "@/lib/server/domain/media/movies/library/movie-stats-contributions";
-import {MovieStatsReadRepository} from "@/lib/server/domain/media/movies/library/movie-stats-read.repository";
+import {MovieStatsRepository} from "@/lib/server/domain/media/movies/library/movie-stats.repository";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {MovieLibraryReadRepository} from "@/lib/server/domain/media/movies/library/movie-library-read.repository";
 import {MovieCatalogReadRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-read.repository";
@@ -39,7 +37,6 @@ import {MovieUpcomingNotificationSource} from "@/lib/server/domain/media/movies/
 
 export const setupMovieMediaModule = (tmdb: TmdbApi) => {
     const list = new MovieListReadRepository();
-    const statsRead = new MovieStatsReadRepository();
     const tags = new LibraryTagsQuery(MediaType.MOVIES);
     const catalogRead = new MovieCatalogReadRepository();
     const catalogAdmin = new MovieCatalogAdminRepository();
@@ -76,13 +73,10 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
         library: {
             list,
             commands: libraryCommands,
+            stats: MovieStatsRepository,
             read: libraryRead,
             export: {
                 csv: exportMovieLibraryCsv,
-            },
-            stats: {
-                read: statsRead,
-                rebuild: createLibraryStatsRebuild({ kind: MediaType.MOVIES, getContributions: getMovieStatsContributions }),
             },
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),

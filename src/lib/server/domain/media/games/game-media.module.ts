@@ -5,7 +5,7 @@ import {GameDetailsQuery} from "@/lib/server/domain/media/games/catalog/game-det
 import {GameLibraryCommands} from "@/lib/server/domain/media/games/library/game-library.commands";
 import {GameLibraryReadRepository} from "@/lib/server/domain/media/games/library/game-library-read.repository";
 import {GameListReadRepository} from "@/lib/server/domain/media/games/library/game-list-read.repository";
-import {GameStatsReadRepository} from "@/lib/server/domain/media/games/library/game-stats-read.repository";
+import {GameStatsRepository} from "@/lib/server/domain/media/games/library/game-stats.repository";
 import {GameCatalogReadRepository} from "@/lib/server/domain/media/games/catalog/game-catalog-read.repository";
 import {GameCatalogAdminRepository} from "@/lib/server/domain/media/games/catalog/game-catalog-admin.repository";
 import {GameCatalogEditCommand} from "@/lib/server/domain/media/games/catalog/game-catalog-edit.command";
@@ -17,8 +17,6 @@ import {GameLibraryRepository} from "@/lib/server/domain/media/games/library/gam
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {GameCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/games/catalog/game-catalog-refresh-candidates.query";
 import {exportGameLibraryCsv} from "@/lib/server/domain/media/games/library/game-library-csv-export";
-import {getGameStatsContributions} from "@/lib/server/domain/media/games/library/game-stats-contributions";
-import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
@@ -42,7 +40,6 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
     const catalogCommands = new GameCatalogIngestionCommand(catalogRepository);
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.GAMES);
     const refreshCandidates = new GameCatalogRefreshCandidatesQuery();
-    const statsRead = new GameStatsReadRepository();
     const tags = new LibraryTagsQuery(MediaType.GAMES);
 
     const external = createIgdbGamesProvider(clients.igdb);
@@ -91,10 +88,7 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
             export: {
                 csv: exportGameLibraryCsv,
             },
-            stats: {
-                read: statsRead,
-                rebuild: createLibraryStatsRebuild({ kind: MediaType.GAMES, getContributions: getGameStatsContributions }),
-            },
+            stats: GameStatsRepository,
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),
                 edit: (params: Parameters<GameLibraryCommands["editTag"]>[0]) => libraryCommands.editTag(params),

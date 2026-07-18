@@ -4,8 +4,6 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {libraryEntry, libraryStats} from "@/lib/server/database/schema";
 
 
-export type GetLibraryStatsContributions = (...args: any) => Promise<LibraryStatsContribution[]>;
-
 export type LibraryStatsContribution = {
     redo: number;
     userId: number;
@@ -32,25 +30,16 @@ export type LibraryStatsAggregate = {
 };
 
 
-interface CreateLibraryStatsRebuildOptions {
-    kind: MediaType;
-    getContributions: GetLibraryStatsContributions;
-}
-
-
 /**
- * Generic aggregation engine; each media module supplies its own contribution policy.
+ * Generic aggregation engine; each media repository owns its contribution policy.
  * Rebuild the aggregated stats of libraryStats for all users (used in tasks every day)
  * as a fallback if delta calculation is wrong or something happens :D.
  * */
-export const createLibraryStatsRebuild = ({ kind, getContributions }: CreateLibraryStatsRebuildOptions) => {
-    return async () => {
-        const mediaContributions = await getContributions();
-        const aggregates = aggregateLibraryStats(mediaContributions);
-        await replaceLibraryStats(kind, aggregates);
+export const rebuildLibraryStats = async (kind: MediaType, contributions: LibraryStatsContribution[]) => {
+    const aggregates = aggregateLibraryStats(contributions);
+    await replaceLibraryStats(kind, aggregates);
 
-        return aggregates.length;
-    };
+    return aggregates.length;
 };
 
 

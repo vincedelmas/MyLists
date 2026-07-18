@@ -18,7 +18,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const { TvLibraryRepository } = await import("./tv-library.repository");
 const { TvLibraryCommands } = await import("./tv-library.commands");
 const { TvLibraryReadRepository } = await import("./tv-library-read.repository");
-const { TvStatsReadRepository } = await import("./tv-stats-read.repository");
+const { TvStatsRepository } = await import("./tv-stats.repository");
 
 
 describe("TV library commands", () => {
@@ -93,7 +93,7 @@ describe("TV library commands", () => {
         ]);
 
         await service.synchronizeProfileChannel({ userId: 42, kind: MediaType.SERIES, enabled: true, views: 0 });
-        const statsReader = new TvStatsReadRepository(MediaType.SERIES);
+        const statsReader = new TvStatsRepository(MediaType.SERIES);
         const statsAccess = { type: "library", access: { ownerId: 42, actorId: 42, reason: "owner", mediaTypeEnabled: true } } as const;
         expect(await statsReader.getAggregatedMediaStats(statsAccess)).toMatchObject({
             totalEntries: 1,

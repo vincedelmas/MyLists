@@ -1,10 +1,12 @@
-import {and, asc, count, countDistinct, desc, eq, gte, isNotNull, ne, SQL, sql} from "drizzle-orm";
-import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType, Status} from "@/lib/utils/enums";
+import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {and, asc, count, countDistinct, desc, eq, gte, isNotNull, ne, SQL, sql} from "drizzle-orm";
+import {libraryStatsContributionBase, rebuildLibraryStats} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {
     bookAuthor,
     bookDetails,
+    bookProgress,
     catalogGenre,
     catalogItem,
     catalogItemGenre,
@@ -15,9 +17,14 @@ import {
 } from "@/lib/server/database/schema";
 
 
-/** Book aggregate and advanced statistics over exact stored totals and catalog metadata. */
-export class BookStatsReadRepository {
-    async getAggregatedMediaStats(scope: BookStatsReadScope) {
+/** Book aggregate, advanced, and materialized library statistics. */
+export class BookStatsRepository {
+    static async rebuild() {
+        const booksContributions = await this.getRebuildContributions();
+        return rebuildLibraryStats(MediaType.BOOKS, booksContributions);
+    }
+
+    static async getAggregatedMediaStats(scope: BookStatsReadScope) {
         const userId = scope.type === "library" ? scope.access.ownerId : undefined;
         const conditions = [
             eq(libraryStats.kind, MediaType.BOOKS),
@@ -79,7 +86,7 @@ export class BookStatsReadRepository {
         };
     }
 
-    async getAdvancedMediaStats(scope: BookStatsReadScope, mediaAvgRating: number | null) {
+    static async getAdvancedMediaStats(scope: BookStatsReadScope, mediaAvgRating: number | null) {
         const userId = scope.type === "library" ? scope.access.ownerId : undefined;
         const [
             ratings,
@@ -115,7 +122,22 @@ export class BookStatsReadRepository {
         };
     }
 
-    private async computeRatingStats(userId?: number) {
+    private static getRebuildContributions() {
+        const totalPages = sql<number>`COALESCE(${bookProgress.totalPagesRead}, 0)`;
+
+        return getDbClient()
+            .select({
+                ...libraryStatsContributionBase,
+                specific: totalPages,
+                timeSpent: sql<number>`${totalPages} * 1.7`,
+                redo: sql<number>`COALESCE(${bookProgress.rereadCount}, 0)`,
+            }).from(libraryEntry)
+            .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
+            .leftJoin(bookProgress, eq(bookProgress.libraryEntryId, libraryEntry.id))
+            .where(eq(catalogItem.kind, MediaType.BOOKS));
+    }
+
+    private static async computeRatingStats(userId?: number) {
         const rows = await getDbClient().select({ rating: libraryEntry.rating, count: count(libraryEntry.rating) })
             .from(libraryEntry).innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
             .where(and(...this.entryConditions(userId), isNotNull(libraryEntry.rating)))
@@ -129,14 +151,14 @@ export class BookStatsReadRepository {
         return buckets;
     }
 
-    private async computeTotalTags(userId?: number) {
+    private static async computeTotalTags(userId?: number) {
         const conditions = [eq(libraryTag.kind, MediaType.BOOKS)];
         if (userId !== undefined) conditions.push(eq(libraryTag.userId, userId));
         return getDbClient().select({ value: countDistinct(libraryTag.name) })
             .from(libraryTag).where(and(...conditions)).get()?.value ?? 0;
     }
 
-    private computeReleaseDateStats(userId?: number) {
+    private static computeReleaseDateStats(userId?: number) {
         const decade = sql<number>`(CAST(strftime('%Y', ${catalogItem.releaseDate}) AS INTEGER) / 10) * 10`;
         return getDbClient().select({ name: decade, value: count(catalogItem.id) }).from(catalogItem)
             .innerJoin(libraryEntry, eq(libraryEntry.catalogItemId, catalogItem.id))
@@ -144,7 +166,7 @@ export class BookStatsReadRepository {
             .groupBy(decade).orderBy(asc(decade));
     }
 
-    private async computeAveragePages(userId?: number) {
+    private static async computeAveragePages(userId?: number) {
         return getDbClient().select({ value: sql<number | null>`AVG(${bookDetails.pages})` })
             .from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
@@ -152,7 +174,7 @@ export class BookStatsReadRepository {
             .where(and(...this.consumedConditions(userId))).get()?.value ?? null;
     }
 
-    private computePageDistribution(userId?: number) {
+    private static computePageDistribution(userId?: number) {
         const bucket = sql<number>`floor(${bookDetails.pages} / 100.0) * 100`;
         return getDbClient().select({ name: bucket, value: count(catalogItem.id) }).from(libraryEntry)
             .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
@@ -162,7 +184,7 @@ export class BookStatsReadRepository {
             .then((rows) => rows.map((row) => ({ name: String(row.name), value: row.value })));
     }
 
-    private async computeGenreAffinity(mediaAvgRating: number | null, userId?: number) {
+    private static async computeGenreAffinity(mediaAvgRating: number | null, userId?: number) {
         const expressions = affinityExpressions(catalogGenre.name, mediaAvgRating);
         const rows = await getDbClient().select({ ...expressions.selection, name: catalogGenre.name })
             .from(libraryEntry)
@@ -175,7 +197,7 @@ export class BookStatsReadRepository {
         return formatAffinity(rows);
     }
 
-    private async computeAuthorAffinity(mediaAvgRating: number | null, userId?: number) {
+    private static async computeAuthorAffinity(mediaAvgRating: number | null, userId?: number) {
         const expressions = affinityExpressions(bookAuthor.name, mediaAvgRating);
         const rows = await getDbClient().select({ ...expressions.selection, name: bookAuthor.name })
             .from(libraryEntry)
@@ -187,7 +209,7 @@ export class BookStatsReadRepository {
         return formatAffinity(rows);
     }
 
-    private async computeDetailsAffinity(
+    private static async computeDetailsAffinity(
         metric: typeof bookDetails.publisher | typeof bookDetails.language,
         mediaAvgRating: number | null,
         userId?: number,
@@ -203,13 +225,13 @@ export class BookStatsReadRepository {
         return formatAffinity(rows);
     }
 
-    private entryConditions(userId?: number): SQL[] {
+    private static entryConditions(userId?: number): SQL[] {
         const conditions: SQL[] = [eq(catalogItem.kind, MediaType.BOOKS)];
         if (userId !== undefined) conditions.push(eq(libraryEntry.userId, userId));
         return conditions;
     }
 
-    private consumedConditions(userId?: number): SQL[] {
+    private static consumedConditions(userId?: number): SQL[] {
         return [...this.entryConditions(userId), ne(libraryEntry.status, Status.PLAN_TO_READ)];
     }
 }

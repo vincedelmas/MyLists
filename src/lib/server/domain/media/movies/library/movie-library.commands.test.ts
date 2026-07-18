@@ -13,7 +13,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbCon
 
 const { MovieLibraryRepository } = await import("./movie-library.repository");
 const { MovieLibraryCommands } = await import("./movie-library.commands");
-const { MovieStatsReadRepository } = await import("./movie-stats-read.repository");
+const { MovieStatsRepository } = await import("./movie-stats.repository");
 
 
 describe("movie library commands", () => {
@@ -154,7 +154,7 @@ describe("movie library commands", () => {
             { mediaId: 1000, mediaType: MediaType.MOVIES, monthBucket: "2026-06", specificGained: 1 },
         ]);
 
-        const stats = new MovieStatsReadRepository();
+        const stats = MovieStatsRepository;
         const scope = { type: "library", access } as const;
         expect(await stats.getAggregatedMediaStats(scope)).toMatchObject({
             totalEntries: 1,

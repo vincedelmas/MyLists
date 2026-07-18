@@ -154,8 +154,8 @@ describe("game library commands", () => {
             items: [expect.objectContaining({ mediaId: 1000, specificGained: 600 })],
         });
 
-        const { GameStatsReadRepository } = await import("./game-stats-read.repository");
-        const stats = new GameStatsReadRepository();
+        const { GameStatsRepository } = await import("./game-stats.repository");
+        const stats = GameStatsRepository;
         const scope = { type: "library", access } as const;
         expect(await stats.getAggregatedMediaStats(scope)).toMatchObject({
             totalEntries: 1,

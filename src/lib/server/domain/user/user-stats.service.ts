@@ -56,13 +56,12 @@ export class UserStatsService {
 
     async userAdvancedMediaStats(userId: number, mediaType: MediaType, access?: MediaListAccessScope) {
         if (!access) throw new Error("Media stats access scope is required");
-        const stats = this.media.get(mediaType).library.stats.read;
+
+        const stats = this.media.get(mediaType).library.stats;
         const preComputedMediaStats = await stats.getAggregatedMediaStats({ type: "library", access });
+        const specificMediaStats = await stats.getAdvancedMediaStats({ type: "library", access }, preComputedMediaStats.avgRated);
+        
         const activityByMonth = await this.activityService.getActivityStatsByMonth({ userId, mediaType });
-        const specificMediaStats = await stats.getAdvancedMediaStats(
-            { type: "library", access },
-            preComputedMediaStats.avgRated,
-        );
         const mediaUpdatesPerMonthStats = await this.updates.mediaUpdatesStatsPerMonth({ mediaType, userId });
 
         return {
@@ -93,7 +92,7 @@ export class UserStatsService {
     }
 
     async platformMediaAdvancedStats(mediaType: MediaType) {
-        const stats = this.media.get(mediaType).library.stats.read;
+        const stats = this.media.get(mediaType).library.stats;
         const platformPreComputedStats = await stats.getAggregatedMediaStats({ type: "platform" });
         const specificMediaStats = await stats.getAdvancedMediaStats(
             { type: "platform" },

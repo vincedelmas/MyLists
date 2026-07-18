@@ -8,7 +8,7 @@ import {TvLibraryCommands} from "@/lib/server/domain/media/tv/library/tv-library
 import {TvLibraryRepository} from "@/lib/server/domain/media/tv/library/tv-library.repository";
 import {TvCatalogEditCommand} from "@/lib/server/domain/media/tv/catalog/tv-catalog-edit.command";
 import {TvListReadRepository} from "@/lib/server/domain/media/tv/library/tv-list-read.repository";
-import {TvStatsReadRepository} from "@/lib/server/domain/media/tv/library/tv-stats-read.repository";
+import {TvStatsRepository} from "@/lib/server/domain/media/tv/library/tv-stats.repository";
 import {TvLibraryReadRepository} from "@/lib/server/domain/media/tv/library/tv-library-read.repository";
 import {TvCatalogReadRepository} from "@/lib/server/domain/media/tv/catalog/tv-catalog-read.repository";
 import {TvCatalogAdminRepository} from "@/lib/server/domain/media/tv/catalog/tv-catalog-admin.repository";
@@ -19,8 +19,6 @@ import {CatalogCoverStorage} from "@/lib/server/domain/media/shared/catalog/cata
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {TvCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/tv/catalog/tv-catalog-refresh-candidates.query";
 import {exportTvLibraryCsv} from "@/lib/server/domain/media/tv/library/tv-library-csv-export";
-import {getTvStatsContributions} from "@/lib/server/domain/media/tv/library/tv-stats-contributions";
-import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
@@ -58,7 +56,7 @@ export const setupTvMediaModule = <K extends TvMediaType>(
     const catalogCommands = new TvCatalogIngestionCommand(catalogRepository, libraryRepository, libraryCommands);
     const refreshIdentity = new CatalogRefreshIdentityQuery(kind);
     const refreshCandidates = new TvCatalogRefreshCandidatesQuery(kind);
-    const statsRead = new TvStatsReadRepository(kind);
+    const stats = new TvStatsRepository(kind);
     const tags = new LibraryTagsQuery(kind);
 
     const external = (kind === MediaType.ANIME)
@@ -121,13 +119,7 @@ export const setupTvMediaModule = <K extends TvMediaType>(
             export: {
                 csv: (userId: number) => exportTvLibraryCsv(kind, userId),
             },
-            stats: {
-                read: statsRead,
-                rebuild: createLibraryStatsRebuild({
-                    kind,
-                    getContributions: () => getTvStatsContributions(kind),
-                }),
-            },
+            stats,
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),
                 edit: (params: Omit<Parameters<TvLibraryCommands["editTag"]>[0], "kind">) => {

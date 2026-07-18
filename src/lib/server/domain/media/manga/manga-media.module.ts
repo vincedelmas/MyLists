@@ -4,7 +4,7 @@ import {MangaLibraryCommands} from "@/lib/server/domain/media/manga/library/mang
 import {MangaLibraryRepository} from "@/lib/server/domain/media/manga/library/manga-library.repository";
 import {MangaLibraryReadRepository} from "@/lib/server/domain/media/manga/library/manga-library-read.repository";
 import {MangaListReadRepository} from "@/lib/server/domain/media/manga/library/manga-list-read.repository";
-import {MangaStatsReadRepository} from "@/lib/server/domain/media/manga/library/manga-stats-read.repository";
+import {MangaStatsRepository} from "@/lib/server/domain/media/manga/library/manga-stats.repository";
 import {MangaDetailsQuery} from "@/lib/server/domain/media/manga/catalog/manga-details.query";
 import {MangaCatalogReadRepository} from "@/lib/server/domain/media/manga/catalog/manga-catalog-read.repository";
 import {MangaCatalogAdminRepository} from "@/lib/server/domain/media/manga/catalog/manga-catalog-admin.repository";
@@ -16,8 +16,6 @@ import {createMangaMatcher} from "@/lib/server/domain/media/manga/imports/manga.
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {MangaCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/manga/catalog/manga-catalog-refresh-candidates.query";
 import {exportMangaLibraryCsv} from "@/lib/server/domain/media/manga/library/manga-library-csv-export";
-import {getMangaStatsContributions} from "@/lib/server/domain/media/manga/library/manga-stats-contributions";
-import {createLibraryStatsRebuild} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
 import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
 import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
@@ -43,7 +41,6 @@ export const setupMangaMediaModule = (
     const external = createJikanMangaProvider(jikan);
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.MANGA);
     const refreshCandidates = new MangaCatalogRefreshCandidatesQuery();
-    const statsRead = new MangaStatsReadRepository();
     const tags = new LibraryTagsQuery(MediaType.MANGA);
     const ingestion = createMangaIngestionService(catalogCommands, external, {
         getCandidateApiIds: () => refreshCandidates.getCandidateApiIds(),
@@ -71,10 +68,7 @@ export const setupMangaMediaModule = (
             export: {
                 csv: exportMangaLibraryCsv,
             },
-            stats: {
-                read: statsRead,
-                rebuild: createLibraryStatsRebuild({ kind: MediaType.MANGA, getContributions: getMangaStatsContributions }),
-            },
+            stats: MangaStatsRepository,
             tags: {
                 getNames: (userId: number) => tags.getNames(userId),
                 edit: (params: Parameters<MangaLibraryCommands["editTag"]>[0]) => libraryCommands.editTag(params),

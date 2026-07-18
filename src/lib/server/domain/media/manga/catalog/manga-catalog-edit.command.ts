@@ -1,6 +1,5 @@
 import {MangaCatalogAdminRepository, MangaCatalogEdit} from "@/lib/server/domain/media/manga/catalog/manga-catalog-admin.repository";
-import {MangaLibraryCommands} from "@/lib/server/domain/media/manga/library/manga-library.commands";
-import {MangaLibraryRepository} from "@/lib/server/domain/media/manga/library/manga-library.repository";
+import {MangaLibraryService} from "@/lib/server/domain/media/manga/library/manga-library.service";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {MediaType} from "@/lib/utils/enums";
 import {MangaCatalogEditPayload} from "@/lib/contracts/media/catalog-edit";
@@ -10,8 +9,7 @@ import {CatalogCoverStorage, relationNames} from "@/lib/server/domain/media/shar
 export class MangaCatalogEditCommand {
     constructor(
         private readonly catalog: MangaCatalogAdminRepository,
-        private readonly library = new MangaLibraryRepository(),
-        private readonly libraryCommands = new MangaLibraryCommands(library),
+        private readonly library = new MangaLibraryService(),
         private readonly coverStorage = new CatalogCoverStorage(MediaType.MANGA),
     ) {
     }
@@ -32,7 +30,7 @@ export class MangaCatalogEditCommand {
                 : [];
             const updated = await this.catalog.updateEditableFields(catalogItemId, edit);
             if (updated && previousEntries.length > 0) {
-                await this.libraryCommands.reconcileCatalogMetadata(previousEntries);
+                await this.library.reconcileCatalogMetadata(previousEntries);
             }
             return updated;
         });

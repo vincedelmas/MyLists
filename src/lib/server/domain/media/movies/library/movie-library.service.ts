@@ -1,10 +1,17 @@
+import {SearchType, SimpleSearch} from "@/lib/schemas";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {UpdateUserMedia} from "@/lib/contracts/media/library";
+import {MovieListArgs} from "@/lib/contracts/media/lists";
+import type {UpComingMedia} from "@/lib/types/notifications.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
-import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
+import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {UpdateUserCustomCover, UpdateUserMedia} from "@/lib/contracts/media/library";
+import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {MovieFinalListInsert} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
+import {MovieStatsRepository} from "@/lib/server/domain/media/movies/library/movie-stats.repository";
+import {exportMovieLibraryCsv} from "@/lib/server/domain/media/movies/library/movie-library-csv-export";
+import {prepareLibraryCustomCover} from "@/lib/server/domain/media/shared/library/library-custom-cover";
 import {MovieLibraryEntry, MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";
 import {
     changeMovieStatus,
@@ -19,9 +26,59 @@ import {
 type MovieUpdatePayload = Extract<UpdateUserMedia, { mediaType: typeof MediaType.MOVIES }>["payload"];
 
 
-/** Canonical movie library mutation boundary. */
-export class MovieLibraryCommands {
+export class MovieLibraryService {
+    readonly stats = MovieStatsRepository;
+    readonly export = { csv: exportMovieLibraryCsv };
+
     constructor(private readonly repository = new MovieLibraryRepository()) {
+    }
+
+    getUserMediaHistory(userId: number, catalogItemId: number) {
+        return this.repository.getUserMediaHistory(userId, catalogItemId);
+    }
+
+    findUserMedia(userId: number | undefined, catalogItemId: number) {
+        return this.repository.findUserMedia(userId, catalogItemId);
+    }
+
+    findFollowedUsersMedia(viewerId: number | undefined, catalogItemId: number) {
+        return this.repository.findFollowedUsersMedia(viewerId, catalogItemId);
+    }
+
+    getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType) {
+        return this.repository.getCommunityActivity(viewerId, catalogItemId, search);
+    }
+
+    getListHeader(userId: number) {
+        return this.repository.getListHeader(userId);
+    }
+
+    getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: MovieListArgs) {
+        return this.repository.getMediaList(currentUserId, access, args);
+    }
+
+    getListFilters(access: MediaListAccessScope) {
+        return this.repository.getListFilters(access);
+    }
+
+    getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
+        return this.repository.getSearchListFilters(access, query, job);
+    }
+
+    getTagsView(access: MediaListAccessScope, search: SimpleSearch) {
+        return this.repository.getTagsView(access, search);
+    }
+
+    getTagNames(userId: number) {
+        return this.repository.getTagNames(userId);
+    }
+
+    async upcoming(ownerId: number): Promise<UpComingMedia[]> {
+        return this.repository.getUpcomingMedia({ ownerId, actorId: ownerId, reason: "owner", mediaTypeEnabled: true });
+    }
+
+    findEntriesByCatalogItem(catalogItemId: number) {
+        return this.repository.findEntriesByCatalogItem(catalogItemId);
     }
 
     async update(params: { userId: number; mediaId: number; payload: MovieUpdatePayload }) {
@@ -49,25 +106,27 @@ export class MovieLibraryCommands {
             for (const row of rows) {
                 await this.importEntry({
                     userId: row.userId,
-                    catalogItemId: row.mediaId,
                     status: row.status,
-                    rewatchCount: row.redo ?? 0,
                     rating: row.rating,
                     comment: row.comment,
-                    favorite: row.favorite,
-                    customCover: row.customCover,
                     addedAt: row.addedAt,
+                    favorite: row.favorite,
                     updatedAt: row.lastUpdated,
+                    catalogItemId: row.mediaId,
+                    rewatchCount: row.redo ?? 0,
+                    customCover: row.customCover,
                 });
             }
         });
     }
 
     async editTag(params: { userId: number; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
-        const libraryEntryId = params.mediaId ? (await this.get(params.userId, params.mediaId))?.id : undefined;
-        return this.repository.common.editTag({
+        const libraryEntryId = params.mediaId
+            ? (await this.repository.findEntry(params.userId, params.mediaId))?.id
+            : undefined;
+
+        return this.repository.editTag({
             userId: params.userId,
-            kind: MediaType.MOVIES,
             action: params.action,
             name: params.tag.name,
             oldName: params.tag.oldName,
@@ -83,48 +142,49 @@ export class MovieLibraryCommands {
         const created = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(undefined, created);
         if (!params.silent) {
-            await this.repository.common.recordChange(entryId, UpdateType.STATUS, null, progress.status);
+            await this.repository.recordChange(entryId, UpdateType.STATUS, null, progress.status);
             await this.recordActivity(undefined, created);
         }
         return created;
     }
 
-    get(userId: number, catalogItemId: number) {
-        return this.repository.findEntry(userId, catalogItemId);
-    }
-
     async importEntry(params: {
         userId: number;
-        catalogItemId: number;
         status: Status;
         rewatchCount: number;
+        catalogItemId: number;
         rating?: number | null;
+        addedAt?: string | null;
         comment?: string | null;
         favorite?: boolean | null;
-        customCover?: string | null;
-        addedAt?: string | null;
         updatedAt?: string | null;
+        customCover?: string | null;
     }) {
         const existing = await this.repository.findEntry(params.userId, params.catalogItemId);
         if (existing) return existing;
+
         if (!await this.repository.getMovieCatalogItem(params.catalogItemId)) throw new FormattedError("Media not found");
         const progress = importMovieProgress(params.status, params.rewatchCount);
+
         await this.repository.createEntry({
             ...params,
-            status: progress.status,
             progress,
+            status: progress.status,
             rating: params.rating ?? null,
             comment: params.comment ?? null,
             favorite: params.favorite ?? false,
             customCover: params.customCover ?? null,
         });
+
         const imported = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(undefined, imported);
+
         return imported;
     }
 
     async changeStatus(params: { userId: number; catalogItemId: number; status: Status; loggedAt?: string }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
+
         return this.persistTransition(
             current,
             changeMovieStatus(current.progress, params.status),
@@ -160,20 +220,25 @@ export class MovieLibraryCommands {
         return this.updateCommon(params, { favorite: params.favorite });
     }
 
-    updateCustomCover(params: { userId: number; catalogItemId: number; customCover: string | null }) {
-        return this.updateCommon(params, { customCover: params.customCover });
+    async updateCustomCover(userId: number, input: UpdateUserCustomCover) {
+        await this.requireEntry(userId, input.mediaId);
+        const customCover = await prepareLibraryCustomCover(MediaType.MOVIES, input);
+        await this.updateCommon({ userId, catalogItemId: input.mediaId }, { customCover });
+
+        const result = await this.repository.findUserMedia(userId, input.mediaId);
+        if (!result) throw new FormattedError("Media not in your list");
+        return result;
     }
 
     async remove(params: { userId: number; catalogItemId: number }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(current, undefined);
-        await this.repository.common.removeEntry(current.id);
+        await this.repository.removeEntry(current.id);
     }
 
     synchronizeProfileChannel(params: { userId: number; enabled: boolean; views: number }) {
-        return this.repository.common.synchronizeProfileChannel(
+        return this.repository.synchronizeProfileChannel(
             params.userId,
-            MediaType.MOVIES,
             params.enabled,
             params.views,
         );
@@ -198,16 +263,16 @@ export class MovieLibraryCommands {
         const updated = await this.requireEntry(current.userId, current.catalogItemId);
         await this.applyStatsTransition(current, updated);
         await this.recordActivity(current, updated, metadata.loggedAt);
-        await this.repository.common.recordChange(current.id, updateType, oldValue, newValue, metadata.loggedAt);
+        await this.repository.recordChange(current.id, updateType, oldValue, newValue, metadata.loggedAt);
         return updated;
     }
 
     private async updateCommon(
         params: { userId: number; catalogItemId: number },
-        fields: Parameters<MovieLibraryRepository["common"]["updateEntry"]>[1],
+        fields: Parameters<MovieLibraryRepository["updateCommonFields"]>[1],
     ) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.repository.common.updateEntry(current.id, fields);
+        await this.repository.updateCommonFields(current.id, fields);
         const updated = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(current, updated);
         return updated;
@@ -216,7 +281,7 @@ export class MovieLibraryCommands {
     private async applyStatsTransition(before?: MovieLibraryEntry, after?: MovieLibraryEntry) {
         const sample = after ?? before;
         if (!sample) return;
-        const current = await this.repository.common.getStats(sample.userId, MediaType.MOVIES);
+        const current = await this.repository.getStats(sample.userId);
         const beforeMetrics = entryMetrics(before);
         const afterMetrics = entryMetrics(after);
         const statusCounts = { ...(current?.statusCounts ?? {}) };
@@ -225,7 +290,7 @@ export class MovieLibraryCommands {
         const entriesRated = Math.max(0, (current?.entriesRated ?? 0) + afterMetrics.rated - beforeMetrics.rated);
         const ratingSum = Math.max(0, (current?.ratingSum ?? 0) + afterMetrics.rating - beforeMetrics.rating);
 
-        await this.repository.common.saveStats({
+        await this.repository.saveStats({
             userId: sample.userId,
             kind: MediaType.MOVIES,
             timeSpentMinutes: Math.max(0, (current?.timeSpentMinutes ?? 0) + afterMetrics.time - beforeMetrics.time),
@@ -245,7 +310,7 @@ export class MovieLibraryCommands {
         const beforeCount = before?.progress.watchCount ?? 0;
         const afterCount = after.progress.watchCount;
         const occurredAt = loggedAt ? `${loggedAt} 12:00:00` : new Date().toISOString();
-        await this.repository.common.recordActivity({
+        await this.repository.recordActivity({
             entryId: after.id,
             unitsGained: afterCount - beforeCount,
             completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,

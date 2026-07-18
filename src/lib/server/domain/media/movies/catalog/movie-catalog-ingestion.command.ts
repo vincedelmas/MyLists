@@ -1,16 +1,14 @@
 import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
 import {MovieCatalogSnapshot} from "@/lib/server/domain/media/movies/catalog/movie-catalog-snapshot";
 import {MovieCatalogIngestionRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-ingestion.repository";
-import {MovieLibraryCommands} from "@/lib/server/domain/media/movies/library/movie-library.commands";
-import {MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";
+import {MovieLibraryService} from "@/lib/server/domain/media/movies/library/movie-library.service";
 import {withTransaction} from "@/lib/server/database/async-storage";
 
 
 export class MovieCatalogIngestionCommand implements CatalogIngestionCommands<MovieCatalogSnapshot> {
     constructor(
         private readonly catalog: MovieCatalogIngestionRepository,
-        private readonly library = new MovieLibraryRepository(),
-        private readonly libraryCommands = new MovieLibraryCommands(library),
+        private readonly library = new MovieLibraryService(),
     ) {
     }
 
@@ -33,7 +31,7 @@ export class MovieCatalogIngestionCommand implements CatalogIngestionCommands<Mo
             const previousEntries = await this.library.findEntriesByCatalogItem(existing.id);
             const updated = await this.catalog.replaceSnapshot(details);
             if (updated && previousEntries.length > 0) {
-                await this.libraryCommands.reconcileCatalogMetadata(previousEntries);
+                await this.library.reconcileCatalogMetadata(previousEntries);
             }
             return updated;
         });

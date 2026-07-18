@@ -10,10 +10,9 @@ const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
 const { GameLibraryRepository } = await import("@/lib/server/domain/media/games/library/game-library.repository");
-const { GameLibraryCommands } = await import("@/lib/server/domain/media/games/library/game-library.commands");
 const { GameDetailsQuery } = await import("./game-details.query");
 const { GameCatalogReadRepository } = await import("./game-catalog-read.repository");
-const { GameLibraryReadRepository } = await import("@/lib/server/domain/media/games/library/game-library-read.repository");
+const { GameLibraryService } = await import("@/lib/server/domain/media/games/library/game-library.service");
 
 
 describe("game details query", () => {
@@ -47,7 +46,7 @@ describe("game details query", () => {
         await db.insert(schema.gamePlatform).values({ catalogItemId: 1000, name: "PC (Microsoft Windows)" });
         await db.insert(schema.gameCompany).values({ catalogItemId: 1000, name: "Studio", developer: true, publisher: true });
 
-        const library = new GameLibraryCommands(new GameLibraryRepository());
+        const library = new GameLibraryService(new GameLibraryRepository());
         await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.PLAYING, playtime: 600, platform: "PC", rating: 9 });
         await library.importEntry({ userId: 43, catalogItemId: 1000, status: Status.COMPLETED, playtime: 1_200, platform: "PC", favorite: true });
         await library.importEntry({ userId: 44, catalogItemId: 1000, status: Status.ENDLESS, playtime: 3_000, platform: null });
@@ -89,7 +88,7 @@ describe("game details query", () => {
     });
 
     it("keeps private accounts out of community rows while retaining restricted rows for members", async () => {
-        const reader = new GameLibraryReadRepository();
+        const reader = new GameLibraryService();
         const community = await reader.getCommunityActivity(42, 1000, { page: 1, perPage: 8 });
         expect(community).toMatchObject({
             total: 2,

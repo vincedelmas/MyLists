@@ -15,9 +15,8 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { TvListReadRepository } = await import("./tv-list-read.repository");
 const { TvLibraryRepository } = await import("./tv-library.repository");
-const { TvLibraryCommands } = await import("./tv-library.commands");
+const { TvLibraryService } = await import("./tv-library.service");
 
 
 const ownerScope = {
@@ -28,7 +27,7 @@ const ownerScope = {
 } as const;
 
 
-describe("TV list read repository", () => {
+describe("TV library repository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -47,7 +46,7 @@ describe("TV list read repository", () => {
     });
 
     it("hydrates the current list contract with normalized progress, tags, covers and common items", async () => {
-        const repository = new TvListReadRepository(MediaType.SERIES);
+        const repository = new TvLibraryRepository(MediaType.SERIES);
         const result = await repository.getMediaList(50, ownerScope, { page: 1, perPage: 2 });
 
         expect(result.pagination).toMatchObject({ page: 1, perPage: 2, totalItems: 3, totalPages: 2, sorting: "Title A-Z" });
@@ -67,10 +66,10 @@ describe("TV list read repository", () => {
     });
 
     it("sorts rewatched entries from normalized per-season counts", async () => {
-        const library = new TvLibraryCommands(new TvLibraryRepository());
+        const library = new TvLibraryService(MediaType.SERIES, new TvLibraryRepository(MediaType.SERIES));
         await library.replaceRewatches({ userId: 42, catalogItemId: 1001, rewatches: [{ seasonNumber: 1, count: 2 }] });
 
-        const result = await new TvListReadRepository(MediaType.SERIES).getMediaList(42, ownerScope, {
+        const result = await new TvLibraryRepository(MediaType.SERIES).getMediaList(42, ownerScope, {
             page: 1,
             perPage: 3,
             sorting: "Re-watched",
@@ -87,19 +86,19 @@ describe("TV list read repository", () => {
     });
 
     it("serves the public list header from the channel and normalized stats", async () => {
-        const repository = new TvListReadRepository(MediaType.SERIES);
+        const repository = new TvLibraryRepository(MediaType.SERIES);
         expect(await repository.getListHeader(42)).toBeUndefined();
 
-        const library = new TvLibraryCommands(new TvLibraryRepository());
-        await library.synchronizeProfileChannel({ userId: 42, kind: MediaType.SERIES, enabled: true, views: 4 });
+        const library = new TvLibraryService(MediaType.SERIES, new TvLibraryRepository(MediaType.SERIES));
+        await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 924 });
 
-        await library.synchronizeProfileChannel({ userId: 42, kind: MediaType.SERIES, enabled: false, views: 4 });
+        await library.synchronizeProfileChannel({ userId: 42, enabled: false, views: 4 });
         expect(await repository.getListHeader(42)).toBeUndefined();
     });
 
     it("applies TV-specific and common filters without leaking another viewer's common rows", async () => {
-        const repository = new TvListReadRepository(MediaType.SERIES);
+        const repository = new TvLibraryRepository(MediaType.SERIES);
 
         const hiddenCommon = await repository.getMediaList(50, ownerScope, { hideCommon: true });
         expect(hiddenCommon.items.map(({ mediaName }) => mediaName)).toEqual(["Beta", "Gamma"]);
@@ -115,7 +114,7 @@ describe("TV list read repository", () => {
     });
 
     it("returns only filter values represented in this owner's TV list", async () => {
-        const filters = await new TvListReadRepository(MediaType.SERIES).getListFilters(ownerScope);
+        const filters = await new TvLibraryRepository(MediaType.SERIES).getListFilters(ownerScope);
         expect(filters).toEqual({
             kind: MediaType.SERIES,
             genres: [{ name: "Drama" }],
@@ -125,14 +124,13 @@ describe("TV list read repository", () => {
     });
 
     it("supports dynamic TV filter searches and empty tags created from the tags page", async () => {
-        const libraryRepository = new TvLibraryRepository();
+        const libraryRepository = new TvLibraryRepository(MediaType.SERIES);
         await libraryRepository.editTag({
             userId: 42,
-            kind: MediaType.SERIES,
             action: TagAction.ADD,
             name: "empty-tag",
         });
-        const repository = new TvListReadRepository(MediaType.SERIES);
+        const repository = new TvLibraryRepository(MediaType.SERIES);
 
         expect(await repository.getSearchListFilters(ownerScope, "Le", JobType.ACTOR)).toEqual([{ name: "Lead" }]);
         expect(await repository.getSearchListFilters(ownerScope, "Net", JobType.PLATFORM)).toEqual([{ name: "Network" }]);
@@ -156,7 +154,7 @@ describe("TV list read repository", () => {
             .set({ nextEpisodeAirDate: "2099-01-02", nextEpisodeSeason: 2, nextEpisodeNumber: 3 })
             .where(eq(schema.tvDetails.catalogItemId, 1000));
 
-        const items = await new TvListReadRepository(MediaType.SERIES).getUpcomingMedia(ownerScope);
+        const items = await new TvLibraryRepository(MediaType.SERIES).getUpcomingMedia(ownerScope);
         expect(items).toEqual([
             expect.objectContaining({
                 mediaId: 1000,
@@ -197,12 +195,12 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
     await db.insert(schema.tvActor).values({ catalogItemId: 1000, name: "Lead" });
     await db.insert(schema.tvNetwork).values({ catalogItemId: 1000, name: "Network" });
 
-    const repository = new TvLibraryRepository();
-    const library = new TvLibraryCommands(repository);
+    const repository = new TvLibraryRepository(MediaType.SERIES);
+    const library = new TvLibraryService(MediaType.SERIES, repository);
     const alpha = await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
     await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatches: [{ seasonNumber: 1, count: 1 }] });
-    await library.updateCustomCover({ userId: 42, catalogItemId: 1000, customCover: "custom.jpg" });
-    await repository.editTag({ userId: 42, kind: MediaType.SERIES, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
+    await repository.updateCommonFields(alpha.id, { customCover: "custom.jpg" });
+    await repository.editTag({ userId: 42, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
     await library.add({ userId: 42, catalogItemId: 1001, status: Status.WATCHING });
     await library.add({ userId: 42, catalogItemId: 1002, status: Status.PLAN_TO_WATCH });
     await library.add({ userId: 50, catalogItemId: 1000, status: Status.WATCHING });

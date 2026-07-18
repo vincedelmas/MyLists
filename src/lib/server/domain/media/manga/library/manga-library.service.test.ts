@@ -11,10 +11,10 @@ const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
 const { MangaLibraryRepository } = await import("./manga-library.repository");
-const { MangaLibraryCommands } = await import("./manga-library.commands");
+const { MangaLibraryService } = await import("./manga-library.service");
 
 
-describe("manga library commands", () => {
+describe("manga library service", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -48,7 +48,7 @@ describe("manga library commands", () => {
     });
 
     it("keeps chapter, reread, status, stats, activity and history semantics coherent", async () => {
-        const library = new MangaLibraryCommands(new MangaLibraryRepository());
+        const library = new MangaLibraryService(new MangaLibraryRepository());
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.READING });
         await library.replaceChapter({ userId: 42, catalogItemId: 1000, currentChapter: 80 });
         await library.replaceRereads({ userId: 42, catalogItemId: 1000, rereadCount: 2 });
@@ -73,7 +73,7 @@ describe("manga library commands", () => {
     });
 
     it("supports open-ended chapter progress and exact imports without manufacturing events", async () => {
-        const library = new MangaLibraryCommands(new MangaLibraryRepository());
+        const library = new MangaLibraryService(new MangaLibraryRepository());
         await library.add({ userId: 42, catalogItemId: 1001, status: Status.READING, silent: true });
         const publishing = await library.replaceChapter({ userId: 42, catalogItemId: 1001, currentChapter: 1_256 });
         expect(publishing.progress.totalChaptersRead).toBe(1_256);
@@ -114,7 +114,7 @@ describe("manga library commands", () => {
     });
 
     it("backdates manga activity and history through the command", async () => {
-        const library = new MangaLibraryCommands(new MangaLibraryRepository());
+        const library = new MangaLibraryService(new MangaLibraryRepository());
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.READING, silent: true });
         await library.replaceChapter({ userId: 42, catalogItemId: 1000, currentChapter: 25, loggedAt: "2025-02-07" });
 
@@ -127,7 +127,7 @@ describe("manga library commands", () => {
     });
 
     it("retains catalog activity after the mutable list entry is removed", async () => {
-        const library = new MangaLibraryCommands(new MangaLibraryRepository());
+        const library = new MangaLibraryService(new MangaLibraryRepository());
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         await library.remove({ userId: 42, catalogItemId: 1000 });
         expect(await db.select().from(schema.libraryEntry)).toEqual([]);

@@ -38,7 +38,7 @@ describe("TvImportListWriter", () => {
 
         await writer.addMatchedItems(42, matches);
 
-        expect(libraryWriter.importRows).toHaveBeenCalledWith(MediaType.SERIES, [{
+        expect(libraryWriter.importRows).toHaveBeenCalledWith([{
             userId: 42,
             mediaId: 100,
             status: Status.COMPLETED,
@@ -85,7 +85,7 @@ describe("TvImportListWriter", () => {
             },
         }]);
 
-        expect(libraryWriter.importRows).toHaveBeenCalledWith(MediaType.ANIME, [{
+        expect(libraryWriter.importRows).toHaveBeenCalledWith([{
             userId: 42,
             mediaId: 100,
             status: Status.WATCHING,

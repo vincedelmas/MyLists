@@ -10,10 +10,9 @@ const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
 const { BookLibraryRepository } = await import("@/lib/server/domain/media/books/library/book-library.repository");
-const { BookLibraryCommands } = await import("@/lib/server/domain/media/books/library/book-library.commands");
 const { BookDetailsQuery } = await import("./book-details.query");
 const { BookCatalogReadRepository } = await import("./book-catalog-read.repository");
-const { BookLibraryReadRepository } = await import("@/lib/server/domain/media/books/library/book-library-read.repository");
+const { BookLibraryService } = await import("@/lib/server/domain/media/books/library/book-library.service");
 
 
 describe("book details query", () => {
@@ -57,7 +56,7 @@ describe("book details query", () => {
             { catalogItemId: 1001, name: "Author" },
         ]);
 
-        const library = new BookLibraryCommands(new BookLibraryRepository());
+        const library = new BookLibraryService(new BookLibraryRepository());
         await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.READING, currentPage: 120, rereadCount: 0, totalPagesRead: 120, rating: 9 });
         await library.importEntry({ userId: 43, catalogItemId: 1000, status: Status.COMPLETED, currentPage: 300, rereadCount: 2, totalPagesRead: 900, favorite: true });
         await library.importEntry({ userId: 44, catalogItemId: 1000, status: Status.READING, currentPage: 200, rereadCount: 1, totalPagesRead: 500 });
@@ -108,7 +107,7 @@ describe("book details query", () => {
     });
 
     it("uses stored historical totals and the existing public/restricted community audience", async () => {
-        const reader = new BookLibraryReadRepository();
+        const reader = new BookLibraryService();
         const community = await reader.getCommunityActivity(42, 1000, { page: 1, perPage: 8 });
         expect(community).toMatchObject({
             total: 2,

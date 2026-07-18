@@ -17,7 +17,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { BookCatalogIngestionRepository } = await import("./book-catalog-ingestion.repository");
 const { BookCatalogIngestionCommand } = await import("./book-catalog-ingestion.command");
-const { BookLibraryCommands } = await import("@/lib/server/domain/media/books/library/book-library.commands");
+const { BookLibraryService } = await import("@/lib/server/domain/media/books/library/book-library.service");
 const { BookLibraryRepository } = await import("@/lib/server/domain/media/books/library/book-library.repository");
 const { BookCatalogAdminRepository } = await import("./book-catalog-admin.repository");
 const { BookCatalogEditCommand } = await import("./book-catalog-edit.command");
@@ -64,7 +64,7 @@ describe("book catalog ingestion command", () => {
         expect(await ingestion.storeFromExternal("volume-777")).toBe(catalogItemId);
         expect(provider.details.getDetails).toHaveBeenCalledTimes(1);
 
-        const library = new BookLibraryCommands(new BookLibraryRepository());
+        const library = new BookLibraryService(new BookLibraryRepository());
         await library.add({ userId: 42, catalogItemId, status: Status.COMPLETED });
         await library.replaceRereads({ userId: 42, catalogItemId, rereadCount: 1 });
 

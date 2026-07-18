@@ -21,7 +21,7 @@ const { ImportService } = await import("@/lib/server/domain/imports/import.servi
 const { ImportRepository } = await import("@/lib/server/domain/imports/import.repository");
 const { createGamesMatcher } = await import("@/lib/server/domain/media/games/imports/games.matcher");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
-const { GameLibraryCommands } = await import("@/lib/server/domain/media/games/library/game-library.commands");
+const { GameLibraryService } = await import("@/lib/server/domain/media/games/library/game-library.service");
 const { GameCatalogIngestionRepository } = await import("@/lib/server/domain/media/games/catalog/game-catalog-ingestion.repository");
 
 
@@ -62,7 +62,7 @@ describe("games import processing", () => {
         const matcher = createGamesMatcher(
             new GameCatalogIngestionRepository(),
             { storeBatchFromExternal: vi.fn() } as any,
-            new GameLibraryCommands(),
+            new GameLibraryService(),
         );
         const processor = new ImportJobProcessor(importService, { get: () => matcher });
 

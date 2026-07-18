@@ -17,7 +17,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { MangaCatalogIngestionRepository } = await import("./manga-catalog-ingestion.repository");
 const { MangaCatalogIngestionCommand } = await import("./manga-catalog-ingestion.command");
-const { MangaLibraryCommands } = await import("@/lib/server/domain/media/manga/library/manga-library.commands");
+const { MangaLibraryService } = await import("@/lib/server/domain/media/manga/library/manga-library.service");
 const { MangaLibraryRepository } = await import("@/lib/server/domain/media/manga/library/manga-library.repository");
 const { MangaCatalogAdminRepository } = await import("./manga-catalog-admin.repository");
 const { MangaCatalogEditCommand } = await import("./manga-catalog-edit.command");
@@ -64,7 +64,7 @@ describe("manga catalog ingestion command", () => {
         expect(await ingestion.storeFromExternal(777)).toBe(catalogItemId);
         expect(provider.details.getDetails).toHaveBeenCalledTimes(1);
 
-        const library = new MangaLibraryCommands(new MangaLibraryRepository());
+        const library = new MangaLibraryService(new MangaLibraryRepository());
         await library.add({ userId: 42, catalogItemId, status: Status.COMPLETED });
         await library.replaceRereads({ userId: 42, catalogItemId, rereadCount: 1 });
 

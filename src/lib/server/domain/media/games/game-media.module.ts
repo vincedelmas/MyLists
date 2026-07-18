@@ -1,11 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
-import type {UpComingMedia} from "@/lib/types/notifications.types";
 import {GameDetailsQuery} from "@/lib/server/domain/media/games/catalog/game-details.query";
-import {GameLibraryCommands} from "@/lib/server/domain/media/games/library/game-library.commands";
-import {GameLibraryReadRepository} from "@/lib/server/domain/media/games/library/game-library-read.repository";
-import {GameListReadRepository} from "@/lib/server/domain/media/games/library/game-list-read.repository";
-import {GameStatsRepository} from "@/lib/server/domain/media/games/library/game-stats.repository";
+import {GameLibraryService} from "@/lib/server/domain/media/games/library/game-library.service";
 import {GameCatalogReadRepository} from "@/lib/server/domain/media/games/catalog/game-catalog-read.repository";
 import {GameCatalogAdminRepository} from "@/lib/server/domain/media/games/catalog/game-catalog-admin.repository";
 import {GameCatalogEditCommand} from "@/lib/server/domain/media/games/catalog/game-catalog-edit.command";
@@ -16,9 +12,6 @@ import {createGamesMatcher} from "@/lib/server/domain/media/games/imports/games.
 import {GameLibraryRepository} from "@/lib/server/domain/media/games/library/game-library.repository";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {GameCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/games/catalog/game-catalog-refresh-candidates.query";
-import {exportGameLibraryCsv} from "@/lib/server/domain/media/games/library/game-library-csv-export";
-import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
-import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/imports/game-import.schemas";
 import {gamesAchievements} from "@/lib/server/domain/media/games/achievements/games.seed";
@@ -30,17 +23,14 @@ import {gameActivityDefinition} from "@/lib/server/domain/media/games/activity/g
 
 
 export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) => {
-    const list = new GameListReadRepository();
     const libraryRepository = new GameLibraryRepository();
-    const libraryCommands = new GameLibraryCommands(libraryRepository);
-    const libraryRead = new GameLibraryReadRepository(libraryRepository);
+    const library = new GameLibraryService(libraryRepository);
     const catalogRead = new GameCatalogReadRepository();
     const catalogAdmin = new GameCatalogAdminRepository();
     const catalogRepository = new GameCatalogIngestionRepository();
     const catalogCommands = new GameCatalogIngestionCommand(catalogRepository);
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.GAMES);
     const refreshCandidates = new GameCatalogRefreshCandidatesQuery();
-    const tags = new LibraryTagsQuery(MediaType.GAMES);
 
     const external = createIgdbGamesProvider(clients.igdb);
     const ingestion = createGamesIngestionService(clients.hltb, catalogCommands, external, {
@@ -52,7 +42,7 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
         external,
         contributions: {
             imports: {
-                matcher: createGamesMatcher(catalogRepository, ingestion, libraryCommands),
+                matcher: createGamesMatcher(catalogRepository, ingestion, library),
                 csv: {
                     rowSchema: gamesMyListsCSVRowSchema,
                 },
@@ -71,7 +61,7 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
         catalog: {
             ingestion,
             admin: catalogAdmin,
-            details: new GameDetailsQuery(catalogRead, libraryRead),
+            details: new GameDetailsQuery(catalogRead, library),
             read: catalogRead,
             edit: new GameCatalogEditCommand(catalogAdmin),
             refresh: {
@@ -81,22 +71,6 @@ export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) 
             },
             maintenance: createCatalogMaintenance(MediaType.GAMES),
         },
-        library: {
-            list,
-            commands: libraryCommands,
-            read: libraryRead,
-            export: {
-                csv: exportGameLibraryCsv,
-            },
-            stats: GameStatsRepository,
-            tags: {
-                getNames: (userId: number) => tags.getNames(userId),
-                edit: (params: Parameters<GameLibraryCommands["editTag"]>[0]) => libraryCommands.editTag(params),
-            },
-            covers: new LibraryCustomCoverCommand(MediaType.GAMES, libraryRead, libraryCommands),
-            async upcoming(ownerId: number): Promise<UpComingMedia[]> {
-                return list.getUpcomingMedia({ ownerId, actorId: ownerId, reason: "owner", mediaTypeEnabled: true });
-            },
-        },
+        library,
     } as const;
 };

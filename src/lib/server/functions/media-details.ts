@@ -1,11 +1,11 @@
 import {logger} from "@/lib/server/core/logger";
 import {notFound} from "@tanstack/react-router";
 import {createServerFn} from "@tanstack/react-start";
+import {assertNever} from "@/lib/utils/assert-never";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {isAtLeastRole, MediaType, RoleType} from "@/lib/utils/enums";
-import {assertNever} from "@/lib/utils/assert-never";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {publicAuthMiddleware, requiredAuthAndManagerRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
@@ -38,7 +38,7 @@ export const getMediaCommunityActivity = createServerFn({ method: "GET" })
     .validator(mediaCommunityActivitySchema)
     .handler(async ({ data: { mediaType, mediaId, search }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.media.get(mediaType).library.read.getCommunityActivity(currentUser?.id, mediaId, search);
+        return container.media.get(mediaType).library.getCommunityActivity(currentUser?.id, mediaId, search);
     });
 
 

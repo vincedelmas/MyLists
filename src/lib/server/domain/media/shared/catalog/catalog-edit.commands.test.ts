@@ -21,6 +21,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { TvCatalogAdminRepository } = await import("../../tv/catalog/tv-catalog-admin.repository");
 const { TvCatalogEditCommand } = await import("../../tv/catalog/tv-catalog-edit.command");
+const { TvLibraryService } = await import("../../tv/library/tv-library.service");
 const { MovieCatalogAdminRepository } = await import("../../movies/catalog/movie-catalog-admin.repository");
 const { MovieCatalogEditCommand } = await import("../../movies/catalog/movie-catalog-edit.command");
 const { GameCatalogAdminRepository } = await import("../../games/catalog/game-catalog-admin.repository");
@@ -48,8 +49,14 @@ describe("normalized catalog manager edits", () => {
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
 
-        series = new TvCatalogEditCommand(new TvCatalogAdminRepository(MediaType.SERIES));
-        anime = new TvCatalogEditCommand(new TvCatalogAdminRepository(MediaType.ANIME));
+        series = new TvCatalogEditCommand(
+            new TvCatalogAdminRepository(MediaType.SERIES),
+            new TvLibraryService(MediaType.SERIES),
+        );
+        anime = new TvCatalogEditCommand(
+            new TvCatalogAdminRepository(MediaType.ANIME),
+            new TvLibraryService(MediaType.ANIME),
+        );
         movies = new MovieCatalogEditCommand(new MovieCatalogAdminRepository());
         games = new GameCatalogEditCommand(new GameCatalogAdminRepository());
         books = new BookCatalogEditCommand(new BookCatalogAdminRepository());

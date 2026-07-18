@@ -10,10 +10,9 @@ const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
 const { MangaLibraryRepository } = await import("@/lib/server/domain/media/manga/library/manga-library.repository");
-const { MangaLibraryCommands } = await import("@/lib/server/domain/media/manga/library/manga-library.commands");
 const { MangaDetailsQuery } = await import("./manga-details.query");
 const { MangaCatalogReadRepository } = await import("./manga-catalog-read.repository");
-const { MangaLibraryReadRepository } = await import("@/lib/server/domain/media/manga/library/manga-library-read.repository");
+const { MangaLibraryService } = await import("@/lib/server/domain/media/manga/library/manga-library.service");
 
 
 describe("manga details query", () => {
@@ -49,7 +48,7 @@ describe("manga details query", () => {
             { catalogItemId: 1001, name: "Author" },
         ]);
 
-        const library = new MangaLibraryCommands(new MangaLibraryRepository());
+        const library = new MangaLibraryService(new MangaLibraryRepository());
         await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.READING, currentChapter: 120, rereadCount: 0, totalChaptersRead: 120, rating: 9 });
         await library.importEntry({ userId: 43, catalogItemId: 1000, status: Status.COMPLETED, currentChapter: 300, rereadCount: 2, totalChaptersRead: 900, favorite: true });
         await library.importEntry({ userId: 44, catalogItemId: 1000, status: Status.READING, currentChapter: 200, rereadCount: 1, totalChaptersRead: 500 });
@@ -94,7 +93,7 @@ describe("manga details query", () => {
     });
 
     it("uses stored historical totals and the existing public/restricted community audience", async () => {
-        const reader = new MangaLibraryReadRepository();
+        const reader = new MangaLibraryService();
         const community = await reader.getCommunityActivity(42, 1000, { page: 1, perPage: 8 });
         expect(community).toMatchObject({
             total: 2,

@@ -26,12 +26,15 @@ export class MovieStatsRepository {
 
     static async getAggregatedMediaStats(scope: MovieStatsReadScope) {
         const userId = scope.type === "library" ? scope.access.ownerId : undefined;
+
         const conditions = [
             eq(libraryStats.kind, MediaType.MOVIES),
             eq(profileMediaChannel.kind, MediaType.MOVIES),
             eq(profileMediaChannel.enabled, true),
         ];
+
         if (userId !== undefined) conditions.push(eq(libraryStats.userId, userId));
+
         const rows = await getDbClient()
             .select({
                 timeSpentMinutes: libraryStats.timeSpentMinutes,
@@ -50,6 +53,7 @@ export class MovieStatsRepository {
                 eq(profileMediaChannel.kind, libraryStats.kind),
             ))
             .where(and(...conditions));
+
         const totals = rows.reduce((result, row) => {
             result.timeSpentMinutes += row.timeSpentMinutes;
             result.totalEntries += row.totalEntries;
@@ -74,23 +78,26 @@ export class MovieStatsRepository {
             totalSpecific: 0,
             statusCounts: {} as Record<string, number>,
         });
+
         const timeSpentHours = totals.timeSpentMinutes / 60;
+
         return {
-            statusesCounts: Object.entries(totals.statusCounts).map(([name, value]) => ({ name, value })),
+            timeSpentHours,
             totalRedo: totals.totalRedo,
             totalRated: totals.totalRated,
             totalEntries: totals.totalEntries,
+            timeSpentDays: timeSpentHours / 24,
             totalComments: totals.totalComments,
             totalSpecific: totals.totalSpecific,
-            timeSpentHours,
             totalFavorites: totals.totalFavorites,
-            timeSpentDays: timeSpentHours / 24,
             avgRated: totals.totalRated === 0 ? null : totals.ratingSum / totals.totalRated,
+            statusesCounts: Object.entries(totals.statusCounts).map(([name, value]) => ({ name, value })),
         };
     }
 
     static async getAdvancedMediaStats(scope: MovieStatsReadScope, mediaAvgRating: number | null) {
         const userId = scope.type === "library" ? scope.access.ownerId : undefined;
+
         const [
             ratings,
             totalTags,
@@ -114,18 +121,19 @@ export class MovieStatsRepository {
             this.computeActorAffinity(mediaAvgRating, userId),
             this.computeLanguageAffinity(mediaAvgRating, userId),
         ]);
+
         return {
             ratings,
             totalTags,
+            langsStats,
             genresStats,
+            actorsStats,
+            avgDuration,
             releaseDates,
+            directorsStats,
+            durationDistrib,
             totalBudget: budgetRevenue.totalBudget,
             totalRevenue: budgetRevenue.totalRevenue,
-            avgDuration,
-            durationDistrib,
-            directorsStats,
-            actorsStats,
-            langsStats,
         };
     }
 
@@ -255,6 +263,16 @@ export class MovieStatsRepository {
         return this.computeDetailsAffinity(movieDetails.originalLanguage, mediaAvgRating, userId);
     }
 
+    private static entryConditions(userId?: number): SQL[] {
+        const conditions: SQL[] = [eq(catalogItem.kind, MediaType.MOVIES)];
+        if (userId !== undefined) conditions.push(eq(libraryEntry.userId, userId));
+        return conditions;
+    }
+
+    private static consumedConditions(userId?: number): SQL[] {
+        return [...this.entryConditions(userId), ne(libraryEntry.status, Status.PLAN_TO_WATCH)];
+    }
+
     private static async computeDetailsAffinity(
         metric: typeof movieDetails.directorName | typeof movieDetails.originalLanguage,
         mediaAvgRating: number | null,
@@ -272,16 +290,6 @@ export class MovieStatsRepository {
             .orderBy(desc(expressions.affinity))
             .limit(10);
         return formatAffinity(rows);
-    }
-
-    private static entryConditions(userId?: number): SQL[] {
-        const conditions: SQL[] = [eq(catalogItem.kind, MediaType.MOVIES)];
-        if (userId !== undefined) conditions.push(eq(libraryEntry.userId, userId));
-        return conditions;
-    }
-
-    private static consumedConditions(userId?: number): SQL[] {
-        return [...this.entryConditions(userId), ne(libraryEntry.status, Status.PLAN_TO_WATCH)];
     }
 }
 

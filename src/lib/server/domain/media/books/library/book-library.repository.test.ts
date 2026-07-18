@@ -9,15 +9,14 @@ import {JobType, MediaType, Status, TagAction} from "@/lib/utils/enums";
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
-const { BookListReadRepository } = await import("./book-list-read.repository");
 const { BookLibraryRepository } = await import("./book-library.repository");
-const { BookLibraryCommands } = await import("./book-library.commands");
+const { BookLibraryService } = await import("./book-library.service");
 
 
 const ownerScope = { ownerId: 42, actorId: 50, reason: "public", mediaTypeEnabled: true } as const;
 
 
-describe("book list read repository", () => {
+describe("book library repository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -36,7 +35,7 @@ describe("book list read repository", () => {
     });
 
     it("hydrates exact historical progress, tags, covers and common items", async () => {
-        const result = await new BookListReadRepository().getMediaList(50, ownerScope, { page: 1, perPage: 2 });
+        const result = await new BookLibraryRepository().getMediaList(50, ownerScope, { page: 1, perPage: 2 });
         expect(result.pagination).toMatchObject({ page: 1, perPage: 2, totalItems: 3, totalPages: 2, sorting: "Title A-Z" });
         expect(result.items.map(({ mediaName }) => mediaName)).toEqual(["Alpha", "Beta"]);
         expect(result.items[0]).toMatchObject({
@@ -53,7 +52,7 @@ describe("book list read repository", () => {
     });
 
     it("uses stable canonical book IDs for every sort tie", async () => {
-        const result = await new BookListReadRepository().getMediaList(42, ownerScope, {
+        const result = await new BookLibraryRepository().getMediaList(42, ownerScope, {
             page: 1,
             perPage: 3,
             sorting: "Rating +",
@@ -62,15 +61,15 @@ describe("book list read repository", () => {
     });
 
     it("serves the header from channel state and normalized 1.7-minute page totals", async () => {
-        const repository = new BookListReadRepository();
+        const repository = new BookLibraryRepository();
         expect(await repository.getListHeader(42)).toBeUndefined();
-        const library = new BookLibraryCommands(new BookLibraryRepository());
+        const library = new BookLibraryService(new BookLibraryRepository());
         await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 1_768 });
     });
 
     it("filters by language, genre, author and tag and returns represented filter values", async () => {
-        const repository = new BookListReadRepository();
+        const repository = new BookLibraryRepository();
         expect((await repository.getMediaList(50, ownerScope, { hideCommon: true })).items
             .map(({ mediaName }) => mediaName)).toEqual(["Beta", "Gamma"]);
         const filtered = await repository.getMediaList(undefined, ownerScope, {
@@ -90,9 +89,9 @@ describe("book list read repository", () => {
     });
 
     it("supports empty tags while retaining canonical book IDs", async () => {
-        const common = new BookLibraryRepository().common;
-        await common.editTag({ userId: 42, kind: MediaType.BOOKS, action: TagAction.ADD, name: "empty-tag" });
-        expect(await new BookListReadRepository().getTagsView(ownerScope, { page: 1 })).toMatchObject({
+        const repository = new BookLibraryRepository();
+        await repository.editTag({ userId: 42, action: TagAction.ADD, name: "empty-tag" });
+        expect(await new BookLibraryRepository().getTagsView(ownerScope, { page: 1 })).toMatchObject({
             total: 2,
             items: expect.arrayContaining([
                 expect.objectContaining({ tagName: "comfort", totalCount: 1, medias: [expect.objectContaining({ mediaId: 1000 })] }),
@@ -126,10 +125,10 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
     ]);
 
     const repository = new BookLibraryRepository();
-    const library = new BookLibraryCommands(repository);
+    const library = new BookLibraryService(repository);
     const alpha = await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.READING, currentPage: 40, rereadCount: 2, totalPagesRead: 640, rating: 8 });
-    await library.updateCustomCover({ userId: 42, catalogItemId: 1000, customCover: "custom.jpg" });
-    await repository.common.editTag({ userId: 42, kind: MediaType.BOOKS, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
+    await repository.updateCommonFields(alpha.id, { customCover: "custom.jpg" });
+    await repository.editTag({ userId: 42, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
     await library.importEntry({ userId: 42, catalogItemId: 1001, status: Status.COMPLETED, currentPage: 400, rereadCount: 0, totalPagesRead: 400, rating: 8 });
     await library.importEntry({ userId: 42, catalogItemId: 1002, status: Status.PLAN_TO_READ, currentPage: 0, rereadCount: 0, totalPagesRead: 0, rating: 8 });
     await library.importEntry({ userId: 50, catalogItemId: 1000, status: Status.READING, currentPage: 30, rereadCount: 0, totalPagesRead: 30 });

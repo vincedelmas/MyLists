@@ -6,7 +6,7 @@ import {ExternalTMDBMovieMatcher} from "@/lib/server/domain/media/movies/imports
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {MoviesImportListWriter} from "@/lib/server/domain/media/movies/imports/movies-import-list.writer";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
-import {MovieLibraryCommands} from "@/lib/server/domain/media/movies/library/movie-library.commands";
+import {MovieLibraryService} from "@/lib/server/domain/media/movies/library/movie-library.service";
 import {MovieCatalogIngestionRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-ingestion.repository";
 
 
@@ -14,7 +14,7 @@ export const createMoviesMatcher = (
     catalog: MovieCatalogIngestionRepository,
     moviesProvider: ExternalMediaProvider<MovieCatalogSnapshot>,
     moviesIngestion: MediaIngestionService<MovieCatalogSnapshot>,
-    libraryCommands: MovieLibraryCommands,
+    library: MovieLibraryService,
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.TMDB, catalog),
@@ -23,5 +23,5 @@ export const createMoviesMatcher = (
     externalMatchers: [
         new ExternalTMDBMovieMatcher(moviesProvider, moviesIngestion),
     ],
-    listWriter: new MoviesImportListWriter(libraryCommands),
+    listWriter: new MoviesImportListWriter(library),
 });

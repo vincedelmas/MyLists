@@ -20,7 +20,7 @@ export const getUserMediaHistory = createServerFn({ method: "GET" })
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.media.get(mediaType).library.read.getUserMediaHistory(currentUser.id, mediaId);
+        return container.media.get(mediaType).library.getUserMediaHistory(currentUser.id, mediaId);
     });
 
 
@@ -30,8 +30,8 @@ export const postAddMediaToList = createServerFn({ method: "POST" })
     .handler(async ({ data: { mediaType, mediaId, status }, context: { currentUser } }) => {
         const container = await getContainer();
 
-        await container.media.get(mediaType).library.commands.add({ userId: currentUser.id, catalogItemId: mediaId, status });
-        const result = await container.media.get(mediaType).library.read.findUserMedia(currentUser.id, mediaId);
+        await container.media.get(mediaType).library.add({ userId: currentUser.id, catalogItemId: mediaId, status });
+        const result = await container.media.get(mediaType).library.findUserMedia(currentUser.id, mediaId);
         if (!result) throw new FormattedError("Media not in your list");
 
         return result;
@@ -49,25 +49,25 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
         switch (data.mediaType) {
             case MediaType.SERIES:
             case MediaType.ANIME:
-                await container.media.get(data.mediaType).library.commands.update({ userId, mediaId, payload: data.payload });
+                await container.media.get(data.mediaType).library.update({ userId, mediaId, payload: data.payload });
                 break;
             case MediaType.MOVIES:
-                await container.media.get(MediaType.MOVIES).library.commands.update({ userId, mediaId, payload: data.payload });
+                await container.media.get(MediaType.MOVIES).library.update({ userId, mediaId, payload: data.payload });
                 break;
             case MediaType.GAMES:
-                await container.media.get(MediaType.GAMES).library.commands.update({ userId, mediaId, payload: data.payload });
+                await container.media.get(MediaType.GAMES).library.update({ userId, mediaId, payload: data.payload });
                 break;
             case MediaType.BOOKS:
-                await container.media.get(MediaType.BOOKS).library.commands.update({ userId, mediaId, payload: data.payload });
+                await container.media.get(MediaType.BOOKS).library.update({ userId, mediaId, payload: data.payload });
                 break;
             case MediaType.MANGA:
-                await container.media.get(MediaType.MANGA).library.commands.update({ userId, mediaId, payload: data.payload });
+                await container.media.get(MediaType.MANGA).library.update({ userId, mediaId, payload: data.payload });
                 break;
             default:
                 assertNever(data);
         }
 
-        const result = await container.media.get(data.mediaType).library.read.findUserMedia(userId, mediaId);
+        const result = await container.media.get(data.mediaType).library.findUserMedia(userId, mediaId);
         if (!result) throw new FormattedError("Media not in your list");
 
         return result;
@@ -81,7 +81,7 @@ export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
     })
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.media.get(data.mediaType).library.covers.update(currentUser.id, data);
+        return container.media.get(data.mediaType).library.updateCustomCover(currentUser.id, data);
     });
 
 
@@ -109,7 +109,7 @@ export const getUserTagNames = createServerFn({ method: "GET" })
     .validator(userTagNamesSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.media.get(mediaType).library.tags.getNames(currentUser.id);
+        return container.media.get(mediaType).library.getTagNames(currentUser.id);
     });
 
 
@@ -118,7 +118,7 @@ export const postEditUserTag = createServerFn({ method: "POST" })
     .validator(editUserTagSchema)
     .handler(async ({ data: { mediaType, mediaId, tag, action }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.media.get(mediaType).library.tags.edit({
+        return container.media.get(mediaType).library.editTag({
             userId: currentUser.id,
             mediaId,
             action,
@@ -130,7 +130,7 @@ export const postEditUserTag = createServerFn({ method: "POST" })
 type Container = Awaited<ReturnType<typeof getContainer>>;
 
 const removeMedia = (container: Container, userId: number, mediaType: MediaType, mediaId: number) => {
-    return container.media.get(mediaType).library.commands.remove({ userId, catalogItemId: mediaId });
+    return container.media.get(mediaType).library.remove({ userId, catalogItemId: mediaId });
 };
 
 const assertNever = (value: never): never => {

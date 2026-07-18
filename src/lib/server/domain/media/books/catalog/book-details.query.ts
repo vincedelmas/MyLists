@@ -1,6 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {BookCatalogReadRepository} from "@/lib/server/domain/media/books/catalog/book-catalog-read.repository";
-import {BookLibraryReadRepository} from "@/lib/server/domain/media/books/library/book-library-read.repository";
+import {BookLibraryService} from "@/lib/server/domain/media/books/library/book-library.service";
 import {BookDetailsPage} from "@/lib/contracts/media/details";
 
 
@@ -8,7 +8,7 @@ import {BookDetailsPage} from "@/lib/contracts/media/details";
 export class BookDetailsQuery {
     constructor(
         private readonly catalog = new BookCatalogReadRepository(),
-        private readonly library = new BookLibraryReadRepository(),
+        private readonly library = new BookLibraryService(),
     ) {
     }
 

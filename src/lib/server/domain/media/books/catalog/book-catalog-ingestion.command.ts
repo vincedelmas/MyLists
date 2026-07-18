@@ -2,16 +2,14 @@ import {withTransaction} from "@/lib/server/database/async-storage";
 import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
 import {BookCatalogSnapshot} from "@/lib/server/domain/media/books/catalog/book-catalog-snapshot";
 import {BookCatalogIngestionRepository} from "@/lib/server/domain/media/books/catalog/book-catalog-ingestion.repository";
-import {BookLibraryCommands} from "@/lib/server/domain/media/books/library/book-library.commands";
-import {BookLibraryRepository} from "@/lib/server/domain/media/books/library/book-library.repository";
+import {BookLibraryService} from "@/lib/server/domain/media/books/library/book-library.service";
 
 
 /** Owns catalog refresh reconciliation across the book catalog and user libraries. */
 export class BookCatalogIngestionCommand implements CatalogIngestionCommands<BookCatalogSnapshot> {
     constructor(
         private readonly catalog: BookCatalogIngestionRepository,
-        private readonly library = new BookLibraryRepository(),
-        private readonly libraryCommands = new BookLibraryCommands(library),
+        private readonly library = new BookLibraryService(),
     ) {
     }
 
@@ -34,7 +32,7 @@ export class BookCatalogIngestionCommand implements CatalogIngestionCommands<Boo
             const previousEntries = await this.library.findEntriesByCatalogItem(existing.id);
             const updated = await this.catalog.replaceSnapshot(details);
             if (updated && previousEntries.length > 0) {
-                await this.libraryCommands.reconcileCatalogMetadata(previousEntries);
+                await this.library.reconcileCatalogMetadata(previousEntries);
             }
             return updated;
         });

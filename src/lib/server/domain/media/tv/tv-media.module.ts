@@ -1,15 +1,11 @@
 import {MediaType} from "@/lib/utils/enums";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import type {UpComingMedia} from "@/lib/types/notifications.types";
 import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {TvDetailsQuery} from "@/lib/server/domain/media/tv/catalog/tv-details.query";
 import {createTvMatcher} from "@/lib/server/domain/media/tv/imports/tv.matcher";
-import {TvLibraryCommands} from "@/lib/server/domain/media/tv/library/tv-library.commands";
+import {TvLibraryService} from "@/lib/server/domain/media/tv/library/tv-library.service";
 import {TvLibraryRepository} from "@/lib/server/domain/media/tv/library/tv-library.repository";
 import {TvCatalogEditCommand} from "@/lib/server/domain/media/tv/catalog/tv-catalog-edit.command";
-import {TvListReadRepository} from "@/lib/server/domain/media/tv/library/tv-list-read.repository";
-import {TvStatsRepository} from "@/lib/server/domain/media/tv/library/tv-stats.repository";
-import {TvLibraryReadRepository} from "@/lib/server/domain/media/tv/library/tv-library-read.repository";
 import {TvCatalogReadRepository} from "@/lib/server/domain/media/tv/catalog/tv-catalog-read.repository";
 import {TvCatalogAdminRepository} from "@/lib/server/domain/media/tv/catalog/tv-catalog-admin.repository";
 import {TvCatalogIngestionCommand} from "@/lib/server/domain/media/tv/catalog/tv-catalog-ingestion.command";
@@ -18,9 +14,6 @@ import {createAnimeIngestionService, createSeriesIngestionService, createTmdbAni
 import {CatalogCoverStorage} from "@/lib/server/domain/media/shared/catalog/catalog-edit.shared";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {TvCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/tv/catalog/tv-catalog-refresh-candidates.query";
-import {exportTvLibraryCsv} from "@/lib/server/domain/media/tv/library/tv-library-csv-export";
-import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
-import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
 import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/imports/tv-import.schemas";
 import {seriesAchievements} from "@/lib/server/domain/media/tv/achievements/series.seed";
@@ -40,24 +33,19 @@ export const setupTvMediaModule = <K extends TvMediaType>(
     kind: K,
     clients: { tmdb: TmdbApi; jikan: JikanApi },
 ) => {
-    const list = new TvListReadRepository(kind);
-    const libraryRepository = new TvLibraryRepository();
+    const libraryRepository = new TvLibraryRepository(kind);
     const catalogAdmin = new TvCatalogAdminRepository(kind);
-    const libraryCommands = new TvLibraryCommands(libraryRepository);
-    const libraryRead = new TvLibraryReadRepository(kind, libraryRepository);
+    const library = new TvLibraryService(kind, libraryRepository);
     const catalogRead = new TvCatalogReadRepository(kind);
     const catalogRepository = new TvCatalogIngestionRepository(kind);
     const catalogEdit = new TvCatalogEditCommand(
         catalogAdmin,
-        libraryRepository,
-        libraryCommands,
+        library,
         new CatalogCoverStorage(kind),
     );
-    const catalogCommands = new TvCatalogIngestionCommand(catalogRepository, libraryRepository, libraryCommands);
+    const catalogCommands = new TvCatalogIngestionCommand(catalogRepository, library);
     const refreshIdentity = new CatalogRefreshIdentityQuery(kind);
     const refreshCandidates = new TvCatalogRefreshCandidatesQuery(kind);
-    const stats = new TvStatsRepository(kind);
-    const tags = new LibraryTagsQuery(kind);
 
     const external = (kind === MediaType.ANIME)
         ? createTmdbAnimeProvider(clients.tmdb)
@@ -79,7 +67,7 @@ export const setupTvMediaModule = <K extends TvMediaType>(
         external,
         contributions: {
             imports: {
-                matcher: createTvMatcher(kind, catalogRepository, external, ingestion, libraryCommands),
+                matcher: createTvMatcher(kind, catalogRepository, external, ingestion, library),
                 csv: {
                     rowSchema: kind === MediaType.SERIES ? seriesMyListsCSVRowSchema : animeMyListsCSVRowSchema,
                 },
@@ -103,7 +91,7 @@ export const setupTvMediaModule = <K extends TvMediaType>(
             ingestion,
             edit: catalogEdit,
             admin: catalogAdmin,
-            details: new TvDetailsQuery(kind, catalogRead, libraryRead),
+            details: new TvDetailsQuery(kind, catalogRead, library),
             read: catalogRead,
             refresh: {
                 identity: refreshIdentity,
@@ -112,24 +100,6 @@ export const setupTvMediaModule = <K extends TvMediaType>(
             },
             maintenance: createCatalogMaintenance(kind),
         },
-        library: {
-            list,
-            commands: libraryCommands,
-            read: libraryRead,
-            export: {
-                csv: (userId: number) => exportTvLibraryCsv(kind, userId),
-            },
-            stats,
-            tags: {
-                getNames: (userId: number) => tags.getNames(userId),
-                edit: (params: Omit<Parameters<TvLibraryCommands["editTag"]>[0], "kind">) => {
-                    return libraryCommands.editTag({ ...params, kind });
-                },
-            },
-            covers: new LibraryCustomCoverCommand(kind, libraryRead, libraryCommands),
-            async upcoming(ownerId: number): Promise<UpComingMedia[]> {
-                return list.getUpcomingMedia({ ownerId, actorId: ownerId, reason: "owner", mediaTypeEnabled: true });
-            },
-        },
+        library,
     } as const;
 };

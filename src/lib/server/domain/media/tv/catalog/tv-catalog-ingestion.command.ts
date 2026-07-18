@@ -1,17 +1,16 @@
 import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
 import {TvCatalogSnapshot} from "@/lib/server/domain/media/tv/catalog/tv-catalog-snapshot";
 import {TvCatalogIngestionRepository} from "@/lib/server/domain/media/tv/catalog/tv-catalog-ingestion.repository";
-import {TvLibraryCommands} from "@/lib/server/domain/media/tv/library/tv-library.commands";
-import {TvLibraryRepository} from "@/lib/server/domain/media/tv/library/tv-library.repository";
+import {TvLibraryService} from "@/lib/server/domain/media/tv/library/tv-library.service";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
 /** Owns catalog refresh reconciliation across the catalog and library aggregates. */
-export class TvCatalogIngestionCommand implements CatalogIngestionCommands<TvCatalogSnapshot> {
+export class TvCatalogIngestionCommand<K extends TvMediaType> implements CatalogIngestionCommands<TvCatalogSnapshot> {
     constructor(
         private readonly catalog: TvCatalogIngestionRepository,
-        private readonly library = new TvLibraryRepository(),
-        private readonly libraryCommands = new TvLibraryCommands(library),
+        private readonly library: TvLibraryService<K>,
     ) {
     }
 
@@ -35,7 +34,7 @@ export class TvCatalogIngestionCommand implements CatalogIngestionCommands<TvCat
             const previousEntries = await this.library.findEntriesByCatalogItem(existing.id);
             const updated = await this.catalog.replaceSnapshot(details);
             if (updated && previousEntries.length > 0) {
-                await this.libraryCommands.reconcileCatalogMetadata(previousEntries);
+                await this.library.reconcileCatalogMetadata(previousEntries);
             }
             return updated;
         });

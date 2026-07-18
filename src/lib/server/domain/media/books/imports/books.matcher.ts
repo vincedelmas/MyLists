@@ -6,7 +6,7 @@ import {ExternalGoogleBooksMatcher} from "@/lib/server/domain/media/books/import
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
 import {BooksImportListWriter} from "@/lib/server/domain/media/books/imports/books-import-list.writer";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
-import {BookLibraryCommands} from "@/lib/server/domain/media/books/library/book-library.commands";
+import {BookLibraryService} from "@/lib/server/domain/media/books/library/book-library.service";
 import {BookCatalogIngestionRepository} from "@/lib/server/domain/media/books/catalog/book-catalog-ingestion.repository";
 
 
@@ -14,7 +14,7 @@ export const createBooksMatcher = (
     catalog: BookCatalogIngestionRepository,
     booksProvider: ExternalMediaProvider<BookCatalogSnapshot>,
     booksIngestion: MediaIngestionService<BookCatalogSnapshot>,
-    libraryCommands: BookLibraryCommands,
+    library: BookLibraryService,
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.BOOKS, catalog),
@@ -23,5 +23,5 @@ export const createBooksMatcher = (
     externalMatchers: [
         new ExternalGoogleBooksMatcher(booksProvider, booksIngestion),
     ],
-    listWriter: new BooksImportListWriter(catalog, libraryCommands),
+    listWriter: new BooksImportListWriter(catalog, library),
 });

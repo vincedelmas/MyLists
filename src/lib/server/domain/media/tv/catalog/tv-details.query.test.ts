@@ -17,8 +17,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { TvDetailsQuery } = await import("./tv-details.query");
 const { TvLibraryRepository } = await import("@/lib/server/domain/media/tv/library/tv-library.repository");
-const { TvLibraryCommands } = await import("@/lib/server/domain/media/tv/library/tv-library.commands");
-const { TvLibraryReadRepository } = await import("@/lib/server/domain/media/tv/library/tv-library-read.repository");
+const { TvLibraryService } = await import("@/lib/server/domain/media/tv/library/tv-library.service");
 const { TvCatalogReadRepository } = await import("./tv-catalog-read.repository");
 const { TvCatalogAdminRepository } = await import("./tv-catalog-admin.repository");
 
@@ -42,8 +41,8 @@ describe("TV details query", () => {
     });
 
     it("serves catalog, private viewer state and followed state with catalog IDs", async () => {
-        const libraryRepository = new TvLibraryRepository();
-        const library = new TvLibraryCommands(libraryRepository);
+        const libraryRepository = new TvLibraryRepository(MediaType.SERIES);
+        const library = new TvLibraryService(MediaType.SERIES, libraryRepository);
         const viewerEntry = await library.add({ userId: 42, catalogItemId: 1000, status: Status.WATCHING });
         await library.replaceRewatches({
             userId: 42,
@@ -53,7 +52,6 @@ describe("TV details query", () => {
         await library.updateRating({ userId: 42, catalogItemId: 1000, rating: 8.5 });
         await libraryRepository.editTag({
             userId: 42,
-            kind: MediaType.SERIES,
             action: TagAction.ADD,
             name: "comfort",
             libraryEntryId: viewerEntry.id,
@@ -93,7 +91,7 @@ describe("TV details query", () => {
     });
 
     it("does not expose viewer library state to an anonymous detail request", async () => {
-        const library = new TvLibraryCommands(new TvLibraryRepository());
+        const library = new TvLibraryService(MediaType.SERIES, new TvLibraryRepository(MediaType.SERIES));
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.WATCHING });
 
         const result = await new TvDetailsQuery(MediaType.SERIES).getMediaAndUserDetails(undefined, 1000);
@@ -102,14 +100,14 @@ describe("TV details query", () => {
     });
 
     it("preserves the community audience rules while aggregating normalized TV progress", async () => {
-        const library = new TvLibraryCommands(new TvLibraryRepository());
+        const library = new TvLibraryService(MediaType.SERIES, new TvLibraryRepository(MediaType.SERIES));
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.WATCHING });
         await library.add({ userId: 50, catalogItemId: 1000, status: Status.COMPLETED });
         await library.updateRating({ userId: 50, catalogItemId: 1000, rating: 9 });
         await db.insert(schema.profileMediaChannel).values({ userId: 42, kind: MediaType.SERIES, enabled: true });
         await db.update(schema.user).set({ privacy: PrivacyType.PUBLIC }).where(eq(schema.user.id, 50));
 
-        const reader = new TvLibraryReadRepository(MediaType.SERIES);
+        const reader = new TvLibraryService(MediaType.SERIES);
         const anonymous = await reader.getCommunityActivity(undefined, 1000, { page: 1 });
         expect(anonymous).toMatchObject({
             total: 1,
@@ -125,7 +123,7 @@ describe("TV details query", () => {
     });
 
     it("serves public TV job pages with viewer list membership", async () => {
-        const library = new TvLibraryCommands(new TvLibraryRepository());
+        const library = new TvLibraryService(MediaType.SERIES, new TvLibraryRepository(MediaType.SERIES));
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.WATCHING });
 
         const result = await new TvCatalogReadRepository(MediaType.SERIES)

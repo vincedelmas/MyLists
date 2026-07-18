@@ -16,15 +16,14 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 
 const { TvLibraryRepository } = await import("./tv-library.repository");
-const { TvLibraryCommands } = await import("./tv-library.commands");
-const { TvLibraryReadRepository } = await import("./tv-library-read.repository");
+const { TvLibraryService } = await import("./tv-library.service");
 const { TvStatsRepository } = await import("./tv-stats.repository");
 
 
-describe("TV library commands", () => {
+describe("TV library service", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
-    let service: InstanceType<typeof TvLibraryCommands>;
+    let service: InstanceType<typeof TvLibraryService>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
@@ -33,7 +32,7 @@ describe("TV library commands", () => {
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
 
-        service = new TvLibraryCommands(new TvLibraryRepository());
+        service = new TvLibraryService(MediaType.SERIES, new TvLibraryRepository(MediaType.SERIES));
         await seedTv(db);
     });
 
@@ -92,7 +91,7 @@ describe("TV library commands", () => {
             { updateType: UpdateType.STATUS, payload: { oldValue: Status.WATCHING, newValue: Status.COMPLETED } },
         ]);
 
-        await service.synchronizeProfileChannel({ userId: 42, kind: MediaType.SERIES, enabled: true, views: 0 });
+        await service.synchronizeProfileChannel({ userId: 42, enabled: true, views: 0 });
         const statsReader = new TvStatsRepository(MediaType.SERIES);
         const statsAccess = { type: "library", access: { ownerId: 42, actorId: 42, reason: "owner", mediaTypeEnabled: true } } as const;
         expect(await statsReader.getAggregatedMediaStats(statsAccess)).toMatchObject({
@@ -118,7 +117,7 @@ describe("TV library commands", () => {
             ratings: expect.arrayContaining([{ name: "0.0", value: 0 }, { name: "10.0", value: 0 }]),
         });
 
-        const history = await new TvLibraryReadRepository(MediaType.SERIES).getUserMediaHistory(42, 1000);
+        const history = await new TvLibraryService(MediaType.SERIES).getUserMediaHistory(42, 1000);
         expect(history.map(({ id, mediaId, mediaName, payload }) => ({ id, mediaId, mediaName, payload }))).toEqual([
             { id: 4, mediaId: 1000, mediaName: "A difficult show", payload: { oldValue: Status.WATCHING, newValue: Status.COMPLETED } },
             { id: 3, mediaId: 1000, mediaName: "A difficult show", payload: { oldValue: 0, newValue: 1 } },
@@ -165,17 +164,15 @@ describe("TV library commands", () => {
             entriesFavorited: 1,
         });
 
-        const repository = new TvLibraryRepository();
+        const repository = new TvLibraryRepository(MediaType.SERIES);
         await repository.editTag({
             userId: 42,
-            kind: MediaType.SERIES,
             action: TagAction.ADD,
             name: "comfort",
             libraryEntryId: entry.id,
         });
         await repository.editTag({
             userId: 42,
-            kind: MediaType.SERIES,
             action: TagAction.RENAME,
             oldName: "comfort",
             name: "favorites",
@@ -187,7 +184,6 @@ describe("TV library commands", () => {
 
         await repository.editTag({
             userId: 42,
-            kind: MediaType.SERIES,
             action: TagAction.DELETE_ONE,
             name: "favorites",
             libraryEntryId: entry.id,

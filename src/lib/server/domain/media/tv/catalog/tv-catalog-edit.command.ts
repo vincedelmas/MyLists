@@ -1,17 +1,16 @@
 import {TvCatalogAdminRepository, TvCatalogEdit} from "@/lib/server/domain/media/tv/catalog/tv-catalog-admin.repository";
-import {TvLibraryCommands} from "@/lib/server/domain/media/tv/library/tv-library.commands";
-import {TvLibraryRepository} from "@/lib/server/domain/media/tv/library/tv-library.repository";
+import {TvLibraryService} from "@/lib/server/domain/media/tv/library/tv-library.service";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {TvCatalogEditPayload} from "@/lib/contracts/media/catalog-edit";
 import {MediaType} from "@/lib/utils/enums";
 import {CatalogCoverStorage} from "@/lib/server/domain/media/shared/catalog/catalog-edit.shared";
+import {TvMediaType} from "@/lib/types/media-kind.types";
 
 
-export class TvCatalogEditCommand {
+export class TvCatalogEditCommand<K extends TvMediaType> {
     constructor(
         private readonly catalog: TvCatalogAdminRepository,
-        private readonly library = new TvLibraryRepository(),
-        private readonly libraryCommands = new TvLibraryCommands(library),
+        private readonly library: TvLibraryService<K>,
         private readonly coverStorage = new CatalogCoverStorage(MediaType.SERIES),
     ) {
     }
@@ -28,7 +27,7 @@ export class TvCatalogEditCommand {
                 : [];
             const updated = await this.catalog.updateEditableFields(catalogItemId, edit);
             if (updated && previousEntries.length > 0) {
-                await this.libraryCommands.reconcileCatalogMetadata(previousEntries);
+                await this.library.reconcileCatalogMetadata(previousEntries);
             }
             return updated;
         });

@@ -1,17 +1,76 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {UpdateUserMedia} from "@/lib/contracts/media/library";
+import {GamesPlatformsEnum, JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {UpdateUserCustomCover, UpdateUserMedia} from "@/lib/contracts/media/library";
 import {GamesFinalListInsert} from "@/lib/server/domain/media/games/imports/game-import.schemas";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {GameLibraryEntry, GameLibraryRepository} from "@/lib/server/domain/media/games/library/game-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {changeGameStatus, createInitialGameProgress, importGameProgress, replaceGamePlatform, replaceGamePlaytime,} from "@/lib/server/domain/media/games/library/game-progress";
 import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
+import {SearchType, SimpleSearch} from "@/lib/schemas";
+import {GameListArgs} from "@/lib/contracts/media/lists";
+import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {GameStatsRepository} from "@/lib/server/domain/media/games/library/game-stats.repository";
+import {exportGameLibraryCsv} from "@/lib/server/domain/media/games/library/game-library-csv-export";
+import {prepareLibraryCustomCover} from "@/lib/server/domain/media/shared/library/library-custom-cover";
+import type {UpComingMedia} from "@/lib/types/notifications.types";
 
 
-/** Canonical game library mutation boundary. */
-export class GameLibraryCommands {
+/** Complete game library capability over one persistence boundary. */
+export class GameLibraryService {
+    readonly stats = GameStatsRepository;
+    readonly export = { csv: exportGameLibraryCsv };
+
     constructor(private readonly repository = new GameLibraryRepository()) {
+    }
+
+    getUserMediaHistory(userId: number, catalogItemId: number) {
+        return this.repository.getUserMediaHistory(userId, catalogItemId);
+    }
+
+    findUserMedia(userId: number | undefined, catalogItemId: number) {
+        return this.repository.findUserMedia(userId, catalogItemId);
+    }
+
+    findFollowedUsersMedia(viewerId: number | undefined, catalogItemId: number) {
+        return this.repository.findFollowedUsersMedia(viewerId, catalogItemId);
+    }
+
+    getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType) {
+        return this.repository.getCommunityActivity(viewerId, catalogItemId, search);
+    }
+
+    getListHeader(userId: number) {
+        return this.repository.getListHeader(userId);
+    }
+
+    getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: GameListArgs) {
+        return this.repository.getMediaList(currentUserId, access, args);
+    }
+
+    getListFilters(access: MediaListAccessScope) {
+        return this.repository.getListFilters(access);
+    }
+
+    getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
+        return this.repository.getSearchListFilters(access, query, job);
+    }
+
+    getTagsView(access: MediaListAccessScope, search: SimpleSearch) {
+        return this.repository.getTagsView(access, search);
+    }
+
+    getTagNames(userId: number) {
+        return this.repository.getTagNames(userId);
+    }
+
+    async upcoming(ownerId: number): Promise<UpComingMedia[]> {
+        return this.repository.getUpcomingMedia({
+            ownerId,
+            actorId: ownerId,
+            reason: "owner",
+            mediaTypeEnabled: true,
+        });
     }
 
     async update(params: { userId: number; mediaId: number; payload: Extract<UpdateUserMedia, { mediaType: typeof MediaType.GAMES }>["payload"] }) {
@@ -52,8 +111,8 @@ export class GameLibraryCommands {
 
     async editTag(params: { userId: number; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
         const libraryEntryId = params.mediaId ? (await this.get(params.userId, params.mediaId))?.id : undefined;
-        return this.repository.common.editTag({
-            userId: params.userId, kind: MediaType.GAMES, action: params.action,
+        return this.repository.editTag({
+            userId: params.userId, action: params.action,
             name: params.tag.name, oldName: params.tag.oldName, libraryEntryId,
         });
     }
@@ -66,7 +125,7 @@ export class GameLibraryCommands {
         const created = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(undefined, created);
         if (!params.silent) {
-            await this.repository.common.recordChange(entryId, UpdateType.STATUS, null, progress.status);
+            await this.repository.recordChange(entryId, UpdateType.STATUS, null, progress.status);
             await this.recordActivity(undefined, created);
         }
         return created;
@@ -150,18 +209,24 @@ export class GameLibraryCommands {
         return this.updateCommon(params, { favorite: params.favorite });
     }
 
-    updateCustomCover(params: { userId: number; catalogItemId: number; customCover: string | null }) {
-        return this.updateCommon(params, { customCover: params.customCover });
+    async updateCustomCover(userId: number, input: UpdateUserCustomCover) {
+        await this.requireEntry(userId, input.mediaId);
+        const customCover = await prepareLibraryCustomCover(MediaType.GAMES, input);
+        await this.updateCommon({ userId, catalogItemId: input.mediaId }, { customCover });
+
+        const result = await this.repository.findUserMedia(userId, input.mediaId);
+        if (!result) throw new FormattedError("Media not in your list");
+        return result;
     }
 
     async remove(params: { userId: number; catalogItemId: number }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(current, undefined);
-        await this.repository.common.removeEntry(current.id);
+        await this.repository.removeEntry(current.id);
     }
 
     synchronizeProfileChannel(params: { userId: number; enabled: boolean; views: number }) {
-        return this.repository.common.synchronizeProfileChannel(params.userId, MediaType.GAMES, params.enabled, params.views);
+        return this.repository.synchronizeProfileChannel(params.userId, params.enabled, params.views);
     }
 
     private async persistLoggedTransition(
@@ -176,16 +241,16 @@ export class GameLibraryCommands {
         const updated = await this.requireEntry(current.userId, current.catalogItemId);
         await this.applyStatsTransition(current, updated);
         await this.recordActivity(current, updated, metadata.loggedAt);
-        await this.repository.common.recordChange(current.id, updateType, oldValue, newValue, metadata.loggedAt);
+        await this.repository.recordChange(current.id, updateType, oldValue, newValue, metadata.loggedAt);
         return updated;
     }
 
     private async updateCommon(
         params: { userId: number; catalogItemId: number },
-        fields: Parameters<GameLibraryRepository["common"]["updateEntry"]>[1],
+        fields: Parameters<GameLibraryRepository["updateCommonFields"]>[1],
     ) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.repository.common.updateEntry(current.id, fields);
+        await this.repository.updateCommonFields(current.id, fields);
         const updated = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(current, updated);
         return updated;
@@ -194,7 +259,7 @@ export class GameLibraryCommands {
     private async applyStatsTransition(before?: GameLibraryEntry, after?: GameLibraryEntry) {
         const sample = after ?? before;
         if (!sample) return;
-        const current = await this.repository.common.getStats(sample.userId, MediaType.GAMES);
+        const current = await this.repository.getStats(sample.userId);
         const beforeMetrics = entryMetrics(before);
         const afterMetrics = entryMetrics(after);
         const statusCounts = { ...(current?.statusCounts ?? {}) };
@@ -203,7 +268,7 @@ export class GameLibraryCommands {
         const entriesRated = Math.max(0, (current?.entriesRated ?? 0) + afterMetrics.rated - beforeMetrics.rated);
         const ratingSum = Math.max(0, (current?.ratingSum ?? 0) + afterMetrics.rating - beforeMetrics.rating);
 
-        await this.repository.common.saveStats({
+        await this.repository.saveStats({
             userId: sample.userId,
             kind: MediaType.GAMES,
             timeSpentMinutes: Math.max(0, (current?.timeSpentMinutes ?? 0) + afterMetrics.time - beforeMetrics.time),
@@ -221,7 +286,7 @@ export class GameLibraryCommands {
 
     private async recordActivity(before: GameLibraryEntry | undefined, after: GameLibraryEntry, loggedAt?: string) {
         const occurredAt = loggedAt ? `${loggedAt} 12:00:00` : new Date().toISOString();
-        await this.repository.common.recordActivity({
+        await this.repository.recordActivity({
             entryId: after.id,
             unitsGained: after.progress.playtimeMinutes - (before?.progress.playtimeMinutes ?? 0),
             completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,

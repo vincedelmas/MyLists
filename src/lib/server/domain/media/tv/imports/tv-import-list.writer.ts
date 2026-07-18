@@ -3,7 +3,7 @@ import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {TvFinalListInsert, tvFinalListInsertSchema, TvImportPayload, tvImportPayloadSchema} from "@/lib/server/domain/media/tv/imports/tv-import.schemas";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {TvLibraryCommands} from "@/lib/server/domain/media/tv/library/tv-library.commands";
+import {TvLibraryService} from "@/lib/server/domain/media/tv/library/tv-library.service";
 import {TvCatalogIngestionRepository} from "@/lib/server/domain/media/tv/catalog/tv-catalog-ingestion.repository";
 
 
@@ -20,7 +20,7 @@ export class TvImportListWriter implements ImportListWriter {
     constructor(
         private catalog: TvCatalogIngestionRepository,
         private mediaType: TvMediaType,
-        private libraryCommands: TvLibraryCommands,
+        private library: TvLibraryService,
     ) {
     }
 
@@ -35,7 +35,7 @@ export class TvImportListWriter implements ImportListWriter {
             userTvRows.push(tvFinalListInsertSchema.parse({ userId, mediaId, ...fullPayload }));
         }
 
-        await this.libraryCommands.importRows(this.mediaType, userTvRows);
+        await this.library.importRows(userTvRows);
 
         return matches.map(({ item, mediaId }) => ({
             itemId: item.id,

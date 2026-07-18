@@ -1,6 +1,6 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {UpdateUserMedia} from "@/lib/contracts/media/library";
+import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {UpdateUserCustomCover, UpdateUserMedia} from "@/lib/contracts/media/library";
 import {TvFinalListInsert} from "@/lib/server/domain/media/tv/imports/tv-import.schemas";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {TvLibraryEntry, TvLibraryRepository} from "@/lib/server/domain/media/tv/library/tv-library.repository";
@@ -18,11 +18,79 @@ import {
 } from "@/lib/server/domain/media/tv/library/tv-progress";
 import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
 import {TvMediaType} from "@/lib/types/media-kind.types";
+import {SearchType, SimpleSearch} from "@/lib/schemas";
+import {TvListArgs} from "@/lib/contracts/media/lists";
+import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {TvStatsRepository} from "@/lib/server/domain/media/tv/library/tv-stats.repository";
+import {exportTvLibraryCsv} from "@/lib/server/domain/media/tv/library/tv-library-csv-export";
+import {prepareLibraryCustomCover} from "@/lib/server/domain/media/shared/library/library-custom-cover";
+import type {UpComingMedia} from "@/lib/types/notifications.types";
 
 
-/** Canonical TV/anime library mutation boundary. */
-export class TvLibraryCommands {
-    constructor(private repository = new TvLibraryRepository()) {
+/** Complete series/anime library capability over one persistence boundary. */
+export class TvLibraryService<K extends TvMediaType = TvMediaType> {
+    readonly stats: TvStatsRepository;
+    readonly export: { csv: (userId: number) => ReturnType<typeof exportTvLibraryCsv> };
+
+    constructor(
+        private readonly kind: K,
+        private readonly repository = new TvLibraryRepository(kind),
+    ) {
+        this.stats = new TvStatsRepository(kind);
+        this.export = { csv: (userId: number) => exportTvLibraryCsv(kind, userId) };
+    }
+
+    getUserMediaHistory(userId: number, catalogItemId: number) {
+        return this.repository.getUserMediaHistory(userId, catalogItemId);
+    }
+
+    findUserMedia(userId: number | undefined, catalogItemId: number) {
+        return this.repository.findUserMedia(userId, catalogItemId);
+    }
+
+    findFollowedUsersMedia(viewerId: number | undefined, catalogItemId: number) {
+        return this.repository.findFollowedUsersMedia(viewerId, catalogItemId);
+    }
+
+    getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType) {
+        return this.repository.getCommunityActivity(viewerId, catalogItemId, search);
+    }
+
+    getListHeader(userId: number) {
+        return this.repository.getListHeader(userId);
+    }
+
+    getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: TvListArgs) {
+        return this.repository.getMediaList(currentUserId, access, args);
+    }
+
+    getListFilters(access: MediaListAccessScope) {
+        return this.repository.getListFilters(access);
+    }
+
+    getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
+        return this.repository.getSearchListFilters(access, query, job);
+    }
+
+    getTagsView(access: MediaListAccessScope, search: SimpleSearch) {
+        return this.repository.getTagsView(access, search);
+    }
+
+    getTagNames(userId: number) {
+        return this.repository.getTagNames(userId);
+    }
+
+    async upcoming(ownerId: number): Promise<UpComingMedia[]> {
+        return this.repository.getUpcomingMedia({
+            ownerId,
+            actorId: ownerId,
+            reason: "owner",
+            mediaTypeEnabled: true,
+        });
+    }
+
+    findEntriesByCatalogItem(catalogItemId: number) {
+        return this.repository.findEntriesByCatalogItem(catalogItemId);
     }
 
     async update(params: { userId: number; mediaId: number; payload: Extract<UpdateUserMedia, { mediaType: typeof MediaType.SERIES }>["payload"] }) {
@@ -58,7 +126,7 @@ export class TvLibraryCommands {
         }
     }
 
-    async importRows(_kind: TvMediaType, rows: TvFinalListInsert[]) {
+    async importRows(rows: TvFinalListInsert[]) {
         return withTransaction(async () => {
             for (const row of rows) {
                 if (row.total === undefined) throw new Error("Materialized TV import row is missing total progress.");
@@ -81,13 +149,12 @@ export class TvLibraryCommands {
         });
     }
 
-    async editTag(params: { userId: number; kind: TvMediaType; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
+    async editTag(params: { userId: number; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
         const libraryEntryId = params.mediaId
             ? (await this.get(params.userId, params.mediaId))?.id
             : undefined;
         return this.repository.editTag({
             userId: params.userId,
-            kind: params.kind,
             action: params.action,
             name: params.tag.name,
             oldName: params.tag.oldName,
@@ -145,10 +212,14 @@ export class TvLibraryCommands {
         return this.updateCommon(params, { favorite: params.favorite });
     }
 
-    async updateCustomCover(params: { userId: number; catalogItemId: number; customCover: string | null }) {
-        const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.repository.updateCommonFields(current.id, { customCover: params.customCover });
-        return this.requireEntry(params.userId, params.catalogItemId);
+    async updateCustomCover(userId: number, input: UpdateUserCustomCover) {
+        const current = await this.requireEntry(userId, input.mediaId);
+        const customCover = await prepareLibraryCustomCover(this.kind, input);
+        await this.repository.updateCommonFields(current.id, { customCover });
+
+        const result = await this.repository.findUserMedia(userId, input.mediaId);
+        if (!result) throw new FormattedError("Media not in your list");
+        return result;
     }
 
     /** Silent, exact final-list adapter for the retained import pipeline. */
@@ -252,11 +323,10 @@ export class TvLibraryCommands {
 
     async synchronizeProfileChannel(params: {
         userId: number;
-        kind: TvLibraryEntry["kind"];
         enabled: boolean;
         views: number;
     }) {
-        await this.repository.synchronizeProfileChannel(params.userId, params.kind, params.enabled, params.views);
+        await this.repository.synchronizeProfileChannel(params.userId, params.enabled, params.views);
     }
 
     /**
@@ -305,7 +375,7 @@ export class TvLibraryCommands {
         const sample = after ?? before;
         if (!sample) return;
 
-        const current = await this.repository.getStats(sample.userId, sample.kind);
+        const current = await this.repository.getStats(sample.userId);
         const beforeMetrics = entryMetrics(before);
         const afterMetrics = entryMetrics(after);
         const statusCounts = { ...(current?.statusCounts ?? {}) };

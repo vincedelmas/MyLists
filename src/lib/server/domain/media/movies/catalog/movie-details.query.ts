@@ -1,6 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {MovieCatalogReadRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-read.repository";
-import {MovieLibraryReadRepository} from "@/lib/server/domain/media/movies/library/movie-library-read.repository";
+import {MovieLibraryService} from "@/lib/server/domain/media/movies/library/movie-library.service";
 import {MovieDetailsPage} from "@/lib/contracts/media/details";
 
 
@@ -8,7 +8,7 @@ import {MovieDetailsPage} from "@/lib/contracts/media/details";
 export class MovieDetailsQuery {
     constructor(
         private readonly catalog = new MovieCatalogReadRepository(),
-        private readonly library = new MovieLibraryReadRepository(),
+        private readonly library = new MovieLibraryService(),
     ) {
     }
 

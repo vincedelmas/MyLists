@@ -12,10 +12,10 @@ const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
 const { GameLibraryRepository } = await import("./game-library.repository");
-const { GameLibraryCommands } = await import("./game-library.commands");
+const { GameLibraryService } = await import("./game-library.service");
 
 
-describe("game library commands", () => {
+describe("game library service", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -50,7 +50,7 @@ describe("game library commands", () => {
     });
 
     it("keeps status, playtime, selected platform, stats, activity and history coherent", async () => {
-        const library = new GameLibraryCommands(new GameLibraryRepository());
+        const library = new GameLibraryService(new GameLibraryRepository());
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.PLAYING });
         await library.replacePlaytime({ userId: 42, catalogItemId: 1000, playtime: 600 });
         await library.replacePlatform({ userId: 42, catalogItemId: 1000, platform: "PC" });
@@ -86,7 +86,7 @@ describe("game library commands", () => {
     });
 
     it("imports exact common fields without manufacturing history or activity", async () => {
-        const library = new GameLibraryCommands(new GameLibraryRepository());
+        const library = new GameLibraryService(new GameLibraryRepository());
         const imported = await library.importEntry({
             userId: 42,
             catalogItemId: 1000,
@@ -119,7 +119,7 @@ describe("game library commands", () => {
         await db.insert(schema.gameCompany).values({ catalogItemId: 1000, name: "Studio", developer: true, publisher: true });
 
         const repository = new GameLibraryRepository();
-        const library = new GameLibraryCommands(repository);
+        const library = new GameLibraryService(repository);
         const entry = await library.importEntry({
             userId: 42,
             catalogItemId: 1000,
@@ -130,9 +130,8 @@ describe("game library commands", () => {
             comment: "Good",
             favorite: true,
         });
-        await repository.common.editTag({
+        await repository.editTag({
             userId: 42,
-            kind: MediaType.GAMES,
             action: TagAction.ADD,
             name: "comfort",
             libraryEntryId: entry.id,

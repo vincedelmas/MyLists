@@ -5,7 +5,7 @@ import {catalogItem, libraryEntry, movieProgress} from "@/lib/server/database/sc
 import {libraryCsvBaseSelection, libraryCsvMetadata} from "@/lib/server/domain/media/shared/library/library-csv-export.shared";
 
 
-export const exportMovieLibraryCsv = (userId: number) => {
+export const exportMovieLibraryCsv = async (userId: number) => {
     const metadata = libraryCsvMetadata(MediaType.MOVIES);
 
     return getDbClient()

@@ -1,6 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {MangaCatalogReadRepository} from "@/lib/server/domain/media/manga/catalog/manga-catalog-read.repository";
-import {MangaLibraryReadRepository} from "@/lib/server/domain/media/manga/library/manga-library-read.repository";
+import {MangaLibraryService} from "@/lib/server/domain/media/manga/library/manga-library.service";
 import {MangaDetailsPage} from "@/lib/contracts/media/details";
 
 
@@ -8,7 +8,7 @@ import {MangaDetailsPage} from "@/lib/contracts/media/details";
 export class MangaDetailsQuery {
     constructor(
         private readonly catalog = new MangaCatalogReadRepository(),
-        private readonly library = new MangaLibraryReadRepository(),
+        private readonly library = new MangaLibraryService(),
     ) {
     }
 

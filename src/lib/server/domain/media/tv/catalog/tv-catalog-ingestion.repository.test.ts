@@ -22,7 +22,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const { TvCatalogIngestionRepository } = await import("./tv-catalog-ingestion.repository");
 const { TvCatalogIngestionCommand } = await import("./tv-catalog-ingestion.command");
 const { TvLibraryRepository } = await import("@/lib/server/domain/media/tv/library/tv-library.repository");
-const { TvLibraryCommands } = await import("@/lib/server/domain/media/tv/library/tv-library.commands");
+const { TvLibraryService } = await import("@/lib/server/domain/media/tv/library/tv-library.service");
 
 
 describe("TV catalog ingestion command", () => {
@@ -56,11 +56,17 @@ describe("TV catalog ingestion command", () => {
         const animeProvider = provider(MediaType.ANIME, details({ name: "Anime", apiId: 777 }));
         const seriesIngestion = createMediaIngestionService({
             provider: seriesProvider,
-            catalog: new TvCatalogIngestionCommand(new TvCatalogIngestionRepository(MediaType.SERIES)),
+            catalog: new TvCatalogIngestionCommand(
+                new TvCatalogIngestionRepository(MediaType.SERIES),
+                new TvLibraryService(MediaType.SERIES),
+            ),
         });
         const animeIngestion = createMediaIngestionService({
             provider: animeProvider,
-            catalog: new TvCatalogIngestionCommand(new TvCatalogIngestionRepository(MediaType.ANIME)),
+            catalog: new TvCatalogIngestionCommand(
+                new TvCatalogIngestionRepository(MediaType.ANIME),
+                new TvLibraryService(MediaType.ANIME),
+            ),
         });
 
         const seriesId = await seriesIngestion.storeFromExternal(777);
@@ -82,11 +88,11 @@ describe("TV catalog ingestion command", () => {
         const catalogRepository = new TvCatalogIngestionRepository(MediaType.SERIES);
         const ingestion = createMediaIngestionService({
             provider: externalProvider,
-            catalog: new TvCatalogIngestionCommand(catalogRepository),
+            catalog: new TvCatalogIngestionCommand(catalogRepository, new TvLibraryService(MediaType.SERIES)),
         });
         const catalogItemId = await ingestion.storeFromExternal(888);
 
-        const library = new TvLibraryCommands(new TvLibraryRepository());
+        const library = new TvLibraryService(MediaType.SERIES, new TvLibraryRepository(MediaType.SERIES));
         await library.add({ userId: 42, catalogItemId, status: Status.COMPLETED });
         await library.replaceRewatches({
             userId: 42,
@@ -102,7 +108,7 @@ describe("TV catalog ingestion command", () => {
         }));
         await ingestion.refreshFromExternal(888);
 
-        const entry = await new TvLibraryRepository().findEntry(42, catalogItemId);
+        const entry = await new TvLibraryRepository(MediaType.SERIES).findEntry(42, catalogItemId);
         expect(entry?.progress).toEqual({
             status: Status.COMPLETED,
             currentSeason: 1,

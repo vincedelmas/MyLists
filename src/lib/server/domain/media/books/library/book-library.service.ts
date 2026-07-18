@@ -1,38 +1,90 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {UpdateUserMedia} from "@/lib/contracts/media/library";
-import {MangaFinalListInsert} from "@/lib/server/domain/media/manga/imports/manga-import.schemas";
+import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {UpdateUserCustomCover, UpdateUserMedia} from "@/lib/contracts/media/library";
+import {BooksFinalListInsert} from "@/lib/server/domain/media/books/imports/book-import.schemas";
 import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
-import {MangaLibraryEntry, MangaLibraryRepository} from "@/lib/server/domain/media/manga/library/manga-library.repository";
+import {BookLibraryEntry, BookLibraryRepository} from "@/lib/server/domain/media/books/library/book-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {
-    changeMangaStatus,
-    createInitialMangaProgress,
-    importMangaProgress,
-    reconcileMangaChapters,
-    replaceMangaChapter,
-    replaceMangaRereads,
-} from "@/lib/server/domain/media/manga/library/manga-progress";
+    changeBookStatus,
+    createInitialBookProgress,
+    importBookProgress,
+    reconcileBookPages,
+    replaceBookPage,
+    replaceBookRereads
+} from "@/lib/server/domain/media/books/library/book-progress";
 import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
+import {SearchType, SimpleSearch} from "@/lib/schemas";
+import {BookListArgs} from "@/lib/contracts/media/lists";
+import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {BookStatsRepository} from "@/lib/server/domain/media/books/library/book-stats.repository";
+import {exportBookLibraryCsv} from "@/lib/server/domain/media/books/library/book-library-csv-export";
+import {prepareLibraryCustomCover} from "@/lib/server/domain/media/shared/library/library-custom-cover";
 
 
-const MINUTES_PER_CHAPTER = 7;
+const MINUTES_PER_PAGE = 1.7;
 
 
-/** Canonical manga library mutation boundary. */
-export class MangaLibraryCommands {
-    constructor(private readonly repository = new MangaLibraryRepository()) {
+/** Complete book library capability over one persistence boundary. */
+export class BookLibraryService {
+    readonly stats = BookStatsRepository;
+    readonly export = { csv: exportBookLibraryCsv };
+
+    constructor(private readonly repository = new BookLibraryRepository()) {
     }
 
-    async update(params: { userId: number; mediaId: number; payload: Extract<UpdateUserMedia, { mediaType: typeof MediaType.MANGA }>["payload"] }) {
+    getUserMediaHistory(userId: number, catalogItemId: number) {
+        return this.repository.getUserMediaHistory(userId, catalogItemId);
+    }
+
+    findUserMedia(userId: number | undefined, catalogItemId: number) {
+        return this.repository.findUserMedia(userId, catalogItemId);
+    }
+
+    findFollowedUsersMedia(viewerId: number | undefined, catalogItemId: number) {
+        return this.repository.findFollowedUsersMedia(viewerId, catalogItemId);
+    }
+
+    getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType) {
+        return this.repository.getCommunityActivity(viewerId, catalogItemId, search);
+    }
+
+    getListHeader(userId: number) {
+        return this.repository.getListHeader(userId);
+    }
+
+    getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: BookListArgs) {
+        return this.repository.getMediaList(currentUserId, access, args);
+    }
+
+    getListFilters(access: MediaListAccessScope) {
+        return this.repository.getListFilters(access);
+    }
+
+    getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
+        return this.repository.getSearchListFilters(access, query, job);
+    }
+
+    getTagsView(access: MediaListAccessScope, search: SimpleSearch) {
+        return this.repository.getTagsView(access, search);
+    }
+
+    getTagNames(userId: number) {
+        return this.repository.getTagNames(userId);
+    }
+
+    findEntriesByCatalogItem(catalogItemId: number) {
+        return this.repository.findEntriesByCatalogItem(catalogItemId);
+    }
+
+    async update(params: { userId: number; mediaId: number; payload: Extract<UpdateUserMedia, { mediaType: typeof MediaType.BOOKS }>["payload"] }) {
         const common = { userId: params.userId, catalogItemId: params.mediaId };
         switch (params.payload.type) {
             case UpdateType.STATUS:
-                if (!params.payload.status) throw new Error("Manga status payload is missing status.");
+                if (!params.payload.status) throw new Error("Book status payload is missing status.");
                 return this.changeStatus({ ...common, status: params.payload.status, loggedAt: params.payload.loggedAt });
-            case UpdateType.CHAPTER:
-                if (params.payload.currentChapter === undefined) throw new Error("Manga chapter payload is missing progress.");
-                return this.replaceChapter({ ...common, currentChapter: params.payload.currentChapter, loggedAt: params.payload.loggedAt });
+            case UpdateType.PAGE:
+                return this.replacePage({ ...common, currentPage: params.payload.currentPage, loggedAt: params.payload.loggedAt });
             case UpdateType.REDO:
                 return this.replaceRereads({ ...common, rereadCount: params.payload.rereadCount, loggedAt: params.payload.loggedAt });
             case UpdateType.RATING:
@@ -42,16 +94,16 @@ export class MangaLibraryCommands {
             case UpdateType.FAVORITE:
                 return this.updateFavorite({ ...common, favorite: params.payload.favorite ?? false });
             default:
-                throw new Error("Unsupported manga update type.");
+                throw new Error("Unsupported book update type.");
         }
     }
 
-    async importRows(rows: MangaFinalListInsert[]) {
+    async importRows(rows: BooksFinalListInsert[]) {
         return withTransaction(async () => {
             for (const row of rows) {
                 await this.importEntry({
                     userId: row.userId, catalogItemId: row.mediaId, status: row.status,
-                    currentChapter: row.currentChapter, rereadCount: row.redo ?? 0, totalChaptersRead: row.total ?? 0,
+                    currentPage: row.actualPage ?? null, rereadCount: row.redo ?? 0, totalPagesRead: row.total ?? 0,
                     rating: row.rating, comment: row.comment, favorite: row.favorite,
                     customCover: row.customCover, addedAt: row.addedAt, updatedAt: row.lastUpdated,
                 });
@@ -61,22 +113,22 @@ export class MangaLibraryCommands {
 
     async editTag(params: { userId: number; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
         const libraryEntryId = params.mediaId ? (await this.get(params.userId, params.mediaId))?.id : undefined;
-        return this.repository.common.editTag({
-            userId: params.userId, kind: MediaType.MANGA, action: params.action,
+        return this.repository.editTag({
+            userId: params.userId, action: params.action,
             name: params.tag.name, oldName: params.tag.oldName, libraryEntryId,
         });
     }
 
     async add(params: { userId: number; catalogItemId: number; status?: Status; silent?: boolean }) {
-        const media = await this.repository.getMangaCatalogItem(params.catalogItemId);
+        const media = await this.repository.getBookCatalogItem(params.catalogItemId);
         if (!media) throw new FormattedError("Media not found");
         if (await this.repository.findEntry(params.userId, params.catalogItemId)) throw new FormattedError("Media already in your list");
-        const progress = createInitialMangaProgress(params.status ?? Status.PLAN_TO_READ, media.chapters);
+        const progress = createInitialBookProgress(params.status ?? Status.PLAN_TO_READ, media.pages);
         const entryId = await this.repository.createEntry({ ...params, status: progress.status, progress });
         const created = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(undefined, created);
         if (!params.silent) {
-            await this.repository.common.recordChange(entryId, UpdateType.STATUS, null, progress.status);
+            await this.repository.recordChange(entryId, UpdateType.STATUS, null, progress.status);
             await this.recordActivity(undefined, created);
         }
         return created;
@@ -90,9 +142,9 @@ export class MangaLibraryCommands {
         userId: number;
         catalogItemId: number;
         status: Status;
-        currentChapter: number;
+        currentPage: number | null;
         rereadCount: number;
-        totalChaptersRead: number;
+        totalPagesRead: number;
         rating?: number | null;
         comment?: string | null;
         favorite?: boolean | null;
@@ -102,8 +154,8 @@ export class MangaLibraryCommands {
     }) {
         const existing = await this.repository.findEntry(params.userId, params.catalogItemId);
         if (existing) return existing;
-        if (!await this.repository.getMangaCatalogItem(params.catalogItemId)) throw new FormattedError("Media not found");
-        const progress = importMangaProgress(params.status, params.currentChapter, params.rereadCount, params.totalChaptersRead);
+        if (!await this.repository.getBookCatalogItem(params.catalogItemId)) throw new FormattedError("Media not found");
+        const progress = importBookProgress(params.status, params.currentPage, params.rereadCount, params.totalPagesRead);
         await this.repository.createEntry({
             ...params,
             status: progress.status,
@@ -122,7 +174,7 @@ export class MangaLibraryCommands {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
         return this.persistLoggedTransition(
             current,
-            changeMangaStatus(current.progress, params.status, current.chapters),
+            changeBookStatus(current.progress, params.status, current.pages),
             UpdateType.STATUS,
             current.progress.status,
             params.status,
@@ -130,14 +182,14 @@ export class MangaLibraryCommands {
         );
     }
 
-    async replaceChapter(params: { userId: number; catalogItemId: number; currentChapter: number; loggedAt?: string }) {
+    async replacePage(params: { userId: number; catalogItemId: number; currentPage: number; loggedAt?: string }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
         return this.persistLoggedTransition(
             current,
-            replaceMangaChapter(current.progress, params.currentChapter, current.chapters),
-            UpdateType.CHAPTER,
-            current.progress.currentChapter,
-            params.currentChapter,
+            replaceBookPage(current.progress, params.currentPage, current.pages),
+            UpdateType.PAGE,
+            current.progress.currentPage,
+            params.currentPage,
             params,
         );
     }
@@ -146,7 +198,7 @@ export class MangaLibraryCommands {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
         return this.persistLoggedTransition(
             current,
-            replaceMangaRereads(current.progress, params.rereadCount, current.chapters),
+            replaceBookRereads(current.progress, params.rereadCount, current.pages),
             UpdateType.REDO,
             current.progress.rereadCount,
             params.rereadCount,
@@ -167,33 +219,39 @@ export class MangaLibraryCommands {
         return this.updateCommon(params, { favorite: params.favorite });
     }
 
-    updateCustomCover(params: { userId: number; catalogItemId: number; customCover: string | null }) {
-        return this.updateCommon(params, { customCover: params.customCover });
+    async updateCustomCover(userId: number, input: UpdateUserCustomCover) {
+        await this.requireEntry(userId, input.mediaId);
+        const customCover = await prepareLibraryCustomCover(MediaType.BOOKS, input);
+        await this.updateCommon({ userId, catalogItemId: input.mediaId }, { customCover });
+
+        const result = await this.repository.findUserMedia(userId, input.mediaId);
+        if (!result) throw new FormattedError("Media not in your list");
+        return result;
     }
 
     async remove(params: { userId: number; catalogItemId: number }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(current, undefined);
-        await this.repository.common.removeEntry(current.id);
+        await this.repository.removeEntry(current.id);
     }
 
     synchronizeProfileChannel(params: { userId: number; enabled: boolean; views: number }) {
-        return this.repository.common.synchronizeProfileChannel(params.userId, MediaType.MANGA, params.enabled, params.views);
+        return this.repository.synchronizeProfileChannel(params.userId, params.enabled, params.views);
     }
 
-    async reconcileCatalogMetadata(previousEntries: MangaLibraryEntry[]) {
+    async reconcileCatalogMetadata(previousEntries: BookLibraryEntry[]) {
         for (const previous of previousEntries) {
             const current = await this.requireEntry(previous.userId, previous.catalogItemId);
-            await this.repository.saveProgress(current.id, reconcileMangaChapters(previous.progress, current.chapters));
+            await this.repository.saveProgress(current.id, reconcileBookPages(previous.progress, current.pages));
             const reconciled = await this.requireEntry(previous.userId, previous.catalogItemId);
             await this.applyStatsTransition(previous, reconciled);
         }
     }
 
     private async persistLoggedTransition(
-        current: MangaLibraryEntry,
-        progress: MangaLibraryEntry["progress"],
-        updateType: typeof UpdateType.STATUS | typeof UpdateType.CHAPTER | typeof UpdateType.REDO,
+        current: BookLibraryEntry,
+        progress: BookLibraryEntry["progress"],
+        updateType: typeof UpdateType.STATUS | typeof UpdateType.PAGE | typeof UpdateType.REDO,
         oldValue: LibraryChangeValue,
         newValue: LibraryChangeValue,
         metadata: { loggedAt?: string },
@@ -202,25 +260,25 @@ export class MangaLibraryCommands {
         const updated = await this.requireEntry(current.userId, current.catalogItemId);
         await this.applyStatsTransition(current, updated);
         await this.recordActivity(current, updated, metadata.loggedAt);
-        await this.repository.common.recordChange(current.id, updateType, oldValue, newValue, metadata.loggedAt);
+        await this.repository.recordChange(current.id, updateType, oldValue, newValue, metadata.loggedAt);
         return updated;
     }
 
     private async updateCommon(
         params: { userId: number; catalogItemId: number },
-        fields: Parameters<MangaLibraryRepository["common"]["updateEntry"]>[1],
+        fields: Parameters<BookLibraryRepository["updateCommonFields"]>[1],
     ) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.repository.common.updateEntry(current.id, fields);
-        const updated = await this.requireEntry(current.userId, current.catalogItemId);
+        await this.repository.updateCommonFields(current.id, fields);
+        const updated = await this.requireEntry(params.userId, params.catalogItemId);
         await this.applyStatsTransition(current, updated);
         return updated;
     }
 
-    private async applyStatsTransition(before?: MangaLibraryEntry, after?: MangaLibraryEntry) {
+    private async applyStatsTransition(before?: BookLibraryEntry, after?: BookLibraryEntry) {
         const sample = after ?? before;
         if (!sample) return;
-        const current = await this.repository.common.getStats(sample.userId, MediaType.MANGA);
+        const current = await this.repository.getStats(sample.userId);
         const beforeMetrics = entryMetrics(before);
         const afterMetrics = entryMetrics(after);
         const statusCounts = { ...(current?.statusCounts ?? {}) };
@@ -228,9 +286,10 @@ export class MangaLibraryCommands {
         if (after) statusCounts[after.progress.status] = (statusCounts[after.progress.status] ?? 0) + 1;
         const entriesRated = Math.max(0, (current?.entriesRated ?? 0) + afterMetrics.rated - beforeMetrics.rated);
         const ratingSum = Math.max(0, (current?.ratingSum ?? 0) + afterMetrics.rating - beforeMetrics.rating);
-        await this.repository.common.saveStats({
+
+        await this.repository.saveStats({
             userId: sample.userId,
-            kind: MediaType.MANGA,
+            kind: MediaType.BOOKS,
             timeSpentMinutes: Math.max(0, (current?.timeSpentMinutes ?? 0) + afterMetrics.time - beforeMetrics.time),
             totalEntries: Math.max(0, (current?.totalEntries ?? 0) + Number(!!after) - Number(!!before)),
             totalRedo: Math.max(0, (current?.totalRedo ?? 0) + afterMetrics.redo - beforeMetrics.redo),
@@ -238,17 +297,17 @@ export class MangaLibraryCommands {
             ratingSum,
             entriesCommented: Math.max(0, (current?.entriesCommented ?? 0) + afterMetrics.commented - beforeMetrics.commented),
             entriesFavorited: Math.max(0, (current?.entriesFavorited ?? 0) + afterMetrics.favorited - beforeMetrics.favorited),
-            totalSpecific: Math.max(0, (current?.totalSpecific ?? 0) + afterMetrics.chapters - beforeMetrics.chapters),
+            totalSpecific: Math.max(0, (current?.totalSpecific ?? 0) + afterMetrics.pages - beforeMetrics.pages),
             statusCounts,
             averageRating: entriesRated > 0 ? ratingSum / entriesRated : null,
         });
     }
 
-    private async recordActivity(before: MangaLibraryEntry | undefined, after: MangaLibraryEntry, loggedAt?: string) {
+    private async recordActivity(before: BookLibraryEntry | undefined, after: BookLibraryEntry, loggedAt?: string) {
         const occurredAt = loggedAt ? `${loggedAt} 12:00:00` : new Date().toISOString();
-        await this.repository.common.recordActivity({
+        await this.repository.recordActivity({
             entryId: after.id,
-            unitsGained: after.progress.totalChaptersRead - (before?.progress.totalChaptersRead ?? 0),
+            unitsGained: after.progress.totalPagesRead - (before?.progress.totalPagesRead ?? 0),
             completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,
             redo: after.progress.rereadCount > (before?.progress.rereadCount ?? 0),
             monthBucket: monthBucketFromDateInput(new Date(occurredAt)),
@@ -264,12 +323,12 @@ export class MangaLibraryCommands {
 }
 
 
-const entryMetrics = (entry?: MangaLibraryEntry) => {
-    if (!entry) return { time: 0, redo: 0, chapters: 0, rated: 0, rating: 0, commented: 0, favorited: 0 };
+const entryMetrics = (entry?: BookLibraryEntry) => {
+    if (!entry) return { time: 0, redo: 0, pages: 0, rated: 0, rating: 0, commented: 0, favorited: 0 };
     return {
-        time: entry.progress.totalChaptersRead * MINUTES_PER_CHAPTER,
+        time: entry.progress.totalPagesRead * MINUTES_PER_PAGE,
         redo: entry.progress.rereadCount,
-        chapters: entry.progress.totalChaptersRead,
+        pages: entry.progress.totalPagesRead,
         rated: Number(entry.rating !== null),
         rating: entry.rating ?? 0,
         commented: Number(!!entry.comment),

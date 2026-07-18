@@ -2,12 +2,12 @@ import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {mangaFinalListInsertSchema, MangaImportPayload, mangaImportPayloadSchema} from "@/lib/server/domain/media/manga/imports/manga-import.schemas";
-import {MangaLibraryCommands} from "@/lib/server/domain/media/manga/library/manga-library.commands";
+import {MangaLibraryService} from "@/lib/server/domain/media/manga/library/manga-library.service";
 import {MangaCatalogIngestionRepository} from "@/lib/server/domain/media/manga/catalog/manga-catalog-ingestion.repository";
 
 
 export class MangaImportListWriter implements ImportListWriter {
-    constructor(private catalog: MangaCatalogIngestionRepository, private libraryCommands: MangaLibraryCommands) {
+    constructor(private catalog: MangaCatalogIngestionRepository, private library: MangaLibraryService) {
     }
 
     async addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]> {
@@ -24,7 +24,7 @@ export class MangaImportListWriter implements ImportListWriter {
             userManga.push(mangaFinalListInsertSchema.parse({ userId, mediaId, ...fullPayload }));
         }
 
-        await this.libraryCommands.importRows(userManga);
+        await this.library.importRows(userManga);
 
         return matches.map(({ item, mediaId }) => ({
             itemId: item.id,

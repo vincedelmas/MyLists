@@ -18,7 +18,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const { MovieCatalogIngestionRepository } = await import("./movie-catalog-ingestion.repository");
 const { MovieCatalogIngestionCommand } = await import("./movie-catalog-ingestion.command");
 const { MovieLibraryRepository } = await import("@/lib/server/domain/media/movies/library/movie-library.repository");
-const { MovieLibraryCommands } = await import("@/lib/server/domain/media/movies/library/movie-library.commands");
+const { MovieLibraryService } = await import("@/lib/server/domain/media/movies/library/movie-library.service");
 
 
 describe("movie catalog ingestion command", () => {
@@ -62,7 +62,7 @@ describe("movie catalog ingestion command", () => {
         expect(await ingestion.storeFromExternal(777)).toBe(catalogItemId);
         expect(provider.details.getDetails).toHaveBeenCalledTimes(1);
 
-        const library = new MovieLibraryCommands(new MovieLibraryRepository());
+        const library = new MovieLibraryService(new MovieLibraryRepository());
         await library.add({ userId: 42, catalogItemId, status: Status.COMPLETED });
         await library.replaceRewatches({ userId: 42, catalogItemId, rewatchCount: 1 });
         provider.details.getDetails = vi.fn(async () => details(120));

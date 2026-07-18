@@ -1,6 +1,5 @@
 import {MovieCatalogAdminRepository, MovieCatalogEdit} from "@/lib/server/domain/media/movies/catalog/movie-catalog-admin.repository";
-import {MovieLibraryCommands} from "@/lib/server/domain/media/movies/library/movie-library.commands";
-import {MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";
+import {MovieLibraryService} from "@/lib/server/domain/media/movies/library/movie-library.service";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {MediaType} from "@/lib/utils/enums";
 import {MovieCatalogEditPayload} from "@/lib/contracts/media/catalog-edit";
@@ -10,8 +9,7 @@ import {CatalogCoverStorage} from "@/lib/server/domain/media/shared/catalog/cata
 export class MovieCatalogEditCommand {
     constructor(
         private readonly catalog: MovieCatalogAdminRepository,
-        private readonly library = new MovieLibraryRepository(),
-        private readonly libraryCommands = new MovieLibraryCommands(library),
+        private readonly library = new MovieLibraryService(),
         private readonly coverStorage = new CatalogCoverStorage(MediaType.MOVIES),
     ) {
     }
@@ -36,7 +34,7 @@ export class MovieCatalogEditCommand {
                 : [];
             const updated = await this.catalog.updateEditableFields(catalogItemId, edit);
             if (updated && previousEntries.length > 0) {
-                await this.libraryCommands.reconcileCatalogMetadata(previousEntries);
+                await this.library.reconcileCatalogMetadata(previousEntries);
             }
             return updated;
         });

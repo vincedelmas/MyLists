@@ -1,6 +1,5 @@
 import {BookCatalogAdminRepository, BookCatalogEdit} from "@/lib/server/domain/media/books/catalog/book-catalog-admin.repository";
-import {BookLibraryCommands} from "@/lib/server/domain/media/books/library/book-library.commands";
-import {BookLibraryRepository} from "@/lib/server/domain/media/books/library/book-library.repository";
+import {BookLibraryService} from "@/lib/server/domain/media/books/library/book-library.service";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {MediaType} from "@/lib/utils/enums";
 import {BookCatalogEditPayload} from "@/lib/contracts/media/catalog-edit";
@@ -10,8 +9,7 @@ import {CatalogCoverStorage, relationNames} from "@/lib/server/domain/media/shar
 export class BookCatalogEditCommand {
     constructor(
         private readonly catalog: BookCatalogAdminRepository,
-        private readonly library = new BookLibraryRepository(),
-        private readonly libraryCommands = new BookLibraryCommands(library),
+        private readonly library = new BookLibraryService(),
         private readonly coverStorage = new CatalogCoverStorage(MediaType.BOOKS),
     ) {
     }
@@ -32,7 +30,7 @@ export class BookCatalogEditCommand {
                 : [];
             const updated = await this.catalog.updateEditableFields(catalogItemId, edit);
             if (updated && previousEntries.length > 0) {
-                await this.libraryCommands.reconcileCatalogMetadata(previousEntries);
+                await this.library.reconcileCatalogMetadata(previousEntries);
             }
             return updated;
         });

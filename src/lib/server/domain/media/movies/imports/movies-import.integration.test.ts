@@ -21,7 +21,7 @@ const { ImportService } = await import("@/lib/server/domain/imports/import.servi
 const { ImportRepository } = await import("@/lib/server/domain/imports/import.repository");
 const { createMoviesMatcher } = await import("@/lib/server/domain/media/movies/imports/movies.matcher");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
-const { MovieLibraryCommands } = await import("@/lib/server/domain/media/movies/library/movie-library.commands");
+const { MovieLibraryService } = await import("@/lib/server/domain/media/movies/library/movie-library.service");
 const { MovieCatalogIngestionRepository } = await import("@/lib/server/domain/media/movies/catalog/movie-catalog-ingestion.repository");
 
 
@@ -63,7 +63,7 @@ describe("movies import processing", () => {
             new MovieCatalogIngestionRepository(),
             { search: { search: vi.fn() } } as any,
             { storeFromExternal: vi.fn() } as any,
-            new MovieLibraryCommands(),
+            new MovieLibraryService(),
         );
         const processor = new ImportJobProcessor(importService, { get: () => matcher });
 
@@ -141,7 +141,7 @@ describe("movies import processing", () => {
             new MovieCatalogIngestionRepository(),
             moviesProvider as any,
             { storeFromExternal: vi.fn() } as any,
-            new MovieLibraryCommands(),
+            new MovieLibraryService(),
         );
         const processor = new ImportJobProcessor(importService, { get: () => matcher });
 

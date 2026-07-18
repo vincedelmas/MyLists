@@ -11,10 +11,10 @@ const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
 const { BookLibraryRepository } = await import("./book-library.repository");
-const { BookLibraryCommands } = await import("./book-library.commands");
+const { BookLibraryService } = await import("./book-library.service");
 
 
-describe("book library commands", () => {
+describe("book library service", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -49,7 +49,7 @@ describe("book library commands", () => {
     });
 
     it("keeps page, reread, status, stats, activity and history semantics coherent", async () => {
-        const library = new BookLibraryCommands(new BookLibraryRepository());
+        const library = new BookLibraryService(new BookLibraryRepository());
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.READING });
         await library.replacePage({ userId: 42, catalogItemId: 1000, currentPage: 80 });
         await library.replaceRereads({ userId: 42, catalogItemId: 1000, rereadCount: 2 });
@@ -93,7 +93,7 @@ describe("book library commands", () => {
     });
 
     it("imports exact drifted progress and common timestamps without manufacturing events", async () => {
-        const library = new BookLibraryCommands(new BookLibraryRepository());
+        const library = new BookLibraryService(new BookLibraryRepository());
         const imported = await library.importEntry({
             userId: 42,
             catalogItemId: 1000,
@@ -138,7 +138,7 @@ describe("book library commands", () => {
     });
 
     it("backdates book activity and history through the command", async () => {
-        const library = new BookLibraryCommands(new BookLibraryRepository());
+        const library = new BookLibraryService(new BookLibraryRepository());
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.READING, silent: true });
         await library.replacePage({ userId: 42, catalogItemId: 1000, currentPage: 25, loggedAt: "2025-02-07" });
 
@@ -151,7 +151,7 @@ describe("book library commands", () => {
     });
 
     it("retains catalog activity after the mutable list entry is removed", async () => {
-        const library = new BookLibraryCommands(new BookLibraryRepository());
+        const library = new BookLibraryService(new BookLibraryRepository());
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         await library.remove({ userId: 42, catalogItemId: 1000 });
 

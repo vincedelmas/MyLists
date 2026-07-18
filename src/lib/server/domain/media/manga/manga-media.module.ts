@@ -1,10 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {JikanApi} from "@/lib/server/api-providers/api";
-import {MangaLibraryCommands} from "@/lib/server/domain/media/manga/library/manga-library.commands";
+import {MangaLibraryService} from "@/lib/server/domain/media/manga/library/manga-library.service";
 import {MangaLibraryRepository} from "@/lib/server/domain/media/manga/library/manga-library.repository";
-import {MangaLibraryReadRepository} from "@/lib/server/domain/media/manga/library/manga-library-read.repository";
-import {MangaListReadRepository} from "@/lib/server/domain/media/manga/library/manga-list-read.repository";
-import {MangaStatsRepository} from "@/lib/server/domain/media/manga/library/manga-stats.repository";
 import {MangaDetailsQuery} from "@/lib/server/domain/media/manga/catalog/manga-details.query";
 import {MangaCatalogReadRepository} from "@/lib/server/domain/media/manga/catalog/manga-catalog-read.repository";
 import {MangaCatalogAdminRepository} from "@/lib/server/domain/media/manga/catalog/manga-catalog-admin.repository";
@@ -15,9 +12,6 @@ import {createJikanMangaProvider, createMangaIngestionService} from "@/lib/serve
 import {createMangaMatcher} from "@/lib/server/domain/media/manga/imports/manga.matcher";
 import {CatalogRefreshIdentityQuery} from "@/lib/server/domain/media/shared/catalog/catalog-refresh-identity.query";
 import {MangaCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/manga/catalog/manga-catalog-refresh-candidates.query";
-import {exportMangaLibraryCsv} from "@/lib/server/domain/media/manga/library/manga-library-csv-export";
-import {LibraryTagsQuery} from "@/lib/server/domain/media/shared/library/library-tags.query";
-import {LibraryCustomCoverCommand} from "@/lib/server/domain/media/shared/library/library-custom-cover.command";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
 import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/imports/manga-import.schemas";
 import {mangaAchievements} from "@/lib/server/domain/media/manga/achievements/manga.seed";
@@ -32,16 +26,14 @@ export const setupMangaMediaModule = (
     jikan: JikanApi,
 ) => {
     const libraryRepository = new MangaLibraryRepository();
-    const libraryCommands = new MangaLibraryCommands(libraryRepository);
-    const libraryRead = new MangaLibraryReadRepository(libraryRepository);
+    const library = new MangaLibraryService(libraryRepository);
     const catalogRead = new MangaCatalogReadRepository();
     const catalogRepository = new MangaCatalogIngestionRepository();
-    const catalogCommands = new MangaCatalogIngestionCommand(catalogRepository, libraryRepository, libraryCommands);
+    const catalogCommands = new MangaCatalogIngestionCommand(catalogRepository, library);
     const catalogAdmin = new MangaCatalogAdminRepository();
     const external = createJikanMangaProvider(jikan);
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.MANGA);
     const refreshCandidates = new MangaCatalogRefreshCandidatesQuery();
-    const tags = new LibraryTagsQuery(MediaType.MANGA);
     const ingestion = createMangaIngestionService(catalogCommands, external, {
         getCandidateApiIds: () => refreshCandidates.getCandidateApiIds(),
     });
@@ -49,10 +41,10 @@ export const setupMangaMediaModule = (
     return {
         kind: MediaType.MANGA,
         catalog: {
-            details: new MangaDetailsQuery(catalogRead, libraryRead),
+            details: new MangaDetailsQuery(catalogRead, library),
             read: catalogRead,
             admin: catalogAdmin,
-            edit: new MangaCatalogEditCommand(catalogAdmin, libraryRepository, libraryCommands),
+            edit: new MangaCatalogEditCommand(catalogAdmin, library),
             ingestion,
             refresh: {
                 identity: refreshIdentity,
@@ -61,24 +53,11 @@ export const setupMangaMediaModule = (
             },
             maintenance: createCatalogMaintenance(MediaType.MANGA),
         },
-        library: {
-            commands: libraryCommands,
-            read: libraryRead,
-            list: new MangaListReadRepository(),
-            export: {
-                csv: exportMangaLibraryCsv,
-            },
-            stats: MangaStatsRepository,
-            tags: {
-                getNames: (userId: number) => tags.getNames(userId),
-                edit: (params: Parameters<MangaLibraryCommands["editTag"]>[0]) => libraryCommands.editTag(params),
-            },
-            covers: new LibraryCustomCoverCommand(MediaType.MANGA, libraryRead, libraryCommands),
-        },
+        library,
         external,
         contributions: {
             imports: {
-                matcher: createMangaMatcher(catalogRepository, external, ingestion, libraryCommands),
+                matcher: createMangaMatcher(catalogRepository, external, ingestion, library),
                 csv: {
                     rowSchema: mangaMyListsCSVRowSchema,
                 },

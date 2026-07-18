@@ -12,11 +12,11 @@ const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
 const { MovieLibraryRepository } = await import("./movie-library.repository");
-const { MovieLibraryCommands } = await import("./movie-library.commands");
+const { MovieLibraryService } = await import("./movie-library.service");
 const { MovieStatsRepository } = await import("./movie-stats.repository");
 
 
-describe("movie library commands", () => {
+describe("movie library service", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -51,7 +51,7 @@ describe("movie library commands", () => {
     });
 
     it("keeps status, watch count, stats, activity and history in one movie transition", async () => {
-        const library = new MovieLibraryCommands(new MovieLibraryRepository());
+        const library = new MovieLibraryService(new MovieLibraryRepository());
         const added = await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         expect(added.progress).toEqual({ status: Status.COMPLETED, watchCount: 1 });
 
@@ -86,7 +86,7 @@ describe("movie library commands", () => {
     });
 
     it("normalizes imported stale totals from the movie's status and redo count", async () => {
-        const library = new MovieLibraryCommands(new MovieLibraryRepository());
+        const library = new MovieLibraryService(new MovieLibraryRepository());
         const imported = await library.importEntry({
             userId: 42,
             catalogItemId: 1000,
@@ -117,7 +117,7 @@ describe("movie library commands", () => {
         await db.insert(schema.catalogItemGenre).values({ catalogItemId: 1000, genreId: genre!.id });
 
         const repository = new MovieLibraryRepository();
-        const library = new MovieLibraryCommands(repository);
+        const library = new MovieLibraryService(repository);
         const entry = await library.importEntry({
             userId: 42,
             catalogItemId: 1000,
@@ -127,9 +127,8 @@ describe("movie library commands", () => {
             comment: "Good",
             favorite: true,
         });
-        await repository.common.editTag({
+        await repository.editTag({
             userId: 42,
-            kind: MediaType.MOVIES,
             action: TagAction.ADD,
             name: "comfort",
             libraryEntryId: entry.id,

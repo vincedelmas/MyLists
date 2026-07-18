@@ -1,6 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {GameCatalogReadRepository} from "@/lib/server/domain/media/games/catalog/game-catalog-read.repository";
-import {GameLibraryReadRepository} from "@/lib/server/domain/media/games/library/game-library-read.repository";
+import {GameLibraryService} from "@/lib/server/domain/media/games/library/game-library.service";
 import {GameDetailsPage} from "@/lib/contracts/media/details";
 
 
@@ -8,7 +8,7 @@ import {GameDetailsPage} from "@/lib/contracts/media/details";
 export class GameDetailsQuery {
     constructor(
         private readonly catalog = new GameCatalogReadRepository(),
-        private readonly library = new GameLibraryReadRepository(),
+        private readonly library = new GameLibraryService(),
     ) {
     }
 

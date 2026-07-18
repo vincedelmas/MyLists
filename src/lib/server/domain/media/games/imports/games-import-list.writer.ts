@@ -2,11 +2,11 @@ import {ImportItemStatus} from "@/lib/utils/enums";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {gamesFinalListInsertSchema, GamesImportPayload, gamesImportPayloadSchema} from "@/lib/server/domain/media/games/imports/game-import.schemas";
-import {GameLibraryCommands} from "@/lib/server/domain/media/games/library/game-library.commands";
+import {GameLibraryService} from "@/lib/server/domain/media/games/library/game-library.service";
 
 
 export class GamesImportListWriter implements ImportListWriter {
-    constructor(private libraryCommands: GameLibraryCommands) {
+    constructor(private library: GameLibraryService) {
     }
 
     async addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]> {
@@ -21,7 +21,7 @@ export class GamesImportListWriter implements ImportListWriter {
             });
         });
 
-        await this.libraryCommands.importRows(userGames);
+        await this.library.importRows(userGames);
 
         return matches.map(({ item, mediaId }) => ({
             itemId: item.id,

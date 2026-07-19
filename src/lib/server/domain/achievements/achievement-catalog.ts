@@ -4,27 +4,29 @@ import {Achievement, AchievementSeedData} from "@/lib/types/achievements.types";
 
 
 export type AchievementCalculation = (achievement: Achievement) => StatsCTE;
+type AchievementEntry = Omit<AchievementSeedData, "codeName" | "mediaType"> & { calculate: AchievementCalculation };
 
 
-export type AchievementCalculations<TDefinitions extends readonly AchievementSeedData[]> = {
-    [TCodeName in TDefinitions[number]["codeName"]]: AchievementCalculation;
-};
-
-
-type AchievementCatalogOptions<
-    TMediaType extends MediaType,
-    TDefinitions extends readonly (AchievementSeedData & { mediaType: TMediaType })[],
-> = {
+type AchievementCatalogOptions<TMediaType extends MediaType, TEntries extends Record<string, AchievementEntry>> = {
+    entries: TEntries;
     mediaType: TMediaType;
-    definitions: TDefinitions;
-    calculations: AchievementCalculations<TDefinitions>;
 };
 
 
 export const defineAchievementCatalog = <
-    const TMediaType extends MediaType,
-    const TDefinitions extends readonly (AchievementSeedData & { mediaType: TMediaType })[],
->({ mediaType, definitions, calculations }: AchievementCatalogOptions<TMediaType, TDefinitions>) => {
+    TMediaType extends MediaType,
+    TEntries extends Record<string, AchievementEntry>,
+>({ mediaType, entries }: AchievementCatalogOptions<TMediaType, TEntries>) => {
+    const definitions: AchievementSeedData[] = Object.entries(entries).map(([codeName, entry]) => {
+        const { calculate: _calculate, ...definition } = entry;
+
+        return {
+            ...definition,
+            codeName,
+            mediaType,
+        };
+    });
+
     return ({
         mediaType,
         definitions,
@@ -33,12 +35,10 @@ export const defineAchievementCatalog = <
                 throw new Error(`Achievement ${achievement.codeName} belongs to ${achievement.mediaType}, not ${mediaType}`);
             }
 
-            const calculation = calculations[achievement.codeName as TDefinitions[number]["codeName"]];
-            if (!calculation) {
-                throw new Error(`Invalid achievement codeName: ${achievement.codeName}`);
-            }
+            const entry = entries[achievement.codeName];
+            if (!entry) throw new Error(`Invalid achievement codeName: ${achievement.codeName}`);
 
-            return calculation(achievement);
+            return entry.calculate(achievement);
         },
     });
 }

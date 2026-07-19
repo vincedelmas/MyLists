@@ -1,11 +1,10 @@
-import {Status} from "@/lib/utils/enums";
+import {AchievementDifficulty, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {books, booksAuthors, booksList} from "@/lib/server/database/schema";
 import {BookSchemaConfig} from "@/lib/server/domain/media/books/books.config";
 import {count, countDistinct, eq, gte, isNotNull, lte, max} from "drizzle-orm";
-import {booksAchievements} from "@/lib/server/domain/media/books/achievements.seed";
-import {AchievementCalculation, AchievementCalculations, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/base.achievements-queries";
+import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
 export const createBooksAchievementCatalog = (config: BookSchemaConfig) => {
@@ -64,19 +63,136 @@ export const createBooksAchievementCatalog = (config: BookSchemaConfig) => {
 
     return defineAchievementCatalog({
         mediaType: config.mediaType,
-        definitions: booksAchievements,
-        calculations: {
-            lang_books: language,
-            long_books: duration,
-            short_books: duration,
-            author_books: authors,
-            crime_books: queries.countCompletedGenre,
-            fantasy_books: queries.countCompletedGenre,
-            classic_books: queries.countCompletedGenre,
-            young_adult_books: queries.countCompletedGenre,
-            rated_books: queries.countList(isNotNull(listTable.rating)),
-            comment_books: queries.countList(isNotNull(listTable.comment)),
-            completed_books: queries.countList(eq(listTable.status, Status.COMPLETED)),
-        } satisfies AchievementCalculations<typeof booksAchievements>,
+        entries: {
+            completed_books: {
+                name: "Bibliophile Conqueror",
+                description: "Awarded for completing books, because every finished book is a new world conquered in your literary journey!",
+                tiers: [
+                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 30 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 80 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 150 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: queries.countList(eq(listTable.status, Status.COMPLETED)),
+            },
+            rated_books: {
+                name: "Rating Wizard",
+                description: "Awarded for rating books, because your insights can turn a hidden gem into a bestseller!",
+                tiers: [
+                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 30 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 50 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 100 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: queries.countList(isNotNull(listTable.rating)),
+            },
+            comment_books: {
+                name: "Commentary Bard",
+                description: "Awarded for commenting books, because every opinion adds a new layer to the storytelling tapestry!",
+                tiers: [
+                    { criteria: { count: 10 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 30 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 50 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 100 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: queries.countList(isNotNull(listTable.comment)),
+            },
+            author_books: {
+                name: "Author Aficionado",
+                description: "Awarded for completing books from the same author, showing your unwavering devotion to their literary magic!",
+                tiers: [
+                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 12 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: authors,
+            },
+            lang_books: {
+                name: "Linguistic Explorer",
+                description: "Awarded for completing books in 2 different languages, because you’re mastering the art of storytelling across cultures!",
+                value: 2,
+                tiers: [
+                    { criteria: { count: 1 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: language,
+            },
+            short_books: {
+                name: "Quick Read Guru",
+                description: "Awarded for completing books with less than 150 pages, because you appreciate the art of concise " +
+                    "storytelling that gets straight to the point!",
+                value: 150,
+                tiers: [
+                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 12 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: duration,
+            },
+            long_books: {
+                name: "Epic Page Turner",
+                description: "Awarded for completing books with more than 800 pages, proving you have the stamina for literary marathon sessions!",
+                value: 800,
+                tiers: [
+                    { criteria: { count: 1 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 2 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 4 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: duration,
+            },
+            classic_books: {
+                name: "Classic Crusader",
+                description: "Awarded for completing Classic books, because you’re embracing the timeless tales that shaped literature!",
+                value: "Classic",
+                tiers: [
+                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 12 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: queries.countCompletedGenre,
+            },
+            young_adult_books: {
+                name: "Young Adult Adventurer",
+                description: "Awarded for completing Young Adult books, because sometimes the journey to self-discovery is just as thrilling!",
+                value: "Young adult",
+                tiers: [
+                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 12 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: queries.countCompletedGenre,
+            },
+            crime_books: {
+                name: "Serial Seeker",
+                description: "Awarded for completing Crime books, because you thrive on plot twists and heart-pounding suspense!",
+                value: "Crime",
+                tiers: [
+                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 12 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: queries.countCompletedGenre,
+            },
+            fantasy_books: {
+                name: "Fantasy Realm Adventurer",
+                description: "Awarded for completing Fantasy books, because you’ve traversed enchanted lands and battled mythical creatures like a true hero!",
+                value: "Fantasy",
+                tiers: [
+                    { criteria: { count: 3 }, difficulty: AchievementDifficulty.BRONZE },
+                    { criteria: { count: 5 }, difficulty: AchievementDifficulty.SILVER },
+                    { criteria: { count: 8 }, difficulty: AchievementDifficulty.GOLD },
+                    { criteria: { count: 12 }, difficulty: AchievementDifficulty.PLATINUM },
+                ],
+                calculate: queries.countCompletedGenre,
+            }
+        },
     });
 };

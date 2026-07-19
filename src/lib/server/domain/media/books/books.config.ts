@@ -6,7 +6,7 @@ import {booksAchievements} from "@/lib/server/domain/media/books/achievements.se
 import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 
 
-export type MangaSchemaConfig = MediaSchemaConfig<
+export type BookSchemaConfig = MediaSchemaConfig<
     typeof books,
     typeof booksList,
     typeof booksGenre,
@@ -14,7 +14,7 @@ export type MangaSchemaConfig = MediaSchemaConfig<
 >;
 
 
-export const booksConfig: MangaSchemaConfig = {
+export const booksConfig: BookSchemaConfig = {
     mediaTable: books,
     listTable: booksList,
     genreTable: booksGenre,

@@ -6,7 +6,7 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {Achievement} from "@/lib/types/achievements.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
-import {MangaSchemaConfig} from "@/lib/server/domain/media/books/books.config";
+import {BookSchemaConfig} from "@/lib/server/domain/media/books/books.config";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {Book, BooksAchCodeName, BooksList} from "@/lib/server/domain/media/books/books.types";
 import {LogPayload} from "@/lib/types/user-updates.types";
@@ -14,7 +14,7 @@ import {PagePayload, RedoPayload, StatusPayload, UserMediaWithTags} from "@/lib/
 import {StatsCTE} from "@/lib/types/media-common.types";
 
 
-export class BooksService extends BaseService<MangaSchemaConfig, BooksRepository> {
+export class BooksService extends BaseService<BookSchemaConfig, BooksRepository> {
     readonly achievementHandlers: Record<BooksAchCodeName, (achievement: Achievement, userId?: number) => StatsCTE>;
 
     constructor(repository: BooksRepository) {

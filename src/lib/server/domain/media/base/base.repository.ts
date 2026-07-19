@@ -337,10 +337,10 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
 
         return getDbClient()
             .selectDistinct({
+                mediaId: mediaTable.id,
+                mediaName: mediaTable.name,
                 mediaCover: mediaTable.imageCover,
-                mediaId: sql<number>`${mediaTable.id}`,
-                mediaName: sql<string>`${mediaTable.name}`,
-                customCover: sql<string>`${listTable.customCover}`,
+                customCover: listTable.customCover,
             })
             .from(listTable)
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
@@ -384,6 +384,8 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
             return tagData satisfies Tag;
         }
         else if (action === TagAction.DELETE_ONE) {
+            if (!mediaId) return;
+
             await db
                 .delete(tagTable)
                 .where(and(eq(tagTable.userId, userId), eq(tagTable.name, tag.name), eq(tagTable.mediaId, mediaId)));
@@ -1067,7 +1069,8 @@ export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
             .innerJoin(genreTable, eq(mediaTable.id, genreTable.mediaId));
 
-        const conditions = [eq(listTable.status, Status.COMPLETED), eq(genreTable.name, achievement.value)];
+        const conditions = [eq(listTable.status, Status.COMPLETED)];
+        if (achievement.value) conditions.push(eq(genreTable.name, achievement.value));
 
         return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
     }

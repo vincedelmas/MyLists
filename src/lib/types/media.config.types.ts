@@ -1,68 +1,72 @@
-import {Column, SQL, Table} from "drizzle-orm";
-import {SQLiteColumn} from "drizzle-orm/sqlite-core";
+import {SQL, Table} from "drizzle-orm";
+import {AnySQLiteColumn} from "drizzle-orm/sqlite-core";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {FilterDefinitions} from "@/lib/types/media-list.types";
 import {AchievementSeedData} from "@/lib/types/achievements.types";
 
 
+type NotNullColumn<T> = AnySQLiteColumn<{ data: T; notNull: true }>;
+type NullableColumn<T> = AnySQLiteColumn<{ data: T; notNull: false }>;
+
+
 type MediaTableColumns = {
-    id: Column<any, any, any>;
-    name: Column<any, any, any>;
-    apiId: Column<any, any, any>;
-    addedAt: Column<any, any, any>;
-    synopsis: Column<any, any, any>;
-    imageCover: Column<any, any, any>;
-    releaseDate: Column<any, any, any>;
-    lastApiUpdate: Column<any, any, any>;
+    id: NotNullColumn<number>;
+    name: NotNullColumn<string>;
+    imageCover: NotNullColumn<string>;
+    apiId: NotNullColumn<string | number>;
+    addedAt: NullableColumn<string>;
+    synopsis: NullableColumn<string>;
+    releaseDate: NullableColumn<string>;
+    lastApiUpdate: NullableColumn<string>;
 };
 
 
 type ListTableColumns = {
-    id: Column<any, any, any>;
-    userId: Column<any, any, any>;
-    mediaId: Column<any, any, any>;
-    status: Column<any, any, any>;
-    favorite: Column<any, any, any>;
-    comment: Column<any, any, any>;
-    rating: Column<any, any, any>;
-    customCover: Column<any, any, any>;
-    addedAt: Column<any, any, any>;
-    lastUpdated: Column<any, any, any>;
-    redo?: Column<any, any, any>;
+    id: NotNullColumn<number>;
+    userId: NotNullColumn<number>;
+    status: NotNullColumn<Status>;
+    rating: NullableColumn<number>;
+    mediaId: NotNullColumn<number>;
+    comment: NullableColumn<string>;
+    addedAt: NullableColumn<string>;
+    favorite: NullableColumn<boolean>;
+    lastUpdated: NullableColumn<string>;
+    customCover: NullableColumn<string | null>;
+    redo?: NotNullColumn<number>;
 }
 
 
 type TagTableColumns = {
-    id: Column<any, any, any>;
-    name: Column<any, any, any>;
-    userId: Column<any, any, any>;
-    mediaId: Column<any, any, any>;
+    id: NotNullColumn<number>;
+    name: NotNullColumn<string>;
+    userId: NotNullColumn<number>;
+    mediaId: NullableColumn<number>;
 }
 
 
 type GenreTableColumns = {
-    id: Column<any, any, any>;
-    name: Column<any, any, any>;
-    mediaId: Column<any, any, any>;
+    id: NotNullColumn<number>;
+    name: NotNullColumn<string>;
+    mediaId: NotNullColumn<number>;
 }
 
 
 type JobDefinition = {
     sourceTable: Table,
-    nameColumn: Column<any, any, any>,
-    mediaIdColumn: Column<any, any, any>,
+    mediaIdColumn: NotNullColumn<number>;
     getFilter?: (name: string) => SQL | undefined;
+    nameColumn: NullableColumn<string> | NotNullColumn<string>;
     postProcess?: (results: { name: string | null }[]) => { name: string | null }[];
 }
 
 
 type BaseSelection<TListTable, TMediaTable> = {
-    [K in keyof TListTable]: SQLiteColumn | SQL
+    [K in keyof TListTable]: AnySQLiteColumn
 } | {
-    [K in keyof TMediaTable]: SQLiteColumn | SQL
+    [K in keyof TMediaTable]: AnySQLiteColumn
 } | {
-    mediaName: SQLiteColumn | SQL,
-    epsPerSeason?: SQLiteColumn | SQL,
+    mediaName: AnySQLiteColumn,
+    epsPerSeason?: SQL,
 }
 
 
@@ -102,12 +106,12 @@ export interface MediaSchemaConfig<
     achievements: readonly AchievementSeedData[];
     jobDefinitions: Partial<Record<JobType, JobDefinition>>;
     editableFields: Array<keyof TMediaTable["$inferSelect"]>;
-    tablesForDeletion: (Table & { mediaId: Column<any, any, any> })[];
+    tablesForDeletion: (Table & { mediaId: NotNullColumn<number> | NullableColumn<number> })[];
 }
 
 
 type TvMediaTableColumns = {
-    nextEpisodeToAir: Column<any, any, any>;
+    nextEpisodeToAir: NullableColumn<string>;
 }
 
 

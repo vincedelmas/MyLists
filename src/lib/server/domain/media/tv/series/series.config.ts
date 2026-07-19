@@ -2,7 +2,6 @@ import {asc, desc, getTableColumns, sql} from "drizzle-orm";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {defineTvSchemaConfig} from "@/lib/types/media.config.types";
 import {createArrayFilterDef} from "@/lib/server/domain/media/base/base.repository";
-import {seriesAchievements} from "@/lib/server/domain/media/tv/series/achievements.seed";
 import {series, seriesActors, seriesEpisodesPerSeason, seriesGenre, seriesList, seriesNetwork, seriesTags} from "@/lib/server/database/schema/media/series.schema";
 
 
@@ -115,7 +114,6 @@ export const seriesConfig = defineTvSchemaConfig({
         }
     },
     tablesForDeletion: [seriesEpisodesPerSeason, seriesNetwork, seriesActors, seriesGenre, seriesTags],
-    achievements: seriesAchievements,
 });
 
 

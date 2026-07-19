@@ -8,7 +8,6 @@ import {LogPayload} from "@/lib/types/user-updates.types";
 import {TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
-import {TvAchievements} from "@/lib/server/domain/media/tv/tv.achievements";
 import {AnimeSchemaConfig} from "@/lib/server/domain/media/tv/anime/anime.config";
 import {SeriesSchemaConfig} from "@/lib/server/domain/media/tv/series/series.config";
 import {EpsSeasonPayload, RedoTvPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
@@ -16,7 +15,7 @@ import {EpsSeasonPayload, RedoTvPayload, StatusPayload, UserMediaWithTags} from 
 
 export class TvService extends BaseService<AnimeSchemaConfig | SeriesSchemaConfig, TvRepository> {
     constructor(repository: TvRepository) {
-        super(repository, new TvAchievements(repository.config));
+        super(repository);
 
         this.updateHandlers = {
             ...this.updateHandlers,

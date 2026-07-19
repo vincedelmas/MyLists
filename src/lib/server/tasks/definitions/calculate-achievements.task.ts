@@ -13,8 +13,8 @@ export const calculateAchievementsTask = defineTask({
     }),
     handler: async (ctx, input) => {
         const container = await getContainer();
-        const mediaRegistry = container.registries.mediaService;
         const achievementsService = container.services.achievements;
+        const achievementsRegistry = container.registries.mediaAchievements;
         const allAchievements = await achievementsService.getAllAchievements();
 
         const mediaTypes = input.mediaTypes;
@@ -22,14 +22,14 @@ export const calculateAchievementsTask = defineTask({
 
         for (const mediaType of typesToProcess) {
             await ctx.step(`calculate-${mediaType}`, async () => {
-                const mediaService = mediaRegistry.get(mediaType);
+                const mediaAchievementsCalculator = achievementsRegistry.get(mediaType);
                 const mediaAchievements = allAchievements.filter((ach) => ach.mediaType === mediaType);
 
                 ctx.metric(`${mediaType}.count`, mediaAchievements.length);
 
                 for (const achievement of mediaAchievements) {
                     try {
-                        await achievementsService.calculateAchievement(achievement, mediaService);
+                        await achievementsService.calculateAchievement(achievement, mediaAchievementsCalculator);
                         ctx.increment(`${mediaType}.processed`);
                     }
                     catch (err) {

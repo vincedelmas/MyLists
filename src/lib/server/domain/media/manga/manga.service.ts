@@ -8,13 +8,12 @@ import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Manga, MangaList} from "@/lib/server/domain/media/manga/manga.types";
 import {MangaSchemaConfig} from "@/lib/server/domain/media/manga/manga.config";
 import {MangaRepository} from "@/lib/server/domain/media/manga/manga.repository";
-import {MangaAchievements} from "@/lib/server/domain/media/manga/manga.achievements";
 import {ChapterPayload, RedoPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
 
 
 export class MangaService extends BaseService<MangaSchemaConfig, MangaRepository> {
     constructor(repository: MangaRepository) {
-        super(repository, new MangaAchievements(repository.config));
+        super(repository);
 
         this.updateHandlers = {
             ...this.updateHandlers,

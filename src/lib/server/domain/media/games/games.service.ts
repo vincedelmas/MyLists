@@ -7,13 +7,12 @@ import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Game, GamesList} from "@/lib/server/domain/media/games/games.types";
 import {GamesSchemaConfig} from "@/lib/server/domain/media/games/games.config";
 import {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
-import {GamesAchievements} from "@/lib/server/domain/media/games/games.achievements";
 import {PlaytimePayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
 
 
 export class GamesService extends BaseService<GamesSchemaConfig, GamesRepository> {
     constructor(repository: GamesRepository) {
-        super(repository, new GamesAchievements(repository.config));
+        super(repository);
 
         this.updateHandlers = {
             ...this.updateHandlers,

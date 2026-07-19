@@ -1,6 +1,5 @@
 import type {SQL} from "drizzle-orm";
 import type {AnySQLiteColumn, AnySQLiteTable, SelectedFieldsFlat,} from "drizzle-orm/sqlite-core";
-import type {AchievementSeedData} from "@/lib/types/achievements.types";
 import type {FilterDefinitions} from "@/lib/types/media-list.types";
 import type {JobType, MediaType, Status} from "@/lib/utils/enums";
 
@@ -118,7 +117,6 @@ export interface MediaSchemaConfig<
     })[];
     readonly jobDefinitions: Partial<Record<JobType, JobDefinition>>;
     readonly editableFields: readonly (keyof TMediaTable["$inferSelect"] & string)[];
-    readonly achievements: readonly (AchievementSeedData & { mediaType: NoInfer<TMediaType> })[];
     readonly communityActivityStats: Partial<Record<"totalRedo" | "totalSpecific" | "totalPlaytime", SQL<number>>>;
 }
 

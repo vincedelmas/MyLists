@@ -8,13 +8,12 @@ import {Book, BooksList} from "@/lib/server/domain/media/books/books.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BookSchemaConfig} from "@/lib/server/domain/media/books/books.config";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
-import {BooksAchievements} from "@/lib/server/domain/media/books/books.achievements";
 import {PagePayload, RedoPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
 
 
 export class BooksService extends BaseService<BookSchemaConfig, BooksRepository> {
     constructor(repository: BooksRepository) {
-        super(repository, new BooksAchievements(repository.config));
+        super(repository);
 
         this.updateHandlers = {
             ...this.updateHandlers,

@@ -7,13 +7,12 @@ import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Movie, MoviesList} from "@/lib/server/domain/media/movies/movies.types";
 import {MovieSchemaConfig} from "@/lib/server/domain/media/movies/movies.config";
 import {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
-import {MoviesAchievements} from "@/lib/server/domain/media/movies/movies.achievements";
 import {RedoPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
 
 
 export class MoviesService extends BaseService<MovieSchemaConfig, MoviesRepository> {
     constructor(repository: MoviesRepository) {
-        super(repository, new MoviesAchievements(repository.config));
+        super(repository);
 
         this.updateHandlers = {
             ...this.updateHandlers,

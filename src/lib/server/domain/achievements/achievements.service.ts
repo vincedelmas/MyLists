@@ -2,9 +2,9 @@ import {sql} from "drizzle-orm";
 import {AchievementTier} from "@/lib/schemas";
 import {userAchievement} from "@/lib/server/database/schema";
 import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
-import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Achievement, AchievementSeedData} from "@/lib/types/achievements.types";
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
+import type {MediaAchievements} from "@/lib/server/domain/media/base/base.achievements";
 
 
 export class AchievementsService {
@@ -114,8 +114,8 @@ export class AchievementsService {
         return this.repository.calculateAllAchievementsRarity();
     }
 
-    async calculateAchievement(achievement: Achievement, mediaService: BaseService<any, any>) {
-        const achievementCTE = mediaService.getAchievementCte(achievement);
+    async calculateAchievement(achievement: Achievement, mediaAchievements: MediaAchievements) {
+        const achievementCTE = mediaAchievements.getCte(achievement);
 
         for (const tier of achievement.tiers) {
             const valueNeeded = tier.criteria.count;

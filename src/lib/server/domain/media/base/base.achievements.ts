@@ -9,73 +9,90 @@ import {Achievement, AchievementSeedData} from "@/lib/types/achievements.types";
 export type AchievementHandler = (achievement: Achievement, userId?: number) => StatsCTE;
 
 
-export interface MediaAchievements {
-    getCte(achievement: Achievement, userId?: number): StatsCTE;
+export interface MediaAchievementHelpers {
+    specificGenre: AchievementHandler;
 
-    getDefinitions(): readonly AchievementSeedData[];
+    count(condition: SQL): AchievementHandler;
+
+    applyWhereConditionsAndGrouping(cte: StatsCTE, baseConditions: SQL[], userId?: number): StatsCTE;
 }
 
 
-export abstract class BaseMediaAchievements<TConfig extends AnyMediaSchemaConfig, TCodeName extends string> implements MediaAchievements {
-    protected abstract readonly handlers: Record<TCodeName, AchievementHandler>;
+type CreateMediaAchievementsOptions<TConfig extends AnyMediaSchemaConfig, TCodeName extends string> = {
+    config: TConfig;
+    definitions: readonly (AchievementSeedData & { mediaType: TConfig["mediaType"] })[];
+    createHandlers: (helpers: MediaAchievementHelpers) => Record<TCodeName, AchievementHandler>;
+};
 
-    protected constructor(protected readonly config: TConfig) {
-    }
 
-    getCte(achievement: Achievement, userId?: number) {
-        const handler = this.handlers[achievement.codeName as TCodeName];
-        if (!handler) {
-            throw new Error(`Invalid Achievement codeName: ${achievement.codeName}`);
-        }
-
-        return handler(achievement, userId);
-    }
-
-    getDefinitions() {
-        return this.config.achievements;
-    }
-
-    protected count(condition: SQL, _achievement: Achievement, userId?: number) {
-        const { listTable } = this.config;
-
+const createMediaAchievementHelpers = <TConfig extends AnyMediaSchemaConfig>(config: TConfig): MediaAchievementHelpers => {
+    const countAchievement = (condition: SQL): AchievementHandler => (_achievement, userId) => {
         const baseCte = getDbClient()
             .select({
-                userId: listTable.userId,
-                value: count(listTable.mediaId).as("value"),
+                userId: config.listTable.userId,
+                value: count(config.listTable.mediaId).as("value"),
             })
-            .from(listTable);
+            .from(config.listTable);
 
-        return this.applyWhereConditionsAndGrouping(baseCte, [condition], userId);
-    }
+        return applyWhereConditionsAndGrouping(baseCte, [condition], userId);
+    };
 
-    protected specificGenre(achievement: Achievement, userId?: number) {
-        const { mediaTable, listTable, genreTable } = this.config;
-
+    const specificGenre: AchievementHandler = (achievement, userId) => {
         const baseCte = getDbClient()
             .select({
-                userId: listTable.userId,
-                value: count(listTable.mediaId).as("value"),
+                userId: config.listTable.userId,
+                value: count(config.listTable.mediaId).as("value"),
             })
-            .from(listTable)
-            .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-            .innerJoin(genreTable, eq(mediaTable.id, genreTable.mediaId));
+            .from(config.listTable)
+            .innerJoin(config.mediaTable, eq(config.listTable.mediaId, config.mediaTable.id))
+            .innerJoin(config.genreTable, eq(config.mediaTable.id, config.genreTable.mediaId));
 
-        const conditions = [eq(listTable.status, Status.COMPLETED)];
-        if (achievement.value) conditions.push(eq(genreTable.name, achievement.value));
+        const conditions = [eq(config.listTable.status, Status.COMPLETED)];
+        if (achievement.value) conditions.push(eq(config.genreTable.name, achievement.value));
 
-        return this.applyWhereConditionsAndGrouping(baseCte, conditions, userId);
-    }
+        return applyWhereConditionsAndGrouping(baseCte, conditions, userId);
+    };
 
-    protected applyWhereConditionsAndGrouping(cte: StatsCTE, baseConditions: SQL[], userId?: number) {
-        const { listTable } = this.config;
-
+    const applyWhereConditionsAndGrouping = (cte: StatsCTE, baseConditions: SQL[], userId?: number) => {
         const conditions = userId
-            ? [...baseConditions, eq(listTable.userId, userId)]
+            ? [...baseConditions, eq(config.listTable.userId, userId)]
             : baseConditions;
 
         return cte
             .where(and(...conditions))
-            .groupBy(listTable.userId)
+            .groupBy(config.listTable.userId)
             .as("calculation");
-    }
-}
+    };
+
+    return {
+        specificGenre,
+        count: countAchievement,
+        applyWhereConditionsAndGrouping,
+    };
+};
+
+
+export const createMediaAchievements = <
+    TConfig extends AnyMediaSchemaConfig,
+    TCodeName extends string
+>({ config, definitions, createHandlers }: CreateMediaAchievementsOptions<TConfig, TCodeName>) => {
+    const handlers = createHandlers(createMediaAchievementHelpers(config));
+
+    return {
+        getCte(achievement: Achievement, userId?: number) {
+            const handler = handlers[achievement.codeName as TCodeName];
+            if (!handler) {
+                throw new Error(`Invalid Achievement codeName: ${achievement.codeName}`);
+            }
+
+            return handler(achievement, userId);
+        },
+
+        getDefinitions() {
+            return definitions;
+        },
+    };
+};
+
+
+export type MediaAchievements = ReturnType<typeof createMediaAchievements>;

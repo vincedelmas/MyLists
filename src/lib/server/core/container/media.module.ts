@@ -4,7 +4,16 @@ import {GamesRepository, GamesService} from "@/lib/server/domain/media/games";
 import {MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
 import {MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
 import {animeConfig, seriesConfig, TvRepository, TvService} from "@/lib/server/domain/media/tv";
-import {MediaRepositoryRegistry, MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import {booksConfig} from "@/lib/server/domain/media/books/books.config";
+import {gamesConfig} from "@/lib/server/domain/media/games/games.config";
+import {mangaConfig} from "@/lib/server/domain/media/manga/manga.config";
+import {moviesConfig} from "@/lib/server/domain/media/movies/movies.config";
+import {createMediaAchievements} from "@/lib/server/domain/media/media-achievements.factory";
+import {
+    MediaAchievementsRegistry,
+    MediaRepositoryRegistry,
+    MediaServiceRegistry,
+} from "@/lib/server/domain/media/media.registries";
 
 
 export function setupMediaModule() {
@@ -18,6 +27,18 @@ export function setupMediaModule() {
     };
     Object.entries(repositories).forEach(([key, repo]) => {
         MediaRepositoryRegistry.register(key as MediaType, repo);
+    });
+
+    const achievements = {
+        series: createMediaAchievements(seriesConfig),
+        anime: createMediaAchievements(animeConfig),
+        movies: createMediaAchievements(moviesConfig),
+        games: createMediaAchievements(gamesConfig),
+        books: createMediaAchievements(booksConfig),
+        manga: createMediaAchievements(mangaConfig),
+    };
+    Object.entries(achievements).forEach(([key, calculator]) => {
+        MediaAchievementsRegistry.register(key as MediaType, calculator);
     });
 
     const services = {
@@ -50,6 +71,7 @@ export function setupMediaModule() {
             manga: services.manga,
         },
         registries: {
+            mediaAchievements: MediaAchievementsRegistry,
             mediaService: MediaServiceRegistry,
             mediaRepository: MediaRepositoryRegistry,
         }

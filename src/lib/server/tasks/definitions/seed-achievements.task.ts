@@ -13,13 +13,12 @@ export const seedAchievementsTask = defineTask({
     handler: async (ctx) => {
         const container = await getContainer();
         const mediaTypes = Object.values(MediaType);
-        const mediaRegistry = container.registries.mediaService;
         const achievementsService = container.services.achievements;
+        const achievementsRegistry = container.registries.mediaAchievements;
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`seed-${mediaType}`, async () => {
-                const mediaService = mediaRegistry.get(mediaType);
-                const achievementsDef = mediaService.getAchievementsDefinition();
+                const achievementsDef = achievementsRegistry.get(mediaType).getDefinitions();
 
                 const definitionCount = Object.keys(achievementsDef).length;
                 ctx.metric(`${mediaType}.definitions_found`, definitionCount);

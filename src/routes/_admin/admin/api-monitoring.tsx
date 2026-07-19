@@ -1,20 +1,20 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {UserStats} from "@/lib/client/components/admin/UserStats";
-import {formatMs, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {Pagination} from "@/lib/client/components/general/Pagination";
+import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {formatDate, formatDateTime} from "@/lib/utils/date-formatting";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {formatMs, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {Activity, AlertTriangle, BarChart3, Clock, Gauge, Radio} from "lucide-react";
 import {AdminApiMonitoringParams, ApiMonitoringRange} from "@/lib/types/admin.types";
 import {adminApiMonitoringOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {EmptyState} from "@/lib/client/components/general/EmptyState";
 
 
 export const Route = createFileRoute("/_admin/admin/api-monitoring")({
@@ -72,9 +72,23 @@ function ApiMonitoringPage() {
     const selectedDailyRange = dailyRangeOptions.find((opt) => opt.value === dailyRange)?.label ?? "Selected range";
     const providerMixTotal = apiData.totalsByProvider.reduce((total, row) => total + Number(row.count), 0);
     const providerColorMap = new Map(apiData.providers.map((provider, idx) => [provider, providerColors[idx % providerColors.length]]));
+    const providerRows = apiData.totalsByProvider.map((row) => {
+        const count = Number(row.count);
+        const errors = Number(row.errors);
+
+        return {
+            ...row,
+            count,
+            errors,
+            share: providerMixTotal ? (count / providerMixTotal) * 100 : 0,
+            errorRate: count ? (errors / count) * 100 : 0,
+            color: providerColorMap.get(row.provider),
+        };
+    });
+    const leadingProvider = providerRows[0];
 
     const onNavigate = (params: AdminApiMonitoringParams) => {
-        navigate({ search: { ...filters, ...params }, resetScroll: false });
+        void navigate({ search: { ...filters, ...params }, resetScroll: false });
     };
 
     return (
@@ -129,8 +143,143 @@ function ApiMonitoringPage() {
                         icon={<Clock className="text-app-accent size-5"/>}
                     />
                 </div>
-                <div className="grid gap-4 grid-cols-7 max-sm:grid-cols-2">
-                    <Card className="col-span-4 max-sm:col-span-5">
+                <div className="grid gap-4 grid-cols-7 max-lg:grid-cols-1">
+                    <Card className="col-span-12 max-lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>Provider Mix</CardTitle>
+                            <CardDescription>
+                                {selectedProviderRange} · share, errors, and avg. latency
+                            </CardDescription>
+                            <CardAction>
+                                <Select value={range} onValueChange={(value: ApiMonitoringRange) => onNavigate({ range: value })}>
+                                    <SelectTrigger aria-label="Provider Mix range">
+                                        <SelectValue placeholder="Select Range"/>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {rangeOptions.map((opt) =>
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </CardAction>
+                        </CardHeader>
+                        <CardContent className="mt-2">
+                            <div className="space-y-4">
+                                {providerRows.length === 0 &&
+                                    <EmptyState
+                                        icon={Radio}
+                                        className="py-4"
+                                        message="No provider calls in this range"
+                                    />
+                                }
+                                {providerRows.length > 0 &&
+                                    <>
+                                        <div className="rounded-xl border bg-muted/20 p-3.5">
+                                            <div className="flex items-end justify-between gap-4">
+                                                <div>
+                                                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                                        Traffic in range
+                                                    </p>
+                                                    <p className="mt-0.5 text-2xl font-bold tabular-nums tracking-tight">
+                                                        {formatNumber(providerMixTotal)}
+                                                        <span className="ml-1.5 text-sm font-medium text-muted-foreground">calls</span>
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                                        Providers
+                                                    </p>
+                                                    <p className="mt-0.5 text-lg font-bold tabular-nums">{providerRows.length}</p>
+                                                </div>
+                                            </div>
+                                            <div
+                                                role="img"
+                                                aria-label="Provider traffic distribution"
+                                                className="mt-3 flex h-3 overflow-hidden rounded-full bg-muted ring-1 ring-foreground/5"
+                                            >
+                                                {providerRows.map((row) =>
+                                                    <span
+                                                        key={row.provider}
+                                                        title={`${row.provider}: ${formatPercent(row.share, { fractionDigits: row.share < 1 ? 1 : 0 })}`}
+                                                        className="h-full border-r border-background/50 last:border-r-0"
+                                                        style={{
+                                                            width: `${row.share}%`,
+                                                            minWidth: row.share > 0 ? "2px" : 0,
+                                                            backgroundColor: row.color,
+                                                        }}
+                                                    />
+                                                )}
+                                            </div>
+                                            {leadingProvider &&
+                                                <div className="mt-2.5 flex items-center justify-between gap-3 text-xs">
+                                                    <span className="text-muted-foreground">Largest share</span>
+                                                    <span className="flex min-w-0 items-center gap-1.5 font-medium">
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className="size-2 shrink-0 rounded-full"
+                                                            style={{ backgroundColor: leadingProvider.color }}
+                                                        />
+                                                        <span className="truncate capitalize">{leadingProvider.provider}</span>
+                                                        <span className="tabular-nums text-muted-foreground">
+                                                            {formatPercent(leadingProvider.share, { fractionDigits: 0 })}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div>
+                                            <div
+                                                className="grid grid-cols-[minmax(7.5rem,1.35fr)_minmax(4.5rem,.8fr)_minmax(4.5rem,.85fr)_4rem] gap-2 px-2 pb-1.5 text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground max-sm:hidden">
+                                                <span>Provider</span>
+                                                <span className="text-right">Traffic</span>
+                                                <span className="text-right">Errors</span>
+                                                <span className="text-right">Latency</span>
+                                            </div>
+                                            <div className="divide-y overflow-hidden rounded-xl border">
+                                                {providerRows.map((row) =>
+                                                    <div
+                                                        key={row.provider}
+                                                        className="grid grid-cols-[minmax(7.5rem,1.35fr)_minmax(4.5rem,.8fr)_minmax(4.5rem,.85fr)_4rem] items-center gap-2 px-2.5 py-2.5 text-xs transition-colors hover:bg-muted/35 max-sm:grid-cols-2 max-sm:gap-y-3"
+                                                    >
+                                                        <div className="flex min-w-0 items-center gap-2">
+                                                            <span
+                                                                aria-hidden="true"
+                                                                className="size-2.5 shrink-0 rounded-full ring-2 ring-background"
+                                                                style={{ backgroundColor: row.color }}
+                                                            />
+                                                            <span className="truncate font-semibold capitalize" title={row.provider}>
+                                                                {row.provider}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-right tabular-nums">
+                                                            <p className="font-semibold">
+                                                                {formatPercent(row.share, { fractionDigits: row.share > 0 && row.share < 1 ? 1 : 0 })}
+                                                            </p>
+                                                            <p className="text-[0.68rem] text-muted-foreground">{formatNumber(row.count)} calls</p>
+                                                        </div>
+                                                        <div className="text-right tabular-nums max-sm:text-left">
+                                                            <p className={row.errors > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "font-semibold"}>
+                                                                {formatPercent(row.errorRate, { fractionDigits: row.errorRate > 0 && row.errorRate < 0.1 ? 2 : 1 })}
+                                                            </p>
+                                                            <p className="text-[0.68rem] text-muted-foreground">{formatNumber(row.errors)} failed</p>
+                                                        </div>
+                                                        <div className="text-right tabular-nums">
+                                                            <p className="font-semibold">{formatMs(Number(row.avgDurationMs ?? 0))}</p>
+                                                            <p className="text-[0.68rem] text-muted-foreground">average</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                }
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="col-span-12 max-lg:col-span-1">
                         <CardHeader>
                             <CardTitle>Daily Provider Calls</CardTitle>
                             <CardDescription>{selectedDailyRange} · daily volume stacked by provider</CardDescription>
@@ -182,71 +331,6 @@ function ApiMonitoringPage() {
                                     )}
                                 </BarChart>
                             </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="col-span-3 max-sm:col-span-5">
-                        <CardHeader>
-                            <CardTitle>Provider Mix</CardTitle>
-                            <CardDescription>
-                                {selectedProviderRange} · share, errors, and avg. latency
-                            </CardDescription>
-                            <CardAction>
-                                <Select value={range} onValueChange={(value: ApiMonitoringRange) => onNavigate({ range: value })}>
-                                    <SelectTrigger aria-label="Provider Mix range">
-                                        <SelectValue placeholder="Select Range"/>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {rangeOptions.map((opt) =>
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </SelectItem>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </CardAction>
-                        </CardHeader>
-                        <CardContent className="mt-2">
-                            <div className="space-y-3">
-                                {apiData.totalsByProvider.length === 0 &&
-                                    <EmptyState
-                                        icon={Radio}
-                                        className="py-4"
-                                        message="No provider calls in this range"
-                                    />
-                                }
-                                {apiData.totalsByProvider.map((row) => {
-                                    const count = Number(row.count);
-                                    const pct = providerMixTotal ? (count / providerMixTotal) * 100 : 0;
-
-                                    return (
-                                        <div key={row.provider} className="space-y-1 text-sm">
-                                            <div className="flex items-center justify-between gap-3">
-                                                <span className="font-medium capitalize">
-                                                    {row.provider}
-                                                </span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {formatNumber(count)} ({formatPercent(pct, { fractionDigits: pct > 0 && pct < 1 ? 1 : 0 })})
-                                                </span>
-                                            </div>
-                                            <div className="h-2 rounded-full bg-muted">
-                                                <div
-                                                    className="h-2 rounded-full"
-                                                    style={{ width: `${pct}%`, backgroundColor: providerColorMap.get(row.provider) }}
-                                                />
-                                            </div>
-                                            <div className="flex justify-between text-xs text-muted-foreground">
-                                                <span>
-                                                    {formatNumber(row.errors)}{" "}
-                                                    ({formatPercent((row.errors / (count ?? 1)), { fractionDigits: 3 })}){" "}
-                                                    errors
-                                                </span>
-                                                <span>{formatMs(Number(row.avgDurationMs ?? 0))} avg</span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
                         </CardContent>
                     </Card>
                 </div>

@@ -1,27 +1,16 @@
-import {and, asc, count, desc, eq, like, sql} from "drizzle-orm";
-import {getDbClient} from "@/lib/server/database/async-storage";
-import {
-    catalogItem,
-    libraryActivity,
-    libraryChange,
-    libraryEntry,
-    libraryEntryTag,
-    libraryStats,
-    libraryTag,
-    profileMediaChannel,
-} from "@/lib/server/database/schema";
-import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
 import {SimpleSearch} from "@/lib/schemas";
 import {getImageUrl} from "@/lib/utils/image-url";
-import {resolvePagination} from "@/lib/server/database/pagination";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {getDbClient} from "@/lib/server/database/async-storage";
+import {and, asc, count, desc, eq, like, sql} from "drizzle-orm";
+import {resolvePagination} from "@/lib/server/database/pagination";
 import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
+import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
+import {catalogItem, libraryActivity, libraryChange, libraryEntry, libraryEntryTag, libraryStats, libraryTag, profileMediaChannel,} from "@/lib/server/database/schema";
 
 
-export type CommonLibraryFields = Partial<Pick<
-    typeof libraryEntry.$inferInsert,
-    "status" | "rating" | "comment" | "favorite" | "customCover"
->>;
+export type CommonLibraryFields = Partial<Pick<typeof libraryEntry.$inferInsert, "status" | "rating" | "comment" | "favorite" | "customCover">>;
+
 
 export class CommonLibraryRepository {
     constructor(readonly kind: MediaType) {

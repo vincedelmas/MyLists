@@ -6,11 +6,10 @@ import type {MediadleEligibility} from "@/lib/server/domain/mediadle/mediadle.se
 import {createMoviesMatcher} from "@/lib/server/domain/media/movies/imports/movies.matcher";
 import {moviesAchievements} from "@/lib/server/domain/media/movies/achievements/movies.seed";
 import {MovieDetailsQuery} from "@/lib/server/domain/media/movies/catalog/movie-details.query";
-import {MovieLibraryService} from "@/lib/server/domain/media/movies/library/movie-library.service";
+import {createMovieLibrary} from "@/lib/server/domain/media/movies/library/movie-library";
 import {createCatalogMaintenance} from "@/lib/server/domain/media/shared/catalog/catalog-maintenance";
 import type {UpcomingNotificationSource} from "@/lib/server/domain/notifications/notification.service";
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
-import {MovieLibraryRepository} from "@/lib/server/domain/media/movies/library/movie-library.repository";
 import {movieActivityDefinition} from "@/lib/server/domain/media/movies/activity/movie-activity.definition";
 import {MovieCatalogEditCommand} from "@/lib/server/domain/media/movies/catalog/movie-catalog-edit.command";
 import {MovieCatalogReadRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-read.repository";
@@ -26,8 +25,6 @@ import {MovieCatalogIngestionRepository} from "@/lib/server/domain/media/movies/
 import {MovieCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/movies/catalog/movie-catalog-refresh-candidates.query";
 import {createMoviesIngestionService, createTmdbMoviesProvider} from "@/lib/server/domain/media/movies/external/tmdb-movies.provider";
 import {MovieUpcomingNotificationSource} from "@/lib/server/domain/media/movies/features/notifications/movie-upcoming-notification.source";
-import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
-import {CommonLibraryService} from "@/lib/server/domain/media/shared/library/common-library.service";
 
 
 export const setupMovieMediaModule = (tmdb: TmdbApi) => {
@@ -37,9 +34,7 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
     const refreshCandidates = new MovieCatalogRefreshCandidatesQuery();
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.MOVIES);
 
-    const commonLibraryRepository = new CommonLibraryRepository(MediaType.MOVIES);
-    const libraryRepository = new MovieLibraryRepository(commonLibraryRepository);
-    const library = new MovieLibraryService(libraryRepository, new CommonLibraryService(commonLibraryRepository));
+    const library = createMovieLibrary();
 
     const catalogEdit = new MovieCatalogEditCommand(catalogAdmin, library);
     const catalogCommands = new MovieCatalogIngestionCommand(catalogRepository, library);
@@ -51,6 +46,7 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
 
     return {
         kind: MediaType.MOVIES,
+        library,
         external,
         catalog: {
             ingestion,
@@ -65,7 +61,6 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
             },
             maintenance: createCatalogMaintenance(MediaType.MOVIES),
         },
-        library,
         contributions: {
             imports: {
                 matcher: createMoviesMatcher(catalogRepository, external, ingestion, library),

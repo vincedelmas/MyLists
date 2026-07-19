@@ -2,11 +2,11 @@ import {ImportItemStatus, Status} from "@/lib/utils/enums";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {moviesFinalListInsertSchema, MoviesImportPayload, moviesImportPayloadSchema} from "@/lib/server/domain/media/movies/imports/movie-import.schemas";
-import {MovieLibraryService} from "@/lib/server/domain/media/movies/library/movie-library.service";
+import {MovieLibrary} from "@/lib/server/domain/media/movies/library/movie-library";
 
 
 export class MoviesImportListWriter implements ImportListWriter {
-    constructor(private library: MovieLibraryService) {
+    constructor(private library: MovieLibrary) {
     }
 
     async addMatchedItems(userId: number, matches: MatchedImportItem[]): Promise<ImportItemOutcome[]> {

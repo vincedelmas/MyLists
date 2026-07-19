@@ -237,6 +237,7 @@ const statsSnapshot = (entry: BookLibraryEntry): LibraryStatsSnapshot => ({
     favorited: Number(entry.favorite),
 });
 
+
 const activityContribution = (before: BookLibraryEntry | undefined, after: BookLibraryEntry) => ({
     unitsGained: after.progress.totalPagesRead - (before?.progress.totalPagesRead ?? 0),
     completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,

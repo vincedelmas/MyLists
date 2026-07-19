@@ -1,14 +1,14 @@
 import {CatalogIngestionCommands} from "@/lib/server/domain/media/shared/catalog/catalog-ingestion.types";
 import {MovieCatalogSnapshot} from "@/lib/server/domain/media/movies/catalog/movie-catalog-snapshot";
 import {MovieCatalogIngestionRepository} from "@/lib/server/domain/media/movies/catalog/movie-catalog-ingestion.repository";
-import {MovieLibraryService} from "@/lib/server/domain/media/movies/library/movie-library.service";
+import {createMovieLibrary, MovieLibrary} from "@/lib/server/domain/media/movies/library/movie-library";
 import {withTransaction} from "@/lib/server/database/async-storage";
 
 
 export class MovieCatalogIngestionCommand implements CatalogIngestionCommands<MovieCatalogSnapshot> {
     constructor(
         private readonly catalog: MovieCatalogIngestionRepository,
-        private readonly library = new MovieLibraryService(),
+        private readonly library: MovieLibrary = createMovieLibrary(),
     ) {
     }
 

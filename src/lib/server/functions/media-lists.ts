@@ -12,7 +12,7 @@ export const getUserListHeaderSF = createServerFn({ method: "GET" })
     .handler(async ({ data: { mediaType }, context: { currentUser, targetUser } }) => {
         const container = await getContainer();
 
-        const header = await container.media.get(mediaType).library.common.getListHeader(targetUser.id);
+        const header = await container.media.get(mediaType).library.getListHeader(targetUser.id);
         if (!header) throw notFound();
 
         if (currentUser && currentUser.id !== targetUser.id) {
@@ -67,7 +67,7 @@ export const getTagsViewFn = createServerFn({ method: "GET" })
     .validator(mediaTypeUsernameSchema.extend({ search: simpleSearchSchema }))
     .handler(async ({ data: { mediaType, search }, context: { mediaListAccessScope } }) => {
         const container = await getContainer();
-        return container.media.get(mediaType).library.common.getTagsView(mediaListAccessScope, search);
+        return container.media.get(mediaType).library.getTagsView(mediaListAccessScope, search);
     });
 
 

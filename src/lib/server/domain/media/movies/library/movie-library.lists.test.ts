@@ -4,14 +4,13 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {JobType, MediaType, Status, TagAction} from "@/lib/utils/enums";
+import {eq} from "drizzle-orm";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
-const { MovieLibraryRepository } = await import("./movie-library.repository");
-const { MovieLibraryService } = await import("./movie-library.service");
-const { CommonLibraryRepository } = await import("@/lib/server/domain/media/shared/library/common-library.repository");
+const { createMovieLibrary } = await import("./movie-library");
 
 
 const ownerScope = {
@@ -22,7 +21,7 @@ const ownerScope = {
 } as const;
 
 
-describe("movie library repository", () => {
+describe("movie library lists", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -41,7 +40,7 @@ describe("movie library repository", () => {
     });
 
     it("hydrates canonical movie progress, tags, covers and common items", async () => {
-        const result = await new MovieLibraryRepository().getMediaList(50, ownerScope, { page: 1, perPage: 2 });
+        const result = await createMovieLibrary().getMediaList(50, ownerScope, { page: 1, perPage: 2 });
         expect(result.pagination).toMatchObject({ page: 1, perPage: 2, totalItems: 3, totalPages: 2, sorting: "Title A-Z" });
         expect(result.items.map(({ mediaName }) => mediaName)).toEqual(["Alpha", "Beta"]);
         expect(result.items[0]).toMatchObject({
@@ -57,9 +56,9 @@ describe("movie library repository", () => {
     });
 
     it("sorts by canonical rewatches with stable movie IDs", async () => {
-        const library = new MovieLibraryService(new MovieLibraryRepository());
+        const library = createMovieLibrary();
         await library.replaceRewatches({ userId: 42, catalogItemId: 1001, rewatchCount: 2 });
-        const result = await new MovieLibraryRepository().getMediaList(42, ownerScope, {
+        const result = await library.getMediaList(42, ownerScope, {
             page: 1,
             perPage: 3,
             sorting: "Re-Watched",
@@ -72,21 +71,20 @@ describe("movie library repository", () => {
     });
 
     it("serves the intentional public header from channel state and normalized stats", async () => {
-        const repository = new CommonLibraryRepository(MediaType.MOVIES);
-        expect(await repository.getListHeader(42)).toBeUndefined();
-        const library = new MovieLibraryService(new MovieLibraryRepository());
+        const library = createMovieLibrary();
+        expect(await library.common.getListHeader(42)).toBeUndefined();
         await library.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
-        expect(await repository.getListHeader(42)).toEqual({ timeSpent: 290 });
+        expect(await library.common.getListHeader(42)).toEqual({ timeSpent: 290 });
         await library.common.synchronizeProfileChannel({ userId: 42, enabled: false, views: 4 });
-        expect(await repository.getListHeader(42)).toBeUndefined();
+        expect(await library.common.getListHeader(42)).toBeUndefined();
     });
 
     it("applies movie-specific filters and hide-common at the authorized list boundary", async () => {
-        const repository = new MovieLibraryRepository();
-        const hiddenCommon = await repository.getMediaList(50, ownerScope, { hideCommon: true });
+        const library = createMovieLibrary();
+        const hiddenCommon = await library.getMediaList(50, ownerScope, { hideCommon: true });
         expect(hiddenCommon.items.map(({ mediaName }) => mediaName)).toEqual(["Beta", "Gamma"]);
 
-        const relational = await repository.getMediaList(undefined, ownerScope, {
+        const relational = await library.getMediaList(undefined, ownerScope, {
             genres: ["Drama"],
             actors: ["Lead"],
             directors: ["Director"],
@@ -97,39 +95,38 @@ describe("movie library repository", () => {
     });
 
     it("returns only filter/search values represented in the owner's movie list", async () => {
-        const repository = new MovieLibraryRepository();
-        expect(await repository.getListFilters(ownerScope)).toEqual({
+        const library = createMovieLibrary();
+        expect(await library.getListFilters(ownerScope)).toEqual({
             kind: MediaType.MOVIES,
             genres: [{ name: "Drama" }],
             tags: [{ name: "comfort" }],
             langs: [{ name: "en" }, { name: "fr" }],
         });
-        expect(await repository.getSearchListFilters(ownerScope, "Le", JobType.ACTOR)).toEqual([{ name: "Lead" }]);
-        expect(await repository.getSearchListFilters(ownerScope, "Dire", JobType.CREATOR)).toEqual([{ name: "Director" }]);
+        expect(await library.getSearchListFilters(ownerScope, "Le", JobType.ACTOR)).toEqual([{ name: "Lead" }]);
+        expect(await library.getSearchListFilters(ownerScope, "Dire", JobType.CREATOR)).toEqual([{ name: "Director" }]);
     });
 
     it("supports linked and empty tags without exposing list data outside the supplied scope", async () => {
-        const libraryRepository = new CommonLibraryRepository(MediaType.MOVIES);
-        await libraryRepository.editTag({
+        const library = createMovieLibrary();
+        await library.common.editTag({
             userId: 42,
             action: TagAction.ADD,
-            name: "empty-tag",
+            tag: { name: "empty-tag" },
         });
-        const repository = new CommonLibraryRepository(MediaType.MOVIES);
-        const tags = await repository.getTagsView(ownerScope.ownerId, { page: 1 });
+        const tags = await library.common.getTagsView(ownerScope, { page: 1 });
         expect(tags).toMatchObject({ total: 2, exactMatch: false, pages: 1 });
         expect(tags.items).toEqual(expect.arrayContaining([
             expect.objectContaining({ tagName: "comfort", totalCount: 1, medias: [expect.objectContaining({ mediaId: 1000 })] }),
             expect.objectContaining({ tagName: "empty-tag", totalCount: 0, medias: [] }),
         ]));
-        expect(await repository.getTagsView(ownerScope.ownerId, { page: 1, search: "EMPTY-TAG" })).toMatchObject({
+        expect(await library.common.getTagsView(ownerScope, { page: 1, search: "EMPTY-TAG" })).toMatchObject({
             total: 1,
             exactMatch: true,
         });
     });
 
-    it("uses canonical movie IDs in coming-next reads", async () => {
-        const items = await new MovieLibraryRepository().getUpcomingMedia(ownerScope);
+    it("uses canonical movie IDs in upcoming reads", async () => {
+        const items = await createMovieLibrary().upcoming(ownerScope.ownerId);
         expect(items).toEqual([
             expect.objectContaining({ mediaId: 1002, userId: 42, mediaName: "Gamma", date: "2099-01-02" }),
         ]);
@@ -156,13 +153,16 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
     await db.insert(schema.catalogItemGenre).values({ catalogItemId: 1000, genreId: 1 });
     await db.insert(schema.movieActor).values({ catalogItemId: 1000, name: "Lead" });
 
-    const repository = new MovieLibraryRepository();
-    const library = new MovieLibraryService(repository);
-    const commonRepository = new CommonLibraryRepository(MediaType.MOVIES);
+    const library = createMovieLibrary();
     const alpha = await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
     await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatchCount: 1 });
-    await commonRepository.updateEntry(alpha.id, { customCover: "custom.jpg" });
-    await commonRepository.editTag({ userId: 42, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
+    await db.update(schema.libraryEntry).set({ customCover: "custom.jpg" }).where(eq(schema.libraryEntry.id, alpha.id));
+    await library.common.editTag({
+        userId: 42,
+        mediaId: 1000,
+        action: TagAction.ADD,
+        tag: { name: "comfort" },
+    });
     await library.add({ userId: 42, catalogItemId: 1001, status: Status.COMPLETED });
     await library.add({ userId: 42, catalogItemId: 1002, status: Status.PLAN_TO_WATCH });
     await library.add({ userId: 50, catalogItemId: 1000, status: Status.COMPLETED });

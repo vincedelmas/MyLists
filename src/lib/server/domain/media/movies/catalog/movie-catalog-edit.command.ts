@@ -1,5 +1,5 @@
 import {MovieCatalogAdminRepository, MovieCatalogEdit} from "@/lib/server/domain/media/movies/catalog/movie-catalog-admin.repository";
-import {MovieLibraryService} from "@/lib/server/domain/media/movies/library/movie-library.service";
+import {createMovieLibrary, MovieLibrary} from "@/lib/server/domain/media/movies/library/movie-library";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {MediaType} from "@/lib/utils/enums";
 import {MovieCatalogEditPayload} from "@/lib/contracts/media/catalog-edit";
@@ -9,7 +9,7 @@ import {CatalogCoverStorage} from "@/lib/server/domain/media/shared/catalog/cata
 export class MovieCatalogEditCommand {
     constructor(
         private readonly catalog: MovieCatalogAdminRepository,
-        private readonly library = new MovieLibraryService(),
+        private readonly library: MovieLibrary = createMovieLibrary(),
         private readonly coverStorage = new CatalogCoverStorage(MediaType.MOVIES),
     ) {
     }

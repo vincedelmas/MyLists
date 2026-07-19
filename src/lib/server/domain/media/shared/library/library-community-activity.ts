@@ -1,9 +1,9 @@
+import {SearchType} from "@/lib/schemas";
 import {and, desc, eq, ne, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {followers, libraryEntry, profileMediaChannel, user} from "@/lib/server/database/schema";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {MediaType, PrivacyType, SocialState, Status} from "@/lib/utils/enums";
-import {SearchType} from "@/lib/schemas";
+import {followers, libraryEntry, profileMediaChannel, user} from "@/lib/server/database/schema";
 
 
 export type CommunityActivityContribution = {
@@ -11,6 +11,7 @@ export type CommunityActivityContribution = {
     specific: number;
     playtime: number;
 };
+
 
 type CommunityActivityParams<K extends MediaType, TEntry, TUserMedia extends object> = {
     kind: K;
@@ -27,21 +28,9 @@ type CommunityActivityParams<K extends MediaType, TEntry, TUserMedia extends obj
  * Shared community visibility, pagination and aggregation policy. Media repositories
  * retain ownership of entry hydration and their progress-specific contributions.
  */
-export const getLibraryCommunityActivity = async <K extends MediaType, TEntry, TUserMedia extends object>({
-                                                                                                              kind,
-                                                                                                              viewerId,
-                                                                                                              catalogItemId,
-                                                                                                              search,
-                                                                                                              findEntry,
-                                                                                                              toUserMedia,
-                                                                                                              getContribution,
-                                                                                                          }: CommunityActivityParams<K, TEntry, TUserMedia>) => {
-    const pagination = resolvePagination({
-        page: search.page,
-        perPage: search.perPage,
-        defaultPerPage: 8,
-        maxPerPage: 50,
-    });
+export const getLibraryCommunityActivity = async <K extends MediaType, TEntry, TUserMedia extends object>(props: CommunityActivityParams<K, TEntry, TUserMedia>) => {
+    const { kind, viewerId, catalogItemId, search, findEntry, toUserMedia, getContribution } = props;
+    const pagination = resolvePagination({ page: search.page, perPage: search.perPage, defaultPerPage: 8, maxPerPage: 50 });
 
     const audienceCondition = viewerId
         ? sql`(
@@ -57,9 +46,9 @@ export const getLibraryCommunityActivity = async <K extends MediaType, TEntry, T
         : eq(user.privacy, PrivacyType.PUBLIC);
 
     const visibleConditions = and(
-        eq(libraryEntry.catalogItemId, catalogItemId),
-        ne(user.name, "DemoProfile"),
         audienceCondition,
+        ne(user.name, "DemoProfile"),
+        eq(libraryEntry.catalogItemId, catalogItemId),
     );
 
     const baseQuery = () => getDbClient()
@@ -67,10 +56,10 @@ export const getLibraryCommunityActivity = async <K extends MediaType, TEntry, T
             userId: user.id,
             name: user.name,
             image: user.image,
-            ratingSystem: user.ratingSystem,
-            favorite: libraryEntry.favorite,
             rating: libraryEntry.rating,
             status: libraryEntry.status,
+            ratingSystem: user.ratingSystem,
+            favorite: libraryEntry.favorite,
         })
         .from(libraryEntry)
         .innerJoin(user, eq(user.id, libraryEntry.userId))
@@ -93,8 +82,10 @@ export const getLibraryCommunityActivity = async <K extends MediaType, TEntry, T
         userId,
         entry: await findEntry(userId, catalogItemId),
     })));
-    const entriesByUserId = new Map(entries.map(({ userId, entry }) => [userId, entry]));
+
     const completeEntries: TEntry[] = [];
+    const entriesByUserId = new Map(entries.map(({ userId, entry }) => [userId, entry]));
+
     for (const { entry } of entries) {
         if (entry !== undefined) completeEntries.push(entry as TEntry);
     }
@@ -102,7 +93,9 @@ export const getLibraryCommunityActivity = async <K extends MediaType, TEntry, T
     const items = await Promise.all(pageRows.map(async (row) => {
         const entry = entriesByUserId.get(row.userId);
         if (!entry) return;
+
         const userMedia = await toUserMedia(entry, catalogItemId, row.ratingSystem);
+
         return {
             kind,
             id: row.userId,
@@ -113,26 +106,24 @@ export const getLibraryCommunityActivity = async <K extends MediaType, TEntry, T
         };
     }));
 
-    const ratings = allRows
-        .map(({ rating }) => rating)
-        .filter((rating): rating is number => rating !== null);
-    const contributions = completeEntries.map(getContribution);
     const total = allRows.length;
+    const contributions = completeEntries.map(getContribution);
+    const ratings = allRows.map(({ rating }) => rating).filter((rating): rating is number => rating !== null);
 
     return {
         kind,
-        page: pagination.page,
-        items: items.filter((item): item is NonNullable<typeof item> => item !== undefined),
         total,
+        page: pagination.page,
         perPage: pagination.perPage,
+        items: items.filter((item): item is NonNullable<typeof item> => item !== undefined),
         pages: Math.ceil(total / pagination.perPage),
         stats: {
             total,
-            totalRedo: contributions.reduce((sum, contribution) => sum + contribution.redo, 0),
             likedCount: allRows.filter(({ favorite }) => favorite).length,
+            completedCount: allRows.filter(({ status }) => status === Status.COMPLETED).length,
+            totalRedo: contributions.reduce((sum, contribution) => sum + contribution.redo, 0),
             totalSpecific: contributions.reduce((sum, contribution) => sum + contribution.specific, 0),
             totalPlaytime: contributions.reduce((sum, contribution) => sum + contribution.playtime, 0),
-            completedCount: allRows.filter(({ status }) => status === Status.COMPLETED).length,
             averageRating: ratings.length > 0
                 ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
                 : null,

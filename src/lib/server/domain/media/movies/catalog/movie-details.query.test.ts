@@ -15,11 +15,9 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { MovieDetailsQuery } = await import("./movie-details.query");
 const { MovieCatalogReadRepository } = await import("./movie-catalog-read.repository");
-const { MovieLibraryRepository } = await import("@/lib/server/domain/media/movies/library/movie-library.repository");
-const { MovieLibraryService } = await import("@/lib/server/domain/media/movies/library/movie-library.service");
+const { createMovieLibrary } = await import("@/lib/server/domain/media/movies/library/movie-library");
 const { MovieCatalogAdminRepository } = await import("./movie-catalog-admin.repository");
 const { MovieCatalogEditCommand } = await import("./movie-catalog-edit.command");
-const { CommonLibraryRepository } = await import("@/lib/server/domain/media/shared/library/common-library.repository");
 
 
 describe("movie details query", () => {
@@ -41,16 +39,15 @@ describe("movie details query", () => {
     });
 
     it("serves movie metadata, collection, private state and followed state with canonical IDs", async () => {
-        const repository = new MovieLibraryRepository();
-        const library = new MovieLibraryService(repository);
-        const viewerEntry = await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
+        const library = createMovieLibrary();
+        await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatchCount: 2 });
         await library.common.updateRating({ userId: 42, catalogItemId: 1000, rating: 8.5 });
-        await new CommonLibraryRepository(MediaType.MOVIES).editTag({
+        await library.common.editTag({
             userId: 42,
+            mediaId: 1000,
             action: TagAction.ADD,
-            name: "comfort",
-            libraryEntryId: viewerEntry.id,
+            tag: { name: "comfort" },
         });
         await library.add({ userId: 50, catalogItemId: 1000, status: Status.COMPLETED });
 
@@ -88,7 +85,7 @@ describe("movie details query", () => {
     });
 
     it("preserves movie community audience rules and normalized watch totals", async () => {
-        const library = new MovieLibraryService(new MovieLibraryRepository());
+        const library = createMovieLibrary();
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatchCount: 1 });
         await library.add({ userId: 50, catalogItemId: 1000, status: Status.COMPLETED });
@@ -96,7 +93,7 @@ describe("movie details query", () => {
         await db.insert(schema.profileMediaChannel).values({ userId: 42, kind: MediaType.MOVIES, enabled: true });
         await db.update(schema.user).set({ privacy: PrivacyType.PUBLIC }).where(eq(schema.user.id, 50));
 
-        const reader = new MovieLibraryService();
+        const reader = createMovieLibrary();
         const anonymous = await reader.getCommunityActivity(undefined, 1000, { page: 1 });
         expect(anonymous).toMatchObject({
             total: 1,
@@ -112,7 +109,7 @@ describe("movie details query", () => {
     });
 
     it("serves actor, director and compositor pages with viewer membership", async () => {
-        const library = new MovieLibraryService(new MovieLibraryRepository());
+        const library = createMovieLibrary();
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         const catalog = new MovieCatalogReadRepository();
 
@@ -131,7 +128,7 @@ describe("movie details query", () => {
     });
 
     it("updates manager-editable movie fields while repairing duration stats", async () => {
-        const library = new MovieLibraryService(new MovieLibraryRepository());
+        const library = createMovieLibrary();
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         const admin = new MovieCatalogEditCommand(new MovieCatalogAdminRepository());
         await admin.updateEditableFields(1000, {

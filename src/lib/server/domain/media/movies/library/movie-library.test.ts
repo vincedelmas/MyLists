@@ -11,12 +11,11 @@ import {ActivityKind, MediaType, Status, TagAction, UpdateType} from "@/lib/util
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbContext.db }));
 
-const { MovieLibraryRepository } = await import("./movie-library.repository");
-const { MovieLibraryService } = await import("./movie-library.service");
+const { createMovieLibrary } = await import("./movie-library");
 const { MovieStatsRepository } = await import("./movie-stats.repository");
 
 
-describe("movie library service", () => {
+describe("movie library", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
 
@@ -51,7 +50,7 @@ describe("movie library service", () => {
     });
 
     it("keeps status, watch count, stats, activity and history in one movie transition", async () => {
-        const library = new MovieLibraryService(new MovieLibraryRepository());
+        const library = createMovieLibrary();
         const added = await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         expect(added.progress).toEqual({ status: Status.COMPLETED, watchCount: 1 });
 
@@ -86,7 +85,7 @@ describe("movie library service", () => {
     });
 
     it("normalizes imported stale totals from the movie's status and redo count", async () => {
-        const library = new MovieLibraryService(new MovieLibraryRepository());
+        const library = createMovieLibrary();
         const imported = await library.importEntry({
             userId: 42,
             catalogItemId: 1000,
@@ -116,8 +115,7 @@ describe("movie library service", () => {
         const genre = db.select().from(schema.catalogGenre).get();
         await db.insert(schema.catalogItemGenre).values({ catalogItemId: 1000, genreId: genre!.id });
 
-        const repository = new MovieLibraryRepository();
-        const library = new MovieLibraryService(repository);
+        const library = createMovieLibrary();
         await library.importEntry({
             userId: 42,
             catalogItemId: 1000,

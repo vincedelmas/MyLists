@@ -2,6 +2,7 @@ import {MediaType, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, asc, count, desc, eq, gte, isNotNull, ne, SQL, sql} from "drizzle-orm";
 import {libraryStatsContributionBase, rebuildLibraryStats} from "@/lib/server/domain/media/shared/library/library-stats-rebuild";
+import {catalogGenre, catalogItem, catalogItemGenre, libraryEntry, movieActor, movieDetails, movieProgress} from "@/lib/server/database/schema";
 import {
     formatLibraryAffinity,
     getAggregatedLibraryStats,
@@ -12,15 +13,6 @@ import {
     libraryAffinityExpressions,
     LibraryStatsReadScope,
 } from "@/lib/server/domain/media/shared/library/library-stats-read";
-import {
-    catalogGenre,
-    catalogItem,
-    catalogItemGenre,
-    libraryEntry,
-    movieActor,
-    movieDetails,
-    movieProgress,
-} from "@/lib/server/database/schema";
 
 
 /** Movie aggregate, advanced, and materialized library statistics. */

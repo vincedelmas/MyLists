@@ -5,7 +5,7 @@ import {Achievement} from "@/lib/types/achievements.types";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {StatsCTE, Tag} from "@/lib/types/media-common.types";
 import {mediaTypeToApiProvider} from "@/lib/utils/media-mapping";
-import {MediaSchemaConfig} from "@/lib/types/media.config.types";
+import {AnyMediaSchemaConfig} from "@/lib/types/media.config.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
@@ -14,7 +14,7 @@ import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/
 import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
-export abstract class BaseService<TConfig extends MediaSchemaConfig, R extends BaseRepository<TConfig>> {
+export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extends BaseRepository<TConfig>> {
     protected repository: R;
     protected abstract readonly achievementHandlers: Record<string, (achievement: Achievement, userId?: number) => StatsCTE>;
     protected updateHandlers: Partial<Record<UpdateType, UpdateHandlerFn<TConfig["listTable"]["$inferSelect"], any, TConfig["mediaTable"]["$inferSelect"]>>>;

@@ -1,20 +1,12 @@
 import {asc, desc, getTableColumns, sql} from "drizzle-orm";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
-import {MediaSchemaConfig} from "@/lib/types/media.config.types";
+import {defineMediaSchemaConfig} from "@/lib/types/media.config.types";
 import {createArrayFilterDef} from "@/lib/server/domain/media/base/base.repository";
 import {booksAchievements} from "@/lib/server/domain/media/books/achievements.seed";
 import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 
 
-export type BookSchemaConfig = MediaSchemaConfig<
-    typeof books,
-    typeof booksList,
-    typeof booksGenre,
-    typeof booksTags
->;
-
-
-export const booksConfig: BookSchemaConfig = {
+export const booksConfig = defineMediaSchemaConfig({
     mediaTable: books,
     listTable: booksList,
     genreTable: booksGenre,
@@ -75,4 +67,7 @@ export const booksConfig: BookSchemaConfig = {
     },
     tablesForDeletion: [booksAuthors, booksGenre, booksTags],
     achievements: booksAchievements,
-};
+});
+
+
+export type BookSchemaConfig = typeof booksConfig;

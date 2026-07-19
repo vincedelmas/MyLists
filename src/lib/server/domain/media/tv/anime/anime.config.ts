@@ -1,23 +1,12 @@
 import {asc, desc, getTableColumns, sql} from "drizzle-orm";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
-import {TvSchemaConfig} from "@/lib/types/media.config.types";
+import {defineTvSchemaConfig} from "@/lib/types/media.config.types";
 import {createArrayFilterDef} from "@/lib/server/domain/media/base/base.repository";
 import {animeAchievements} from "@/lib/server/domain/media/tv/anime/achievements.seed";
 import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, animeNetwork, animeTags} from "@/lib/server/database/schema/media/anime.schema";
 
 
-export type AnimeSchemaConfig = TvSchemaConfig<
-    typeof anime,
-    typeof animeList,
-    typeof animeGenre,
-    typeof animeTags,
-    typeof animeActors,
-    typeof animeNetwork,
-    typeof animeEpisodesPerSeason
->;
-
-
-export const animeConfig: AnimeSchemaConfig = {
+export const animeConfig = defineTvSchemaConfig({
     mediaTable: anime,
     listTable: animeList,
     genreTable: animeGenre,
@@ -127,4 +116,7 @@ export const animeConfig: AnimeSchemaConfig = {
     },
     tablesForDeletion: [animeEpisodesPerSeason, animeNetwork, animeActors, animeGenre, animeTags],
     achievements: animeAchievements,
-};
+});
+
+
+export type AnimeSchemaConfig = typeof animeConfig;

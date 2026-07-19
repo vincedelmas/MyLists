@@ -8,7 +8,7 @@ import {Achievement} from "@/lib/types/achievements.types";
 import {UpComingMedia} from "@/lib/types/notifications.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
-import {MediaSchemaConfig} from "@/lib/types/media.config.types";
+import {AnyMediaSchemaConfig} from "@/lib/types/media.config.types";
 import {MediaListArgs, SearchType, SimpleSearch} from "@/lib/schemas";
 import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
@@ -23,7 +23,7 @@ const SIMILAR_MAX_GENRES = 10;
 const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 
 
-export abstract class BaseRepository<TConfig extends MediaSchemaConfig> {
+export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     readonly config: TConfig;
     protected readonly baseFilterDefs: FilterDefinitions;
 

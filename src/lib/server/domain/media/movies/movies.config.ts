@@ -1,20 +1,12 @@
 import {asc, desc, getTableColumns, sql} from "drizzle-orm";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
-import {MediaSchemaConfig} from "@/lib/types/media.config.types";
+import {defineMediaSchemaConfig} from "@/lib/types/media.config.types";
 import {createArrayFilterDef} from "@/lib/server/domain/media/base/base.repository";
 import {moviesAchievements} from "@/lib/server/domain/media/movies/achievements.seed";
 import {movies, moviesActors, moviesGenre, moviesList, moviesTags} from "@/lib/server/database/schema/media/movies.schema";
 
 
-export type MovieSchemaConfig = MediaSchemaConfig<
-    typeof movies,
-    typeof moviesList,
-    typeof moviesGenre,
-    typeof moviesTags
->;
-
-
-export const moviesConfig: MovieSchemaConfig = {
+export const moviesConfig = defineMediaSchemaConfig({
     mediaTable: movies,
     tagTable: moviesTags,
     listTable: moviesList,
@@ -95,4 +87,7 @@ export const moviesConfig: MovieSchemaConfig = {
     },
     tablesForDeletion: [moviesActors, moviesGenre, moviesTags],
     achievements: moviesAchievements,
-};
+});
+
+
+export type MovieSchemaConfig = typeof moviesConfig;

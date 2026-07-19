@@ -1,20 +1,12 @@
 import {asc, desc, getTableColumns, sql} from "drizzle-orm";
 import {JobType, MediaType, Status} from "@/lib/utils/enums";
-import {MediaSchemaConfig} from "@/lib/types/media.config.types";
+import {defineMediaSchemaConfig} from "@/lib/types/media.config.types";
 import {createArrayFilterDef} from "@/lib/server/domain/media/base/base.repository";
 import {mangaAchievements} from "@/lib/server/domain/media/manga/achievements.seed";
 import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
 
 
-export type MangaSchemaConfig = MediaSchemaConfig<
-    typeof manga,
-    typeof mangaList,
-    typeof mangaGenre,
-    typeof mangaTags
->;
-
-
-export const mangaConfig: MangaSchemaConfig = {
+export const mangaConfig = defineMediaSchemaConfig({
     mediaTable: manga,
     listTable: mangaList,
     genreTable: mangaGenre,
@@ -83,4 +75,7 @@ export const mangaConfig: MangaSchemaConfig = {
     },
     tablesForDeletion: [mangaAuthors, mangaGenre, mangaTags],
     achievements: mangaAchievements,
-};
+});
+
+
+export type MangaSchemaConfig = typeof mangaConfig;

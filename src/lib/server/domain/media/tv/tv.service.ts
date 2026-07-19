@@ -1,47 +1,22 @@
+import {getTableName} from "drizzle-orm";
 import {notFound} from "@tanstack/react-router";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {Status, UpdateType} from "@/lib/utils/enums";
-import {eq, getTableName, isNotNull} from "drizzle-orm";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {Achievement} from "@/lib/types/achievements.types";
+import {LogPayload} from "@/lib/types/user-updates.types";
+import {TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import {TvAchievements} from "@/lib/server/domain/media/tv/tv.achievements";
 import {AnimeSchemaConfig} from "@/lib/server/domain/media/tv/anime/anime.config";
-import {TvAchCodeName, TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
 import {SeriesSchemaConfig} from "@/lib/server/domain/media/tv/series/series.config";
 import {EpsSeasonPayload, RedoTvPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {LogPayload} from "@/lib/types/user-updates.types";
-import {StatsCTE} from "@/lib/types/media-common.types";
 
 
 export class TvService extends BaseService<AnimeSchemaConfig | SeriesSchemaConfig, TvRepository> {
-    readonly achievementHandlers: Record<TvAchCodeName, (achievement: Achievement, userId?: number) => StatsCTE>;
-
     constructor(repository: TvRepository) {
-        super(repository);
-
-        const { listTable } = this.repository.config;
-
-        this.achievementHandlers = {
-            completed_anime: this.repository.countAchievementCte.bind(this.repository, eq(listTable.status, Status.COMPLETED)),
-            rated_anime: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.rating)),
-            comment_anime: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.comment)),
-            short_anime: this.repository.getDurationAchievementCte.bind(this.repository),
-            long_anime: this.repository.getDurationAchievementCte.bind(this.repository),
-            shonen_anime: this.repository.specificGenreAchievementCte.bind(this.repository),
-            seinen_anime: this.repository.specificGenreAchievementCte.bind(this.repository),
-            network_anime: this.repository.getNetworkAchievementCte.bind(this.repository),
-            actor_anime: this.repository.getActorAchievementCte.bind(this.repository),
-
-            completed_series: this.repository.countAchievementCte.bind(this.repository, eq(listTable.status, Status.COMPLETED)),
-            rated_series: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.rating)),
-            short_series: this.repository.getDurationAchievementCte.bind(this.repository),
-            long_series: this.repository.getDurationAchievementCte.bind(this.repository),
-            comedy_series: this.repository.specificGenreAchievementCte.bind(this.repository),
-            drama_series: this.repository.specificGenreAchievementCte.bind(this.repository),
-            network_series: this.repository.getNetworkAchievementCte.bind(this.repository),
-        };
+        super(repository, new TvAchievements(repository.config));
 
         this.updateHandlers = {
             ...this.updateHandlers,

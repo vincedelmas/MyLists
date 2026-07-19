@@ -1,25 +1,25 @@
 import {notFound} from "@tanstack/react-router";
 import {DeltaStats} from "@/lib/types/stats.types";
+import {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {Achievement} from "@/lib/types/achievements.types";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
-import {StatsCTE, Tag} from "@/lib/types/media-common.types";
 import {mediaTypeToApiProvider} from "@/lib/utils/media-mapping";
 import {AnyMediaSchemaConfig} from "@/lib/types/media.config.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import type {MediaAchievements} from "@/lib/server/domain/media/base/base.achievements";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
 export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extends BaseRepository<TConfig>> {
     protected repository: R;
-    protected abstract readonly achievementHandlers: Record<string, (achievement: Achievement, userId?: number) => StatsCTE>;
     protected updateHandlers: Partial<Record<UpdateType, UpdateHandlerFn<TConfig["listTable"]["$inferSelect"], any, TConfig["mediaTable"]["$inferSelect"]>>>;
 
-    protected constructor(repository: R) {
+    protected constructor(repository: R, private readonly achievements: MediaAchievements) {
         this.repository = repository;
 
         // User progress handlers based on update type
@@ -281,11 +281,7 @@ export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extend
     }
 
     getAchievementCte(achievement: Achievement, userId?: number) {
-        const handler = this.achievementHandlers[achievement.codeName];
-        if (!handler) {
-            throw new Error(`Invalid Achievement codeName: ${achievement.codeName}`);
-        }
-        return handler(achievement, userId);
+        return this.achievements.getCte(achievement, userId);
     }
 
     createSimpleUpdateHandler<K extends string>(propName: K): UpdateHandlerFn<any, any, any> {
@@ -296,7 +292,7 @@ export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extend
     }
 
     getAchievementsDefinition() {
-        return this.repository.config.achievements;
+        return this.achievements.getDefinitions();
     }
 
     // --- Admin Methods ---------------------------------------------------

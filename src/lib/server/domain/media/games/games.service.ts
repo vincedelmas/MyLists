@@ -1,41 +1,19 @@
-import {eq, isNotNull} from "drizzle-orm";
 import {notFound} from "@tanstack/react-router";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {Status, UpdateType} from "@/lib/utils/enums";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
-import {Achievement} from "@/lib/types/achievements.types";
+import {LogPayload} from "@/lib/types/user-updates.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import {Game, GamesList} from "@/lib/server/domain/media/games/games.types";
 import {GamesSchemaConfig} from "@/lib/server/domain/media/games/games.config";
 import {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
-import {Game, GamesAchCodeName, GamesList} from "@/lib/server/domain/media/games/games.types";
-import {LogPayload} from "@/lib/types/user-updates.types";
+import {GamesAchievements} from "@/lib/server/domain/media/games/games.achievements";
 import {PlaytimePayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {StatsCTE} from "@/lib/types/media-common.types";
 
 
 export class GamesService extends BaseService<GamesSchemaConfig, GamesRepository> {
-    readonly achievementHandlers: Record<GamesAchCodeName, (achievement: Achievement, userId?: number) => StatsCTE>;
-
     constructor(repository: GamesRepository) {
-        super(repository);
-
-        const { listTable } = this.repository.config;
-
-        this.achievementHandlers = {
-            completed_games: this.repository.countAchievementCte.bind(this.repository, eq(listTable.status, Status.COMPLETED)),
-            rated_games: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.rating)),
-            comment_games: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.comment)),
-            hack_slash_games: this.repository.specificGenreAchievementCte.bind(this.repository),
-            multiplayer_games: this.repository.getGameModeAchievementCte.bind(this.repository),
-            log_hours_games: this.repository.getTimeSpentAchievementCte.bind(this.repository),
-            platform_games: this.repository.getPlatformAchievementCte.bind(this.repository),
-            pc_games: this.repository.getSpecificPlatformAchievementCte.bind(this.repository),
-            short_games: this.repository.getDurationAchievementCte.bind(this.repository),
-            long_games: this.repository.getDurationAchievementCte.bind(this.repository),
-            developer_games: this.repository.getCompanyAchievementCte.bind(this.repository),
-            publisher_games: this.repository.getCompanyAchievementCte.bind(this.repository),
-            first_person_games: this.repository.getPerspectiveAchievementCte.bind(this.repository),
-        };
+        super(repository, new GamesAchievements(repository.config));
 
         this.updateHandlers = {
             ...this.updateHandlers,

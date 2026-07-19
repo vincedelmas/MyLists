@@ -1,12 +1,11 @@
 import {Status} from "@/lib/utils/enums";
-import {AddedMediaDetails} from "@/lib/types/media-common.types";
-import {Achievement} from "@/lib/types/achievements.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {and, asc, eq, getTableColumns, isNotNull, isNull, ne, sql} from "drizzle-orm";
 import {books, booksAuthors, booksGenre, booksList} from "@/lib/server/database/schema";
-import {Book, InsertBooksWithDetails, UpdateBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 import {BookSchemaConfig, booksConfig} from "@/lib/server/domain/media/books/books.config";
-import {and, asc, count, countDistinct, eq, getTableColumns, gte, isNotNull, isNull, lte, max, ne, sql} from "drizzle-orm";
+import {Book, InsertBooksWithDetails, UpdateBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 
 
 export class BooksRepository extends BaseRepository<BookSchemaConfig> {
@@ -30,58 +29,6 @@ export class BooksRepository extends BaseRepository<BookSchemaConfig> {
             .leftJoin(booksGenre, eq(booksGenre.mediaId, books.id))
             .where(isNull(booksGenre.mediaId))
             .groupBy(books.id);
-    }
-
-    // --- Achievements ----------------------------------------------------------
-
-    getDurationAchievementCte(achievement: Achievement, userId?: number) {
-        const value = parseInt(achievement.value!, 10);
-        const isLong = achievement.codeName.includes("long");
-        const condition = isLong ? gte(books.pages, value) : lte(books.pages, value);
-
-        const baseCTE = getDbClient()
-            .select({
-                userId: booksList.userId,
-                value: count(booksList.mediaId).as("value"),
-            }).from(booksList)
-            .innerJoin(books, eq(booksList.mediaId, books.id))
-
-        const conditions = [eq(booksList.status, Status.COMPLETED), condition]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    getAuthorsAchievementCte(_achievement: Achievement, userId?: number) {
-        const subQ = getDbClient()
-            .select({
-                userId: booksList.userId,
-                count: count(booksList.mediaId).as("count"),
-            }).from(booksList)
-            .innerJoin(booksAuthors, eq(booksList.mediaId, booksAuthors.mediaId))
-            .where(eq(booksList.status, Status.COMPLETED))
-            .groupBy(userId ? eq(booksList.userId, userId) : booksList.userId, booksAuthors.name)
-            .as("sub");
-
-        return getDbClient()
-            .select({
-                userId: subQ.userId,
-                value: max(subQ.count).as("value"),
-            }).from(subQ)
-            .groupBy(subQ.userId)
-            .as("calculation");
-    }
-
-    getLanguageAchievementCte(_achievement: Achievement, userId?: number) {
-        const baseCTE = getDbClient()
-            .select({
-                userId: booksList.userId,
-                value: countDistinct(books.language).as("value"),
-            }).from(booksList)
-            .innerJoin(books, eq(booksList.mediaId, books.id))
-
-        const conditions = [eq(booksList.status, Status.COMPLETED)]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
     }
 
     // --- Advanced Stats  --------------------------------------------------

@@ -1,40 +1,20 @@
-import {eq, isNotNull} from "drizzle-orm";
 import {notFound} from "@tanstack/react-router";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {Status, UpdateType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {Achievement} from "@/lib/types/achievements.types";
+import {LogPayload} from "@/lib/types/user-updates.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import {Book, BooksList} from "@/lib/server/domain/media/books/books.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BookSchemaConfig} from "@/lib/server/domain/media/books/books.config";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
-import {Book, BooksAchCodeName, BooksList} from "@/lib/server/domain/media/books/books.types";
-import {LogPayload} from "@/lib/types/user-updates.types";
+import {BooksAchievements} from "@/lib/server/domain/media/books/books.achievements";
 import {PagePayload, RedoPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {StatsCTE} from "@/lib/types/media-common.types";
 
 
 export class BooksService extends BaseService<BookSchemaConfig, BooksRepository> {
-    readonly achievementHandlers: Record<BooksAchCodeName, (achievement: Achievement, userId?: number) => StatsCTE>;
-
     constructor(repository: BooksRepository) {
-        super(repository);
-
-        const { listTable } = this.repository.config;
-
-        this.achievementHandlers = {
-            completed_books: this.repository.countAchievementCte.bind(this.repository, eq(listTable.status, Status.COMPLETED)),
-            rated_books: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.rating)),
-            comment_books: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.comment)),
-            long_books: this.repository.getDurationAchievementCte.bind(this.repository),
-            short_books: this.repository.getDurationAchievementCte.bind(this.repository),
-            author_books: this.repository.getAuthorsAchievementCte.bind(this.repository),
-            lang_books: this.repository.getLanguageAchievementCte.bind(this.repository),
-            classic_books: this.repository.specificGenreAchievementCte.bind(this.repository),
-            young_adult_books: this.repository.specificGenreAchievementCte.bind(this.repository),
-            crime_books: this.repository.specificGenreAchievementCte.bind(this.repository),
-            fantasy_books: this.repository.specificGenreAchievementCte.bind(this.repository),
-        };
+        super(repository, new BooksAchievements(repository.config));
 
         this.updateHandlers = {
             ...this.updateHandlers,

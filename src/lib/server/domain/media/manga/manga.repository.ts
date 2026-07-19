@@ -1,12 +1,11 @@
 import {Status} from "@/lib/utils/enums";
-import {AddedMediaDetails} from "@/lib/types/media-common.types";
-import {Achievement} from "@/lib/types/achievements.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {manga, mangaAuthors, mangaGenre, mangaList} from "@/lib/server/database/schema";
 import {Manga, UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
 import {mangaConfig, MangaSchemaConfig} from "@/lib/server/domain/media/manga/manga.config";
-import {and, asc, count, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, ne, or, sql, sum} from "drizzle-orm";
+import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
 
 
 export class MangaRepository extends BaseRepository<MangaSchemaConfig> {
@@ -32,75 +31,6 @@ export class MangaRepository extends BaseRepository<MangaSchemaConfig> {
             ));
 
         return results.map((r) => r.apiId);
-    }
-
-    // --- Achievements ----------------------------------------------------------
-
-    getDurationAchievementCte(achievement: Achievement, userId?: number) {
-        const value = parseInt(achievement.value!, 10);
-        const isLong = achievement.codeName.includes("long");
-        const condition = isLong ? gte(manga.chapters, value) : lte(manga.chapters, value);
-
-        const baseCTE = getDbClient()
-            .select({
-                userId: mangaList.userId,
-                value: count(mangaList.mediaId).as("value"),
-            }).from(mangaList)
-            .innerJoin(manga, eq(mangaList.mediaId, manga.id))
-
-        const conditions = [eq(mangaList.status, Status.COMPLETED), condition]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    getAuthorsAchievementCte(_achievement: Achievement, userId?: number) {
-        const subQ = getDbClient()
-            .select({
-                userId: mangaList.userId,
-                count: count(mangaList.mediaId).as("count"),
-            }).from(mangaList)
-            .innerJoin(mangaAuthors, eq(mangaList.mediaId, mangaAuthors.mediaId))
-            .where(eq(mangaList.status, Status.COMPLETED))
-            .groupBy(userId ? eq(mangaList.userId, userId) : mangaList.userId, mangaAuthors.name)
-            .as("sub");
-
-        return getDbClient()
-            .select({
-                userId: subQ.userId,
-                value: max(subQ.count).as("value"),
-            }).from(subQ)
-            .groupBy(subQ.userId)
-            .as("calculation");
-    }
-
-    getPublishersAchievementCte(_achievement: Achievement, userId?: number) {
-        const subQ = getDbClient()
-            .select({
-                userId: mangaList.userId,
-                count: count(mangaList.mediaId).as("count"),
-            }).from(mangaList)
-            .innerJoin(manga, eq(manga.id, mangaList.mediaId))
-            .where(eq(mangaList.status, Status.COMPLETED))
-            .groupBy(userId ? eq(mangaList.userId, userId) : mangaList.userId, manga.publishers)
-            .as("sub");
-
-        return getDbClient()
-            .select({
-                userId: subQ.userId,
-                value: max(subQ.count).as("value"),
-            }).from(subQ)
-            .groupBy(subQ.userId)
-            .as("calculation");
-    }
-
-    getChaptersAchievementsCte(_achievement: Achievement, userId?: number) {
-        const baseCTE = getDbClient()
-            .select({
-                userId: mangaList.userId,
-                value: sum(mangaList.total).as("value"),
-            }).from(mangaList)
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, [], userId);
     }
 
     // --- Advanced Stats  --------------------------------------------------

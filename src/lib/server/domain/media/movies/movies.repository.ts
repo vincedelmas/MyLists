@@ -1,13 +1,12 @@
 import {Status} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
-import {AddedMediaDetails} from "@/lib/types/media-common.types";
-import {Achievement} from "@/lib/types/achievements.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {movies, moviesActors, moviesGenre, moviesList} from "@/lib/server/database/schema";
 import {Movie, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {MovieSchemaConfig, moviesConfig} from "@/lib/server/domain/media/movies/movies.config";
-import {and, asc, count, countDistinct, eq, getTableColumns, gte, isNotNull, isNull, lte, max, ne, or, sql} from "drizzle-orm";
+import {and, asc, eq, getTableColumns, gte, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
 
 
 export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
@@ -54,78 +53,6 @@ export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
             ));
 
         return results.map((r) => r.apiId);
-    }
-
-    // --- Achievements ----------------------------------------------------------
-
-    getDurationAchievementCte(achievement: Achievement, userId?: number) {
-        const value = parseInt(achievement.value!);
-        const isLong = achievement.codeName.includes("long");
-        const condition = isLong ? gte(movies.duration, value) : lte(movies.duration, value);
-
-        const baseCTE = getDbClient()
-            .select({
-                userId: moviesList.userId,
-                value: count(moviesList.mediaId).as("value"),
-            }).from(moviesList)
-            .innerJoin(movies, eq(moviesList.mediaId, movies.id))
-
-        const conditions = [eq(moviesList.status, Status.COMPLETED), condition]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    getDirectorAchievementCte(_achievement: Achievement, userId?: number) {
-        const subQ = getDbClient()
-            .select({
-                userId: moviesList.userId,
-                count: count(moviesList.mediaId).as("count"),
-            }).from(moviesList)
-            .innerJoin(movies, eq(moviesList.mediaId, movies.id))
-            .where(eq(moviesList.status, Status.COMPLETED))
-            .groupBy(userId ? eq(moviesList.userId, userId) : moviesList.userId, movies.directorName)
-            .as("sub");
-
-        return getDbClient()
-            .select({
-                userId: subQ.userId,
-                value: max(subQ.count).as("value"),
-            }).from(subQ)
-            .groupBy(subQ.userId)
-            .as("calculation");
-    }
-
-    getActorAchievementCte(_achievement: Achievement, userId?: number) {
-        const subQ = getDbClient()
-            .select({
-                userId: moviesList.userId,
-                count: count(moviesList.mediaId).as("count"),
-            }).from(moviesList)
-            .innerJoin(moviesActors, eq(moviesList.mediaId, moviesActors.mediaId))
-            .where(eq(moviesList.status, Status.COMPLETED))
-            .groupBy(userId ? eq(moviesList.userId, userId) : moviesList.userId, moviesActors.name)
-            .as("sub");
-
-        return getDbClient()
-            .select({
-                userId: subQ.userId,
-                value: max(subQ.count).as("value"),
-            }).from(subQ)
-            .groupBy(subQ.userId)
-            .as("calculation");
-    }
-
-    getLanguageAchievementCte(_achievement: Achievement, userId?: number) {
-        const baseCTE = getDbClient()
-            .select({
-                userId: moviesList.userId,
-                value: countDistinct(movies.originalLanguage).as("value"),
-            }).from(moviesList)
-            .innerJoin(movies, eq(moviesList.mediaId, movies.id))
-
-        const conditions = [eq(moviesList.status, Status.COMPLETED)]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
     }
 
     // --- Advanced Stats  --------------------------------------------------

@@ -1,5 +1,4 @@
 import {getImageUrl} from "@/lib/utils/image-url";
-import {Achievement} from "@/lib/types/achievements.types";
 import {GamesPlatformsEnum, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
@@ -8,7 +7,7 @@ import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {Game, UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {gamesConfig, GamesSchemaConfig} from "@/lib/server/domain/media/games/games.config";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms} from "@/lib/server/database/schema";
-import {and, asc, count, countDistinct, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lte, max, ne, notInArray, or, sql} from "drizzle-orm";
+import {and, asc, count, eq, getTableColumns, gte, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
 
 
 export class GamesRepository extends BaseRepository<GamesSchemaConfig> {
@@ -29,121 +28,6 @@ export class GamesRepository extends BaseRepository<GamesSchemaConfig> {
                 or(isNull(games.releaseDate), gte(games.releaseDate, sql`date('now')`)),
             ))
             .then((res) => res.map((r) => r.apiId));
-    }
-
-    // --- Achievements ----------------------------------------------------------
-
-    getGameModeAchievementCte(achievement: Achievement, userId?: number) {
-        const baseCTE = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                value: count(gamesList.id).as("value"),
-            }).from(gamesList)
-            .innerJoin(games, eq(gamesList.mediaId, games.id))
-
-        const conditions = [
-            like(games.gameModes, `%${achievement.value}%`),
-            notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY]),
-        ]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    getTimeSpentAchievementCte(_achievement: Achievement, userId?: number) {
-        const baseCTE = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                value: sql`SUM(${gamesList.playtime}) / 60`.as("value"),
-            }).from(gamesList)
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, [], userId);
-    }
-
-    getPlatformAchievementCte(_achievement: Achievement, userId?: number) {
-        const baseCTE = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                value: countDistinct(gamesList.platform).as("value"),
-            }).from(gamesList)
-
-        const conditions = [notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY])]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    getSpecificPlatformAchievementCte(achievement: Achievement, userId?: number) {
-        const baseCTE = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                value: count(gamesList.mediaId).as("value"),
-            }).from(gamesList)
-
-        const conditions = [
-            eq(gamesList.platform, achievement.value as GamesPlatformsEnum),
-            notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY]),
-        ]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    getDurationAchievementCte(achievement: Achievement, userId?: number) {
-        const value = parseInt(achievement.value!);
-        const isLong = achievement.codeName.includes("long");
-
-        const baseCTE = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                value: count(gamesList.mediaId).as("value"),
-            }).from(gamesList)
-            .innerJoin(games, eq(gamesList.mediaId, games.id))
-
-        const conditions = [
-            isLong ? gte(gamesList.playtime, value) : lte(gamesList.playtime, value),
-            inArray(gamesList.status, [Status.PLAYING, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER]),
-        ]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    getCompanyAchievementCte(achievement: Achievement, userId?: number) {
-        const isDevCompany = achievement.value === "developer";
-
-        const subQ = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                count: count(gamesList.mediaId).as("count"),
-            }).from(gamesList)
-            .innerJoin(gamesCompanies, eq(gamesList.mediaId, gamesCompanies.mediaId))
-            .where(and(
-                notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY]),
-                isDevCompany ? eq(gamesCompanies.developer, true) : eq(gamesCompanies.publisher, true)
-            ))
-            .groupBy(userId ? eq(gamesList.userId, userId) : gamesList.userId, gamesCompanies.name)
-            .as("sub");
-
-        return getDbClient()
-            .select({
-                userId: subQ.userId,
-                value: max(subQ.count).as("value"),
-            }).from(subQ)
-            .groupBy(subQ.userId)
-            .as("calculation");
-    }
-
-    getPerspectiveAchievementCte(achievement: Achievement, userId?: number) {
-        const baseCTE = getDbClient()
-            .select({
-                userId: gamesList.userId,
-                value: count(gamesList.mediaId).as("value"),
-            }).from(gamesList)
-            .innerJoin(games, eq(gamesList.mediaId, games.id))
-
-        const conditions = [
-            eq(games.playerPerspective, achievement.value as string),
-            notInArray(gamesList.status, [Status.DROPPED, Status.PLAN_TO_PLAY]),
-        ]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
     }
 
     // --- Advanced Stats  --------------------------------------------------

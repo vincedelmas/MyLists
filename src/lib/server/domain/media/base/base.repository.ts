@@ -4,7 +4,6 @@ import {MediaInfo} from "@/lib/types/activity.types";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {TopAffinityConfig} from "@/lib/types/stats.types";
-import {Achievement} from "@/lib/types/achievements.types";
 import {UpComingMedia} from "@/lib/types/notifications.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
@@ -1053,47 +1052,6 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
                 thisMonth: updatedThisMonth?.count || 0,
             }
         };
-    }
-
-    // --- Achievements ----------------------------------------------------
-
-    specificGenreAchievementCte(achievement: Achievement, userId?: number) {
-        const { mediaTable, listTable, genreTable } = this.config;
-
-        const baseCTE = getDbClient()
-            .select({
-                userId: listTable.userId,
-                value: count(listTable.mediaId).as("value"),
-            })
-            .from(listTable)
-            .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-            .innerJoin(genreTable, eq(mediaTable.id, genreTable.mediaId));
-
-        const conditions = [eq(listTable.status, Status.COMPLETED)];
-        if (achievement.value) conditions.push(eq(genreTable.name, achievement.value));
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    countAchievementCte(condition: SQL, _achievement: Achievement, userId?: number) {
-        const { listTable } = this.config;
-
-        const baseCTE = getDbClient()
-            .select({
-                userId: listTable.userId,
-                value: count(listTable.mediaId).as("value"),
-            }).from(listTable);
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, [condition], userId);
-    }
-
-    applyWhereConditionsAndGrouping(cte: any, baseConditions: SQL[], userId?: number) {
-        const { listTable } = this.config;
-        const conditions = userId ? [...baseConditions, eq(listTable.userId, userId)] : [...baseConditions];
-
-        return cte.where(and(...conditions))
-            .groupBy(listTable.userId)
-            .as("calculation");
     }
 
     // --- Advanced Stats ---------------------------------------------------

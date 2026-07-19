@@ -1,5 +1,4 @@
 import {Status} from "@/lib/utils/enums";
-import {Achievement} from "@/lib/types/achievements.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {EpsPerSeasonType} from "@/lib/types/media-list.types";
@@ -7,7 +6,7 @@ import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {TvType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {AnimeSchemaConfig} from "@/lib/server/domain/media/tv/anime/anime.config";
 import {SeriesSchemaConfig} from "@/lib/server/domain/media/tv/series/series.config";
-import {and, asc, count, countDistinct, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, ne, notInArray, or, sql} from "drizzle-orm";
+import {and, asc, count, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, ne, notInArray, or, sql} from "drizzle-orm";
 
 
 export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchemaConfig> {
@@ -50,64 +49,6 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
             .from(mediaTable)
             .where(and(or(eq(mediaTable.lockStatus, false), isNull(mediaTable.lockStatus)), refreshCriteria))
             .then((res) => res.map((m) => m.apiId));
-    }
-
-    // --- Achievements ----------------------------------------------------------
-
-    getDurationAchievementCte(achievement: Achievement, userId?: number) {
-        const { mediaTable, listTable } = this.config;
-
-        const value = parseInt(achievement.value!);
-        const isLong = achievement.codeName.includes("long");
-        const condition = isLong ? gte(mediaTable.totalEpisodes, value) : lte(mediaTable.totalEpisodes, value);
-
-        const baseCTE = getDbClient()
-            .select({
-                userId: listTable.userId,
-                value: count(listTable.mediaId).as("value"),
-            }).from(listTable)
-            .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-
-        const conditions = [eq(listTable.status, Status.COMPLETED), condition]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    getNetworkAchievementCte(_achievement: Achievement, userId?: number) {
-        const { listTable, networkTable } = this.config;
-
-        const baseCTE = getDbClient()
-            .select({
-                userId: listTable.userId,
-                value: countDistinct(networkTable.name).as("value"),
-            }).from(listTable)
-            .innerJoin(networkTable, eq(listTable.mediaId, networkTable.mediaId))
-
-        const conditions = [ne(listTable.status, Status.PLAN_TO_WATCH)]
-
-        return this.applyWhereConditionsAndGrouping(baseCTE, conditions, userId);
-    }
-
-    getActorAchievementCte(_achievement: Achievement, userId?: number) {
-        const { listTable, actorTable } = this.config;
-
-        const subQ = getDbClient()
-            .select({
-                userId: listTable.userId,
-                count: count(listTable.mediaId).as("count"),
-            }).from(listTable)
-            .innerJoin(actorTable, eq(listTable.mediaId, actorTable.mediaId))
-            .where(eq(listTable.status, Status.COMPLETED))
-            .groupBy(userId ? eq(listTable.userId, userId) : listTable.userId, actorTable.name)
-            .as("sub");
-
-        return getDbClient()
-            .select({
-                userId: subQ.userId,
-                value: max(subQ.count).as("value"),
-            }).from(subQ)
-            .groupBy(subQ.userId)
-            .as("calculation");
     }
 
     // --- Advanced Stats  --------------------------------------------------

@@ -1,40 +1,20 @@
-import {eq, isNotNull} from "drizzle-orm";
 import {notFound} from "@tanstack/react-router";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {Status, UpdateType} from "@/lib/utils/enums";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {Achievement} from "@/lib/types/achievements.types";
+import {LogPayload} from "@/lib/types/user-updates.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import {Manga, MangaList} from "@/lib/server/domain/media/manga/manga.types";
 import {MangaSchemaConfig} from "@/lib/server/domain/media/manga/manga.config";
 import {MangaRepository} from "@/lib/server/domain/media/manga/manga.repository";
-import {Manga, MangaAchCodeName, MangaList} from "@/lib/server/domain/media/manga/manga.types";
+import {MangaAchievements} from "@/lib/server/domain/media/manga/manga.achievements";
 import {ChapterPayload, RedoPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {LogPayload} from "@/lib/types/user-updates.types";
-import {StatsCTE} from "@/lib/types/media-common.types";
 
 
 export class MangaService extends BaseService<MangaSchemaConfig, MangaRepository> {
-    readonly achievementHandlers: Record<MangaAchCodeName, (achievement: Achievement, userId?: number) => StatsCTE>;
-
     constructor(repository: MangaRepository) {
-        super(repository);
-
-        const { listTable } = this.repository.config;
-
-        this.achievementHandlers = {
-            completed_manga: this.repository.countAchievementCte.bind(this.repository, eq(listTable.status, Status.COMPLETED)),
-            rated_manga: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.rating)),
-            comment_manga: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.comment)),
-            author_manga: this.repository.getAuthorsAchievementCte.bind(this.repository),
-            publisher_manga: this.repository.getPublishersAchievementCte.bind(this.repository),
-            short_manga: this.repository.getDurationAchievementCte.bind(this.repository),
-            long_manga: this.repository.getDurationAchievementCte.bind(this.repository),
-            chapter_manga: this.repository.getChaptersAchievementsCte.bind(this.repository),
-            hentai_manga: this.repository.specificGenreAchievementCte.bind(this.repository),
-            shounen_manga: this.repository.specificGenreAchievementCte.bind(this.repository),
-            seinen_manga: this.repository.specificGenreAchievementCte.bind(this.repository),
-        };
+        super(repository, new MangaAchievements(repository.config));
 
         this.updateHandlers = {
             ...this.updateHandlers,

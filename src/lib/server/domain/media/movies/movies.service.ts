@@ -1,40 +1,19 @@
-import {eq, isNotNull} from "drizzle-orm";
 import {notFound} from "@tanstack/react-router";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {Status, UpdateType} from "@/lib/utils/enums";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
-import {Achievement} from "@/lib/types/achievements.types";
+import {LogPayload} from "@/lib/types/user-updates.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import {Movie, MoviesList} from "@/lib/server/domain/media/movies/movies.types";
 import {MovieSchemaConfig} from "@/lib/server/domain/media/movies/movies.config";
 import {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
-import {Movie, MoviesAchCodeName, MoviesList} from "@/lib/server/domain/media/movies/movies.types";
-import {LogPayload} from "@/lib/types/user-updates.types";
+import {MoviesAchievements} from "@/lib/server/domain/media/movies/movies.achievements";
 import {RedoPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {StatsCTE} from "@/lib/types/media-common.types";
 
 
 export class MoviesService extends BaseService<MovieSchemaConfig, MoviesRepository> {
-    readonly achievementHandlers: Record<MoviesAchCodeName, (achievement: Achievement, userId?: number) => StatsCTE>;
-
     constructor(repository: MoviesRepository) {
-        super(repository);
-
-        const { listTable } = this.repository.config;
-
-        this.achievementHandlers = {
-            completed_movies: this.repository.countAchievementCte.bind(this.repository, eq(listTable.status, Status.COMPLETED)),
-            rated_movies: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.rating)),
-            comment_movies: this.repository.countAchievementCte.bind(this.repository, isNotNull(listTable.comment)),
-            long_movies: this.repository.getDurationAchievementCte.bind(this.repository),
-            short_movies: this.repository.getDurationAchievementCte.bind(this.repository),
-            director_movies: this.repository.getDirectorAchievementCte.bind(this.repository),
-            actor_movies: this.repository.getActorAchievementCte.bind(this.repository),
-            origin_lang_movies: this.repository.getLanguageAchievementCte.bind(this.repository),
-            war_genre_movies: this.repository.specificGenreAchievementCte.bind(this.repository),
-            family_genre_movies: this.repository.specificGenreAchievementCte.bind(this.repository),
-            sci_genre_movies: this.repository.specificGenreAchievementCte.bind(this.repository),
-            animation_movies: this.repository.specificGenreAchievementCte.bind(this.repository),
-        };
+        super(repository, new MoviesAchievements(repository.config));
 
         this.updateHandlers = {
             ...this.updateHandlers,

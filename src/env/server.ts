@@ -20,9 +20,6 @@ export const serverEnv = createEnv({
         ADMIN_MAIL_PASSWORD: z.string().min(8),
         ADMIN_TTL_COOKIE_MIN: z.coerce.number().int().default(10),
 
-        // DemoProfile
-        DEMO_PASSWORD: z.string().min(8),
-
         // Logging
         LOG_LEVEL: z.string().trim().default("info"),
         ADMIN_LOG_PREFIX: z.string().trim().default("mylists-"),

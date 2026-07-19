@@ -1,11 +1,17 @@
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
 import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {ArrowRight, Bug, ChevronDown, Code, Heart, LayoutGrid, Lightbulb, Monitor, Popcorn, Shield, Sprout, Trophy, Users} from "lucide-react";
+import {randomPublicProfile} from "@/lib/client/react-query/query-options";
+import {ArrowRight, Bug, ChevronDown, Code, Heart, LayoutGrid, Lightbulb, Monitor, Popcorn, Shield, Shuffle, Sprout, Trophy, Users} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_public/")({
+    loader: ({ context: { queryClient } }) => {
+        return queryClient.ensureQueryData(randomPublicProfile);
+    },
+    component: HomePage,
     head: () => ({
         links: addSeoLinks({ canonical: "/" }),
         meta: addSeo({
@@ -16,7 +22,6 @@ export const Route = createFileRoute("/_main/_public/")({
                 "achievements, collections, privacy controls and social discovery.",
         }),
     }),
-    component: HomePage,
 })
 
 
@@ -100,6 +105,8 @@ const floatingTileDelays = Array.from({ length: 32 }, (_, idx) => -((idx * 7) % 
 
 
 function HomePage() {
+    const randomProfile = useSuspenseQuery(randomPublicProfile).data;
+
     return (
         <PageTitle title="HomePage" onlyHelmet>
             <section className="relative flex flex-col items-center justify-center bg-cover h-150 w-[99.7vw] left-[calc(-50vw+50%)] max-sm:h-87">
@@ -124,11 +131,15 @@ function HomePage() {
                         Track all your media in one place, manage your lists, track time spent,
                         and follow other enthusiasts in one beautiful platform
                     </p>
-                    <Link to="/profile/$username" params={{ username: "DemoProfile" }}>
-                        <Button variant="emeraldy" size="lg" className="gap-2">
-                            Demo Profile <ArrowRight/>
-                        </Button>
-                    </Link>
+                    {randomProfile &&
+                        <Link to="/profile/$username" params={{ username: randomProfile.name }}>
+                            <Button variant="emeraldy" size="lg" className="gap-2">
+                                <Shuffle className="size-4"/>
+                                Explore a random profile
+                                <ArrowRight className="size-4"/>
+                            </Button>
+                        </Link>
+                    }
                 </div>
             </section>
 

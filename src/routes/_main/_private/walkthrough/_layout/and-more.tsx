@@ -48,8 +48,8 @@ function AndMoreOnboarding() {
             </OnboardingGrid>
 
             <OnboardingNote title="Where to find these?">
-                All of these features are available in the <strong>top navigation bar</strong>. Click on 'HoF', 'Trends',
-                or 'Moviedle' at any time to jump straight into the action!
+                All of these features are available in the <strong>top navigation bar</strong>. Click on 'Community' at any time to
+                jump straight into the action!
             </OnboardingNote>
         </OnboardingContainer>
     );

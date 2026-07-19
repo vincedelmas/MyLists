@@ -1,12 +1,12 @@
 import dedent from "dedent";
 import {Card} from "@/lib/client/components/ui/card";
-import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
-import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
+import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {ExternalLink, Heart, List, MessageCircle, Plus, RotateCcw, Star, Tags} from "lucide-react";
+import {ONBOARDING_MOVIE_ID, onboardingAddMediaFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
 import {
     OnboardingContainer,
     OnboardingDemoBox,
@@ -18,21 +18,14 @@ import {
 } from "@/lib/client/components/onboarding/OnBoardingShared";
 
 
-// Edge of Tomorrow
-const mediaId = 110;
-
-
 export const Route = createFileRoute("/_main/_private/walkthrough/_layout/add-media")({
-    loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(mediaDetailsOptions(MediaType.MOVIES, mediaId));
-    },
     component: RouteComponent,
 });
 
 
 function RouteComponent() {
-    const apiData = useSuspenseQuery(mediaDetailsOptions(MediaType.MOVIES, mediaId)).data;
-    const { media, userMedia } = apiData;
+    const { media, userMedia } = onboardingAddMediaFixture;
+    const onboardingQueryOption = mediaDetailsOptions(MediaType.MOVIES, ONBOARDING_MOVIE_ID);
 
     return (
         <OnboardingContainer>
@@ -84,9 +77,10 @@ function RouteComponent() {
                     {!!userMedia &&
                         <div className="max-w-100">
                             <UserMediaDetails
+                                preview
                                 userMedia={userMedia}
                                 mediaType={MediaType.MOVIES}
-                                queryOption={mediaDetailsOptions(MediaType.MOVIES, mediaId)}
+                                queryOption={onboardingQueryOption}
                             />
                         </div>
                     }

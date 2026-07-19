@@ -6,30 +6,19 @@ import {useQueryClient} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
-import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
 import {authOptions} from "@/lib/client/react-query/query-options";
+import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {Link, useLocation, useNavigate} from "@tanstack/react-router";
+import {MyMediaMenu} from "@/lib/client/components/navbar/MyMediaMenu";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
-import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {useFeatureFlagMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger
-} from "@/lib/client/components/ui/dropdown-menu";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 import {
     Activity,
-    Award,
     BarChart2,
-    Calendar,
-    ChartNoAxesColumn,
     ChevronDown,
     Clapperboard,
     GitCompareArrows,
@@ -43,7 +32,6 @@ import {
     User,
     UsersRound,
     X,
-    Zap
 } from "lucide-react";
 
 
@@ -56,12 +44,10 @@ export const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
-    const currentDate = useCurrentDate();
     const { currentUser, isAnonymous } = useAuth();
     const { openLogin, openRegister } = useAuthModal();
     const featureFlagMutation = useFeatureFlagMutation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [currentYear, currentMonth] = currentDate?.split("-") ?? [];
 
     const logoutUser = async () => {
         await authClient.signOut();
@@ -164,74 +150,11 @@ export const Navbar = () => {
                             </div>
                             :
                             <>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger className={navStyle()}>
-                                        MyMedia
-                                        <ChevronDown className="ml-2 size-3 opacity-70"/>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-92 p-0" align="end">
-                                        <div className="grid grid-cols-2">
-                                            <div className="bg-muted/30 pt-1 pb-2 px-3">
-                                                <DropdownMenuLabel className="mb-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-                                                    Tracking Lists
-                                                </DropdownMenuLabel>
-                                                <DropdownMenuGroup>
-                                                    {currentUser.settings
-                                                        .filter((s) => s.active)
-                                                        .map((setting) =>
-                                                            <DropdownMenuItem key={setting.mediaType} asChild>
-                                                                <Link
-                                                                    to="/list/$mediaType/$username"
-                                                                    params={{ mediaType: setting.mediaType, username: currentUser.name }}
-                                                                >
-                                                                    <MainThemeIcon type={setting.mediaType}/>
-                                                                    {capitalize(setting.mediaType)} List
-                                                                </Link>
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                </DropdownMenuGroup>
-                                            </div>
-                                            <div className="border-l pt-1 pb-2 px-3">
-                                                <DropdownMenuLabel className="mb-2 text-[10px] uppercase tracking-wide text-muted-foreground">
-                                                    Personal
-                                                </DropdownMenuLabel>
-                                                <DropdownMenuGroup>
-                                                    <DropdownMenuItem asChild>
-                                                        <Link to="/stats/$username" params={{ username: currentUser.name }}>
-                                                            <ChartNoAxesColumn className="size-4"/> My Stats
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                    {currentYear && currentMonth &&
-                                                        <DropdownMenuItem asChild>
-                                                            <Link
-                                                                to="/activity/$username"
-                                                                params={{ username: currentUser.name }}
-                                                                search={{ year: currentYear, month: String(Number(currentMonth)) }}
-                                                            >
-                                                                <Zap className="size-4"/> My Activity
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                    }
-                                                    <DropdownMenuItem asChild>
-                                                        <Link to="/coming-next">
-                                                            <Calendar className="size-4"/> Coming Next
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem asChild>
-                                                        <Link to="/collections/user/$username" params={{ username: currentUser.name }}>
-                                                            <ListOrdered className="size-4"/> My Collections
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem asChild>
-                                                        <Link to="/achievements/$username" params={{ username: currentUser.name }}>
-                                                            <Award className="size-4"/> My Achievements
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuGroup>
-                                            </div>
-                                        </div>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                <MyMediaMenu
+                                    username={currentUser.name}
+                                    triggerClassName={navStyle()}
+                                    settings={currentUser.settings}
+                                />
 
                                 <Notifications/>
 

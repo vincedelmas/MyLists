@@ -61,7 +61,7 @@ export const OnboardingDemoBox = ({ children, className }: { children: React.Rea
         className={cn(
             "p-8 bg-accent/20 rounded-xl border border-dashed flex",
             "justify-center items-center relative group pointer-events-none",
-            "select-none", className,
+            "select-none max-sm:px-3 max-sm:py-6", className,
         )}
     >
         {children}

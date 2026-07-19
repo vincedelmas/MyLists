@@ -160,6 +160,10 @@ export class UserService {
         return this.repository.findByUsername(username);
     }
 
+    async getRandomPublicProfile() {
+        return this.repository.getRandomPublicProfile();
+    }
+
     async getUserById(userId: number) {
         return this.repository.findById(userId);
     }

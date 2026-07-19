@@ -47,7 +47,6 @@ export class UserSimilarityRepository {
             INNER JOIN user AS candidate_user ON candidate_user.id = shared.candidate_id
             WHERE candidate_user.email_verified = 1
                 AND candidate_user.privacy <> ${PrivacyType.PRIVATE}
-                AND candidate_user.name <> 'DemoProfile'
             GROUP BY shared.candidate_id, shared.media_type
         `);
     }

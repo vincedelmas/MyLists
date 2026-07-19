@@ -576,7 +576,6 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
 
         const conditions = and(
             eq(listTable.mediaId, mediaId),
-            ne(user.name, "DemoProfile"),
             userId ? inArray(user.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]) : eq(user.privacy, PrivacyType.PUBLIC),
         );
 

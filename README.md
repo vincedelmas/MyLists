@@ -99,8 +99,6 @@ Below is an explanation for each key found in `.env.example`:
 | **Admin Mail Service**                      |                                                             |          |                                |
 | `ADMIN_MAIL_USERNAME`                       | SMTP username/email used to send verification emails        | ✅        |                                |
 | `ADMIN_MAIL_PASSWORD`                       | SMTP password                                               | ✅        |                                |
-| **Demo User**                               |                                                             |          |                                |
-| `DEMO_PASSWORD`                             | Password for demo profile (if enabled)                      | ❌        |                                |
 | **Cache / Redis**                           |                                                             |          |                                |
 | `CACHE_TTL_MIN`                             | Cache duration (min)                                        | ❌        | `5`                            |
 | `REDIS_ENABLED`                             | Enables Redis-backed cache, rate limits, and API monitoring | ❌        | `false`                        |

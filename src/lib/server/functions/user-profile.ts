@@ -37,6 +37,13 @@ export const getUserProfileHeader = createServerFn({ method: "GET" })
     });
 
 
+export const getRandomPublicProfile = createServerFn({ method: "GET" })
+    .handler(async () => {
+        const userService = await getContainer().then((container) => container.services.user);
+        return userService.getRandomPublicProfile();
+    });
+
+
 export const getUserProfile = createServerFn({ method: "GET" })
     .middleware([authorizationMiddleware])
     .handler(async ({ context: { currentUser, user } }) => {

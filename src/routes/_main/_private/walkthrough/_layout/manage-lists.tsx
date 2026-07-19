@@ -1,13 +1,12 @@
-import React from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {createFileRoute} from "@tanstack/react-router";
-import {useSuspenseQuery} from "@tanstack/react-query";
 import {Header} from "@/lib/client/components/media/base/Header";
-import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 import {AlertTriangle, Bookmark, Grid2X2, ListFilter, Play, Plus, PlusCircle, Search, Settings2, Star, Users} from "lucide-react";
+import {ONBOARDING_PROFILE_NAME, onboardingListPagination, onboardingMovieFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
 import {
     OnboardingContainer,
     OnboardingDemoBox,
@@ -20,15 +19,12 @@ import {
 
 
 export const Route = createFileRoute("/_main/_private/walkthrough/_layout/manage-lists")({
-    loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(mediaListOptions(MediaType.MOVIES, "DemoProfile", {}));
-    },
     component: ListsOnboarding,
 });
 
 
 function ListsOnboarding() {
-    const apiData = useSuspenseQuery(mediaListOptions(MediaType.MOVIES, "DemoProfile", {})).data;
+    const onboardingQueryOption = mediaListOptions(MediaType.MOVIES, ONBOARDING_PROFILE_NAME, {});
 
     return (
         <OnboardingContainer>
@@ -51,7 +47,7 @@ function ListsOnboarding() {
                     <Header
                         filters={{}}
                         isGrid={true}
-                        pagination={apiData.results.pagination}
+                        pagination={onboardingListPagination}
                         onGridClick={() => undefined}
                         onSortChange={() => undefined}
                         onFilterClick={() => undefined}
@@ -101,11 +97,11 @@ function ListsOnboarding() {
                         isConnected={true}
                         isMediaTypeActive={true}
                         mediaType={MediaType.MOVIES}
-                        userMedia={apiData.results.items[0]}
-                        queryOption={mediaListOptions(MediaType.MOVIES, "DemoProfile", {})}
-                        redoDisplay={"redo" in apiData.results.items[0] && !!apiData.results.items[0].redo &&
+                        userMedia={onboardingMovieFixture}
+                        queryOption={onboardingQueryOption}
+                        redoDisplay={!!onboardingMovieFixture.redo &&
                             <DisplayRedoValue
-                                redoValue={apiData.results.items[0].redo}
+                                redoValue={onboardingMovieFixture.redo}
                             />
                         }
                     />

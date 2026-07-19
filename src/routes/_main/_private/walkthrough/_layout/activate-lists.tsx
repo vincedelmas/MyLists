@@ -1,6 +1,7 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {ArrowRight, List, MousePointer2, Settings} from "lucide-react";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {ONBOARDING_PROFILE_NAME} from "@/lib/client/components/onboarding/onboarding-fixtures";
 import {OnboardingContainer, OnboardingDemoBox, OnboardingNote, OnboardingSection, OnboardingSubSection} from "@/lib/client/components/onboarding/OnBoardingShared";
 
 
@@ -37,7 +38,7 @@ function ActiveListsOnboarding() {
                             <ProfileIcon
                                 fallbackSize="text-base"
                                 className="size-10 border-none"
-                                user={{ name: "DemoProfile", image: "" }}
+                                user={{ name: ONBOARDING_PROFILE_NAME, image: "" }}
                             />
                         </div>
                         <ArrowRight className="size-4 text-muted-foreground"/>

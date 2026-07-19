@@ -5,7 +5,7 @@ import {DeltaStats} from "@/lib/types/stats.types";
 import {UserMediaStats} from "@/lib/types/user-media.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
-import {and, count, countDistinct, eq, gt, inArray, ne, SQL, sql, sum} from "drizzle-orm";
+import {and, count, countDistinct, eq, gt, inArray, SQL, sql, sum} from "drizzle-orm";
 import {user, userMediaSettings, userMediaStatsHistory} from "@/lib/server/database/schema";
 
 
@@ -145,7 +145,6 @@ export class UserStatsRepository {
             .from(user)
             .innerJoin(umsAlias, eq(user.id, umsAlias.userId))
             .leftJoin(maxTimePerMedia, eq(umsAlias.mediaType, maxTimePerMedia.mediaType))
-            .where(ne(user.name, "DemoProfile"))
             .groupBy(user.id, user.name, user.image)
             .as("base_sub");
 

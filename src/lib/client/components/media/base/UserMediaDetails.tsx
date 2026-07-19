@@ -23,21 +23,22 @@ import {
 
 
 interface UserMediaDetailsProps {
+    preview?: boolean;
     mediaType: MediaType;
     queryOption: UserMediaQueryOption;
     userMedia: UserMedia | UserMediaItem;
 }
 
 
-export const UserMediaDetails = ({ userMedia, mediaType, queryOption }: UserMediaDetailsProps) => {
+export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = false }: UserMediaDetailsProps) => {
     const confirm = useConfirm();
     const queryClient = useQueryClient();
     const [backlogDate, setBacklogDate] = useState("");
     const [backlogMode, setBacklogMode] = useState(false);
-    const history = useQuery(historyOptions(mediaType, userMedia.mediaId)).data;
     const removeMediaFromListMutation = useRemoveMediaFromListMutation(queryOption);
     const updateCustomCoverMutation = useUpdateCustomCoverMutation(queryOption, { noErrorToast: true });
     const [activeTab, setActiveTab] = useState<"progress" | "history" | "custom">("progress");
+    const history = useQuery({ ...historyOptions(mediaType, userMedia.mediaId), enabled: !preview }).data;
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, {
         backlogMode,
         loggedAt: backlogMode ? backlogDate : undefined,

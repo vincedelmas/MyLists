@@ -3,10 +3,10 @@ import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
-import {ProviderSearchResult, ProviderSearchResults} from "@/lib/types/provider.types";
 import {followers, user, userMediaSettings} from "@/lib/server/database/schema";
+import {and, asc, count, desc, eq, gte, isNotNull, like, sql, sum} from "drizzle-orm";
+import {ProviderSearchResult, ProviderSearchResults} from "@/lib/types/provider.types";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, SocialState} from "@/lib/utils/enums";
-import {and, asc, count, desc, eq, isNotNull, like, sql} from "drizzle-orm";
 
 
 const orderByMediaType = sql`
@@ -267,6 +267,22 @@ export class UserRepository {
             .select()
             .from(user)
             .where(eq(user.name, name))
+            .get();
+    }
+
+    static async getRandomPublicProfile() {
+        return getDbClient()
+            .select({ name: user.name })
+            .from(user)
+            .innerJoin(userMediaSettings, eq(userMediaSettings.userId, user.id))
+            .where(and(
+                eq(user.emailVerified, true),
+                eq(user.privacy, PrivacyType.PUBLIC),
+                eq(userMediaSettings.active, true),
+            ))
+            .groupBy(user.id, user.name)
+            .having(gte(sum(userMediaSettings.timeSpent), 5000))
+            .orderBy(sql`random()`)
             .get();
     }
 

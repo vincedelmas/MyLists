@@ -1,5 +1,7 @@
 import {createFileRoute} from "@tanstack/react-router";
-import {Bell, Calendar, CalendarDays, ChevronDown, Clock, Gamepad2, Monitor, MousePointer2, Popcorn} from "lucide-react";
+import {MyMediaMenu} from "@/lib/client/components/navbar/MyMediaMenu";
+import {Bell, Calendar, CalendarDays, Clock, Gamepad2, MousePointer2} from "lucide-react";
+import {ONBOARDING_PROFILE_NAME, onboardingProfileFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
 import {
     OnboardingContainer,
     OnboardingDemoBox,
@@ -35,33 +37,13 @@ function ComingNextOnboarding() {
                 title="Where to find it"
                 description={<>Access your release calendar directly from the navbar under the <b>MyMedia</b> menu.</>}
             >
-                <OnboardingDemoBox className="flex-col gap-4">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-background border rounded-md text-sm font-medium">
-                        MyMedia
-                        <ChevronDown className="size-3 opacity-70"/>
-                    </div>
-
-                    <div className="w-56 border rounded-lg bg-popover shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 pb-1">
-                        <div className="p-2 text-[10px] uppercase tracking-wide text-muted-foreground font-bold">
-                            Tracking Lists
-                        </div>
-                        <div className="px-2 pb-2 space-y-1 opacity-40">
-                            <div className="flex items-center gap-2 p-2 text-sm rounded-md">
-                                <Popcorn className="size-4"/> Movies List
-                            </div>
-                            <div className="flex items-center gap-2 p-2 text-sm rounded-md">
-                                <Monitor className="size-4"/> Series List
-                            </div>
-                        </div>
-                        <div className="border-t border-border my-1"/>
-                        <div className="p-1">
-                            <div className="flex items-center gap-2 p-2 text-sm rounded-md bg-app-accent/20 text-app-accent font-bold ring-1 ring-app-accent/30">
-                                <Calendar className="size-4"/>
-                                Coming Next
-                                <div className="ml-auto bg-app-accent text-black text-[9px] px-1 rounded">CLICK</div>
-                            </div>
-                        </div>
-                    </div>
+                <OnboardingDemoBox>
+                    <MyMediaMenu
+                        preview
+                        highlightComingNext
+                        username={ONBOARDING_PROFILE_NAME}
+                        settings={onboardingProfileFixture.userData.userMediaSettings}
+                    />
                 </OnboardingDemoBox>
             </OnboardingSubSection>
 

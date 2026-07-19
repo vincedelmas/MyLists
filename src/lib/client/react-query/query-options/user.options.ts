@@ -1,12 +1,12 @@
 import {queryOptions} from "@tanstack/react-query";
-import {HallOfFameSearch, highlightedMediaSearchSchema, SimpleSearch, StatsActiveTab} from "@/lib/schemas";
 import {getUserStats} from "@/lib/server/functions/user-stats";
 import {getHallOfFame} from "@/lib/server/functions/hall-of-fame";
 import {HighlightedMediaTab} from "@/lib/types/profile-custom.types";
 import {getPlatformStats} from "@/lib/server/functions/platform-stats";
 import {getUserAchievements} from "@/lib/server/functions/user-achievements";
 import {getProfileCustomSearch, getProfileCustomSettings} from "@/lib/server/functions/user-settings";
-import {getAllUpdatesHistory, getUserProfile, getUserProfileHeader, getUsersFollowers, getUsersFollows} from "@/lib/server/functions/user-profile";
+import {HallOfFameSearch, highlightedMediaSearchSchema, SimpleSearch, StatsActiveTab} from "@/lib/schemas";
+import {getAllUpdatesHistory, getRandomPublicProfile, getUserProfile, getUserProfileHeader, getUsersFollowers, getUsersFollows} from "@/lib/server/functions/user-profile";
 
 
 export const profileHeaderOptions = (username: string) => queryOptions({
@@ -83,4 +83,11 @@ export const userStatsOptions = (username: string, activeTab: StatsActiveTab) =>
 export const platformStatsOptions = (activeTab: StatsActiveTab) => queryOptions({
     queryKey: ["platformStats", activeTab],
     queryFn: () => getPlatformStats({ data: { activeTab } }),
+});
+
+
+export const randomPublicProfile = queryOptions({
+    queryKey: ["profile", "random-public"],
+    queryFn: getRandomPublicProfile,
+    refetchOnMount: "always",
 });

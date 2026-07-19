@@ -18,13 +18,19 @@ import {booksAchievements} from "@/lib/server/domain/media/books/achievements/bo
 import {BookAchievementCalculator} from "@/lib/server/domain/media/books/achievements/book-achievement-calculator";
 import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achievements/media-achievement-calculator";
 import {bookActivityDefinition} from "@/lib/server/domain/media/books/activity/book-activity.definition";
+import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
+import {CommonLibraryService} from "@/lib/server/domain/media/shared/library/common-library.service";
 
 
 export const setupBookMediaModule = (
     gBooks: GBooksApi,
 ) => {
-    const libraryRepository = new BookLibraryRepository();
-    const library = new BookLibraryService(libraryRepository);
+    const commonLibraryRepository = new CommonLibraryRepository(MediaType.BOOKS);
+    const libraryRepository = new BookLibraryRepository(commonLibraryRepository);
+    const library = new BookLibraryService(
+        libraryRepository,
+        new CommonLibraryService(commonLibraryRepository),
+    );
     const catalogRepository = new BookCatalogIngestionRepository();
     const catalogCommands = new BookCatalogIngestionCommand(catalogRepository, library);
     const catalogRead = new BookCatalogReadRepository();

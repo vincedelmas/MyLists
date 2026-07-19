@@ -20,13 +20,19 @@ import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achie
 import {MangaWcfPoolSource} from "@/lib/server/domain/media/manga/features/which-came-first/manga-wcf-pool-source";
 import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import {mangaActivityDefinition} from "@/lib/server/domain/media/manga/activity/manga-activity.definition";
+import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
+import {CommonLibraryService} from "@/lib/server/domain/media/shared/library/common-library.service";
 
 
 export const setupMangaMediaModule = (
     jikan: JikanApi,
 ) => {
-    const libraryRepository = new MangaLibraryRepository();
-    const library = new MangaLibraryService(libraryRepository);
+    const commonLibraryRepository = new CommonLibraryRepository(MediaType.MANGA);
+    const libraryRepository = new MangaLibraryRepository(commonLibraryRepository);
+    const library = new MangaLibraryService(
+        libraryRepository,
+        new CommonLibraryService(commonLibraryRepository),
+    );
     const catalogRead = new MangaCatalogReadRepository();
     const catalogRepository = new MangaCatalogIngestionRepository();
     const catalogCommands = new MangaCatalogIngestionCommand(catalogRepository, library);

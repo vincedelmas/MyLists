@@ -1,19 +1,18 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {GamesPlatformsEnum, JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {UpdateUserCustomCover, UpdateUserMedia} from "@/lib/contracts/media/library";
+import {GamesPlatformsEnum, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {UpdateUserMedia} from "@/lib/contracts/media/library";
 import {GamesFinalListInsert} from "@/lib/server/domain/media/games/imports/game-import.schemas";
-import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {GameLibraryEntry, GameLibraryRepository} from "@/lib/server/domain/media/games/library/game-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {changeGameStatus, createInitialGameProgress, importGameProgress, replaceGamePlatform, replaceGamePlaytime,} from "@/lib/server/domain/media/games/library/game-progress";
-import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
-import {SearchType, SimpleSearch} from "@/lib/schemas";
+import {SearchType} from "@/lib/schemas";
 import {GameListArgs} from "@/lib/contracts/media/lists";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {GameStatsRepository} from "@/lib/server/domain/media/games/library/game-stats.repository";
 import {exportGameLibraryCsv} from "@/lib/server/domain/media/games/library/game-library-csv-export";
-import {prepareLibraryCustomCover} from "@/lib/server/domain/media/shared/library/library-custom-cover";
 import type {UpComingMedia} from "@/lib/types/notifications.types";
+import {CommonLibraryService, LibraryStatsSnapshot} from "@/lib/server/domain/media/shared/library/common-library.service";
+import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
 
 
 /** Complete game library capability over one persistence boundary. */
@@ -21,11 +20,10 @@ export class GameLibraryService {
     readonly stats = GameStatsRepository;
     readonly export = { csv: exportGameLibraryCsv };
 
-    constructor(private readonly repository = new GameLibraryRepository()) {
-    }
-
-    getUserMediaHistory(userId: number, catalogItemId: number) {
-        return this.repository.getUserMediaHistory(userId, catalogItemId);
+    constructor(
+        private readonly repository = new GameLibraryRepository(),
+        readonly common = new CommonLibraryService(new CommonLibraryRepository(MediaType.GAMES)),
+    ) {
     }
 
     findUserMedia(userId: number | undefined, catalogItemId: number) {
@@ -40,10 +38,6 @@ export class GameLibraryService {
         return this.repository.getCommunityActivity(viewerId, catalogItemId, search);
     }
 
-    getListHeader(userId: number) {
-        return this.repository.getListHeader(userId);
-    }
-
     getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: GameListArgs) {
         return this.repository.getMediaList(currentUserId, access, args);
     }
@@ -54,14 +48,6 @@ export class GameLibraryService {
 
     getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
         return this.repository.getSearchListFilters(access, query, job);
-    }
-
-    getTagsView(access: MediaListAccessScope, search: SimpleSearch) {
-        return this.repository.getTagsView(access, search);
-    }
-
-    getTagNames(userId: number) {
-        return this.repository.getTagNames(userId);
     }
 
     async upcoming(ownerId: number): Promise<UpComingMedia[]> {
@@ -86,11 +72,11 @@ export class GameLibraryService {
                 if (params.payload.platform === undefined) throw new Error("Game platform payload is missing platform.");
                 return this.replacePlatform({ ...common, platform: params.payload.platform });
             case UpdateType.RATING:
-                return this.updateRating({ ...common, rating: params.payload.rating ?? null });
+                return this.common.updateRating({ ...common, rating: params.payload.rating ?? null });
             case UpdateType.COMMENT:
-                return this.updateComment({ ...common, comment: params.payload.comment ?? null });
+                return this.common.updateComment({ ...common, comment: params.payload.comment ?? null });
             case UpdateType.FAVORITE:
-                return this.updateFavorite({ ...common, favorite: params.payload.favorite ?? false });
+                return this.common.updateFavorite({ ...common, favorite: params.payload.favorite ?? false });
             default:
                 throw new Error("Unsupported game update type.");
         }
@@ -109,25 +95,18 @@ export class GameLibraryService {
         });
     }
 
-    async editTag(params: { userId: number; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
-        const libraryEntryId = params.mediaId ? (await this.get(params.userId, params.mediaId))?.id : undefined;
-        return this.repository.editTag({
-            userId: params.userId, action: params.action,
-            name: params.tag.name, oldName: params.tag.oldName, libraryEntryId,
-        });
-    }
-
     async add(params: { userId: number; catalogItemId: number; status?: Status; silent?: boolean }) {
         if (!await this.repository.getGameCatalogItem(params.catalogItemId)) throw new FormattedError("Media not found");
         if (await this.repository.findEntry(params.userId, params.catalogItemId)) throw new FormattedError("Media already in your list");
         const progress = createInitialGameProgress(params.status ?? Status.PLAN_TO_PLAY);
-        const entryId = await this.repository.createEntry({ ...params, status: progress.status, progress });
+        await this.repository.createEntry({ ...params, status: progress.status, progress });
         const created = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(undefined, created);
-        if (!params.silent) {
-            await this.repository.recordChange(entryId, UpdateType.STATUS, null, progress.status);
-            await this.recordActivity(undefined, created);
-        }
+        await this.common.recordCreatedEntry({
+            entryId: created.id,
+            snapshot: statsSnapshot(created),
+            activity: activityContribution(undefined, created),
+            silent: params.silent,
+        });
         return created;
     }
 
@@ -162,32 +141,44 @@ export class GameLibraryService {
             customCover: params.customCover ?? null,
         });
         const imported = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(undefined, imported);
+        await this.common.applyStatsTransition(undefined, statsSnapshot(imported));
         return imported;
     }
 
     async changeStatus(params: { userId: number; catalogItemId: number; status: Status; loggedAt?: string }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        return this.persistLoggedTransition(
-            current,
-            changeGameStatus(current.progress, params.status),
-            UpdateType.STATUS,
-            current.progress.status,
-            params.status,
-            params,
-        );
+        const progress = changeGameStatus(current.progress, params.status);
+        await this.repository.saveProgress(current.id, progress);
+        const updated = await this.requireEntry(current.userId, current.catalogItemId);
+        await this.common.recordEntryTransition({
+            entryId: current.id,
+            before: statsSnapshot(current),
+            after: statsSnapshot(updated),
+            activity: activityContribution(current, updated),
+            updateType: UpdateType.STATUS,
+            oldValue: current.progress.status,
+            newValue: params.status,
+            loggedAt: params.loggedAt,
+        });
+        return updated;
     }
 
     async replacePlaytime(params: { userId: number; catalogItemId: number; playtime: number; loggedAt?: string }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        return this.persistLoggedTransition(
-            current,
-            replaceGamePlaytime(current.progress, params.playtime),
-            UpdateType.PLAYTIME,
-            current.progress.playtimeMinutes,
-            params.playtime,
-            params,
-        );
+        const progress = replaceGamePlaytime(current.progress, params.playtime);
+        await this.repository.saveProgress(current.id, progress);
+        const updated = await this.requireEntry(current.userId, current.catalogItemId);
+        await this.common.recordEntryTransition({
+            entryId: current.id,
+            before: statsSnapshot(current),
+            after: statsSnapshot(updated),
+            activity: activityContribution(current, updated),
+            updateType: UpdateType.PLAYTIME,
+            oldValue: current.progress.playtimeMinutes,
+            newValue: params.playtime,
+            loggedAt: params.loggedAt,
+        });
+        return updated;
     }
 
     async replacePlatform(params: { userId: number; catalogItemId: number; platform: GamesPlatformsEnum | null }) {
@@ -196,104 +187,9 @@ export class GameLibraryService {
         return this.requireEntry(current.userId, current.catalogItemId);
     }
 
-    updateRating(params: { userId: number; catalogItemId: number; rating: number | null }) {
-        if (params.rating !== null && (params.rating < 0 || params.rating > 10)) throw new FormattedError("Rating must be between 0 and 10.");
-        return this.updateCommon(params, { rating: params.rating });
-    }
-
-    updateComment(params: { userId: number; catalogItemId: number; comment: string | null }) {
-        return this.updateCommon(params, { comment: params.comment });
-    }
-
-    updateFavorite(params: { userId: number; catalogItemId: number; favorite: boolean }) {
-        return this.updateCommon(params, { favorite: params.favorite });
-    }
-
-    async updateCustomCover(userId: number, input: UpdateUserCustomCover) {
-        await this.requireEntry(userId, input.mediaId);
-        const customCover = await prepareLibraryCustomCover(MediaType.GAMES, input);
-        await this.updateCommon({ userId, catalogItemId: input.mediaId }, { customCover });
-
-        const result = await this.repository.findUserMedia(userId, input.mediaId);
-        if (!result) throw new FormattedError("Media not in your list");
-        return result;
-    }
-
     async remove(params: { userId: number; catalogItemId: number }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(current, undefined);
-        await this.repository.removeEntry(current.id);
-    }
-
-    synchronizeProfileChannel(params: { userId: number; enabled: boolean; views: number }) {
-        return this.repository.synchronizeProfileChannel(params.userId, params.enabled, params.views);
-    }
-
-    private async persistLoggedTransition(
-        current: GameLibraryEntry,
-        progress: GameLibraryEntry["progress"],
-        updateType: typeof UpdateType.STATUS | typeof UpdateType.PLAYTIME,
-        oldValue: LibraryChangeValue,
-        newValue: LibraryChangeValue,
-        metadata: { loggedAt?: string },
-    ) {
-        await this.repository.saveProgress(current.id, progress);
-        const updated = await this.requireEntry(current.userId, current.catalogItemId);
-        await this.applyStatsTransition(current, updated);
-        await this.recordActivity(current, updated, metadata.loggedAt);
-        await this.repository.recordChange(current.id, updateType, oldValue, newValue, metadata.loggedAt);
-        return updated;
-    }
-
-    private async updateCommon(
-        params: { userId: number; catalogItemId: number },
-        fields: Parameters<GameLibraryRepository["updateCommonFields"]>[1],
-    ) {
-        const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.repository.updateCommonFields(current.id, fields);
-        const updated = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(current, updated);
-        return updated;
-    }
-
-    private async applyStatsTransition(before?: GameLibraryEntry, after?: GameLibraryEntry) {
-        const sample = after ?? before;
-        if (!sample) return;
-        const current = await this.repository.getStats(sample.userId);
-        const beforeMetrics = entryMetrics(before);
-        const afterMetrics = entryMetrics(after);
-        const statusCounts = { ...(current?.statusCounts ?? {}) };
-        if (before) statusCounts[before.progress.status] = Math.max(0, (statusCounts[before.progress.status] ?? 0) - 1);
-        if (after) statusCounts[after.progress.status] = (statusCounts[after.progress.status] ?? 0) + 1;
-        const entriesRated = Math.max(0, (current?.entriesRated ?? 0) + afterMetrics.rated - beforeMetrics.rated);
-        const ratingSum = Math.max(0, (current?.ratingSum ?? 0) + afterMetrics.rating - beforeMetrics.rating);
-
-        await this.repository.saveStats({
-            userId: sample.userId,
-            kind: MediaType.GAMES,
-            timeSpentMinutes: Math.max(0, (current?.timeSpentMinutes ?? 0) + afterMetrics.time - beforeMetrics.time),
-            totalEntries: Math.max(0, (current?.totalEntries ?? 0) + Number(!!after) - Number(!!before)),
-            totalRedo: 0,
-            entriesRated,
-            ratingSum,
-            entriesCommented: Math.max(0, (current?.entriesCommented ?? 0) + afterMetrics.commented - beforeMetrics.commented),
-            entriesFavorited: Math.max(0, (current?.entriesFavorited ?? 0) + afterMetrics.favorited - beforeMetrics.favorited),
-            totalSpecific: 0,
-            statusCounts,
-            averageRating: entriesRated > 0 ? ratingSum / entriesRated : null,
-        });
-    }
-
-    private async recordActivity(before: GameLibraryEntry | undefined, after: GameLibraryEntry, loggedAt?: string) {
-        const occurredAt = loggedAt ? `${loggedAt} 12:00:00` : new Date().toISOString();
-        await this.repository.recordActivity({
-            entryId: after.id,
-            unitsGained: after.progress.playtimeMinutes - (before?.progress.playtimeMinutes ?? 0),
-            completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,
-            redo: false,
-            monthBucket: monthBucketFromDateInput(new Date(occurredAt)),
-            occurredAt,
-        });
+        return this.common.removeEntry(current.id, statsSnapshot(current));
     }
 
     private async requireEntry(userId: number, catalogItemId: number) {
@@ -304,13 +200,20 @@ export class GameLibraryService {
 }
 
 
-const entryMetrics = (entry?: GameLibraryEntry) => {
-    if (!entry) return { time: 0, rated: 0, rating: 0, commented: 0, favorited: 0 };
-    return {
-        time: entry.progress.playtimeMinutes,
-        rated: Number(entry.rating !== null),
-        rating: entry.rating ?? 0,
-        commented: Number(!!entry.comment),
-        favorited: Number(entry.favorite),
-    };
-};
+const statsSnapshot = (entry: GameLibraryEntry): LibraryStatsSnapshot => ({
+    userId: entry.userId,
+    status: entry.progress.status,
+    time: entry.progress.playtimeMinutes,
+    redo: 0,
+    specific: 0,
+    rated: Number(entry.rating !== null),
+    rating: entry.rating ?? 0,
+    commented: Number(!!entry.comment),
+    favorited: Number(entry.favorite),
+});
+
+const activityContribution = (before: GameLibraryEntry | undefined, after: GameLibraryEntry) => ({
+    unitsGained: after.progress.playtimeMinutes - (before?.progress.playtimeMinutes ?? 0),
+    completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,
+    redo: false,
+});

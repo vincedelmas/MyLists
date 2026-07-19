@@ -1,8 +1,7 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {UpdateUserCustomCover, UpdateUserMedia} from "@/lib/contracts/media/library";
+import {JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {UpdateUserMedia} from "@/lib/contracts/media/library";
 import {TvFinalListInsert} from "@/lib/server/domain/media/tv/imports/tv-import.schemas";
-import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {TvLibraryEntry, TvLibraryRepository} from "@/lib/server/domain/media/tv/library/tv-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {
@@ -13,18 +12,17 @@ import {
     reconcileTvSeasons,
     replaceTvRewatches,
     totalTvRewatchCount,
-    TvProgressState,
     TvSeasonRewatchState,
 } from "@/lib/server/domain/media/tv/library/tv-progress";
-import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
 import {TvMediaType} from "@/lib/types/media-kind.types";
-import {SearchType, SimpleSearch} from "@/lib/schemas";
+import {SearchType} from "@/lib/schemas";
 import {TvListArgs} from "@/lib/contracts/media/lists";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {TvStatsRepository} from "@/lib/server/domain/media/tv/library/tv-stats.repository";
 import {exportTvLibraryCsv} from "@/lib/server/domain/media/tv/library/tv-library-csv-export";
-import {prepareLibraryCustomCover} from "@/lib/server/domain/media/shared/library/library-custom-cover";
 import type {UpComingMedia} from "@/lib/types/notifications.types";
+import {CommonLibraryService, LibraryStatsSnapshot} from "@/lib/server/domain/media/shared/library/common-library.service";
+import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
 
 
 /** Complete series/anime library capability over one persistence boundary. */
@@ -35,13 +33,10 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
     constructor(
         private readonly kind: K,
         private readonly repository = new TvLibraryRepository(kind),
+        readonly common = new CommonLibraryService(new CommonLibraryRepository(kind)),
     ) {
         this.stats = new TvStatsRepository(kind);
         this.export = { csv: (userId: number) => exportTvLibraryCsv(kind, userId) };
-    }
-
-    getUserMediaHistory(userId: number, catalogItemId: number) {
-        return this.repository.getUserMediaHistory(userId, catalogItemId);
     }
 
     findUserMedia(userId: number | undefined, catalogItemId: number) {
@@ -56,10 +51,6 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
         return this.repository.getCommunityActivity(viewerId, catalogItemId, search);
     }
 
-    getListHeader(userId: number) {
-        return this.repository.getListHeader(userId);
-    }
-
     getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: TvListArgs) {
         return this.repository.getMediaList(currentUserId, access, args);
     }
@@ -70,14 +61,6 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
 
     getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
         return this.repository.getSearchListFilters(access, query, job);
-    }
-
-    getTagsView(access: MediaListAccessScope, search: SimpleSearch) {
-        return this.repository.getTagsView(access, search);
-    }
-
-    getTagNames(userId: number) {
-        return this.repository.getTagNames(userId);
     }
 
     async upcoming(ownerId: number): Promise<UpComingMedia[]> {
@@ -116,11 +99,11 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
                 });
             }
             case UpdateType.RATING:
-                return this.updateRating({ ...common, rating: params.payload.rating ?? null });
+                return this.common.updateRating({ ...common, rating: params.payload.rating ?? null });
             case UpdateType.COMMENT:
-                return this.updateComment({ ...common, comment: params.payload.comment ?? null });
+                return this.common.updateComment({ ...common, comment: params.payload.comment ?? null });
             case UpdateType.FAVORITE:
-                return this.updateFavorite({ ...common, favorite: params.payload.favorite ?? false });
+                return this.common.updateFavorite({ ...common, favorite: params.payload.favorite ?? false });
             default:
                 throw new Error("Unsupported TV update type.");
         }
@@ -149,19 +132,6 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
         });
     }
 
-    async editTag(params: { userId: number; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
-        const libraryEntryId = params.mediaId
-            ? (await this.get(params.userId, params.mediaId))?.id
-            : undefined;
-        return this.repository.editTag({
-            userId: params.userId,
-            action: params.action,
-            name: params.tag.name,
-            oldName: params.tag.oldName,
-            libraryEntryId,
-        });
-    }
-
     async add(params: {
         userId: number;
         catalogItemId: number;
@@ -177,49 +147,24 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
         const seasons = await this.repository.getSeasons(params.catalogItemId);
         const status = params.status ?? Status.PLAN_TO_WATCH;
         const progress = createInitialTvProgress(status, seasons);
-        const entryId = await this.repository.createEntry({
+        await this.repository.createEntry({
             userId: params.userId,
             catalogItemId: params.catalogItemId,
             status,
             progress,
         });
         const created = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(undefined, created);
-
-        if (!params.silent) {
-            await this.repository.recordChange(entryId, UpdateType.STATUS, null, status);
-            await this.recordActivity(undefined, created);
-        }
+        await this.common.recordCreatedEntry({
+            entryId: created.id,
+            snapshot: statsSnapshot(created),
+            activity: activityContribution(undefined, created),
+            silent: params.silent,
+        });
         return created;
     }
 
     get(userId: number, catalogItemId: number) {
         return this.repository.findEntry(userId, catalogItemId);
-    }
-
-    async updateRating(params: { userId: number; catalogItemId: number; rating: number | null }) {
-        if (params.rating !== null && (params.rating < 0 || params.rating > 10)) {
-            throw new FormattedError("Rating must be between 0 and 10.");
-        }
-        return this.updateCommon(params, { rating: params.rating });
-    }
-
-    async updateComment(params: { userId: number; catalogItemId: number; comment: string | null }) {
-        return this.updateCommon(params, { comment: params.comment });
-    }
-
-    async updateFavorite(params: { userId: number; catalogItemId: number; favorite: boolean }) {
-        return this.updateCommon(params, { favorite: params.favorite });
-    }
-
-    async updateCustomCover(userId: number, input: UpdateUserCustomCover) {
-        const current = await this.requireEntry(userId, input.mediaId);
-        const customCover = await prepareLibraryCustomCover(this.kind, input);
-        await this.repository.updateCommonFields(current.id, { customCover });
-
-        const result = await this.repository.findUserMedia(userId, input.mediaId);
-        if (!result) throw new FormattedError("Media not in your list");
-        return result;
     }
 
     /** Silent, exact final-list adapter for the retained import pipeline. */
@@ -273,14 +218,26 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
             updatedAt: params.updatedAt,
         });
         const imported = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(undefined, imported);
+        await this.common.applyStatsTransition(undefined, statsSnapshot(imported));
         return imported;
     }
 
     async changeStatus(params: { userId: number; catalogItemId: number; status: Status; loggedAt?: string }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
         const nextProgress = changeTvStatus(current.progress, params.status, current.seasons);
-        return this.persistTransition(current, nextProgress, UpdateType.STATUS, current.progress.status, params.status, params.loggedAt);
+        await this.repository.saveProgress(current, nextProgress);
+        const updated = await this.requireEntry(current.userId, current.catalogItemId);
+        await this.common.recordEntryTransition({
+            entryId: current.id,
+            before: statsSnapshot(current),
+            after: statsSnapshot(updated),
+            activity: activityContribution(current, updated),
+            updateType: UpdateType.STATUS,
+            oldValue: current.progress.status,
+            newValue: params.status,
+            loggedAt: params.loggedAt,
+        });
+        return updated;
     }
 
     async moveProgress(params: {
@@ -294,7 +251,19 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
         const oldPosition = [current.progress.currentSeason, current.progress.currentEpisode];
         const nextProgress = moveTvProgress(current.progress, params, current.seasons);
         const newPosition = [nextProgress.currentSeason, nextProgress.currentEpisode];
-        return this.persistTransition(current, nextProgress, UpdateType.TV, oldPosition, newPosition, params.loggedAt);
+        await this.repository.saveProgress(current, nextProgress);
+        const updated = await this.requireEntry(current.userId, current.catalogItemId);
+        await this.common.recordEntryTransition({
+            entryId: current.id,
+            before: statsSnapshot(current),
+            after: statsSnapshot(updated),
+            activity: activityContribution(current, updated),
+            updateType: UpdateType.TV,
+            oldValue: oldPosition,
+            newValue: newPosition,
+            loggedAt: params.loggedAt,
+        });
+        return updated;
     }
 
     async replaceRewatches(params: {
@@ -305,28 +274,24 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
     }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
         const nextProgress = replaceTvRewatches(current.progress, params.rewatches, current.seasons);
-        return this.persistTransition(
-            current,
-            nextProgress,
-            UpdateType.REDO,
-            totalTvRewatchCount(current.progress),
-            totalTvRewatchCount(nextProgress),
-            params.loggedAt,
-        );
+        await this.repository.saveProgress(current, nextProgress);
+        const updated = await this.requireEntry(current.userId, current.catalogItemId);
+        await this.common.recordEntryTransition({
+            entryId: current.id,
+            before: statsSnapshot(current),
+            after: statsSnapshot(updated),
+            activity: activityContribution(current, updated),
+            updateType: UpdateType.REDO,
+            oldValue: totalTvRewatchCount(current.progress),
+            newValue: totalTvRewatchCount(nextProgress),
+            loggedAt: params.loggedAt,
+        });
+        return updated;
     }
 
     async remove(params: { userId: number; catalogItemId: number }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(current, undefined);
-        await this.repository.removeEntry(current.id);
-    }
-
-    async synchronizeProfileChannel(params: {
-        userId: number;
-        enabled: boolean;
-        views: number;
-    }) {
-        await this.repository.synchronizeProfileChannel(params.userId, params.enabled, params.views);
+        return this.common.removeEntry(current.id, statsSnapshot(current));
     }
 
     /**
@@ -340,83 +305,8 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
             const reconciledProgress = reconcileTvSeasons(previous.progress, current.seasons);
             await this.repository.saveProgress(current, reconciledProgress);
             const reconciled = await this.requireEntry(previous.userId, previous.catalogItemId);
-            await this.applyStatsTransition(previous, reconciled);
+            await this.common.applyStatsTransition(statsSnapshot(previous), statsSnapshot(reconciled));
         }
-    }
-
-    private async persistTransition(
-        current: TvLibraryEntry,
-        nextProgress: TvProgressState,
-        updateType: UpdateType,
-        oldValue: LibraryChangeValue,
-        newValue: LibraryChangeValue,
-        loggedAt?: string,
-    ) {
-        await this.repository.saveProgress(current, nextProgress);
-        const updated = await this.requireEntry(current.userId, current.catalogItemId);
-        await this.applyStatsTransition(current, updated);
-        await this.recordActivity(current, updated, loggedAt);
-        await this.repository.recordChange(current.id, updateType, oldValue, newValue, loggedAt);
-        return updated;
-    }
-
-    private async updateCommon(
-        params: { userId: number; catalogItemId: number },
-        fields: Parameters<TvLibraryRepository["updateCommonFields"]>[1],
-    ) {
-        const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.repository.updateCommonFields(current.id, fields);
-        const updated = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(current, updated);
-        return updated;
-    }
-
-    private async applyStatsTransition(before?: TvLibraryEntry, after?: TvLibraryEntry) {
-        const sample = after ?? before;
-        if (!sample) return;
-
-        const current = await this.repository.getStats(sample.userId);
-        const beforeMetrics = entryMetrics(before);
-        const afterMetrics = entryMetrics(after);
-        const statusCounts = { ...(current?.statusCounts ?? {}) };
-
-        if (before) statusCounts[before.progress.status] = Math.max(0, (statusCounts[before.progress.status] ?? 0) - 1);
-        if (after) statusCounts[after.progress.status] = (statusCounts[after.progress.status] ?? 0) + 1;
-
-        const entriesRated = Math.max(0, (current?.entriesRated ?? 0) + afterMetrics.rated - beforeMetrics.rated);
-        const ratingSum = Math.max(0, (current?.ratingSum ?? 0) + afterMetrics.rating - beforeMetrics.rating);
-
-        await this.repository.saveStats({
-            userId: sample.userId,
-            kind: sample.kind,
-            timeSpentMinutes: Math.max(0, (current?.timeSpentMinutes ?? 0) + afterMetrics.time - beforeMetrics.time),
-            totalEntries: Math.max(0, (current?.totalEntries ?? 0) + Number(!!after) - Number(!!before)),
-            totalRedo: Math.max(0, (current?.totalRedo ?? 0) + afterMetrics.redo - beforeMetrics.redo),
-            entriesRated,
-            ratingSum,
-            entriesCommented: Math.max(0, (current?.entriesCommented ?? 0) + afterMetrics.commented - beforeMetrics.commented),
-            entriesFavorited: Math.max(0, (current?.entriesFavorited ?? 0) + afterMetrics.favorited - beforeMetrics.favorited),
-            totalSpecific: Math.max(0, (current?.totalSpecific ?? 0) + afterMetrics.consumed - beforeMetrics.consumed),
-            statusCounts,
-            averageRating: entriesRated > 0 ? ratingSum / entriesRated : null,
-        });
-    }
-
-    private async recordActivity(before: TvLibraryEntry | undefined, after: TvLibraryEntry, loggedAt?: string) {
-        const beforeConsumed = before ? consumedEpisodeCount(before.progress, before.seasons) : 0;
-        const afterConsumed = consumedEpisodeCount(after.progress, after.seasons);
-        const beforeRedo = before ? totalTvRewatchCount(before.progress) : 0;
-        const afterRedo = totalTvRewatchCount(after.progress);
-        const occurredAt = loggedAt ? `${loggedAt} 12:00:00` : new Date().toISOString();
-
-        await this.repository.recordActivity({
-            entryId: after.id,
-            unitsGained: afterConsumed - beforeConsumed,
-            completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,
-            redo: afterRedo > beforeRedo,
-            monthBucket: monthBucketFromDateInput(new Date(occurredAt)),
-            occurredAt,
-        });
     }
 
     private async requireEntry(userId: number, catalogItemId: number) {
@@ -427,17 +317,29 @@ export class TvLibraryService<K extends TvMediaType = TvMediaType> {
 }
 
 
-const entryMetrics = (entry?: TvLibraryEntry) => {
-    if (!entry) return { consumed: 0, time: 0, redo: 0, rated: 0, rating: 0, commented: 0, favorited: 0 };
-
+const statsSnapshot = (entry: TvLibraryEntry): LibraryStatsSnapshot => {
     const consumed = consumedEpisodeCount(entry.progress, entry.seasons);
     return {
-        consumed,
+        userId: entry.userId,
+        status: entry.progress.status,
+        specific: consumed,
         time: consumed * entry.episodeDurationMinutes,
         redo: totalTvRewatchCount(entry.progress),
         rated: Number(entry.rating !== null),
         rating: entry.rating ?? 0,
         commented: Number(!!entry.comment),
         favorited: Number(entry.favorite),
+    };
+};
+
+const activityContribution = (before: TvLibraryEntry | undefined, after: TvLibraryEntry) => {
+    const beforeConsumed = before ? consumedEpisodeCount(before.progress, before.seasons) : 0;
+    const afterConsumed = consumedEpisodeCount(after.progress, after.seasons);
+    const beforeRedo = before ? totalTvRewatchCount(before.progress) : 0;
+    const afterRedo = totalTvRewatchCount(after.progress);
+    return {
+        unitsGained: afterConsumed - beforeConsumed,
+        completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,
+        redo: afterRedo > beforeRedo,
     };
 };

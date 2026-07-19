@@ -43,18 +43,18 @@ describe("TV details query", () => {
     it("serves catalog, private viewer state and followed state with catalog IDs", async () => {
         const libraryRepository = new TvLibraryRepository(MediaType.SERIES);
         const library = new TvLibraryService(MediaType.SERIES, libraryRepository);
-        const viewerEntry = await library.add({ userId: 42, catalogItemId: 1000, status: Status.WATCHING });
+        await library.add({ userId: 42, catalogItemId: 1000, status: Status.WATCHING });
         await library.replaceRewatches({
             userId: 42,
             catalogItemId: 1000,
             rewatches: [{ seasonNumber: 1, count: 1 }],
         });
-        await library.updateRating({ userId: 42, catalogItemId: 1000, rating: 8.5 });
-        await libraryRepository.editTag({
+        await library.common.updateRating({ userId: 42, catalogItemId: 1000, rating: 8.5 });
+        await library.common.editTag({
             userId: 42,
+            mediaId: 1000,
             action: TagAction.ADD,
-            name: "comfort",
-            libraryEntryId: viewerEntry.id,
+            tag: { name: "comfort" },
         });
         await library.add({ userId: 50, catalogItemId: 1000, status: Status.COMPLETED });
 
@@ -103,7 +103,7 @@ describe("TV details query", () => {
         const library = new TvLibraryService(MediaType.SERIES, new TvLibraryRepository(MediaType.SERIES));
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.WATCHING });
         await library.add({ userId: 50, catalogItemId: 1000, status: Status.COMPLETED });
-        await library.updateRating({ userId: 50, catalogItemId: 1000, rating: 9 });
+        await library.common.updateRating({ userId: 50, catalogItemId: 1000, rating: 9 });
         await db.insert(schema.profileMediaChannel).values({ userId: 42, kind: MediaType.SERIES, enabled: true });
         await db.update(schema.user).set({ privacy: PrivacyType.PUBLIC }).where(eq(schema.user.id, 50));
 

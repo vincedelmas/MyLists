@@ -10,7 +10,7 @@ describe("media module composition", () => {
 
         expect(registry.values().map(({ kind }) => kind)).toEqual([...MEDIA_TYPES]);
         expect(registry.values()).toHaveLength(MEDIA_TYPES.length);
-        expect(registry.get(MediaType.SERIES).library.getUserMediaHistory).toBeTypeOf("function");
+        expect(registry.get(MediaType.SERIES).library.common.getUserMediaHistory).toBeTypeOf("function");
         expect(registry.get(MediaType.ANIME).contributions.imports.matcher.match).toBeTypeOf("function");
         expect(registry.get(MediaType.MOVIES).external.trends?.getTrends).toBeTypeOf("function");
         expect(registry.get(MediaType.GAMES).catalog.read.getCompatiblePlatforms).toBeTypeOf("function");

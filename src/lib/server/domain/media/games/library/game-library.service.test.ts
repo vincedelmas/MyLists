@@ -120,7 +120,7 @@ describe("game library service", () => {
 
         const repository = new GameLibraryRepository();
         const library = new GameLibraryService(repository);
-        const entry = await library.importEntry({
+        await library.importEntry({
             userId: 42,
             catalogItemId: 1000,
             status: Status.PLAYING,
@@ -130,15 +130,15 @@ describe("game library service", () => {
             comment: "Good",
             favorite: true,
         });
-        await repository.editTag({
+        await library.common.editTag({
             userId: 42,
+            mediaId: 1000,
             action: TagAction.ADD,
-            name: "comfort",
-            libraryEntryId: entry.id,
+            tag: { name: "comfort" },
         });
         await library.replacePlaytime({ userId: 42, catalogItemId: 1000, playtime: 6_000, loggedAt: "2026-06-02" });
         await library.changeStatus({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED, loggedAt: "2026-06-02" });
-        await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
+        await library.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
 
         const access = { ownerId: 42, actorId: 42, reason: "owner", mediaTypeEnabled: true } as const;
         const activity = ActivityRepository;

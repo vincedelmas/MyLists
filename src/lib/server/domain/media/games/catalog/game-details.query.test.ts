@@ -50,9 +50,9 @@ describe("game details query", () => {
         await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.PLAYING, playtime: 600, platform: "PC", rating: 9 });
         await library.importEntry({ userId: 43, catalogItemId: 1000, status: Status.COMPLETED, playtime: 1_200, platform: "PC", favorite: true });
         await library.importEntry({ userId: 44, catalogItemId: 1000, status: Status.ENDLESS, playtime: 3_000, platform: null });
-        await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 1 });
-        await library.synchronizeProfileChannel({ userId: 43, enabled: true, views: 2 });
-        await library.synchronizeProfileChannel({ userId: 44, enabled: true, views: 3 });
+        await library.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 1 });
+        await library.common.synchronizeProfileChannel({ userId: 43, enabled: true, views: 2 });
+        await library.common.synchronizeProfileChannel({ userId: 44, enabled: true, views: 3 });
         await db.insert(schema.followers).values({ followerId: 42, followedId: 43, status: SocialState.ACCEPTED });
     });
 

@@ -42,7 +42,9 @@ export const importMovieProgress = (status: Status, rewatchCount: number): Movie
 };
 
 
-export const movieRedoCount = (state: MovieProgressState) => Math.max(0, state.watchCount - 1);
+export const movieRedoCount = (state: MovieProgressState) => {
+    return Math.max(0, state.watchCount - 1);
+}
 
 
 const requireMovieStatus = (status: Status): MovieStatus => {

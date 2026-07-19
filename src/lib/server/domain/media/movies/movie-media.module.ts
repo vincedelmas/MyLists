@@ -26,6 +26,8 @@ import {MovieCatalogIngestionRepository} from "@/lib/server/domain/media/movies/
 import {MovieCatalogRefreshCandidatesQuery} from "@/lib/server/domain/media/movies/catalog/movie-catalog-refresh-candidates.query";
 import {createMoviesIngestionService, createTmdbMoviesProvider} from "@/lib/server/domain/media/movies/external/tmdb-movies.provider";
 import {MovieUpcomingNotificationSource} from "@/lib/server/domain/media/movies/features/notifications/movie-upcoming-notification.source";
+import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
+import {CommonLibraryService} from "@/lib/server/domain/media/shared/library/common-library.service";
 
 
 export const setupMovieMediaModule = (tmdb: TmdbApi) => {
@@ -35,8 +37,9 @@ export const setupMovieMediaModule = (tmdb: TmdbApi) => {
     const refreshCandidates = new MovieCatalogRefreshCandidatesQuery();
     const refreshIdentity = new CatalogRefreshIdentityQuery(MediaType.MOVIES);
 
-    const libraryRepository = new MovieLibraryRepository();
-    const library = new MovieLibraryService(libraryRepository);
+    const commonLibraryRepository = new CommonLibraryRepository(MediaType.MOVIES);
+    const libraryRepository = new MovieLibraryRepository(commonLibraryRepository);
+    const library = new MovieLibraryService(libraryRepository, new CommonLibraryService(commonLibraryRepository));
 
     const catalogEdit = new MovieCatalogEditCommand(catalogAdmin, library);
     const catalogCommands = new MovieCatalogIngestionCommand(catalogRepository, library);

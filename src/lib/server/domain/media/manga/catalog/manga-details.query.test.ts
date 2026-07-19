@@ -52,9 +52,9 @@ describe("manga details query", () => {
         await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.READING, currentChapter: 120, rereadCount: 0, totalChaptersRead: 120, rating: 9 });
         await library.importEntry({ userId: 43, catalogItemId: 1000, status: Status.COMPLETED, currentChapter: 300, rereadCount: 2, totalChaptersRead: 900, favorite: true });
         await library.importEntry({ userId: 44, catalogItemId: 1000, status: Status.READING, currentChapter: 200, rereadCount: 1, totalChaptersRead: 500 });
-        await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 1 });
-        await library.synchronizeProfileChannel({ userId: 43, enabled: true, views: 2 });
-        await library.synchronizeProfileChannel({ userId: 44, enabled: true, views: 3 });
+        await library.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 1 });
+        await library.common.synchronizeProfileChannel({ userId: 43, enabled: true, views: 2 });
+        await library.common.synchronizeProfileChannel({ userId: 44, enabled: true, views: 3 });
         await db.insert(schema.followers).values({ followerId: 42, followedId: 43, status: SocialState.ACCEPTED });
     });
 

@@ -27,15 +27,22 @@ import type {UpcomingNotificationSource} from "@/lib/server/domain/notifications
 import {tvActivityDefinition} from "@/lib/server/domain/media/tv/activity/tv-activity.definition";
 import {TvActivityDurationSource} from "@/lib/server/domain/media/tv/activity/tv-activity-duration.source";
 import type {ActivityDurationSource} from "@/lib/types/activity.types";
+import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
+import {CommonLibraryService} from "@/lib/server/domain/media/shared/library/common-library.service";
 
 
 export const setupTvMediaModule = <K extends TvMediaType>(
     kind: K,
     clients: { tmdb: TmdbApi; jikan: JikanApi },
 ) => {
-    const libraryRepository = new TvLibraryRepository(kind);
+    const commonLibraryRepository = new CommonLibraryRepository(kind);
+    const libraryRepository = new TvLibraryRepository(kind, commonLibraryRepository);
     const catalogAdmin = new TvCatalogAdminRepository(kind);
-    const library = new TvLibraryService(kind, libraryRepository);
+    const library = new TvLibraryService(
+        kind,
+        libraryRepository,
+        new CommonLibraryService(commonLibraryRepository),
+    );
     const catalogRead = new TvCatalogReadRepository(kind);
     const catalogRepository = new TvCatalogIngestionRepository(kind);
     const catalogEdit = new TvCatalogEditCommand(

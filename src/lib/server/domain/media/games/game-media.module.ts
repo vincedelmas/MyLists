@@ -20,11 +20,17 @@ import type {AchievementCalculator} from "@/lib/server/domain/media/shared/achie
 import {GameWcfPoolSource} from "@/lib/server/domain/media/games/features/which-came-first/game-wcf-pool-source";
 import type {WcfPoolSource} from "@/lib/server/domain/which-came-first/wcf.service";
 import {gameActivityDefinition} from "@/lib/server/domain/media/games/activity/game-activity.definition";
+import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
+import {CommonLibraryService} from "@/lib/server/domain/media/shared/library/common-library.service";
 
 
 export const setupGameMediaModule = (clients: { igdb: IgdbApi; hltb: HltbApi }) => {
-    const libraryRepository = new GameLibraryRepository();
-    const library = new GameLibraryService(libraryRepository);
+    const commonLibraryRepository = new CommonLibraryRepository(MediaType.GAMES);
+    const libraryRepository = new GameLibraryRepository(commonLibraryRepository);
+    const library = new GameLibraryService(
+        libraryRepository,
+        new CommonLibraryService(commonLibraryRepository),
+    );
     const catalogRead = new GameCatalogReadRepository();
     const catalogAdmin = new GameCatalogAdminRepository();
     const catalogRepository = new GameCatalogIngestionRepository();

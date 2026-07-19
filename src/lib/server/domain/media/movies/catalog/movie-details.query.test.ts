@@ -19,6 +19,7 @@ const { MovieLibraryRepository } = await import("@/lib/server/domain/media/movie
 const { MovieLibraryService } = await import("@/lib/server/domain/media/movies/library/movie-library.service");
 const { MovieCatalogAdminRepository } = await import("./movie-catalog-admin.repository");
 const { MovieCatalogEditCommand } = await import("./movie-catalog-edit.command");
+const { CommonLibraryRepository } = await import("@/lib/server/domain/media/shared/library/common-library.repository");
 
 
 describe("movie details query", () => {
@@ -44,8 +45,8 @@ describe("movie details query", () => {
         const library = new MovieLibraryService(repository);
         const viewerEntry = await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatchCount: 2 });
-        await library.updateRating({ userId: 42, catalogItemId: 1000, rating: 8.5 });
-        await repository.editTag({
+        await library.common.updateRating({ userId: 42, catalogItemId: 1000, rating: 8.5 });
+        await new CommonLibraryRepository(MediaType.MOVIES).editTag({
             userId: 42,
             action: TagAction.ADD,
             name: "comfort",
@@ -91,7 +92,7 @@ describe("movie details query", () => {
         await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
         await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatchCount: 1 });
         await library.add({ userId: 50, catalogItemId: 1000, status: Status.COMPLETED });
-        await library.updateRating({ userId: 50, catalogItemId: 1000, rating: 9 });
+        await library.common.updateRating({ userId: 50, catalogItemId: 1000, rating: 9 });
         await db.insert(schema.profileMediaChannel).values({ userId: 42, kind: MediaType.MOVIES, enabled: true });
         await db.update(schema.user).set({ privacy: PrivacyType.PUBLIC }).where(eq(schema.user.id, 50));
 

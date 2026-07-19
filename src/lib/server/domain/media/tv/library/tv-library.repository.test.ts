@@ -17,6 +17,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { TvLibraryRepository } = await import("./tv-library.repository");
 const { TvLibraryService } = await import("./tv-library.service");
+const { CommonLibraryRepository } = await import("@/lib/server/domain/media/shared/library/common-library.repository");
 
 
 const ownerScope = {
@@ -86,14 +87,14 @@ describe("TV library repository", () => {
     });
 
     it("serves the public list header from the channel and normalized stats", async () => {
-        const repository = new TvLibraryRepository(MediaType.SERIES);
+        const repository = new CommonLibraryRepository(MediaType.SERIES);
         expect(await repository.getListHeader(42)).toBeUndefined();
 
         const library = new TvLibraryService(MediaType.SERIES, new TvLibraryRepository(MediaType.SERIES));
-        await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
+        await library.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 924 });
 
-        await library.synchronizeProfileChannel({ userId: 42, enabled: false, views: 4 });
+        await library.common.synchronizeProfileChannel({ userId: 42, enabled: false, views: 4 });
         expect(await repository.getListHeader(42)).toBeUndefined();
     });
 
@@ -124,26 +125,27 @@ describe("TV library repository", () => {
     });
 
     it("supports dynamic TV filter searches and empty tags created from the tags page", async () => {
-        const libraryRepository = new TvLibraryRepository(MediaType.SERIES);
+        const libraryRepository = new CommonLibraryRepository(MediaType.SERIES);
         await libraryRepository.editTag({
             userId: 42,
             action: TagAction.ADD,
             name: "empty-tag",
         });
         const repository = new TvLibraryRepository(MediaType.SERIES);
+        const commonRepository = new CommonLibraryRepository(MediaType.SERIES);
 
         expect(await repository.getSearchListFilters(ownerScope, "Le", JobType.ACTOR)).toEqual([{ name: "Lead" }]);
         expect(await repository.getSearchListFilters(ownerScope, "Net", JobType.PLATFORM)).toEqual([{ name: "Network" }]);
         expect(await repository.getSearchListFilters(ownerScope, "reat", JobType.CREATOR)).toEqual([{ name: "Creator" }]);
 
-        const tags = await repository.getTagsView(ownerScope, { page: 1 });
+        const tags = await commonRepository.getTagsView(ownerScope.ownerId, { page: 1 });
         expect(tags).toMatchObject({ total: 2, exactMatch: false, pages: 1 });
         expect(tags.items).toEqual(expect.arrayContaining([
             expect.objectContaining({ tagName: "comfort", totalCount: 1, medias: [expect.objectContaining({ mediaId: 1000 })] }),
             expect.objectContaining({ tagName: "empty-tag", totalCount: 0, medias: [] }),
         ]));
 
-        expect(await repository.getTagsView(ownerScope, { page: 1, search: "EMPTY-TAG" })).toMatchObject({
+        expect(await commonRepository.getTagsView(ownerScope.ownerId, { page: 1, search: "EMPTY-TAG" })).toMatchObject({
             total: 1,
             exactMatch: true,
         });
@@ -197,10 +199,11 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
 
     const repository = new TvLibraryRepository(MediaType.SERIES);
     const library = new TvLibraryService(MediaType.SERIES, repository);
+    const commonRepository = new CommonLibraryRepository(MediaType.SERIES);
     const alpha = await library.add({ userId: 42, catalogItemId: 1000, status: Status.COMPLETED });
     await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatches: [{ seasonNumber: 1, count: 1 }] });
-    await repository.updateCommonFields(alpha.id, { customCover: "custom.jpg" });
-    await repository.editTag({ userId: 42, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
+    await commonRepository.updateEntry(alpha.id, { customCover: "custom.jpg" });
+    await commonRepository.editTag({ userId: 42, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
     await library.add({ userId: 42, catalogItemId: 1001, status: Status.WATCHING });
     await library.add({ userId: 42, catalogItemId: 1002, status: Status.PLAN_TO_WATCH });
     await library.add({ userId: 50, catalogItemId: 1000, status: Status.WATCHING });

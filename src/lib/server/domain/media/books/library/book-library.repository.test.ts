@@ -11,6 +11,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbCon
 
 const { BookLibraryRepository } = await import("./book-library.repository");
 const { BookLibraryService } = await import("./book-library.service");
+const { CommonLibraryRepository } = await import("@/lib/server/domain/media/shared/library/common-library.repository");
 
 
 const ownerScope = { ownerId: 42, actorId: 50, reason: "public", mediaTypeEnabled: true } as const;
@@ -61,10 +62,10 @@ describe("book library repository", () => {
     });
 
     it("serves the header from channel state and normalized 1.7-minute page totals", async () => {
-        const repository = new BookLibraryRepository();
+        const repository = new CommonLibraryRepository(MediaType.BOOKS);
         expect(await repository.getListHeader(42)).toBeUndefined();
         const library = new BookLibraryService(new BookLibraryRepository());
-        await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
+        await library.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 1_768 });
     });
 
@@ -89,9 +90,9 @@ describe("book library repository", () => {
     });
 
     it("supports empty tags while retaining canonical book IDs", async () => {
-        const repository = new BookLibraryRepository();
+        const repository = new CommonLibraryRepository(MediaType.BOOKS);
         await repository.editTag({ userId: 42, action: TagAction.ADD, name: "empty-tag" });
-        expect(await new BookLibraryRepository().getTagsView(ownerScope, { page: 1 })).toMatchObject({
+        expect(await repository.getTagsView(ownerScope.ownerId, { page: 1 })).toMatchObject({
             total: 2,
             items: expect.arrayContaining([
                 expect.objectContaining({ tagName: "comfort", totalCount: 1, medias: [expect.objectContaining({ mediaId: 1000 })] }),
@@ -126,9 +127,10 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
 
     const repository = new BookLibraryRepository();
     const library = new BookLibraryService(repository);
+    const commonRepository = new CommonLibraryRepository(MediaType.BOOKS);
     const alpha = await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.READING, currentPage: 40, rereadCount: 2, totalPagesRead: 640, rating: 8 });
-    await repository.updateCommonFields(alpha.id, { customCover: "custom.jpg" });
-    await repository.editTag({ userId: 42, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
+    await commonRepository.updateEntry(alpha.id, { customCover: "custom.jpg" });
+    await commonRepository.editTag({ userId: 42, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
     await library.importEntry({ userId: 42, catalogItemId: 1001, status: Status.COMPLETED, currentPage: 400, rereadCount: 0, totalPagesRead: 400, rating: 8 });
     await library.importEntry({ userId: 42, catalogItemId: 1002, status: Status.PLAN_TO_READ, currentPage: 0, rereadCount: 0, totalPagesRead: 0, rating: 8 });
     await library.importEntry({ userId: 50, catalogItemId: 1000, status: Status.READING, currentPage: 30, rereadCount: 0, totalPagesRead: 30 });

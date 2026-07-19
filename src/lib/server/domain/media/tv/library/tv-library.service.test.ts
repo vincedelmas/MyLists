@@ -91,7 +91,7 @@ describe("TV library service", () => {
             { updateType: UpdateType.STATUS, payload: { oldValue: Status.WATCHING, newValue: Status.COMPLETED } },
         ]);
 
-        await service.synchronizeProfileChannel({ userId: 42, enabled: true, views: 0 });
+        await service.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 0 });
         const statsReader = new TvStatsRepository(MediaType.SERIES);
         const statsAccess = { type: "library", access: { ownerId: 42, actorId: 42, reason: "owner", mediaTypeEnabled: true } } as const;
         expect(await statsReader.getAggregatedMediaStats(statsAccess)).toMatchObject({
@@ -117,7 +117,7 @@ describe("TV library service", () => {
             ratings: expect.arrayContaining([{ name: "0.0", value: 0 }, { name: "10.0", value: 0 }]),
         });
 
-        const history = await new TvLibraryService(MediaType.SERIES).getUserMediaHistory(42, 1000);
+        const history = await new TvLibraryService(MediaType.SERIES).common.getUserMediaHistory(42, 1000);
         expect(history.map(({ id, mediaId, mediaName, payload }) => ({ id, mediaId, mediaName, payload }))).toEqual([
             { id: 4, mediaId: 1000, mediaName: "A difficult show", payload: { oldValue: Status.WATCHING, newValue: Status.COMPLETED } },
             { id: 3, mediaId: 1000, mediaName: "A difficult show", payload: { oldValue: 0, newValue: 1 } },
@@ -150,10 +150,10 @@ describe("TV library service", () => {
     });
 
     it("projects common fields and preserves per-list tag semantics", async () => {
-        const entry = await service.add({ userId: 42, catalogItemId: 1000 });
-        await service.updateRating({ userId: 42, catalogItemId: 1000, rating: 8.5 });
-        await service.updateComment({ userId: 42, catalogItemId: 1000, comment: "Worth continuing" });
-        await service.updateFavorite({ userId: 42, catalogItemId: 1000, favorite: true });
+        await service.add({ userId: 42, catalogItemId: 1000 });
+        await service.common.updateRating({ userId: 42, catalogItemId: 1000, rating: 8.5 });
+        await service.common.updateComment({ userId: 42, catalogItemId: 1000, comment: "Worth continuing" });
+        await service.common.updateFavorite({ userId: 42, catalogItemId: 1000, favorite: true });
 
         const [stats] = await db.select().from(schema.libraryStats);
         expect(stats).toMatchObject({
@@ -164,29 +164,27 @@ describe("TV library service", () => {
             entriesFavorited: 1,
         });
 
-        const repository = new TvLibraryRepository(MediaType.SERIES);
-        await repository.editTag({
+        await service.common.editTag({
             userId: 42,
+            mediaId: 1000,
             action: TagAction.ADD,
-            name: "comfort",
-            libraryEntryId: entry.id,
+            tag: { name: "comfort" },
         });
-        await repository.editTag({
+        await service.common.editTag({
             userId: 42,
             action: TagAction.RENAME,
-            oldName: "comfort",
-            name: "favorites",
+            tag: { oldName: "comfort", name: "favorites" },
         });
         expect(await db.select().from(schema.libraryTag)).toEqual([
             expect.objectContaining({ name: "favorites", kind: MediaType.SERIES }),
         ]);
         expect(await db.select().from(schema.libraryEntryTag)).toHaveLength(1);
 
-        await repository.editTag({
+        await service.common.editTag({
             userId: 42,
+            mediaId: 1000,
             action: TagAction.DELETE_ONE,
-            name: "favorites",
-            libraryEntryId: entry.id,
+            tag: { name: "favorites" },
         });
         expect(await db.select().from(schema.libraryTag)).toHaveLength(0);
         expect(await db.select().from(schema.libraryEntryTag)).toHaveLength(0);

@@ -60,9 +60,9 @@ describe("book details query", () => {
         await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.READING, currentPage: 120, rereadCount: 0, totalPagesRead: 120, rating: 9 });
         await library.importEntry({ userId: 43, catalogItemId: 1000, status: Status.COMPLETED, currentPage: 300, rereadCount: 2, totalPagesRead: 900, favorite: true });
         await library.importEntry({ userId: 44, catalogItemId: 1000, status: Status.READING, currentPage: 200, rereadCount: 1, totalPagesRead: 500 });
-        await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 1 });
-        await library.synchronizeProfileChannel({ userId: 43, enabled: true, views: 2 });
-        await library.synchronizeProfileChannel({ userId: 44, enabled: true, views: 3 });
+        await library.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 1 });
+        await library.common.synchronizeProfileChannel({ userId: 43, enabled: true, views: 2 });
+        await library.common.synchronizeProfileChannel({ userId: 44, enabled: true, views: 3 });
         await db.insert(schema.followers).values({ followerId: 42, followedId: 43, status: SocialState.ACCEPTED });
     });
 

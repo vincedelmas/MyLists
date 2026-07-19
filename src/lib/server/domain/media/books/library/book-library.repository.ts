@@ -1,41 +1,32 @@
-import {and, asc, count, desc, eq, getTableColumns, inArray, isNotNull, like, ne, notInArray, sql, SQL} from "drizzle-orm";
+import {and, asc, count, desc, eq, getTableColumns, inArray, isNotNull, like, sql, SQL} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {
     bookAuthor,
     bookDetails,
     bookProgress,
-    catalogGenre,
     catalogItem,
-    catalogItemGenre,
-    followers,
-    libraryChange,
     libraryEntry,
-    libraryEntryTag,
-    libraryStats,
-    libraryTag,
-    profileMediaChannel,
     user
 } from "@/lib/server/database/schema";
-import {JobType, MediaType, PrivacyType, SocialState, Status} from "@/lib/utils/enums";
-import {
-    createLibraryEntry,
-    editLibraryTag,
-    getLibraryStats,
-    recordLibraryActivity,
-    recordLibraryChange,
-    removeLibraryEntry,
-    saveLibraryStats,
-    synchronizeLibraryProfileChannel,
-    updateLibraryEntry,
-} from "@/lib/server/domain/media/shared/library/library-persistence";
+import {JobType, MediaType, Status} from "@/lib/utils/enums";
+import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
 import {BookProgressState, isBookStatus} from "@/lib/server/domain/media/books/library/book-progress";
-import {SearchType, SimpleSearch} from "@/lib/schemas";
+import {SearchType} from "@/lib/schemas";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {BookCommunityActivityPage} from "@/lib/contracts/media/community";
-import {alias} from "drizzle-orm/sqlite-core";
 import {BookListArgs, BookListPage} from "@/lib/contracts/media/lists";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
+import {getLibraryCommunityActivity} from "@/lib/server/domain/media/shared/library/library-community-activity";
+import {
+    findFollowedUsersLibraryMedia,
+    findLibraryEntriesByCatalogItem,
+    findLibraryUserMedia,
+    getCommonLibraryListConditions,
+    getLibraryEntryTags,
+    getLibraryGenresAndTags,
+    getLibraryListItemRelations,
+} from "@/lib/server/domain/media/shared/library/library-shared-queries";
 
 export type BookLibraryEntry = {
     id: number;
@@ -68,32 +59,14 @@ export const BOOK_LIST_SORTS = [
 ] as const;
 
 export class BookLibraryRepository {
-    readonly updateCommonFields = updateLibraryEntry;
-    readonly removeEntry = removeLibraryEntry;
-    readonly saveStats = saveLibraryStats;
-    readonly recordChange = recordLibraryChange;
-    readonly recordActivity = recordLibraryActivity;
-
-    getStats(userId: number) {
-        return getLibraryStats(userId, MediaType.BOOKS);
-    }
-
-    synchronizeProfileChannel(userId: number, enabled: boolean, views: number) {
-        return synchronizeLibraryProfileChannel(userId, MediaType.BOOKS, enabled, views);
-    }
-
-    editTag(params: Omit<Parameters<typeof editLibraryTag>[0], "kind">) {
-        return editLibraryTag({ ...params, kind: MediaType.BOOKS });
+    constructor(private readonly common = new CommonLibraryRepository(MediaType.BOOKS)) {
     }
 
     async findEntriesByCatalogItem(catalogItemId: number) {
-        const owners = await getDbClient()
-            .select({ userId: libraryEntry.userId })
-            .from(libraryEntry)
-            .innerJoin(bookProgress, eq(bookProgress.libraryEntryId, libraryEntry.id))
-            .where(eq(libraryEntry.catalogItemId, catalogItemId));
-        const entries = await Promise.all(owners.map(({ userId }) => this.findEntry(userId, catalogItemId)));
-        return entries.filter((entry): entry is BookLibraryEntry => !!entry);
+        return findLibraryEntriesByCatalogItem(
+            catalogItemId,
+            (ownerId, mediaId) => this.findEntry(ownerId, mediaId),
+        );
     }
 
     async findEntry(userId: number, catalogItemId: number): Promise<BookLibraryEntry | undefined> {
@@ -159,7 +132,7 @@ export class BookLibraryRepository {
         addedAt?: string | null;
         updatedAt?: string | null;
     }) {
-        const entryId = await createLibraryEntry({
+        const entryId = await this.common.createEntry({
             userId: params.userId,
             catalogItemId: params.catalogItemId,
             status: params.status,
@@ -180,7 +153,7 @@ export class BookLibraryRepository {
     }
 
     async saveProgress(entryId: number, progress: BookProgressState) {
-        await updateLibraryEntry(entryId, { status: progress.status });
+        await this.common.updateEntry(entryId, { status: progress.status });
         await getDbClient().update(bookProgress).set({
             currentPage: progress.currentPage,
             rereadCount: progress.rereadCount,
@@ -189,168 +162,43 @@ export class BookLibraryRepository {
     }
 
 
-    async getUserMediaHistory(userId: number, catalogItemId: number) {
-        const rows = await getDbClient().select({
-            id: libraryChange.id,
-            userId: libraryEntry.userId,
-            mediaId: catalogItem.id,
-            mediaName: catalogItem.name,
-            mediaType: catalogItem.kind,
-            updateType: libraryChange.updateType,
-            payload: libraryChange.payload,
-            timestamp: libraryChange.occurredAt,
-        }).from(libraryChange)
-            .innerJoin(libraryEntry, eq(libraryEntry.id, libraryChange.libraryEntryId))
-            .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
-            .where(and(
-                eq(libraryEntry.userId, userId),
-                eq(catalogItem.kind, MediaType.BOOKS),
-                eq(catalogItem.id, catalogItemId),
-            ))
-            .orderBy(desc(libraryChange.occurredAt), desc(libraryChange.id));
-        return rows.map((row) => ({
-            ...row,
-            id: row.id,
-            payload: row.payload,
-        }));
-    }
-
     async findUserMedia(userId: number | undefined, catalogItemId: number) {
-        if (!userId) return null;
-        const [entry, owner] = await Promise.all([
-            this.findEntry(userId, catalogItemId),
-            getDbClient().select({ ratingSystem: user.ratingSystem }).from(user).where(eq(user.id, userId)).get(),
-        ]);
-        if (!entry || !owner) return null;
-        return this.toUserMedia(entry, catalogItemId, owner.ratingSystem, true);
+        return findLibraryUserMedia(
+            userId,
+            catalogItemId,
+            (ownerId, mediaId) => this.findEntry(ownerId, mediaId),
+            (entry, mediaId, ratingSystem, includeTags) => this.toUserMedia(entry, mediaId, ratingSystem, includeTags),
+        );
     }
 
     async findFollowedUsersMedia(viewerId: number | undefined, catalogItemId: number) {
-        if (!viewerId) return [];
-        const followedOwners = await getDbClient().select({
-            id: user.id,
-            name: user.name,
-            image: user.image,
-            ratingSystem: user.ratingSystem,
-        }).from(followers)
-            .innerJoin(user, eq(user.id, followers.followedId))
-            .innerJoin(libraryEntry, and(
-                eq(libraryEntry.userId, followers.followedId),
-                eq(libraryEntry.catalogItemId, catalogItemId),
-            ))
-            .innerJoin(profileMediaChannel, and(
-                eq(profileMediaChannel.userId, followers.followedId),
-                eq(profileMediaChannel.kind, MediaType.BOOKS),
-                eq(profileMediaChannel.enabled, true),
-            ))
-            .where(and(eq(followers.followerId, viewerId), eq(followers.status, SocialState.ACCEPTED)))
-            .orderBy(asc(user.name));
-        const results = await Promise.all(followedOwners.map(async (owner) => {
-            const entry = await this.findEntry(owner.id, catalogItemId);
-            if (!entry) return;
-            return { ...owner, userMedia: await this.toUserMedia(entry, catalogItemId, owner.ratingSystem, false) };
-        }));
-        return results.filter((result): result is NonNullable<typeof result> => !!result);
+        return findFollowedUsersLibraryMedia(
+            MediaType.BOOKS,
+            viewerId,
+            catalogItemId,
+            (ownerId, mediaId) => this.findEntry(ownerId, mediaId),
+            (entry, mediaId, ratingSystem, includeTags) => this.toUserMedia(entry, mediaId, ratingSystem, includeTags),
+        );
     }
 
     async getCommunityActivity(viewerId: number | undefined, catalogItemId: number, search: SearchType): Promise<BookCommunityActivityPage> {
-        const pagination = resolvePagination({ page: search.page, perPage: search.perPage, defaultPerPage: 8, maxPerPage: 50 });
-
-        const audienceCondition = viewerId
-            ? sql`(
-                ${user.privacy} IN (${PrivacyType.PUBLIC}, ${PrivacyType.RESTRICTED})
-                OR ${user.id} = ${viewerId}
-                OR EXISTS (
-                    SELECT 1 FROM ${followers} AS community_follow
-                    WHERE community_follow.follower_id = ${viewerId}
-                        AND community_follow.followed_id = ${user.id}
-                        AND community_follow.status = ${SocialState.ACCEPTED}
-                )
-            )`
-            : eq(user.privacy, PrivacyType.PUBLIC);
-
-        const visibleConditions = and(eq(libraryEntry.catalogItemId, catalogItemId), ne(user.name, "DemoProfile"), audienceCondition);
-
-        const baseQuery = () => getDbClient()
-            .select({
-                userId: user.id,
-                name: user.name,
-                image: user.image,
-                rating: libraryEntry.rating,
-                status: libraryEntry.status,
-                ratingSystem: user.ratingSystem,
-                favorite: libraryEntry.favorite,
-            }).from(libraryEntry)
-            .innerJoin(user, eq(user.id, libraryEntry.userId))
-            .innerJoin(profileMediaChannel, and(
-                eq(profileMediaChannel.userId, libraryEntry.userId),
-                eq(profileMediaChannel.kind, MediaType.BOOKS),
-                eq(profileMediaChannel.enabled, true),
-            ))
-            .where(visibleConditions);
-
-        const [allRows, pageRows] = await Promise.all([
-            baseQuery(),
-            baseQuery()
-                .orderBy(desc(sql`COALESCE(${libraryEntry.updatedAt}, ${libraryEntry.addedAt})`))
-                .limit(pagination.limit)
-                .offset(pagination.offset),
-        ]);
-
-        const ratings = allRows.map(({ rating }) => rating).filter((rating): rating is number => rating !== null);
-        const entries = await Promise.all(allRows.map(({ userId }) => this.findEntry(userId, catalogItemId)));
-
-        const total = allRows.length;
-        const completeEntries = entries.filter((entry): entry is BookLibraryEntry => !!entry);
-
-        const items = await Promise.all(pageRows.map(async (row) => {
-            const entry = await this.findEntry(row.userId, catalogItemId);
-            if (!entry) return;
-
-            const userMedia = await this.toUserMedia(entry, catalogItemId, row.ratingSystem, false);
-
-            return {
-                id: row.userId,
-                name: row.name,
-                image: row.image,
-                kind: MediaType.BOOKS,
-                ratingSystem: row.ratingSystem,
-                userMedia: {
-                    ...userMedia,
-                    comment: null,
-                    kind: MediaType.BOOKS,
-                },
-            };
-        }));
-
-        return {
-            total,
+        return getLibraryCommunityActivity({
             kind: MediaType.BOOKS,
-            page: pagination.page,
-            perPage: pagination.perPage,
-            pages: Math.ceil(total / pagination.perPage),
-            items: items.filter((item): item is NonNullable<typeof item> => !!item),
-            stats: {
-                total,
-                totalPlaytime: 0,
-                likedCount: allRows.filter(({ favorite }) => favorite).length,
-                completedCount: allRows.filter(({ status }) => status === Status.COMPLETED).length,
-                totalRedo: completeEntries.reduce((sum, entry) => sum + entry.progress.rereadCount, 0),
-                totalSpecific: completeEntries.reduce((sum, entry) => sum + entry.progress.totalPagesRead, 0),
-                averageRating: ratings.length > 0 ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : null,
-            },
-        };
+            viewerId,
+            catalogItemId,
+            search,
+            findEntry: (userId, mediaId) => this.findEntry(userId, mediaId),
+            toUserMedia: (entry, mediaId, ratingSystem) => this.toUserMedia(entry, mediaId, ratingSystem, false),
+            getContribution: (entry) => ({
+                redo: entry.progress.rereadCount,
+                specific: entry.progress.totalPagesRead,
+                playtime: 0,
+            }),
+        });
     }
 
     private async toUserMedia(entry: BookLibraryEntry, catalogItemId: number, ratingSystem: typeof user.$inferSelect.ratingSystem, includeTags: boolean) {
-        const tags = includeTags
-            ? await getDbClient()
-                .select({ name: libraryTag.name })
-                .from(libraryEntryTag)
-                .innerJoin(libraryTag, eq(libraryTag.id, libraryEntryTag.tagId))
-                .where(eq(libraryEntryTag.libraryEntryId, entry.id))
-                .orderBy(asc(libraryTag.name))
-            : undefined;
+        const tags = includeTags ? await getLibraryEntryTags(entry.id) : undefined;
 
         const userMedia = {
             id: entry.id,
@@ -369,28 +217,6 @@ export class BookLibraryRepository {
         };
 
         return { ...userMedia, ratingSystem, tags: tags ?? [] };
-    }
-
-    async getListHeader(userId: number) {
-        const channel = getDbClient()
-            .select({ enabled: profileMediaChannel.enabled })
-            .from(profileMediaChannel)
-            .where(and(
-                eq(profileMediaChannel.userId, userId),
-                eq(profileMediaChannel.kind, MediaType.BOOKS),
-            )).get();
-
-        if (!channel?.enabled) return;
-
-        const stats = getDbClient()
-            .select({ timeSpent: libraryStats.timeSpentMinutes })
-            .from(libraryStats)
-            .where(and(
-                eq(libraryStats.userId, userId),
-                eq(libraryStats.kind, MediaType.BOOKS),
-            )).get();
-
-        return { timeSpent: stats?.timeSpent ?? 0 };
     }
 
     async getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: BookListArgs): Promise<BookListPage> {
@@ -450,16 +276,8 @@ export class BookLibraryRepository {
 
     async getListFilters(access: MediaListAccessScope) {
         const ownerId = access.ownerId;
-        const [genres, tags, langs] = await Promise.all([
-            getDbClient().selectDistinct({ name: catalogGenre.name }).from(libraryEntry)
-                .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
-                .innerJoin(catalogItemGenre, eq(catalogItemGenre.catalogItemId, catalogItem.id))
-                .innerJoin(catalogGenre, eq(catalogGenre.id, catalogItemGenre.genreId))
-                .where(and(eq(libraryEntry.userId, ownerId), eq(catalogItem.kind, MediaType.BOOKS)))
-                .orderBy(asc(catalogGenre.name)),
-            getDbClient().select({ name: libraryTag.name }).from(libraryTag)
-                .where(and(eq(libraryTag.userId, ownerId), eq(libraryTag.kind, MediaType.BOOKS)))
-                .orderBy(asc(libraryTag.name)),
+        const [{ genres, tags }, langs] = await Promise.all([
+            getLibraryGenresAndTags(MediaType.BOOKS, ownerId),
             getDbClient().selectDistinct({ name: bookDetails.language }).from(libraryEntry)
                 .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
                 .innerJoin(bookDetails, eq(bookDetails.catalogItemId, catalogItem.id))
@@ -484,83 +302,12 @@ export class BookLibraryRepository {
             ));
     }
 
-    async getTagsView(access: MediaListAccessScope, search: SimpleSearch) {
-        const ownerId = access.ownerId;
-        const pagination = resolvePagination({ page: search.page, perPage: 16, maxPerPage: 16 });
-        const tagRows = await getDbClient().select({ id: libraryTag.id, name: libraryTag.name })
-            .from(libraryTag).where(and(
-                eq(libraryTag.userId, ownerId),
-                eq(libraryTag.kind, MediaType.BOOKS),
-                search.search ? like(libraryTag.name, `%${search.search}%`) : undefined,
-            ));
-        const linkedByTag = await Promise.all(tagRows.map(async (tag) => {
-            const medias = await getDbClient().select({
-                mediaId: catalogItem.id,
-                mediaName: catalogItem.name,
-                mediaCover: catalogItem.imageCover,
-                activity: sql<string>`COALESCE(${libraryEntry.updatedAt}, ${libraryEntry.addedAt})`,
-            }).from(libraryEntryTag)
-                .innerJoin(libraryEntry, eq(libraryEntry.id, libraryEntryTag.libraryEntryId))
-                .innerJoin(catalogItem, eq(catalogItem.id, libraryEntry.catalogItemId))
-                .where(eq(libraryEntryTag.tagId, tag.id))
-                .orderBy(desc(sql`COALESCE(${libraryEntry.updatedAt}, ${libraryEntry.addedAt})`));
-            return {
-                tagId: tag.id,
-                tagName: tag.name,
-                totalCount: medias.length,
-                lastActivity: medias[0]?.activity ?? "",
-                medias: medias.slice(0, 3).map(({ activity: _, mediaCover, ...media }) => ({
-                    ...media,
-                    mediaCover: getImageUrl("books-covers", mediaCover),
-                })),
-            };
-        }));
-        linkedByTag.sort((a, b) => b.lastActivity.localeCompare(a.lastActivity) || a.tagName.localeCompare(b.tagName));
-        const items = linkedByTag.slice(pagination.offset, pagination.offset + pagination.limit)
-            .map(({ lastActivity: _, ...tag }) => tag);
-        const exactMatch = !!search.search && tagRows.some(({ name }) => name.toLowerCase() === search.search!.toLowerCase());
-        return {
-            total: tagRows.length,
-            items,
-            page: pagination.page,
-            exactMatch,
-            perPage: pagination.perPage,
-            pages: Math.ceil(tagRows.length / pagination.perPage),
-        };
-    }
-
-    getTagNames(userId: number) {
-        return getDbClient().select({ name: libraryTag.name })
-            .from(libraryTag)
-            .where(and(eq(libraryTag.userId, userId), eq(libraryTag.kind, MediaType.BOOKS)))
-            .orderBy(asc(libraryTag.name));
-    }
-
     private buildConditions(currentUserId: number | undefined, ownerId: number, args: BookListArgs) {
-        const conditions: SQL[] = [eq(libraryEntry.userId, ownerId), eq(catalogItem.kind, MediaType.BOOKS)];
-        if (args.search) conditions.push(like(catalogItem.name, `%${args.search}%`));
-        if (args.favorite) conditions.push(eq(libraryEntry.favorite, true));
-        if (args.comment) conditions.push(isNotNull(libraryEntry.comment));
-        if (args.status?.length) conditions.push(inArray(libraryEntry.status, args.status));
+        const conditions = getCommonLibraryListConditions(MediaType.BOOKS, currentUserId, ownerId, args);
         if (args.langs?.length) conditions.push(inArray(bookDetails.language, args.langs));
-        if (args.tags?.length) {
-            conditions.push(inArray(libraryEntry.id, getDbClient().select({ libraryEntryId: libraryEntryTag.libraryEntryId })
-                .from(libraryEntryTag).innerJoin(libraryTag, eq(libraryTag.id, libraryEntryTag.tagId))
-                .where(inArray(libraryTag.name, args.tags))));
-        }
-        if (args.genres?.length) {
-            conditions.push(inArray(catalogItem.id, getDbClient().select({ catalogItemId: catalogItemGenre.catalogItemId })
-                .from(catalogItemGenre).innerJoin(catalogGenre, eq(catalogGenre.id, catalogItemGenre.genreId))
-                .where(inArray(catalogGenre.name, args.genres))));
-        }
         if (args.authors?.length) {
             conditions.push(inArray(catalogItem.id, getDbClient().select({ catalogItemId: bookAuthor.catalogItemId })
                 .from(bookAuthor).where(inArray(bookAuthor.name, args.authors))));
-        }
-        if (args.hideCommon && currentUserId && currentUserId !== ownerId) {
-            const currentEntry = alias(libraryEntry, "current_book_library_entry");
-            conditions.push(notInArray(catalogItem.id, getDbClient().select({ catalogItemId: currentEntry.catalogItemId })
-                .from(currentEntry).where(eq(currentEntry.userId, currentUserId))));
         }
         return conditions;
     }
@@ -594,16 +341,12 @@ export class BookLibraryRepository {
         if (rows.length === 0) return [];
         const entryIds = rows.map(({ id }) => id);
         const catalogItemIds = rows.map(({ catalogItemId }) => catalogItemId);
-        const [tags, commonEntries] = await Promise.all([
-            getDbClient().select({ libraryEntryId: libraryEntryTag.libraryEntryId, id: libraryTag.id, name: libraryTag.name })
-                .from(libraryEntryTag).innerJoin(libraryTag, eq(libraryTag.id, libraryEntryTag.tagId))
-                .where(inArray(libraryEntryTag.libraryEntryId, entryIds)).orderBy(asc(libraryTag.name)),
-            currentUserId && currentUserId !== ownerId
-                ? getDbClient().select({ catalogItemId: libraryEntry.catalogItemId }).from(libraryEntry)
-                    .where(and(eq(libraryEntry.userId, currentUserId), inArray(libraryEntry.catalogItemId, catalogItemIds)))
-                : [],
-        ]);
-        const commonIds = new Set(commonEntries.map(({ catalogItemId }) => catalogItemId));
+        const { tags, commonIds } = await getLibraryListItemRelations(
+            entryIds,
+            catalogItemIds,
+            currentUserId,
+            ownerId,
+        );
         return rows.map(({ catalogItemId, imageCover, customCover, ...row }) => {
             if (!isBookStatus(row.status)) throw new Error(`Invalid book library status: ${row.status}`);
             return {

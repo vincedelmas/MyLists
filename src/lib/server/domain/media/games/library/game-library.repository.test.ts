@@ -11,6 +11,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({ getDbClient: () => dbCon
 
 const { GameLibraryRepository } = await import("./game-library.repository");
 const { GameLibraryService } = await import("./game-library.service");
+const { CommonLibraryRepository } = await import("@/lib/server/domain/media/shared/library/common-library.repository");
 
 
 const ownerScope = { ownerId: 42, actorId: 50, reason: "public", mediaTypeEnabled: true } as const;
@@ -60,10 +61,10 @@ describe("game library repository", () => {
     });
 
     it("serves the public list header from channel state and normalized playtime stats", async () => {
-        const repository = new GameLibraryRepository();
+        const repository = new CommonLibraryRepository(MediaType.GAMES);
         expect(await repository.getListHeader(42)).toBeUndefined();
         const library = new GameLibraryService(new GameLibraryRepository());
-        await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
+        await library.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
         expect(await repository.getListHeader(42)).toEqual({ timeSpent: 720 });
     });
 
@@ -93,16 +94,16 @@ describe("game library repository", () => {
     });
 
     it("supports empty tags and retains canonical IDs in upcoming game reads", async () => {
-        const repository = new GameLibraryRepository();
-        await repository.editTag({ userId: 42, action: TagAction.ADD, name: "empty-tag" });
-        expect(await repository.getTagsView(ownerScope, { page: 1 })).toMatchObject({
+        const commonRepository = new CommonLibraryRepository(MediaType.GAMES);
+        await commonRepository.editTag({ userId: 42, action: TagAction.ADD, name: "empty-tag" });
+        expect(await commonRepository.getTagsView(ownerScope.ownerId, { page: 1 })).toMatchObject({
             total: 2,
             items: expect.arrayContaining([
                 expect.objectContaining({ tagName: "comfort", totalCount: 1 }),
                 expect.objectContaining({ tagName: "empty-tag", totalCount: 0 }),
             ]),
         });
-        expect(await repository.getUpcomingMedia(ownerScope)).toEqual([
+        expect(await new GameLibraryRepository().getUpcomingMedia(ownerScope)).toEqual([
             expect.objectContaining({ mediaId: 1002, userId: 42, mediaName: "Gamma", date: "2099-01-02" }),
         ]);
     });
@@ -133,9 +134,10 @@ const seedList = async (db: BunSQLiteDatabase<typeof schema>) => {
 
     const repository = new GameLibraryRepository();
     const library = new GameLibraryService(repository);
+    const commonRepository = new CommonLibraryRepository(MediaType.GAMES);
     const alpha = await library.importEntry({ userId: 42, catalogItemId: 1000, status: Status.PLAYING, playtime: 600, platform: "PC", rating: 8 });
-    await repository.updateCommonFields(alpha.id, { customCover: "custom.jpg" });
-    await repository.editTag({ userId: 42, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
+    await commonRepository.updateEntry(alpha.id, { customCover: "custom.jpg" });
+    await commonRepository.editTag({ userId: 42, action: TagAction.ADD, name: "comfort", libraryEntryId: alpha.id });
     await library.importEntry({ userId: 42, catalogItemId: 1001, status: Status.COMPLETED, playtime: 120, platform: "Switch", rating: 8 });
     await library.importEntry({ userId: 42, catalogItemId: 1002, status: Status.PLAN_TO_PLAY, playtime: 0, platform: null, rating: 8 });
     await library.importEntry({ userId: 50, catalogItemId: 1000, status: Status.PLAYING, playtime: 30, platform: "PC" });

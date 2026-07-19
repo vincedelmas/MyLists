@@ -1,8 +1,7 @@
 import {FormattedError} from "@/lib/utils/error-classes";
-import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
-import {UpdateUserCustomCover, UpdateUserMedia} from "@/lib/contracts/media/library";
+import {JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {UpdateUserMedia} from "@/lib/contracts/media/library";
 import {BooksFinalListInsert} from "@/lib/server/domain/media/books/imports/book-import.schemas";
-import {monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {BookLibraryEntry, BookLibraryRepository} from "@/lib/server/domain/media/books/library/book-library.repository";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {
@@ -13,13 +12,13 @@ import {
     replaceBookPage,
     replaceBookRereads
 } from "@/lib/server/domain/media/books/library/book-progress";
-import {LibraryChangeValue} from "@/lib/server/database/schema/library.schema";
-import {SearchType, SimpleSearch} from "@/lib/schemas";
+import {SearchType} from "@/lib/schemas";
 import {BookListArgs} from "@/lib/contracts/media/lists";
 import {MediaListAccessScope} from "@/lib/server/domain/access/library-access.policy";
 import {BookStatsRepository} from "@/lib/server/domain/media/books/library/book-stats.repository";
 import {exportBookLibraryCsv} from "@/lib/server/domain/media/books/library/book-library-csv-export";
-import {prepareLibraryCustomCover} from "@/lib/server/domain/media/shared/library/library-custom-cover";
+import {CommonLibraryService, LibraryStatsSnapshot} from "@/lib/server/domain/media/shared/library/common-library.service";
+import {CommonLibraryRepository} from "@/lib/server/domain/media/shared/library/common-library.repository";
 
 
 const MINUTES_PER_PAGE = 1.7;
@@ -30,11 +29,10 @@ export class BookLibraryService {
     readonly stats = BookStatsRepository;
     readonly export = { csv: exportBookLibraryCsv };
 
-    constructor(private readonly repository = new BookLibraryRepository()) {
-    }
-
-    getUserMediaHistory(userId: number, catalogItemId: number) {
-        return this.repository.getUserMediaHistory(userId, catalogItemId);
+    constructor(
+        private readonly repository = new BookLibraryRepository(),
+        readonly common = new CommonLibraryService(new CommonLibraryRepository(MediaType.BOOKS)),
+    ) {
     }
 
     findUserMedia(userId: number | undefined, catalogItemId: number) {
@@ -49,10 +47,6 @@ export class BookLibraryService {
         return this.repository.getCommunityActivity(viewerId, catalogItemId, search);
     }
 
-    getListHeader(userId: number) {
-        return this.repository.getListHeader(userId);
-    }
-
     getMediaList(currentUserId: number | undefined, access: MediaListAccessScope, args: BookListArgs) {
         return this.repository.getMediaList(currentUserId, access, args);
     }
@@ -63,14 +57,6 @@ export class BookLibraryService {
 
     getSearchListFilters(access: MediaListAccessScope, query: string, job: JobType) {
         return this.repository.getSearchListFilters(access, query, job);
-    }
-
-    getTagsView(access: MediaListAccessScope, search: SimpleSearch) {
-        return this.repository.getTagsView(access, search);
-    }
-
-    getTagNames(userId: number) {
-        return this.repository.getTagNames(userId);
     }
 
     findEntriesByCatalogItem(catalogItemId: number) {
@@ -88,11 +74,11 @@ export class BookLibraryService {
             case UpdateType.REDO:
                 return this.replaceRereads({ ...common, rereadCount: params.payload.rereadCount, loggedAt: params.payload.loggedAt });
             case UpdateType.RATING:
-                return this.updateRating({ ...common, rating: params.payload.rating ?? null });
+                return this.common.updateRating({ ...common, rating: params.payload.rating ?? null });
             case UpdateType.COMMENT:
-                return this.updateComment({ ...common, comment: params.payload.comment ?? null });
+                return this.common.updateComment({ ...common, comment: params.payload.comment ?? null });
             case UpdateType.FAVORITE:
-                return this.updateFavorite({ ...common, favorite: params.payload.favorite ?? false });
+                return this.common.updateFavorite({ ...common, favorite: params.payload.favorite ?? false });
             default:
                 throw new Error("Unsupported book update type.");
         }
@@ -111,26 +97,19 @@ export class BookLibraryService {
         });
     }
 
-    async editTag(params: { userId: number; mediaId?: number; action: TagAction; tag: { name: string; oldName?: string } }) {
-        const libraryEntryId = params.mediaId ? (await this.get(params.userId, params.mediaId))?.id : undefined;
-        return this.repository.editTag({
-            userId: params.userId, action: params.action,
-            name: params.tag.name, oldName: params.tag.oldName, libraryEntryId,
-        });
-    }
-
     async add(params: { userId: number; catalogItemId: number; status?: Status; silent?: boolean }) {
         const media = await this.repository.getBookCatalogItem(params.catalogItemId);
         if (!media) throw new FormattedError("Media not found");
         if (await this.repository.findEntry(params.userId, params.catalogItemId)) throw new FormattedError("Media already in your list");
         const progress = createInitialBookProgress(params.status ?? Status.PLAN_TO_READ, media.pages);
-        const entryId = await this.repository.createEntry({ ...params, status: progress.status, progress });
+        await this.repository.createEntry({ ...params, status: progress.status, progress });
         const created = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(undefined, created);
-        if (!params.silent) {
-            await this.repository.recordChange(entryId, UpdateType.STATUS, null, progress.status);
-            await this.recordActivity(undefined, created);
-        }
+        await this.common.recordCreatedEntry({
+            entryId: created.id,
+            snapshot: statsSnapshot(created),
+            activity: activityContribution(undefined, created),
+            silent: params.silent,
+        });
         return created;
     }
 
@@ -166,77 +145,67 @@ export class BookLibraryService {
             customCover: params.customCover ?? null,
         });
         const imported = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(undefined, imported);
+        await this.common.applyStatsTransition(undefined, statsSnapshot(imported));
         return imported;
     }
 
     async changeStatus(params: { userId: number; catalogItemId: number; status: Status; loggedAt?: string }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        return this.persistLoggedTransition(
-            current,
-            changeBookStatus(current.progress, params.status, current.pages),
-            UpdateType.STATUS,
-            current.progress.status,
-            params.status,
-            params,
-        );
+        const progress = changeBookStatus(current.progress, params.status, current.pages);
+        await this.repository.saveProgress(current.id, progress);
+        const updated = await this.requireEntry(current.userId, current.catalogItemId);
+        await this.common.recordEntryTransition({
+            entryId: current.id,
+            before: statsSnapshot(current),
+            after: statsSnapshot(updated),
+            activity: activityContribution(current, updated),
+            updateType: UpdateType.STATUS,
+            oldValue: current.progress.status,
+            newValue: params.status,
+            loggedAt: params.loggedAt,
+        });
+        return updated;
     }
 
     async replacePage(params: { userId: number; catalogItemId: number; currentPage: number; loggedAt?: string }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        return this.persistLoggedTransition(
-            current,
-            replaceBookPage(current.progress, params.currentPage, current.pages),
-            UpdateType.PAGE,
-            current.progress.currentPage,
-            params.currentPage,
-            params,
-        );
+        const progress = replaceBookPage(current.progress, params.currentPage, current.pages);
+        await this.repository.saveProgress(current.id, progress);
+        const updated = await this.requireEntry(current.userId, current.catalogItemId);
+        await this.common.recordEntryTransition({
+            entryId: current.id,
+            before: statsSnapshot(current),
+            after: statsSnapshot(updated),
+            activity: activityContribution(current, updated),
+            updateType: UpdateType.PAGE,
+            oldValue: current.progress.currentPage,
+            newValue: params.currentPage,
+            loggedAt: params.loggedAt,
+        });
+        return updated;
     }
 
     async replaceRereads(params: { userId: number; catalogItemId: number; rereadCount: number; loggedAt?: string }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        return this.persistLoggedTransition(
-            current,
-            replaceBookRereads(current.progress, params.rereadCount, current.pages),
-            UpdateType.REDO,
-            current.progress.rereadCount,
-            params.rereadCount,
-            params,
-        );
-    }
-
-    updateRating(params: { userId: number; catalogItemId: number; rating: number | null }) {
-        if (params.rating !== null && (params.rating < 0 || params.rating > 10)) throw new FormattedError("Rating must be between 0 and 10.");
-        return this.updateCommon(params, { rating: params.rating });
-    }
-
-    updateComment(params: { userId: number; catalogItemId: number; comment: string | null }) {
-        return this.updateCommon(params, { comment: params.comment });
-    }
-
-    updateFavorite(params: { userId: number; catalogItemId: number; favorite: boolean }) {
-        return this.updateCommon(params, { favorite: params.favorite });
-    }
-
-    async updateCustomCover(userId: number, input: UpdateUserCustomCover) {
-        await this.requireEntry(userId, input.mediaId);
-        const customCover = await prepareLibraryCustomCover(MediaType.BOOKS, input);
-        await this.updateCommon({ userId, catalogItemId: input.mediaId }, { customCover });
-
-        const result = await this.repository.findUserMedia(userId, input.mediaId);
-        if (!result) throw new FormattedError("Media not in your list");
-        return result;
+        const progress = replaceBookRereads(current.progress, params.rereadCount, current.pages);
+        await this.repository.saveProgress(current.id, progress);
+        const updated = await this.requireEntry(current.userId, current.catalogItemId);
+        await this.common.recordEntryTransition({
+            entryId: current.id,
+            before: statsSnapshot(current),
+            after: statsSnapshot(updated),
+            activity: activityContribution(current, updated),
+            updateType: UpdateType.REDO,
+            oldValue: current.progress.rereadCount,
+            newValue: params.rereadCount,
+            loggedAt: params.loggedAt,
+        });
+        return updated;
     }
 
     async remove(params: { userId: number; catalogItemId: number }) {
         const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(current, undefined);
-        await this.repository.removeEntry(current.id);
-    }
-
-    synchronizeProfileChannel(params: { userId: number; enabled: boolean; views: number }) {
-        return this.repository.synchronizeProfileChannel(params.userId, params.enabled, params.views);
+        return this.common.removeEntry(current.id, statsSnapshot(current));
     }
 
     async reconcileCatalogMetadata(previousEntries: BookLibraryEntry[]) {
@@ -244,75 +213,8 @@ export class BookLibraryService {
             const current = await this.requireEntry(previous.userId, previous.catalogItemId);
             await this.repository.saveProgress(current.id, reconcileBookPages(previous.progress, current.pages));
             const reconciled = await this.requireEntry(previous.userId, previous.catalogItemId);
-            await this.applyStatsTransition(previous, reconciled);
+            await this.common.applyStatsTransition(statsSnapshot(previous), statsSnapshot(reconciled));
         }
-    }
-
-    private async persistLoggedTransition(
-        current: BookLibraryEntry,
-        progress: BookLibraryEntry["progress"],
-        updateType: typeof UpdateType.STATUS | typeof UpdateType.PAGE | typeof UpdateType.REDO,
-        oldValue: LibraryChangeValue,
-        newValue: LibraryChangeValue,
-        metadata: { loggedAt?: string },
-    ) {
-        await this.repository.saveProgress(current.id, progress);
-        const updated = await this.requireEntry(current.userId, current.catalogItemId);
-        await this.applyStatsTransition(current, updated);
-        await this.recordActivity(current, updated, metadata.loggedAt);
-        await this.repository.recordChange(current.id, updateType, oldValue, newValue, metadata.loggedAt);
-        return updated;
-    }
-
-    private async updateCommon(
-        params: { userId: number; catalogItemId: number },
-        fields: Parameters<BookLibraryRepository["updateCommonFields"]>[1],
-    ) {
-        const current = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.repository.updateCommonFields(current.id, fields);
-        const updated = await this.requireEntry(params.userId, params.catalogItemId);
-        await this.applyStatsTransition(current, updated);
-        return updated;
-    }
-
-    private async applyStatsTransition(before?: BookLibraryEntry, after?: BookLibraryEntry) {
-        const sample = after ?? before;
-        if (!sample) return;
-        const current = await this.repository.getStats(sample.userId);
-        const beforeMetrics = entryMetrics(before);
-        const afterMetrics = entryMetrics(after);
-        const statusCounts = { ...(current?.statusCounts ?? {}) };
-        if (before) statusCounts[before.progress.status] = Math.max(0, (statusCounts[before.progress.status] ?? 0) - 1);
-        if (after) statusCounts[after.progress.status] = (statusCounts[after.progress.status] ?? 0) + 1;
-        const entriesRated = Math.max(0, (current?.entriesRated ?? 0) + afterMetrics.rated - beforeMetrics.rated);
-        const ratingSum = Math.max(0, (current?.ratingSum ?? 0) + afterMetrics.rating - beforeMetrics.rating);
-
-        await this.repository.saveStats({
-            userId: sample.userId,
-            kind: MediaType.BOOKS,
-            timeSpentMinutes: Math.max(0, (current?.timeSpentMinutes ?? 0) + afterMetrics.time - beforeMetrics.time),
-            totalEntries: Math.max(0, (current?.totalEntries ?? 0) + Number(!!after) - Number(!!before)),
-            totalRedo: Math.max(0, (current?.totalRedo ?? 0) + afterMetrics.redo - beforeMetrics.redo),
-            entriesRated,
-            ratingSum,
-            entriesCommented: Math.max(0, (current?.entriesCommented ?? 0) + afterMetrics.commented - beforeMetrics.commented),
-            entriesFavorited: Math.max(0, (current?.entriesFavorited ?? 0) + afterMetrics.favorited - beforeMetrics.favorited),
-            totalSpecific: Math.max(0, (current?.totalSpecific ?? 0) + afterMetrics.pages - beforeMetrics.pages),
-            statusCounts,
-            averageRating: entriesRated > 0 ? ratingSum / entriesRated : null,
-        });
-    }
-
-    private async recordActivity(before: BookLibraryEntry | undefined, after: BookLibraryEntry, loggedAt?: string) {
-        const occurredAt = loggedAt ? `${loggedAt} 12:00:00` : new Date().toISOString();
-        await this.repository.recordActivity({
-            entryId: after.id,
-            unitsGained: after.progress.totalPagesRead - (before?.progress.totalPagesRead ?? 0),
-            completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,
-            redo: after.progress.rereadCount > (before?.progress.rereadCount ?? 0),
-            monthBucket: monthBucketFromDateInput(new Date(occurredAt)),
-            occurredAt,
-        });
     }
 
     private async requireEntry(userId: number, catalogItemId: number) {
@@ -323,15 +225,20 @@ export class BookLibraryService {
 }
 
 
-const entryMetrics = (entry?: BookLibraryEntry) => {
-    if (!entry) return { time: 0, redo: 0, pages: 0, rated: 0, rating: 0, commented: 0, favorited: 0 };
-    return {
-        time: entry.progress.totalPagesRead * MINUTES_PER_PAGE,
-        redo: entry.progress.rereadCount,
-        pages: entry.progress.totalPagesRead,
-        rated: Number(entry.rating !== null),
-        rating: entry.rating ?? 0,
-        commented: Number(!!entry.comment),
-        favorited: Number(entry.favorite),
-    };
-};
+const statsSnapshot = (entry: BookLibraryEntry): LibraryStatsSnapshot => ({
+    userId: entry.userId,
+    status: entry.progress.status,
+    time: entry.progress.totalPagesRead * MINUTES_PER_PAGE,
+    redo: entry.progress.rereadCount,
+    specific: entry.progress.totalPagesRead,
+    rated: Number(entry.rating !== null),
+    rating: entry.rating ?? 0,
+    commented: Number(!!entry.comment),
+    favorited: Number(entry.favorite),
+});
+
+const activityContribution = (before: BookLibraryEntry | undefined, after: BookLibraryEntry) => ({
+    unitsGained: after.progress.totalPagesRead - (before?.progress.totalPagesRead ?? 0),
+    completed: before?.progress.status !== Status.COMPLETED && after.progress.status === Status.COMPLETED,
+    redo: after.progress.rereadCount > (before?.progress.rereadCount ?? 0),
+});

@@ -20,7 +20,7 @@ export const getUserMediaHistory = createServerFn({ method: "GET" })
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.media.get(mediaType).library.getUserMediaHistory(currentUser.id, mediaId);
+        return container.media.get(mediaType).library.common.getUserMediaHistory(currentUser.id, mediaId);
     });
 
 
@@ -81,7 +81,11 @@ export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
     })
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.media.get(data.mediaType).library.updateCustomCover(currentUser.id, data);
+        const library = container.media.get(data.mediaType).library;
+        await library.common.updateCustomCover(currentUser.id, data);
+        const result = await library.findUserMedia(currentUser.id, data.mediaId);
+        if (!result) throw new FormattedError("Media not in your list");
+        return result;
     });
 
 
@@ -109,7 +113,7 @@ export const getUserTagNames = createServerFn({ method: "GET" })
     .validator(userTagNamesSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.media.get(mediaType).library.getTagNames(currentUser.id);
+        return container.media.get(mediaType).library.common.getTagNames(currentUser.id);
     });
 
 
@@ -118,7 +122,7 @@ export const postEditUserTag = createServerFn({ method: "POST" })
     .validator(editUserTagSchema)
     .handler(async ({ data: { mediaType, mediaId, tag, action }, context: { currentUser } }) => {
         const container = await getContainer();
-        return container.media.get(mediaType).library.editTag({
+        return container.media.get(mediaType).library.common.editTag({
             userId: currentUser.id,
             mediaId,
             action,

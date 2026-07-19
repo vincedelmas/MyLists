@@ -57,7 +57,7 @@ describe("movie library service", () => {
 
         const rewatched = await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatchCount: 2 });
         expect(rewatched.progress).toEqual({ status: Status.COMPLETED, watchCount: 3 });
-        await library.updateRating({ userId: 42, catalogItemId: 1000, rating: 9 });
+        await library.common.updateRating({ userId: 42, catalogItemId: 1000, rating: 9 });
 
         expect(await db.select().from(schema.libraryStats)).toEqual([
             expect.objectContaining({
@@ -118,7 +118,7 @@ describe("movie library service", () => {
 
         const repository = new MovieLibraryRepository();
         const library = new MovieLibraryService(repository);
-        const entry = await library.importEntry({
+        await library.importEntry({
             userId: 42,
             catalogItemId: 1000,
             status: Status.COMPLETED,
@@ -127,14 +127,14 @@ describe("movie library service", () => {
             comment: "Good",
             favorite: true,
         });
-        await repository.editTag({
+        await library.common.editTag({
             userId: 42,
+            mediaId: 1000,
             action: TagAction.ADD,
-            name: "comfort",
-            libraryEntryId: entry.id,
+            tag: { name: "comfort" },
         });
         await library.replaceRewatches({ userId: 42, catalogItemId: 1000, rewatchCount: 2, loggedAt: "2026-06-02" });
-        await library.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
+        await library.common.synchronizeProfileChannel({ userId: 42, enabled: true, views: 4 });
 
         const access = { ownerId: 42, actorId: 42, reason: "owner", mediaTypeEnabled: true } as const;
         const activity = ActivityRepository;

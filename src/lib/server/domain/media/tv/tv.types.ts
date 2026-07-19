@@ -1,10 +1,9 @@
 import * as z from "zod";
 import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
+import {REDO_MAX} from "@/lib/utils/constants";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
 import {anime, animeList, series, seriesList} from "@/lib/server/database/schema";
-import {animeAchievements} from "@/lib/server/domain/media/tv/anime/achievements.seed";
-import {seriesAchievements} from "@/lib/server/domain/media/tv/series/achievements.seed";
 import {
     importCommentSchema,
     importFavoriteSchema,
@@ -15,7 +14,6 @@ import {
     importStatusSchema,
     importTotalSchema
 } from "@/lib/server/domain/imports/import-list-validation";
-import {REDO_MAX} from "@/lib/utils/constants";
 
 
 type Series = typeof series.$inferSelect;
@@ -28,7 +26,6 @@ export type TvType = Series | Anime;
 export type TvList = SeriesList | AnimeList;
 export type TvImportPayload = z.infer<typeof tvImportPayloadSchema>;
 export type TvMediaType = typeof MediaType.SERIES | typeof MediaType.ANIME;
-export type TvAchCodeName = typeof animeAchievements[number]["codeName"] | typeof seriesAchievements[number]["codeName"];
 
 
 export type UpsertTvWithDetails = {

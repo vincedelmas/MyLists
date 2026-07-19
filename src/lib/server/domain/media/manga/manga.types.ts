@@ -3,7 +3,6 @@ import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {manga, mangaList} from "@/lib/server/database/schema";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
-import {mangaAchievements} from "@/lib/server/domain/media/manga/achievements.seed";
 import {
     importCommentSchema,
     importFavoriteSchema,
@@ -18,7 +17,6 @@ import {
 export type Manga = typeof manga.$inferSelect;
 export type MangaList = typeof mangaList.$inferSelect;
 export type MangaImportPayload = z.infer<typeof mangaImportPayloadSchema>;
-export type MangaAchCodeName = typeof mangaAchievements[number]["codeName"];
 
 
 export type UpsertMangaWithDetails = {

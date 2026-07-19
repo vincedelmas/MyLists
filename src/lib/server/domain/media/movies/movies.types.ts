@@ -3,7 +3,6 @@ import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {movies, moviesList} from "@/lib/server/database/schema";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
-import {moviesAchievements} from "@/lib/server/domain/media/movies/achievements.seed";
 import {
     importCommentSchema,
     importFavoriteSchema,
@@ -17,7 +16,6 @@ import {
 export type Movie = typeof movies.$inferSelect;
 export type MoviesList = typeof moviesList.$inferSelect;
 export type MoviesImportPayload = z.infer<typeof moviesImportPayloadSchema>;
-export type MoviesAchCodeName = typeof moviesAchievements[number]["codeName"];
 
 
 export type UpsertMovieWithDetails = {

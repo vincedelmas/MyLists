@@ -3,7 +3,6 @@ import {MediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {books, booksList} from "@/lib/server/database/schema";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
-import {booksAchievements} from "@/lib/server/domain/media/books/achievements.seed";
 import {
     importCommentSchema,
     importFavoriteSchema,
@@ -18,7 +17,6 @@ import {
 export type Book = typeof books.$inferSelect;
 export type BooksList = typeof booksList.$inferSelect;
 export type BooksImportPayload = z.infer<typeof booksImportPayloadSchema>;
-export type BooksAchCodeName = typeof booksAchievements[number]["codeName"];
 
 
 export type InsertBooksWithDetails = {

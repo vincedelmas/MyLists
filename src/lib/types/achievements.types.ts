@@ -1,8 +1,24 @@
 import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
-import {AchievementsService} from "@/lib/server/domain/achievements/achievements.service";
 
 
-export type Achievement = Awaited<ReturnType<AchievementsService["getAllAchievements"]>>[number];
+export type Achievement = {
+    id: number;
+    name: string;
+    codeName: string;
+    description: string;
+    mediaType: MediaType;
+    value: string | null;
+    tiers: AchievementTier[];
+};
+
+
+type AchievementTier = {
+    id: number;
+    achievementId: number;
+    rarity: number | null;
+    criteria: { count: number };
+    difficulty: AchievementDifficulty;
+};
 
 
 export type AchievementSeedData = {

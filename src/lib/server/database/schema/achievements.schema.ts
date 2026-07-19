@@ -28,15 +28,17 @@ export const achievementTier = sqliteTable("achievement_tier", {
 
 export const userAchievement = sqliteTable("user_achievement", {
     id: integer().primaryKey().notNull(),
-    userId: integer().references(() => user.id, { onDelete: "cascade" }),
-    achievementId: integer().references(() => achievement.id, { onDelete: "cascade" }),
-    tierId: integer().references(() => achievementTier.id),
+    userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
+    achievementId: integer().notNull().references(() => achievement.id, { onDelete: "cascade" }),
+    tierId: integer().notNull().references(() => achievementTier.id, { onDelete: "cascade" }),
     progress: real(),
     count: real(),
     completed: integer({ mode: "boolean" }),
     completedAt: text(),
     lastCalculatedAt: text(),
-});
+}, (table) => [
+    uniqueIndex("user_achievement_user_tier_unique_idx").on(table.userId, table.tierId),
+]);
 
 
 export const achievementRelations = relations(achievement, ({ many }) => ({

@@ -22,14 +22,14 @@ export const calculateAchievementsTask = defineTask({
 
         for (const mediaType of typesToProcess) {
             await ctx.step(`calculate-${mediaType}`, async () => {
-                const mediaAchievementsCalculator = achievementsRegistry.get(mediaType);
+                const catalog = achievementsRegistry.get(mediaType);
                 const mediaAchievements = allAchievements.filter((ach) => ach.mediaType === mediaType);
 
                 ctx.metric(`${mediaType}.count`, mediaAchievements.length);
 
                 for (const achievement of mediaAchievements) {
                     try {
-                        await achievementsService.calculateAchievement(achievement, mediaAchievementsCalculator);
+                        await achievementsService.calculateAchievement(achievement, catalog);
                         ctx.increment(`${mediaType}.processed`);
                     }
                     catch (err) {

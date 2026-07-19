@@ -1,15 +1,15 @@
 import {db} from "@/lib/server/database/db";
 import {AchievementTier} from "@/lib/schemas";
 import {StatsCTE} from "@/lib/types/media-common.types";
-import {AchievementDifficulty} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {AchievementSeedData} from "@/lib/types/achievements.types";
-import {and, asc, count, desc, eq, inArray, max, notInArray, SQL, sql} from "drizzle-orm";
+import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
+import {Achievement, AchievementSeedData} from "@/lib/types/achievements.types";
+import {and, asc, count, desc, eq, inArray, max, notInArray, sql} from "drizzle-orm";
 import {achievement, achievementTier, user, userAchievement, userMediaSettings} from "@/lib/server/database/schema";
 
 
 export class AchievementsRepository {
-    static async seedAchievements(achievementsDef: readonly AchievementSeedData[]) {
+    static async seedAchievements(mediaType: MediaType, achievementsDef: readonly AchievementSeedData[]) {
         const tx = getDbClient();
 
         // Upsert achievements and tiers
@@ -57,7 +57,6 @@ export class AchievementsRepository {
         }));
 
         // Remove orphaned achievements and tiers
-        const mediaType = achievementsDef[0].mediaType;
         const achCodeNames = achievementsDef.map((ach) => ach.codeName);
 
         const orphanedAchievementIds = await tx
@@ -67,7 +66,9 @@ export class AchievementsRepository {
             .then((rows) => rows.map((r) => r.id));
 
         if (orphanedAchievementIds.length > 0) {
-            await tx.delete(achievement).where(inArray(achievement.id, orphanedAchievementIds));
+            await tx
+                .delete(achievement)
+                .where(inArray(achievement.id, orphanedAchievementIds));
         }
     }
 
@@ -253,51 +254,66 @@ export class AchievementsRepository {
         });
     }
 
-    static async updateAchievement(tier: AchievementTier, cte: StatsCTE, completed: SQL, count: SQL, progress: SQL, completedAt: SQL) {
-        await getDbClient()
-            .update(userAchievement)
-            .set({
-                count: count,
-                progress: progress,
-                completed: completed,
-                completedAt: completedAt,
-                lastCalculatedAt: sql`datetime('now')`,
-            }).from(cte)
-            .where(and(
-                eq(userAchievement.tierId, tier.id),
-                sql`${userAchievement.userId} = calculation.user_id`,
-                eq(userAchievement.achievementId, tier.achievementId),
-            ));
-    }
-
-    static async insertAchievement(tier: AchievementTier, cte: StatsCTE, completed: SQL, count: SQL, progress: SQL) {
+    static async upsertAchievementProgress(achievementData: Achievement, calculation: StatsCTE) {
         getDbClient().run(sql`
+            WITH candidate_progress(user_id, value) AS (
+                SELECT calculation.user_id, COALESCE(calculation.value, 0)
+                FROM ${calculation}
+
+                UNION ALL
+
+                SELECT existing_progress.user_id, 0
+                FROM ${userAchievement} AS existing_progress
+                WHERE existing_progress.achievement_id = ${achievementData.id}
+            ),
+            resolved_progress(user_id, value) AS (
+                SELECT user_id, MAX(value)
+                FROM candidate_progress
+                GROUP BY user_id
+            )
             INSERT INTO ${userAchievement} (
-                tier_id, 
-                user_id, 
-                achievement_id, 
-                count, 
-                progress, 
-                completed, 
-                completed_at, 
+                user_id,
+                achievement_id,
+                tier_id,
+                count,
+                progress,
+                completed,
+                completed_at,
                 last_calculated_at
             )
-            SELECT 
-                ${tier.id},
-                calculation.user_id,
-                ${tier.achievementId},
-                ${count},
-                ${progress},
-                ${completed},
-                CASE WHEN ${completed} THEN datetime('now') ELSE NULL END,
+            SELECT
+                resolved_progress.user_id,
+                ${achievementData.id},
+                ${achievementTier.id},
+                resolved_progress.value,
+                CASE
+                    WHEN resolved_progress.value >= CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL)
+                    THEN 100.0
+                    ELSE resolved_progress.value * 100.0 / CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL)
+                END,
+                resolved_progress.value >= CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL),
+                CASE
+                    WHEN resolved_progress.value >= CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL)
+                    THEN datetime('now')
+                    ELSE NULL
+                END,
                 datetime('now')
-            FROM ${cte}
-            WHERE NOT EXISTS (
-                SELECT 1 FROM ${userAchievement} ua
-                WHERE ua.tier_id = ${tier.id}
-                    AND ua.achievement_id = ${tier.achievementId}
-                    AND ua.user_id = calculation.user_id
-            )
+            FROM resolved_progress
+            CROSS JOIN ${achievementTier}
+            WHERE ${achievementTier.achievementId} = ${achievementData.id}
+            ON CONFLICT (user_id, tier_id) DO UPDATE SET
+                achievement_id = excluded.achievement_id,
+                count = excluded.count,
+                progress = excluded.progress,
+                completed = excluded.completed,
+                completed_at = CASE
+                    WHEN excluded.completed = 1 AND COALESCE(${userAchievement.completed}, 0) = 0
+                    THEN excluded.completed_at
+                    WHEN excluded.completed = 0
+                    THEN NULL
+                    ELSE ${userAchievement.completedAt}
+                END,
+                last_calculated_at = excluded.last_calculated_at
         `);
     }
 
@@ -308,23 +324,19 @@ export class AchievementsRepository {
             .where(eq(user.emailVerified, true))
             .get();
 
-        const raritySubq = getDbClient()
-            .select({
-                tierId: userAchievement.tierId,
-                count: count(userAchievement.userId).as("count"),
-            })
-            .from(userAchievement)
-            .where(eq(userAchievement.completed, true))
-            .groupBy(userAchievement.tierId)
-            .as("rarity_subq");
-
         await getDbClient()
             .update(achievementTier)
             .set({
-                rarity: sql`COALESCE((100.0 * ${raritySubq.count} / ${totalActiveUsers?.count ?? 0}), 0)`,
-            })
-            .from(raritySubq)
-            .where(eq(achievementTier.id, raritySubq.tierId));
+                rarity: totalActiveUsers?.count
+                    ? sql`COALESCE(
+                        100.0 * (
+                            SELECT COUNT(*)
+                            FROM ${userAchievement} AS completed_progress
+                            WHERE completed_progress.tier_id = ${achievementTier.id} AND completed_progress.completed = 1
+                        ) / ${totalActiveUsers.count}, 0
+                    )`
+                    : 0,
+            });
     }
 
     private static _getSQLTierOrdering() {

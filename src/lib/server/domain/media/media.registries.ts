@@ -6,10 +6,10 @@ import {MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
 import {BooksRepository, BooksService} from "@/lib/server/domain/media/books";
 import {MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
-import {MediaAchievements} from "@/lib/server/domain/media/base/base.achievements";
 import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 import {UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
 import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
+import {AchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
 
@@ -117,20 +117,8 @@ export class MediaIngestionServiceRegistry {
 }
 
 
-type MediaAchievementsRegistryMap = Record<MediaType, MediaAchievements>;
-
-
-export class MediaAchievementsRegistry {
-    private static achievements: MediaAchievementsRegistryMap = {} as MediaAchievementsRegistryMap;
-
-    static register<T extends MediaType>(mediaType: T, achievements: MediaAchievementsRegistryMap[T]) {
-        this.achievements[mediaType] = achievements;
-    }
-
-    static get<T extends MediaType>(mediaType: T): MediaAchievementsRegistryMap[T] {
-        if (!this.achievements[mediaType]) {
-            throw new Error(`Achievements for media type ${mediaType} not registered`);
-        }
-        return this.achievements[mediaType];
-    }
-}
+export const createMediaAchievementsRegistry = (catalogs: Record<MediaType, AchievementCatalog>) => ({
+    get<T extends MediaType>(mediaType: T): Record<MediaType, AchievementCatalog>[T] {
+        return catalogs[mediaType];
+    },
+});

@@ -260,6 +260,13 @@
       "when": 1783851780887,
       "tag": "0036_drop_error_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1784473745784,
+      "tag": "0037_achievement_progress_integrity",
+      "breakpoints": true
     }
   ]
 }

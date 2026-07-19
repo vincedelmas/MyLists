@@ -1,19 +1,19 @@
 import {MediaType} from "@/lib/utils/enums";
-import {BooksRepository, BooksService} from "@/lib/server/domain/media/books";
-import {GamesRepository, GamesService} from "@/lib/server/domain/media/games";
-import {MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
-import {MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
-import {animeConfig, seriesConfig, TvRepository, TvService} from "@/lib/server/domain/media/tv";
 import {booksConfig} from "@/lib/server/domain/media/books/books.config";
 import {gamesConfig} from "@/lib/server/domain/media/games/games.config";
 import {mangaConfig} from "@/lib/server/domain/media/manga/manga.config";
 import {moviesConfig} from "@/lib/server/domain/media/movies/movies.config";
-import {createMediaAchievements} from "@/lib/server/domain/media/media-achievements.factory";
-import {
-    MediaAchievementsRegistry,
-    MediaRepositoryRegistry,
-    MediaServiceRegistry,
-} from "@/lib/server/domain/media/media.registries";
+import {BooksRepository, BooksService} from "@/lib/server/domain/media/books";
+import {GamesRepository, GamesService} from "@/lib/server/domain/media/games";
+import {MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
+import {MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
+import {createTvAchievementCatalog} from "@/lib/server/domain/media/tv/tv.achievements";
+import {animeConfig, seriesConfig, TvRepository, TvService} from "@/lib/server/domain/media/tv";
+import {createBooksAchievementCatalog} from "@/lib/server/domain/media/books/books.achievements";
+import {createGamesAchievementCatalog} from "@/lib/server/domain/media/games/games.achievements";
+import {createMangaAchievementCatalog} from "@/lib/server/domain/media/manga/manga.achievements";
+import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
+import {createMediaAchievementsRegistry, MediaRepositoryRegistry, MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 
 
 export function setupMediaModule() {
@@ -29,16 +29,13 @@ export function setupMediaModule() {
         MediaRepositoryRegistry.register(key as MediaType, repo);
     });
 
-    const achievements = {
-        series: createMediaAchievements(seriesConfig),
-        anime: createMediaAchievements(animeConfig),
-        movies: createMediaAchievements(moviesConfig),
-        games: createMediaAchievements(gamesConfig),
-        books: createMediaAchievements(booksConfig),
-        manga: createMediaAchievements(mangaConfig),
-    };
-    Object.entries(achievements).forEach(([key, calculator]) => {
-        MediaAchievementsRegistry.register(key as MediaType, calculator);
+    const mediaAchievementsRegistry = createMediaAchievementsRegistry({
+        [MediaType.SERIES]: createTvAchievementCatalog(seriesConfig),
+        [MediaType.ANIME]: createTvAchievementCatalog(animeConfig),
+        [MediaType.MOVIES]: createMoviesAchievementCatalog(moviesConfig),
+        [MediaType.GAMES]: createGamesAchievementCatalog(gamesConfig),
+        [MediaType.BOOKS]: createBooksAchievementCatalog(booksConfig),
+        [MediaType.MANGA]: createMangaAchievementCatalog(mangaConfig),
     });
 
     const services = {
@@ -71,9 +68,9 @@ export function setupMediaModule() {
             manga: services.manga,
         },
         registries: {
-            mediaAchievements: MediaAchievementsRegistry,
             mediaService: MediaServiceRegistry,
             mediaRepository: MediaRepositoryRegistry,
+            mediaAchievements: mediaAchievementsRegistry,
         }
     };
 }

@@ -18,9 +18,10 @@ export const seedAchievementsTask = defineTask({
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`seed-${mediaType}`, async () => {
-                const achievementsDef = achievementsRegistry.get(mediaType).getDefinitions();
+                const catalog = achievementsRegistry.get(mediaType);
+                const achievementsDefinitions = catalog.definitions;
 
-                const definitionCount = Object.keys(achievementsDef).length;
+                const definitionCount = Object.keys(achievementsDefinitions).length;
                 ctx.metric(`${mediaType}.definitions_found`, definitionCount);
 
                 if (definitionCount === 0) {
@@ -29,7 +30,7 @@ export const seedAchievementsTask = defineTask({
                 }
 
                 await withTransaction(async () => {
-                    await achievementsService.seedAchievements(achievementsDef);
+                    await achievementsService.seedAchievements(catalog.mediaType, achievementsDefinitions);
                 });
 
                 ctx.metric(`${mediaType}.seeded`, definitionCount);

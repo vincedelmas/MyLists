@@ -3,7 +3,6 @@ import {createInsertSchema} from "drizzle-zod";
 import {games, gamesList} from "@/lib/server/database/schema";
 import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
-import {gamesAchievements} from "@/lib/server/domain/media/games/achievements.seed";
 import {
     emptyStringToNull,
     importCommentSchema,
@@ -17,7 +16,6 @@ import {
 export type Game = typeof games.$inferSelect;
 export type GamesList = typeof gamesList.$inferSelect;
 export type GamesImportPayload = z.infer<typeof gamesImportPayloadSchema>;
-export type GamesAchCodeName = typeof gamesAchievements[number]["codeName"];
 
 
 export type UpsertGameWithDetails = {

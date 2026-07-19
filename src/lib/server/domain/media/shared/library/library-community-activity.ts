@@ -18,11 +18,7 @@ type CommunityActivityParams<K extends MediaType, TEntry, TUserMedia extends obj
     catalogItemId: number;
     search: SearchType;
     findEntry: (userId: number, catalogItemId: number) => Promise<TEntry | undefined>;
-    toUserMedia: (
-        entry: TEntry,
-        catalogItemId: number,
-        ratingSystem: typeof user.$inferSelect.ratingSystem,
-    ) => Promise<TUserMedia>;
+    toUserMedia: (entry: TEntry, catalogItemId: number, ratingSystem: typeof user.$inferSelect.ratingSystem) => Promise<TUserMedia>;
     getContribution: (entry: TEntry) => CommunityActivityContribution;
 };
 
@@ -32,14 +28,14 @@ type CommunityActivityParams<K extends MediaType, TEntry, TUserMedia extends obj
  * retain ownership of entry hydration and their progress-specific contributions.
  */
 export const getLibraryCommunityActivity = async <K extends MediaType, TEntry, TUserMedia extends object>({
-    kind,
-    viewerId,
-    catalogItemId,
-    search,
-    findEntry,
-    toUserMedia,
-    getContribution,
-}: CommunityActivityParams<K, TEntry, TUserMedia>) => {
+                                                                                                              kind,
+                                                                                                              viewerId,
+                                                                                                              catalogItemId,
+                                                                                                              search,
+                                                                                                              findEntry,
+                                                                                                              toUserMedia,
+                                                                                                              getContribution,
+                                                                                                          }: CommunityActivityParams<K, TEntry, TUserMedia>) => {
     const pagination = resolvePagination({
         page: search.page,
         perPage: search.perPage,

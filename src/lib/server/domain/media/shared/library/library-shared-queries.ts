@@ -2,22 +2,12 @@ import {alias} from "drizzle-orm/sqlite-core";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType, SocialState, Status} from "@/lib/utils/enums";
 import {and, asc, eq, inArray, isNotNull, like, notInArray, SQL} from "drizzle-orm";
-import {
-    catalogGenre,
-    catalogItem,
-    catalogItemGenre,
-    followers,
-    libraryEntry,
-    libraryEntryTag,
-    libraryTag,
-    profileMediaChannel,
-    user,
-} from "@/lib/server/database/schema";
+import {catalogGenre, catalogItem, catalogItemGenre, followers, libraryEntry, libraryEntryTag, libraryTag, profileMediaChannel, user,} from "@/lib/server/database/schema";
 
 
 type RatingSystem = typeof user.$inferSelect.ratingSystem;
 
-type CommonLibraryListArgs = {
+export type CommonLibraryListArgs = {
     search?: string;
     favorite?: boolean;
     comment?: boolean;
@@ -109,16 +99,9 @@ export const findLibraryEntriesByCatalogItem = async <TEntry>(
     return entries.filter((entry): entry is Exclude<typeof entry, undefined> => entry !== undefined);
 };
 
-export const getCommonLibraryListConditions = (
-    kind: MediaType,
-    currentUserId: number | undefined,
-    ownerId: number,
-    args: CommonLibraryListArgs,
-) => {
-    const conditions: SQL[] = [
-        eq(libraryEntry.userId, ownerId),
-        eq(catalogItem.kind, kind),
-    ];
+export const getCommonLibraryListConditions = (kind: MediaType, currentUserId: number | undefined, ownerId: number, args: CommonLibraryListArgs) => {
+    const conditions: SQL[] = [eq(libraryEntry.userId, ownerId), eq(catalogItem.kind, kind)];
+
     if (args.search) conditions.push(like(catalogItem.name, `%${args.search}%`));
     if (args.favorite) conditions.push(eq(libraryEntry.favorite, true));
     if (args.comment) conditions.push(isNotNull(libraryEntry.comment));
@@ -153,6 +136,7 @@ export const getCommonLibraryListConditions = (
                 .where(eq(currentEntry.userId, currentUserId)),
         ));
     }
+
     return conditions;
 };
 
@@ -175,12 +159,7 @@ export const getLibraryGenresAndTags = async (kind: MediaType, ownerId: number) 
     return { genres, tags };
 };
 
-export const getLibraryListItemRelations = async (
-    entryIds: number[],
-    catalogItemIds: number[],
-    currentUserId: number | undefined,
-    ownerId: number,
-) => {
+export const getLibraryListItemRelations = async (entryIds: number[], catalogItemIds: number[], currentUserId: number | undefined, ownerId: number) => {
     const [tags, commonEntries] = await Promise.all([
         getDbClient()
             .select({
@@ -202,6 +181,7 @@ export const getLibraryListItemRelations = async (
                 ))
             : [],
     ]);
+    
     return {
         tags,
         commonIds: new Set(commonEntries.map(({ catalogItemId }) => catalogItemId)),

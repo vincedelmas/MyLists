@@ -4,6 +4,7 @@ import {notFound} from "@tanstack/react-router";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {apiTokens} from "@/lib/server/database/schema";
 import {getContainer} from "@/lib/server/core/container";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {IgdbGameCollectionIds, IgdbGameDetails, IgdbSearchResponse, IgdbSearchResultItem, IgdbTokenResponse, IgdbTrendGamesResponse, SearchData} from "@/lib/types/provider.types";
@@ -11,8 +12,6 @@ import {IgdbGameCollectionIds, IgdbGameDetails, IgdbSearchResponse, IgdbSearchRe
 
 type IgdbApiConfig = ApiClientConfig & {
     baseUrl: string;
-    clientId: string;
-    secretId: string;
     trendingUrl: string;
     tokenCacheKey: string;
     externalGamesUrl: string;
@@ -27,8 +26,6 @@ const createConfig = (): IgdbApiConfig => ({
     resultsPerPage: 20,
     consumeKey: "igdb-API",
     tokenCacheKey: "igdb:accessToken",
-    clientId: serverEnv.IGDB_CLIENT_ID,
-    secretId: serverEnv.IGDB_CLIENT_SECRET,
     tokenCacheExpiryMs: 24 * 60 * 60 * 1000,
     baseUrl: "https://api.igdb.com/v4/games",
     externalGamesUrl: "https://api.igdb.com/v4/external_games",
@@ -39,6 +36,17 @@ const createConfig = (): IgdbApiConfig => ({
         keyPrefix: "igdbAPI",
     }],
 });
+
+
+const getCredentials = () => {
+    if (!serverEnv.IGDB_CLIENT_ID || !serverEnv.IGDB_CLIENT_SECRET) {
+        throw new FormattedError("Game search is unavailable because IGDB is not configured.");
+    }
+    return {
+        clientId: serverEnv.IGDB_CLIENT_ID,
+        clientSecret: serverEnv.IGDB_CLIENT_SECRET,
+    };
+};
 
 
 export const createIgdbApi = async () => {
@@ -55,8 +63,11 @@ export const createIgdbApi = async () => {
     }
 
     const fetchNewIgdbToken = async (): Promise<IgdbTokenResponse> => {
-        const url = `https://id.twitch.tv/oauth2/token?client_id=${config.clientId}&client_secret=${config.secretId}&grant_type=client_credentials`;
+        const { clientId, clientSecret } = getCredentials();
+        
+        const url = `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`;
         const response = await http.call(url, "post");
+
         return response.json();
     };
 
@@ -119,10 +130,11 @@ export const createIgdbApi = async () => {
     };
 
     const getHeaders = async () => {
+        const { clientId } = getCredentials();
         const accessToken = await getAccessToken();
 
         return {
-            "Client-ID": config.clientId,
+            "Client-ID": clientId,
             "Accept": "application/json",
             "Content-Type": "text/plain",
             "Authorization": `Bearer ${accessToken}`,

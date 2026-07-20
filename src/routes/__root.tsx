@@ -10,19 +10,22 @@ import {Navbar} from "@/lib/client/components/navbar/Navbar";
 import {useNProgress} from "@/lib/client/hooks/use-nprogress";
 import {Footer} from "@/lib/client/components/general/Footer";
 import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
-import {authOptions} from "@/lib/client/react-query/query-options";
 import {PostHogAuthSync} from "@/lib/client/components/general/PostHogAuthSync";
 import {AuthSessionSync} from "@/lib/client/components/general/AuthSessionSync";
 import {ConfirmDialogHost} from "@/lib/client/components/confirm/ConfirmDialogHost";
 import {AuthModalProvider} from "@/lib/client/components/general/AuthModalProvider";
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
+import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
 import {createRootRouteWithContext, HeadContent, Outlet, Scripts} from "@tanstack/react-router";
 
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
     ssr: false,
-    beforeLoad: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(authOptions);
+    beforeLoad: async ({ context: { queryClient } }) => {
+        await Promise.all([
+            queryClient.ensureQueryData(authOptions),
+            queryClient.ensureQueryData(authMethodsOptions),
+        ]);
     },
     head: () => ({
         links: [
@@ -59,7 +62,7 @@ function RootComponent() {
         </head>
         <body>
 
-        {clientEnv.VITE_PUBLIC_POSTHOG_KEY
+        {(clientEnv.VITE_PUBLIC_POSTHOG_KEY && import.meta.env.PROD)
             ? (
                 <PostHogProvider
                     apiKey={clientEnv.VITE_PUBLIC_POSTHOG_KEY}

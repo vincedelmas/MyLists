@@ -15,6 +15,17 @@ import {user as userTable, userMediaSettings} from "@/lib/server/database/schema
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 
 
+const mailEnabled = !!(serverEnv.ADMIN_MAIL_USERNAME && serverEnv.ADMIN_MAIL_PASSWORD);
+
+const githubOAuthConfig = serverEnv.GITHUB_CLIENT_ID && serverEnv.GITHUB_CLIENT_SECRET
+    ? { clientId: serverEnv.GITHUB_CLIENT_ID, clientSecret: serverEnv.GITHUB_CLIENT_SECRET }
+    : null;
+
+const googleOAuthConfig = serverEnv.GOOGLE_CLIENT_ID && serverEnv.GOOGLE_CLIENT_SECRET
+    ? { clientId: serverEnv.GOOGLE_CLIENT_ID, clientSecret: serverEnv.GOOGLE_CLIENT_SECRET }
+    : null;
+
+
 const getAuthConfig = createServerOnlyFn(() => betterAuth({
     appName: "MyLists",
     baseURL: clientEnv.VITE_BASE_URL,
@@ -123,7 +134,7 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
             },
         },
         changeEmail: {
-            enabled: true,
+            enabled: mailEnabled,
         },
     },
     session: {
@@ -133,51 +144,50 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         },
     },
     socialProviders: {
-        github: {
-            clientId: serverEnv.GITHUB_CLIENT_ID,
-            clientSecret: serverEnv.GITHUB_CLIENT_SECRET,
-        },
-        google: {
-            clientId: serverEnv.GOOGLE_CLIENT_ID,
-            clientSecret: serverEnv.GOOGLE_CLIENT_SECRET,
-        },
+        ...(githubOAuthConfig ? { github: githubOAuthConfig } : {}),
+        ...(googleOAuthConfig ? { google: googleOAuthConfig } : {}),
     },
     emailAndPassword: {
         enabled: true,
         autoSignIn: false,
         minPasswordLength: 8,
         maxPasswordLength: 128,
-        requireEmailVerification: true,
+        disableSignUp: !mailEnabled,
         resetPasswordTokenExpiresIn: 3600,
-        sendResetPassword: async ({ user, url }) => {
-            await sendEmail({
-                link: url,
-                to: user.email,
-                username: user.name,
-                template: "resetPassword",
-                subject: "MyLists - Reset Your Password",
-            });
-        },
+        requireEmailVerification: mailEnabled,
+        ...(mailEnabled ? {
+            sendResetPassword: async ({ user, url }: { user: { email: string; name: string }; url: string }) => {
+                await sendEmail({
+                    link: url,
+                    to: user.email,
+                    username: user.name,
+                    template: "resetPassword",
+                    subject: "MyLists - Reset Your Password",
+                });
+            },
+        } : {}),
         password: {
             hash: async (password: string) => bcrypt.hash(password, 12),
             verify: async ({ hash, password }) => bcrypt.compare(password, Buffer.from(hash).toString()),
         },
     },
-    emailVerification: {
-        expiresIn: 3600,
-        sendOnSignUp: true,
-        sendOnSignIn: true,
-        autoSignInAfterVerification: true,
-        sendVerificationEmail: async ({ user, url }) => {
-            void sendEmail({
-                link: url,
-                to: user.email,
-                username: user.name,
-                template: "register",
-                subject: "MyLists - Verify your email address",
-            });
+    ...(mailEnabled ? {
+        emailVerification: {
+            expiresIn: 3600,
+            sendOnSignUp: true,
+            sendOnSignIn: true,
+            autoSignInAfterVerification: true,
+            sendVerificationEmail: async ({ user, url }: { user: { email: string; name: string }; url: string }) => {
+                void sendEmail({
+                    link: url,
+                    to: user.email,
+                    username: user.name,
+                    template: "register",
+                    subject: "MyLists - Verify your email address",
+                });
+            },
         },
-    },
+    } : {}),
     advanced: {
         cookiePrefix: "mylists",
         database: {

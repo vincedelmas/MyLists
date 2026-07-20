@@ -1,21 +1,15 @@
 import z from "zod";
 import {serverEnv} from "@/env/server";
 import {LLMResponse} from "@/lib/types/provider.types";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 
 
-type LlmApiConfig = ApiClientConfig & {
-    apiKey: string;
-    baseUrl: string;
-    modelId: string;
-};
+type LlmApiConfig = ApiClientConfig;
 
 
 const createConfig = (): LlmApiConfig => ({
     consumeKey: "llm-API",
-    apiKey: serverEnv.LLM_API_KEY,
-    baseUrl: serverEnv.LLM_BASE_URL,
-    modelId: serverEnv.LLM_MODEL_ID,
     throttleOptions: [{
         points: 5,
         duration: 1,
@@ -30,13 +24,17 @@ export const createLlmApi = async () => {
 
     return {
         async llmBookGenresCall(content: string, schema: z.Schema): Promise<LLMResponse> {
-            const response = await http.call(`${config.baseUrl}/chat/completions`, "post", {
+            if (!serverEnv.LLM_API_KEY) {
+                throw new FormattedError("Book genre enrichment is unavailable because the LLM integration is not configured.");
+            }
+
+            const response = await http.call(`${serverEnv.LLM_BASE_URL}/chat/completions`, "post", {
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${config.apiKey}`,
+                    "Authorization": `Bearer ${serverEnv.LLM_API_KEY}`,
                 },
                 body: JSON.stringify({
-                    model: config.modelId,
+                    model: serverEnv.LLM_MODEL_ID,
                     messages: [{ role: "user", content: content }],
                     response_format: {
                         type: "json_schema",

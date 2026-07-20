@@ -14,10 +14,10 @@ export const serverEnv = createEnv({
         BASE_UPLOADS_LOCATION: z.string().default("./public/static/"),
 
         // Admin Secrets
+        ADMIN_MAIL_USERNAME: z.email().optional(),
         ADMIN_PASSWORD: z.string().min(8),
         ADMIN_TOKEN_SECRET: z.string().min(20),
-        ADMIN_MAIL_USERNAME: z.email(),
-        ADMIN_MAIL_PASSWORD: z.string().min(8),
+        ADMIN_MAIL_PASSWORD: z.string().min(8).optional(),
         ADMIN_TTL_COOKIE_MIN: z.coerce.number().int().default(10),
 
         // Logging
@@ -35,22 +35,41 @@ export const serverEnv = createEnv({
         BETTER_AUTH_SECRET: z.string().min(20),
 
         // OAuth2 Providers
-        GITHUB_CLIENT_ID: z.string(),
-        GITHUB_CLIENT_SECRET: z.string(),
-        GOOGLE_CLIENT_ID: z.string(),
-        GOOGLE_CLIENT_SECRET: z.string(),
+        GITHUB_CLIENT_ID: z.string().trim().min(1).optional(),
+        GITHUB_CLIENT_SECRET: z.string().trim().min(1).optional(),
+        GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
+        GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
 
         // ApiKeys
-        THEMOVIEDB_API_KEY: z.string(),
-        GOOGLE_BOOKS_API_KEY: z.string(),
-        IGDB_CLIENT_ID: z.string(),
-        IGDB_CLIENT_SECRET: z.string(),
+        THEMOVIEDB_API_KEY: z.string().trim().min(1).optional(),
+        GOOGLE_BOOKS_API_KEY: z.string().trim().min(1).optional(),
+        IGDB_CLIENT_ID: z.string().trim().min(1).optional(),
+        IGDB_CLIENT_SECRET: z.string().trim().min(1).optional(),
 
         // LLM ROUTER
-        LLM_API_KEY: z.string(),
-        LLM_MODEL_ID: z.string(),
-        LLM_BASE_URL: z.string(),
+        LLM_API_KEY: z.string().trim().min(1).optional(),
+        LLM_BASE_URL: z.url().default("https://openrouter.ai/api/v1"),
+        LLM_MODEL_ID: z.string().trim().min(1).default("google/gemini-2.5-flash-lite"),
     },
     runtimeEnv: process.env,
+    emptyStringAsUndefined: true,
     skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
+
+
+const optionalCredentialPairs = [
+    ["ADMIN_MAIL_USERNAME", "ADMIN_MAIL_PASSWORD"],
+    ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
+    ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
+    ["IGDB_CLIENT_ID", "IGDB_CLIENT_SECRET"],
+] as const;
+
+
+for (const [first, second] of optionalCredentialPairs) {
+    if (serverEnv[first] && !serverEnv[second]) {
+        throw new Error(`Invalid env config: ${second} is required when ${first} is set.`);
+    }
+    if (serverEnv[second] && !serverEnv[first]) {
+        throw new Error(`Invalid env config: ${first} is required when ${second} is set.`);
+    }
+}

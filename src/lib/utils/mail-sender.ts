@@ -8,6 +8,10 @@ let transporterPromise: Promise<Transporter> | undefined;
 
 
 const getTransporter = () => {
+    if (!serverEnv.ADMIN_MAIL_USERNAME || !serverEnv.ADMIN_MAIL_PASSWORD) {
+        throw new Error("Email delivery is unavailable because admin mail credentials are not configured.");
+    }
+
     transporterPromise ??= import("nodemailer").then(({ default: nodemailer }) => nodemailer.createTransport({
         pool: true,
         service: "gmail",
@@ -34,6 +38,10 @@ interface EmailOptions {
 
 
 export const sendEmail = createServerOnlyFn(() => async (options: EmailOptions) => {
+    if (!serverEnv.ADMIN_MAIL_USERNAME || !serverEnv.ADMIN_MAIL_PASSWORD) {
+        throw new Error("Email delivery is unavailable because admin mail credentials are not configured.");
+    }
+
     const [transporter, { render }, { InactiveAccountDeletionEmail, PasswordResetEmail, RegisterEmail }] = await Promise.all([
         getTransporter(),
         import("@react-email/render"),

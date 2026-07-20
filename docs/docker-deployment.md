@@ -15,7 +15,8 @@ Create the Docker env file:
 cp .env.docker.example .env.docker
 ```
 
-Edit `.env.docker` with real secrets and API keys.
+Set real values for `ADMIN_PASSWORD`, `ADMIN_TOKEN_SECRET`, and `BETTER_AUTH_SECRET`.
+API keys, OAuth providers, mail delivery, PostHog, and LLM enrichment are optional.
 
 Build the app image:
 
@@ -183,6 +184,17 @@ VITE_PUBLIC_POSTHOG_UI_HOST=
 ```
 
 If `VITE_PUBLIC_POSTHOG_KEY` is empty, the app does not mount `PostHogProvider` and does not identify users.
+
+## Optional Integrations
+
+Missing optional integration credentials do not stop the container:
+
+- Without mail credentials, create verified users with the CLI. Email registration, password reset, email changes, and inactive-account email maintenance are disabled.
+- TMDB and IGDB credentials enable their respective external media providers. Missing credentials produce a clear error when that provider is used.
+- GitHub and Google OAuth providers are enabled independently when both values in their credential pair are set.
+- LLM book genre enrichment is skipped when `LLM_API_KEY` is empty.
+
+For paired credentials, leave both values empty or set both. Partial pairs fail validation with the missing variable name.
 
 ## Existing Production Data
 

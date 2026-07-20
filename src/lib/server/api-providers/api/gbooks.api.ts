@@ -4,7 +4,6 @@ import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/a
 
 
 type GBooksApiConfig = ApiClientConfig & {
-    apiKey: string;
     baseUrl: string;
 };
 
@@ -12,7 +11,6 @@ type GBooksApiConfig = ApiClientConfig & {
 const createConfig = (): GBooksApiConfig => ({
     resultsPerPage: 20,
     consumeKey: "gBooks-API",
-    apiKey: serverEnv.GOOGLE_BOOKS_API_KEY,
     baseUrl: "https://www.googleapis.com/books/v1/volumes",
     throttleOptions: [{
         points: 4,
@@ -29,11 +27,10 @@ export const createGBooksApi = async () => {
 
     return {
         async search(query: string, page: number = 1): Promise<SearchData<GBooksSearchResults>> {
-            const params = new URLSearchParams({
-                q: query,
-                key: config.apiKey,
-                startIndex: ((page - 1) * resultsPerPage).toString(),
-            });
+            const params = new URLSearchParams({ q: query, startIndex: ((page - 1) * resultsPerPage).toString() });
+
+            const apiKey = serverEnv.GOOGLE_BOOKS_API_KEY;
+            if (apiKey) params.set("key", apiKey);
 
             const response = await http.call(`${config.baseUrl}?${params.toString()}`);
             return {
@@ -44,8 +41,12 @@ export const createGBooksApi = async () => {
         },
 
         async getBooksDetails(bookApiId: string): Promise<GBooksDetails> {
-            const url = `${config.baseUrl}/${bookApiId}?key=${config.apiKey}`;
-            const response = await http.call(url);
+            const url = new URL(`${config.baseUrl}/${bookApiId}`);
+
+            const apiKey = serverEnv.GOOGLE_BOOKS_API_KEY;
+            if (apiKey) url.searchParams.set("key", apiKey);
+
+            const response = await http.call(url.toString());
             return response.json();
         },
     };

@@ -16,6 +16,12 @@ export const addGenresToBooksUsingLlmTask = defineTask({
         batchLimit: z.coerce.number().min(1).max(50).default(10).optional().describe("Maximum number of batches to process"),
     }),
     handler: async (ctx, input) => {
+        if (!serverEnv.LLM_API_KEY) {
+            ctx.metric("llm.skipped", 1);
+            ctx.warn("Skipping book genre enrichment because the LLM integration is not configured.");
+            return;
+        }
+
         const container = await getContainer();
         const llmClient = container.apiClients.llmClient;
         const booksService = container.registries.mediaService.get(MediaType.BOOKS);

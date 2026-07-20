@@ -17,6 +17,12 @@ export const inactiveAccountDeletionTask = defineTask({
         maxEmailsPerRun: z.coerce.number().int().positive().max(500).default(100),
     }),
     handler: async (ctx, input) => {
+        if (!serverEnv.ADMIN_MAIL_USERNAME || !serverEnv.ADMIN_MAIL_PASSWORD) {
+            ctx.metric("mail.skipped", 1);
+            ctx.warn("Skipping inactive-account deletion because warning emails are not configured.");
+            return;
+        }
+
         const container = await getContainer();
         const userService = container.services.user;
         const inactiveAccountService = container.services.inactiveAccount;

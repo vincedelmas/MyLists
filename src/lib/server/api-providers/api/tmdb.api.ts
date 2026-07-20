@@ -1,5 +1,6 @@
 import {serverEnv} from "@/env/server";
 import {getContainer} from "@/lib/server/core/container";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {
     SearchData,
@@ -13,7 +14,6 @@ import {
 
 
 type TmdbApiConfig = ApiClientConfig & {
-    apiKey: string;
     baseUrl: string;
     tvChangedIdsTtl: number;
     tvChangedIdsCacheKey: string;
@@ -24,7 +24,6 @@ const createConfig = (): TmdbApiConfig => ({
     resultsPerPage: 20,
     consumeKey: "tmdb-API",
     tvChangedIdsTtl: 5 * 60 * 1000,
-    apiKey: serverEnv.THEMOVIEDB_API_KEY,
     baseUrl: "https://api.themoviedb.org/3",
     tvChangedIdsCacheKey: "tmdb:tvChangedIds",
     throttleOptions: [{
@@ -35,6 +34,14 @@ const createConfig = (): TmdbApiConfig => ({
 });
 
 
+const getApiKey = () => {
+    if (!serverEnv.THEMOVIEDB_API_KEY) {
+        throw new FormattedError("Movie, series, and anime search is unavailable because TMDB is not configured.");
+    }
+    return serverEnv.THEMOVIEDB_API_KEY;
+};
+
+
 export const createTmdbApi = async () => {
     const config = createConfig();
     const http = await createApiHttpClient(config);
@@ -42,11 +49,8 @@ export const createTmdbApi = async () => {
 
     return {
         async search(query: string, page = 1): Promise<SearchData<TmdbMultiSearchResponse>> {
-            const params = new URLSearchParams({
-                query: query,
-                api_key: config.apiKey,
-                page: page.toString(),
-            });
+            const apiKey = getApiKey();
+            const params = new URLSearchParams({ query: query, api_key: apiKey, page: page.toString() });
 
             const response = await http.call(`${config.baseUrl}/search/multi?${params.toString()}`);
             return {
@@ -57,26 +61,31 @@ export const createTmdbApi = async () => {
         },
 
         async getMovieDetails(movieId: number): Promise<TmdbMovieDetails> {
-            const response = await http.call(`${config.baseUrl}/movie/${movieId}?api_key=${config.apiKey}&append_to_response=credits`);
+            const apiKey = getApiKey();
+            const response = await http.call(`${config.baseUrl}/movie/${movieId}?api_key=${apiKey}&append_to_response=credits`);
             return response.json();
         },
 
         async getTvDetails(tvId: number): Promise<TmdbTvDetails> {
-            const response = await http.call(`${config.baseUrl}/tv/${tvId}?api_key=${config.apiKey}&append_to_response=credits`);
+            const apiKey = getApiKey();
+            const response = await http.call(`${config.baseUrl}/tv/${tvId}?api_key=${apiKey}&append_to_response=credits`);
             return response.json();
         },
 
         async getTvTrending(): Promise<TmdbTrendingTvResponse> {
-            const response = await http.call(`${config.baseUrl}/trending/tv/week?api_key=${config.apiKey}`);
+            const apiKey = getApiKey();
+            const response = await http.call(`${config.baseUrl}/trending/tv/week?api_key=${apiKey}`);
             return response.json();
         },
 
         async getMoviesTrending(): Promise<TmdbTrendingMoviesResponse> {
-            const response = await http.call(`${config.baseUrl}/trending/movie/week?api_key=${config.apiKey}`);
+            const apiKey = getApiKey();
+            const response = await http.call(`${config.baseUrl}/trending/movie/week?api_key=${apiKey}`);
             return response.json();
         },
 
         async getTvChangedIds() {
+            const apiKey = getApiKey();
             const cacheStore = await getContainer().then((c) => c.cacheManager);
 
             return cacheStore.wrap<number[]>(config.tvChangedIdsCacheKey, async () => {
@@ -86,7 +95,7 @@ export const createTmdbApi = async () => {
 
                 while (page <= Math.min(totalPages, 20)) {
                     try {
-                        const response = await http.call(`${config.baseUrl}/tv/changes?api_key=${config.apiKey}&page=${page}`);
+                        const response = await http.call(`${config.baseUrl}/tv/changes?api_key=${apiKey}&page=${page}`);
                         const data: TmdbChangesResponse = await response.json();
 
                         if (data?.results) {

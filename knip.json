@@ -5,9 +5,6 @@
     ],
     "entry": [
         "server.ts",
-        "src/start.ts",
-        "src/router.tsx",
-        "src/client.tsx",
         "src/styles.css",
         "src/routeTree.gen.ts",
         "src/routes/**/*.{ts,tsx}"
@@ -21,6 +18,9 @@
             "vite.cli.config.ts"
         ]
     },
+    "ignoreDependencies": [
+        "pino-pretty"
+    ],
     "ignoreIssues": {
         "src/lib/client/components/emails/**": [
             "duplicates",

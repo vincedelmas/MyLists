@@ -129,7 +129,7 @@ export const postPasswordSettings = createServerFn({ method: "POST" })
     .validator(passwordSettingsSchema)
     .handler(async ({ data: { newPassword, currentPassword }, context: { currentUser } }) => {
         const ctx = await auth.$context;
-        const userAccount = await ctx.internalAdapter.findAccount(currentUser.id.toString());
+        const [userAccount] = await ctx.internalAdapter.findAccountByUserId(currentUser.id.toString());
 
         const isValid = await ctx.password.verify({ hash: userAccount?.password ?? "", password: currentPassword });
         if (!isValid) {

@@ -83,6 +83,7 @@
     },
     "devDependencies": {
         "@babel/core": "^7.29.7",
+        "@libsql/client": "^0.17.4",
         "@react-email/ui": "6.5.0",
         "@rolldown/plugin-babel": "^0.2.3",
         "@tailwindcss/vite": "^4.3.0",

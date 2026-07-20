@@ -3,7 +3,7 @@ import {relations} from "drizzle-orm/relations";
 import {customJson} from "@/lib/server/database/custom-types";
 import {ProfileCustomKey} from "@/lib/types/profile-custom.types";
 import {taskHistory} from "@/lib/server/database/schema/admin.schema";
-import {index, integer, real, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, real, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {MediaType, SocialState, Status, UpdateType} from "@/lib/utils/enums";
 import {
     animeList,
@@ -32,7 +32,11 @@ export const followers = sqliteTable("followers", {
     followerId: integer().references(() => user.id, { onDelete: "cascade" }).notNull(),
     followedId: integer().references(() => user.id, { onDelete: "cascade" }).notNull(),
     status: text().$type<SocialState>().default(SocialState.ACCEPTED).notNull(),
-});
+}, (table) => [
+    uniqueIndex("ux_followers_follower_followed").on(table.followerId, table.followedId),
+    index("ix_followers_followed_status_follower").on(table.followedId, table.status, table.followerId),
+    check("followers_not_self_check", sql`${table.followerId} <> ${table.followedId}`),
+]);
 
 
 export const userMediaUpdate = sqliteTable("user_media_update", {
@@ -45,10 +49,10 @@ export const userMediaUpdate = sqliteTable("user_media_update", {
     payload: customJson<{ old_value: any, new_value: any }>("payload"),
     timestamp: text().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 }, (table) => [
-    index("ix_user_media_update_media_id").on(table.mediaId),
+    index("ix_user_media_update_media_type_media_id").on(table.mediaType, table.mediaId),
+    index("ix_user_media_update_user_timestamp").on(table.userId, table.timestamp),
+    index("ix_user_media_update_user_media_kind_timestamp").on(table.userId, table.mediaType, table.mediaId, table.updateType, table.timestamp),
     index("ix_user_media_update_timestamp").on(table.timestamp),
-    index("ix_user_media_update_media_type").on(table.mediaType),
-    index("ix_user_media_update_user_id").on(table.userId),
 ]);
 
 export const userMediaActivity = sqliteTable("user_media_activity", {
@@ -63,11 +67,13 @@ export const userMediaActivity = sqliteTable("user_media_activity", {
     lastUpdate: text().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
     hidden: integer({ mode: "boolean" }).default(false).notNull(),
 }, (table) => [
-    index("ix_user_media_activity_user_id").on(table.userId),
     index("ix_user_media_activity_media_id").on(table.mediaId),
     index("ix_user_media_activity_media_type").on(table.mediaType),
     index("ix_user_media_activity_month_bucket").on(table.monthBucket),
+    index("ix_user_media_activity_user_last_update").on(table.userId, table.lastUpdate),
+    index("ix_user_media_activity_user_month_type_update").on(table.userId, table.monthBucket, table.mediaType, table.lastUpdate),
     uniqueIndex("user_media_month_idx").on(table.userId, table.mediaId, table.mediaType, table.monthBucket),
+    check("user_media_activity_specific_nonnegative_check", sql`${table.specificGained} >= 0`),
 ]);
 
 
@@ -90,6 +96,13 @@ export const userMediaSettings = sqliteTable("user_media_settings", {
 }, (table) => [
     index("ix_user_media_settings_media_type").on(table.mediaType),
     uniqueIndex("ux_user_id_media_type").on(table.userId, table.mediaType),
+    check("user_media_settings_counters_nonnegative_check", sql`
+        ${table.timeSpent} >= 0 AND ${table.views} >= 0 AND ${table.totalEntries} >= 0
+        AND ${table.totalRedo} >= 0 AND ${table.entriesRated} >= 0
+        AND ${table.sumEntriesRated} >= 0 AND ${table.entriesCommented} >= 0
+        AND ${table.entriesFavorites} >= 0 AND ${table.totalSpecific} >= 0
+    `),
+    check("user_media_settings_status_counts_json_check", sql`json_valid(${table.statusCounts})`),
 ]);
 
 
@@ -115,6 +128,7 @@ export const userMediaStatsHistory = sqliteTable("user_media_stats_history", {
     index("ix_user_media_stats_history_user_id").on(table.userId),
     index("ix_user_media_stats_history_media_type").on(table.mediaType),
     index("ix_user_media_stats_history_timestamp").on(table.timestamp),
+    check("user_media_stats_history_status_counts_json_check", sql`json_valid(${table.statusCounts})`),
 ]);
 
 
@@ -126,8 +140,8 @@ export const profileCustom = sqliteTable("profile_custom", {
     createdAt: text().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
     updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 }, (table) => [
-    index("ix_profile_custom_user_id").on(table.userId),
     uniqueIndex("ux_profile_custom_user_id_key").on(table.userId, table.key),
+    check("profile_custom_value_json_check", sql`json_valid(${table.value})`),
 ]);
 
 

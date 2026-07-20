@@ -2,7 +2,7 @@ import {sql} from "drizzle-orm";
 import {user} from "./auth.schema";
 import {relations} from "drizzle-orm/relations";
 import {MediaType, SocialNotifType} from "@/lib/utils/enums";
-import {integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {featureRequests} from "@/lib/server/database/schema/feature-votes.schema";
 
 
@@ -21,6 +21,8 @@ export const socialNotifications = sqliteTable("social_notifications", {
     uniqueIndex("social_feature_notif_unique")
         .on(table.userId, table.actorId, table.type, table.featureRequestId)
         .where(sql`${table.featureRequestId} IS NOT NULL`),
+    index("ix_social_notifications_user_created_at").on(table.userId, table.createdAt),
+    index("ix_social_notifications_user_unread").on(table.userId).where(sql`${table.read} = 0`),
 ]);
 
 
@@ -36,7 +38,12 @@ export const mediaNotifications = sqliteTable("media_notifications", {
     releaseDate: text("release_date"),
     read: integer({ mode: "boolean" }).default(false).notNull(),
     createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
-});
+}, (table) => [
+    index("ix_media_notifications_user_created_at").on(table.userId, table.createdAt),
+    index("ix_media_notifications_media_user_created_at").on(table.mediaType, table.mediaId, table.userId, table.createdAt),
+    index("ix_media_notifications_user_unread").on(table.userId).where(sql`${table.read} = 0`),
+    check("media_notifications_season_finale_check", sql`${table.isSeasonFinale} IS NULL OR ${table.isSeasonFinale} IN (0, 1)`),
+]);
 
 
 export const socialNotificationsRelations = relations(socialNotifications, ({ one }) => ({

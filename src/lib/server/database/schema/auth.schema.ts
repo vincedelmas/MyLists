@@ -1,4 +1,4 @@
-import {integer, sqliteTable, text} from "drizzle-orm/sqlite-core";
+import {index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {dateAsString, imageUrl} from "@/lib/server/database/custom-types";
 import {ApiProviderType, PrivacyType, RatingSystemType, RoleType} from "@/lib/utils/enums";
 
@@ -20,7 +20,9 @@ export const user = sqliteTable("user", {
     ratingSystem: text("rating_system").$type<RatingSystemType>().default(RatingSystemType.SCORE).notNull(),
     searchSelector: text("search_selector").$type<ApiProviderType>().default(ApiProviderType.TMDB).notNull(),
     backgroundImage: imageUrl("background_image", "profile-back-covers").default("default.jpg").notNull(),
-});
+}, (table) => [
+    uniqueIndex("user_name_unique").on(table.name),
+]);
 
 
 export const session = sqliteTable("session", {
@@ -32,7 +34,9 @@ export const session = sqliteTable("session", {
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" })
-});
+}, (table) => [
+    index("session_user_id_idx").on(table.userId),
+]);
 
 
 export const account = sqliteTable("account", {
@@ -59,4 +63,6 @@ export const verification = sqliteTable("verification", {
     expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
     createdAt: integer("created_at", { mode: "timestamp" }),
     updatedAt: integer("updated_at", { mode: "timestamp" })
-});
+}, (table) => [
+    index("verification_identifier_idx").on(table.identifier),
+]);

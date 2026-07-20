@@ -2,7 +2,7 @@ import {sql} from "drizzle-orm";
 import {user} from "@/lib/server/database/schema";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {imageUrl, nullableImageUrl} from "@/lib/server/database/custom-types";
-import {index, integer, real, SQLiteColumn, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, real, SQLiteColumn, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
 export const commonMediaCols = (mediaTypeName: MediaType) => {
@@ -35,11 +35,18 @@ export const commonMediaListCols = (modelMediaId: SQLiteColumn, mediaTypeName: M
 };
 
 
-export const commonMediaListIndexes = (table: { userId: SQLiteColumn; mediaId: SQLiteColumn; rating: SQLiteColumn }, mediaTypeName: MediaType) => {
+export const commonMediaListIndexes = (table: {
+    userId: SQLiteColumn;
+    mediaId: SQLiteColumn;
+    status: SQLiteColumn;
+    rating: SQLiteColumn;
+    favorite: SQLiteColumn
+}, mediaTypeName: MediaType) => {
     return [
         uniqueIndex(`ux_${mediaTypeName}_list_user_media`).on(table.userId, table.mediaId),
         index(`ix_${mediaTypeName}_list_user_media_rated`).on(table.userId, table.mediaId).where(sql`${table.rating} IS NOT NULL`),
         index(`ix_${mediaTypeName}_list_media_user_rated`).on(table.mediaId, table.userId).where(sql`${table.rating} IS NOT NULL`),
+        check(`${mediaTypeName}_list_rating_check`, sql`${table.rating} IS NULL OR (${table.rating} >= 0 AND ${table.rating} <= 10)`),
     ];
 };
 
@@ -53,6 +60,14 @@ export const commonGenericCols = (modelMediaId: SQLiteColumn) => {
 };
 
 
+export const commonGenericIndexes = (table: { mediaId: SQLiteColumn; name: SQLiteColumn }, tableName: string) => {
+    return [
+        uniqueIndex(`ux_${tableName}_media_name`).on(table.mediaId, table.name),
+        index(`ix_${tableName}_name_media`).on(table.name, table.mediaId),
+    ];
+};
+
+
 export const commonMediaTagsCols = (modelMediaId: SQLiteColumn) => {
     return {
         id: integer().primaryKey().notNull(),
@@ -63,6 +78,19 @@ export const commonMediaTagsCols = (modelMediaId: SQLiteColumn) => {
 };
 
 
+export const commonMediaTagsIndexes = (table: { userId: SQLiteColumn; mediaId: SQLiteColumn; name: SQLiteColumn }, mediaTypeName: MediaType) => {
+    return [
+        uniqueIndex(`ux_${mediaTypeName}_tags_user_media_name`)
+            .on(table.userId, table.mediaId, table.name)
+            .where(sql`${table.mediaId} IS NOT NULL`),
+        uniqueIndex(`ux_${mediaTypeName}_tags_user_placeholder_name`)
+            .on(table.userId, table.name)
+            .where(sql`${table.mediaId} IS NULL`),
+        index(`ix_${mediaTypeName}_tags_user_name_media`).on(table.userId, table.name, table.mediaId),
+    ];
+};
+
+
 export const commMediaEpsCols = (modelMediaId: SQLiteColumn) => {
     return {
         id: integer().primaryKey().notNull(),
@@ -70,4 +98,9 @@ export const commMediaEpsCols = (modelMediaId: SQLiteColumn) => {
         season: integer().notNull(),
         episodes: integer().notNull(),
     };
+};
+
+
+export const commonMediaEpsIndexes = (table: { mediaId: SQLiteColumn; season: SQLiteColumn }, tableName: string) => {
+    return [uniqueIndex(`ux_${tableName}_media_season`).on(table.mediaId, table.season)];
 };

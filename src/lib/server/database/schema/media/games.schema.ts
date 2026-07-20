@@ -1,8 +1,16 @@
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {GamesPlatformsEnum, MediaType} from "@/lib/utils/enums";
-import {integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
-import {commonGenericCols, commonMediaCols, commonMediaListCols, commonMediaListIndexes, commonMediaTagsCols} from "@/lib/server/database/schema/media/_helper";
+import {index, integer, real, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {
+    commonGenericCols,
+    commonGenericIndexes,
+    commonMediaCols,
+    commonMediaListCols,
+    commonMediaListIndexes,
+    commonMediaTagsCols,
+    commonMediaTagsIndexes
+} from "@/lib/server/database/schema/media/_helper";
 
 
 export const games = sqliteTable("games", {
@@ -31,24 +39,27 @@ export const gamesList = sqliteTable("games_list", {
 
 export const gamesGenre = sqliteTable("games_genre", {
     ...commonGenericCols(games.id),
-});
+}, (table) => commonGenericIndexes(table, "games_genre"));
 
 
 export const gamesPlatforms = sqliteTable("games_platforms", {
     ...commonGenericCols(games.id),
-});
+}, (table) => commonGenericIndexes(table, "games_platforms"));
 
 
 export const gamesCompanies = sqliteTable("games_companies", {
     ...commonGenericCols(games.id),
-    publisher: integer({ mode: "boolean" }),
-    developer: integer({ mode: "boolean" }),
-});
+    publisher: integer({ mode: "boolean" }).default(false).notNull(),
+    developer: integer({ mode: "boolean" }).default(false).notNull(),
+}, (table) => [
+    uniqueIndex("ux_games_companies_media_name_roles").on(table.mediaId, table.name, table.publisher, table.developer),
+    index("ix_games_companies_name_media").on(table.name, table.mediaId),
+]);
 
 
 export const gamesTags = sqliteTable("games_tags", {
     ...commonMediaTagsCols(games.id),
-});
+}, (table) => commonMediaTagsIndexes(table, MediaType.GAMES));
 
 
 export const gamesRelations = relations(games, ({ many }) => ({

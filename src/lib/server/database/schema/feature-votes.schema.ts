@@ -26,7 +26,6 @@ export const featureVotes = sqliteTable("feature_votes", {
     createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 }, (table) => [
     index("ix_feature_votes_user_id").on(table.userId),
-    index("ix_feature_votes_feature_id").on(table.featureId),
     uniqueIndex("ux_feature_votes_feature_user").on(table.featureId, table.userId),
 ]);
 

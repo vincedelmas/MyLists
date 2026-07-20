@@ -2,7 +2,7 @@ import {sql} from "drizzle-orm";
 import {relations} from "drizzle-orm/relations";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {user} from "@/lib/server/database/schema/auth.schema";
-import {index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
 export const collections = sqliteTable("collections", {
@@ -22,6 +22,10 @@ export const collections = sqliteTable("collections", {
     index("ix_collections_privacy").on(table.privacy),
     index("ix_collections_owner_id").on(table.ownerId),
     index("ix_collections_media_type").on(table.mediaType),
+    check("collections_counters_nonnegative_check", sql`
+        ${table.viewCount} >= 0 AND ${table.likeCount} >= 0 AND ${table.copiedCount} >= 0
+    `),
+    check("collections_ordered_check", sql`${table.ordered} IN (0, 1)`),
 ]);
 
 
@@ -34,8 +38,10 @@ export const collectionItems = sqliteTable("collection_items", {
     mediaType: text("media_type").$type<MediaType>().notNull(),
     createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 }, (table) => [
-    index("ix_collection_items_collection_id").on(table.collectionId),
     uniqueIndex("ux_collection_items_collection_media").on(table.collectionId, table.mediaId),
+    uniqueIndex("ux_collection_items_collection_order").on(table.collectionId, table.orderIndex),
+    index("ix_collection_items_media_type_media_collection").on(table.mediaType, table.mediaId, table.collectionId),
+    check("collection_items_order_nonnegative_check", sql`${table.orderIndex} >= 0`),
 ]);
 
 
@@ -46,7 +52,6 @@ export const collectionLikes = sqliteTable("collection_likes", {
     createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 }, (table) => [
     index("ix_collection_likes_user_id").on(table.userId),
-    index("ix_collection_likes_collection_id").on(table.collectionId),
     uniqueIndex("ux_collection_likes_collection_user").on(table.collectionId, table.userId),
 ]);
 

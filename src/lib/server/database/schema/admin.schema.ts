@@ -3,7 +3,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {TaskResult} from "@/lib/types/tasks.types";
 import {user} from "@/lib/server/database/schema/auth.schema";
-import {index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 import {customJson, dateAsString} from "@/lib/server/database/custom-types";
 
 
@@ -22,6 +22,7 @@ export const taskHistory = sqliteTable("task_history", {
     index("ix_task_history_task_id").on(table.taskId),
     index("ix_task_history_status").on(table.status),
     index("ix_task_history_user_id").on(table.userId),
+    check("task_history_logs_json_check", sql`json_valid(${table.logs})`),
 ]);
 
 
@@ -46,6 +47,7 @@ export const inactiveAccountDeletion = sqliteTable("inactive_account_deletion", 
     index("ix_inactive_account_deletion_status").on(table.status),
     index("ix_inactive_account_deletion_deletion_scheduled_at").on(table.deletionScheduledAt),
     uniqueIndex("ux_inactive_account_deletion_warning_token_hash").on(table.warningTokenHash),
+    check("inactive_account_deletion_retry_count_nonnegative_check", sql`${table.emailRetryCount} >= 0`),
 ]);
 
 
@@ -90,7 +92,12 @@ export const apiCallRollup = sqliteTable("api_call_rollup", {
     statusCounts: customJson<Record<string, number>>("status_counts").notNull(),
 }, (table) => [
     index("ix_api_call_rollup_provider").on(table.provider),
-    index("ix_api_call_rollup_bucket_start_ms").on(table.bucketStartMs),
     index("ix_api_call_rollup_bucket_start").on(table.bucketStart),
     uniqueIndex("ux_api_call_rollup_bucket_provider").on(table.bucketStartMs, table.provider),
+    check("api_call_rollup_counts_nonnegative_check", sql`
+        ${table.total} >= 0 AND ${table.errors} >= 0 AND ${table.durationMsTotal} >= 0
+        AND ${table.maxSecondBurst} >= 0
+    `),
+    check("api_call_rollup_errors_not_above_total_check", sql`${table.errors} <= ${table.total}`),
+    check("api_call_rollup_status_counts_json_check", sql`json_valid(${table.statusCounts})`),
 ]);

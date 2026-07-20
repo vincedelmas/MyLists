@@ -3,8 +3,18 @@ import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {customJson} from "@/lib/server/database/custom-types";
-import {integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
-import {commMediaEpsCols, commonGenericCols, commonMediaCols, commonMediaListCols, commonMediaListIndexes, commonMediaTagsCols} from "@/lib/server/database/schema/media/_helper";
+import {check, integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
+import {
+    commMediaEpsCols,
+    commonGenericCols,
+    commonGenericIndexes,
+    commonMediaCols,
+    commonMediaEpsIndexes,
+    commonMediaListCols,
+    commonMediaListIndexes,
+    commonMediaTagsCols,
+    commonMediaTagsIndexes
+} from "@/lib/server/database/schema/media/_helper";
 
 
 export const series = sqliteTable("series", {
@@ -35,32 +45,35 @@ export const seriesList = sqliteTable("series_list", {
     total: integer("total").default(0).notNull(),
     redo2: customJson<number[]>("redo2").default(sql`'[]'`).notNull(),
     ...commonMediaListCols(series.id, MediaType.SERIES),
-}, (table) => commonMediaListIndexes(table, MediaType.SERIES));
+}, (table) => [
+    ...commonMediaListIndexes(table, MediaType.SERIES),
+    check("series_list_redo2_json_check", sql`json_valid(${table.redo2})`),
+]);
 
 
 export const seriesGenre = sqliteTable("series_genre", {
     ...commonGenericCols(series.id),
-});
+}, (table) => commonGenericIndexes(table, "series_genre"));
 
 
 export const seriesActors = sqliteTable("series_actors", {
     ...commonGenericCols(series.id),
-});
+}, (table) => commonGenericIndexes(table, "series_actors"));
 
 
 export const seriesNetwork = sqliteTable("series_network", {
     ...commonGenericCols(series.id),
-});
+}, (table) => commonGenericIndexes(table, "series_network"));
 
 
 export const seriesEpisodesPerSeason = sqliteTable("series_episodes_per_season", {
     ...commMediaEpsCols(series.id),
-});
+}, (table) => commonMediaEpsIndexes(table, "series_episodes_per_season"));
 
 
 export const seriesTags = sqliteTable("series_tags", {
     ...commonMediaTagsCols(series.id),
-});
+}, (table) => commonMediaTagsIndexes(table, MediaType.SERIES));
 
 
 export const seriesRelations = relations(series, ({ many }) => ({

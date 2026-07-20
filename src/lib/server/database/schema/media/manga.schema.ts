@@ -2,7 +2,15 @@ import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
-import {commonGenericCols, commonMediaCols, commonMediaListCols, commonMediaListIndexes, commonMediaTagsCols} from "@/lib/server/database/schema/media/_helper";
+import {
+    commonGenericCols,
+    commonGenericIndexes,
+    commonMediaCols,
+    commonMediaListCols,
+    commonMediaListIndexes,
+    commonMediaTagsCols,
+    commonMediaTagsIndexes
+} from "@/lib/server/database/schema/media/_helper";
 
 
 export const manga = sqliteTable("manga", {
@@ -31,17 +39,17 @@ export const mangaList = sqliteTable("manga_list", {
 
 export const mangaGenre = sqliteTable("manga_genre", {
     ...commonGenericCols(manga.id),
-});
+}, (table) => commonGenericIndexes(table, "manga_genre"));
 
 
 export const mangaAuthors = sqliteTable("manga_authors", {
     ...commonGenericCols(manga.id),
-});
+}, (table) => commonGenericIndexes(table, "manga_authors"));
 
 
 export const mangaTags = sqliteTable("manga_tags", {
     ...commonMediaTagsCols(manga.id),
-});
+}, (table) => commonMediaTagsIndexes(table, MediaType.MANGA));
 
 
 export const mangaRelations = relations(manga, ({ many }) => ({

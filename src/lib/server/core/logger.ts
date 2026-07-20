@@ -3,11 +3,16 @@ import "@tanstack/react-start/server-only";
 import {getDisabledOptionalIntegrations, serverEnv} from "@/env/server";
 
 
+const usePrettyLogs = process.env.NODE_ENV !== "production"
+    && process.env.NODE_ENV !== "test"
+    && process.stdout.isTTY;
+
+
 export const logger = pino({
     name: "mylists",
     level: serverEnv.LOG_LEVEL,
     timestamp: pino.stdTimeFunctions.isoTime,
-    transport: process.env.NODE_ENV === "development"
+    transport: usePrettyLogs
         ? {
             target: "pino-pretty",
             options: {

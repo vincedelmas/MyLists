@@ -2,7 +2,6 @@ import * as z from "zod";
 import path from "node:path";
 import {homedir} from "node:os";
 import {createEnv} from "@t3-oss/env-core";
-import "@tanstack/react-start/server-only";
 
 
 export const serverEnv = createEnv({

@@ -14,6 +14,7 @@ import {authMethodsOptions} from "@/lib/client/react-query/query-options";
 import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 
 
 interface RegisterFormProps {
@@ -148,13 +149,13 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
                     </form>
                 </Form>
                 :
-                <div className="mt-2 rounded-md border border-amber-900/60 bg-amber-950/20 p-3 text-sm text-amber-100">
+                <InlineErrorContainer>
                     Email registration is disabled on this instance.{" "}
                     {hasSocialProvider
                         ? "Use one of the options below or ask the admin to create an account."
                         : "Ask the admin to create an account with the `create-user` CLI."
                     }
-                </div>
+                </InlineErrorContainer>
             }
             {hasSocialProvider &&
                 <>

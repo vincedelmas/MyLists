@@ -2,6 +2,7 @@ import * as z from "zod";
 import path from "node:path";
 import {homedir} from "node:os";
 import {createEnv} from "@t3-oss/env-core";
+import "@tanstack/react-start/server-only";
 
 
 export const serverEnv = createEnv({
@@ -73,3 +74,49 @@ for (const [first, second] of optionalCredentialPairs) {
         throw new Error(`Invalid env config: ${first} is required when ${second} is set.`);
     }
 }
+
+
+const optionalIntegrations = [
+    {
+        feature: "Email registration, password reset, and mail delivery",
+        envVars: ["ADMIN_MAIL_USERNAME", "ADMIN_MAIL_PASSWORD"],
+    },
+    {
+        feature: "GitHub sign-in",
+        envVars: ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"],
+    },
+    {
+        feature: "Google sign-in",
+        envVars: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
+    },
+    {
+        feature: "Movie, Series, and Anime provider (TMDB)",
+        envVars: ["THEMOVIEDB_API_KEY"],
+    },
+    {
+        feature: "Game provider (IGDB)",
+        envVars: ["IGDB_CLIENT_ID", "IGDB_CLIENT_SECRET"],
+    },
+    {
+        feature: "LLM book genre enrichment",
+        envVars: ["LLM_API_KEY"],
+    },
+] as const satisfies ReadonlyArray<{
+    feature: string;
+    envVars: ReadonlyArray<keyof typeof serverEnv>;
+}>;
+
+
+type OptionalIntegrationEnvVar = typeof optionalIntegrations[number]["envVars"][number];
+type OptionalIntegrationEnv = Partial<Pick<typeof serverEnv, OptionalIntegrationEnvVar>>;
+
+
+export const getDisabledOptionalIntegrations = (env: OptionalIntegrationEnv) => {
+    return optionalIntegrations.flatMap(({ feature, envVars }) => {
+        const missingEnvVars = envVars.filter((envVar) => !env[envVar]);
+
+        return missingEnvVars.length > 0
+            ? [{ feature, missingEnvVars }]
+            : [];
+    });
+};

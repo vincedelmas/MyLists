@@ -26,8 +26,13 @@ export class WcfService {
     }
 
     async getGameData(userId: number) {
-        if ((await this.repository.countPool()).length === 0) {
-            await this.curatePool();
+        let poolCounts = await this.repository.countPool();
+        if (countPoolMedia(poolCounts) < 2) {
+            poolCounts = await this.curatePool();
+        }
+
+        if (countPoolMedia(poolCounts) < 2) {
+            throw new FormattedError("Not enough media found to create a Which Came First game.");
         }
 
         const { highestRound, ...stats } = await this.repository.getStats(userId);
@@ -281,6 +286,11 @@ const GAME_DIFFICULTY = [
 
 const randomItem = <T>(items: T[]) => {
     return items[Math.floor(Math.random() * items.length)];
+}
+
+
+const countPoolMedia = (poolCounts: { count: number }[]) => {
+    return poolCounts.reduce((total, row) => total + row.count, 0);
 }
 
 

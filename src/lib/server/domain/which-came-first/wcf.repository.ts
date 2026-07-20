@@ -23,6 +23,8 @@ export class WcfRepository {
             .delete(whichCameFirstMedia)
             .where(eq(whichCameFirstMedia.mediaType, mediaType));
 
+        if (mediaRefs.length === 0) return;
+
         await getDbClient()
             .insert(whichCameFirstMedia)
             .values(mediaRefs.map((media) => ({

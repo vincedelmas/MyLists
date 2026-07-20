@@ -1,11 +1,9 @@
 # Docker Deployment
 
-MyLists ships a Docker Compose setup with the app and Redis.
-The app image runs the Bun web server by default and also contains
-the built CLI for one-off commands and scheduled maintenance.
+MyLists ships a Docker Compose setup with the app and Redis. The app image runs the Bun web server by default and also contains the built CLI for one-off commands and scheduled
+maintenance.
 
-The Compose setup does not include a scheduler or reverse proxy.
-In production, provide those from your platform when you need them.
+The Compose setup does not include a scheduler or reverse proxy. In production, provide those from your platform when you need them.
 
 ## Build
 
@@ -15,8 +13,7 @@ Create the Docker env file:
 cp .env.docker.example .env.docker
 ```
 
-Set real values for `ADMIN_PASSWORD`, `ADMIN_TOKEN_SECRET`, and `BETTER_AUTH_SECRET`.
-API keys, OAuth providers, mail delivery, PostHog, and LLM enrichment are optional.
+Set real values for `ADMIN_PASSWORD`, `ADMIN_TOKEN_SECRET`, and `BETTER_AUTH_SECRET`. API keys, OAuth providers, mail delivery, PostHog, and LLM enrichment are optional.
 
 Build the app image:
 
@@ -81,13 +78,13 @@ REDIS_URL=redis://redis:6379
 
 When Redis is disabled, the app uses in-memory cache and in-memory rate limiting inside each app process.
 
-API monitoring in the admin dashboard is Redis-backed. Without Redis, outbound API calls are not recorded into the monitoring
-rollups and the live Redis counters show zero/null data.
+API monitoring in the admin dashboard is Redis-backed. Without Redis, outbound API calls are not recorded into the monitoring rollups and the live Redis counters show zero/null
+data.
 
 ## Import Drain
 
-Imports are processed by the built CLI. The web app only creates queued import jobs; it does not start a worker process.
-Run the import drain on a schedule with the same image, env, and persistent mounts as the app:
+Imports are processed by the built CLI. The web app only creates queued import jobs; it does not start a worker process. Run the import drain on a schedule with the same image,
+env, and persistent mounts as the app:
 
 ```bash
 flock -n /tmp/mylists-import-drain.lock bun dist/cli/index.js import-drain
@@ -99,13 +96,13 @@ For Docker Compose:
 flock -n /tmp/mylists-import-drain.lock docker compose --env-file .env.docker run --rm app bun dist/cli/index.js import-drain
 ```
 
-A typical schedule is every 2 minutes for example. The `flock` lock skips a new run when the previous drain is still active.
-The database also only allows one import job to be in `PROCESSING` at a time.
+A typical schedule is every 2 minutes for example. The `flock` lock skips a new run when the previous drain is still active. The database also only allows one import job to be in
+`PROCESSING` at a time.
 
 ## Maintenance
 
-The image does not run cron. Use Dokploy cron, host cron, Kubernetes CronJob, or another scheduler.
-Run the maintenance task with the same image, env, and persistent mounts as the app:
+The image does not run cron. Use Dokploy cron, host cron, Kubernetes CronJob, or another scheduler. Run the maintenance task with the same image, env, and persistent mounts as the
+app:
 
 ```bash
 docker compose --env-file .env.docker run --rm app \
@@ -161,8 +158,7 @@ This runs Drizzle schema push, seeds achievements, and calculates achievements a
 
 ## Public Deployment
 
-Put the app behind your platform reverse proxy or your own TLS proxy.
-Forward these headers from your proxy:
+Put the app behind your platform reverse proxy or your own TLS proxy. Forward these headers from your proxy:
 
 ```nginx
 proxy_set_header Host $host;
@@ -218,16 +214,17 @@ View logs:
 docker compose logs -f app
 ```
 
-The app writes structured JSON logs to stdout in every environment. In Docker, read them with `docker compose logs`.
+The app writes structured JSON logs to stdout in prod. Dev logs are pretty-printed in the terminal. In Docker, read them with `docker compose logs`.
 
-The admin Runtime Logs page does not make the app write log files. It only reads existing files from `ADMIN_LOG_DIR`, which defaults to `~/.pm2/logs`.
-For PM2 deployments, point `ADMIN_LOG_DIR` at the directory where PM2 writes the app output logs, for example:
+The admin Runtime Logs page does not make the app write log files. It only reads existing files from `ADMIN_LOG_DIR`, which defaults to `~/.pm2/logs`. For PM2 deployments, point
+`ADMIN_LOG_DIR` at the directory where PM2 writes the app output logs, for example:
 
 ```env
 ADMIN_LOG_DIR=/home/deploy/.pm2/logs
 ```
 
-In local dev, no file log is written by the app; use the terminal output instead. In Docker, leave `ADMIN_LOG_DIR` unset unless you mount a directory containing log files that the admin dashboard should read.
+In local dev, no file log is written by the app; use the terminal output instead. In Docker, leave `ADMIN_LOG_DIR` unset unless you mount a directory containing log files that the
+admin dashboard should read.
 
 Restart the app:
 

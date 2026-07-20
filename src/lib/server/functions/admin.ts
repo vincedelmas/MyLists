@@ -220,12 +220,7 @@ export const postImpersonateUser = createServerFn({ method: "POST" })
     .validator(z.object({ userId: z.coerce.number().int().positive() }))
     .handler(async ({ data: { userId } }) => {
         const ctx = await auth.$context;
-        const prefix = ctx.options?.advanced?.cookiePrefix ?? "better-auth";
-        const prePrefix = (process.env.NODE_ENV === "production") ? "__Secure-" : "";
-        const cookies = {
-            sessionData: `${prePrefix}${prefix}.session_data`,
-            sessionToken: `${prePrefix}${prefix}.session_token`,
-        };
+        const { sessionData, sessionToken } = ctx.authCookies;
 
         const targetUser = await ctx.internalAdapter.findUserById(String(userId));
         if (!targetUser) throw new FormattedError("User not found");
@@ -240,11 +235,19 @@ export const postImpersonateUser = createServerFn({ method: "POST" })
         if (!newSession) throw new FormattedError("Failed to create session");
 
         // Delete current user and admin cookie
-        deleteCookie(ADMIN_COOKIE_NAME);
-        deleteCookie(cookies.sessionData);
+        deleteCookie(ADMIN_COOKIE_NAME, {
+            path: "/",
+            secure: process.env.NODE_ENV === "production",
+        });
+        
+        deleteCookie(sessionData.name, {
+            path: sessionData.attributes.path,
+            secure: sessionData.attributes.secure,
+            domain: sessionData.attributes.domain,
+        });
 
         // 10 min cookie
-        await setSignedCookie(cookies.sessionToken, newSession.token, ctx.secret, 10 * 60);
+        await setSignedCookie(sessionToken.name, newSession.token, ctx.secret, 10 * 60);
     });
 
 

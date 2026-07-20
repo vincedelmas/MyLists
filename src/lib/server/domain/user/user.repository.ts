@@ -271,7 +271,7 @@ export class UserRepository {
     }
 
     static async getRandomPublicProfile() {
-        return getDbClient()
+        const randomPublicProfile = getDbClient()
             .select({ name: user.name })
             .from(user)
             .innerJoin(userMediaSettings, eq(userMediaSettings.userId, user.id))
@@ -284,6 +284,8 @@ export class UserRepository {
             .having(gte(sum(userMediaSettings.timeSpent), 5000))
             .orderBy(sql`random()`)
             .get();
+        
+        return randomPublicProfile ?? null;
     }
 
     static async getMinimalUserSettings(userId: number) {

@@ -27,7 +27,7 @@ Ensure you have [Bun](https://bun.sh) installed on your machine.
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/crossoufire/mylists.git
+   git clone https://github.com/crossoufire/MyLists.git
    cd MyLists
    ```
 

@@ -1,8 +1,8 @@
 import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
-import {Status} from "@/lib/utils/enums";
+import {MediaType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
-import {movies, moviesList, user} from "@/lib/server/database/schema";
+import {collectionItems, collections, movies, moviesList, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -19,7 +19,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const { MoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
 
 
-describe("BaseRepository.bulkInsertUserMedia", () => {
+describe("BaseRepository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
     let repository: InstanceType<typeof MoviesRepository>;
@@ -81,5 +81,35 @@ describe("BaseRepository.bulkInsertUserMedia", () => {
 
     it("does not execute an insert for an empty batch", async () => {
         await expect(repository.bulkInsertUserMedia([])).resolves.toEqual([]);
+    });
+
+    it("finds media absent from both user lists and collections", async () => {
+        await db.insert(movies).values({
+            id: 102,
+            apiId: 1002,
+            duration: 105,
+            imageCover: "3.jpg",
+            name: "Orphaned movie",
+        });
+        await db.insert(moviesList).values({
+            id: 1,
+            userId: 42,
+            mediaId: 100,
+            status: Status.COMPLETED,
+        });
+        await db.insert(collections).values({
+            id: 1,
+            ownerId: 42,
+            title: "Movie collection",
+            mediaType: MediaType.MOVIES,
+        });
+        await db.insert(collectionItems).values({
+            mediaId: 101,
+            orderIndex: 0,
+            collectionId: 1,
+            mediaType: MediaType.MOVIES,
+        });
+
+        await expect(repository.getOrphanedMediaIds(MediaType.MOVIES)).resolves.toEqual([102]);
     });
 });

@@ -44,6 +44,7 @@ export const commonMediaListIndexes = (table: {
 }, mediaTypeName: MediaType) => {
     return [
         uniqueIndex(`ux_${mediaTypeName}_list_user_media`).on(table.userId, table.mediaId),
+        index(`ix_${mediaTypeName}_list_media_id`).on(table.mediaId),
         index(`ix_${mediaTypeName}_list_user_media_rated`).on(table.userId, table.mediaId).where(sql`${table.rating} IS NOT NULL`),
         index(`ix_${mediaTypeName}_list_media_user_rated`).on(table.mediaId, table.userId).where(sql`${table.rating} IS NOT NULL`),
         check(`${mediaTypeName}_list_rating_check`, sql`${table.rating} IS NULL OR (${table.rating} >= 0 AND ${table.rating} <= 10)`),

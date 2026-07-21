@@ -144,9 +144,11 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
         const mediaToDelete = await tx
             .select({ id: mediaTable.id })
             .from(mediaTable)
-            .leftJoin(listTable, eq(listTable.mediaId, mediaTable.id))
             .where(and(
-                isNull(listTable.userId),
+                notExists(tx.select()
+                    .from(listTable)
+                    .where(eq(listTable.mediaId, mediaTable.id))
+                ),
                 notExists(tx.select()
                     .from(collectionItems)
                     .where(and(eq(collectionItems.mediaId, mediaTable.id), eq(collectionItems.mediaType, mediaType)))

@@ -71,8 +71,8 @@ describe("TV import processing", () => {
     it("matches an internal series and adds it to the user list", async () => {
         const importService = new ImportService(ImportRepository);
         const seriesService = new TvService(
-            new TvRepository(seriesDefinition.repository, seriesDefinition.attribution),
-            seriesDefinition.service,
+            new TvRepository(seriesDefinition),
+            seriesDefinition,
         );
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.SERIES, createTvMatcher(MediaType.SERIES, seriesService, {} as any, {} as any));

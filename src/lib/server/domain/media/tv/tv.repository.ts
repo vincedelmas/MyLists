@@ -4,21 +4,21 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {TvType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
+import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
 import {ProviderAttribution} from "@/lib/server/domain/media/base/media-definition";
-import {AnimeRepositoryDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
-import {SeriesRepositoryDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
+import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 import {and, asc, count, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, ne, notInArray, or, sql} from "drizzle-orm";
 
 
-type TvRepositoryDefinition = AnimeRepositoryDefinition | SeriesRepositoryDefinition;
+type TvDefinition = AnimeDefinition | SeriesDefinition;
 
 
-export class TvRepository extends BaseRepository<TvRepositoryDefinition> {
-    constructor(
-        definition: TvRepositoryDefinition,
-        private readonly attribution: ProviderAttribution,
-    ) {
+export class TvRepository extends BaseRepository<TvDefinition> {
+    private readonly attribution: ProviderAttribution;
+
+    constructor(definition: TvDefinition) {
         super(definition);
+        this.attribution = definition.attribution;
     }
 
     async getMediaEpsPerSeason(mediaId: number) {

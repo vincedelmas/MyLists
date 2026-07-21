@@ -2,14 +2,15 @@ import {AchievementDifficulty, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {movies, moviesActors, moviesList} from "@/lib/server/database/schema";
 import {count, countDistinct, eq, gte, isNotNull, lte, max} from "drizzle-orm";
-import {MovieRepositoryDefinition} from "@/lib/server/domain/media/movies/movies.definition";
+import {MovieDefinition} from "@/lib/server/domain/media/movies/movies.definition";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-export const createMoviesAchievementCatalog = (definition: MovieRepositoryDefinition) => {
-    const { listTable } = definition.tables;
-    const queries = createAchievementQueries(definition);
+export const createMoviesAchievementCatalog = (definition: MovieDefinition) => {
+    const { identity, repository } = definition;
+    const { listTable } = repository.tables;
+    const queries = createAchievementQueries(repository);
 
     const duration: AchievementCalculation = (achievement) => {
         const value = Number(achievement.value);
@@ -84,7 +85,7 @@ export const createMoviesAchievementCatalog = (definition: MovieRepositoryDefini
     };
 
     return defineAchievementCatalog({
-        mediaType: definition.mediaType,
+        mediaType: identity.mediaType,
         entries: {
             completed_movies: {
                 name: "Cinephile Marathoner",

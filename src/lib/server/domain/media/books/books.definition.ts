@@ -9,8 +9,11 @@ export const BOOK_READING_MINUTES_PER_PAGE = 1.7;
 
 
 export const booksDefinition = defineMediaDefinition({
-    repository: {
+    identity: {
         mediaType: MediaType.BOOKS,
+        coverDirectory: "books-covers",
+    },
+    repository: {
         tables: {
             mediaTable: books,
             listTable: booksList,
@@ -102,8 +105,6 @@ export const booksDefinition = defineMediaDefinition({
         },
     },
     service: {
-        mediaType: MediaType.BOOKS,
-        coverDirectory: "books-covers",
         defaultStatus: Status.PLAN_TO_READ,
         editableFields: ["name", "releaseDate", "pages", "language", "publishers", "synopsis", "lockStatus"],
         progressTotals: (state) => ({
@@ -112,6 +113,7 @@ export const booksDefinition = defineMediaDefinition({
             timeSpent: (state?.total ?? 0) * BOOK_READING_MINUTES_PER_PAGE,
         }),
     },
+    ingestion: {},
     attribution: {
         name: "GoogleBooks",
         mediaUrl: "https://books.google.com/books?id=",

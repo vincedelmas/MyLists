@@ -6,8 +6,11 @@ import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, anime
 
 
 export const animeDefinition = defineMediaDefinition({
-    repository: {
+    identity: {
         mediaType: MediaType.ANIME,
+        coverDirectory: "anime-covers",
+    },
+    repository: {
         tables: {
             mediaTable: anime,
             listTable: animeList,
@@ -146,8 +149,6 @@ export const animeDefinition = defineMediaDefinition({
         },
     },
     service: {
-        mediaType: MediaType.ANIME,
-        coverDirectory: "anime-covers",
         defaultStatus: Status.PLAN_TO_WATCH,
         editableFields: [
             "name", "originalName", "releaseDate", "lastAirDate", "homepage",
@@ -158,6 +159,14 @@ export const animeDefinition = defineMediaDefinition({
             timeSpent: (state?.total ?? 0) * media.duration,
             totalRedo: state?.redo2.reduce((sum, value) => sum + value, 0) ?? 0,
         }),
+    },
+    ingestion: {
+        defaultDuration: 24,
+        limits: {
+            genres: 5,
+            actors: 5,
+            networks: 2,
+        },
     },
     attribution: {
         name: "TMDB",

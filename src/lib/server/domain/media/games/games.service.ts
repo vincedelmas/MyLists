@@ -10,8 +10,8 @@ import {gamesDefinition, type GamesDefinition} from "@/lib/server/domain/media/g
 
 
 export class GamesService extends BaseService<GamesDefinition, GamesRepository> {
-    constructor(repository: GamesRepository, policy: GamesDefinition["service"] = gamesDefinition.service) {
-        super(repository, policy);
+    constructor(repository: GamesRepository, definition: GamesDefinition = gamesDefinition) {
+        super(repository, definition);
 
         this.updateHandlers = {
             ...this.updateHandlers,
@@ -72,7 +72,8 @@ export class GamesService extends BaseService<GamesDefinition, GamesRepository> 
     }
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
-        const { editableFields, coverDirectory } = this.policy;
+        const { editableFields } = this.policy;
+        const { coverDirectory } = this.identity;
 
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();

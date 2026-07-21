@@ -6,17 +6,17 @@ import {normalizeGamePlatforms} from "@/lib/utils/game-platforms";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {ProviderAttribution} from "@/lib/server/domain/media/base/media-definition";
 import {Game, UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
+import {gamesDefinition, GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms} from "@/lib/server/database/schema";
 import {and, asc, count, eq, getTableColumns, gte, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
-import {gamesDefinition, GamesRepositoryDefinition} from "@/lib/server/domain/media/games/games.definition";
 
 
-export class GamesRepository extends BaseRepository<GamesRepositoryDefinition> {
-    constructor(
-        definition: GamesRepositoryDefinition = gamesDefinition.repository,
-        private readonly attribution: ProviderAttribution = gamesDefinition.attribution,
-    ) {
+export class GamesRepository extends BaseRepository<GamesDefinition> {
+    private readonly attribution: ProviderAttribution;
+
+    constructor(definition: GamesDefinition = gamesDefinition) {
         super(definition);
+        this.attribution = definition.attribution;
     }
 
     async getMediaIdsToBeRefreshed() {

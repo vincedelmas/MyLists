@@ -6,8 +6,11 @@ import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags}
 
 
 export const gamesDefinition = defineMediaDefinition({
-    repository: {
+    identity: {
         mediaType: MediaType.GAMES,
+        coverDirectory: "games-covers",
+    },
+    repository: {
         tables: {
             mediaTable: games,
             listTable: gamesList,
@@ -123,8 +126,6 @@ export const gamesDefinition = defineMediaDefinition({
         },
     },
     service: {
-        mediaType: MediaType.GAMES,
-        coverDirectory: "games-covers",
         defaultStatus: Status.PLAN_TO_PLAY,
         editableFields: [
             "name", "gameEngine", "gameModes", "playerPerspective", "releaseDate", "synopsis",
@@ -135,6 +136,11 @@ export const gamesDefinition = defineMediaDefinition({
             totalSpecific: 0,
             timeSpent: state?.playtime ?? 0,
         }),
+    },
+    ingestion: {
+        limits: {
+            genres: 5,
+        },
     },
     attribution: {
         name: "IGDB",

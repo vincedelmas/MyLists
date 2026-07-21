@@ -1,6 +1,6 @@
-import {MediaType} from "@/lib/utils/enums";
 import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
 import {GamesRepository} from "@/lib/server/domain/media/games";
+import {GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
@@ -15,35 +15,34 @@ const createHltbEnricher = (hltbClient: HltbApi): MediaDetailsEnricher<UpsertGam
 
         return {
             ...details,
-            mediaData: igdbTransformer.addHLTBDataToMainDetails(
-                hltbData,
-                details.mediaData,
-            ),
+            mediaData: igdbTransformer.addHLTBDataToMainDetails(hltbData, details.mediaData),
         };
     }
 };
 
 
-export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<UpsertGameWithDetails> => {
+export const createIgdbGamesProvider = (igdb: IgdbApi, definition: GamesDefinition): ExternalMediaProvider<UpsertGameWithDetails> => {
+    const transformOptions = { ...definition.identity, maxGenres: definition.ingestion.limits.genres };
+
     return {
         source: "igdb" as const,
-        mediaType: MediaType.GAMES,
+        mediaType: definition.identity.mediaType,
 
         search: {
             async search(query: string, page = 1) {
                 const raw = await igdb.search(query, page);
-                return igdbTransformer.transformSearchResults(raw);
+                return igdbTransformer.transformSearchResults(raw, transformOptions);
             },
         },
 
         details: {
             async getDetails(apiId: number) {
                 const raw = await igdb.getGameDetails(apiId);
-                return igdbTransformer.transformDetailsResults(raw);
+                return igdbTransformer.transformDetailsResults(raw, transformOptions);
             },
             async getDetailsBatch(apiIds) {
                 const rawItems = await igdb.getGamesDetails(apiIds.map(Number));
-                const entries = await Promise.all(rawItems.map(async raw => [String(raw.id), await igdbTransformer.transformDetailsResults(raw)] as const));
+                const entries = await Promise.all(rawItems.map(async raw => [String(raw.id), await igdbTransformer.transformDetailsResults(raw, transformOptions)] as const));
                 return new Map(entries);
             },
         },
@@ -51,7 +50,7 @@ export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<Up
         trends: {
             async getTrends() {
                 const raw = await igdb.getTrendingGames();
-                return igdbTransformer.transformGamesTrends(raw);
+                return igdbTransformer.transformGamesTrends(raw, transformOptions);
             },
         },
     };

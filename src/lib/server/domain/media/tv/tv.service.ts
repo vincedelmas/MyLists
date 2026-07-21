@@ -15,8 +15,8 @@ type TvDefinition = AnimeDefinition | SeriesDefinition;
 
 
 export class TvService extends BaseService<TvDefinition, TvRepository> {
-    constructor(repository: TvRepository, policy: TvDefinition["service"]) {
-        super(repository, policy);
+    constructor(repository: TvRepository, definition: TvDefinition) {
+        super(repository, definition);
 
         this.updateHandlers = {
             ...this.updateHandlers,
@@ -71,7 +71,8 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
     }
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
-        const { editableFields, coverDirectory } = this.policy;
+        const { editableFields } = this.policy;
+        const { coverDirectory } = this.identity;
 
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();

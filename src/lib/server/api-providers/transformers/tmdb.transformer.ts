@@ -4,7 +4,6 @@ import {isLatin1} from "@/lib/utils/text-formatting";
 import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {formatDateForDb} from "@/lib/utils/date-formatting";
-import {jikanImportPolicy, tmdbImportPolicy} from "@/lib/server/api-providers/provider-import.policies";
 import {
     JikanAnimeSearchResponse,
     ProviderSearchResult,
@@ -20,19 +19,27 @@ import {
 } from "@/lib/types/provider.types";
 
 
-type Options = {
-    dirSaveName: CoverType;
+export type TmdbMediaIdentities = {
+    [MediaType.SERIES]: { mediaType: typeof MediaType.SERIES; coverDirectory: CoverType };
+    [MediaType.ANIME]: { mediaType: typeof MediaType.ANIME; coverDirectory: CoverType };
+    [MediaType.MOVIES]: { mediaType: typeof MediaType.MOVIES; coverDirectory: CoverType };
+};
+
+
+export type TmdbMovieTransformOptions = {
+    maxGenres: number;
+    maxActors: number;
     defaultDuration: number;
+    coverDirectory: CoverType;
 }
 
 
-const animeDefaultDuration = 24;
-const seriesDefaultDuration = 40;
-const moviesDefaultDuration = 90;
-const tmdbMaxGenres = tmdbImportPolicy.maxGenres;
-const jikanMaxGenres = jikanImportPolicy.maxGenres;
-const { maxActors, maxNetworks } = tmdbImportPolicy;
-const imageBaseUrl = "https://image.tmdb.org/t/p/w300";
+export type TmdbTvTransformOptions = TmdbMovieTransformOptions & {
+    maxNetworks: number;
+};
+
+
+const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w300";
 
 
 const toUniqueNamedData = (items: { name: string }[] | null | undefined, limit: number) => {
@@ -44,8 +51,8 @@ const toUniqueNamedData = (items: { name: string }[] | null | undefined, limit: 
 };
 
 
-const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Options) => {
-    const { defaultDuration, dirSaveName } = options;
+const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: TmdbTvTransformOptions) => {
+    const { coverDirectory, defaultDuration, maxActors, maxGenres, maxNetworks } = options;
 
     const processCreatedBy = (rawData: TmdbTvDetails) => {
         const creators = rawData?.created_by;
@@ -88,8 +95,8 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Option
         episodeToAir: rawData?.next_episode_to_air?.episode_number ?? null,
         nextEpisodeToAir: formatDateForDb(rawData?.next_episode_to_air?.air_date),
         imageCover: await saveImageFromUrl({
-            dirSaveName: dirSaveName,
-            imageUrl: `${imageBaseUrl}${rawData?.poster_path}`,
+            dirSaveName: coverDirectory,
+            imageUrl: `${IMAGE_BASE_URL}${rawData?.poster_path}`,
         }),
     };
 
@@ -101,7 +108,7 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Option
         seasonsData.push({ season: 1, episodes: 1 });
     }
 
-    const genresData = toUniqueNamedData(rawData?.genres, tmdbMaxGenres);
+    const genresData = toUniqueNamedData(rawData?.genres, maxGenres);
     const networkData = toUniqueNamedData(rawData?.networks, maxNetworks);
     const actorsData = toUniqueNamedData(rawData?.credits?.cast, maxActors);
 
@@ -109,7 +116,7 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Option
 };
 
 
-const transformSearchResults = (searchData: SearchData<TmdbMultiSearchResponse>) => {
+const transformSearchResults = (searchData: SearchData<TmdbMultiSearchResponse>, identities: TmdbMediaIdentities) => {
     const results = searchData?.rawData?.results ?? [];
     const hasNextPage = searchData?.rawData?.total_pages > searchData.page;
 
@@ -119,7 +126,7 @@ const transformSearchResults = (searchData: SearchData<TmdbMultiSearchResponse>)
 
     const processSearchTv = (item: TmdbTvSearchResult) => {
         const date = item.first_air_date;
-        let itemType: MediaType = MediaType.SERIES;
+        let itemType: typeof MediaType.SERIES | typeof MediaType.ANIME = MediaType.SERIES;
 
         const name = isLatin1(item.original_name)
             ? item.original_name
@@ -147,11 +154,6 @@ const transformSearchResults = (searchData: SearchData<TmdbMultiSearchResponse>)
     };
 
     const transformedResults = fResults.map((item) => {
-        const baseInfo = {
-            id: item.id,
-            image: item.poster_path ? `${imageBaseUrl}${item.poster_path}` : getImageUrl("movies-covers"),
-        };
-
         let details;
         if (item.media_type === "tv") {
             details = processSearchTv(item);
@@ -160,6 +162,14 @@ const transformSearchResults = (searchData: SearchData<TmdbMultiSearchResponse>)
             details = processSearchMovie(item);
         }
 
+        const identity = identities[details.itemType];
+        const baseInfo = {
+            id: item.id,
+            image: item.poster_path
+                ? `${IMAGE_BASE_URL}${item.poster_path}`
+                : getImageUrl(identity.coverDirectory),
+        };
+
         return { ...baseInfo, ...details } as ProviderSearchResult;
     });
 
@@ -167,7 +177,9 @@ const transformSearchResults = (searchData: SearchData<TmdbMultiSearchResponse>)
 };
 
 
-const transformMoviesDetailsResults = async (rawData: TmdbMovieDetails) => {
+const transformMoviesDetailsResults = async (rawData: TmdbMovieDetails, options: TmdbMovieTransformOptions) => {
+    const { coverDirectory, defaultDuration, maxActors, maxGenres } = options;
+
     const mediaData = {
         apiId: rawData.id,
         name: rawData?.title,
@@ -183,39 +195,26 @@ const transformMoviesDetailsResults = async (rawData: TmdbMovieDetails) => {
         originalLanguage: rawData?.original_language,
         collectionId: rawData?.belongs_to_collection?.id,
         releaseDate: formatDateForDb(rawData.release_date),
-        duration: rawData?.runtime ?? moviesDefaultDuration,
+        duration: rawData?.runtime ?? defaultDuration,
         directorName: rawData?.credits?.crew?.find((crew) => crew.job === "Director")?.name,
         compositorName: rawData?.credits?.crew?.find((crew) => crew.job === "Original Music Composer")?.name,
         imageCover: await saveImageFromUrl({
-            dirSaveName: "movies-covers",
-            imageUrl: `${imageBaseUrl}${rawData?.poster_path}`,
+            dirSaveName: coverDirectory,
+            imageUrl: `${IMAGE_BASE_URL}${rawData?.poster_path}`,
         }),
     }
 
-    const genresData = toUniqueNamedData(rawData?.genres, tmdbMaxGenres);
+    const genresData = toUniqueNamedData(rawData?.genres, maxGenres);
     const actorsData = toUniqueNamedData(rawData?.credits?.cast, maxActors);
 
     return { mediaData, actorsData, genresData };
 };
 
 
-const transformAnimeDetailsResults = async (rawData: TmdbTvDetails) => {
-    return transformTvDetailsResults(rawData, {
-        dirSaveName: "anime-covers",
-        defaultDuration: animeDefaultDuration,
-    });
-};
-
-
-const transformSeriesDetailsResults = async (rawData: TmdbTvDetails) => {
-    return transformTvDetailsResults(rawData, {
-        dirSaveName: "series-covers",
-        defaultDuration: seriesDefaultDuration,
-    });
-};
-
-
-const transformMoviesTrends = async (rawData: TmdbTrendingMoviesResponse) => {
+const transformMoviesTrends = async (
+    rawData: TmdbTrendingMoviesResponse,
+    identity: { mediaType: typeof MediaType.MOVIES; coverDirectory: CoverType },
+) => {
     const moviesTrends: TrendsMedia[] = [];
 
     const rawResults = rawData?.results ?? [];
@@ -224,9 +223,9 @@ const transformMoviesTrends = async (rawData: TmdbTrendingMoviesResponse) => {
             apiId: result.id,
             overview: result?.overview,
             displayName: result?.title,
-            mediaType: MediaType.MOVIES,
+            mediaType: identity.mediaType,
             releaseDate: result?.release_date,
-            posterPath: result?.poster_path ? `${imageBaseUrl}${result.poster_path}` : getImageUrl("movies-covers"),
+            posterPath: result?.poster_path ? `${IMAGE_BASE_URL}${result.poster_path}` : getImageUrl(identity.coverDirectory),
         }
 
         moviesTrends.push(mediaData);
@@ -236,7 +235,12 @@ const transformMoviesTrends = async (rawData: TmdbTrendingMoviesResponse) => {
 };
 
 
-const transformTvTrends = async (rawData: TmdbTrendingTvResponse) => {
+const transformTvTrends = async (
+    rawData: TmdbTrendingTvResponse,
+    identities: TmdbMediaIdentities,
+) => {
+    const seriesIdentity = identities[MediaType.SERIES];
+    const animeIdentity = identities[MediaType.ANIME];
     const tvTrends: TrendsMedia[] = [];
 
     const rawResults = rawData?.results ?? [];
@@ -245,15 +249,16 @@ const transformTvTrends = async (rawData: TmdbTrendingTvResponse) => {
             apiId: result.id,
             displayName: result?.name,
             overview: result?.overview,
-            mediaType: MediaType.SERIES,
+            mediaType: seriesIdentity.mediaType,
             releaseDate: result?.first_air_date,
-            posterPath: result?.poster_path ? `${imageBaseUrl}${result.poster_path}` : getImageUrl("series-covers"),
+            posterPath: result?.poster_path ? `${IMAGE_BASE_URL}${result.poster_path}` : getImageUrl(seriesIdentity.coverDirectory),
         }
 
         const isJap = result?.origin_country.find((c) => c.toLowerCase() === "jp" || c.toLowerCase() === "ja") ?? false;
         const isAnimation = result?.genre_ids.find((g) => g === 16) ?? false;
         if (isJap && isAnimation) {
-            mediaData.mediaType = MediaType.ANIME;
+            mediaData.mediaType = animeIdentity.mediaType;
+            if (!result?.poster_path) mediaData.posterPath = getImageUrl(animeIdentity.coverDirectory);
         }
 
         tvTrends.push(mediaData);
@@ -263,25 +268,29 @@ const transformTvTrends = async (rawData: TmdbTrendingTvResponse) => {
 };
 
 
-const addAnimeSpecificGenres = (jikanData: JikanAnimeSearchResponse, genresData: { name: string }[] | null | undefined) => {
+const addAnimeSpecificGenres = (
+    jikanData: JikanAnimeSearchResponse,
+    genresData: { name: string }[] | null | undefined,
+    maxGenres: number,
+) => {
     const { genres = [], demographics = [] } = jikanData?.data?.[0] || {};
 
-    const genreList = toUniqueNamedData(genres, jikanMaxGenres) ?? [];
-    const demographicsList = toUniqueNamedData(demographics, jikanMaxGenres) ?? [];
+    const genreList = toUniqueNamedData(genres, maxGenres) ?? [];
+    const demographicsList = toUniqueNamedData(demographics, maxGenres) ?? [];
 
     const demoNames = new Set(demographicsList.map((genre) => genre.name));
     const nonDemographicGenres = genreList.filter((genre) => !demoNames.has(genre.name));
 
-    const combinedGenres = demographicsList.length >= jikanMaxGenres
+    const combinedGenres = demographicsList.length >= maxGenres
         ? demographicsList
-        : [...nonDemographicGenres.slice(0, jikanMaxGenres - demographicsList.length), ...demographicsList];
+        : [...nonDemographicGenres.slice(0, maxGenres - demographicsList.length), ...demographicsList];
 
-    const newGenres = toUniqueNamedData(combinedGenres, jikanMaxGenres) ?? [];
+    const newGenres = toUniqueNamedData(combinedGenres, maxGenres) ?? [];
 
     return newGenres.length
         ? newGenres
         : genresData
-            ? toUniqueNamedData(genresData, jikanMaxGenres)
+            ? toUniqueNamedData(genresData, maxGenres)
             : genresData;
 };
 
@@ -291,7 +300,6 @@ export const tmdbTransformer = {
     transformMoviesTrends,
     transformSearchResults,
     addAnimeSpecificGenres,
-    transformAnimeDetailsResults,
     transformMoviesDetailsResults,
-    transformSeriesDetailsResults,
+    transformTvDetailsResults,
 }

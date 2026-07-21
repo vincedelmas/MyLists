@@ -11,8 +11,8 @@ import {BookDefinition, booksDefinition} from "@/lib/server/domain/media/books/b
 
 
 export class BooksService extends BaseService<BookDefinition, BooksRepository> {
-    constructor(repository: BooksRepository, policy: BookDefinition["service"] = booksDefinition.service) {
-        super(repository, policy);
+    constructor(repository: BooksRepository, definition: BookDefinition = booksDefinition) {
+        super(repository, definition);
 
         this.updateHandlers = {
             ...this.updateHandlers,
@@ -66,7 +66,8 @@ export class BooksService extends BaseService<BookDefinition, BooksRepository> {
     }
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
-        const { editableFields, coverDirectory } = this.policy;
+        const { editableFields } = this.policy;
+        const { coverDirectory } = this.identity;
 
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
@@ -104,7 +105,7 @@ export class BooksService extends BaseService<BookDefinition, BooksRepository> {
     }
 
     async updateDefaultCover(mediaId: number, payload: { imageUrl?: string; imageFile?: File }) {
-        const { coverDirectory } = this.policy;
+        const { coverDirectory } = this.identity;
 
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();

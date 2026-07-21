@@ -1,17 +1,23 @@
 import {MediaType} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
+import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {formatDateForDb} from "@/lib/utils/date-formatting";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
-import {igdbImportPolicy} from "@/lib/server/api-providers/provider-import.policies";
 import {HltbGameEntry, IgdbGameDetails, IgdbSearchResponse, IgdbTrendGamesResponse, ProviderSearchResult, SearchData, TrendsMedia} from "@/lib/types/provider.types";
 
 
-const maxGenres = igdbImportPolicy.maxGenres;
+export type IgdbTransformOptions = {
+    maxGenres: number;
+    coverDirectory: CoverType;
+    mediaType: typeof MediaType.GAMES;
+};
+
+
 const imageBaseUrl = "https://images.igdb.com/igdb/image/upload/t_1080p/";
 
 
-const transformSearchResults = (searchData: SearchData<IgdbSearchResponse>) => {
+const transformSearchResults = (searchData: SearchData<IgdbSearchResponse>, options: IgdbTransformOptions) => {
     const results = searchData.rawData?.result ?? [];
     const hasNextPage = (searchData.rawData?.count ?? 0) > (searchData.page * searchData.resultsPerPage);
 
@@ -19,9 +25,9 @@ const transformSearchResults = (searchData: SearchData<IgdbSearchResponse>) => {
         return {
             id: item.id,
             name: item?.name,
-            itemType: MediaType.GAMES,
+            itemType: options.mediaType,
             date: item?.first_release_date,
-            image: item?.cover?.image_id ? `${imageBaseUrl}${item?.cover?.image_id}.jpg` : getImageUrl("games-covers"),
+            image: item?.cover?.image_id ? `${imageBaseUrl}${item?.cover?.image_id}.jpg` : getImageUrl(options.coverDirectory),
         };
     });
 
@@ -29,7 +35,7 @@ const transformSearchResults = (searchData: SearchData<IgdbSearchResponse>) => {
 };
 
 
-const transformGamesDetailsResults = async (rawData: IgdbGameDetails) => {
+const transformGamesDetailsResults = async (rawData: IgdbGameDetails, options: IgdbTransformOptions) => {
     const mediaData = {
         apiId: rawData.id,
         name: rawData?.name,
@@ -47,7 +53,7 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails) => {
         hltbMainAndExtraTime: null,
         hltbTotalCompleteTime: null,
         imageCover: await saveImageFromUrl({
-            dirSaveName: "games-covers",
+            dirSaveName: options.coverDirectory,
             imageUrl: `${imageBaseUrl}${rawData?.cover?.image_id}.jpg`,
         }),
     }
@@ -67,7 +73,7 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails) => {
         }
     }
 
-    genresData = genresData.slice(0, maxGenres);
+    genresData = genresData.slice(0, options.maxGenres);
     const companiesData = rawData?.involved_companies?.filter(company => company.developer || company.publisher)
         .map(company => ({
             name: company.company.name,
@@ -94,11 +100,11 @@ const addHLTBDataToMainDetails = (hltbData: HltbGameEntry, mediaData: UpsertGame
 };
 
 
-const transformGamesTrends = (rawData: IgdbTrendGamesResponse[]): TrendsMedia[] => {
+const transformGamesTrends = (rawData: IgdbTrendGamesResponse[], options: IgdbTransformOptions): TrendsMedia[] => {
     return rawData.map((item) => ({
         apiId: item.game.id,
         displayName: item.game.name,
-        mediaType: MediaType.GAMES,
+        mediaType: options.mediaType,
         overview: item.game.summary ?? "",
         releaseDate: item.game.first_release_date,
         posterPath: item.game.cover?.image_id ? `${imageBaseUrl}${item.game.cover.image_id}.jpg` : "",

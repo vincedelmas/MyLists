@@ -18,39 +18,47 @@ import {createMediaAchievementsRegistry, MediaRepositoryRegistry, MediaServiceRe
 
 export function setupMediaModule() {
     const repositories = {
-        series: new TvRepository(seriesDefinition.repository, seriesDefinition.attribution),
-        anime: new TvRepository(animeDefinition.repository, animeDefinition.attribution),
-        movies: new MoviesRepository(moviesDefinition.repository, moviesDefinition.attribution),
-        games: new GamesRepository(gamesDefinition.repository, gamesDefinition.attribution),
-        books: new BooksRepository(booksDefinition.repository, booksDefinition.attribution),
-        manga: new MangaRepository(mangaDefinition.repository, mangaDefinition.attribution),
+        series: new TvRepository(seriesDefinition),
+        anime: new TvRepository(animeDefinition),
+        movies: new MoviesRepository(moviesDefinition),
+        games: new GamesRepository(gamesDefinition),
+        books: new BooksRepository(booksDefinition),
+        manga: new MangaRepository(mangaDefinition),
     };
     Object.entries(repositories).forEach(([key, repo]) => {
         MediaRepositoryRegistry.register(key as MediaType, repo);
     });
 
     const mediaAchievementsRegistry = createMediaAchievementsRegistry({
-        [MediaType.SERIES]: createTvAchievementCatalog(seriesDefinition.repository),
-        [MediaType.ANIME]: createTvAchievementCatalog(animeDefinition.repository),
-        [MediaType.MOVIES]: createMoviesAchievementCatalog(moviesDefinition.repository),
-        [MediaType.GAMES]: createGamesAchievementCatalog(gamesDefinition.repository),
-        [MediaType.BOOKS]: createBooksAchievementCatalog(booksDefinition.repository),
-        [MediaType.MANGA]: createMangaAchievementCatalog(mangaDefinition.repository),
+        [MediaType.SERIES]: createTvAchievementCatalog(seriesDefinition),
+        [MediaType.ANIME]: createTvAchievementCatalog(animeDefinition),
+        [MediaType.MOVIES]: createMoviesAchievementCatalog(moviesDefinition),
+        [MediaType.GAMES]: createGamesAchievementCatalog(gamesDefinition),
+        [MediaType.BOOKS]: createBooksAchievementCatalog(booksDefinition),
+        [MediaType.MANGA]: createMangaAchievementCatalog(mangaDefinition),
     });
 
     const services = {
-        series: new TvService(repositories.series, seriesDefinition.service),
-        anime: new TvService(repositories.anime, animeDefinition.service),
-        movies: new MoviesService(repositories.movies, moviesDefinition.service),
-        games: new GamesService(repositories.games, gamesDefinition.service),
-        books: new BooksService(repositories.books, booksDefinition.service),
-        manga: new MangaService(repositories.manga, mangaDefinition.service),
+        series: new TvService(repositories.series, seriesDefinition),
+        anime: new TvService(repositories.anime, animeDefinition),
+        movies: new MoviesService(repositories.movies, moviesDefinition),
+        games: new GamesService(repositories.games, gamesDefinition),
+        books: new BooksService(repositories.books, booksDefinition),
+        manga: new MangaService(repositories.manga, mangaDefinition),
     };
     Object.entries(services).forEach(([key, service]) => {
         MediaServiceRegistry.register(key as MediaType, service);
     })
 
     return {
+        definitions: {
+            series: seriesDefinition,
+            anime: animeDefinition,
+            movies: moviesDefinition,
+            games: gamesDefinition,
+            books: booksDefinition,
+            manga: mangaDefinition,
+        },
         repositories: {
             series: repositories.series,
             anime: repositories.anime,

@@ -24,8 +24,8 @@ describe("TvService", () => {
                 { listTable: createListTableStub() },
                 { getMediaEpsPerSeason: async () => epsPerSeasonMock },
             ) as unknown as TvRepository;
-            const policy = mediaType === MediaType.ANIME ? animeDefinition.service : seriesDefinition.service;
-            const tvService = new TvService(tvRepository, policy);
+            const definition = mediaType === MediaType.ANIME ? animeDefinition : seriesDefinition;
+            const tvService = new TvService(tvRepository, definition);
 
             const baseTv: TvType = {
                 id: 1,

@@ -1,21 +1,28 @@
 import {MediaType} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
+import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {formatDateForDb} from "@/lib/utils/date-formatting";
 import {JikanDetails, JikanMangaSearchResponse, ProviderSearchResult, SearchData} from "@/lib/types/provider.types";
 
 
-const transformSearchResults = (searchData: SearchData<JikanMangaSearchResponse>) => {
+export type JikanTransformOptions = {
+    coverDirectory: CoverType;
+    mediaType: typeof MediaType.MANGA;
+};
+
+
+const transformSearchResults = (searchData: SearchData<JikanMangaSearchResponse>, options: JikanTransformOptions) => {
     const results = searchData.rawData?.data ?? [];
     const hasNextPage = searchData.rawData?.pagination?.has_next_page ?? false;
 
     const transformedResults = results.map((item): ProviderSearchResult => {
         return {
             id: item.mal_id,
-            itemType: MediaType.MANGA,
+            itemType: options.mediaType,
             date: item.published?.from,
             name: item.title_english ?? item.title,
-            image: item.images?.jpg?.image_url ?? getImageUrl("manga-covers"),
+            image: item.images?.jpg?.image_url ?? getImageUrl(options.coverDirectory),
         };
     });
 
@@ -23,7 +30,7 @@ const transformSearchResults = (searchData: SearchData<JikanMangaSearchResponse>
 };
 
 
-const transformMangaDetailsResults = async (rawData: JikanDetails) => {
+const transformMangaDetailsResults = async (rawData: JikanDetails, options: JikanTransformOptions) => {
     const mediaData = {
         siteUrl: rawData.url,
         apiId: rawData.mal_id,
@@ -40,7 +47,7 @@ const transformMangaDetailsResults = async (rawData: JikanDetails) => {
         releaseDate: formatDateForDb(rawData.published.from),
         publishers: rawData.serializations?.[0]?.name ?? null,
         imageCover: await saveImageFromUrl({
-            dirSaveName: "manga-covers",
+            dirSaveName: options.coverDirectory,
             imageUrl: rawData.images.jpg.large_image_url,
         }),
     }

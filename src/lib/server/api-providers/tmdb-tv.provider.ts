@@ -1,14 +1,18 @@
-import {MediaType} from "@/lib/utils/enums";
 import {logger} from "@/lib/server/core/logger";
 import {TvRepository} from "@/lib/server/domain/media/tv";
 import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
-import {TvMediaType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
-import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
+import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
+import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
+import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ExternalMediaProvider, MediaDetailsEnricher} from "@/lib/server/api-providers/interfaces.types";
+import {TmdbMediaIdentities, tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 
 
-const createAnimeGenresEnricher = (jikan: JikanApi): MediaDetailsEnricher<UpsertTvWithDetails> => {
+type TvDefinition = AnimeDefinition | SeriesDefinition;
+
+
+const createAnimeGenresEnricher = (jikan: JikanApi, maxGenres: number): MediaDetailsEnricher<UpsertTvWithDetails> => {
     return async (details, context) => {
         // If isBulk is true, we don't query Jikan for the genres, so we don't want to override the genres
         if (context.isBulk) {
@@ -22,7 +26,7 @@ const createAnimeGenresEnricher = (jikan: JikanApi): MediaDetailsEnricher<Upsert
 
             return {
                 ...details,
-                genresData: tmdbTransformer.addAnimeSpecificGenres(jikanData, details.genresData),
+                genresData: tmdbTransformer.addAnimeSpecificGenres(jikanData, details.genresData, maxGenres),
             };
         }
         catch (err) {
@@ -43,29 +47,42 @@ const createTvRefreshCandidates = (repository: TvRepository, provider: ExternalM
 };
 
 
-const createTmdbTvProvider = (tmdb: TmdbApi, mediaType: TvMediaType, transformDetails: typeof tmdbTransformer.transformSeriesDetailsResults): ExternalMediaProvider<UpsertTvWithDetails> => {
+const createTmdbTvProvider = (
+    tmdb: TmdbApi,
+    definition: TvDefinition,
+    tmdbIdentities: TmdbMediaIdentities,
+): ExternalMediaProvider<UpsertTvWithDetails> => {
+    const { identity, ingestion } = definition;
+    const transformOptions = {
+        coverDirectory: identity.coverDirectory,
+        defaultDuration: ingestion.defaultDuration,
+        maxGenres: ingestion.limits.genres,
+        maxActors: ingestion.limits.actors,
+        maxNetworks: ingestion.limits.networks,
+    };
+
     return {
-        mediaType,
+        mediaType: identity.mediaType,
         source: "tmdb",
 
         search: {
             async search(query, page = 1) {
                 const raw = await tmdb.search(query, page);
-                return tmdbTransformer.transformSearchResults(raw);
+                return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
             },
         },
 
         details: {
             async getDetails(apiId) {
                 const raw = await tmdb.getTvDetails(Number(apiId));
-                return transformDetails(raw);
+                return tmdbTransformer.transformTvDetailsResults(raw, transformOptions);
             },
         },
 
         trends: {
             async getTrends() {
                 const raw = await tmdb.getTvTrending();
-                return tmdbTransformer.transformTvTrends(raw);
+                return tmdbTransformer.transformTvTrends(raw, tmdbIdentities);
             },
         },
 
@@ -78,17 +95,28 @@ const createTmdbTvProvider = (tmdb: TmdbApi, mediaType: TvMediaType, transformDe
 };
 
 
-export const createTmdbSeriesProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertTvWithDetails> => {
-    return createTmdbTvProvider(tmdb, MediaType.SERIES, tmdbTransformer.transformSeriesDetailsResults);
+export const createTmdbSeriesProvider = (
+    tmdb: TmdbApi,
+    definition: SeriesDefinition,
+    tmdbIdentities: TmdbMediaIdentities,
+): ExternalMediaProvider<UpsertTvWithDetails> => {
+    return createTmdbTvProvider(tmdb, definition, tmdbIdentities);
 };
 
 
-export const createTmdbAnimeProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertTvWithDetails> => {
-    return createTmdbTvProvider(tmdb, MediaType.ANIME, tmdbTransformer.transformAnimeDetailsResults);
+export const createTmdbAnimeProvider = (
+    tmdb: TmdbApi,
+    definition: AnimeDefinition,
+    tmdbIdentities: TmdbMediaIdentities,
+): ExternalMediaProvider<UpsertTvWithDetails> => {
+    return createTmdbTvProvider(tmdb, definition, tmdbIdentities);
 };
 
 
-export const createSeriesIngestionService = (repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
+export const createSeriesIngestionService = (
+    repository: TvRepository,
+    provider: ExternalMediaProvider<UpsertTvWithDetails>
+) => {
     return createMediaIngestionService({
         provider,
         repository,
@@ -97,13 +125,18 @@ export const createSeriesIngestionService = (repository: TvRepository, provider:
 };
 
 
-export const createAnimeIngestionService = (jikan: JikanApi, repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
+export const createAnimeIngestionService = (
+    jikan: JikanApi,
+    repository: TvRepository,
+    provider: ExternalMediaProvider<UpsertTvWithDetails>,
+    definition: AnimeDefinition,
+) => {
     return createMediaIngestionService({
         provider,
         repository,
         refreshCandidates: createTvRefreshCandidates(repository, provider),
         enrichers: [
-            createAnimeGenresEnricher(jikan),
+            createAnimeGenresEnricher(jikan, definition.ingestion.limits.genres),
         ],
     });
 };

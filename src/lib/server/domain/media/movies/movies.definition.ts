@@ -6,8 +6,11 @@ import {movies, moviesActors, moviesGenre, moviesList, moviesTags} from "@/lib/s
 
 
 export const moviesDefinition = defineMediaDefinition({
-    repository: {
+    identity: {
         mediaType: MediaType.MOVIES,
+        coverDirectory: "movies-covers",
+    },
+    repository: {
         tables: {
             mediaTable: movies,
             listTable: moviesList,
@@ -126,8 +129,6 @@ export const moviesDefinition = defineMediaDefinition({
         },
     },
     service: {
-        mediaType: MediaType.MOVIES,
-        coverDirectory: "movies-covers",
         defaultStatus: Status.PLAN_TO_WATCH,
         editableFields: [
             "originalName", "name", "directorName", "releaseDate", "duration", "synopsis",
@@ -138,6 +139,13 @@ export const moviesDefinition = defineMediaDefinition({
             totalSpecific: state?.total ?? 0,
             timeSpent: (state?.total ?? 0) * media.duration,
         }),
+    },
+    ingestion: {
+        defaultDuration: 100,
+        limits: {
+            genres: 5,
+            actors: 5,
+        },
     },
     attribution: {
         name: "TMDB",

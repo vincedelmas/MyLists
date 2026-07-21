@@ -10,10 +10,10 @@ import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {MediaListArgs, SearchType, SimpleSearch} from "@/lib/schemas";
 import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
-import {AnyMediaRepositoryDefinition} from "@/lib/server/domain/media/base/media-definition";
 import {ExpandedListFilters, ExportMediaList, MediaListData} from "@/lib/types/media-list.types";
 import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {createArrayFilter, type FilterDefinitions} from "@/lib/server/domain/media/base/media-list.query";
+import {AnyMediaDefinition, AnyMediaRepositoryDefinition} from "@/lib/server/domain/media/base/media-definition";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user, userMediaSettings} from "@/lib/server/database/schema";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
@@ -23,13 +23,18 @@ const SIMILAR_MAX_GENRES = 10;
 const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 
 
-export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> {
-    readonly definition: TDef;
+export abstract class BaseRepository<
+    TMediaDef extends AnyMediaDefinition,
+    TRepoDef extends AnyMediaRepositoryDefinition = TMediaDef["repository"],
+> {
+    readonly definition: TRepoDef;
+    readonly identity: TMediaDef["identity"];
     protected readonly baseFilterDefs: FilterDefinitions;
 
-    protected constructor(definition: TDef) {
-        this.definition = definition;
+    protected constructor(definition: TMediaDef) {
+        this.identity = definition.identity;
         this.baseFilterDefs = this.baseListFiltersDefs();
+        this.definition = definition.repository as TRepoDef;
     }
 
     private baseListFiltersDefs = (): FilterDefinitions => {
@@ -79,11 +84,12 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
         };
     }
 
-    async bulkInsertUserMedia(rows: TDef["tables"]["listTable"]["$inferInsert"][]) {
+    async bulkInsertUserMedia(rows: TRepoDef["tables"]["listTable"]["$inferInsert"][]) {
+        const { listTable } = this.definition.tables;
+
         if (rows.length === 0) return [];
 
-        const { listTable } = this.definition.tables;
-        const insertedRows: TDef["tables"]["listTable"]["$inferSelect"][] = [];
+        const insertedRows: TRepoDef["tables"]["listTable"]["$inferSelect"][] = [];
 
         for (let offset = 0; offset < rows.length; offset += USER_MEDIA_INSERT_BATCH_SIZE) {
             const batch = rows.slice(offset, offset + USER_MEDIA_INSERT_BATCH_SIZE);
@@ -202,7 +208,8 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
     }
 
     async searchByName(query: string, limit = 5): Promise<ProviderSearchResult[]> {
-        const { mediaType, tables: { mediaTable } } = this.definition;
+        const { mediaType } = this.identity;
+        const { mediaTable } = this.definition.tables;
 
         const results = await getDbClient()
             .select({
@@ -284,7 +291,8 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
     }
 
     async getMediaDurationsByIds(mediaIds: number[]) {
-        const { mediaType, tables: { mediaTable } } = this.definition;
+        const { mediaType } = this.identity;
+        const { mediaTable } = this.definition.tables;
 
         const uniqueMediaIds = [...new Set(mediaIds)];
         if (uniqueMediaIds.length === 0) return [];
@@ -410,7 +418,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
         }
     }
 
-    async findById(mediaId: number): Promise<TDef["tables"]["mediaTable"]["$inferSelect"] | undefined> {
+    async findById(mediaId: number): Promise<TRepoDef["tables"]["mediaTable"]["$inferSelect"] | undefined> {
         const { mediaTable } = this.definition.tables;
 
         return getDbClient()
@@ -420,7 +428,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
             .get();
     }
 
-    async findByApiId(apiId: number | string): Promise<TDef["tables"]["mediaTable"]["$inferSelect"] | undefined> {
+    async findByApiId(apiId: number | string): Promise<TRepoDef["tables"]["mediaTable"]["$inferSelect"] | undefined> {
         const { mediaTable } = this.definition.tables;
 
         return getDbClient()
@@ -479,7 +487,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
         return matches;
     }
 
-    async updateUserMediaDetails(userId: number, mediaId: number, updateData: TDef["tables"]["listTable"]["$inferSelect"]): Promise<TDef["tables"]["listTable"]["$inferSelect"]> {
+    async updateUserMediaDetails(userId: number, mediaId: number, updateData: TRepoDef["tables"]["listTable"]["$inferSelect"]): Promise<TRepoDef["tables"]["listTable"]["$inferSelect"]> {
         const { listTable } = this.definition.tables;
 
         const [result] = await getDbClient()
@@ -494,7 +502,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
         return result;
     }
 
-    async findUserMedia(userId: number | undefined, mediaId: number): Promise<UserMediaWithTags<TDef["tables"]["listTable"]["$inferSelect"]> | null> {
+    async findUserMedia(userId: number | undefined, mediaId: number): Promise<UserMediaWithTags<TRepoDef["tables"]["listTable"]["$inferSelect"]> | null> {
         const { listTable, tagTable } = this.definition.tables;
 
         if (!userId) return null;
@@ -529,7 +537,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
         };
     }
 
-    async downloadMediaListAsCSV(userId: number): Promise<(TDef["tables"]["listTable"]["$inferSelect"] & ExportMediaList)[] | undefined> {
+    async downloadMediaListAsCSV(userId: number): Promise<(TRepoDef["tables"]["listTable"]["$inferSelect"] & ExportMediaList)[] | undefined> {
         const { mediaTable, listTable } = this.definition.tables;
 
         return getDbClient()
@@ -544,7 +552,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
             .where(eq(listTable.userId, userId));
     }
 
-    async getUserFollowsMediaData(userId: number | undefined, mediaId: number): Promise<UserFollowsMediaData<TDef["tables"]["listTable"]["$inferSelect"]>[]> {
+    async getUserFollowsMediaData(userId: number | undefined, mediaId: number): Promise<UserFollowsMediaData<TRepoDef["tables"]["listTable"]["$inferSelect"]>[]> {
         const { listTable } = this.definition.tables;
 
         if (!userId) return [];
@@ -562,7 +570,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
             .innerJoin(listTable, eq(listTable.userId, followers.followedId))
             .innerJoin(userMediaSettings, and(
                 eq(userMediaSettings.userId, listTable.userId),
-                eq(userMediaSettings.mediaType, this.definition.mediaType),
+                eq(userMediaSettings.mediaType, this.identity.mediaType),
                 eq(userMediaSettings.active, true),
             ))
             .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED), eq(listTable.mediaId, mediaId)))
@@ -604,7 +612,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
             .innerJoin(user, eq(user.id, listTable.userId))
             .innerJoin(userMediaSettings, and(
                 eq(userMediaSettings.userId, listTable.userId),
-                eq(userMediaSettings.mediaType, this.definition.mediaType),
+                eq(userMediaSettings.mediaType, this.identity.mediaType),
                 eq(userMediaSettings.active, true),
             ))
             .where(conditions)
@@ -626,7 +634,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
             .innerJoin(userMediaSettings, and(
                 eq(userMediaSettings.active, true),
                 eq(userMediaSettings.userId, listTable.userId),
-                eq(userMediaSettings.mediaType, this.definition.mediaType),
+                eq(userMediaSettings.mediaType, this.identity.mediaType),
             ))
             .where(conditions)
             .orderBy(desc(sql`COALESCE(${listTable.lastUpdated}, ${listTable.addedAt})`))
@@ -654,7 +662,7 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
         };
     }
 
-    async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<TDef["tables"]["listTable"]["$inferSelect"]>> {
+    async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<TRepoDef["tables"]["listTable"]["$inferSelect"]>> {
         const { tables: { listTable, mediaTable, tagTable }, listQuery } = this.definition;
 
         const { page, perPage, offset, limit } = resolvePagination({
@@ -956,7 +964,8 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
     }
 
     async computeAllUsersStats() {
-        const { tables: { listTable, mediaTable }, mediaType } = this.definition;
+        const { mediaType } = this.identity;
+        const { listTable, mediaTable } = this.definition.tables;
         const { timeSpent: timeSpentStat, totalSpecific: totalSpecificStat, totalRedo: totalRedoStat } = this.definition.stats.allUsers;
 
         const redoStat = totalRedoStat ?? (listTable?.redo ? sql`COALESCE(SUM(${listTable.redo}), 0)` : sql`0`);
@@ -1225,9 +1234,9 @@ export abstract class BaseRepository<TDef extends AnyMediaRepositoryDefinition> 
 
     abstract updateMediaWithDetails(params: any): Promise<boolean>;
 
-    abstract addMediaToUserList(userId: number, media: any, newStatus: Status): Promise<TDef["tables"]["listTable"]["$inferSelect"]>;
+    abstract addMediaToUserList(userId: number, media: any, newStatus: Status): Promise<TRepoDef["tables"]["listTable"]["$inferSelect"]>;
 
-    abstract findAllAssociatedDetails(mediaId: number): Promise<(TDef["tables"]["mediaTable"]["$inferSelect"] & AddedMediaDetails) | undefined>;
+    abstract findAllAssociatedDetails(mediaId: number): Promise<(TRepoDef["tables"]["mediaTable"]["$inferSelect"] & AddedMediaDetails) | undefined>;
 }
 
 

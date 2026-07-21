@@ -2,14 +2,15 @@ import {AchievementDifficulty, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {count, eq, gte, isNotNull, lte, max, sum} from "drizzle-orm";
 import {manga, mangaAuthors, mangaList} from "@/lib/server/database/schema";
-import {MangaRepositoryDefinition} from "@/lib/server/domain/media/manga/manga.definition";
+import {MangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-export const createMangaAchievementCatalog = (definition: MangaRepositoryDefinition) => {
-    const { listTable } = definition.tables;
-    const queries = createAchievementQueries(definition);
+export const createMangaAchievementCatalog = (definition: MangaDefinition) => {
+    const { identity, repository } = definition;
+    const { listTable } = repository.tables;
+    const queries = createAchievementQueries(repository);
 
     const duration: AchievementCalculation = (achievement) => {
         const value = Number(achievement.value);
@@ -83,7 +84,7 @@ export const createMangaAchievementCatalog = (definition: MangaRepositoryDefinit
     };
 
     return defineAchievementCatalog({
-        mediaType: definition.mediaType,
+        mediaType: identity.mediaType,
         entries: {
             completed_manga: {
                 name: "Finish Line Hero",

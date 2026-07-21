@@ -5,16 +5,16 @@ import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {ProviderAttribution} from "@/lib/server/domain/media/base/media-definition";
 import {manga, mangaAuthors, mangaGenre, mangaList} from "@/lib/server/database/schema";
 import {Manga, UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
+import {mangaDefinition, type MangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
 import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
-import {mangaDefinition, type MangaRepositoryDefinition} from "@/lib/server/domain/media/manga/manga.definition";
 
 
-export class MangaRepository extends BaseRepository<MangaRepositoryDefinition> {
-    constructor(
-        definition: MangaRepositoryDefinition = mangaDefinition.repository,
-        private readonly attribution: ProviderAttribution = mangaDefinition.attribution,
-    ) {
+export class MangaRepository extends BaseRepository<MangaDefinition> {
+    private readonly attribution: ProviderAttribution;
+
+    constructor(definition: MangaDefinition = mangaDefinition) {
         super(definition);
+        this.attribution = definition.attribution;
     }
 
     async getMediaIdsToBeRefreshed() {

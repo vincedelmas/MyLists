@@ -13,17 +13,19 @@ import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/
 import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
-export abstract class BaseService<TDef extends AnyMediaDefinition, R extends BaseRepository<TDef["repository"]>> {
+export abstract class BaseService<TDef extends AnyMediaDefinition, R extends BaseRepository<TDef>> {
     protected repository: R;
     protected readonly policy: TDef["service"];
+    protected readonly identity: TDef["identity"];
     protected updateHandlers: Partial<Record<
         UpdateType,
         UpdateHandlerFn<TDef["repository"]["tables"]["listTable"]["$inferSelect"], any, TDef["repository"]["tables"]["mediaTable"]["$inferSelect"]>
     >>;
 
-    protected constructor(repository: R, policy: TDef["service"]) {
-        this.policy = policy;
+    protected constructor(repository: R, definition: TDef) {
         this.repository = repository;
+        this.policy = definition.service;
+        this.identity = definition.identity;
 
         // User progress handlers based on update type
         this.updateHandlers = {
@@ -126,7 +128,7 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
     }
 
     async downloadMediaListAsCSV(userId: number) {
-        const mediaType = this.policy.mediaType;
+        const mediaType = this.identity.mediaType;
         const rows = await this.repository.downloadMediaListAsCSV(userId);
 
         return rows?.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, ...row }) => ({
@@ -228,7 +230,7 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
 
         let imageName: string | null = null;
         if (!payload.remove) {
-            const dirSaveName = this.policy.coverDirectory;
+            const dirSaveName = this.identity.coverDirectory;
 
             if (payload.imageFile) {
                 imageName = await saveUploadedImage({ dirSaveName, file: payload.imageFile });

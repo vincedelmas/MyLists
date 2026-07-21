@@ -9,8 +9,11 @@ export const MANGA_READING_MINUTES_PER_CHAPTER = 7;
 
 
 export const mangaDefinition = defineMediaDefinition({
-    repository: {
+    identity: {
         mediaType: MediaType.MANGA,
+        coverDirectory: "manga-covers",
+    },
+    repository: {
         tables: {
             mediaTable: manga,
             listTable: mangaList,
@@ -97,8 +100,6 @@ export const mangaDefinition = defineMediaDefinition({
         },
     },
     service: {
-        mediaType: MediaType.MANGA,
-        coverDirectory: "manga-covers",
         defaultStatus: Status.PLAN_TO_READ,
         editableFields: ["name", "releaseDate", "chapters", "publishers", "synopsis", "lockStatus"],
         progressTotals: (state) => ({
@@ -107,6 +108,7 @@ export const mangaDefinition = defineMediaDefinition({
             timeSpent: (state?.total ?? 0) * MANGA_READING_MINUTES_PER_CHAPTER,
         }),
     },
+    ingestion: {},
     attribution: {
         name: "MyAnimeList",
         mediaUrl: "https://myanimelist.net/manga/",

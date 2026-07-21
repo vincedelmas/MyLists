@@ -55,7 +55,7 @@ describe("disabled media visibility", () => {
     });
 
     it("hides disabled media everywhere without deleting it", async () => {
-        const animeRepository = new TvRepository(animeDefinition.repository, animeDefinition.attribution);
+        const animeRepository = new TvRepository(animeDefinition);
 
         const disabledStats = await UserStatsRepository.getPreComputedStatsSummary({ userId: 42 });
         const disabledUpdates = await UserUpdatesRepository.getUserUpdates(42, 10);

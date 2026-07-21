@@ -7,15 +7,15 @@ import type {ProviderAttribution} from "@/lib/server/domain/media/base/media-def
 import {movies, moviesActors, moviesGenre, moviesList} from "@/lib/server/database/schema";
 import {Movie, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {and, asc, eq, getTableColumns, gte, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
-import {type MovieRepositoryDefinition, moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
+import {type MovieDefinition, moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
 
 
-export class MoviesRepository extends BaseRepository<MovieRepositoryDefinition> {
-    constructor(
-        definition: MovieRepositoryDefinition = moviesDefinition.repository,
-        private readonly attribution: ProviderAttribution = moviesDefinition.attribution,
-    ) {
+export class MoviesRepository extends BaseRepository<MovieDefinition> {
+    private readonly attribution: ProviderAttribution;
+
+    constructor(definition: MovieDefinition = moviesDefinition) {
         super(definition);
+        this.attribution = definition.attribution;
     }
 
     async lockOldMovies() {

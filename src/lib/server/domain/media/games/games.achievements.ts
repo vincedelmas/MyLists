@@ -1,15 +1,16 @@
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {games, gamesCompanies, gamesList} from "@/lib/server/database/schema";
+import {GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {AchievementDifficulty, GamesPlatformsEnum, Status} from "@/lib/utils/enums";
-import {GamesRepositoryDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
 import {and, count, countDistinct, eq, gte, inArray, isNotNull, like, lte, max, notInArray, sql} from "drizzle-orm";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-export const createGamesAchievementCatalog = (definition: GamesRepositoryDefinition) => {
-    const { listTable } = definition.tables;
-    const queries = createAchievementQueries(definition);
+export const createGamesAchievementCatalog = (definition: GamesDefinition) => {
+    const { identity, repository } = definition;
+    const { listTable } = repository.tables;
+    const queries = createAchievementQueries(repository);
 
     const gameMode: AchievementCalculation = (achievement) => {
         const query = getDbClient()
@@ -126,7 +127,7 @@ export const createGamesAchievementCatalog = (definition: GamesRepositoryDefinit
     };
 
     return defineAchievementCatalog({
-        mediaType: definition.mediaType,
+        mediaType: identity.mediaType,
         entries: {
             completed_games: {
                 name: "Gaming Completionist",

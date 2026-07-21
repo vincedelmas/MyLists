@@ -1,33 +1,46 @@
-import {MediaType} from "@/lib/utils/enums";
 import {TmdbApi} from "@/lib/server/api-providers/api";
 import {MoviesRepository} from "@/lib/server/domain/media/movies";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
+import {MovieDefinition} from "@/lib/server/domain/media/movies/movies.definition";
 import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
-import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
+import {TmdbMediaIdentities, tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 
 
-export const createTmdbMoviesProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertMovieWithDetails> => {
+export const createTmdbMoviesProvider = (
+    tmdb: TmdbApi,
+    definition: MovieDefinition,
+    tmdbIdentities: TmdbMediaIdentities,
+): ExternalMediaProvider<UpsertMovieWithDetails> => {
+    const { identity, ingestion } = definition;
+    
+    const transformOptions = {
+        maxGenres: ingestion.limits.genres,
+        maxActors: ingestion.limits.actors,
+        coverDirectory: identity.coverDirectory,
+        defaultDuration: ingestion.defaultDuration,
+    };
+
     return ({
         source: "tmdb",
-        mediaType: MediaType.MOVIES,
+        mediaType: identity.mediaType,
 
         search: {
             async search(query, page = 1) {
                 const raw = await tmdb.search(query, page);
-                return tmdbTransformer.transformSearchResults(raw);
+                return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
             },
         },
         details: {
             async getDetails(apiId) {
                 const raw = await tmdb.getMovieDetails(Number(apiId));
-                return tmdbTransformer.transformMoviesDetailsResults(raw);
+                return tmdbTransformer.transformMoviesDetailsResults(raw, transformOptions);
             },
         },
         trends: {
             async getTrends() {
                 const raw = await tmdb.getMoviesTrending();
-                return tmdbTransformer.transformMoviesTrends(raw);
+                return tmdbTransformer.transformMoviesTrends(raw, identity);
             },
         },
     });

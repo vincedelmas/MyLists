@@ -132,9 +132,7 @@ export interface MediaRepositoryDefinition<
     TTables extends BaseMediaTables = BaseMediaTables,
     TSortDefinitions extends SortDefinitions = SortDefinitions,
     TAffinityDefinitions extends AffinityDefinitions = AffinityDefinitions,
-    TMediaType extends MediaType = MediaType,
 > {
-    readonly mediaType: TMediaType;
     readonly tables: TTables;
     readonly popularity?: {
         readonly eligibility: SQL;
@@ -161,14 +159,27 @@ export interface MediaRepositoryDefinition<
 
 export interface MediaServicePolicy<
     TTables extends BaseMediaTables = BaseMediaTables,
-    TMediaType extends MediaType = MediaType,
 > {
-    readonly mediaType: TMediaType;
-    readonly coverDirectory: Extract<CoverType, `${MediaType}-covers`>;
     readonly defaultStatus: Status;
     readonly editableFields: readonly (keyof TTables["mediaTable"]["$inferSelect"] & string)[];
     readonly progressTotals: (state: TTables["listTable"]["$inferSelect"] | null, media: TTables["mediaTable"]["$inferSelect"]) => ProgressTotals;
 }
+
+
+export type MediaIdentity<TMediaType extends MediaType = MediaType> = {
+    readonly mediaType: TMediaType;
+    readonly coverDirectory: Extract<CoverType, `${TMediaType}-covers`>;
+};
+
+
+export type MediaIngestionPolicy = {
+    readonly defaultDuration?: number;
+    readonly limits?: {
+        readonly genres?: number;
+        readonly actors?: number;
+        readonly networks?: number;
+    };
+};
 
 
 export type ProviderAttribution = {
@@ -182,15 +193,17 @@ export interface MediaDefinition<
     TSortDefinitions extends SortDefinitions = SortDefinitions,
     TAffinityDefinitions extends AffinityDefinitions = AffinityDefinitions,
     TMediaType extends MediaType = MediaType,
+    TIngestion extends MediaIngestionPolicy = MediaIngestionPolicy,
 > {
-    readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType>;
-    readonly service: MediaServicePolicy<TTables, TMediaType>;
+    readonly identity: MediaIdentity<TMediaType>;
+    readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions, TAffinityDefinitions>;
+    readonly service: MediaServicePolicy<TTables>;
+    readonly ingestion: TIngestion;
     readonly attribution: ProviderAttribution;
 }
 
 
 export type AnyMediaRepositoryDefinition = {
-    readonly mediaType: MediaType;
     readonly tables: BaseMediaTables;
     readonly popularity?: { readonly eligibility: SQL };
     readonly listQuery: {
@@ -214,14 +227,14 @@ export type AnyMediaRepositoryDefinition = {
 
 
 export type AnyMediaDefinition = {
+    readonly identity: MediaIdentity;
     readonly repository: AnyMediaRepositoryDefinition;
     readonly service: {
-        readonly mediaType: MediaType;
-        readonly coverDirectory: Extract<CoverType, `${MediaType}-covers`>;
         readonly defaultStatus: Status;
         readonly editableFields: readonly string[];
         readonly progressTotals: (state: any | null, media: any) => ProgressTotals;
     };
+    readonly ingestion: MediaIngestionPolicy;
     readonly attribution: ProviderAttribution;
 };
 
@@ -231,6 +244,7 @@ export const defineMediaDefinition = <
     const TSortDefinitions extends SortDefinitions,
     const TAffinityDefinitions extends AffinityDefinitions,
     const TMediaType extends MediaType,
->(definition: MediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType>) => {
+    const TIngestion extends MediaIngestionPolicy,
+>(definition: MediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion>) => {
     return definition;
 }

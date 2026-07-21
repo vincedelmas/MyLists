@@ -11,8 +11,8 @@ import {mangaDefinition, MangaDefinition} from "@/lib/server/domain/media/manga/
 
 
 export class MangaService extends BaseService<MangaDefinition, MangaRepository> {
-    constructor(repository: MangaRepository, policy: MangaDefinition["service"] = mangaDefinition.service) {
-        super(repository, policy);
+    constructor(repository: MangaRepository, definition: MangaDefinition = mangaDefinition) {
+        super(repository, definition);
 
         this.updateHandlers = {
             ...this.updateHandlers,
@@ -61,7 +61,8 @@ export class MangaService extends BaseService<MangaDefinition, MangaRepository> 
     }
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
-        const { editableFields, coverDirectory } = this.policy;
+        const { editableFields } = this.policy;
+        const { coverDirectory } = this.identity;
 
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();

@@ -2,18 +2,19 @@ import {Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {ProviderAttribution} from "@/lib/server/domain/media/base/media-definition";
 import {and, asc, eq, getTableColumns, isNotNull, isNull, ne, sql} from "drizzle-orm";
 import {books, booksAuthors, booksGenre, booksList} from "@/lib/server/database/schema";
-import {BookSchemaConfig, booksConfig} from "@/lib/server/domain/media/books/books.config";
+import {type BookRepositoryDefinition, booksDefinition} from "@/lib/server/domain/media/books/books.definition";
 import {Book, InsertBooksWithDetails, UpdateBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 
 
-export class BooksRepository extends BaseRepository<BookSchemaConfig> {
-    config: BookSchemaConfig;
-
-    constructor() {
-        super(booksConfig);
-        this.config = booksConfig;
+export class BooksRepository extends BaseRepository<BookRepositoryDefinition> {
+    constructor(
+        definition: BookRepositoryDefinition = booksDefinition.repository,
+        private readonly attribution: ProviderAttribution = booksDefinition.attribution,
+    ) {
+        super(definition);
     }
 
     async getBooksWithoutGenres() {
@@ -63,45 +64,7 @@ export class BooksRepository extends BaseRepository<BookSchemaConfig> {
             .orderBy(asc(sql<number>`floor(${books.pages} / 100.0) * 100`));
     }
 
-    async specificTopMetrics(mediaAvgRating: number | null, userId?: number) {
-        const langsConfig = {
-            metricTable: books,
-            metricIdCol: books.id,
-            metricNameCol: books.language,
-            mediaLinkCol: booksList.mediaId,
-            filters: [ne(booksList.status, Status.PLAN_TO_READ)],
-        };
-        const publishersConfig = {
-            metricTable: books,
-            metricNameCol: books.publishers,
-            metricIdCol: books.id,
-            mediaLinkCol: booksList.mediaId,
-            filters: [ne(booksList.status, Status.PLAN_TO_READ)],
-        };
-        const authorsConfig = {
-            metricTable: booksAuthors,
-            mediaLinkCol: booksList.mediaId,
-            metricNameCol: booksAuthors.name,
-            metricIdCol: booksAuthors.mediaId,
-            filters: [ne(booksList.status, Status.PLAN_TO_READ)],
-        };
-
-        const langsStats = await this.computeTopAffinityStats(langsConfig, mediaAvgRating, userId);
-        const authorsStats = await this.computeTopAffinityStats(authorsConfig, mediaAvgRating, userId);
-        const publishersStats = await this.computeTopAffinityStats(publishersConfig, mediaAvgRating, userId);
-
-        return { publishersStats, authorsStats, langsStats };
-    }
-
     // --- Implemented Methods ------------------------------------------------
-
-    async computeAllUsersStats() {
-        // TODO: check how to add the 1.7 without magic number
-        const timeSpentStat = sql<number>`COALESCE(SUM(${booksList.total} * 1.7), 0)`;
-        const totalSpecificStat = sql<number>`COALESCE(SUM(${booksList.total}), 0)`;
-
-        return this._computeAllUsersStats(timeSpentStat, totalSpecificStat)
-    }
 
     async addMediaToUserList(userId: number, media: Book, newStatus: Status) {
         const newTotal = (newStatus === Status.COMPLETED) ? media.pages : 0;
@@ -121,8 +84,6 @@ export class BooksRepository extends BaseRepository<BookSchemaConfig> {
     }
 
     async findAllAssociatedDetails(mediaId: number) {
-        const { apiProvider } = this.config;
-
         const details = getDbClient()
             .select({
                 ...getTableColumns(books),
@@ -140,8 +101,8 @@ export class BooksRepository extends BaseRepository<BookSchemaConfig> {
         const result: Book & AddedMediaDetails = {
             ...details,
             providerData: {
-                name: apiProvider.name,
-                url: `${apiProvider.mediaUrl}${details.apiId}`,
+                name: this.attribution.name,
+                url: `${this.attribution.mediaUrl}${details.apiId}`,
             },
             genres: details.genres || [],
             authors: details.authors || [],
@@ -188,30 +149,30 @@ export class BooksRepository extends BaseRepository<BookSchemaConfig> {
 
         const mediaId = media.id;
 
-        if (authorsData && authorsData.length > 0) {
-            await tx.delete(booksAuthors).where(eq(booksAuthors.mediaId, mediaId));
-            const authorsToAdd = authorsData.map((a) => ({ mediaId, ...a }));
-            await tx.insert(booksAuthors).values(authorsToAdd);
+        if (authorsData !== undefined) {
+            await tx
+                .delete(booksAuthors)
+                .where(eq(booksAuthors.mediaId, mediaId));
+
+            if (authorsData.length > 0) {
+                await tx
+                    .insert(booksAuthors)
+                    .values(authorsData.map(author => ({ mediaId, ...author })));
+            }
         }
 
-        if (genresData && genresData.length > 0) {
-            await tx.delete(booksGenre).where(eq(booksGenre.mediaId, mediaId));
-            const genresToAdd = genresData.map((g) => ({ mediaId, ...g }));
-            await tx.insert(booksGenre).values(genresToAdd);
+        if (genresData !== undefined) {
+            await tx
+                .delete(booksGenre)
+                .where(eq(booksGenre.mediaId, mediaId));
+
+            if (genresData.length > 0) {
+                await tx
+                    .insert(booksGenre)
+                    .values(genresData.map(genre => ({ mediaId, ...genre })));
+            }
         }
 
         return true;
-    }
-
-    async getListFilters(userId: number) {
-        const { genres, tags } = await super.getCommonListFilters(userId);
-
-        const langs = await getDbClient()
-            .selectDistinct({ name: sql<string>`${books.language}` })
-            .from(books)
-            .innerJoin(booksList, eq(booksList.mediaId, books.id))
-            .where(and(eq(booksList.userId, userId), isNotNull(books.language)));
-
-        return { langs, genres, tags };
     }
 }

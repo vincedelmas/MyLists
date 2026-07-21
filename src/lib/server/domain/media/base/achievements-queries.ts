@@ -2,12 +2,12 @@ import {Status} from "@/lib/utils/enums";
 import {and, count, eq, SQL} from "drizzle-orm";
 import {StatsCTE} from "@/lib/types/media-common.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {AnyMediaSchemaConfig} from "@/lib/types/media.config.types";
 import {AchievementCalculation} from "@/lib/server/domain/achievements/achievement-catalog";
+import {AnyMediaRepositoryDefinition} from "@/lib/server/domain/media/base/media-definition";
 
 
-export const createAchievementQueries = <TConfig extends AnyMediaSchemaConfig>(config: TConfig) => {
-    const { mediaTable, listTable, genreTable } = config;
+export const createAchievementQueries = <T extends AnyMediaRepositoryDefinition>(definition: T) => {
+    const { mediaTable, listTable, genreTable } = definition.tables;
 
     const applyConditionsAndGroup = (query: StatsCTE, conditions: SQL[]) => {
         return query

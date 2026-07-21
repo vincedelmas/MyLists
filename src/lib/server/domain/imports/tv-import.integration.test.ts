@@ -12,7 +12,7 @@ import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-m
 import {createTvMatcher} from "@/lib/server/domain/imports/matchers/tv.matcher";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {TvService} from "@/lib/server/domain/media/tv/tv.service";
-import {seriesConfig} from "@/lib/server/domain/media/tv/series/series.config";
+import {seriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 import {ApiProviderType, ImportItemStatus, ImportJobStatus, ImportSource, MediaType, Status} from "@/lib/utils/enums";
 
 
@@ -70,7 +70,10 @@ describe("TV import processing", () => {
 
     it("matches an internal series and adds it to the user list", async () => {
         const importService = new ImportService(ImportRepository);
-        const seriesService = new TvService(new TvRepository(seriesConfig));
+        const seriesService = new TvService(
+            new TvRepository(seriesDefinition.repository, seriesDefinition.attribution),
+            seriesDefinition.service,
+        );
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.SERIES, createTvMatcher(MediaType.SERIES, seriesService, {} as any, {} as any));
         const processor = new ImportJobProcessor(importService, matcherRegistry);

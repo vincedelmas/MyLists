@@ -1,19 +1,18 @@
 import {notFound} from "@tanstack/react-router";
-import {DeltaStats} from "@/lib/types/stats.types";
 import {Status, UpdateType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {LogPayload} from "@/lib/types/user-updates.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Book, BooksList} from "@/lib/server/domain/media/books/books.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
-import {BookSchemaConfig} from "@/lib/server/domain/media/books/books.config";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
-import {PagePayload, RedoPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
+import {PagePayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
+import {BookDefinition, booksDefinition} from "@/lib/server/domain/media/books/books.definition";
 
 
-export class BooksService extends BaseService<BookSchemaConfig, BooksRepository> {
-    constructor(repository: BooksRepository) {
-        super(repository);
+export class BooksService extends BaseService<BookDefinition, BooksRepository> {
+    constructor(repository: BooksRepository, policy: BookDefinition["service"] = booksDefinition.service) {
+        super(repository, policy);
 
         this.updateHandlers = {
             ...this.updateHandlers,
@@ -47,11 +46,11 @@ export class BooksService extends BaseService<BookSchemaConfig, BooksRepository>
     }
 
     async getMediaEditableFields(mediaId: number) {
+        const editableFields = this.policy.editableFields;
+
+        const fields: Record<string, any> = {};
         const media = await this.repository.findAllAssociatedDetails(mediaId);
         if (!media) throw notFound();
-
-        const editableFields = this.repository.config.editableFields;
-        const fields: Record<string, any> = {};
 
         editableFields.forEach((field) => {
             if (field in media) {
@@ -60,32 +59,38 @@ export class BooksService extends BaseService<BookSchemaConfig, BooksRepository>
         });
 
         if (media.authors) {
-            fields.authors = media.authors.map((a) => a.name).join(",");
+            fields.authors = media.authors.map(author => author.name).join(",");
         }
 
         return { fields };
     }
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
+        const { editableFields, coverDirectory } = this.policy;
+
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
 
-        const editableFields = this.repository.config.editableFields;
         const fields = {} as Record<Partial<keyof Book>, any>;
         fields.apiId = media.apiId;
 
         if (payload?.imageCover) {
             const imageName = await saveImageFromUrl({
-                dirSaveName: "books-covers",
+                dirSaveName: coverDirectory,
                 imageUrl: payload.imageCover,
             });
             fields.imageCover = imageName;
             delete payload.imageCover;
         }
 
-        let authorsData: { name: string }[] = [];
-        if (payload?.authors) {
-            authorsData = payload.authors.split(",").map((a: string) => ({ name: a.trim() }));
+        let authorsData: { name: string }[] | undefined;
+
+        if (payload?.authors !== undefined) {
+            authorsData = payload.authors
+                .split(",")
+                .map((author: string) => author.trim())
+                .filter(Boolean)
+                .map((name: string) => ({ name }));
             delete payload.authors;
         }
 
@@ -99,6 +104,8 @@ export class BooksService extends BaseService<BookSchemaConfig, BooksRepository>
     }
 
     async updateDefaultCover(mediaId: number, payload: { imageUrl?: string; imageFile?: File }) {
+        const { coverDirectory } = this.policy;
+
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
 
@@ -109,28 +116,17 @@ export class BooksService extends BaseService<BookSchemaConfig, BooksRepository>
 
         let imageName;
         if (payload.imageFile) {
-            imageName = await saveUploadedImage({
-                file: payload.imageFile,
-                dirSaveName: "books-covers",
-            });
+            imageName = await saveUploadedImage({ file: payload.imageFile, dirSaveName: coverDirectory });
         }
         else if (payload.imageUrl) {
-            imageName = await saveImageFromUrl({
-                imageUrl: payload.imageUrl,
-                dirSaveName: "books-covers",
-            });
+            imageName = await saveImageFromUrl({ imageUrl: payload.imageUrl, dirSaveName: coverDirectory });
         }
 
         if (!imageName || imageName === "default.jpg") {
             throw new FormattedError("Could not update the book cover. Please choose another one.");
         }
 
-        await this.repository.updateMediaWithDetails({
-            mediaData: {
-                apiId: media.apiId,
-                imageCover: imageName,
-            },
-        });
+        await this.repository.updateMediaWithDetails({ mediaData: { apiId: media.apiId, imageCover: imageName } });
     }
 
     async batchBooksWithoutGenres(batchSize: number) {
@@ -168,106 +164,6 @@ description: ${book.synopsis}
             "Literary Novel", "Memoirs", "Mystery", "Paranormal", "Philosophy", "Poetry", "Romance", "Science",
             "Science-Fiction", "Short story", "Suspense", "Testimony", "Thriller", "Western", "Young adult"
         ];
-    }
-
-    calculateDeltaStats(oldState: UserMediaWithTags<BooksList> | null, newState: BooksList | null, _media: Book) {
-        const delta: DeltaStats = {};
-        const statusCounts: Partial<Record<Status, number>> = {};
-
-        // TODO: Check how to avoid magic number 1.7
-
-        // Extract Old State Info
-        const oldStatus = oldState?.status;
-        const oldRating = oldState?.rating;
-        const oldRedo = oldState?.redo ?? 0;
-        const wasCommented = !!oldState?.comment;
-        const wasRated = oldState?.rating != null;
-        const wasFavorited = !!oldState?.favorite;
-        const oldTotalSpecificValue = oldState?.total ?? 0;
-        const oldTotalTimeSpent = oldTotalSpecificValue * 1.7;
-
-        // Extract New State Info
-        const newStatus = newState?.status;
-        const newRating = newState?.rating;
-        const newRedo = newState?.redo ?? 0;
-        const isCommented = !!newState?.comment;
-        const isRated = newState?.rating != null;
-        const isFavorited = !!newState?.favorite;
-        const newTotalSpecificValue = newState?.total ?? 0;
-        const newTotalTimeSpent = newTotalSpecificValue * 1.7;
-
-        // --- Calculate Deltas ----------------------------------------------------------------
-
-        // Total Entries
-        if (!oldState && newState) {
-            delta.totalEntries = 1;
-        }
-        else if (oldState && !newState) {
-            delta.totalEntries = -1;
-        }
-
-        // Status Counts
-        if (oldStatus !== newStatus) {
-            if (oldStatus) {
-                statusCounts[oldStatus] = (statusCounts[oldStatus] ?? 0) - 1;
-            }
-            if (newStatus) {
-                statusCounts[newStatus] = (statusCounts[newStatus] ?? 0) + 1;
-            }
-        }
-
-        // Time Spent
-        delta.timeSpent = (newTotalTimeSpent - oldTotalTimeSpent);
-
-        // Total Redo Count
-        delta.totalRedo = (newRedo - oldRedo);
-
-        // Total Specific
-        delta.totalSpecific = (newTotalSpecificValue - oldTotalSpecificValue);
-
-        // Rating Stats
-        let entriesRatedDelta = 0;
-        let sumEntriesRatedDelta = 0;
-        if (wasRated && !isRated) {
-            entriesRatedDelta = -1;
-            sumEntriesRatedDelta = -(oldRating ?? 0);
-        }
-        else if (!wasRated && isRated) {
-            entriesRatedDelta = 1;
-            sumEntriesRatedDelta = newRating ?? 0;
-        }
-        else if (wasRated && isRated && oldRating !== newRating) {
-            sumEntriesRatedDelta = (newRating ?? 0) - (oldRating ?? 0);
-        }
-        delta.entriesRated = entriesRatedDelta;
-        delta.sumEntriesRated = sumEntriesRatedDelta;
-
-        // Comment Stats
-        let entriesCommentedDelta = 0;
-        if (wasCommented && !isCommented) {
-            entriesCommentedDelta = -1;
-        }
-        else if (!wasCommented && isCommented) {
-            entriesCommentedDelta = 1;
-        }
-        delta.entriesCommented = entriesCommentedDelta;
-
-        // Favorite Stats
-        let entriesFavoritesDelta = 0;
-        if (wasFavorited && !isFavorited) {
-            entriesFavoritesDelta = -1;
-        }
-        else if (!wasFavorited && isFavorited) {
-            entriesFavoritesDelta = 1;
-        }
-        delta.entriesFavorites = entriesFavoritesDelta;
-
-        // Add statusCounts to delta only if entries
-        if (Object.keys(statusCounts).length > 0) {
-            delta.statusCounts = statusCounts;
-        }
-
-        return delta;
     }
 
     updateRedoHandler(currentState: BooksList, payload: RedoPayload, media: Book): [BooksList, LogPayload] {

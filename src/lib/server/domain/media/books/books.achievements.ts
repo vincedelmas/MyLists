@@ -1,15 +1,15 @@
 import {AchievementDifficulty, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {books, booksAuthors, booksList} from "@/lib/server/database/schema";
-import {BookSchemaConfig} from "@/lib/server/domain/media/books/books.config";
 import {count, countDistinct, eq, gte, isNotNull, lte, max} from "drizzle-orm";
-import {createAchievementQueries} from "@/lib/server/domain/media/base/base.achievements-queries";
+import {BookRepositoryDefinition} from "@/lib/server/domain/media/books/books.definition";
+import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-export const createBooksAchievementCatalog = (config: BookSchemaConfig) => {
-    const { listTable } = config;
-    const queries = createAchievementQueries(config);
+export const createBooksAchievementCatalog = (definition: BookRepositoryDefinition) => {
+    const { listTable } = definition.tables;
+    const queries = createAchievementQueries(definition);
 
     const duration: AchievementCalculation = (achievement) => {
         const value = Number(achievement.value);
@@ -62,7 +62,7 @@ export const createBooksAchievementCatalog = (config: BookSchemaConfig) => {
     };
 
     return defineAchievementCatalog({
-        mediaType: config.mediaType,
+        mediaType: definition.mediaType,
         entries: {
             completed_books: {
                 name: "Bibliophile Conqueror",

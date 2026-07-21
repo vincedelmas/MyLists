@@ -3,7 +3,8 @@ import {getImageUrl} from "@/lib/utils/image-url";
 import {isLatin1} from "@/lib/utils/text-formatting";
 import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
-import {moviesConfig} from "@/lib/server/domain/media/movies/movies.config";
+import {formatDateForDb} from "@/lib/utils/date-formatting";
+import {jikanImportPolicy, tmdbImportPolicy} from "@/lib/server/api-providers/provider-import.policies";
 import {
     JikanAnimeSearchResponse,
     ProviderSearchResult,
@@ -17,7 +18,6 @@ import {
     TmdbTvSearchResult,
     TrendsMedia
 } from "@/lib/types/provider.types";
-import {formatDateForDb} from "@/lib/utils/date-formatting";
 
 
 type Options = {
@@ -26,12 +26,12 @@ type Options = {
 }
 
 
-const maxActors = 5;
-const maxNetworks = 2;
 const animeDefaultDuration = 24;
 const seriesDefaultDuration = 40;
 const moviesDefaultDuration = 90;
-const maxGenres = moviesConfig.apiProvider.maxGenres;
+const tmdbMaxGenres = tmdbImportPolicy.maxGenres;
+const jikanMaxGenres = jikanImportPolicy.maxGenres;
+const { maxActors, maxNetworks } = tmdbImportPolicy;
 const imageBaseUrl = "https://image.tmdb.org/t/p/w300";
 
 
@@ -101,7 +101,7 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Option
         seasonsData.push({ season: 1, episodes: 1 });
     }
 
-    const genresData = toUniqueNamedData(rawData?.genres, maxGenres);
+    const genresData = toUniqueNamedData(rawData?.genres, tmdbMaxGenres);
     const networkData = toUniqueNamedData(rawData?.networks, maxNetworks);
     const actorsData = toUniqueNamedData(rawData?.credits?.cast, maxActors);
 
@@ -192,7 +192,7 @@ const transformMoviesDetailsResults = async (rawData: TmdbMovieDetails) => {
         }),
     }
 
-    const genresData = toUniqueNamedData(rawData?.genres, maxGenres);
+    const genresData = toUniqueNamedData(rawData?.genres, tmdbMaxGenres);
     const actorsData = toUniqueNamedData(rawData?.credits?.cast, maxActors);
 
     return { mediaData, actorsData, genresData };
@@ -265,21 +265,23 @@ const transformTvTrends = async (rawData: TmdbTrendingTvResponse) => {
 
 const addAnimeSpecificGenres = (jikanData: JikanAnimeSearchResponse, genresData: { name: string }[] | null | undefined) => {
     const { genres = [], demographics = [] } = jikanData?.data?.[0] || {};
-    const genreList = toUniqueNamedData(genres, maxGenres) ?? [];
-    const demographicsList = toUniqueNamedData(demographics, maxGenres) ?? [];
+
+    const genreList = toUniqueNamedData(genres, jikanMaxGenres) ?? [];
+    const demographicsList = toUniqueNamedData(demographics, jikanMaxGenres) ?? [];
+
     const demoNames = new Set(demographicsList.map((genre) => genre.name));
     const nonDemographicGenres = genreList.filter((genre) => !demoNames.has(genre.name));
 
-    const combinedGenres = demographicsList.length >= maxGenres
+    const combinedGenres = demographicsList.length >= jikanMaxGenres
         ? demographicsList
-        : [...nonDemographicGenres.slice(0, maxGenres - demographicsList.length), ...demographicsList];
+        : [...nonDemographicGenres.slice(0, jikanMaxGenres - demographicsList.length), ...demographicsList];
 
-    const newGenres = toUniqueNamedData(combinedGenres, maxGenres) ?? [];
+    const newGenres = toUniqueNamedData(combinedGenres, jikanMaxGenres) ?? [];
 
     return newGenres.length
         ? newGenres
         : genresData
-            ? toUniqueNamedData(genresData, maxGenres)
+            ? toUniqueNamedData(genresData, jikanMaxGenres)
             : genresData;
 };
 

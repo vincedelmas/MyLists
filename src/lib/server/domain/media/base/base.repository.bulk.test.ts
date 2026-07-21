@@ -2,7 +2,7 @@ import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {MediaType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
-import {collectionItems, collections, movies, moviesList, user} from "@/lib/server/database/schema";
+import {collectionItems, collections, movies, moviesActors, moviesGenre, moviesList, moviesTags, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -111,5 +111,47 @@ describe("BaseRepository", () => {
         });
 
         await expect(repository.getOrphanedMediaIds(MediaType.MOVIES)).resolves.toEqual([102]);
+    });
+
+    it("scopes tag filters to the owner of the requested list", async () => {
+        await db.insert(user).values({
+            id: 43,
+            emailVerified: true,
+            name: "other-user",
+            email: "other-user@example.com",
+            createdAt: "2024-01-01 00:00:00",
+            updatedAt: "2024-01-01 00:00:00",
+        });
+        await db.insert(moviesList).values([
+            { userId: 42, mediaId: 100, status: Status.COMPLETED },
+            { userId: 42, mediaId: 101, status: Status.COMPLETED },
+        ]);
+        await db.insert(moviesTags).values([
+            { userId: 43, mediaId: 100, name: "private-tag" },
+            { userId: 42, mediaId: 101, name: "private-tag" },
+        ]);
+
+        const result = await repository.getMediaList(undefined, 42, { tags: ["private-tag"] });
+
+        expect(result.items.map((item) => item.mediaId)).toEqual([101]);
+    });
+
+    it("clears related rows when an update explicitly supplies an empty array", async () => {
+        await db.insert(moviesActors).values({ mediaId: 100, name: "Actor" });
+        await db.insert(moviesGenre).values({ mediaId: 100, name: "Drama" });
+
+        await repository.updateMediaWithDetails({
+            mediaData: {
+                apiId: 1000,
+                duration: 120,
+                name: "Movie 1",
+                imageCover: "1.jpg",
+            },
+            actorsData: [],
+            genresData: [],
+        });
+
+        await expect(db.select().from(moviesActors).where(eq(moviesActors.mediaId, 100))).resolves.toEqual([]);
+        await expect(db.select().from(moviesGenre).where(eq(moviesGenre.mediaId, 100))).resolves.toEqual([]);
     });
 });

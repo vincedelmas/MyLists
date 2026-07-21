@@ -5,6 +5,8 @@ import {TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
+import {animeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
+import {seriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 
 
 const epsPerSeasonMock = [
@@ -22,7 +24,8 @@ describe("TvService", () => {
                 { listTable: createListTableStub() },
                 { getMediaEpsPerSeason: async () => epsPerSeasonMock },
             ) as unknown as TvRepository;
-            const tvService = new TvService(tvRepository);
+            const policy = mediaType === MediaType.ANIME ? animeDefinition.service : seriesDefinition.service;
+            const tvService = new TvService(tvRepository, policy);
 
             const baseTv: TvType = {
                 id: 1,

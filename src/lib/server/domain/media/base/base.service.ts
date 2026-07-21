@@ -4,20 +4,25 @@ import {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {mediaTypeToApiProvider} from "@/lib/utils/media-mapping";
-import {AnyMediaSchemaConfig} from "@/lib/types/media.config.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {AnyMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
 import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
-export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extends BaseRepository<TConfig>> {
+export abstract class BaseService<TDef extends AnyMediaDefinition, R extends BaseRepository<TDef["repository"]>> {
     protected repository: R;
-    protected updateHandlers: Partial<Record<UpdateType, UpdateHandlerFn<TConfig["listTable"]["$inferSelect"], any, TConfig["mediaTable"]["$inferSelect"]>>>;
+    protected readonly policy: TDef["service"];
+    protected updateHandlers: Partial<Record<
+        UpdateType,
+        UpdateHandlerFn<TDef["repository"]["tables"]["listTable"]["$inferSelect"], any, TDef["repository"]["tables"]["mediaTable"]["$inferSelect"]>
+    >>;
 
-    protected constructor(repository: R) {
+    protected constructor(repository: R, policy: TDef["service"]) {
+        this.policy = policy;
         this.repository = repository;
 
         // User progress handlers based on update type
@@ -100,7 +105,7 @@ export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extend
         return this.repository.getMediaDurationsByIds(mediaIds);
     }
 
-    async bulkInsertUserMedia(rows: TConfig["listTable"]["$inferInsert"][]) {
+    async bulkInsertUserMedia(rows: TDef["repository"]["tables"]["listTable"]["$inferInsert"][]) {
         return this.repository.bulkInsertUserMedia(rows);
     }
 
@@ -121,7 +126,7 @@ export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extend
     }
 
     async downloadMediaListAsCSV(userId: number) {
-        const mediaType = this.repository.config.mediaType;
+        const mediaType = this.policy.mediaType;
         const rows = await this.repository.downloadMediaListAsCSV(userId);
 
         return rows?.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, ...row }) => ({
@@ -176,7 +181,7 @@ export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extend
     }
 
     async addMediaToUserList(userId: number, mediaId: number, status?: Status) {
-        const newStatus = status ?? this.repository.config.mediaList.defaultStatus;
+        const newStatus = status ?? this.policy.defaultStatus;
 
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
@@ -223,19 +228,13 @@ export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extend
 
         let imageName: string | null = null;
         if (!payload.remove) {
-            const dirSaveName = `${this.repository.config.mediaType}-covers` as const;
+            const dirSaveName = this.policy.coverDirectory;
 
             if (payload.imageFile) {
-                imageName = await saveUploadedImage({
-                    dirSaveName,
-                    file: payload.imageFile,
-                });
+                imageName = await saveUploadedImage({ dirSaveName, file: payload.imageFile });
             }
             else if (payload.imageUrl) {
-                imageName = await saveImageFromUrl({
-                    dirSaveName,
-                    imageUrl: payload.imageUrl,
-                });
+                imageName = await saveImageFromUrl({ dirSaveName, imageUrl: payload.imageUrl });
             }
 
             if (!imageName || imageName === "default.jpg") {
@@ -285,6 +284,67 @@ export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extend
         };
     }
 
+    calculateDeltaStats(
+        oldState: UserMediaWithTags<TDef["repository"]["tables"]["listTable"]["$inferSelect"]> | null,
+        newState: TDef["repository"]["tables"]["listTable"]["$inferSelect"] | null,
+        media: TDef["repository"]["tables"]["mediaTable"]["$inferSelect"],
+    ): DeltaStats {
+        const { progressTotals } = this.policy;
+
+        const oldTotals = progressTotals(oldState, media);
+        const newTotals = progressTotals(newState, media);
+
+        const delta: DeltaStats = {
+            entriesRated: 0,
+            sumEntriesRated: 0,
+            entriesCommented: 0,
+            entriesFavorites: 0,
+            timeSpent: newTotals.timeSpent - oldTotals.timeSpent,
+            totalRedo: newTotals.totalRedo - oldTotals.totalRedo,
+            totalSpecific: newTotals.totalSpecific - oldTotals.totalSpecific,
+        };
+
+        if (!oldState && newState) delta.totalEntries = 1;
+        else if (oldState && !newState) delta.totalEntries = -1;
+
+        if (oldState?.status !== newState?.status) {
+            const statusCounts: Partial<Record<Status, number>> = {};
+
+            if (oldState) statusCounts[oldState.status as Status] = -1;
+            if (newState) statusCounts[newState.status as Status] = (statusCounts[newState.status as Status] ?? 0) + 1;
+
+            delta.statusCounts = statusCounts;
+        }
+
+        const oldRating = oldState?.rating;
+        const newRating = newState?.rating;
+
+        const isRated = newRating != null;
+        const wasRated = oldRating != null;
+
+        if (wasRated && !isRated) {
+            delta.entriesRated = -1;
+            delta.sumEntriesRated = -oldRating;
+        }
+        else if (!wasRated && isRated) {
+            delta.entriesRated = 1;
+            delta.sumEntriesRated = newRating;
+        }
+        else if (wasRated && isRated && oldRating !== newRating) {
+            delta.sumEntriesRated = newRating - oldRating;
+        }
+
+        const wasCommented = !!oldState?.comment;
+        const isCommented = !!newState?.comment;
+        if (wasCommented !== isCommented) delta.entriesCommented = isCommented ? 1 : -1;
+
+        const wasFavorited = !!oldState?.favorite;
+        const isFavorited = !!newState?.favorite;
+        if (wasFavorited !== isFavorited) delta.entriesFavorites = isFavorited ? 1 : -1;
+
+        return delta;
+    }
+
     // --- Admin Methods ---------------------------------------------------
 
     async getUserMediaAddedAndUpdatedForAdmin() {
@@ -296,6 +356,4 @@ export abstract class BaseService<TConfig extends AnyMediaSchemaConfig, R extend
     abstract getMediaEditableFields(mediaId: number): Promise<{ fields: Record<string, any> }>
 
     abstract updateMediaEditableFields(mediaId: number, payload: Record<string, any>): Promise<void>;
-
-    abstract calculateDeltaStats(oldState: UserMediaWithTags<any>, newState: any, media: any): DeltaStats;
 }

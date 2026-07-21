@@ -35,6 +35,15 @@ const maxGenres = moviesConfig.apiProvider.maxGenres;
 const imageBaseUrl = "https://image.tmdb.org/t/p/w300";
 
 
+const toUniqueNamedData = (items: { name: string }[] | null | undefined, limit: number) => {
+    if (!items) return;
+
+    return [...new Set(items.map((item) => item.name))]
+        .slice(0, limit)
+        .map((name) => ({ name }));
+};
+
+
 const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Options) => {
     const { defaultDuration, dirSaveName } = options;
 
@@ -92,17 +101,11 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: Option
         seasonsData.push({ season: 1, episodes: 1 });
     }
 
-    const networkData = rawData?.networks?.slice(0, maxNetworks).map((n) => ({ name: n.name }));
-    const actorsData = rawData?.credits?.cast?.slice(0, maxActors).map((c) => ({ name: c.name }));
-    const genresData = rawData?.genres?.slice(0, maxGenres).map((g) => ({ name: g.name }));
+    const genresData = toUniqueNamedData(rawData?.genres, maxGenres);
+    const networkData = toUniqueNamedData(rawData?.networks, maxNetworks);
+    const actorsData = toUniqueNamedData(rawData?.credits?.cast, maxActors);
 
-    return {
-        mediaData,
-        seasonsData,
-        networkData,
-        actorsData,
-        genresData,
-    };
+    return { mediaData, seasonsData, networkData, actorsData, genresData };
 };
 
 
@@ -116,14 +119,18 @@ const transformSearchResults = (searchData: SearchData<TmdbMultiSearchResponse>)
 
     const processSearchTv = (item: TmdbTvSearchResult) => {
         const date = item.first_air_date;
-        const name = isLatin1(item.original_name) ? item.original_name : item.name;
-
         let itemType: MediaType = MediaType.SERIES;
 
-        const isJapanese = item.original_language === "ja" ||
-            (Array.isArray(item.origin_country) ? item.origin_country.includes("JP") : item.origin_country === "JP");
-        const isAnimationGenre = item.genre_ids?.includes(16) ?? false;
+        const name = isLatin1(item.original_name)
+            ? item.original_name
+            : item.name;
 
+        const isJapanese = item.original_language === "ja" ||
+            (Array.isArray(item.origin_country)
+                ? item.origin_country.includes("JP")
+                : item.origin_country === "JP");
+
+        const isAnimationGenre = item.genre_ids?.includes(16) ?? false;
         if (isJapanese && isAnimationGenre) {
             itemType = MediaType.ANIME;
         }
@@ -185,8 +192,8 @@ const transformMoviesDetailsResults = async (rawData: TmdbMovieDetails) => {
         }),
     }
 
-    const genresData = rawData?.genres?.slice(0, maxGenres).map((genre) => ({ name: genre.name }));
-    const actorsData = rawData?.credits?.cast?.slice(0, maxActors).map((cast) => ({ name: cast.name }));
+    const genresData = toUniqueNamedData(rawData?.genres, maxGenres);
+    const actorsData = toUniqueNamedData(rawData?.credits?.cast, maxActors);
 
     return { mediaData, actorsData, genresData };
 };
@@ -258,13 +265,22 @@ const transformTvTrends = async (rawData: TmdbTrendingTvResponse) => {
 
 const addAnimeSpecificGenres = (jikanData: JikanAnimeSearchResponse, genresData: { name: string }[] | null | undefined) => {
     const { genres = [], demographics = [] } = jikanData?.data?.[0] || {};
-    const genreList = genres.map((g) => ({ name: g.name })) as { name: string }[];
-    const demoList = demographics.map((d) => ({ name: d.name })) as { name: string }[];
+    const genreList = toUniqueNamedData(genres, maxGenres) ?? [];
+    const demographicsList = toUniqueNamedData(demographics, maxGenres) ?? [];
+    const demoNames = new Set(demographicsList.map((genre) => genre.name));
+    const nonDemographicGenres = genreList.filter((genre) => !demoNames.has(genre.name));
 
-    const newGenres = demoList.length >= 5
-        ? demoList.slice(0, 5) : [...genreList.slice(0, 5 - demoList.length), ...demoList];
+    const combinedGenres = demographicsList.length >= maxGenres
+        ? demographicsList
+        : [...nonDemographicGenres.slice(0, maxGenres - demographicsList.length), ...demographicsList];
 
-    return newGenres.length ? newGenres : genresData;
+    const newGenres = toUniqueNamedData(combinedGenres, maxGenres) ?? [];
+
+    return newGenres.length
+        ? newGenres
+        : genresData
+            ? toUniqueNamedData(genresData, maxGenres)
+            : genresData;
 };
 
 

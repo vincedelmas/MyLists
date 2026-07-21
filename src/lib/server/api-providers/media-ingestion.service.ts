@@ -1,3 +1,4 @@
+import {withTransaction} from "@/lib/server/database/async-storage";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {
     ExternalMediaProvider,
@@ -33,6 +34,10 @@ export function createMediaIngestionService<TDetails>(params: {
         return applyEnrichers(details, context);
     }
 
+    async function updatePreparedDetails(details: TDetails) {
+        return withTransaction(() => repository.updateMediaWithDetails(details));
+    }
+
     async function storePreparedDetails(apiId: number | string, details: TDetails, context: IngestionContext) {
         const enriched = await applyEnrichers(details, context);
         const mediaId = await repository.storeMediaWithDetails(enriched);
@@ -53,7 +58,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
                 try {
                     const enriched = await applyEnrichers(details, { mode: "refresh", isBulk: true });
-                    await repository.updateMediaWithDetails(enriched);
+                    await updatePreparedDetails(enriched);
                     yield { apiId, state: "fulfilled" as const, reason: undefined };
                 }
                 catch (reason) {
@@ -72,7 +77,7 @@ export function createMediaIngestionService<TDetails>(params: {
         for (const apiId of apiIds) {
             try {
                 const details = await fetchAndPrepareDetails(apiId, { mode: "refresh", isBulk: true });
-                await repository.updateMediaWithDetails(details);
+                await updatePreparedDetails(details);
                 yield { apiId, state: "fulfilled" as const, reason: undefined };
             }
             catch (reason) {
@@ -142,7 +147,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
         async refreshFromExternal(apiId: number | string, isBulk = false) {
             const details = await fetchAndPrepareDetails(apiId, { mode: "refresh", isBulk });
-            return repository.updateMediaWithDetails(details);
+            return updatePreparedDetails(details);
         },
 
         async* bulkRefresh(limit?: number) {

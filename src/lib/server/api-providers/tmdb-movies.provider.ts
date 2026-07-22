@@ -54,7 +54,7 @@ export const createTmdbMoviesProvider = (tmdb: TmdbApi): ExternalMediaProvider<U
 export const createMoviesIngestionService = (repository: MoviesRepository, provider: ExternalMediaProvider<UpsertMovieWithDetails>) => {
     return createMediaIngestionService({
         provider,
-        repository: repository,
+        repository,
         refreshCandidates: {
             getCandidateApiIds: () => {
                 return repository.getMediaIdsToBeRefreshed();

@@ -37,6 +37,6 @@ export const createGBooksBooksProvider = (gBooks: GBooksApi): ExternalMediaProvi
 export const createBooksIngestionService = (repository: BooksRepository, provider: ExternalMediaProvider<UpsertBooksWithDetails>) => {
     return createMediaIngestionService({
         provider,
-        repository: repository,
+        repository,
     });
 }

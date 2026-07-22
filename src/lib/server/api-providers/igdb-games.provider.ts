@@ -61,16 +61,18 @@ export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<Up
 
 
 export const createGamesIngestionService = (hltbClient: HltbApi, repository: GamesRepository, provider: ExternalMediaProvider<UpsertGameWithDetails>) => {
+    const { chunkSize } = gamesDefinition.ingestion.refresh;
+
     return createMediaIngestionService({
         provider,
-        repository: repository,
+        repository,
         refreshCandidates: {
             getCandidateApiIds: () => {
                 return repository.getMediaIdsToBeRefreshed();
             },
         },
         refreshPolicy: {
-            chunkSize: gamesDefinition.ingestion.refresh.chunkSize,
+            chunkSize,
         },
         enrichers: [
             createHltbEnricher(hltbClient),

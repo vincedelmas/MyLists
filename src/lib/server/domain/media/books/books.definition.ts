@@ -63,37 +63,10 @@ export const booksDefinition = defineMediaDefinition({
                 "Pages -": [asc(books.pages), asc(books.name)],
             },
         },
-        stats: {
-            community: {
+        communityActivity: {
+            aggregates: {
                 totalRedo: sql<number>`COALESCE(SUM(${booksList.redo}), 0)`,
                 totalSpecific: sql<number>`COALESCE(SUM(${booksList.total}), 0)`,
-            },
-            allUsers: {
-                timeSpent: sql<number>`COALESCE(SUM(${booksList.total} * ${BOOK_READING_MINUTES_PER_PAGE}), 0)`,
-                totalSpecific: sql<number>`COALESCE(SUM(${booksList.total}), 0)`,
-            },
-            affinity: {
-                langsStats: {
-                    metricTable: books,
-                    metricIdCol: books.id,
-                    metricNameCol: books.language,
-                    mediaLinkCol: booksList.mediaId,
-                    filters: [ne(booksList.status, Status.PLAN_TO_READ)],
-                },
-                publishersStats: {
-                    metricTable: books,
-                    metricNameCol: books.publishers,
-                    metricIdCol: books.id,
-                    mediaLinkCol: booksList.mediaId,
-                    filters: [ne(booksList.status, Status.PLAN_TO_READ)],
-                },
-                authorsStats: {
-                    metricTable: booksAuthors,
-                    mediaLinkCol: booksList.mediaId,
-                    metricNameCol: booksAuthors.name,
-                    metricIdCol: booksAuthors.mediaId,
-                    filters: [ne(booksList.status, Status.PLAN_TO_READ)],
-                },
             },
         },
         jobs: {
@@ -101,6 +74,35 @@ export const booksDefinition = defineMediaDefinition({
                 sourceTable: booksAuthors,
                 nameColumn: booksAuthors.name,
                 mediaIdColumn: booksAuthors.mediaId,
+            },
+        },
+    },
+    statistics: {
+        allUsers: {
+            totalSpecific: sql<number>`COALESCE(SUM(${booksList.total}), 0)`,
+            timeSpent: sql<number>`COALESCE(SUM(${booksList.total} * ${BOOK_READING_MINUTES_PER_PAGE}), 0)`,
+        },
+        affinity: {
+            langsStats: {
+                metricTable: books,
+                metricIdCol: books.id,
+                metricNameCol: books.language,
+                mediaLinkCol: booksList.mediaId,
+                filters: [ne(booksList.status, Status.PLAN_TO_READ)],
+            },
+            publishersStats: {
+                metricTable: books,
+                metricNameCol: books.publishers,
+                metricIdCol: books.id,
+                mediaLinkCol: booksList.mediaId,
+                filters: [ne(booksList.status, Status.PLAN_TO_READ)],
+            },
+            authorsStats: {
+                metricTable: booksAuthors,
+                mediaLinkCol: booksList.mediaId,
+                metricNameCol: booksAuthors.name,
+                metricIdCol: booksAuthors.mediaId,
+                filters: [ne(booksList.status, Status.PLAN_TO_READ)],
             },
         },
     },

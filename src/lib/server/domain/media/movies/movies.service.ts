@@ -28,32 +28,6 @@ export class MoviesService extends BaseService<MovieDefinition, MoviesRepository
         return this.repository.findByTitleAndYear(title, year);
     }
 
-    async calculateAdvancedMediaStats(mediaAvgRating: number | null, userId?: number) {
-        // If userId not provided, calculations are platform-wide
-
-        const { ratings, genresStats, totalTags, releaseDates } = await super.calculateAdvancedMediaStats(mediaAvgRating, userId);
-
-        // Specific stats
-        const avgDuration = await this.repository.avgMovieDuration(userId);
-        const durationDistrib = await this.repository.movieDurationDistrib(userId);
-        const { totalBudget, totalRevenue } = await this.repository.budgetRevenueStats(userId);
-        const { directorsStats, actorsStats, langsStats } = await this.repository.specificTopMetrics(mediaAvgRating, userId);
-
-        return {
-            ratings,
-            totalTags,
-            genresStats,
-            releaseDates,
-            totalBudget,
-            totalRevenue,
-            avgDuration,
-            durationDistrib,
-            directorsStats,
-            actorsStats,
-            langsStats,
-        };
-    }
-
     async getMediaEditableFields(mediaId: number) {
         const { editableFields } = this.servicePolicy;
 

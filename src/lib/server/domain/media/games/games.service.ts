@@ -21,33 +21,6 @@ export class GamesService extends BaseService<GamesDefinition, GamesRepository> 
         };
     }
 
-    async calculateAdvancedMediaStats(mediaAvgRating: number | null, userId?: number) {
-        // If userId not provided, calculations are platform-wide
-
-        const { ratings, genresStats, totalTags, releaseDates } = await super.calculateAdvancedMediaStats(mediaAvgRating, userId);
-
-        // Specific stats
-        const avgDuration = await this.repository.gameAvgPlaytime(userId);
-        const durationDistrib = await this.repository.gamePlaytimeDistrib(userId);
-
-        const { developersStats, publishersStats, platformsStats, enginesStats, perspectivesStats } =
-            await this.repository.specificTopMetrics(mediaAvgRating, userId);
-
-        return {
-            ratings,
-            totalTags,
-            genresStats,
-            releaseDates,
-            avgDuration,
-            durationDistrib,
-            developersStats,
-            publishersStats,
-            platformsStats,
-            enginesStats,
-            perspectivesStats,
-        };
-    }
-
     async getMediaEditableFields(mediaId: number) {
         const { editableFields } = this.servicePolicy;
 

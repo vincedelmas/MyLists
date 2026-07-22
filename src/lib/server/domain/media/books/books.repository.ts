@@ -1,8 +1,8 @@
 import {Status} from "@/lib/utils/enums";
+import {eq, getTableColumns, isNull, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import {and, asc, eq, getTableColumns, isNotNull, isNull, ne, sql} from "drizzle-orm";
 import {books, booksAuthors, booksGenre, booksList} from "@/lib/server/database/schema";
 import {type BookDefinition, booksDefinition} from "@/lib/server/domain/media/books/books.definition";
 import {Book, InsertBooksWithDetails, UpdateBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
@@ -26,38 +26,6 @@ export class BooksRepository extends BaseRepository<BookDefinition> {
             .leftJoin(booksGenre, eq(booksGenre.mediaId, books.id))
             .where(isNull(booksGenre.mediaId))
             .groupBy(books.id);
-    }
-
-    // --- Advanced Stats  --------------------------------------------------
-
-    async avgBooksDuration(userId?: number) {
-        const forUser = userId ? eq(booksList.userId, userId) : undefined;
-
-        const avgDuration = getDbClient()
-            .select({
-                average: sql<number | null>`avg(${books.pages})`
-            })
-            .from(books)
-            .innerJoin(booksList, eq(booksList.mediaId, books.id))
-            .where(and(forUser, ne(booksList.status, Status.PLAN_TO_READ), isNotNull(books.pages)))
-            .get();
-
-        return avgDuration?.average ?? null;
-    }
-
-    async booksDurationDistrib(userId?: number) {
-        const forUser = userId ? eq(booksList.userId, userId) : undefined;
-
-        return getDbClient()
-            .select({
-                name: sql`floor(${books.pages} / 100.0) * 100`.mapWith(String),
-                value: sql`cast(count(${books.id}) as int)`.mapWith(Number).as("count"),
-            })
-            .from(books)
-            .innerJoin(booksList, eq(booksList.mediaId, books.id))
-            .where(and(forUser, ne(booksList.status, Status.PLAN_TO_READ), isNotNull(books.pages)))
-            .groupBy(sql<number>`floor(${books.pages} / 100.0) * 100`)
-            .orderBy(asc(sql<number>`floor(${books.pages} / 100.0) * 100`));
     }
 
     // --- Implemented Methods ------------------------------------------------

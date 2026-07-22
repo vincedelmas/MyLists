@@ -14,14 +14,14 @@ export const computeAllUsersStatsTask = defineTask({
         const container = await getContainer();
         const mediaTypes = Object.values(MediaType);
         const userStatsService = container.services.userStats;
-        const mediaRegistry = container.registries.mediaService;
+        const mediaStatsRegistry = container.registries.mediaStatistics;
 
         for (const mediaType of mediaTypes) {
             await ctx.step(`stats-${mediaType}`, async () => {
-                const mediaService = mediaRegistry.get(mediaType);
+                const mediaStatistics = mediaStatsRegistry.get(mediaType);
 
                 await withTransaction(async () => {
-                    const userMediaStats = await mediaService.computeAllUsersStats();
+                    const userMediaStats = await mediaStatistics.computeAllUsersStats();
 
                     if (userMediaStats.length === 0) {
                         ctx.warn(`No users found with ${mediaType} data to compute.`);

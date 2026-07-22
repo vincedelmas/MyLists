@@ -3,9 +3,9 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {manga, mangaAuthors, mangaGenre, mangaList} from "@/lib/server/database/schema";
+import {and, eq, getTableColumns, gte, inArray, isNull, lte, or, sql} from "drizzle-orm";
 import {Manga, UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
-import {mangaDefinition, type MangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
-import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
+import {mangaDefinition, MangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
 
 
 export class MangaRepository extends BaseRepository<MangaDefinition> {
@@ -31,39 +31,6 @@ export class MangaRepository extends BaseRepository<MangaDefinition> {
             ));
 
         return results.map((r) => r.apiId);
-    }
-
-    // --- Advanced Stats  --------------------------------------------------
-
-    async avgMangaDuration(userId?: number) {
-        const forUser = userId ? eq(mangaList.userId, userId) : undefined;
-
-        const avgDuration = getDbClient()
-            .select({
-                average: sql<number | null>`avg(${manga.chapters})`
-            })
-            .from(manga)
-            .innerJoin(mangaList, eq(mangaList.mediaId, manga.id))
-            .where(and(forUser, ne(mangaList.status, Status.PLAN_TO_READ), isNotNull(manga.chapters)))
-            .get();
-
-        return avgDuration?.average ?? null;
-    }
-
-    async mangaDurationDistrib(userId?: number) {
-        const forUser = userId ? eq(mangaList.userId, userId) : undefined;
-        const binning = sql<number>`floor(${manga.chapters} / 50.0) * 50`.mapWith(String);
-
-        return getDbClient()
-            .select({
-                name: binning,
-                value: sql`cast(count(${manga.id}) as int)`.mapWith(Number).as("count"),
-            })
-            .from(manga)
-            .innerJoin(mangaList, eq(mangaList.mediaId, manga.id))
-            .where(and(forUser, ne(mangaList.status, Status.PLAN_TO_READ), isNotNull(manga.chapters)))
-            .groupBy(binning)
-            .orderBy(asc(binning));
     }
 
     // --- Implemented Methods ------------------------------------------------

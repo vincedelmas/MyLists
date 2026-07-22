@@ -32,6 +32,7 @@ import {
 
 export function setupUserModule(mediaModule: MediaModule) {
     const mediaServiceRegistry = mediaModule.registries.mediaService;
+    const mediaStatsRegistry = mediaModule.registries.mediaStatistics;
 
     // User Repositories
     const userRepository = UserRepository;
@@ -61,7 +62,7 @@ export function setupUserModule(mediaModule: MediaModule) {
     const featureVotesService = new FeatureVotesService(featureVotesRepository, notificationsService);
     const userActivityService = new UserActivityService(userActivityRepository, mediaServiceRegistry);
     const collectionsService = new CollectionsService(userService, collectionsRepository, mediaServiceRegistry);
-    const userStatsService = new UserStatsService(userStatsRepository, userActivityService, achievementsRepository, userUpdatesRepository, mediaServiceRegistry);
+    const userStatsService = new UserStatsService(userStatsRepository, userActivityService, achievementsRepository, userUpdatesRepository, mediaStatsRegistry);
     const userMediaService = new UserMediaService(userStatsService, userActivityService, userUpdatesService, notificationsService, mediaServiceRegistry);
 
     return {

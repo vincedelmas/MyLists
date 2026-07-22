@@ -102,28 +102,31 @@ type JobDefinition = {
 interface MediaRepositoryDefinition<
     TTables extends BaseMediaTables = BaseMediaTables,
     TSortDefinitions extends SortDefinitions = SortDefinitions,
-    TAffinityDefinitions extends AffinityDefinitions = AffinityDefinitions,
 > {
     readonly tables: TTables;
+    readonly jobs: Partial<Record<JobType, JobDefinition>>;
     readonly popularity?: {
         readonly eligibility: SQL;
     };
+    readonly communityActivity: {
+        readonly aggregates: Partial<Record<"totalRedo" | "totalSpecific" | "totalPlaytime", SQL<number>>>;
+    };
     readonly listQuery: {
-        readonly selection: BaseSelection;
         readonly sorts: TSortDefinitions;
+        readonly selection: BaseSelection;
         readonly filters: FilterDefinitions;
         readonly filterOptions: FilterOptionLoaders;
         readonly defaultSort: NoInfer<Extract<keyof TSortDefinitions, string>>;
     };
-    readonly jobs: Partial<Record<JobType, JobDefinition>>;
-    readonly stats: {
-        readonly community: Partial<Record<"totalRedo" | "totalSpecific" | "totalPlaytime", SQL<number>>>;
-        readonly allUsers: {
-            readonly timeSpent: SQL<number>;
-            readonly totalSpecific: SQL<number>;
-            readonly totalRedo?: SQL<number>;
-        };
-        readonly affinity: TAffinityDefinitions;
+}
+
+
+interface MediaStatisticsDefinition<TAffinityDefinitions extends AffinityDefinitions = AffinityDefinitions> {
+    readonly affinity: TAffinityDefinitions;
+    readonly allUsers: {
+        readonly timeSpent: SQL<number>;
+        readonly totalSpecific: SQL<number>;
+        readonly totalRedo?: SQL<number>;
     };
 }
 
@@ -177,47 +180,53 @@ export interface MediaDefinition<
     TMediaType extends MediaType = MediaType,
     TIngestion extends MediaIngestionPolicy = MediaIngestionPolicy,
 > {
-    readonly identity: MediaIdentity<TMediaType>;
-    readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions, TAffinityDefinitions>;
-    readonly service: MediaServicePolicy<TTables>;
     readonly ingestion: TIngestion;
     readonly attribution: ProviderAttribution;
+    readonly identity: MediaIdentity<TMediaType>;
+    readonly service: MediaServicePolicy<TTables>;
+    readonly statistics: MediaStatisticsDefinition<TAffinityDefinitions>;
+    readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions>;
 }
 
 
 export type AnyMediaRepositoryDefinition = {
     readonly tables: BaseMediaTables;
     readonly popularity?: { readonly eligibility: SQL };
+    readonly jobs: Partial<Record<JobType, JobDefinition>>;
+    readonly communityActivity: {
+        readonly aggregates: Partial<Record<"totalRedo" | "totalSpecific" | "totalPlaytime", SQL<number>>>;
+    };
     readonly listQuery: {
-        readonly selection: BaseSelection;
+        readonly defaultSort: string;
         readonly sorts: SortDefinitions;
+        readonly selection: BaseSelection;
         readonly filters: FilterDefinitions;
         readonly filterOptions: FilterOptionLoaders;
-        readonly defaultSort: string;
     };
-    readonly jobs: Partial<Record<JobType, JobDefinition>>;
-    readonly stats: {
-        readonly community: Partial<Record<"totalRedo" | "totalSpecific" | "totalPlaytime", SQL<number>>>;
-        readonly allUsers: {
-            readonly timeSpent: SQL<number>;
-            readonly totalSpecific: SQL<number>;
-            readonly totalRedo?: SQL<number>;
-        };
-        readonly affinity: AffinityDefinitions;
+};
+
+
+type AnyMediaStatisticsDefinition = {
+    readonly affinity: AffinityDefinitions;
+    readonly allUsers: {
+        readonly timeSpent: SQL<number>;
+        readonly totalSpecific: SQL<number>;
+        readonly totalRedo?: SQL<number>;
     };
 };
 
 
 export type AnyMediaDefinition = {
     readonly identity: MediaIdentity;
+    readonly ingestion: MediaIngestionPolicy;
+    readonly attribution: ProviderAttribution;
     readonly repository: AnyMediaRepositoryDefinition;
+    readonly statistics: AnyMediaStatisticsDefinition;
     readonly service: {
         readonly defaultStatus: Status;
         readonly editableFields: readonly string[];
         readonly progressTotals: (state: any | null, media: any) => ProgressTotals;
     };
-    readonly ingestion: MediaIngestionPolicy;
-    readonly attribution: ProviderAttribution;
 };
 
 

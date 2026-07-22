@@ -3,7 +3,7 @@ import {DeltaStats} from "@/lib/types/stats.types";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {UserMediaStats} from "@/lib/types/user-media.types";
-import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import {MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
 import {UserStatsRepository} from "@/lib/server/domain/user/user-stats.repository";
 import {UserActivityService} from "@/lib/server/domain/user/user-activity.service";
 import {UserUpdatesRepository} from "@/lib/server/domain/user/user-updates.repository";
@@ -16,7 +16,7 @@ export class UserStatsService {
         private userActivityService: UserActivityService,
         private achievementsRepository: typeof AchievementsRepository,
         private userUpdatesRepository: typeof UserUpdatesRepository,
-        private mediaServiceRegistry: MediaServiceRegistry,
+        private mediaStatsRegistry: MediaStatsRegistry,
     ) {
     }
 
@@ -141,8 +141,8 @@ export class UserStatsService {
         const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ userId });
 
         const tagCountPromises = userPreComputedStats.mediaTypes.map((mediaType) => {
-            const mediaService = this.mediaServiceRegistry.get(mediaType);
-            return mediaService.computeTotalTags(userId);
+            const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
+            return mediaStatistics.computeTotalTags(userId);
         });
         const tagCounts = await Promise.all(tagCountPromises);
         const totalTags = tagCounts.reduce((sum, count) => sum + count, 0);
@@ -157,11 +157,11 @@ export class UserStatsService {
     }
 
     async userAdvancedMediaStats(userId: number, mediaType: MediaType) {
-        const mediaService = this.mediaServiceRegistry.get(mediaType);
+        const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
 
         const preComputedMediaStats = await this.repository.getAggregatedMediaStats({ userId, mediaType });
         const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ userId, mediaType });
-        const specificMediaStats = await mediaService.calculateAdvancedMediaStats(preComputedMediaStats.avgRated, userId);
+        const specificMediaStats = await mediaStatistics.calculateAdvancedMediaStats(preComputedMediaStats.avgRated, userId);
         const mediaUpdatesPerMonthStats = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ mediaType, userId });
 
         return {
@@ -181,8 +181,8 @@ export class UserStatsService {
         const mediaUpdatesPerMonth = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ excludeBulkImports: true });
 
         const tagCountPromises = platformPreComputedStats.mediaTypes.map((mediaType) => {
-            const mediaService = this.mediaServiceRegistry.get(mediaType);
-            return mediaService.computeTotalTags();
+            const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
+            return mediaStatistics.computeTotalTags();
         });
         const tagCounts = await Promise.all(tagCountPromises);
         const totalTags = tagCounts.reduce((sum, count) => sum + count, 0);
@@ -197,10 +197,10 @@ export class UserStatsService {
     }
 
     async platformMediaAdvancedStats(mediaType: MediaType) {
-        const mediaService = this.mediaServiceRegistry.get(mediaType);
+        const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
 
         const platformPreComputedStats = await this.repository.getAggregatedMediaStats({ mediaType });
-        const specificMediaStats = await mediaService.calculateAdvancedMediaStats(platformPreComputedStats.avgRated);
+        const specificMediaStats = await mediaStatistics.calculateAdvancedMediaStats(platformPreComputedStats.avgRated);
         const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ mediaType, excludeBulkImports: true });
         const mediaUpdatesPerMonthStats = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ mediaType, excludeBulkImports: true });
 

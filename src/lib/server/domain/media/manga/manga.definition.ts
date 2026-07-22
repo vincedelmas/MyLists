@@ -60,30 +60,10 @@ export const mangaDefinition = defineMediaDefinition({
                 "Chapters -": [asc(manga.chapters), asc(manga.name)],
             },
         },
-        stats: {
-            community: {
+        communityActivity: {
+            aggregates: {
                 totalRedo: sql<number>`COALESCE(SUM(${mangaList.redo}), 0)`,
                 totalSpecific: sql<number>`COALESCE(SUM(${mangaList.total}), 0)`,
-            },
-            allUsers: {
-                timeSpent: sql<number>`COALESCE(SUM(${mangaList.total} * ${MANGA_READING_MINUTES_PER_CHAPTER}), 0)`,
-                totalSpecific: sql<number>`COALESCE(SUM(${mangaList.total}), 0)`,
-            },
-            affinity: {
-                publishersStats: {
-                    metricTable: manga,
-                    metricNameCol: manga.publishers,
-                    metricIdCol: manga.id,
-                    mediaLinkCol: mangaList.mediaId,
-                    filters: [ne(mangaList.status, Status.PLAN_TO_READ)],
-                },
-                authorsStats: {
-                    metricTable: mangaAuthors,
-                    metricNameCol: mangaAuthors.name,
-                    metricIdCol: mangaAuthors.mediaId,
-                    mediaLinkCol: mangaList.mediaId,
-                    filters: [ne(mangaList.status, Status.PLAN_TO_READ)],
-                },
             },
         },
         jobs: {
@@ -96,6 +76,28 @@ export const mangaDefinition = defineMediaDefinition({
                 sourceTable: manga,
                 mediaIdColumn: manga.id,
                 nameColumn: manga.publishers,
+            },
+        },
+    },
+    statistics: {
+        allUsers: {
+            timeSpent: sql<number>`COALESCE(SUM(${mangaList.total} * ${MANGA_READING_MINUTES_PER_CHAPTER}), 0)`,
+            totalSpecific: sql<number>`COALESCE(SUM(${mangaList.total}), 0)`,
+        },
+        affinity: {
+            publishersStats: {
+                metricTable: manga,
+                metricNameCol: manga.publishers,
+                metricIdCol: manga.id,
+                mediaLinkCol: mangaList.mediaId,
+                filters: [ne(mangaList.status, Status.PLAN_TO_READ)],
+            },
+            authorsStats: {
+                metricTable: mangaAuthors,
+                metricNameCol: mangaAuthors.name,
+                metricIdCol: mangaAuthors.mediaId,
+                mediaLinkCol: mangaList.mediaId,
+                filters: [ne(mangaList.status, Status.PLAN_TO_READ)],
             },
         },
     },

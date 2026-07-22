@@ -1,19 +1,19 @@
 import {MediaType} from "@/lib/utils/enums";
-import {BooksRepository, BooksService} from "@/lib/server/domain/media/books";
-import {GamesRepository, GamesService} from "@/lib/server/domain/media/games";
-import {MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
 import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {booksDefinition} from "@/lib/server/domain/media/books/books.definition";
 import {gamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {mangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
-import {MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
 import {moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
 import {createTvAchievementCatalog} from "@/lib/server/domain/media/tv/tv.achievements";
 import {createBooksAchievementCatalog} from "@/lib/server/domain/media/books/books.achievements";
 import {createGamesAchievementCatalog} from "@/lib/server/domain/media/games/games.achievements";
 import {createMangaAchievementCatalog} from "@/lib/server/domain/media/manga/manga.achievements";
 import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
-import {animeDefinition, seriesDefinition, TvRepository, TvService} from "@/lib/server/domain/media/tv";
+import {BooksRepository, BooksService, createBooksStatistics} from "@/lib/server/domain/media/books";
+import {createGamesStatistics, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
+import {createMangaStatistics, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
+import {createMoviesStatistics, MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
+import {animeDefinition, createTvStatistics, seriesDefinition, TvRepository, TvService} from "@/lib/server/domain/media/tv";
 
 
 export function setupMediaModule() {
@@ -46,6 +46,15 @@ export function setupMediaModule() {
     };
     const mediaServiceRegistry = createMediaRegistry(services);
 
+    const mediaStatRegistry = createMediaRegistry({
+        [MediaType.SERIES]: createTvStatistics(seriesDefinition),
+        [MediaType.ANIME]: createTvStatistics(animeDefinition),
+        [MediaType.MOVIES]: createMoviesStatistics(moviesDefinition),
+        [MediaType.GAMES]: createGamesStatistics(gamesDefinition),
+        [MediaType.BOOKS]: createBooksStatistics(booksDefinition),
+        [MediaType.MANGA]: createMangaStatistics(mangaDefinition),
+    });
+
     return {
         repositories: {
             series: repositories.series,
@@ -65,6 +74,7 @@ export function setupMediaModule() {
         },
         registries: {
             mediaService: mediaServiceRegistry,
+            mediaStatistics: mediaStatRegistry,
             mediaRepository: mediaRepositoryRegistry,
             mediaAchievements: mediaAchievementsRegistry,
         }

@@ -1,9 +1,6 @@
 import {notFound} from "@tanstack/react-router";
-import {logger} from "@/lib/server/core/logger";
 import {MediaInfo} from "@/lib/types/activity.types";
-import {statusUtils} from "@/lib/utils/media-mapping";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {TopAffinityDefinition} from "@/lib/types/stats.types";
 import {UpComingMedia} from "@/lib/types/notifications.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
@@ -586,11 +583,11 @@ export abstract class BaseRepository<
     }
 
     async getMediaCommunityActivity(userId: number | undefined, mediaId: number, search: SearchType) {
-        const { tables: { listTable }, stats: { community } } = this.repoDefinition;
+        const { tables: { listTable }, communityActivity: { aggregates } } = this.repoDefinition;
 
-        const totalRedo = community.totalRedo ?? sql<number>`0`;
-        const totalSpecific = community.totalSpecific ?? sql<number>`0`;
-        const totalPlaytime = community.totalPlaytime ?? sql<number>`0`;
+        const totalRedo = aggregates.totalRedo ?? sql<number>`0`;
+        const totalSpecific = aggregates.totalSpecific ?? sql<number>`0`;
+        const totalPlaytime = aggregates.totalPlaytime ?? sql<number>`0`;
 
         const { page, perPage, offset, limit } = resolvePagination({
             maxPerPage: 50,
@@ -969,90 +966,6 @@ export abstract class BaseRepository<
         return results;
     }
 
-    async computeAllUsersStats() {
-        const { mediaType } = this.identity;
-        const { listTable, mediaTable } = this.repoDefinition.tables;
-        const { timeSpent: timeSpentStat, totalSpecific: totalSpecificStat, totalRedo: totalRedoStat } = this.repoDefinition.stats.allUsers;
-
-        const redoStat = totalRedoStat ?? (listTable?.redo ? sql`COALESCE(SUM(${listTable.redo}), 0)` : sql`0`);
-
-        const results = await getDbClient()
-            .select({
-                userId: listTable.userId,
-                timeSpent: timeSpentStat.as("timeSpent"),
-                totalSpecific: totalSpecificStat.as("totalSpecific"),
-                statusCounts: sql`
-                    COALESCE((
-                        SELECT 
-                            JSON_GROUP_OBJECT(status, count_per_status) 
-                        FROM (
-                            SELECT 
-                                status,
-                                COUNT(*) as count_per_status 
-                            FROM ${listTable} as sub_list 
-                            WHERE sub_list.user_id = ${listTable.userId} GROUP BY status
-                        )
-                    ), '{}')
-                `.as("statusCounts"),
-                entriesFavorites: sql<number>`
-                    COALESCE(SUM(CASE WHEN ${listTable.favorite} = 1 THEN 1 ELSE 0 END), 0)
-                `.as("entriesFavorites"),
-                totalRedo: redoStat.as("totalRedo"),
-                entriesCommented: sql<number>`
-                    COALESCE(SUM(CASE WHEN LENGTH(TRIM(COALESCE(${listTable.comment}, ''))) > 0 THEN 1 ELSE 0 END), 0)
-                `.as("entriesCommented"),
-                totalEntries: count(listTable.mediaId).as("totalEntries"),
-                entriesRated: count(listTable.rating).as("entriesRated"),
-                sumEntriesRated: sql<number>`COALESCE(SUM(${listTable.rating}), 0)`.as("sumEntriesRated"),
-                averageRating: sql<number>`
-                    COALESCE(SUM(${listTable.rating}) * 1.0 / NULLIF(COUNT(${listTable.rating}), 0), 0.0)
-                `.as("averageRating"),
-            })
-            .from(listTable)
-            .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-            .groupBy(listTable.userId);
-
-        const expectedStatuses = statusUtils.byMediaType(mediaType) ?? [];
-
-        return results.map((row) => {
-            let parsed: unknown = row.statusCounts;
-
-            if (typeof parsed === "string") {
-                try {
-                    parsed = JSON.parse(parsed);
-                }
-                catch (err) {
-                    parsed = {};
-                    logger.error({ err, userId: row.userId, statusCounts: row.statusCounts }, "Failed to parse user status counts");
-                }
-            }
-
-            const parsedObj = (parsed && typeof parsed === "object")
-                ? parsed as Record<Status, number>
-                : {} as Record<Status, number>;
-
-            const statusCounts = expectedStatuses.reduce<Record<Status, number>>((acc, status) => {
-                const v = parsedObj[status];
-                acc[status] = typeof v === "number" && Number.isFinite(v) ? v : 0;
-                return acc;
-            }, {} as Record<Status, number>);
-
-            return {
-                userId: row.userId,
-                statusCounts: statusCounts,
-                timeSpent: Number(row.timeSpent) || 0,
-                totalRedo: Number(row.totalRedo) || 0,
-                totalEntries: Number(row.totalEntries) || 0,
-                entriesRated: Number(row.entriesRated) || 0,
-                totalSpecific: Number(row.totalSpecific) || 0,
-                averageRating: Number(row.averageRating) || 0,
-                sumEntriesRated: Number(row.sumEntriesRated) || 0,
-                entriesFavorites: Number(row.entriesFavorites) || 0,
-                entriesCommented: Number(row.entriesCommented) || 0,
-            };
-        });
-    }
-
     // --- Admin Functions -------------------------------------------------
 
     async getUserMediaAddedAndUpdatedForAdmin() {
@@ -1086,152 +999,6 @@ export abstract class BaseRepository<
                 thisMonth: updatedThisMonth?.count || 0,
             }
         };
-    }
-
-    // --- Advanced Stats ---------------------------------------------------
-
-    async computeRatingStats(userId?: number) {
-        const { listTable } = this.repoDefinition.tables;
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
-
-        const rows = await getDbClient()
-            .select({
-                rating: listTable.rating,
-                count: count(listTable.rating),
-            })
-            .from(listTable)
-            .where(and(forUser, isNotNull(listTable.rating)))
-            .groupBy(listTable.rating)
-            .orderBy(asc(listTable.rating));
-
-        const buckets = Array.from({ length: 21 }, (_, i) => ({
-            name: (i * 0.5).toFixed(1),
-            value: 0,
-        }));
-
-        for (const r of rows) {
-            if (r.rating == null) continue;
-            const idx = Math.round(Number(r.rating) * 2);
-            if (idx >= 0 && idx < buckets.length) buckets[idx].value = r.count;
-        }
-
-        return buckets;
-    }
-
-    async computeReleaseDateStats(userId?: number) {
-        const { mediaTable, listTable } = this.repoDefinition.tables;
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
-
-        const decadeExpression = sql<number>`(CAST(strftime('%Y', ${mediaTable.releaseDate}) AS INTEGER) / 10) * 10`;
-
-        const releaseDates = await getDbClient()
-            .select({
-                name: decadeExpression,
-                value: sql<number>`COUNT(${mediaTable.id})`,
-            })
-            .from(mediaTable)
-            .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, isNotNull(mediaTable.releaseDate)))
-            .groupBy(decadeExpression)
-            .orderBy(asc(decadeExpression));
-
-        return releaseDates;
-    }
-
-    async computeTotalTags(userId?: number) {
-        const { tagTable } = this.repoDefinition.tables;
-        const forUser = userId ? eq(tagTable.userId, userId) : undefined;
-
-        const result = getDbClient()
-            .select({ count: countDistinct(tagTable.name) })
-            .from(tagTable)
-            .where(and(forUser))
-            .get();
-
-        return result?.count ?? 0;
-    }
-
-    async computeTopGenresStats(mediaAvgRating: number | null, userId?: number) {
-        const { genreTable, listTable } = this.repoDefinition.tables;
-
-        const metricDefinition = {
-            metricTable: genreTable,
-            metricNameCol: genreTable.name,
-            metricIdCol: genreTable.mediaId,
-            mediaLinkCol: listTable.mediaId,
-            filters: [notInArray(listTable.status, [Status.PLAN_TO_WATCH, Status.PLAN_TO_PLAY, Status.PLAN_TO_READ])],
-        };
-
-        return this._computeTopAffinityStats(metricDefinition, mediaAvgRating, userId);
-    }
-
-    async specificTopMetrics(mediaAvgRating: number | null, userId?: number) {
-        const statsAffinity = this.repoDefinition.stats.affinity;
-
-        const entries = await Promise.all(
-            Object.entries(statsAffinity).map(async ([name, metricDefinition]) => {
-                return [name, await this._computeTopAffinityStats(metricDefinition, mediaAvgRating, userId)] as const;
-            }),
-        );
-
-        return Object.fromEntries(entries);
-    }
-
-    private async _computeTopAffinityStats(definition: TopAffinityDefinition, mediaAvgRating: number | null, userId?: number) {
-        const { mediaTable, listTable } = this.repoDefinition.tables;
-
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
-        const { metricTable, metricIdCol, metricNameCol, mediaLinkCol, filters, limit = 10, minRatingCount = 3 } = definition;
-
-        const userAvg = mediaAvgRating ?? 5;
-        const isDifferentTable = metricTable !== mediaTable && metricTable !== listTable;
-
-        // Define raw aggregate aliases
-        const entriesCountSql = sql<number>`CAST(COUNT(${metricNameCol}) AS FLOAT)`;
-        const avgRatingSql = sql<number>`COALESCE(AVG(${listTable.rating}), ${userAvg})`;
-        const favoriteCountSql = sql<number>`CAST(SUM(CASE WHEN ${listTable.favorite} = true THEN 1 ELSE 0 END) AS FLOAT)`;
-
-        const qualityFactor = sql`(${avgRatingSql} / NULLIF(${userAvg}, 0))`;
-        const favoriteBoost = sql`(1 + (${favoriteCountSql} / NULLIF(${entriesCountSql}, 0)))`;
-        const confidence = sql`LN(${entriesCountSql} + 1) / 3`;
-
-        const affinityExpr = sql<number>`
-            10 * (EXP(2 * (${qualityFactor} * ${favoriteBoost} * ${confidence})) - 1) / 
-                 (EXP(2 * (${qualityFactor} * ${favoriteBoost} * ${confidence})) + 1)
-            `;
-
-        let builder = getDbClient()
-            .select({
-                affinity: affinityExpr,
-                avgRating: avgRatingSql,
-                entriesCount: entriesCountSql,
-                favoriteCount: favoriteCountSql,
-                name: sql<string>`${metricNameCol}`,
-            })
-            .from(listTable)
-            .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-            .$dynamic();
-
-        if (isDifferentTable) {
-            builder = builder.innerJoin(metricTable, eq(mediaLinkCol, metricIdCol));
-        }
-
-        const results = await builder
-            .where(and(forUser, isNotNull(metricNameCol), ...filters))
-            .groupBy(metricNameCol)
-            .having(gte(sql`COUNT(${metricNameCol})`, minRatingCount))
-            .orderBy(desc(affinityExpr))
-            .limit(limit);
-
-        return results.map((row) => ({
-            name: row.name,
-            value: Number(row.affinity).toFixed(2),
-            metadata: {
-                entriesCount: Number(row.entriesCount),
-                favoriteCount: Number(row.favoriteCount),
-                avgRating: Number(row.avgRating).toFixed(2),
-            },
-        }));
     }
 
     // --- Abstract Methods -----------------------------------------------------------------

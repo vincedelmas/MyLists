@@ -4,10 +4,10 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {normalizeGamePlatforms} from "@/lib/utils/game-platforms";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
 import {Game, UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {gamesDefinition, GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms} from "@/lib/server/database/schema";
-import {and, asc, count, eq, getTableColumns, gte, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
 
 
 export class GamesRepository extends BaseRepository<GamesDefinition> {
@@ -27,41 +27,6 @@ export class GamesRepository extends BaseRepository<GamesDefinition> {
                 or(isNull(games.releaseDate), gte(games.releaseDate, sql`date('now')`)),
             ))
             .then((res) => res.map((r) => r.apiId));
-    }
-
-    // --- Advanced Stats  --------------------------------------------------
-
-    async gameAvgPlaytime(userId?: number) {
-        const forUser = userId ? eq(gamesList.userId, userId) : undefined;
-
-        const avgDuration = getDbClient()
-            .select({
-                average: sql<number | null>`avg(${gamesList.playtime} / 60)`.as("avg_playtime")
-            })
-            .from(gamesList)
-            .where(and(forUser, ne(gamesList.status, Status.PLAN_TO_PLAY), isNotNull(gamesList.playtime)))
-            .get();
-
-        return avgDuration?.average ?? null;
-    }
-
-    async gamePlaytimeDistrib(userId?: number) {
-        const forUser = userId ? eq(gamesList.userId, userId) : undefined;
-
-        const playtimeHoursLog = sql<number>`floor(log(max(${gamesList.playtime} / 60, 1)) / log(2))`;
-
-        const playtimeDistrib = await getDbClient()
-            .select({
-                name: playtimeHoursLog,
-                value: count(games.id).as("count"),
-            })
-            .from(games)
-            .innerJoin(gamesList, eq(gamesList.mediaId, games.id))
-            .where(and(forUser, ne(gamesList.status, Status.PLAN_TO_PLAY), isNotNull(gamesList.playtime)))
-            .groupBy(playtimeHoursLog)
-            .orderBy(asc(playtimeHoursLog));
-
-        return playtimeDistrib.map((p) => ({ name: String(Math.pow(2, p.name)), value: p.value }));
     }
 
     // --- Implemented Methods ----------------------------------------------

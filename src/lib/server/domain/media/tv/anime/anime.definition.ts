@@ -85,40 +85,10 @@ export const animeDefinition = defineMediaDefinition({
                 "Re-watched": [desc(animeList.redo), asc(anime.name)],
             },
         },
-        stats: {
-            community: {
-                totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${animeList.redo2}))), 0)`,
-                totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
-            },
-            allUsers: {
-                timeSpent: sql<number>`COALESCE(SUM(${animeList.total} * ${anime.duration}), 0)`,
+        communityActivity: {
+            aggregates: {
                 totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
                 totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${animeList.redo2}))), 0)`,
-            },
-            affinity: {
-                networksStats: {
-                    minRatingCount: 3,
-                    metricTable: animeNetwork,
-                    mediaLinkCol: animeList.mediaId,
-                    metricNameCol: animeNetwork.name,
-                    metricIdCol: animeNetwork.mediaId,
-                    filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
-                },
-                countriesStats: {
-                    metricTable: anime,
-                    metricIdCol: anime.id,
-                    mediaLinkCol: animeList.mediaId,
-                    metricNameCol: anime.originCountry,
-                    filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
-                },
-                actorsStats: {
-                    minRatingCount: 3,
-                    metricTable: animeActors,
-                    metricNameCol: animeActors.name,
-                    metricIdCol: animeActors.mediaId,
-                    mediaLinkCol: animeList.mediaId,
-                    filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
-                },
             },
         },
         jobs: {
@@ -145,6 +115,38 @@ export const animeDefinition = defineMediaDefinition({
                 sourceTable: animeNetwork,
                 nameColumn: animeNetwork.name,
                 mediaIdColumn: animeNetwork.mediaId,
+            },
+        },
+    },
+    statistics: {
+        allUsers: {
+            totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
+            timeSpent: sql<number>`COALESCE(SUM(${animeList.total} * ${anime.duration}), 0)`,
+            totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${animeList.redo2}))), 0)`,
+        },
+        affinity: {
+            networksStats: {
+                minRatingCount: 3,
+                metricTable: animeNetwork,
+                mediaLinkCol: animeList.mediaId,
+                metricNameCol: animeNetwork.name,
+                metricIdCol: animeNetwork.mediaId,
+                filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+            },
+            countriesStats: {
+                metricTable: anime,
+                metricIdCol: anime.id,
+                mediaLinkCol: animeList.mediaId,
+                metricNameCol: anime.originCountry,
+                filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+            },
+            actorsStats: {
+                minRatingCount: 3,
+                metricTable: animeActors,
+                metricNameCol: animeActors.name,
+                metricIdCol: animeActors.mediaId,
+                mediaLinkCol: animeList.mediaId,
+                filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
             },
         },
     },

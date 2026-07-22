@@ -1,13 +1,12 @@
-import {SQL} from "drizzle-orm";
-import {TvService} from "@/lib/server/domain/media/tv";
-import {MangaService} from "@/lib/server/domain/media/manga";
-import {GamesService} from "@/lib/server/domain/media/games";
-import {BooksService} from "@/lib/server/domain/media/books";
-import {MoviesService} from "@/lib/server/domain/media/movies";
-import {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
-import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import {UserActivityService, UserStatsRepository, UserStatsService, UserUpdatesRepository} from "@/lib/server/domain/user";
+import type {SQL} from "drizzle-orm";
+import type {TvStatistics} from "@/lib/server/domain/media/tv";
+import type {MangaStatistics} from "@/lib/server/domain/media/manga";
+import type {GamesStatistics} from "@/lib/server/domain/media/games";
+import type {BooksStatistics} from "@/lib/server/domain/media/books";
+import type {MoviesStatistics} from "@/lib/server/domain/media/movies";
+import type {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
+import type {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import type {UserActivityService, UserStatsRepository, UserStatsService, UserUpdatesRepository} from "@/lib/server/domain/user";
 
 
 export type DeltaStats = {
@@ -35,15 +34,16 @@ export type TopAffinityDefinition = {
 }
 
 
+type OtherBase = { activatedMediaTypes: MediaType[]; ratingSystem: RatingSystemType; };
 type BaseMediaStats = Awaited<ReturnType<typeof UserStatsRepository.getAggregatedMediaStats>>;
 type UpdatesStats = Awaited<ReturnType<typeof UserUpdatesRepository.mediaUpdatesStatsPerMonth>>;
 type ActivityStats = { activityByMonth: Awaited<ReturnType<UserActivityService["getActivityStatsByMonth"]>> };
-type OtherBase = { activatedMediaTypes: MediaType[]; ratingSystem: RatingSystemType; };
-type TvSpecificStats = Awaited<ReturnType<TvService["calculateAdvancedMediaStats"]>>;
-type MoviesSpecificStats = Awaited<ReturnType<MoviesService["calculateAdvancedMediaStats"]>>;
-type GamesSpecificStats = Awaited<ReturnType<GamesService["calculateAdvancedMediaStats"]>>;
-type BooksSpecificStats = Awaited<ReturnType<BooksService["calculateAdvancedMediaStats"]>>;
-type MangaSpecificStats = Awaited<ReturnType<MangaService["calculateAdvancedMediaStats"]>>;
+
+type TvSpecificStats = Awaited<ReturnType<TvStatistics["calculateAdvancedMediaStats"]>>;
+type MoviesSpecificStats = Awaited<ReturnType<MoviesStatistics["calculateAdvancedMediaStats"]>>;
+type GamesSpecificStats = Awaited<ReturnType<GamesStatistics["calculateAdvancedMediaStats"]>>;
+type BooksSpecificStats = Awaited<ReturnType<BooksStatistics["calculateAdvancedMediaStats"]>>;
+type MangaSpecificStats = Awaited<ReturnType<MangaStatistics["calculateAdvancedMediaStats"]>>;
 
 
 export type AdvancedMediaStats =
@@ -67,6 +67,14 @@ export type MediaNaming = {
     durationDistributionUnit: string;
 }
 
-export type TopAffinity = Awaited<ReturnType<BaseRepository<any>["_computeTopAffinityStats"]>>;
+export type TopAffinity = {
+    name: string;
+    value: string;
+    metadata: {
+        avgRating: string;
+        entriesCount: number;
+        favoriteCount: number;
+    };
+}[];
 
 export type ExtractStatsByType<T extends MediaType | undefined> = Extract<UserStatsResult, { mediaType: T }>;

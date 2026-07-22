@@ -72,10 +72,6 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
         return this.repository.getUpcomingMedia(userId, maxAWeek);
     }
 
-    async computeAllUsersStats() {
-        return this.repository.computeAllUsersStats();
-    }
-
     async searchMediadleSuggestion(query: string) {
         return this.repository.searchMediadleSuggestion(query);
     }
@@ -90,10 +86,6 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
 
     async getListFilters(userId: number) {
         return this.repository.getListFilters(userId);
-    }
-
-    async computeTotalTags(userId?: number) {
-        return this.repository.computeTotalTags(userId);
     }
 
     async getTagNames(userId: number) {
@@ -138,18 +130,6 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
             formatVersion: MYLISTS_CSV_VERSION,
             externalApiSource: this.ingestion.externalApiSource,
         }) satisfies MyListsCSVImport);
-    }
-
-    async calculateAdvancedMediaStats(mediaAvgRating: number | null, userId?: number) {
-        // If userId not provided, calculations are platform-wide
-
-        // Specific media stats but calculation common
-        const ratings = await this.repository.computeRatingStats(userId);
-        const totalTags = await this.repository.computeTotalTags(userId);
-        const releaseDates = await this.repository.computeReleaseDateStats(userId);
-        const genresStats = await this.repository.computeTopGenresStats(mediaAvgRating, userId);
-
-        return { ratings, genresStats, totalTags, releaseDates };
     }
 
     async getSearchListFilters(userId: number, query: string, job: JobType) {

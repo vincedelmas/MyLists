@@ -6,7 +6,7 @@ import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {TvType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
 import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
-import {and, asc, count, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, ne, notInArray, or, sql} from "drizzle-orm";
+import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, notInArray, or, sql} from "drizzle-orm";
 
 
 type TvDefinition = AnimeDefinition | SeriesDefinition;
@@ -50,55 +50,6 @@ export class TvRepository extends BaseRepository<TvDefinition> {
             .from(mediaTable)
             .where(and(or(eq(mediaTable.lockStatus, false), isNull(mediaTable.lockStatus)), refreshCriteria))
             .then((res) => res.map((m) => m.apiId));
-    }
-
-    // --- Advanced Stats  --------------------------------------------------
-
-    async computeTotalSeasons(userId?: number) {
-        const { listTable } = this.repoDefinition.tables;
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
-
-        const totalSeasons = getDbClient()
-            .select({ totalSeasons: sql<number>`coalesce(sum(${listTable.currentSeason}), 0)` })
-            .from(listTable)
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_WATCH)))
-            .get();
-
-        return totalSeasons?.totalSeasons ?? 0;
-    }
-
-    async avgTvDuration(userId?: number) {
-        const { mediaTable, listTable } = this.repoDefinition.tables;
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
-
-        const avgDuration = getDbClient()
-            .select({
-                average: sql<number | null>`AVG(${mediaTable.duration} * ${listTable.total})`
-            })
-            .from(mediaTable)
-            .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, notInArray(listTable.status, [Status.RANDOM, Status.PLAN_TO_WATCH])))
-            .get();
-
-        return avgDuration?.average ?? null;
-    }
-
-    async tvDurationDistrib(userId?: number) {
-        const { mediaTable, listTable } = this.repoDefinition.tables;
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
-
-        const data = await getDbClient()
-            .select({
-                name: sql`(floor((${mediaTable.duration} * ${mediaTable.totalEpisodes}) / 600.0) * 600) / 60`.mapWith(String),
-                value: count(mediaTable.id).as("count"),
-            })
-            .from(mediaTable)
-            .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, notInArray(listTable.status, [Status.RANDOM, Status.PLAN_TO_WATCH])))
-            .groupBy(sql<number>`floor((${mediaTable.duration} * ${mediaTable.totalEpisodes}) / 600.0) * 600`)
-            .orderBy(asc(sql<number>`floor((${mediaTable.duration} * ${mediaTable.totalEpisodes}) / 600.0) * 600`));
-
-        return data;
     }
 
     // --- Implemented Methods ------------------------------------------------

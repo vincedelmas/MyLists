@@ -22,29 +22,6 @@ export class BooksService extends BaseService<BookDefinition, BooksRepository> {
         }
     }
 
-    async calculateAdvancedMediaStats(mediaAvgRating: number | null, userId?: number) {
-        // If userId not provided, calculations are platform-wide
-
-        const { ratings, genresStats, totalTags, releaseDates } = await super.calculateAdvancedMediaStats(mediaAvgRating, userId);
-
-        // Specific stats
-        const avgDuration = await this.repository.avgBooksDuration(userId);
-        const durationDistrib = await this.repository.booksDurationDistrib(userId);
-        const { publishersStats, authorsStats, langsStats } = await this.repository.specificTopMetrics(mediaAvgRating, userId);
-
-        return {
-            ratings,
-            totalTags,
-            genresStats,
-            releaseDates,
-            avgDuration,
-            durationDistrib,
-            publishersStats,
-            authorsStats,
-            langsStats,
-        };
-    }
-
     async getMediaEditableFields(mediaId: number) {
         const editableFields = this.servicePolicy.editableFields;
 

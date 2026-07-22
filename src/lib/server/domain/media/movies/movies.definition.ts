@@ -67,47 +67,10 @@ export const moviesDefinition = defineMediaDefinition({
                 "Re-Watched": [desc(moviesList.redo), asc(movies.name)],
             },
         },
-        stats: {
-            community: {
+        communityActivity: {
+            aggregates: {
                 totalRedo: sql<number>`COALESCE(SUM(${moviesList.redo}), 0)`,
                 totalSpecific: sql<number>`COALESCE(SUM(${moviesList.total}), 0)`,
-            },
-            allUsers: {
-                timeSpent: sql<number>`
-                    COALESCE(SUM(CASE
-                        WHEN ${moviesList.status} = ${Status.COMPLETED} THEN (1 + ${moviesList.redo}) * ${movies.duration}
-                        ELSE 0
-                    END), 0)
-                `,
-                totalSpecific: sql<number>`
-                    COALESCE(SUM(CASE
-                        WHEN ${moviesList.status} = ${Status.COMPLETED} THEN 1 + ${moviesList.redo}
-                        ELSE 0
-                    END), 0)
-                `,
-            },
-            affinity: {
-                langsStats: {
-                    metricTable: movies,
-                    metricIdCol: movies.id,
-                    mediaLinkCol: moviesList.mediaId,
-                    metricNameCol: movies.originalLanguage,
-                    filters: [ne(moviesList.status, Status.PLAN_TO_WATCH)],
-                },
-                directorsStats: {
-                    metricTable: movies,
-                    metricIdCol: movies.id,
-                    mediaLinkCol: moviesList.mediaId,
-                    metricNameCol: movies.directorName,
-                    filters: [ne(moviesList.status, Status.PLAN_TO_WATCH)],
-                },
-                actorsStats: {
-                    metricTable: moviesActors,
-                    metricNameCol: moviesActors.name,
-                    mediaLinkCol: moviesList.mediaId,
-                    metricIdCol: moviesActors.mediaId,
-                    filters: [ne(moviesList.status, Status.PLAN_TO_WATCH)],
-                },
             },
         },
         jobs: {
@@ -125,6 +88,45 @@ export const moviesDefinition = defineMediaDefinition({
                 sourceTable: movies,
                 mediaIdColumn: movies.id,
                 nameColumn: movies.compositorName,
+            },
+        },
+    },
+    statistics: {
+        allUsers: {
+            timeSpent: sql<number>`
+                COALESCE(SUM(CASE
+                    WHEN ${moviesList.status} = ${Status.COMPLETED} THEN (1 + ${moviesList.redo}) * ${movies.duration}
+                    ELSE 0
+                END), 0)
+            `,
+            totalSpecific: sql<number>`
+                COALESCE(SUM(CASE
+                    WHEN ${moviesList.status} = ${Status.COMPLETED} THEN 1 + ${moviesList.redo}
+                    ELSE 0
+                END), 0)
+            `,
+        },
+        affinity: {
+            langsStats: {
+                metricTable: movies,
+                metricIdCol: movies.id,
+                mediaLinkCol: moviesList.mediaId,
+                metricNameCol: movies.originalLanguage,
+                filters: [ne(moviesList.status, Status.PLAN_TO_WATCH)],
+            },
+            directorsStats: {
+                metricTable: movies,
+                metricIdCol: movies.id,
+                mediaLinkCol: moviesList.mediaId,
+                metricNameCol: movies.directorName,
+                filters: [ne(moviesList.status, Status.PLAN_TO_WATCH)],
+            },
+            actorsStats: {
+                metricTable: moviesActors,
+                metricNameCol: moviesActors.name,
+                mediaLinkCol: moviesList.mediaId,
+                metricIdCol: moviesActors.mediaId,
+                filters: [ne(moviesList.status, Status.PLAN_TO_WATCH)],
             },
         },
     },

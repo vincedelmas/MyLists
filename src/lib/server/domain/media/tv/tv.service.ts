@@ -26,30 +26,6 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
         }
     }
 
-    async calculateAdvancedMediaStats(mediaAvgRating: number | null, userId?: number) {
-        // If userId not provided, calculations are platform-wide
-        const { ratings, genresStats, totalTags, releaseDates } = await super.calculateAdvancedMediaStats(mediaAvgRating, userId);
-
-        // Specific stats
-        const avgDuration = await this.repository.avgTvDuration(userId);
-        const totalSeasons = await this.repository.computeTotalSeasons(userId);
-        const durationDistrib = await this.repository.tvDurationDistrib(userId);
-        const { networksStats, actorsStats, countriesStats } = await this.repository.specificTopMetrics(mediaAvgRating, userId);
-
-        return {
-            ratings,
-            totalTags,
-            genresStats,
-            releaseDates,
-            totalSeasons,
-            avgDuration,
-            durationDistrib,
-            networksStats,
-            actorsStats,
-            countriesStats,
-        };
-    }
-
     async getMediaEditableFields(mediaId: number) {
         const { editableFields } = this.servicePolicy;
 

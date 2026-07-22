@@ -85,40 +85,10 @@ export const seriesDefinition = defineMediaDefinition({
                 "Re-watched": [desc(seriesList.redo), asc(series.name)],
             },
         },
-        stats: {
-            community: {
+        communityActivity: {
+            aggregates: {
                 totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${seriesList.redo2}))), 0)`,
                 totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
-            },
-            allUsers: {
-                timeSpent: sql<number>`COALESCE(SUM(${seriesList.total} * ${series.duration}), 0)`,
-                totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
-                totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${seriesList.redo2}))), 0)`,
-            },
-            affinity: {
-                networksStats: {
-                    minRatingCount: 3,
-                    metricTable: seriesNetwork,
-                    mediaLinkCol: seriesList.mediaId,
-                    metricNameCol: seriesNetwork.name,
-                    metricIdCol: seriesNetwork.mediaId,
-                    filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
-                },
-                countriesStats: {
-                    metricTable: series,
-                    metricIdCol: series.id,
-                    mediaLinkCol: seriesList.mediaId,
-                    metricNameCol: series.originCountry,
-                    filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
-                },
-                actorsStats: {
-                    minRatingCount: 3,
-                    metricTable: seriesActors,
-                    metricNameCol: seriesActors.name,
-                    metricIdCol: seriesActors.mediaId,
-                    mediaLinkCol: seriesList.mediaId,
-                    filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
-                },
             },
         },
         jobs: {
@@ -145,6 +115,38 @@ export const seriesDefinition = defineMediaDefinition({
                 sourceTable: seriesNetwork,
                 nameColumn: seriesNetwork.name,
                 mediaIdColumn: seriesNetwork.mediaId,
+            },
+        },
+    },
+    statistics: {
+        allUsers: {
+            timeSpent: sql<number>`COALESCE(SUM(${seriesList.total} * ${series.duration}), 0)`,
+            totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
+            totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${seriesList.redo2}))), 0)`,
+        },
+        affinity: {
+            networksStats: {
+                minRatingCount: 3,
+                metricTable: seriesNetwork,
+                mediaLinkCol: seriesList.mediaId,
+                metricNameCol: seriesNetwork.name,
+                metricIdCol: seriesNetwork.mediaId,
+                filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+            },
+            countriesStats: {
+                metricTable: series,
+                metricIdCol: series.id,
+                mediaLinkCol: seriesList.mediaId,
+                metricNameCol: series.originCountry,
+                filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
+            },
+            actorsStats: {
+                minRatingCount: 3,
+                metricTable: seriesActors,
+                metricNameCol: seriesActors.name,
+                metricIdCol: seriesActors.mediaId,
+                mediaLinkCol: seriesList.mediaId,
+                filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
             },
         },
     },

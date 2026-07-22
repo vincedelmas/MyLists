@@ -3,9 +3,9 @@ import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
 import {movies, moviesActors, moviesGenre, moviesList} from "@/lib/server/database/schema";
 import {Movie, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
-import {and, asc, eq, getTableColumns, gte, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
 import {type MovieDefinition, moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
 
 
@@ -55,54 +55,6 @@ export class MoviesRepository extends BaseRepository<MovieDefinition> {
             ));
 
         return results.map((r) => r.apiId);
-    }
-
-    // --- Advanced Stats  --------------------------------------------------
-
-    async avgMovieDuration(userId?: number) {
-        const forUser = userId ? eq(moviesList.userId, userId) : undefined;
-
-        const avgDuration = getDbClient()
-            .select({
-                average: sql<number | null>`avg(${movies.duration})`,
-            })
-            .from(movies)
-            .innerJoin(moviesList, eq(moviesList.mediaId, movies.id))
-            .where(and(forUser, ne(moviesList.status, Status.PLAN_TO_WATCH), isNotNull(movies.duration)))
-            .get();
-
-        return avgDuration?.average ?? null;
-    }
-
-    async movieDurationDistrib(userId?: number) {
-        const forUser = userId ? eq(moviesList.userId, userId) : undefined;
-
-        return getDbClient()
-            .select({
-                name: sql`floor(${movies.duration} / 30.0) * 30`.mapWith(String),
-                value: sql`cast(count(${movies.id}) as int)`.mapWith(Number).as("count"),
-            })
-            .from(movies)
-            .innerJoin(moviesList, eq(moviesList.mediaId, movies.id))
-            .where(and(forUser, ne(moviesList.status, Status.PLAN_TO_WATCH), isNotNull(movies.duration)))
-            .groupBy(sql<number>`floor(${movies.duration} / 30.0) * 30`)
-            .orderBy(asc(sql<number>`floor(${movies.duration} / 30.0) * 30`));
-    }
-
-    async budgetRevenueStats(userId?: number) {
-        const forUser = userId ? eq(moviesList.userId, userId) : undefined;
-
-        const data = getDbClient()
-            .select({
-                totalBudget: sql<number>`coalesce(sum(${movies.budget}), 0)`.as("total_budget"),
-                totalRevenue: sql<number>`coalesce(sum(${movies.revenue}), 0)`.as("total_revenue"),
-            })
-            .from(movies)
-            .innerJoin(moviesList, eq(moviesList.mediaId, movies.id))
-            .where(and(forUser, ne(moviesList.status, Status.PLAN_TO_WATCH)))
-            .get();
-
-        return { totalBudget: data?.totalBudget ?? 0, totalRevenue: data?.totalRevenue ?? 0 };
     }
 
     // --- Implemented Methods ------------------------------------------------

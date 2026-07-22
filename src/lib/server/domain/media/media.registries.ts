@@ -1,9 +1,19 @@
 import {MediaType} from "@/lib/utils/enums";
-import type {TvService} from "@/lib/server/domain/media/tv";
-import type {GamesService} from "@/lib/server/domain/media/games";
-import type {MangaService} from "@/lib/server/domain/media/manga";
-import type {BooksService} from "@/lib/server/domain/media/books";
-import type {MoviesService} from "@/lib/server/domain/media/movies";
+import type {TvService, TvStatistics} from "@/lib/server/domain/media/tv";
+import type {GamesService, GamesStatistics} from "@/lib/server/domain/media/games";
+import type {MangaService, MangaStatistics} from "@/lib/server/domain/media/manga";
+import type {BooksService, BooksStatistics} from "@/lib/server/domain/media/books";
+import type {MoviesService, MoviesStatistics} from "@/lib/server/domain/media/movies";
+
+
+export type MediaStatsRegistry = MediaRegistry<{
+    [MediaType.SERIES]: TvStatistics;
+    [MediaType.ANIME]: TvStatistics;
+    [MediaType.MOVIES]: MoviesStatistics;
+    [MediaType.GAMES]: GamesStatistics;
+    [MediaType.BOOKS]: BooksStatistics;
+    [MediaType.MANGA]: MangaStatistics;
+}>;
 
 
 export type MediaServiceRegistry = MediaRegistry<{

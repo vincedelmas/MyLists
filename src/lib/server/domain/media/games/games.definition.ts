@@ -62,52 +62,9 @@ export const gamesDefinition = defineMediaDefinition({
                 "Playtime -": [asc(gamesList.playtime), asc(games.name)],
             },
         },
-        stats: {
-            community: {
+        communityActivity: {
+            aggregates: {
                 totalPlaytime: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0)`,
-            },
-            allUsers: {
-                timeSpent: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0)`,
-                totalSpecific: sql<number>`0`,
-            },
-            affinity: {
-                developersStats: {
-                    minRatingCount: 3,
-                    metricIdCol: games.id,
-                    metricTable: gamesCompanies,
-                    metricNameCol: gamesCompanies.name,
-                    mediaLinkCol: gamesCompanies.mediaId,
-                    filters: [ne(gamesList.status, Status.PLAN_TO_PLAY), eq(gamesCompanies.developer, true)],
-                },
-                publishersStats: {
-                    minRatingCount: 3,
-                    metricIdCol: games.id,
-                    metricTable: gamesCompanies,
-                    metricNameCol: gamesCompanies.name,
-                    mediaLinkCol: gamesCompanies.mediaId,
-                    filters: [ne(gamesList.status, Status.PLAN_TO_PLAY), eq(gamesCompanies.publisher, true)],
-                },
-                platformsStats: {
-                    metricIdCol: games.id,
-                    metricTable: gamesList,
-                    mediaLinkCol: gamesList.mediaId,
-                    metricNameCol: gamesList.platform,
-                    filters: [ne(gamesList.status, Status.PLAN_TO_PLAY)],
-                },
-                enginesStats: {
-                    metricTable: games,
-                    metricIdCol: games.id,
-                    metricNameCol: games.gameEngine,
-                    mediaLinkCol: gamesList.mediaId,
-                    filters: [ne(gamesList.status, Status.PLAN_TO_PLAY)],
-                },
-                perspectivesStats: {
-                    metricTable: games,
-                    metricIdCol: games.id,
-                    mediaLinkCol: gamesList.mediaId,
-                    metricNameCol: games.playerPerspective,
-                    filters: [ne(gamesList.status, Status.PLAN_TO_PLAY)],
-                },
             },
         },
         jobs: {
@@ -122,6 +79,51 @@ export const gamesDefinition = defineMediaDefinition({
                 nameColumn: gamesCompanies.name,
                 mediaIdColumn: gamesCompanies.mediaId,
                 getFilter: (name) => and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.publisher, true)),
+            },
+        },
+    },
+    statistics: {
+        allUsers: {
+            timeSpent: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0)`,
+            totalSpecific: sql<number>`0`,
+        },
+        affinity: {
+            developersStats: {
+                minRatingCount: 3,
+                metricIdCol: games.id,
+                metricTable: gamesCompanies,
+                metricNameCol: gamesCompanies.name,
+                mediaLinkCol: gamesCompanies.mediaId,
+                filters: [ne(gamesList.status, Status.PLAN_TO_PLAY), eq(gamesCompanies.developer, true)],
+            },
+            publishersStats: {
+                minRatingCount: 3,
+                metricIdCol: games.id,
+                metricTable: gamesCompanies,
+                metricNameCol: gamesCompanies.name,
+                mediaLinkCol: gamesCompanies.mediaId,
+                filters: [ne(gamesList.status, Status.PLAN_TO_PLAY), eq(gamesCompanies.publisher, true)],
+            },
+            platformsStats: {
+                metricIdCol: games.id,
+                metricTable: gamesList,
+                mediaLinkCol: gamesList.mediaId,
+                metricNameCol: gamesList.platform,
+                filters: [ne(gamesList.status, Status.PLAN_TO_PLAY)],
+            },
+            enginesStats: {
+                metricTable: games,
+                metricIdCol: games.id,
+                metricNameCol: games.gameEngine,
+                mediaLinkCol: gamesList.mediaId,
+                filters: [ne(gamesList.status, Status.PLAN_TO_PLAY)],
+            },
+            perspectivesStats: {
+                metricTable: games,
+                metricIdCol: games.id,
+                mediaLinkCol: gamesList.mediaId,
+                metricNameCol: games.playerPerspective,
+                filters: [ne(gamesList.status, Status.PLAN_TO_PLAY)],
             },
         },
     },

@@ -1,24 +1,24 @@
 import {Status} from "@/lib/utils/enums";
+import {EpsPerSeasonType} from "@/lib/types/media-list.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
-import {EpsPerSeasonType} from "@/lib/types/media-list.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {TvType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
-import {AnimeSchemaConfig} from "@/lib/server/domain/media/tv/anime/anime.config";
-import {SeriesSchemaConfig} from "@/lib/server/domain/media/tv/series/series.config";
+import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
+import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 import {and, asc, count, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, ne, notInArray, or, sql} from "drizzle-orm";
 
 
-export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchemaConfig> {
-    config: SeriesSchemaConfig | AnimeSchemaConfig;
+type TvDefinition = AnimeDefinition | SeriesDefinition;
 
-    constructor(config: SeriesSchemaConfig | AnimeSchemaConfig) {
-        super(config);
-        this.config = config;
+
+export class TvRepository extends BaseRepository<TvDefinition> {
+    constructor(definition: TvDefinition) {
+        super(definition);
     }
 
     async getMediaEpsPerSeason(mediaId: number) {
-        const { epsPerSeasonTable } = this.config;
+        const { epsPerSeasonTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select({
@@ -31,7 +31,8 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
     }
 
     async getMediaIdsToBeRefreshed(apiIds: number[]) {
-        const { mediaTable } = this.config;
+        const { mediaTable } = this.repoDefinition.tables;
+        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
 
         const airedCondition = and(
             isNotNull(mediaTable.nextEpisodeToAir),
@@ -39,7 +40,7 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
         );
 
         const staleListCondition = apiIds.length > 0
-            ? and(inArray(mediaTable.apiId, apiIds), lte(mediaTable.lastApiUpdate, sql`datetime('now', '-1 day')`))
+            ? and(inArray(mediaTable.apiId, apiIds), lte(mediaTable.lastApiUpdate, sql`datetime('now', ${staleAfter})`))
             : undefined;
 
         const refreshCriteria = staleListCondition ? or(staleListCondition, airedCondition) : airedCondition;
@@ -54,7 +55,7 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
     // --- Advanced Stats  --------------------------------------------------
 
     async computeTotalSeasons(userId?: number) {
-        const { listTable } = this.config;
+        const { listTable } = this.repoDefinition.tables;
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
 
         const totalSeasons = getDbClient()
@@ -67,7 +68,7 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
     }
 
     async avgTvDuration(userId?: number) {
-        const { mediaTable, listTable } = this.config;
+        const { mediaTable, listTable } = this.repoDefinition.tables;
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
 
         const avgDuration = getDbClient()
@@ -83,7 +84,7 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
     }
 
     async tvDurationDistrib(userId?: number) {
-        const { mediaTable, listTable } = this.config;
+        const { mediaTable, listTable } = this.repoDefinition.tables;
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
 
         const data = await getDbClient()
@@ -100,56 +101,10 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
         return data;
     }
 
-    async specificTopMetrics(mediaAvgRating: number | null, userId?: number) {
-        const { mediaTable, listTable, networkTable, actorTable } = this.config;
-
-        const filters = [notInArray(listTable.status, [Status.RANDOM, Status.PLAN_TO_WATCH])]
-
-        const networkConfig = {
-            filters,
-            minRatingCount: 3,
-            metricTable: networkTable,
-            mediaLinkCol: listTable.mediaId,
-            metricNameCol: networkTable.name,
-            metricIdCol: networkTable.mediaId,
-        };
-        const countriesConfig = {
-            filters,
-            metricTable: mediaTable,
-            metricIdCol: mediaTable.id,
-            mediaLinkCol: listTable.mediaId,
-            metricNameCol: mediaTable.originCountry,
-        };
-        const actorsConfig = {
-            filters,
-            minRatingCount: 3,
-            metricTable: actorTable,
-            metricNameCol: actorTable.name,
-            metricIdCol: actorTable.mediaId,
-            mediaLinkCol: listTable.mediaId,
-        };
-
-        const actorsStats = await this.computeTopAffinityStats(actorsConfig, mediaAvgRating, userId);
-        const networksStats = await this.computeTopAffinityStats(networkConfig, mediaAvgRating, userId);
-        const countriesStats = await this.computeTopAffinityStats(countriesConfig, mediaAvgRating, userId);
-
-        return { countriesStats, actorsStats, networksStats };
-    }
-
     // --- Implemented Methods ------------------------------------------------
 
-    async computeAllUsersStats() {
-        const { mediaTable, listTable } = this.config;
-
-        const timeSpentStat = sql<number>`COALESCE(SUM(${listTable.total} * ${mediaTable.duration}), 0)`;
-        const totalSpecificStat = sql<number>`COALESCE(SUM(${listTable.total}), 0)`;
-        const totalRedoStat = sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${listTable.redo2}))), 0)`;
-
-        return this._computeAllUsersStats(timeSpentStat, totalSpecificStat, totalRedoStat)
-    }
-
     async getUpcomingMedia(userId?: number, maxAWeek?: boolean) {
-        const { mediaTable, listTable, epsPerSeasonTable } = this.config;
+        const { mediaTable, listTable, epsPerSeasonTable } = this.repoDefinition.tables;
 
         const epsSubq = getDbClient()
             .select({
@@ -185,7 +140,7 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
     }
 
     async addMediaToUserList(userId: number, media: TvType, newStatus: Status) {
-        const { listTable } = this.config;
+        const { listTable } = this.repoDefinition.tables;
         const epsPerSeason = await this.getMediaEpsPerSeason(media.id);
 
         let newTotal = 1;
@@ -219,7 +174,7 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
     }
 
     async findAllAssociatedDetails(mediaId: number) {
-        const { apiProvider, mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.config;
+        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.repoDefinition.tables;
 
         const details = getDbClient()
             .select({
@@ -242,8 +197,8 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
         const result: TvType & AddedMediaDetails = {
             ...details,
             providerData: {
-                name: apiProvider.name,
-                url: `${apiProvider.mediaUrl}${details.apiId}`,
+                name: this.attribution.name,
+                url: `${this.attribution.mediaUrl}${details.apiId}`,
             },
             genres: details.genres || [],
             actors: details.actors || [],
@@ -255,7 +210,8 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
     }
 
     async storeMediaWithDetails({ mediaData, actorsData, seasonsData, networkData, genresData }: UpsertTvWithDetails) {
-        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.config;
+        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.repoDefinition.tables;
+
         const tx = getDbClient();
 
         const [media] = await tx
@@ -295,7 +251,7 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
     }
 
     async updateMediaWithDetails({ mediaData, actorsData, seasonsData, networkData, genresData }: UpsertTvWithDetails) {
-        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.config;
+        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.repoDefinition.tables;
 
         const [media] = await getDbClient()
             .update(mediaTable)
@@ -308,16 +264,20 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
 
         const mediaId = media.id;
 
-        if (actorsData && actorsData.length > 0) {
+        if (actorsData !== undefined) {
             await getDbClient().delete(actorTable).where(eq(actorTable.mediaId, mediaId));
-            const actorsToAdd = actorsData.map((a) => ({ mediaId, ...a }));
-            await getDbClient().insert(actorTable).values(actorsToAdd);
+            if (actorsData.length > 0) {
+                const actorsToAdd = actorsData.map((a) => ({ mediaId, ...a }));
+                await getDbClient().insert(actorTable).values(actorsToAdd);
+            }
         }
 
-        if (genresData && genresData.length > 0) {
+        if (Array.isArray(genresData)) {
             await getDbClient().delete(genreTable).where(eq(genreTable.mediaId, mediaId));
-            const genresToAdd = genresData.map((g) => ({ mediaId, ...g }));
-            await getDbClient().insert(genreTable).values(genresToAdd);
+            if (genresData.length > 0) {
+                const genresToAdd = genresData.map((g) => ({ mediaId, ...g }));
+                await getDbClient().insert(genreTable).values(genresToAdd);
+            }
         }
 
         if (seasonsData && seasonsData.length > 0) {
@@ -328,32 +288,21 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
             await getDbClient().insert(epsPerSeasonTable).values(epsPerSeasonToAdd);
         }
 
-        if (networkData && networkData.length > 0) {
+        if (networkData !== undefined) {
             await getDbClient().delete(networkTable).where(eq(networkTable.mediaId, mediaId));
-            const networkToAdd = networkData.map((n) => ({ mediaId, ...n }));
-            await getDbClient().insert(networkTable).values(networkToAdd);
+            if (networkData.length > 0) {
+                const networkToAdd = networkData.map((n) => ({ mediaId, ...n }));
+                await getDbClient().insert(networkTable).values(networkToAdd);
+            }
         }
 
         return true;
     }
 
-    async getListFilters(userId: number) {
-        const { mediaTable, listTable } = this.config;
-        const { genres, tags } = await super.getCommonListFilters(userId);
-
-        const langs = await getDbClient()
-            .selectDistinct({ name: sql<string>`${mediaTable.originCountry}` })
-            .from(mediaTable)
-            .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(eq(listTable.userId, userId), isNotNull(mediaTable.originCountry)));
-
-        return { langs, genres, tags };
-    }
-
     // --- Logic When Updating Seasons data -----------------------------------
 
     private async _updateUsersWithMedia(mediaId: number, seasonsData: EpsPerSeasonType[]) {
-        const { listTable } = this.config;
+        const { listTable } = this.repoDefinition.tables;
         const oldSeasonsData = await this.getMediaEpsPerSeason(mediaId);
 
         // If nothing changed, do nothing
@@ -418,7 +367,7 @@ export class TvRepository extends BaseRepository<AnimeSchemaConfig | SeriesSchem
     }
 
     private async _getAllUsersWithMediaInTheirList(mediaId: number) {
-        const { listTable } = this.config;
+        const { listTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select()

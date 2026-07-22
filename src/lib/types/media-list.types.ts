@@ -1,15 +1,11 @@
-import {Column, SQL} from "drizzle-orm";
 import {MediaListArgs} from "@/lib/schemas";
-import {MediaTable} from "@/lib/types/media.config.types";
 import {IdNamePair, NameObj} from "@/lib/types/media-common.types";
-import {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
 import {ListFiltersOptionsType} from "@/lib/types/query.options.types";
 import {GamesPlatformsEnum, JobType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 
 
 export type EpsPerSeasonType = { season: number, episodes: number };
 
-export type FilterDefinitions = Partial<Record<keyof MediaListArgs, FilterDefinition>>;
 
 export type ExpandedListFilters = {
     genres: NameObj[];
@@ -17,6 +13,7 @@ export type ExpandedListFilters = {
     langs?: NameObj[];
     platforms?: { name: GamesPlatformsEnum }[];
 };
+
 
 export type MediaListData<TList> = {
     items: (TList & {
@@ -39,6 +36,7 @@ export type MediaListData<TList> = {
     };
 }
 
+
 export type SheetFilterObject = {
     job?: JobType;
     title: string;
@@ -48,17 +46,6 @@ export type SheetFilterObject = {
     getItems?: (data: ListFiltersOptionsType) => { name: string }[] | undefined;
 };
 
-export type ListFilterDefinition = {
-    mediaTable: MediaTable;
-    filterColumn: SQLiteColumn;
-    argName: keyof MediaListArgs;
-    entityTable?: SQLiteTable & { mediaId: Column<any, any, any> };
-}
-
-export type FilterDefinition = {
-    isActive: (args: MediaListArgs) => boolean;
-    getCondition: (args: MediaListArgs) => SQL | undefined;
-}
 
 export type UserTag = {
     totalCount: number;
@@ -70,6 +57,7 @@ export type UserTag = {
         mediaCover: string;
     }[];
 }
+
 
 export type ExportMediaList = {
     mediaName: string;

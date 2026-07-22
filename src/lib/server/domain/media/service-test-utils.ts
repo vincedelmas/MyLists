@@ -1,4 +1,4 @@
-type RepoStubConfig = {
+type RepoStubDefinition = {
     listTable: unknown;
 };
 
@@ -8,9 +8,9 @@ const unavailableRepoMethod = () => {
 };
 
 
-export function createRepoStub<TConfig extends RepoStubConfig>(config: TConfig, overrides: Record<string, unknown> = {}) {
+export function createRepoStub<TDefinition extends RepoStubDefinition>(definition: TDefinition, overrides: Record<string, unknown> = {}) {
     return {
-        config,
+        definition,
         countAchievementCte: unavailableRepoMethod,
         getActorAchievementCte: unavailableRepoMethod,
         getAuthorsAchievementCte: unavailableRepoMethod,

@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TmdbTvDetails} from "@/lib/types/provider.types";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
+import {seriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 
 
 const imageMocks = vi.hoisted(() => ({
@@ -52,6 +53,16 @@ const createTvDetails = (): TmdbTvDetails => ({
 } as unknown as TmdbTvDetails);
 
 
+const seriesTransformOptions = {
+    coverDirectory: seriesDefinition.identity.coverDirectory,
+    defaultDuration: seriesDefinition.ingestion.defaultDuration,
+    maxGenres: seriesDefinition.ingestion.limits.genres,
+    maxActors: seriesDefinition.ingestion.limits.actors,
+    maxNetworks: seriesDefinition.ingestion.limits.networks,
+    maxWriters: seriesDefinition.ingestion.limits.writers,
+};
+
+
 describe("tmdbTransformer", () => {
     beforeEach(() => {
         imageMocks.saveImageFromUrl.mockReset();
@@ -59,7 +70,7 @@ describe("tmdbTransformer", () => {
     });
 
     it("deduplicates TV relation names before applying their limits", async () => {
-        const result = await tmdbTransformer.transformSeriesDetailsResults(createTvDetails());
+        const result = await tmdbTransformer.transformTvDetailsResults(createTvDetails(), seriesTransformOptions);
 
         expect(result.networkData).toEqual([
             { name: "HBO Max" },
@@ -73,5 +84,38 @@ describe("tmdbTransformer", () => {
             { name: "Action" },
             { name: "Comedy" },
         ]);
+    });
+
+    it("uses media-specific relation limits and duration fallback", async () => {
+        const details = createTvDetails();
+        details.episode_run_time = [];
+
+        const result = await tmdbTransformer.transformTvDetailsResults(details, {
+            ...seriesTransformOptions,
+            defaultDuration: 55,
+            maxGenres: 1,
+            maxActors: 1,
+            maxNetworks: 1,
+        });
+
+        expect(result.mediaData.duration).toBe(55);
+        expect(result.genresData).toEqual([{ name: "Action" }]);
+        expect(result.actorsData).toEqual([{ name: "John Cena" }]);
+        expect(result.networkData).toEqual([{ name: "HBO Max" }]);
+    });
+
+    it("uses the media-specific fallback writer limit", async () => {
+        const details = createTvDetails();
+        details.credits.crew = [
+            { name: "Second Writer", department: "Writing", known_for_department: "Writing", popularity: 10 },
+            { name: "Top Writer", department: "Writing", known_for_department: "Writing", popularity: 20 },
+        ] as typeof details.credits.crew;
+
+        const result = await tmdbTransformer.transformTvDetailsResults(details, {
+            ...seriesTransformOptions,
+            maxWriters: 1,
+        });
+
+        expect(result.mediaData.createdBy).toBe("Top Writer");
     });
 });

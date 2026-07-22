@@ -1,21 +1,23 @@
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AchievementDifficulty, MediaType, Status} from "@/lib/utils/enums";
-import {AnimeSchemaConfig} from "@/lib/server/domain/media/tv/anime/anime.config";
 import {count, countDistinct, eq, gte, isNotNull, lte, max, ne} from "drizzle-orm";
-import {SeriesSchemaConfig} from "@/lib/server/domain/media/tv/series/series.config";
-import {createAchievementQueries} from "@/lib/server/domain/media/base/base.achievements-queries";
+import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
+import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
+import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-type TvConfig = AnimeSchemaConfig | SeriesSchemaConfig;
+type TvDefinition = AnimeDefinition | SeriesDefinition;
 
 
-export const createTvAchievementCatalog = (config: TvConfig) => {
-    const { listTable } = config;
-    const queries = createAchievementQueries(config);
+export const createTvAchievementCatalog = (definition: TvDefinition) => {
+    const { identity, repository } = definition;
+    const { listTable } = repository.tables;
+    const queries = createAchievementQueries(repository);
 
     const duration: AchievementCalculation = (achievement) => {
-        const { mediaTable, listTable } = config;
+        const { mediaTable, listTable } = repository.tables;
+
         const value = Number(achievement.value);
         const isLong = achievement.codeName.includes("long");
         const condition = isLong ? gte(mediaTable.totalEpisodes, value) : lte(mediaTable.totalEpisodes, value);
@@ -32,7 +34,8 @@ export const createTvAchievementCatalog = (config: TvConfig) => {
     };
 
     const network: AchievementCalculation = () => {
-        const { listTable, networkTable } = config;
+        const { listTable, networkTable } = repository.tables;
+
         const query = getDbClient()
             .select({
                 userId: listTable.userId,
@@ -45,7 +48,8 @@ export const createTvAchievementCatalog = (config: TvConfig) => {
     };
 
     const actor: AchievementCalculation = () => {
-        const { listTable, actorTable } = config;
+        const { listTable, actorTable } = repository.tables;
+
         const actorCounts = getDbClient()
             .select({
                 userId: listTable.userId,
@@ -67,9 +71,9 @@ export const createTvAchievementCatalog = (config: TvConfig) => {
             .as("calculation");
     };
 
-    if (config.mediaType === MediaType.ANIME) {
+    if (identity.mediaType === MediaType.ANIME) {
         return defineAchievementCatalog({
-            mediaType: config.mediaType,
+            mediaType: identity.mediaType,
             entries: {
                 completed_anime: {
                     name: 'Binge No Jutsu!',
@@ -180,7 +184,7 @@ export const createTvAchievementCatalog = (config: TvConfig) => {
     }
     else {
         return defineAchievementCatalog({
-            mediaType: config.mediaType,
+            mediaType: identity.mediaType,
             entries: {
                 completed_series: {
                     name: "Couch Potato",

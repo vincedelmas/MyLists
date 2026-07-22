@@ -1,4 +1,4 @@
 export * from "./tv.service";
 export * from "./tv.repository";
-export * from "./anime/anime.config";
-export * from "./series/series.config";
+export * from "./anime/anime.definition";
+export * from "./series/series.definition";

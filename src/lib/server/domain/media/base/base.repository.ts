@@ -3,18 +3,19 @@ import {logger} from "@/lib/server/core/logger";
 import {MediaInfo} from "@/lib/types/activity.types";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {TopAffinityConfig} from "@/lib/types/stats.types";
+import {TopAffinityDefinition} from "@/lib/types/stats.types";
 import {UpComingMedia} from "@/lib/types/notifications.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
-import {AnyMediaSchemaConfig} from "@/lib/types/media.config.types";
 import {MediaListArgs, SearchType, SimpleSearch} from "@/lib/schemas";
 import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
+import {ExpandedListFilters, ExportMediaList, MediaListData} from "@/lib/types/media-list.types";
 import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
-import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaStats, UserMediaWithTags} from "@/lib/types/user-media.types";
+import {createArrayFilter, type FilterDefinitions} from "@/lib/server/domain/media/base/media-list.query";
+import {AnyMediaDefinition, AnyMediaRepositoryDefinition} from "@/lib/server/domain/media/base/media-definition";
+import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user, userMediaSettings} from "@/lib/server/database/schema";
-import {ExpandedListFilters, ExportMediaList, FilterDefinition, FilterDefinitions, ListFilterDefinition, MediaListData} from "@/lib/types/media-list.types";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
 
 
@@ -22,17 +23,28 @@ const SIMILAR_MAX_GENRES = 10;
 const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 
 
-export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
-    readonly config: TConfig;
+export abstract class BaseRepository<
+    TMediaDef extends AnyMediaDefinition,
+    TRepoDef extends AnyMediaRepositoryDefinition = TMediaDef["repository"],
+> {
+    readonly repoDefinition: TRepoDef;
+    readonly identity: TMediaDef["identity"];
+    protected readonly ingestion: TMediaDef["ingestion"];
+    protected readonly attribution: TMediaDef["attribution"];
     protected readonly baseFilterDefs: FilterDefinitions;
 
-    protected constructor(config: TConfig) {
-        this.config = config;
+    protected constructor(definition: TMediaDef) {
+        this.identity = definition.identity;
+        this.ingestion = definition.ingestion;
+        this.attribution = definition.attribution;
+        this.repoDefinition = definition.repository as TRepoDef;
+
+        // Must be instantiated after definition
         this.baseFilterDefs = this.baseListFiltersDefs();
     }
 
     private baseListFiltersDefs = (): FilterDefinitions => {
-        const { listTable, mediaTable, tagTable, genreTable } = this.config;
+        const { listTable, mediaTable, tagTable, genreTable } = this.repoDefinition.tables;
 
         return {
             search: {
@@ -57,18 +69,19 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
                     return notInArray(listTable.mediaId, subQuery);
                 },
             },
-            status: createArrayFilterDef({
+            status: createArrayFilter({
                 argName: "status",
                 mediaTable: mediaTable,
                 filterColumn: listTable.status,
             }),
-            tags: createArrayFilterDef({
+            tags: createArrayFilter({
                 argName: "tags",
                 mediaTable: mediaTable,
                 entityTable: tagTable,
                 filterColumn: tagTable.name,
+                entityScope: (args) => eq(tagTable.userId, args.userId!),
             }),
-            genres: createArrayFilterDef({
+            genres: createArrayFilter({
                 argName: "genres",
                 mediaTable: mediaTable,
                 entityTable: genreTable,
@@ -77,11 +90,12 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
         };
     }
 
-    async bulkInsertUserMedia(rows: TConfig["listTable"]["$inferInsert"][]) {
+    async bulkInsertUserMedia(rows: TRepoDef["tables"]["listTable"]["$inferInsert"][]) {
+        const { listTable } = this.repoDefinition.tables;
+
         if (rows.length === 0) return [];
 
-        const { listTable } = this.config;
-        const insertedRows: TConfig["listTable"]["$inferSelect"][] = [];
+        const insertedRows: TRepoDef["tables"]["listTable"]["$inferSelect"][] = [];
 
         for (let offset = 0; offset < rows.length; offset += USER_MEDIA_INSERT_BATCH_SIZE) {
             const batch = rows.slice(offset, offset + USER_MEDIA_INSERT_BATCH_SIZE);
@@ -98,7 +112,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async getCoverFilenames() {
-        const { mediaTable } = this.config;
+        const { mediaTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select({ imageCover: mediaTable.imageCover })
@@ -106,7 +120,8 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async getPopularMediaRefs() {
-        const { mediaTable, popularity } = this.config;
+        const { popularity, tables: { mediaTable } } = this.repoDefinition;
+
         if (!popularity) return [];
 
         return getDbClient()
@@ -129,7 +144,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async getCustomCoverFilenames() {
-        const { listTable } = this.config;
+        const { listTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select({ customCover: listTable.customCover })
@@ -138,7 +153,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async getOrphanedMediaIds(mediaType: MediaType) {
-        const { mediaTable, listTable } = this.config;
+        const { mediaTable, listTable } = this.repoDefinition.tables;
 
         const tx = getDbClient();
         const mediaToDelete = await tx
@@ -159,7 +174,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async getTagNames(userId: number) {
-        const { tagTable } = this.config;
+        const { tagTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .selectDistinct({ name: sql<string>`${tagTable.name}` })
@@ -169,10 +184,10 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async removeMediaByIds(mediaIds: number[]) {
-        const { mediaTable, tablesForDeletion } = this.config;
+        const { mediaTable, deleteDependents } = this.repoDefinition.tables;
 
         // Delete on other tables
-        for (const table of tablesForDeletion) {
+        for (const table of deleteDependents) {
             await getDbClient()
                 .delete(table)
                 .where(inArray(table.mediaId, mediaIds));
@@ -185,7 +200,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async searchMediadleSuggestion(query: string, limit = 20) {
-        const { mediaTable } = this.config;
+        const { mediaTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select({
@@ -199,7 +214,8 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async searchByName(query: string, limit = 5): Promise<ProviderSearchResult[]> {
-        const { mediaTable, mediaType } = this.config;
+        const { mediaType } = this.identity;
+        const { mediaTable } = this.repoDefinition.tables;
 
         const results = await getDbClient()
             .select({
@@ -217,7 +233,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async removeMediaFromUserList(userId: number, mediaId: number) {
-        const { listTable, tagTable } = this.config;
+        const { listTable, tagTable } = this.repoDefinition.tables;
 
         await getDbClient()
             .delete(listTable)
@@ -229,7 +245,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async findSimilarMedia(mediaId: number) {
-        const { mediaTable, genreTable } = this.config;
+        const { mediaTable, genreTable } = this.repoDefinition.tables;
 
         const targetGenresSubQuery = getDbClient()
             .select({ name: genreTable.name })
@@ -260,10 +276,11 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async getMediaDetailsByIds(mediaIds: number[], userId?: number): Promise<MediaInfo[]> {
-        const { mediaTable, listTable } = this.config;
+        const { mediaTable, listTable } = this.repoDefinition.tables;
+
         const uniqueMediaIds = [...new Set(mediaIds)];
 
-        return getDbClient()
+        const mediaInfo = await getDbClient()
             .select({
                 ...getTableColumns(mediaTable),
                 customCover: listTable.customCover,
@@ -274,11 +291,15 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
                 eq(listTable.mediaId, mediaTable.id),
                 userId === undefined ? sql`FALSE` : eq(listTable.userId, userId),
             ))
-            .where(inArray(mediaTable.id, uniqueMediaIds)) as unknown as MediaInfo[];
+            .where(inArray(mediaTable.id, uniqueMediaIds));
+
+        return mediaInfo as unknown as MediaInfo[];
     }
 
     async getMediaDurationsByIds(mediaIds: number[]) {
-        const { mediaTable, mediaType } = this.config;
+        const { mediaType } = this.identity;
+        const { mediaTable } = this.repoDefinition.tables;
+
         const uniqueMediaIds = [...new Set(mediaIds)];
         if (uniqueMediaIds.length === 0) return [];
 
@@ -296,8 +317,8 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
             .where(inArray(mediaTable.id, uniqueMediaIds));
     }
 
-    async getCommonListFilters(userId: number) {
-        const { genreTable, tagTable, listTable } = this.config;
+    async getListFilters(userId: number): Promise<ExpandedListFilters> {
+        const { tables: { genreTable, tagTable, listTable }, listQuery: { filterOptions } } = this.repoDefinition;
 
         const genresPromise = getDbClient()
             .selectDistinct({ name: sql<string>`${genreTable.name}` })
@@ -314,11 +335,15 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
 
         const [genres, tags] = await Promise.all([genresPromise, tagsPromise]);
 
-        return { genres, tags };
+        const specificEntries = await Promise.all(Object
+            .entries(filterOptions)
+            .map(async ([name, loadOptions]) => [name, await loadOptions(userId)] as const));
+
+        return { tags, genres, ...Object.fromEntries(specificEntries) };
     }
 
     async getUserFavorites(userId: number, limit = 7) {
-        const { listTable, mediaTable } = this.config;
+        const { listTable, mediaTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select({
@@ -334,7 +359,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async searchUserListByName(userId: number, query: string, limit = 10) {
-        const { listTable, mediaTable } = this.config;
+        const { listTable, mediaTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .selectDistinct({
@@ -351,8 +376,9 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {
+        const { tagTable } = this.repoDefinition.tables;
+
         const db = getDbClient();
-        const { tagTable } = this.config;
 
         if (action === TagAction.ADD) {
             const [tagData] = await db
@@ -398,34 +424,30 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
         }
     }
 
-    async findById(mediaId: number): Promise<TConfig["mediaTable"]["$inferSelect"] | undefined> {
-        const { mediaTable } = this.config;
+    async findById(mediaId: number): Promise<TRepoDef["tables"]["mediaTable"]["$inferSelect"] | undefined> {
+        const { mediaTable } = this.repoDefinition.tables;
 
-        const result = getDbClient()
+        return getDbClient()
             .select()
             .from(mediaTable)
             .where(eq(mediaTable.id, mediaId))
             .get();
-
-        return result;
     }
 
-    async findByApiId(apiId: number | string): Promise<TConfig["mediaTable"]["$inferSelect"] | undefined> {
-        const { mediaTable } = this.config;
+    async findByApiId(apiId: number | string): Promise<TRepoDef["tables"]["mediaTable"]["$inferSelect"] | undefined> {
+        const { mediaTable } = this.repoDefinition.tables;
 
-        const result = getDbClient()
+        return getDbClient()
             .select()
             .from(mediaTable)
             .where(eq(mediaTable.apiId, apiId))
             .get()
-
-        return result;
     }
 
     async findByApiIds(apiIds: (number | string)[]) {
-        if (apiIds.length === 0) return [];
+        const { mediaTable } = this.repoDefinition.tables;
 
-        const { mediaTable } = this.config;
+        if (apiIds.length === 0) return [];
         const uniqueApiIds = [...new Set(apiIds)];
         const matches: { id: number; apiId: number | string }[] = [];
 
@@ -446,9 +468,10 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async findByNames(names: string[]) {
+        const { mediaTable } = this.repoDefinition.tables;
+
         if (names.length === 0) return [];
 
-        const { mediaTable } = this.config;
         const uniqueNames = [...new Set(names.map(name => name.trim().toLowerCase()).filter(Boolean))];
         const matches: { id: number; name: string; releaseDate: string | null }[] = [];
         const lowerNames = sql<string>`lower(trim(${mediaTable.name}))`;
@@ -470,8 +493,8 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
         return matches;
     }
 
-    async updateUserMediaDetails(userId: number, mediaId: number, updateData: TConfig["listTable"]["$inferSelect"]): Promise<TConfig["listTable"]["$inferSelect"]> {
-        const { listTable } = this.config;
+    async updateUserMediaDetails(userId: number, mediaId: number, updateData: TRepoDef["tables"]["listTable"]["$inferSelect"]): Promise<TRepoDef["tables"]["listTable"]["$inferSelect"]> {
+        const { listTable } = this.repoDefinition.tables;
 
         const [result] = await getDbClient()
             .update(listTable)
@@ -485,8 +508,8 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
         return result;
     }
 
-    async findUserMedia(userId: number | undefined, mediaId: number): Promise<UserMediaWithTags<TConfig["listTable"]["$inferSelect"]> | null> {
-        const { listTable, tagTable } = this.config;
+    async findUserMedia(userId: number | undefined, mediaId: number): Promise<UserMediaWithTags<TRepoDef["tables"]["listTable"]["$inferSelect"]> | null> {
+        const { listTable, tagTable } = this.repoDefinition.tables;
 
         if (!userId) return null;
 
@@ -520,8 +543,8 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
         };
     }
 
-    async downloadMediaListAsCSV(userId: number): Promise<(TConfig["listTable"]["$inferSelect"] & ExportMediaList)[] | undefined> {
-        const { mediaTable, listTable } = this.config;
+    async downloadMediaListAsCSV(userId: number): Promise<(TRepoDef["tables"]["listTable"]["$inferSelect"] & ExportMediaList)[] | undefined> {
+        const { mediaTable, listTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select({
@@ -535,8 +558,8 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
             .where(eq(listTable.userId, userId));
     }
 
-    async getUserFollowsMediaData(userId: number | undefined, mediaId: number): Promise<UserFollowsMediaData<TConfig["listTable"]["$inferSelect"]>[]> {
-        const { listTable } = this.config;
+    async getUserFollowsMediaData(userId: number | undefined, mediaId: number): Promise<UserFollowsMediaData<TRepoDef["tables"]["listTable"]["$inferSelect"]>[]> {
+        const { listTable } = this.repoDefinition.tables;
 
         if (!userId) return [];
 
@@ -553,7 +576,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
             .innerJoin(listTable, eq(listTable.userId, followers.followedId))
             .innerJoin(userMediaSettings, and(
                 eq(userMediaSettings.userId, listTable.userId),
-                eq(userMediaSettings.mediaType, this.config.mediaType),
+                eq(userMediaSettings.mediaType, this.identity.mediaType),
                 eq(userMediaSettings.active, true),
             ))
             .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED), eq(listTable.mediaId, mediaId)))
@@ -563,11 +586,11 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async getMediaCommunityActivity(userId: number | undefined, mediaId: number, search: SearchType) {
-        const { listTable } = this.config;
-        const communityStats = this.config.communityActivityStats;
-        const totalRedo = communityStats.totalRedo ?? sql<number>`0`;
-        const totalSpecific = communityStats.totalSpecific ?? sql<number>`0`;
-        const totalPlaytime = communityStats.totalPlaytime ?? sql<number>`0`;
+        const { tables: { listTable }, stats: { community } } = this.repoDefinition;
+
+        const totalRedo = community.totalRedo ?? sql<number>`0`;
+        const totalSpecific = community.totalSpecific ?? sql<number>`0`;
+        const totalPlaytime = community.totalPlaytime ?? sql<number>`0`;
 
         const { page, perPage, offset, limit } = resolvePagination({
             maxPerPage: 50,
@@ -595,7 +618,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
             .innerJoin(user, eq(user.id, listTable.userId))
             .innerJoin(userMediaSettings, and(
                 eq(userMediaSettings.userId, listTable.userId),
-                eq(userMediaSettings.mediaType, this.config.mediaType),
+                eq(userMediaSettings.mediaType, this.identity.mediaType),
                 eq(userMediaSettings.active, true),
             ))
             .where(conditions)
@@ -615,9 +638,9 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
             .from(listTable)
             .innerJoin(user, eq(user.id, listTable.userId))
             .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, listTable.userId),
-                eq(userMediaSettings.mediaType, this.config.mediaType),
                 eq(userMediaSettings.active, true),
+                eq(userMediaSettings.userId, listTable.userId),
+                eq(userMediaSettings.mediaType, this.identity.mediaType),
             ))
             .where(conditions)
             .orderBy(desc(sql`COALESCE(${listTable.lastUpdated}, ${listTable.addedAt})`))
@@ -645,24 +668,27 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
         };
     }
 
-    async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<TConfig["listTable"]["$inferSelect"]>> {
-        const { listTable, mediaTable, tagTable, mediaList } = this.config;
+    async getMediaList(currentUserId: number | undefined, userId: number, args: MediaListArgs): Promise<MediaListData<TRepoDef["tables"]["listTable"]["$inferSelect"]>> {
+        const { tables: { listTable, mediaTable, tagTable }, listQuery } = this.repoDefinition;
 
-        const { page, perPage, offset, limit } = resolvePagination({ page: args.page, perPage: args.perPage });
+        const { page, perPage, offset, limit } = resolvePagination({
+            page: args.page,
+            perPage: args.perPage,
+        });
 
-        const sortKeyName = resolveSorting(args.sorting, Object.keys(mediaList.availableSorts), mediaList.defaultSortName);
-        const selectedSort = mediaList.availableSorts[sortKeyName];
+        const sortKeyName = resolveSorting(args.sorting, Object.keys(listQuery.sorts), listQuery.defaultSort);
+        const selectedSort = listQuery.sorts[sortKeyName];
         const filterArgs = { ...args, currentUserId, userId };
 
         const allFilters = {
             ...this.baseFilterDefs,
-            ...mediaList.filterDefinitions,
+            ...listQuery.filters,
         };
 
         // Main query builder
         let queryBuilder = getDbClient()
             .select({
-                ...mediaList.baseSelection,
+                ...listQuery.selection,
                 ratingSystem: user.ratingSystem,
                 tags: sql` COALESCE((
                     SELECT json_group_array(DISTINCT json_object(
@@ -725,7 +751,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
             commonIdsSet = new Set(commonMediaIdsResult.map(m => m.mediaId));
         }
 
-        // Process results - add `common` field and replace `imageCover` by user's `customCover`
+        // Process results - add `common` field and replace `imageCover` with user's `customCover`
         const processedResults = results.map((item: any) => ({
             ...item,
             common: commonIdsSet.has(item.mediaId),
@@ -740,13 +766,13 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
                 totalPages,
                 totalItems,
                 sorting: sortKeyName,
-                availableSorting: Object.keys(mediaList.availableSorts),
+                availableSorting: Object.keys(listQuery.sorts),
             },
         };
     }
 
     async getTagsView(userId: number, search: SimpleSearch) {
-        const { listTable, mediaTable, tagTable } = this.config;
+        const { listTable, mediaTable, tagTable } = this.repoDefinition.tables;
 
         const pagination = resolvePagination({ page: search.page, perPage: 16, maxPerPage: 16 });
         const searchCondition = search.search ? like(tagTable.name, `%${search.search}%`) : undefined;
@@ -830,7 +856,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
         // If userId is defined, returns upcoming media from that user's media list.
         // `maxAWeek` should be true only for userId undefined -> media releasing in next 7 days.
 
-        const { listTable, mediaTable } = this.config;
+        const { listTable, mediaTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select({
@@ -856,15 +882,14 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
                         isNull(mediaTable.releaseDate),
                         gte(mediaTable.releaseDate, sql`date('now')`),
                     )
-            ))
-            .orderBy(asc(mediaTable.releaseDate));
+            )).orderBy(asc(mediaTable.releaseDate));
     }
 
     // TODO: use the paginate function?
     async getMediaJobDetails(job: JobType, name: string, offset: number, limit = 25, userId?: number) {
-        const { mediaTable, listTable, jobDefinitions } = this.config;
+        const { tables: { mediaTable, listTable }, jobs } = this.repoDefinition;
 
-        const jobHandler = jobDefinitions[job];
+        const jobHandler = jobs[job];
         if (!jobHandler) throw notFound();
 
         const hasUser = !!userId;
@@ -884,7 +909,10 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
             .$dynamic();
 
         if (hasUser) {
-            dataQuery = dataQuery.leftJoin(listTable, and(eq(listTable.mediaId, mediaTable.id), eq(listTable.userId, userId)));
+            dataQuery = dataQuery.leftJoin(listTable, and(
+                eq(listTable.userId, userId),
+                eq(listTable.mediaId, mediaTable.id),
+            ));
         }
 
         let countQuery = getDbClient()
@@ -898,7 +926,10 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
             countQuery.innerJoin(sourceTable, joinCondition);
         }
 
-        const filterCondition = jobHandler.getFilter ? jobHandler.getFilter(name) : like(nameColumn, `%${name}%`);
+        const filterCondition = jobHandler.getFilter
+            ? jobHandler.getFilter(name)
+            : like(nameColumn, `%${name}%`);
+
         dataQuery = dataQuery.where(filterCondition);
         countQuery = countQuery.where(filterCondition);
 
@@ -918,9 +949,9 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     };
 
     async getSearchListFilters(userId: number, query: string, job: JobType) {
-        const { listTable, jobDefinitions } = this.config;
+        const { tables: { listTable }, jobs } = this.repoDefinition;
 
-        const jobHandler = jobDefinitions[job];
+        const jobHandler = jobs[job];
         if (!jobHandler) throw notFound();
 
         const { sourceTable, nameColumn, mediaIdColumn, postProcess } = jobHandler;
@@ -938,8 +969,10 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
         return results;
     }
 
-    protected async _computeAllUsersStats(timeSpentStat: SQL, totalSpecificStat: SQL, totalRedoStat?: SQL) {
-        const { listTable, mediaTable, mediaType } = this.config;
+    async computeAllUsersStats() {
+        const { mediaType } = this.identity;
+        const { listTable, mediaTable } = this.repoDefinition.tables;
+        const { timeSpent: timeSpentStat, totalSpecific: totalSpecificStat, totalRedo: totalRedoStat } = this.repoDefinition.stats.allUsers;
 
         const redoStat = totalRedoStat ?? (listTable?.redo ? sql`COALESCE(SUM(${listTable.redo}), 0)` : sql`0`);
 
@@ -1023,7 +1056,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     // --- Admin Functions -------------------------------------------------
 
     async getUserMediaAddedAndUpdatedForAdmin() {
-        const { listTable } = this.config;
+        const { listTable } = this.repoDefinition.tables;
 
         const [addedThisMonth] = await getDbClient()
             .select({ count: countDistinct(listTable.id) })
@@ -1058,7 +1091,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     // --- Advanced Stats ---------------------------------------------------
 
     async computeRatingStats(userId?: number) {
-        const { listTable } = this.config;
+        const { listTable } = this.repoDefinition.tables;
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
 
         const rows = await getDbClient()
@@ -1086,7 +1119,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async computeReleaseDateStats(userId?: number) {
-        const { mediaTable, listTable } = this.config;
+        const { mediaTable, listTable } = this.repoDefinition.tables;
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
 
         const decadeExpression = sql<number>`(CAST(strftime('%Y', ${mediaTable.releaseDate}) AS INTEGER) / 10) * 10`;
@@ -1106,7 +1139,7 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async computeTotalTags(userId?: number) {
-        const { tagTable } = this.config;
+        const { tagTable } = this.repoDefinition.tables;
         const forUser = userId ? eq(tagTable.userId, userId) : undefined;
 
         const result = getDbClient()
@@ -1119,9 +1152,9 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
     }
 
     async computeTopGenresStats(mediaAvgRating: number | null, userId?: number) {
-        const { genreTable, listTable } = this.config;
+        const { genreTable, listTable } = this.repoDefinition.tables;
 
-        const metricStatsConfig = {
+        const metricDefinition = {
             metricTable: genreTable,
             metricNameCol: genreTable.name,
             metricIdCol: genreTable.mediaId,
@@ -1129,17 +1162,29 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
             filters: [notInArray(listTable.status, [Status.PLAN_TO_WATCH, Status.PLAN_TO_PLAY, Status.PLAN_TO_READ])],
         };
 
-        return this.computeTopAffinityStats(metricStatsConfig, mediaAvgRating, userId);
+        return this._computeTopAffinityStats(metricDefinition, mediaAvgRating, userId);
     }
 
-    async computeTopAffinityStats(statsConfig: TopAffinityConfig, mediaAvgRating: number | null, userId?: number) {
-        const { mediaTable, listTable } = this.config;
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
-        const { metricTable, metricIdCol, metricNameCol, mediaLinkCol, filters, limit = 10, minRatingCount = 3 } = statsConfig;
+    async specificTopMetrics(mediaAvgRating: number | null, userId?: number) {
+        const statsAffinity = this.repoDefinition.stats.affinity;
 
-        const isDifferentTable = metricTable !== mediaTable && metricTable !== listTable;
+        const entries = await Promise.all(
+            Object.entries(statsAffinity).map(async ([name, metricDefinition]) => {
+                return [name, await this._computeTopAffinityStats(metricDefinition, mediaAvgRating, userId)] as const;
+            }),
+        );
+
+        return Object.fromEntries(entries);
+    }
+
+    private async _computeTopAffinityStats(definition: TopAffinityDefinition, mediaAvgRating: number | null, userId?: number) {
+        const { mediaTable, listTable } = this.repoDefinition.tables;
+
+        const forUser = userId ? eq(listTable.userId, userId) : undefined;
+        const { metricTable, metricIdCol, metricNameCol, mediaLinkCol, filters, limit = 10, minRatingCount = 3 } = definition;
 
         const userAvg = mediaAvgRating ?? 5;
+        const isDifferentTable = metricTable !== mediaTable && metricTable !== listTable;
 
         // Define raw aggregate aliases
         const entriesCountSql = sql<number>`CAST(COUNT(${metricNameCol}) AS FLOAT)`;
@@ -1191,45 +1236,13 @@ export abstract class BaseRepository<TConfig extends AnyMediaSchemaConfig> {
 
     // --- Abstract Methods -----------------------------------------------------------------
 
-    abstract computeAllUsersStats(): Promise<UserMediaStats[]>;
-
     abstract storeMediaWithDetails(params: any): Promise<number>;
 
     abstract updateMediaWithDetails(params: any): Promise<boolean>;
 
-    abstract getListFilters(userId: number): Promise<ExpandedListFilters>;
+    abstract addMediaToUserList(userId: number, media: any, newStatus: Status): Promise<TRepoDef["tables"]["listTable"]["$inferSelect"]>;
 
-    abstract addMediaToUserList(userId: number, media: any, newStatus: Status): Promise<TConfig["listTable"]["$inferSelect"]>;
-
-    abstract findAllAssociatedDetails(mediaId: number): Promise<(TConfig["mediaTable"]["$inferSelect"] & AddedMediaDetails) | undefined>;
-}
-
-
-const isValidFilter = <T>(value: T) => {
-    return Array.isArray(value) && value.length > 0;
-}
-
-
-export const createArrayFilterDef = ({ argName, entityTable, filterColumn, mediaTable }: ListFilterDefinition): FilterDefinition => {
-    return {
-        isActive: (args: MediaListArgs) => isValidFilter(args[argName]),
-        getCondition: (args: MediaListArgs) => {
-            const dataArray = args[argName] as string[];
-
-            // If no entityTable provided, filter directly on mediaTable
-            if (!entityTable) {
-                return inArray(filterColumn, dataArray);
-            }
-
-            // Otherwise, subquery for relational filtering
-            const subQuery = getDbClient()
-                .select({ mediaId: entityTable.mediaId })
-                .from(entityTable)
-                .where(inArray(filterColumn, dataArray));
-
-            return inArray(mediaTable.id, subQuery);
-        },
-    };
+    abstract findAllAssociatedDetails(mediaId: number): Promise<(TRepoDef["tables"]["mediaTable"]["$inferSelect"] & AddedMediaDetails) | undefined>;
 }
 
 

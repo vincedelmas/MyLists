@@ -5,28 +5,27 @@ import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {movies, moviesActors, moviesGenre, moviesList} from "@/lib/server/database/schema";
 import {Movie, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
-import {MovieSchemaConfig, moviesConfig} from "@/lib/server/domain/media/movies/movies.config";
 import {and, asc, eq, getTableColumns, gte, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
+import {type MovieDefinition, moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
 
 
-export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
-    config: MovieSchemaConfig;
-
-    constructor() {
-        super(moviesConfig);
-        this.config = moviesConfig;
+export class MoviesRepository extends BaseRepository<MovieDefinition> {
+    constructor(definition: MovieDefinition = moviesDefinition) {
+        super(definition);
     }
 
     async lockOldMovies() {
+        const lockAfter = `-${this.ingestion.refresh.lockAfterMonths} months`;
+
         const [{ count }] = await getDbClient()
             .select({ count: sql<number>`count(*)` })
             .from(movies)
-            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', '-6 months')`)));
+            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', ${lockAfter})`)));
 
         await getDbClient()
             .update(movies)
             .set({ lockStatus: true })
-            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', '-6 months')`)));
+            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', ${lockAfter})`)));
 
         return count;
     }
@@ -43,13 +42,16 @@ export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
     }
 
     async getMediaIdsToBeRefreshed() {
+        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
+        const releaseGrace = `-${this.ingestion.refresh.releaseGraceMonths} months`;
+
         const results = await getDbClient()
             .select({ apiId: movies.apiId })
             .from(movies)
             .where(and(
                 eq(movies.lockStatus, false),
-                lte(movies.lastApiUpdate, sql`datetime('now', '-2 days')`),
-                or(isNull(movies.releaseDate), gte(movies.releaseDate, sql`date('now', '-6 months')`)),
+                lte(movies.lastApiUpdate, sql`datetime('now', ${staleAfter})`),
+                or(isNull(movies.releaseDate), gte(movies.releaseDate, sql`date('now', ${releaseGrace})`)),
             ));
 
         return results.map((r) => r.apiId);
@@ -103,58 +105,7 @@ export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
         return { totalBudget: data?.totalBudget ?? 0, totalRevenue: data?.totalRevenue ?? 0 };
     }
 
-    async specificTopMetrics(mediaAvgRating: number | null, userId?: number) {
-        const langsConfig = {
-            metricTable: movies,
-            metricIdCol: movies.id,
-            mediaLinkCol: moviesList.mediaId,
-            metricNameCol: movies.originalLanguage,
-            filters: [ne(moviesList.status, Status.PLAN_TO_WATCH)],
-        };
-        const directorsConfig = {
-            metricTable: movies,
-            metricIdCol: movies.id,
-            mediaLinkCol: moviesList.mediaId,
-            metricNameCol: movies.directorName,
-            filters: [ne(moviesList.status, Status.PLAN_TO_WATCH)],
-        };
-        const actorsConfig = {
-            metricTable: moviesActors,
-            metricNameCol: moviesActors.name,
-            mediaLinkCol: moviesList.mediaId,
-            metricIdCol: moviesActors.mediaId,
-            filters: [ne(moviesList.status, Status.PLAN_TO_WATCH)],
-        };
-
-        const langsStats = await this.computeTopAffinityStats(langsConfig, mediaAvgRating, userId);
-        const actorsStats = await this.computeTopAffinityStats(actorsConfig, mediaAvgRating, userId);
-        const directorsStats = await this.computeTopAffinityStats(directorsConfig, mediaAvgRating, userId);
-
-        return { directorsStats, actorsStats, langsStats };
-    }
-
     // --- Implemented Methods ------------------------------------------------
-
-    async computeAllUsersStats() {
-        const timeSpentStat = sql<number>`
-            COALESCE(SUM(
-                CASE 
-                    WHEN ${moviesList.status} = ${Status.COMPLETED} THEN (1 + ${moviesList.redo}) * ${movies.duration}
-                    ELSE 0
-                END
-            ), 0)
-        `
-        const totalSpecificStat = sql<number>`
-            COALESCE(SUM(
-                CASE 
-                    WHEN ${moviesList.status} = ${Status.COMPLETED} THEN 1 + ${moviesList.redo}
-                    ELSE 0
-                END
-            ), 0)
-        `
-
-        return this._computeAllUsersStats(timeSpentStat, totalSpecificStat)
-    }
 
     async addMediaToUserList(userId: number, media: Movie, newStatus: Status) {
         const newTotal = (newStatus === Status.COMPLETED) ? 1 : 0;
@@ -173,8 +124,6 @@ export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
     }
 
     async findAllAssociatedDetails(mediaId: number) {
-        const { apiProvider } = this.config;
-
         const details = getDbClient()
             .select({
                 ...getTableColumns(movies),
@@ -220,8 +169,8 @@ export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
         const result: Movie & AddedMediaDetails = {
             ...details,
             providerData: {
-                name: apiProvider.name,
-                url: `${apiProvider.mediaUrl}${details.apiId}`,
+                name: this.attribution.name,
+                url: `${this.attribution.mediaUrl}${details.apiId}`,
             },
             actors: details.actors || [],
             genres: details.genres || [],
@@ -274,30 +223,30 @@ export class MoviesRepository extends BaseRepository<MovieSchemaConfig> {
 
         const mediaId = media.id;
 
-        if (actorsData && actorsData.length > 0) {
-            await tx.delete(moviesActors).where(eq(moviesActors.mediaId, mediaId));
-            const actorsToAdd = actorsData.map((a) => ({ mediaId, ...a }));
-            await tx.insert(moviesActors).values(actorsToAdd);
+        if (actorsData !== undefined) {
+            await tx
+                .delete(moviesActors)
+                .where(eq(moviesActors.mediaId, mediaId));
+
+            if (actorsData.length > 0) {
+                await tx
+                    .insert(moviesActors)
+                    .values(actorsData.map(author => ({ mediaId, ...author })));
+            }
         }
 
-        if (genresData && genresData.length > 0) {
-            await tx.delete(moviesGenre).where(eq(moviesGenre.mediaId, mediaId));
-            const genresToAdd = genresData.map((g) => ({ mediaId, ...g }));
-            await tx.insert(moviesGenre).values(genresToAdd);
+        if (genresData !== undefined) {
+            await tx
+                .delete(moviesGenre)
+                .where(eq(moviesGenre.mediaId, mediaId));
+
+            if (genresData.length > 0) {
+                await tx
+                    .insert(moviesGenre)
+                    .values(genresData.map(genre => ({ mediaId, ...genre })));
+            }
         }
 
         return true;
-    }
-
-    async getListFilters(userId: number) {
-        const { genres, tags } = await super.getCommonListFilters(userId);
-
-        const langs = await getDbClient()
-            .selectDistinct({ name: sql<string>`${movies.originalLanguage}` })
-            .from(movies)
-            .innerJoin(moviesList, eq(moviesList.mediaId, movies.id))
-            .where(and(eq(moviesList.userId, userId), isNotNull(movies.originalLanguage)));
-
-        return { langs, genres, tags };
     }
 }

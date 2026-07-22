@@ -1,19 +1,18 @@
 import {notFound} from "@tanstack/react-router";
-import {DeltaStats} from "@/lib/types/stats.types";
 import {Status, UpdateType} from "@/lib/utils/enums";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {LogPayload} from "@/lib/types/user-updates.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Manga, MangaList} from "@/lib/server/domain/media/manga/manga.types";
-import {MangaSchemaConfig} from "@/lib/server/domain/media/manga/manga.config";
 import {MangaRepository} from "@/lib/server/domain/media/manga/manga.repository";
-import {ChapterPayload, RedoPayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
+import {ChapterPayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
+import {mangaDefinition, MangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
 
 
-export class MangaService extends BaseService<MangaSchemaConfig, MangaRepository> {
-    constructor(repository: MangaRepository) {
-        super(repository);
+export class MangaService extends BaseService<MangaDefinition, MangaRepository> {
+    constructor(repository: MangaRepository, definition: MangaDefinition = mangaDefinition) {
+        super(repository, definition);
 
         this.updateHandlers = {
             ...this.updateHandlers,
@@ -46,11 +45,11 @@ export class MangaService extends BaseService<MangaSchemaConfig, MangaRepository
     }
 
     async getMediaEditableFields(mediaId: number) {
+        const { editableFields } = this.servicePolicy;
+
+        const fields: Record<string, any> = {};
         const media = await this.repository.findAllAssociatedDetails(mediaId);
         if (!media) throw notFound();
-
-        const editableFields = this.repository.config.editableFields;
-        const fields: Record<string, any> = {};
 
         editableFields.forEach((field) => {
             if (field in media) {
@@ -62,6 +61,9 @@ export class MangaService extends BaseService<MangaSchemaConfig, MangaRepository
     }
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
+        const { editableFields } = this.servicePolicy;
+        const { coverDirectory } = this.identity;
+
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
 
@@ -71,14 +73,13 @@ export class MangaService extends BaseService<MangaSchemaConfig, MangaRepository
             throw new Error("Genres must be an array");
         }
 
-        const editableFields = this.repository.config.editableFields;
         const fieldsToUpdate = {} as Record<Partial<keyof Manga>, any>;
         fieldsToUpdate.apiId = media.apiId;
 
         if (mediaData?.imageCover) {
             const imageName = await saveImageFromUrl({
+                dirSaveName: coverDirectory,
                 imageUrl: mediaData.imageCover,
-                dirSaveName: "manga-covers",
             });
             fieldsToUpdate.imageCover = imageName;
             delete mediaData.imageCover;
@@ -91,106 +92,6 @@ export class MangaService extends BaseService<MangaSchemaConfig, MangaRepository
         }
 
         await this.repository.updateMediaWithDetails({ mediaData: fieldsToUpdate, genresData: genres });
-    }
-
-    calculateDeltaStats(oldState: UserMediaWithTags<MangaList> | null, newState: MangaList | null, _media: Manga) {
-        const delta: DeltaStats = {};
-        const statusCounts: Partial<Record<Status, number>> = {};
-
-        // TODO: Check how to avoid magic number 7
-
-        // Extract Old State Info
-        const oldStatus = oldState?.status;
-        const oldRating = oldState?.rating;
-        const oldRedo = oldState?.redo ?? 0;
-        const wasCommented = !!oldState?.comment;
-        const wasRated = oldState?.rating != null;
-        const wasFavorited = !!oldState?.favorite;
-        const oldTotalSpecificValue = oldState?.total ?? 0;
-        const oldTotalTimeSpent = oldTotalSpecificValue * 7;
-
-        // Extract New State Info
-        const newStatus = newState?.status;
-        const newRating = newState?.rating;
-        const newRedo = newState?.redo ?? 0;
-        const isCommented = !!newState?.comment;
-        const isRated = newState?.rating != null;
-        const isFavorited = !!newState?.favorite;
-        const newTotalSpecificValue = newState?.total ?? 0;
-        const newTotalTimeSpent = newTotalSpecificValue * 7;
-
-        // --- Calculate Deltas ----------------------------------------------------------------
-
-        // Total Entries
-        if (!oldState && newState) {
-            delta.totalEntries = 1;
-        }
-        else if (oldState && !newState) {
-            delta.totalEntries = -1;
-        }
-
-        // Status Counts
-        if (oldStatus !== newStatus) {
-            if (oldStatus) {
-                statusCounts[oldStatus] = (statusCounts[oldStatus] ?? 0) - 1;
-            }
-            if (newStatus) {
-                statusCounts[newStatus] = (statusCounts[newStatus] ?? 0) + 1;
-            }
-        }
-
-        // Time Spent
-        delta.timeSpent = (newTotalTimeSpent - oldTotalTimeSpent);
-
-        // Total Redo Count
-        delta.totalRedo = (newRedo - oldRedo);
-
-        // Total Specific
-        delta.totalSpecific = (newTotalSpecificValue - oldTotalSpecificValue);
-
-        // Rating Stats
-        let entriesRatedDelta = 0;
-        let sumEntriesRatedDelta = 0;
-        if (wasRated && !isRated) {
-            entriesRatedDelta = -1;
-            sumEntriesRatedDelta = -(oldRating ?? 0);
-        }
-        else if (!wasRated && isRated) {
-            entriesRatedDelta = 1;
-            sumEntriesRatedDelta = newRating ?? 0;
-        }
-        else if (wasRated && isRated && oldRating !== newRating) {
-            sumEntriesRatedDelta = (newRating ?? 0) - (oldRating ?? 0);
-        }
-        delta.entriesRated = entriesRatedDelta;
-        delta.sumEntriesRated = sumEntriesRatedDelta;
-
-        // Comment Stats
-        let entriesCommentedDelta = 0;
-        if (wasCommented && !isCommented) {
-            entriesCommentedDelta = -1;
-        }
-        else if (!wasCommented && isCommented) {
-            entriesCommentedDelta = 1;
-        }
-        delta.entriesCommented = entriesCommentedDelta;
-
-        // Favorite Stats
-        let entriesFavoritesDelta = 0;
-        if (wasFavorited && !isFavorited) {
-            entriesFavoritesDelta = -1;
-        }
-        else if (!wasFavorited && isFavorited) {
-            entriesFavoritesDelta = 1;
-        }
-        delta.entriesFavorites = entriesFavoritesDelta;
-
-        // Add statusCounts to delta only if entries
-        if (Object.keys(statusCounts).length > 0) {
-            delta.statusCounts = statusCounts;
-        }
-
-        return delta;
     }
 
     updateRedoHandler(currentState: MangaList, payload: RedoPayload, media: Manga): [MangaList, LogPayload] {

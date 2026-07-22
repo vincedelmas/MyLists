@@ -24,7 +24,7 @@ export type DeltaStats = {
 };
 
 
-export type TopAffinityConfig = {
+export type TopAffinityDefinition = {
     limit?: number,
     filters: SQL[],
     minRatingCount?: number,
@@ -67,6 +67,6 @@ export type MediaNaming = {
     durationDistributionUnit: string;
 }
 
-export type TopAffinity = Awaited<ReturnType<BaseRepository<any>["computeTopAffinityStats"]>>;
+export type TopAffinity = Awaited<ReturnType<BaseRepository<any>["_computeTopAffinityStats"]>>;
 
 export type ExtractStatsByType<T extends MediaType | undefined> = Extract<UserStatsResult, { mediaType: T }>;

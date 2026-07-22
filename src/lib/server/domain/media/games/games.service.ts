@@ -1,18 +1,17 @@
 import {notFound} from "@tanstack/react-router";
-import {DeltaStats} from "@/lib/types/stats.types";
 import {Status, UpdateType} from "@/lib/utils/enums";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {LogPayload} from "@/lib/types/user-updates.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Game, GamesList} from "@/lib/server/domain/media/games/games.types";
-import {GamesSchemaConfig} from "@/lib/server/domain/media/games/games.config";
+import {PlaytimePayload, StatusPayload} from "@/lib/types/user-media.types";
 import {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
-import {PlaytimePayload, StatusPayload, UserMediaWithTags} from "@/lib/types/user-media.types";
+import {gamesDefinition, type GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 
 
-export class GamesService extends BaseService<GamesSchemaConfig, GamesRepository> {
-    constructor(repository: GamesRepository) {
-        super(repository);
+export class GamesService extends BaseService<GamesDefinition, GamesRepository> {
+    constructor(repository: GamesRepository, definition: GamesDefinition = gamesDefinition) {
+        super(repository, definition);
 
         this.updateHandlers = {
             ...this.updateHandlers,
@@ -50,11 +49,11 @@ export class GamesService extends BaseService<GamesSchemaConfig, GamesRepository
     }
 
     async getMediaEditableFields(mediaId: number) {
+        const { editableFields } = this.servicePolicy;
+
+        const fields: Record<string, any> = {};
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
-
-        const editableFields = this.repository.config.editableFields;
-        const fields: Record<string, any> = {};
 
         editableFields.forEach((field) => {
             if (field in media) {
@@ -73,18 +72,21 @@ export class GamesService extends BaseService<GamesSchemaConfig, GamesRepository
     }
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
+        const { editableFields } = this.servicePolicy;
+        const { coverDirectory } = this.identity;
+
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
 
-        const editableFields = this.repository.config.editableFields;
         const fields = {} as Record<Partial<keyof Game>, any>;
         fields.apiId = media.apiId;
 
         if (payload?.imageCover) {
             const imageName = await saveImageFromUrl({
+                dirSaveName: coverDirectory,
                 imageUrl: payload.imageCover,
-                dirSaveName: "games-covers",
             });
+
             fields.imageCover = imageName;
             delete payload.imageCover;
         }
@@ -96,100 +98,6 @@ export class GamesService extends BaseService<GamesSchemaConfig, GamesRepository
         }
 
         await this.repository.updateMediaWithDetails({ mediaData: fields });
-    }
-
-    calculateDeltaStats(oldState: UserMediaWithTags<GamesList> | null, newState: GamesList | null, _media: Game) {
-        const delta: DeltaStats = {};
-        const statusCounts: Partial<Record<Status, number>> = {};
-
-        // Extract Old State Info
-        const oldStatus = oldState?.status;
-        const oldRating = oldState?.rating;
-        const wasCommented = !!oldState?.comment;
-        const wasRated = oldState?.rating != null;
-        const wasFavorited = !!oldState?.favorite;
-        const oldTotalTimeSpent = oldState?.playtime ?? 0;
-
-        // Extract New State Info
-        const newStatus = newState?.status;
-        const newRating = newState?.rating;
-        const isCommented = !!newState?.comment;
-        const isRated = newState?.rating != null;
-        const isFavorited = !!newState?.favorite;
-        const newTotalTimeSpent = newState?.playtime ?? 0;
-
-        // --- Calculate Deltas ----------------------------------------------------------------
-
-        // Total Entries
-        if (!oldState && newState) {
-            delta.totalEntries = 1;
-        }
-        else if (oldState && !newState) {
-            delta.totalEntries = -1;
-        }
-
-        // Status Counts
-        if (oldStatus !== newStatus) {
-            if (oldStatus) {
-                statusCounts[oldStatus] = (statusCounts[oldStatus] ?? 0) - 1;
-            }
-            if (newStatus) {
-                statusCounts[newStatus] = (statusCounts[newStatus] ?? 0) + 1;
-            }
-        }
-
-        // Time Spent
-        delta.timeSpent = (newTotalTimeSpent - oldTotalTimeSpent);
-
-        // Total Redo Count - Always 0 for Games
-        delta.totalRedo = 0;
-
-        // Total Specific - Always 0 for Games
-        delta.totalSpecific = 0;
-
-        // Rating Stats
-        let entriesRatedDelta = 0;
-        let sumEntriesRatedDelta = 0;
-        if (wasRated && !isRated) {
-            entriesRatedDelta = -1;
-            sumEntriesRatedDelta = -(oldRating ?? 0);
-        }
-        else if (!wasRated && isRated) {
-            entriesRatedDelta = 1;
-            sumEntriesRatedDelta = newRating ?? 0;
-        }
-        else if (wasRated && isRated && oldRating !== newRating) {
-            sumEntriesRatedDelta = (newRating ?? 0) - (oldRating ?? 0);
-        }
-        delta.entriesRated = entriesRatedDelta;
-        delta.sumEntriesRated = sumEntriesRatedDelta;
-
-        // Comment Stats
-        let entriesCommentedDelta = 0;
-        if (wasCommented && !isCommented) {
-            entriesCommentedDelta = -1;
-        }
-        else if (!wasCommented && isCommented) {
-            entriesCommentedDelta = 1;
-        }
-        delta.entriesCommented = entriesCommentedDelta;
-
-        // Favorite Stats
-        let entriesFavoritesDelta = 0;
-        if (wasFavorited && !isFavorited) {
-            entriesFavoritesDelta = -1;
-        }
-        else if (!wasFavorited && isFavorited) {
-            entriesFavoritesDelta = 1;
-        }
-        delta.entriesFavorites = entriesFavoritesDelta;
-
-        // Add statusCounts to delta only if entries
-        if (Object.keys(statusCounts).length > 0) {
-            delta.statusCounts = statusCounts;
-        }
-
-        return delta;
     }
 
     updateStatusHandler(currentState: GamesList, payload: StatusPayload, _media: Game): [GamesList, LogPayload] {

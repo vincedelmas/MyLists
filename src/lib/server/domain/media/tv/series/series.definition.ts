@@ -1,5 +1,5 @@
-import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {asc, desc, getTableColumns, notInArray, sql} from "drizzle-orm";
+import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
 import {series, seriesActors, seriesEpisodesPerSeason, seriesGenre, seriesList, seriesNetwork, seriesTags} from "@/lib/server/database/schema/media/series.schema";
@@ -162,10 +162,15 @@ export const seriesDefinition = defineMediaDefinition({
     },
     ingestion: {
         defaultDuration: 40,
+        source: ApiProviderType.TMDB,
         limits: {
             genres: 5,
             actors: 5,
+            writers: 2,
             networks: 2,
+        },
+        refresh: {
+            staleAfterDays: 1,
         },
     },
     attribution: {
@@ -176,4 +181,3 @@ export const seriesDefinition = defineMediaDefinition({
 
 
 export type SeriesDefinition = typeof seriesDefinition;
-export type SeriesRepositoryDefinition = SeriesDefinition["repository"];

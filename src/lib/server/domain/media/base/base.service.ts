@@ -3,7 +3,6 @@ import {DeltaStats} from "@/lib/types/stats.types";
 import {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
-import {mediaTypeToApiProvider} from "@/lib/utils/media-mapping";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {AnyMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
@@ -17,6 +16,7 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
     protected repository: R;
     protected readonly policy: TDef["service"];
     protected readonly identity: TDef["identity"];
+    protected readonly ingestion: TDef["ingestion"];
     protected updateHandlers: Partial<Record<
         UpdateType,
         UpdateHandlerFn<TDef["repository"]["tables"]["listTable"]["$inferSelect"], any, TDef["repository"]["tables"]["mediaTable"]["$inferSelect"]>
@@ -26,6 +26,7 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
         this.repository = repository;
         this.policy = definition.service;
         this.identity = definition.identity;
+        this.ingestion = definition.ingestion;
 
         // User progress handlers based on update type
         this.updateHandlers = {
@@ -135,7 +136,7 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
             ...row,
             mediaType,
             formatVersion: MYLISTS_CSV_VERSION,
-            externalApiSource: mediaTypeToApiProvider(mediaType),
+            externalApiSource: this.ingestion.source,
         }) satisfies MyListsCSVImport);
     }
 

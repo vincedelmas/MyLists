@@ -36,6 +36,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
 
     async getMediaIdsToBeRefreshed(apiIds: number[]) {
         const { mediaTable } = this.definition.tables;
+        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
 
         const airedCondition = and(
             isNotNull(mediaTable.nextEpisodeToAir),
@@ -43,7 +44,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         );
 
         const staleListCondition = apiIds.length > 0
-            ? and(inArray(mediaTable.apiId, apiIds), lte(mediaTable.lastApiUpdate, sql`datetime('now', '-1 day')`))
+            ? and(inArray(mediaTable.apiId, apiIds), lte(mediaTable.lastApiUpdate, sql`datetime('now', ${staleAfter})`))
             : undefined;
 
         const refreshCriteria = staleListCondition ? or(staleListCondition, airedCondition) : airedCondition;

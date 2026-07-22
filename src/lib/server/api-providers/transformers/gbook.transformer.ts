@@ -7,7 +7,8 @@ import {formatDateForDb} from "@/lib/utils/date-formatting";
 import {GBooksDetails, GBooksSearchResults, ProviderSearchResult, SearchData} from "@/lib/types/provider.types";
 
 
-export type GBooksTransformOptions = {
+type GBooksTransformOptions = {
+    defaultPages: number;
     coverDirectory: CoverType;
     mediaType: typeof MediaType.BOOKS;
 };
@@ -36,8 +37,8 @@ const transformBooksDetailsResults = async (rawData: GBooksDetails, options: GBo
         apiId: rawData.id,
         language: rawData.volumeInfo.language,
         publishers: rawData.volumeInfo.publisher,
-        pages: rawData.volumeInfo.pageCount ?? 50,
         name: rawData.volumeInfo.title ?? "No Title Found",
+        pages: rawData.volumeInfo.pageCount ?? options.defaultPages,
         releaseDate: formatDateForDb(rawData.volumeInfo.publishedDate),
         synopsis: formatHtmlText(rawData.volumeInfo.description ?? "No Description Found"),
         imageCover: await saveImageFromUrl({

@@ -18,16 +18,19 @@ export class MangaRepository extends BaseRepository<MangaDefinition> {
     }
 
     async getMediaIdsToBeRefreshed() {
+        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
+        const activeProdStatuses = [...this.ingestion.refresh.activeProdStatuses];
+
         const results = await getDbClient()
             .select({ apiId: manga.apiId })
             .from(manga)
             .where(and(
                 eq(manga.lockStatus, false),
-                lte(manga.lastApiUpdate, sql`datetime('now', '-6 days')`),
+                lte(manga.lastApiUpdate, sql`datetime('now', ${staleAfter})`),
                 or(
                     isNull(manga.releaseDate),
                     gte(manga.releaseDate, sql`date('now')`),
-                    inArray(manga.prodStatus, ["Publishing", "On Hiatus"]),
+                    inArray(manga.prodStatus, activeProdStatuses),
                 ),
             ));
 

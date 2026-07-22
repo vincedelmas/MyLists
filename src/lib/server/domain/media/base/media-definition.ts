@@ -1,7 +1,7 @@
 import type {SQL} from "drizzle-orm";
 import type {CoverType} from "@/lib/types/media-common.types";
-import type {JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {TopAffinityDefinition} from "@/lib/types/stats.types";
+import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {AnySQLiteColumn, AnySQLiteTable, SelectedFieldsFlat} from "drizzle-orm/sqlite-core";
 import type {FilterDefinitions, FilterOptionLoaders} from "@/lib/server/domain/media/base/media-list.query";
 
@@ -72,11 +72,11 @@ type ProgressTotals = {
 };
 
 
-export type MediaTable = AnySQLiteTable & MediaTableColumns;
-export type ListTable = AnySQLiteTable & ListTableColumns;
-export type GenreTable = AnySQLiteTable & RelatedEntityTableColumns;
-export type TagTable = AnySQLiteTable & TagTableColumns;
-export type EpsPerSeasonTable = AnySQLiteTable & EpsPerSeasonTableColumns;
+type MediaTable = AnySQLiteTable & MediaTableColumns;
+type ListTable = AnySQLiteTable & ListTableColumns;
+type GenreTable = AnySQLiteTable & RelatedEntityTableColumns;
+type TagTable = AnySQLiteTable & TagTableColumns;
+type EpsPerSeasonTable = AnySQLiteTable & EpsPerSeasonTableColumns;
 
 
 export type BaseMediaTables<
@@ -93,7 +93,7 @@ export type BaseMediaTables<
 };
 
 
-export type TvMediaTables<
+type TvMediaTables<
     TMediaTable extends MediaTable & TvMediaTableColumns = MediaTable & TvMediaTableColumns,
     TListTable extends ListTable = ListTable,
     TGenreTable extends GenreTable = GenreTable,
@@ -128,7 +128,7 @@ type JobDefinition = {
 };
 
 
-export interface MediaRepositoryDefinition<
+interface MediaRepositoryDefinition<
     TTables extends BaseMediaTables = BaseMediaTables,
     TSortDefinitions extends SortDefinitions = SortDefinitions,
     TAffinityDefinitions extends AffinityDefinitions = AffinityDefinitions,
@@ -157,7 +157,7 @@ export interface MediaRepositoryDefinition<
 }
 
 
-export interface MediaServicePolicy<
+interface MediaServicePolicy<
     TTables extends BaseMediaTables = BaseMediaTables,
 > {
     readonly defaultStatus: Status;
@@ -166,18 +166,29 @@ export interface MediaServicePolicy<
 }
 
 
-export type MediaIdentity<TMediaType extends MediaType = MediaType> = {
+type MediaIdentity<TMediaType extends MediaType = MediaType> = {
     readonly mediaType: TMediaType;
     readonly coverDirectory: Extract<CoverType, `${TMediaType}-covers`>;
 };
 
 
 export type MediaIngestionPolicy = {
+    readonly source: ApiProviderType;
+    readonly defaultPages?: number;
     readonly defaultDuration?: number;
     readonly limits?: {
         readonly genres?: number;
         readonly actors?: number;
+        readonly writers?: number;
+        readonly authors?: number;
         readonly networks?: number;
+    };
+    readonly refresh?: {
+        readonly chunkSize?: number;
+        readonly staleAfterDays?: number;
+        readonly lockAfterMonths?: number;
+        readonly releaseGraceMonths?: number;
+        readonly activeProdStatuses?: readonly string[];
     };
 };
 

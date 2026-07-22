@@ -51,14 +51,6 @@ export function setupMediaModule() {
     })
 
     return {
-        definitions: {
-            series: seriesDefinition,
-            anime: animeDefinition,
-            movies: moviesDefinition,
-            games: gamesDefinition,
-            books: booksDefinition,
-            manga: mangaDefinition,
-        },
         repositories: {
             series: repositories.series,
             anime: repositories.anime,

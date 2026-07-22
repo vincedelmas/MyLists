@@ -19,15 +19,17 @@ export class MoviesRepository extends BaseRepository<MovieDefinition> {
     }
 
     async lockOldMovies() {
+        const lockAfter = `-${this.ingestion.refresh.lockAfterMonths} months`;
+
         const [{ count }] = await getDbClient()
             .select({ count: sql<number>`count(*)` })
             .from(movies)
-            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', '-6 months')`)));
+            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', ${lockAfter})`)));
 
         await getDbClient()
             .update(movies)
             .set({ lockStatus: true })
-            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', '-6 months')`)));
+            .where(and(eq(movies.lockStatus, false), lte(movies.releaseDate, sql`date('now', ${lockAfter})`)));
 
         return count;
     }
@@ -44,13 +46,16 @@ export class MoviesRepository extends BaseRepository<MovieDefinition> {
     }
 
     async getMediaIdsToBeRefreshed() {
+        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
+        const releaseGrace = `-${this.ingestion.refresh.releaseGraceMonths} months`;
+
         const results = await getDbClient()
             .select({ apiId: movies.apiId })
             .from(movies)
             .where(and(
                 eq(movies.lockStatus, false),
-                lte(movies.lastApiUpdate, sql`datetime('now', '-2 days')`),
-                or(isNull(movies.releaseDate), gte(movies.releaseDate, sql`date('now', '-6 months')`)),
+                lte(movies.lastApiUpdate, sql`datetime('now', ${staleAfter})`),
+                or(isNull(movies.releaseDate), gte(movies.releaseDate, sql`date('now', ${releaseGrace})`)),
             ));
 
         return results.map((r) => r.apiId);

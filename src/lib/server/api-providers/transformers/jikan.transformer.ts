@@ -6,7 +6,8 @@ import {formatDateForDb} from "@/lib/utils/date-formatting";
 import {JikanDetails, JikanMangaSearchResponse, ProviderSearchResult, SearchData} from "@/lib/types/provider.types";
 
 
-export type JikanTransformOptions = {
+type JikanTransformOptions = {
+    maxAuthors: number;
     coverDirectory: CoverType;
     mediaType: typeof MediaType.MANGA;
 };
@@ -19,8 +20,8 @@ const transformSearchResults = (searchData: SearchData<JikanMangaSearchResponse>
     const transformedResults = results.map((item): ProviderSearchResult => {
         return {
             id: item.mal_id,
-            itemType: options.mediaType,
             date: item.published?.from,
+            itemType: options.mediaType,
             name: item.title_english ?? item.title,
             image: item.images?.jpg?.image_url ?? getImageUrl(options.coverDirectory),
         };
@@ -54,7 +55,7 @@ const transformMangaDetailsResults = async (rawData: JikanDetails, options: Jika
 
     const genresData = rawData?.genres.map((genre) => ({ name: genre.name }));
     const authorsData = (rawData?.authors ?? [])
-        .slice(0, 2)
+        .slice(0, options.maxAuthors)
         .map((author) => {
             const [last, first] = author.name?.split(",", 2) ?? [""];
             return first ? `${first.trim()} ${last.trim()}` : last;

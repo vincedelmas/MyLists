@@ -1,6 +1,6 @@
 import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
 import {GamesRepository} from "@/lib/server/domain/media/games";
-import {GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
+import {gamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
@@ -21,12 +21,15 @@ const createHltbEnricher = (hltbClient: HltbApi): MediaDetailsEnricher<UpsertGam
 };
 
 
-export const createIgdbGamesProvider = (igdb: IgdbApi, definition: GamesDefinition): ExternalMediaProvider<UpsertGameWithDetails> => {
-    const transformOptions = { ...definition.identity, maxGenres: definition.ingestion.limits.genres };
+export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<UpsertGameWithDetails> => {
+    const transformOptions = {
+        ...gamesDefinition.identity,
+        maxGenres: gamesDefinition.ingestion.limits.genres,
+    };
 
     return {
         source: "igdb" as const,
-        mediaType: definition.identity.mediaType,
+        mediaType: gamesDefinition.identity.mediaType,
 
         search: {
             async search(query: string, page = 1) {
@@ -67,7 +70,7 @@ export const createGamesIngestionService = (hltbClient: HltbApi, repository: Gam
             },
         },
         refreshPolicy: {
-            chunkSize: 500,
+            chunkSize: gamesDefinition.ingestion.refresh.chunkSize,
         },
         enrichers: [
             createHltbEnricher(hltbClient),

@@ -1,11 +1,11 @@
-import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
+import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {createArrayFilter} from "@/lib/server/domain/media/base/media-list.query";
 import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
 import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
 
 
-export const MANGA_READING_MINUTES_PER_CHAPTER = 7;
+const MANGA_READING_MINUTES_PER_CHAPTER = 7;
 
 
 export const mangaDefinition = defineMediaDefinition({
@@ -108,7 +108,16 @@ export const mangaDefinition = defineMediaDefinition({
             timeSpent: (state?.total ?? 0) * MANGA_READING_MINUTES_PER_CHAPTER,
         }),
     },
-    ingestion: {},
+    ingestion: {
+        source: ApiProviderType.MANGA,
+        limits: {
+            authors: 2,
+        },
+        refresh: {
+            staleAfterDays: 6,
+            activeProdStatuses: ["Publishing", "On Hiatus"],
+        },
+    },
     attribution: {
         name: "MyAnimeList",
         mediaUrl: "https://myanimelist.net/manga/",
@@ -117,4 +126,3 @@ export const mangaDefinition = defineMediaDefinition({
 
 
 export type MangaDefinition = typeof mangaDefinition;
-export type MangaRepositoryDefinition = MangaDefinition["repository"];

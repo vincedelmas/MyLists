@@ -1,11 +1,11 @@
-import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
+import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
 import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 
 
-export const BOOK_READING_MINUTES_PER_PAGE = 1.7;
+const BOOK_READING_MINUTES_PER_PAGE = 1.7;
 
 
 export const booksDefinition = defineMediaDefinition({
@@ -113,7 +113,10 @@ export const booksDefinition = defineMediaDefinition({
             timeSpent: (state?.total ?? 0) * BOOK_READING_MINUTES_PER_PAGE,
         }),
     },
-    ingestion: {},
+    ingestion: {
+        defaultPages: 250,
+        source: ApiProviderType.BOOKS,
+    },
     attribution: {
         name: "GoogleBooks",
         mediaUrl: "https://books.google.com/books?id=",
@@ -122,4 +125,3 @@ export const booksDefinition = defineMediaDefinition({
 
 
 export type BookDefinition = typeof booksDefinition;
-export type BookRepositoryDefinition = BookDefinition["repository"];

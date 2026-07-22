@@ -29,12 +29,16 @@ export abstract class BaseRepository<
 > {
     readonly definition: TRepoDef;
     readonly identity: TMediaDef["identity"];
+    protected readonly ingestion: TMediaDef["ingestion"];
     protected readonly baseFilterDefs: FilterDefinitions;
 
     protected constructor(definition: TMediaDef) {
         this.identity = definition.identity;
-        this.baseFilterDefs = this.baseListFiltersDefs();
+        this.ingestion = definition.ingestion;
         this.definition = definition.repository as TRepoDef;
+
+        // Must be instantiated after definition
+        this.baseFilterDefs = this.baseListFiltersDefs();
     }
 
     private baseListFiltersDefs = (): FilterDefinitions => {

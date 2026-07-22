@@ -1,5 +1,5 @@
-import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
+import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
 import {movies, moviesActors, moviesGenre, moviesList, moviesTags} from "@/lib/server/database/schema/media/movies.schema";
@@ -142,9 +142,15 @@ export const moviesDefinition = defineMediaDefinition({
     },
     ingestion: {
         defaultDuration: 100,
+        source: ApiProviderType.TMDB,
         limits: {
             genres: 5,
             actors: 5,
+        },
+        refresh: {
+            staleAfterDays: 2,
+            lockAfterMonths: 6,
+            releaseGraceMonths: 6,
         },
     },
     attribution: {
@@ -155,4 +161,3 @@ export const moviesDefinition = defineMediaDefinition({
 
 
 export type MovieDefinition = typeof moviesDefinition;
-export type MovieRepositoryDefinition = MovieDefinition["repository"];

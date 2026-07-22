@@ -26,7 +26,7 @@ export type TmdbMediaIdentities = {
 };
 
 
-export type TmdbMovieTransformOptions = {
+type TmdbMovieTransformOptions = {
     maxGenres: number;
     maxActors: number;
     defaultDuration: number;
@@ -34,7 +34,8 @@ export type TmdbMovieTransformOptions = {
 }
 
 
-export type TmdbTvTransformOptions = TmdbMovieTransformOptions & {
+type TmdbTvTransformOptions = TmdbMovieTransformOptions & {
+    maxWriters: number;
     maxNetworks: number;
 };
 
@@ -52,7 +53,7 @@ const toUniqueNamedData = (items: { name: string }[] | null | undefined, limit: 
 
 
 const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: TmdbTvTransformOptions) => {
-    const { coverDirectory, defaultDuration, maxActors, maxGenres, maxNetworks } = options;
+    const { coverDirectory, defaultDuration, maxActors, maxGenres, maxNetworks, maxWriters } = options;
 
     const processCreatedBy = (rawData: TmdbTvDetails) => {
         const creators = rawData?.created_by;
@@ -69,7 +70,7 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: TmdbTv
                 const popularityA = writers.find((w) => w.name === nameA)?.popularity || 0;
                 const popularityB = writers.find((w) => w.name === nameB)?.popularity || 0;
                 return popularityB - popularityA;
-            }).slice(0, 2);
+            }).slice(0, maxWriters);
 
         return topWriters.join(", ");
     };

@@ -20,12 +20,14 @@ export class GamesRepository extends BaseRepository<GamesDefinition> {
     }
 
     async getMediaIdsToBeRefreshed() {
+        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
+
         return getDbClient()
             .select({ apiId: games.apiId })
             .from(games)
             .where(and(
                 eq(games.lockStatus, false),
-                lte(games.lastApiUpdate, sql`datetime('now', '-2 days')`),
+                lte(games.lastApiUpdate, sql`datetime('now', ${staleAfter})`),
                 or(isNull(games.releaseDate), gte(games.releaseDate, sql`date('now')`)),
             ))
             .then((res) => res.map((r) => r.apiId));

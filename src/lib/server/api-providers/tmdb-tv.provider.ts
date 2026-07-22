@@ -2,10 +2,11 @@ import {logger} from "@/lib/server/core/logger";
 import {TvRepository} from "@/lib/server/domain/media/tv";
 import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
-import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
-import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
+import {moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
+import {AnimeDefinition, animeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
 import {ExternalMediaProvider, MediaDetailsEnricher} from "@/lib/server/api-providers/interfaces.types";
+import {SeriesDefinition, seriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 import {TmdbMediaIdentities, tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 
 
@@ -47,18 +48,22 @@ const createTvRefreshCandidates = (repository: TvRepository, provider: ExternalM
 };
 
 
-const createTmdbTvProvider = (
-    tmdb: TmdbApi,
-    definition: TvDefinition,
-    tmdbIdentities: TmdbMediaIdentities,
-): ExternalMediaProvider<UpsertTvWithDetails> => {
+const createTmdbTvProvider = (tmdb: TmdbApi, definition: TvDefinition): ExternalMediaProvider<UpsertTvWithDetails> => {
     const { identity, ingestion } = definition;
+
+    const tmdbIdentities: TmdbMediaIdentities = {
+        [moviesDefinition.identity.mediaType]: moviesDefinition.identity,
+        [seriesDefinition.identity.mediaType]: seriesDefinition.identity,
+        [animeDefinition.identity.mediaType]: animeDefinition.identity,
+    };
+
     const transformOptions = {
-        coverDirectory: identity.coverDirectory,
-        defaultDuration: ingestion.defaultDuration,
         maxGenres: ingestion.limits.genres,
         maxActors: ingestion.limits.actors,
+        maxWriters: ingestion.limits.writers,
         maxNetworks: ingestion.limits.networks,
+        coverDirectory: identity.coverDirectory,
+        defaultDuration: ingestion.defaultDuration,
     };
 
     return {
@@ -95,28 +100,17 @@ const createTmdbTvProvider = (
 };
 
 
-export const createTmdbSeriesProvider = (
-    tmdb: TmdbApi,
-    definition: SeriesDefinition,
-    tmdbIdentities: TmdbMediaIdentities,
-): ExternalMediaProvider<UpsertTvWithDetails> => {
-    return createTmdbTvProvider(tmdb, definition, tmdbIdentities);
+export const createTmdbSeriesProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertTvWithDetails> => {
+    return createTmdbTvProvider(tmdb, seriesDefinition);
 };
 
 
-export const createTmdbAnimeProvider = (
-    tmdb: TmdbApi,
-    definition: AnimeDefinition,
-    tmdbIdentities: TmdbMediaIdentities,
-): ExternalMediaProvider<UpsertTvWithDetails> => {
-    return createTmdbTvProvider(tmdb, definition, tmdbIdentities);
+export const createTmdbAnimeProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertTvWithDetails> => {
+    return createTmdbTvProvider(tmdb, animeDefinition);
 };
 
 
-export const createSeriesIngestionService = (
-    repository: TvRepository,
-    provider: ExternalMediaProvider<UpsertTvWithDetails>
-) => {
+export const createSeriesIngestionService = (repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
     return createMediaIngestionService({
         provider,
         repository,
@@ -125,18 +119,13 @@ export const createSeriesIngestionService = (
 };
 
 
-export const createAnimeIngestionService = (
-    jikan: JikanApi,
-    repository: TvRepository,
-    provider: ExternalMediaProvider<UpsertTvWithDetails>,
-    definition: AnimeDefinition,
-) => {
+export const createAnimeIngestionService = (jikan: JikanApi, repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
     return createMediaIngestionService({
         provider,
         repository,
         refreshCandidates: createTvRefreshCandidates(repository, provider),
         enrichers: [
-            createAnimeGenresEnricher(jikan, definition.ingestion.limits.genres),
+            createAnimeGenresEnricher(jikan, animeDefinition.ingestion.limits.genres),
         ],
     });
 };

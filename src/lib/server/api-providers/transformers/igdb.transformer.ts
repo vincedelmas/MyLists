@@ -7,7 +7,7 @@ import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types
 import {HltbGameEntry, IgdbGameDetails, IgdbSearchResponse, IgdbTrendGamesResponse, ProviderSearchResult, SearchData, TrendsMedia} from "@/lib/types/provider.types";
 
 
-export type IgdbTransformOptions = {
+type IgdbTransformOptions = {
     maxGenres: number;
     coverDirectory: CoverType;
     mediaType: typeof MediaType.GAMES;
@@ -60,6 +60,7 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails, options: I
 
     const part1GenreData = rawData?.genres?.map((genre) => ({ name: genre.name })) || [];
     const part2GenreData = rawData?.themes?.map((theme) => ({ name: theme.name })) || [];
+
     let genresData = [...part1GenreData, ...part2GenreData];
     const renameGenresMap: Record<string, string> = {
         "4X (explore, expand, exploit, and exterminate)": "4X",

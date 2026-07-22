@@ -1,20 +1,4 @@
-import {ApiProviderType, MediaType, Status} from "@/lib/utils/enums";
-
-
-export const mediaTypeToApiProvider = (mediaType: MediaType) => {
-    switch (mediaType) {
-        case MediaType.MOVIES:
-        case MediaType.SERIES:
-        case MediaType.ANIME:
-            return ApiProviderType.TMDB;
-        case MediaType.GAMES:
-            return ApiProviderType.IGDB;
-        case MediaType.BOOKS:
-            return ApiProviderType.BOOKS;
-        case MediaType.MANGA:
-            return ApiProviderType.MANGA;
-    }
-};
+import {MediaType, Status} from "@/lib/utils/enums";
 
 
 export const statusUtils = {

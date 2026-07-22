@@ -1,4 +1,4 @@
-import {JobType, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {and, asc, desc, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
 import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
 import {createArrayFilter, createListColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
@@ -138,8 +138,13 @@ export const gamesDefinition = defineMediaDefinition({
         }),
     },
     ingestion: {
+        source: ApiProviderType.IGDB,
         limits: {
             genres: 5,
+        },
+        refresh: {
+            chunkSize: 500,
+            staleAfterDays: 2,
         },
     },
     attribution: {
@@ -150,4 +155,3 @@ export const gamesDefinition = defineMediaDefinition({
 
 
 export type GamesDefinition = typeof gamesDefinition;
-export type GamesRepositoryDefinition = GamesDefinition["repository"];

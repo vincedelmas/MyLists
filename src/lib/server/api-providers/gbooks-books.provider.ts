@@ -1,18 +1,21 @@
 import {GBooksApi} from "@/lib/server/api-providers/api";
 import {BooksRepository} from "@/lib/server/domain/media/books";
-import {BookDefinition} from "@/lib/server/domain/media/books/books.definition";
+import {booksDefinition} from "@/lib/server/domain/media/books/books.definition";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 import {gBooksTransformer} from "@/lib/server/api-providers/transformers/gbook.transformer";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 
 
-export const createGBooksBooksProvider = (gBooks: GBooksApi, definition: BookDefinition): ExternalMediaProvider<UpsertBooksWithDetails> => {
-    const transformOptions = definition.identity;
+export const createGBooksBooksProvider = (gBooks: GBooksApi): ExternalMediaProvider<UpsertBooksWithDetails> => {
+    const transformOptions = {
+        ...booksDefinition.identity,
+        defaultPages: booksDefinition.ingestion.defaultPages,
+    };
 
     return {
         source: "google-books" as const,
-        mediaType: definition.identity.mediaType,
+        mediaType: booksDefinition.identity.mediaType,
 
         search: {
             async search(query: string, page = 1) {

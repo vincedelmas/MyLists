@@ -2,7 +2,6 @@ import {Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import {ProviderAttribution} from "@/lib/server/domain/media/base/media-definition";
 import {and, asc, eq, getTableColumns, isNotNull, isNull, ne, sql} from "drizzle-orm";
 import {books, booksAuthors, booksGenre, booksList} from "@/lib/server/database/schema";
 import {type BookDefinition, booksDefinition} from "@/lib/server/domain/media/books/books.definition";
@@ -10,11 +9,8 @@ import {Book, InsertBooksWithDetails, UpdateBooksWithDetails} from "@/lib/server
 
 
 export class BooksRepository extends BaseRepository<BookDefinition> {
-    private readonly attribution: ProviderAttribution;
-
     constructor(definition: BookDefinition = booksDefinition) {
         super(definition);
-        this.attribution = definition.attribution;
     }
 
     async getBooksWithoutGenres() {

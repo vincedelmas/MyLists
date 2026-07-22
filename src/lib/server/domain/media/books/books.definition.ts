@@ -115,7 +115,7 @@ export const booksDefinition = defineMediaDefinition({
     },
     ingestion: {
         defaultPages: 250,
-        source: ApiProviderType.BOOKS,
+        externalApiSource: ApiProviderType.BOOKS,
     },
     attribution: {
         name: "GoogleBooks",

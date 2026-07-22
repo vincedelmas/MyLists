@@ -162,7 +162,7 @@ export const animeDefinition = defineMediaDefinition({
     },
     ingestion: {
         defaultDuration: 24,
-        source: ApiProviderType.TMDB,
+        externalApiSource: ApiProviderType.TMDB,
         limits: {
             genres: 5,
             actors: 5,

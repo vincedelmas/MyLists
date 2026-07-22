@@ -4,7 +4,6 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {normalizeGamePlatforms} from "@/lib/utils/game-platforms";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import {ProviderAttribution} from "@/lib/server/domain/media/base/media-definition";
 import {Game, UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {gamesDefinition, GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms} from "@/lib/server/database/schema";
@@ -12,11 +11,8 @@ import {and, asc, count, eq, getTableColumns, gte, isNotNull, isNull, lte, ne, o
 
 
 export class GamesRepository extends BaseRepository<GamesDefinition> {
-    private readonly attribution: ProviderAttribution;
-
     constructor(definition: GamesDefinition = gamesDefinition) {
         super(definition);
-        this.attribution = definition.attribution;
     }
 
     async getMediaIdsToBeRefreshed() {

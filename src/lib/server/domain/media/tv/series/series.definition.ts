@@ -162,7 +162,7 @@ export const seriesDefinition = defineMediaDefinition({
     },
     ingestion: {
         defaultDuration: 40,
-        source: ApiProviderType.TMDB,
+        externalApiSource: ApiProviderType.TMDB,
         limits: {
             genres: 5,
             actors: 5,

@@ -5,7 +5,6 @@ import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {TvType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
-import {ProviderAttribution} from "@/lib/server/domain/media/base/media-definition";
 import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 import {and, asc, count, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, ne, notInArray, or, sql} from "drizzle-orm";
 
@@ -14,15 +13,12 @@ type TvDefinition = AnimeDefinition | SeriesDefinition;
 
 
 export class TvRepository extends BaseRepository<TvDefinition> {
-    private readonly attribution: ProviderAttribution;
-
     constructor(definition: TvDefinition) {
         super(definition);
-        this.attribution = definition.attribution;
     }
 
     async getMediaEpsPerSeason(mediaId: number) {
-        const { epsPerSeasonTable } = this.definition.tables;
+        const { epsPerSeasonTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select({
@@ -35,7 +31,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     }
 
     async getMediaIdsToBeRefreshed(apiIds: number[]) {
-        const { mediaTable } = this.definition.tables;
+        const { mediaTable } = this.repoDefinition.tables;
         const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
 
         const airedCondition = and(
@@ -59,7 +55,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     // --- Advanced Stats  --------------------------------------------------
 
     async computeTotalSeasons(userId?: number) {
-        const { listTable } = this.definition.tables;
+        const { listTable } = this.repoDefinition.tables;
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
 
         const totalSeasons = getDbClient()
@@ -72,7 +68,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     }
 
     async avgTvDuration(userId?: number) {
-        const { mediaTable, listTable } = this.definition.tables;
+        const { mediaTable, listTable } = this.repoDefinition.tables;
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
 
         const avgDuration = getDbClient()
@@ -88,7 +84,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     }
 
     async tvDurationDistrib(userId?: number) {
-        const { mediaTable, listTable } = this.definition.tables;
+        const { mediaTable, listTable } = this.repoDefinition.tables;
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
 
         const data = await getDbClient()
@@ -108,7 +104,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     // --- Implemented Methods ------------------------------------------------
 
     async getUpcomingMedia(userId?: number, maxAWeek?: boolean) {
-        const { mediaTable, listTable, epsPerSeasonTable } = this.definition.tables;
+        const { mediaTable, listTable, epsPerSeasonTable } = this.repoDefinition.tables;
 
         const epsSubq = getDbClient()
             .select({
@@ -144,7 +140,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     }
 
     async addMediaToUserList(userId: number, media: TvType, newStatus: Status) {
-        const { listTable } = this.definition.tables;
+        const { listTable } = this.repoDefinition.tables;
         const epsPerSeason = await this.getMediaEpsPerSeason(media.id);
 
         let newTotal = 1;
@@ -178,7 +174,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     }
 
     async findAllAssociatedDetails(mediaId: number) {
-        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.definition.tables;
+        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.repoDefinition.tables;
 
         const details = getDbClient()
             .select({
@@ -214,7 +210,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     }
 
     async storeMediaWithDetails({ mediaData, actorsData, seasonsData, networkData, genresData }: UpsertTvWithDetails) {
-        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.definition.tables;
+        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.repoDefinition.tables;
 
         const tx = getDbClient();
 
@@ -255,7 +251,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     }
 
     async updateMediaWithDetails({ mediaData, actorsData, seasonsData, networkData, genresData }: UpsertTvWithDetails) {
-        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.definition.tables;
+        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.repoDefinition.tables;
 
         const [media] = await getDbClient()
             .update(mediaTable)
@@ -306,7 +302,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     // --- Logic When Updating Seasons data -----------------------------------
 
     private async _updateUsersWithMedia(mediaId: number, seasonsData: EpsPerSeasonType[]) {
-        const { listTable } = this.definition.tables;
+        const { listTable } = this.repoDefinition.tables;
         const oldSeasonsData = await this.getMediaEpsPerSeason(mediaId);
 
         // If nothing changed, do nothing
@@ -371,7 +367,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
     }
 
     private async _getAllUsersWithMediaInTheirList(mediaId: number) {
-        const { listTable } = this.definition.tables;
+        const { listTable } = this.repoDefinition.tables;
 
         return getDbClient()
             .select()

@@ -142,7 +142,7 @@ export const moviesDefinition = defineMediaDefinition({
     },
     ingestion: {
         defaultDuration: 100,
-        source: ApiProviderType.TMDB,
+        externalApiSource: ApiProviderType.TMDB,
         limits: {
             genres: 5,
             actors: 5,

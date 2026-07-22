@@ -138,7 +138,7 @@ export const gamesDefinition = defineMediaDefinition({
         }),
     },
     ingestion: {
-        source: ApiProviderType.IGDB,
+        externalApiSource: ApiProviderType.IGDB,
         limits: {
             genres: 5,
         },
@@ -149,7 +149,6 @@ export const gamesDefinition = defineMediaDefinition({
     },
     attribution: {
         name: "IGDB",
-        mediaUrl: null,
     },
 });
 

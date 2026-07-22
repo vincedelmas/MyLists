@@ -3,7 +3,6 @@ import {getImageUrl} from "@/lib/utils/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import type {ProviderAttribution} from "@/lib/server/domain/media/base/media-definition";
 import {movies, moviesActors, moviesGenre, moviesList} from "@/lib/server/database/schema";
 import {Movie, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {and, asc, eq, getTableColumns, gte, isNotNull, isNull, lte, ne, or, sql} from "drizzle-orm";
@@ -11,11 +10,8 @@ import {type MovieDefinition, moviesDefinition} from "@/lib/server/domain/media/
 
 
 export class MoviesRepository extends BaseRepository<MovieDefinition> {
-    private readonly attribution: ProviderAttribution;
-
     constructor(definition: MovieDefinition = moviesDefinition) {
         super(definition);
-        this.attribution = definition.attribution;
     }
 
     async lockOldMovies() {

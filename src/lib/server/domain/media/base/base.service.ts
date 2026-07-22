@@ -14,9 +14,9 @@ import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCov
 
 export abstract class BaseService<TDef extends AnyMediaDefinition, R extends BaseRepository<TDef>> {
     protected repository: R;
-    protected readonly policy: TDef["service"];
     protected readonly identity: TDef["identity"];
     protected readonly ingestion: TDef["ingestion"];
+    protected readonly servicePolicy: TDef["service"];
     protected updateHandlers: Partial<Record<
         UpdateType,
         UpdateHandlerFn<TDef["repository"]["tables"]["listTable"]["$inferSelect"], any, TDef["repository"]["tables"]["mediaTable"]["$inferSelect"]>
@@ -24,9 +24,9 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
 
     protected constructor(repository: R, definition: TDef) {
         this.repository = repository;
-        this.policy = definition.service;
         this.identity = definition.identity;
         this.ingestion = definition.ingestion;
+        this.servicePolicy = definition.service;
 
         // User progress handlers based on update type
         this.updateHandlers = {
@@ -136,7 +136,7 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
             ...row,
             mediaType,
             formatVersion: MYLISTS_CSV_VERSION,
-            externalApiSource: this.ingestion.source,
+            externalApiSource: this.ingestion.externalApiSource,
         }) satisfies MyListsCSVImport);
     }
 
@@ -184,7 +184,7 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
     }
 
     async addMediaToUserList(userId: number, mediaId: number, status?: Status) {
-        const newStatus = status ?? this.policy.defaultStatus;
+        const newStatus = status ?? this.servicePolicy.defaultStatus;
 
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
@@ -292,7 +292,7 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
         newState: TDef["repository"]["tables"]["listTable"]["$inferSelect"] | null,
         media: TDef["repository"]["tables"]["mediaTable"]["$inferSelect"],
     ): DeltaStats {
-        const { progressTotals } = this.policy;
+        const { progressTotals } = this.servicePolicy;
 
         const oldTotals = progressTotals(oldState, media);
         const newTotals = progressTotals(newState, media);

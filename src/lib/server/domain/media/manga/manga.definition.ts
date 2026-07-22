@@ -109,7 +109,7 @@ export const mangaDefinition = defineMediaDefinition({
         }),
     },
     ingestion: {
-        source: ApiProviderType.MANGA,
+        externalApiSource: ApiProviderType.MANGA,
         limits: {
             authors: 2,
         },

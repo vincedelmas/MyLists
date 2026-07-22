@@ -45,7 +45,7 @@ export class MangaService extends BaseService<MangaDefinition, MangaRepository> 
     }
 
     async getMediaEditableFields(mediaId: number) {
-        const { editableFields } = this.policy;
+        const { editableFields } = this.servicePolicy;
 
         const fields: Record<string, any> = {};
         const media = await this.repository.findAllAssociatedDetails(mediaId);
@@ -61,7 +61,7 @@ export class MangaService extends BaseService<MangaDefinition, MangaRepository> 
     }
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
-        const { editableFields } = this.policy;
+        const { editableFields } = this.servicePolicy;
         const { coverDirectory } = this.identity;
 
         const media = await this.repository.findById(mediaId);

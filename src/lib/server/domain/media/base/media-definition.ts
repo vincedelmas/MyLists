@@ -52,19 +52,6 @@ type RelatedEntityTableColumns = {
 };
 
 
-type EpsPerSeasonTableColumns = {
-    id: NotNullColumn<number>;
-    season: NotNullColumn<number>;
-    mediaId: NotNullColumn<number>;
-    episodes: NotNullColumn<number>;
-};
-
-
-type TvMediaTableColumns = {
-    nextEpisodeToAir: NullableColumn<string>;
-};
-
-
 type ProgressTotals = {
     timeSpent: number;
     totalRedo: number;
@@ -76,7 +63,6 @@ type MediaTable = AnySQLiteTable & MediaTableColumns;
 type ListTable = AnySQLiteTable & ListTableColumns;
 type GenreTable = AnySQLiteTable & RelatedEntityTableColumns;
 type TagTable = AnySQLiteTable & TagTableColumns;
-type EpsPerSeasonTable = AnySQLiteTable & EpsPerSeasonTableColumns;
 
 
 export type BaseMediaTables<
@@ -90,21 +76,6 @@ export type BaseMediaTables<
     genreTable: TGenreTable;
     tagTable: TTagTable;
     deleteDependents: readonly (AnySQLiteTable & { mediaId: NotNullColumn<number> | NullableColumn<number> })[];
-};
-
-
-type TvMediaTables<
-    TMediaTable extends MediaTable & TvMediaTableColumns = MediaTable & TvMediaTableColumns,
-    TListTable extends ListTable = ListTable,
-    TGenreTable extends GenreTable = GenreTable,
-    TTagTable extends TagTable = TagTable,
-    TActorTable extends GenreTable = GenreTable,
-    TNetworkTable extends GenreTable = GenreTable,
-    TEpsPerSeasonTable extends EpsPerSeasonTable = EpsPerSeasonTable,
-> = BaseMediaTables<TMediaTable, TListTable, TGenreTable, TTagTable> & {
-    actorsTable: TActorTable;
-    networksTable: TNetworkTable;
-    epsPerSeasonTable: TEpsPerSeasonTable;
 };
 
 
@@ -173,7 +144,7 @@ type MediaIdentity<TMediaType extends MediaType = MediaType> = {
 
 
 export type MediaIngestionPolicy = {
-    readonly source: ApiProviderType;
+    readonly externalApiSource: ApiProviderType;
     readonly defaultPages?: number;
     readonly defaultDuration?: number;
     readonly limits?: {
@@ -193,9 +164,9 @@ export type MediaIngestionPolicy = {
 };
 
 
-export type ProviderAttribution = {
+type ProviderAttribution = {
     readonly name: string;
-    readonly mediaUrl: string | null;
+    readonly mediaUrl?: string;
 };
 
 

@@ -46,7 +46,7 @@ export class BooksService extends BaseService<BookDefinition, BooksRepository> {
     }
 
     async getMediaEditableFields(mediaId: number) {
-        const editableFields = this.policy.editableFields;
+        const editableFields = this.servicePolicy.editableFields;
 
         const fields: Record<string, any> = {};
         const media = await this.repository.findAllAssociatedDetails(mediaId);
@@ -66,7 +66,7 @@ export class BooksService extends BaseService<BookDefinition, BooksRepository> {
     }
 
     async updateMediaEditableFields(mediaId: number, payload: Record<string, any>) {
-        const { editableFields } = this.policy;
+        const { editableFields } = this.servicePolicy;
         const { coverDirectory } = this.identity;
 
         const media = await this.repository.findById(mediaId);

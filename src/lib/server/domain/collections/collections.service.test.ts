@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
 import {UserService} from "@/lib/server/domain/user";
 import {MediaType, RoleType} from "@/lib/utils/enums";
-import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import type {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {CollectionsService} from "@/lib/server/domain/collections/collections.service";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 
@@ -18,7 +18,7 @@ const createService = () => {
         }),
     } as unknown as typeof CollectionsRepository;
 
-    const service = new CollectionsService({} as UserService, repository, {} as typeof MediaServiceRegistry);
+    const service = new CollectionsService({} as UserService, repository, {} as MediaServiceRegistry);
 
     return { repository, service };
 };

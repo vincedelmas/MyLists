@@ -26,7 +26,7 @@ export class AdminService {
         return this.repository.deleteArchivedTaskForAdmin(taskId);
     }
 
-    async getMediaOverviewForAdmin(mediaServiceRegistry: typeof MediaServiceRegistry) {
+    async getMediaOverviewForAdmin(mediaServiceRegistry: MediaServiceRegistry) {
         const mediaStats = await Promise.all(Object.values(MediaType).map(async (mediaType) => {
             const mediaService = mediaServiceRegistry.get(mediaType);
             const { added, updated } = await mediaService.getUserMediaAddedAndUpdatedForAdmin();

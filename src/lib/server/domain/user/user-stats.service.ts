@@ -16,7 +16,7 @@ export class UserStatsService {
         private userActivityService: UserActivityService,
         private achievementsRepository: typeof AchievementsRepository,
         private userUpdatesRepository: typeof UserUpdatesRepository,
-        private mediaServiceRegistry: typeof MediaServiceRegistry,
+        private mediaServiceRegistry: MediaServiceRegistry,
     ) {
     }
 

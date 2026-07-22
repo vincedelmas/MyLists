@@ -12,7 +12,7 @@ import {ActivityEditor as ActivityEditorRow, ActivityMediaRef, LogActivityFromDe
 export class UserActivityService {
     constructor(
         private repository: typeof UserActivityRepository,
-        private mediaServiceRegistry: typeof MediaServiceRegistry,
+        private mediaServiceRegistry: MediaServiceRegistry,
     ) {
     }
 

@@ -11,7 +11,7 @@ type ActiveRun = NonNullable<Awaited<ReturnType<typeof WcfRepository.getActiveRu
 export class WcfService {
     constructor(
         private repository: typeof WcfRepository,
-        private mediaServiceRegistry: typeof MediaServiceRegistry,
+        private mediaServiceRegistry: MediaServiceRegistry,
     ) {
     }
 

@@ -20,7 +20,7 @@ export class UserMediaService {
         private userActivityService: UserActivityService,
         private userUpdatesService: UserUpdatesService,
         private notificationsService: NotificationsService,
-        private mediaServiceRegistry: typeof MediaServiceRegistry,
+        private mediaServiceRegistry: MediaServiceRegistry,
     ) {
     }
 

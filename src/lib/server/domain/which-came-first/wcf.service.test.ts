@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
-import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import type {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {WcfService} from "@/lib/server/domain/which-came-first/wcf.service";
 import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
 
@@ -24,7 +24,7 @@ describe("WcfService.getGameData", () => {
         };
         const mediaServiceRegistry = {
             get: vi.fn().mockReturnValue(mediaService),
-        } as unknown as typeof MediaServiceRegistry;
+        } as unknown as MediaServiceRegistry;
         const service = new WcfService(repository, mediaServiceRegistry);
 
         await expect(service.getGameData(42)).rejects.toMatchObject({

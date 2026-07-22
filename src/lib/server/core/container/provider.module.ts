@@ -1,10 +1,9 @@
-import {MediaType} from "@/lib/utils/enums";
 import {MediaModule} from "@/lib/server/core/container/media.module";
 import {ApiClientModule} from "@/lib/server/core/container/api-client.module";
+import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {createGamesIngestionService, createIgdbGamesProvider} from "@/lib/server/api-providers/igdb-games.provider";
 import {createJikanMangaProvider, createMangaIngestionService} from "@/lib/server/api-providers/jikan-manga.provider";
 import {createMoviesIngestionService, createTmdbMoviesProvider} from "@/lib/server/api-providers/tmdb-movies.provider";
-import {ExternalMediaProviderRegistry, MediaIngestionServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {createBooksIngestionService, createGBooksBooksProvider} from "@/lib/server/api-providers/gbooks-books.provider";
 import {createAnimeIngestionService, createSeriesIngestionService, createTmdbAnimeProvider, createTmdbSeriesProvider} from "@/lib/server/api-providers/tmdb-tv.provider";
 
@@ -20,9 +19,7 @@ export function setupProviderModule(mediaModule: MediaModule, apiClientModule: A
         books: createGBooksBooksProvider(apiClients.gBook),
         manga: createJikanMangaProvider(apiClients.jikan),
     };
-    Object.entries(externalProviders).forEach(([key, provider]) => {
-        ExternalMediaProviderRegistry.register(key as MediaType, provider);
-    });
+    const externalProviderRegistry = createMediaRegistry(externalProviders);
 
     const ingestionServices = {
         series: createSeriesIngestionService(mediaModule.repositories.series, externalProviders.series),
@@ -32,14 +29,12 @@ export function setupProviderModule(mediaModule: MediaModule, apiClientModule: A
         books: createBooksIngestionService(mediaModule.repositories.books, externalProviders.books),
         manga: createMangaIngestionService(mediaModule.repositories.manga, externalProviders.manga),
     };
-    Object.entries(ingestionServices).forEach(([key, service]) => {
-        MediaIngestionServiceRegistry.register(key as MediaType, service);
-    });
+    const ingestionServiceRegistry = createMediaRegistry(ingestionServices);
 
     return {
         registries: {
-            externalProviders: ExternalMediaProviderRegistry,
-            ingestionServices: MediaIngestionServiceRegistry,
+            externalProviders: externalProviderRegistry,
+            ingestionServices: ingestionServiceRegistry,
         },
     }
 }

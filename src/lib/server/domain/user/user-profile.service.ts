@@ -17,7 +17,7 @@ import {
 export class UserProfileService {
     constructor(
         private repository: typeof UserProfileRepository,
-        private mediaServiceRegistry: typeof MediaServiceRegistry,
+        private mediaServiceRegistry: MediaServiceRegistry,
     ) {
     }
 

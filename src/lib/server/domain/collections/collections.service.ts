@@ -13,7 +13,7 @@ export class CollectionsService {
     constructor(
         private userService: UserService,
         private repository: typeof CollectionsRepository,
-        private mediaRegistry: typeof MediaServiceRegistry,
+        private mediaRegistry: MediaServiceRegistry,
     ) {
     }
 

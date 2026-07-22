@@ -2,6 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {BooksRepository, BooksService} from "@/lib/server/domain/media/books";
 import {GamesRepository, GamesService} from "@/lib/server/domain/media/games";
 import {MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
+import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {booksDefinition} from "@/lib/server/domain/media/books/books.definition";
 import {gamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {mangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
@@ -13,7 +14,6 @@ import {createGamesAchievementCatalog} from "@/lib/server/domain/media/games/gam
 import {createMangaAchievementCatalog} from "@/lib/server/domain/media/manga/manga.achievements";
 import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
 import {animeDefinition, seriesDefinition, TvRepository, TvService} from "@/lib/server/domain/media/tv";
-import {createMediaAchievementsRegistry, MediaRepositoryRegistry, MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 
 
 export function setupMediaModule() {
@@ -25,11 +25,9 @@ export function setupMediaModule() {
         books: new BooksRepository(booksDefinition),
         manga: new MangaRepository(mangaDefinition),
     };
-    Object.entries(repositories).forEach(([key, repo]) => {
-        MediaRepositoryRegistry.register(key as MediaType, repo);
-    });
+    const mediaRepositoryRegistry = createMediaRegistry(repositories);
 
-    const mediaAchievementsRegistry = createMediaAchievementsRegistry({
+    const mediaAchievementsRegistry = createMediaRegistry({
         [MediaType.SERIES]: createTvAchievementCatalog(seriesDefinition),
         [MediaType.ANIME]: createTvAchievementCatalog(animeDefinition),
         [MediaType.MOVIES]: createMoviesAchievementCatalog(moviesDefinition),
@@ -46,9 +44,7 @@ export function setupMediaModule() {
         books: new BooksService(repositories.books, booksDefinition),
         manga: new MangaService(repositories.manga, mangaDefinition),
     };
-    Object.entries(services).forEach(([key, service]) => {
-        MediaServiceRegistry.register(key as MediaType, service);
-    })
+    const mediaServiceRegistry = createMediaRegistry(services);
 
     return {
         repositories: {
@@ -68,8 +64,8 @@ export function setupMediaModule() {
             manga: services.manga,
         },
         registries: {
-            mediaService: MediaServiceRegistry,
-            mediaRepository: MediaRepositoryRegistry,
+            mediaService: mediaServiceRegistry,
+            mediaRepository: mediaRepositoryRegistry,
             mediaAchievements: mediaAchievementsRegistry,
         }
     };

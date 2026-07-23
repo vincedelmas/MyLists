@@ -5,15 +5,15 @@ import {statusUtils} from "@/lib/utils/media-mapping";
 import {UserMediaStats} from "@/lib/types/user-media.types";
 import {MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
 import {UserStatsRepository} from "@/lib/server/domain/user/user-stats.repository";
-import {UserActivityService} from "@/lib/server/domain/user/user-activity.service";
 import {UserUpdatesRepository} from "@/lib/server/domain/user/user-updates.repository";
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
+import {UserMonthlyActivityService} from "@/lib/server/domain/user/user-monthly-activity.service";
 
 
 export class UserStatsService {
     constructor(
         private repository: typeof UserStatsRepository,
-        private userActivityService: UserActivityService,
+        private userActivityService: UserMonthlyActivityService,
         private achievementsRepository: typeof AchievementsRepository,
         private userUpdatesRepository: typeof UserUpdatesRepository,
         private mediaStatsRegistry: MediaStatsRegistry,

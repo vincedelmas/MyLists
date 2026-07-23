@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {ActivitySearch} from "@/lib/schemas";
+import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -7,9 +7,9 @@ import {LayoutGrid, Plus, Settings2} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
-import {ActivityEditor} from "@/lib/types/activity.types";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {MonthlyActivityEditor} from "@/lib/types/activity.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
@@ -18,26 +18,26 @@ import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
-import {ActivityAddDialog} from "@/lib/client/components/activity/ActivityAddDialog";
-import {ActivityEditDialog} from "@/lib/client/components/activity/ActivityEditDialog";
 import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
-import {ActivityStatusIcon} from "@/lib/client/components/activity/ActivityStatusIcon";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
+import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
+import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
+import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 interface MonthlyActivityContentProps {
     username: string;
-    filters: ActivitySearch;
     fixedMediaType?: MediaType;
+    filters: MonthlyActivitySearch;
 }
 
 
 const activityKindFilters: { label: string, value: ActivityKind }[] = [
-    { label: "All Activities", value: ActivityKind.ALL },
+    { label: "All Summaries", value: ActivityKind.ALL },
     { label: "Completed", value: ActivityKind.COMPLETED },
-    { label: "In progress", value: ActivityKind.PROGRESSED },
-    { label: "Re-experience", value: ActivityKind.REDO },
+    { label: "Progressed", value: ActivityKind.PROGRESSED },
+    { label: "Re-Experienced", value: ActivityKind.REDO },
 ];
 
 
@@ -45,23 +45,21 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
     const { currentUser } = useAuth();
     const canEdit = currentUser?.name === username;
     const [addActivity, setAddActivity] = useState(false);
-    const [editActivity, setEditActivity] = useState<ActivityEditor | null>(null);
     const activeFilters = fixedMediaType ? { ...filters, activeTab: fixedMediaType } : filters;
+    const [editActivity, setEditActivity] = useState<MonthlyActivityEditor | null>(null);
 
     const apiData = useSuspenseQuery(monthlyActivityOptions(username, activeFilters)).data;
     const { activeTab = "all", activityKind = ActivityKind.ALL, hiddenOnly = false, search = "", page = 1, ...dateFilters } = activeFilters;
 
-    const {
-        localSearch,
-        handleInputChange,
-        updateFilters
-    } = useSearchNavigate<ActivitySearch>({ search, options: { resetScroll: false } });
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<MonthlyActivitySearch>({
+        search, options: { resetScroll: false },
+    });
 
     const activeMediaTypes = fixedMediaType
         ? [fixedMediaType]
         : currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? apiData.mediaTypes;
 
-    const handleFilterChange = (next: Partial<ActivitySearch>) => {
+    const handleFilterChange = (next: Partial<MonthlyActivitySearch>) => {
         updateFilters({ page: 1, ...next, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) });
     };
 
@@ -87,12 +85,12 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                             className="w-full"
                             value={localSearch}
                             onChange={handleInputChange}
-                            placeholder="Search activity by title..."
+                            placeholder="Search monthly activity by title..."
                         />
                     </div>
                     <div className="col-span-1 sm:order-1 sm:shrink-0">
                         <Select value={activityKind} onValueChange={(v) => handleFilterChange({ activityKind: v as ActivityKind })}>
-                            <SelectTrigger className="w-full sm:w-36">
+                            <SelectTrigger className="w-full sm:w-42">
                                 <SelectValue placeholder="Activity Kind"/>
                             </SelectTrigger>
                             <SelectContent>
@@ -138,7 +136,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                             className="flex-1 sm:flex-initial justify-center gap-2"
                         >
                             <Plus className="size-4 shrink-0"/>
-                            <span>Add activity</span>
+                            <span>Add Activity</span>
                         </Button>
                         <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3
                         shadow-sm flex-1 sm:flex-initial justify-center cursor-pointer select-none">
@@ -160,7 +158,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                     iconSize={50}
                     className="py-20"
                     icon={LayoutGrid}
-                    message={hiddenOnly ? "No hidden activity." : "No activity recorded."}
+                    message={hiddenOnly ? "No hidden monthly activity." : "No activity recorded for this month."}
                 />
             }
 
@@ -182,7 +180,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                             size="iconBare"
                                             variant="invisible"
                                             onClick={() => setEditActivity(row)}
-                                            title={`Edit activity for ${row.mediaName}`}
+                                            title={`Edit Monthly Activity for ${row.mediaName}`}
                                         >
                                             <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
                                         </Button>
@@ -199,7 +197,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                     <MainThemeIcon type={row.mediaType} size={14}/>
                                     <span>-</span>
                                     <span>{formatMinutes(row.timeGained)}</span>
-                                    <ActivityStatusIcon row={row}/>
+                                    <MonthlyActivityStatusIcons row={row}/>
                                 </div>
                             </div>
                         </MediaCard>
@@ -223,14 +221,14 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
             />
 
             {editActivity &&
-                <ActivityEditDialog
+                <MonthlyActivityEditDialog
                     activity={editActivity}
                     open={Boolean(editActivity)}
                     onOpenChange={() => setEditActivity(null)}
                 />
             }
 
-            <ActivityAddDialog
+            <MonthlyActivityAddDialog
                 open={addActivity}
                 onOpenChange={setAddActivity}
                 mediaTypes={activeMediaTypes}

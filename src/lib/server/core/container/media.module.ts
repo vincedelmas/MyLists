@@ -1,7 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {createTvAchievementCatalog} from "@/lib/server/domain/media/tv/tv.achievements";
-import {createTvStatistics, TvRepository, TvService} from "@/lib/server/domain/media/tv";
 import {booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {mangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 import {gamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
@@ -12,10 +11,11 @@ import {createGamesAchievementCatalog} from "@/lib/server/domain/media/games/gam
 import {createMangaAchievementCatalog} from "@/lib/server/domain/media/manga/manga.achievements";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
-import {BooksRepository, BooksService, createBooksStatistics} from "@/lib/server/domain/media/books";
-import {createGamesStatistics, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
-import {createMangaStatistics, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
-import {createMoviesStatistics, MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
+import {createTvMonthlyActivity, createTvStatistics, TvRepository, TvService} from "@/lib/server/domain/media/tv";
+import {BooksRepository, BooksService, createBooksMonthlyActivity, createBooksStatistics} from "@/lib/server/domain/media/books";
+import {createGamesMonthlyActivity, createGamesStatistics, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
+import {createMangaMonthlyActivity, createMangaStatistics, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
+import {createMoviesMonthlyActivity, createMoviesStatistics, MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
 
 
 export function setupMediaModule() {
@@ -28,6 +28,15 @@ export function setupMediaModule() {
         manga: new MangaRepository(mangaServerDefinition),
     };
     const mediaRepositoryRegistry = createMediaRegistry(repositories);
+
+    const mediaMonthlyActivityRegistry = createMediaRegistry({
+        [MediaType.SERIES]: createTvMonthlyActivity(seriesServerDefinition, repositories.series),
+        [MediaType.ANIME]: createTvMonthlyActivity(animeServerDefinition, repositories.anime),
+        [MediaType.MOVIES]: createMoviesMonthlyActivity(moviesServerDefinition, repositories.movies),
+        [MediaType.GAMES]: createGamesMonthlyActivity(gamesServerDefinition, repositories.games),
+        [MediaType.BOOKS]: createBooksMonthlyActivity(booksServerDefinition, repositories.books),
+        [MediaType.MANGA]: createMangaMonthlyActivity(mangaServerDefinition, repositories.manga),
+    });
 
     const mediaAchievementsRegistry = createMediaRegistry({
         [MediaType.SERIES]: createTvAchievementCatalog(seriesServerDefinition),
@@ -79,6 +88,7 @@ export function setupMediaModule() {
             mediaStatistics: mediaStatRegistry,
             mediaRepository: mediaRepositoryRegistry,
             mediaAchievements: mediaAchievementsRegistry,
+            mediaMonthlyActivity: mediaMonthlyActivityRegistry,
         }
     };
 }

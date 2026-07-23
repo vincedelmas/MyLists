@@ -4,6 +4,10 @@ import type {GamesService, GamesStatistics} from "@/lib/server/domain/media/game
 import type {MangaService, MangaStatistics} from "@/lib/server/domain/media/manga";
 import type {BooksService, BooksStatistics} from "@/lib/server/domain/media/books";
 import type {MoviesService, MoviesStatistics} from "@/lib/server/domain/media/movies";
+import type {MediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
+
+
+export type MediaMonthlyActivityRegistry = MediaRegistry<Record<MediaType, MediaMonthlyActivity>>;
 
 
 export type MediaStatsRegistry = MediaRegistry<{

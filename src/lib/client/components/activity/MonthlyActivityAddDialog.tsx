@@ -6,27 +6,25 @@ import {useQuery} from "@tanstack/react-query";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {Button} from "@/lib/client/components/ui/button";
-import {useCurrentDate} from "@/lib/client/hooks/use-dates";
-import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
-import {AddActivity, AddActivityInput, addActivitySchema} from "@/lib/schemas";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {activityMediaAddSearchOptions} from "@/lib/client/react-query/query-options";
-import {useAddActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
+import {monthlyActivityMediaSearchOptions} from "@/lib/client/react-query/query-options";
+import {getDefaultActivityDate, toActivityStoredValue} from "@/lib/utils/activity-utils";
+import {AddMonthlyActivity, AddMonthlyActivityInput, addMonthlyActivitySchema} from "@/lib/schemas";
+import {MonthlyActivityFormFields} from "@/lib/client/components/activity/MonthlyActivityFormFields";
+import {useAddMonthlyActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
-import {getActivityInputStep, getActivityUnitLabel, getDefaultActivityDate, toActivityStoredValue} from "@/lib/utils/activity-utils";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
-interface ActivityAddDialogProps {
+interface MonthlyActivityAddDialogProps {
     year: number;
     open: boolean;
     month: number;
@@ -35,28 +33,27 @@ interface ActivityAddDialogProps {
 }
 
 
-export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange }: ActivityAddDialogProps) => {
-    const currentDate = useCurrentDate();
-    const addMutation = useAddActivityMutation({ noErrorToast: true });
+export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange }: MonthlyActivityAddDialogProps) => {
+    const addMutation = useAddMonthlyActivityMutation({ noErrorToast: true });
     const [selectedMedia, setSelectedMedia] = useState<{ id: number; name: string; imageCover: string } | null>(null);
     const { search, setSearch, debouncedSearch, isOpen, reset: resetSearch, containerRef } = useSearchContainer({
         onReset: () => undefined,
     });
-    const form = useForm<AddActivityInput, unknown, AddActivity>({
-        resolver: zodResolver(addActivitySchema),
+    const form = useForm<AddMonthlyActivityInput, unknown, AddMonthlyActivity>({
+        resolver: zodResolver(addMonthlyActivitySchema),
         defaultValues: {
             mediaId: 0,
-            isRedo: false,
             hidden: false,
-            specificGained: 1,
-            isCompleted: false,
+            redoGained: 0,
+            progressGained: 1,
+            hadCompletion: false,
             mediaType: mediaTypes[0] ?? MediaType.SERIES,
-            lastUpdate: getDefaultActivityDate(year, month),
+            lastActivityAt: getDefaultActivityDate(year, month),
         },
     });
 
     const selectedType = form.watch("mediaType");
-    const { data: searchResults = [], isFetching, error } = useQuery(activityMediaAddSearchOptions(selectedType, debouncedSearch));
+    const { data: searchResults = [], isFetching, error } = useQuery(monthlyActivityMediaSearchOptions(selectedType, debouncedSearch));
 
     const handleTypeChange = (value: MediaType) => {
         resetSearch();
@@ -76,14 +73,12 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
         resetSearch();
     };
 
-    const handleSubmit = (values: AddActivity) => {
+    const handleSubmit = (values: AddMonthlyActivity) => {
         addMutation.mutate({
             data: {
                 ...values,
-                isRedo: values.isRedo,
-                isCompleted: values.isCompleted,
-                lastUpdate: `${values.lastUpdate}T12:00:00.000Z`,
-                specificGained: toActivityStoredValue(values.mediaType, values.specificGained),
+                lastActivityAt: `${values.lastActivityAt}T12:00:00.000Z`,
+                progressGained: toActivityStoredValue(values.mediaType, values.progressGained),
             },
         }, {
             onError: (error) => {
@@ -99,9 +94,9 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="w-[min(620px,calc(100vw-2rem))]">
                 <DialogHeader>
-                    <DialogTitle>Add Activity</DialogTitle>
+                    <DialogTitle>Add monthly activity</DialogTitle>
                     <DialogDescription>
-                        Add progress to the selected month's activity.
+                        Add or correct this media's summary for the selected month.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -173,8 +168,8 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                                                     </div>
                                                     :
                                                     <div ref={containerRef} className="relative">
-                                                        <div className="flex items-center overflow-hidden rounded-md border border-border
-                                                    focus-within:border-app-accent focus-within:ring-2 focus-within:ring-app-accent/50">
+                                                        <div className="flex items-center overflow-hidden focus-within:border-app-accent
+                                                        rounded-md border focus-within:ring-2 focus-within:ring-app-accent/50">
                                                             <div className="px-3 text-muted-foreground">
                                                                 <Search className="size-4"/>
                                                             </div>
@@ -234,98 +229,14 @@ export const ActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange 
                                 }
                             />
 
-                            <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-                                <FormField
-                                    name="specificGained"
-                                    control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem>
-                                            <FormLabel>
-                                                {getActivityUnitLabel(selectedType, "long") ?? "Units gained"}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    ref={field.ref}
-                                                    name={field.name}
-                                                    value={field.value}
-                                                    onBlur={field.onBlur}
-                                                    step={getActivityInputStep(selectedType)}
-                                                    onChange={(ev) => field.onChange(ev.target.valueAsNumber)}
-                                                />
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
-                                    }
-                                />
-                                <FormField
-                                    name="lastUpdate"
-                                    control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem>
-                                            <FormLabel>Progress date</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    type="date"
-                                                    max={currentDate}
-                                                    min={MIN_ACTIVITY_DATE}
-                                                />
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
-                                    }
-                                />
-                            </div>
-                            <div className="flex flex-wrap gap-4">
-                                <FormField
-                                    name="isCompleted"
-                                    control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={field.value}
-                                                    onCheckedChange={(value) => {
-                                                        field.onChange(!!value);
-                                                        if (value) {
-                                                            form.setValue("isRedo", false, { shouldDirty: true, shouldValidate: true });
-                                                        }
-                                                    }}
-                                                />
-                                            </FormControl>
-                                            <FormLabel className="font-normal">Completed</FormLabel>
-                                            <FormMessage/>
-                                        </FormItem>
-                                    }
-                                />
-                                <FormField
-                                    name="isRedo"
-                                    control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={field.value}
-                                                    onCheckedChange={(value) => {
-                                                        field.onChange(!!value);
-                                                        if (value) {
-                                                            form.setValue("isCompleted", false, { shouldDirty: true, shouldValidate: true });
-                                                        }
-                                                    }}
-                                                />
-                                            </FormControl>
-                                            <FormLabel className="font-normal">Re-experience</FormLabel>
-                                            <FormMessage/>
-                                        </FormItem>
-                                    }
-                                />
-                            </div>
+                            <MonthlyActivityFormFields
+                                mediaType={selectedType}
+                            />
                         </fieldset>
                         <FormError/>
                         <DialogFooter>
                             <FormSubmitButton isLoading={addMutation.isPending}>
-                                Add New Activity
+                                Add Monthly Activity
                             </FormSubmitButton>
                         </DialogFooter>
                     </form>

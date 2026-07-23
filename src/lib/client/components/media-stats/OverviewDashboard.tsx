@@ -91,9 +91,9 @@ export function OverviewDashboard({ stats }: OverviewDashboardProps) {
                 />
                 <ActivityByMonthChart
                     stacked={true}
-                    title="Activity Time by Month"
                     data={stats.activityByMonth.data}
                     mediaTypes={stats.activityByMonth.mediaTypes}
+                    title="Activity Time (hours) Distribution by Month"
                 />
             </div>
 

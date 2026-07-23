@@ -31,7 +31,7 @@ type MediaStatsDefinition = Readonly<{
 type MediaProgressDefinition = Readonly<{
     inputStep: number;
     timing: MediaProgressTiming;
-    unit?: Readonly<{
+    unit: Readonly<{
         long: string;
         short: string;
         plural: string;

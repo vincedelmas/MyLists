@@ -17,6 +17,12 @@ export const moviesDefinition = defineMediaDefinition({
     },
     progress: {
         inputStep: 1,
+        unit: {
+            short: "views",
+            plural: "viewings",
+            singular: "viewing",
+            long: "Times Watched",
+        },
         timing: {
             kind: "media-duration",
             fallbackMinutes: MOVIES_FALLBACK_DURATION,

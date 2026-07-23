@@ -1,6 +1,5 @@
+import {ActivityKind, MediaType, UpdateType} from "@/lib/utils/enums";
 import {DeltaStats} from "@/lib/types/stats.types";
-import {ActivityKind, MediaType} from "@/lib/utils/enums";
-import {UpdateUserMediaDetails} from "@/lib/types/user-media.types";
 
 
 export type MediaInfo = {
@@ -14,43 +13,43 @@ export type MediaInfo = {
 }
 
 
-export type ActivityEditor = {
+export type MonthlyActivityEditor = {
     id: number;
-    isRedo: boolean;
     mediaId: number;
     hidden: boolean;
     mediaName: string;
     mediaCover: string;
-    lastUpdate: string;
     timeGained: number;
-    isCompleted: boolean;
+    redoGained: number;
     mediaType: MediaType;
-    specificGained: number;
+    hadCompletion: boolean;
+    lastActivityAt: string;
+    progressGained: number;
 }
 
 
-export type PaginatedActivityFilter = {
+export type PaginatedMonthlyActivityFilter = {
     page?: number;
     perPage?: number;
     timeBucket: string;
-    mediaType?: MediaType;
     hiddenOnly?: boolean;
+    mediaType?: MediaType;
     activityKind?: ActivityKind;
     mediaIdsByType?: Partial<Record<MediaType, number[]>>;
 }
 
 
-export type WrappedActivityResult = {
+export type WrappedMonthlyActivityResult = {
     count: number;
     timeGained: number;
-    specificTotal: number;
+    progressTotal: number;
 }
 
 
-export type ActivityMediaRef = {
+export type MonthlyActivityMediaRef = {
     mediaId: number;
     mediaType: MediaType;
-    specificGained: number;
+    progressGained: number;
 };
 
 
@@ -60,23 +59,23 @@ export type MonthlyActivityChartDatum = {
 } & Partial<Record<MediaType, number>>;
 
 
-export type LogActivityFromDelta = {
+export type LogMonthlyActivityFromDelta = {
     userId: number;
     mediaId: number;
     delta: DeltaStats;
-    lastUpdate?: string;
     mediaType: MediaType;
-    newState: UpdateUserMediaDetails<any, any>["newState"];
+    activityDate?: string;
+    updateType: UpdateType;
 };
 
 
-export type LogActivity = {
+export type LogMonthlyActivity = {
     userId: number;
     mediaId: number;
-    isRedo: boolean;
     hidden?: boolean;
-    lastUpdate?: string;
-    isCompleted: boolean;
+    redoGained: number;
     mediaType: MediaType;
-    specificGained: number;
+    activityDate?: string;
+    hadCompletion: boolean;
+    progressGained: number;
 }

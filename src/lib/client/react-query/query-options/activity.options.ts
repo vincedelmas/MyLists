@@ -1,10 +1,10 @@
 import {MediaType} from "@/lib/utils/enums";
-import {ActivitySearch} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
-import {getActivityAddMediaSearch, getMonthlyActivity, getMonthlyActivityStats} from "@/lib/server/functions/user-activity";
+import {MonthlyActivitySearch} from "@/lib/schemas";
+import {getMonthlyActivity, getMonthlyActivityMediaSearch, getMonthlyActivityStats} from "@/lib/server/functions/user-monthly-activity";
 
 
-export const monthlyActivityStatsOptions = (username: string, search: Pick<ActivitySearch, "year" | "month"> & { mediaType?: MediaType }) => {
+export const monthlyActivityStatsOptions = (username: string, search: Pick<MonthlyActivitySearch, "year" | "month"> & { mediaType?: MediaType }) => {
     return queryOptions({
         queryKey: ["monthly-activity", username, "stats", search],
         queryFn: () => getMonthlyActivityStats({ data: { username, ...search } }),
@@ -13,7 +13,7 @@ export const monthlyActivityStatsOptions = (username: string, search: Pick<Activ
 }
 
 
-export const monthlyActivityOptions = (username: string, search: ActivitySearch) => {
+export const monthlyActivityOptions = (username: string, search: MonthlyActivitySearch) => {
     return queryOptions({
         queryKey: ["monthly-activity", username, "rows", search],
         queryFn: () => getMonthlyActivity({ data: { username, ...search } }),
@@ -21,10 +21,10 @@ export const monthlyActivityOptions = (username: string, search: ActivitySearch)
 }
 
 
-export const activityMediaAddSearchOptions = (mediaType: MediaType, query: string) => {
+export const monthlyActivityMediaSearchOptions = (mediaType: MediaType, query: string) => {
     return queryOptions({
         queryKey: ["activity-user-media-search", mediaType, query],
-        queryFn: () => getActivityAddMediaSearch({ data: { mediaType, query } }),
+        queryFn: () => getMonthlyActivityMediaSearch({ data: { mediaType, query } }),
         enabled: query.trim().length >= 2,
         staleTime: 30 * 1000,
     });

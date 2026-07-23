@@ -14,9 +14,9 @@ import {NotificationsRepository} from "@/lib/server/domain/notifications/notific
 import {
     InactiveAccountRepository,
     InactiveAccountService,
-    UserActivityRepository,
-    UserActivityService,
     UserMediaService,
+    UserMonthlyActivityRepository,
+    UserMonthlyActivityService,
     UserProfileRepository,
     UserProfileService,
     UserRepository,
@@ -33,6 +33,7 @@ import {
 export function setupUserModule(mediaModule: MediaModule) {
     const mediaServiceRegistry = mediaModule.registries.mediaService;
     const mediaStatsRegistry = mediaModule.registries.mediaStatistics;
+    const mediaActivityRegistry = mediaModule.registries.mediaMonthlyActivity;
 
     // User Repositories
     const userRepository = UserRepository;
@@ -42,12 +43,12 @@ export function setupUserModule(mediaModule: MediaModule) {
     const userUpdatesRepository = UserUpdatesRepository;
     const userProfileRepository = UserProfileRepository;
     const collectionsRepository = CollectionsRepository;
-    const userActivityRepository = UserActivityRepository;
     const achievementsRepository = AchievementsRepository;
     const featureVotesRepository = FeatureVotesRepository;
     const notificationsRepository = NotificationsRepository;
     const userSimilarityRepository = UserSimilarityRepository;
     const inactiveAccountRepository = InactiveAccountRepository;
+    const userActivityRepository = UserMonthlyActivityRepository;
 
     // User Services
     const inactiveAccountService = new InactiveAccountService(inactiveAccountRepository);
@@ -60,7 +61,7 @@ export function setupUserModule(mediaModule: MediaModule) {
     const whichCameFirstService = new WcfService(whichCameFirstRepository, mediaServiceRegistry);
     const userProfileService = new UserProfileService(userProfileRepository, mediaServiceRegistry);
     const featureVotesService = new FeatureVotesService(featureVotesRepository, notificationsService);
-    const userActivityService = new UserActivityService(userActivityRepository, mediaServiceRegistry);
+    const userActivityService = new UserMonthlyActivityService(userActivityRepository, mediaActivityRegistry);
     const collectionsService = new CollectionsService(userService, collectionsRepository, mediaServiceRegistry);
     const userStatsService = new UserStatsService(userStatsRepository, userActivityService, achievementsRepository, userUpdatesRepository, mediaStatsRegistry);
     const userMediaService = new UserMediaService(userStatsService, userActivityService, userUpdatesService, notificationsService, mediaServiceRegistry);

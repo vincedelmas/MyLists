@@ -281,6 +281,13 @@
       "when": 1784634293122,
       "tag": "0039_media_list_orphan_lookup_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1784809270225,
+      "tag": "0040_explicit_monthly_activity",
+      "breakpoints": true
     }
   ]
 }

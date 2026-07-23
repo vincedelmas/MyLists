@@ -2,15 +2,15 @@ import {logger} from "@/lib/server/core/logger";
 import {TvRepository} from "@/lib/server/domain/media/tv";
 import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
-import {moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
+import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
-import {AnimeDefinition, animeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
 import {ExternalMediaProvider, MediaDetailsEnricher} from "@/lib/server/api-providers/interfaces.types";
-import {SeriesDefinition, seriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 import {TmdbMediaIdentities, tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
+import {animeServerDefinition, AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
+import {seriesServerDefinition, SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 
 
-type TvDefinition = AnimeDefinition | SeriesDefinition;
+type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
 
 
 const createAnimeGenresEnricher = (jikan: JikanApi, maxGenres: number): MediaDetailsEnricher<UpsertTvWithDetails> => {
@@ -52,9 +52,9 @@ const createTmdbTvProvider = (tmdb: TmdbApi, definition: TvDefinition): External
     const { identity, ingestion } = definition;
 
     const tmdbIdentities: TmdbMediaIdentities = {
-        [moviesDefinition.identity.mediaType]: moviesDefinition.identity,
-        [seriesDefinition.identity.mediaType]: seriesDefinition.identity,
-        [animeDefinition.identity.mediaType]: animeDefinition.identity,
+        [moviesServerDefinition.identity.mediaType]: moviesServerDefinition.identity,
+        [seriesServerDefinition.identity.mediaType]: seriesServerDefinition.identity,
+        [animeServerDefinition.identity.mediaType]: animeServerDefinition.identity,
     };
 
     const transformOptions = {
@@ -101,12 +101,12 @@ const createTmdbTvProvider = (tmdb: TmdbApi, definition: TvDefinition): External
 
 
 export const createTmdbSeriesProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertTvWithDetails> => {
-    return createTmdbTvProvider(tmdb, seriesDefinition);
+    return createTmdbTvProvider(tmdb, seriesServerDefinition);
 };
 
 
 export const createTmdbAnimeProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertTvWithDetails> => {
-    return createTmdbTvProvider(tmdb, animeDefinition);
+    return createTmdbTvProvider(tmdb, animeServerDefinition);
 };
 
 
@@ -125,7 +125,7 @@ export const createAnimeIngestionService = (jikan: JikanApi, repository: TvRepos
         repository,
         refreshCandidates: createTvRefreshCandidates(repository, provider),
         enrichers: [
-            createAnimeGenresEnricher(jikan, animeDefinition.ingestion.limits.genres),
+            createAnimeGenresEnricher(jikan, animeServerDefinition.ingestion.limits.genres),
         ],
     });
 };

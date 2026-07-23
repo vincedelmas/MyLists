@@ -6,7 +6,7 @@ import type {BooksStatistics} from "@/lib/server/domain/media/books";
 import type {MoviesStatistics} from "@/lib/server/domain/media/movies";
 import type {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
 import type {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
-import type {UserActivityService, UserStatsRepository, UserStatsService, UserUpdatesRepository} from "@/lib/server/domain/user";
+import type {UserMonthlyActivityService, UserStatsRepository, UserStatsService, UserUpdatesRepository} from "@/lib/server/domain/user";
 
 
 export type DeltaStats = {
@@ -37,7 +37,7 @@ export type TopAffinityDefinition = {
 type OtherBase = { activatedMediaTypes: MediaType[]; ratingSystem: RatingSystemType; };
 type BaseMediaStats = Awaited<ReturnType<typeof UserStatsRepository.getAggregatedMediaStats>>;
 type UpdatesStats = Awaited<ReturnType<typeof UserUpdatesRepository.mediaUpdatesStatsPerMonth>>;
-type ActivityStats = { activityByMonth: Awaited<ReturnType<UserActivityService["getActivityStatsByMonth"]>> };
+type ActivityStats = { activityByMonth: Awaited<ReturnType<UserMonthlyActivityService["getActivityStatsByMonth"]>> };
 
 type TvSpecificStats = Awaited<ReturnType<TvStatistics["calculateAdvancedMediaStats"]>>;
 type MoviesSpecificStats = Awaited<ReturnType<MoviesStatistics["calculateAdvancedMediaStats"]>>;
@@ -59,13 +59,6 @@ type OverviewStats = Awaited<ReturnType<UserStatsService["userAdvancedSummarySta
 export type UserStatsResult = OverviewStats | AdvancedMediaStats;
 
 export type NamedValue = { name: number | string; value: number };
-
-export type MediaNaming = {
-    redo?: string;
-    totalSpecific?: string;
-    durationDistribution: string;
-    durationDistributionUnit: string;
-}
 
 export type TopAffinity = {
     name: string;

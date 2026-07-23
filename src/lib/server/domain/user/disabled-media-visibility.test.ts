@@ -1,21 +1,11 @@
 import Database from "bun:sqlite";
 import {and, eq} from "drizzle-orm";
 import * as schema from "@/lib/server/database/schema";
+import {achievement, achievementTier, anime, animeList, user, userAchievement, userMediaMonthlyActivity, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {AchievementDifficulty, MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import {
-    achievement,
-    achievementTier,
-    anime,
-    animeList,
-    user,
-    userAchievement,
-    userMediaActivity,
-    userMediaSettings,
-    userMediaUpdate,
-} from "@/lib/server/database/schema";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -26,11 +16,11 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { animeDefinition } = await import("@/lib/server/domain/media/tv/anime/anime.definition");
 const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { UserStatsRepository } = await import("@/lib/server/domain/user/user-stats.repository");
 const { UserUpdatesRepository } = await import("@/lib/server/domain/user/user-updates.repository");
-const { UserActivityRepository } = await import("@/lib/server/domain/user/user-activity.repository");
+const { UserMonthlyActivityRepository } = await import("@/lib/server/domain/user/user-monthly-activity.repository");
+const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime/anime.definition.server");
 const { AchievementsRepository } = await import("@/lib/server/domain/achievements/achievements.repository");
 
 
@@ -55,12 +45,12 @@ describe("disabled media visibility", () => {
     });
 
     it("hides disabled media everywhere without deleting it", async () => {
-        const animeRepository = new TvRepository(animeDefinition);
+        const animeRepository = new TvRepository(animeServerDefinition);
 
         const disabledStats = await UserStatsRepository.getPreComputedStatsSummary({ userId: 42 });
         const disabledUpdates = await UserUpdatesRepository.getUserUpdates(42, 10);
         const disabledHistory = await UserUpdatesRepository.getUserUpdatesPaginated({}, 42);
-        const disabledActivity = await UserActivityRepository.getPaginatedActivities(42, {
+        const disabledActivity = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
             page: 1,
             perPage: 48,
             timeBucket: "2026-04",
@@ -88,7 +78,7 @@ describe("disabled media visibility", () => {
 
         const enabledStats = await UserStatsRepository.getPreComputedStatsSummary({ userId: 42 });
         const enabledUpdates = await UserUpdatesRepository.getUserUpdates(42, 10);
-        const enabledActivity = await UserActivityRepository.getPaginatedActivities(42, {
+        const enabledActivity = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
             page: 1,
             perPage: 48,
             timeBucket: "2026-04",
@@ -144,9 +134,9 @@ async function seedUserData(db: BunSQLiteDatabase<typeof schema>) {
         },
     ]);
 
-    await db.insert(userMediaActivity).values([
-        { id: 1, userId: 42, mediaId: 10, mediaType: MediaType.MOVIES, monthBucket: "2026-04", specificGained: 1 },
-        { id: 2, userId: 42, mediaId: 100, mediaType: MediaType.ANIME, monthBucket: "2026-04", specificGained: 1 },
+    await db.insert(userMediaMonthlyActivity).values([
+        { id: 1, userId: 42, mediaId: 10, mediaType: MediaType.MOVIES, monthBucket: "2026-04", progressGained: 1 },
+        { id: 2, userId: 42, mediaId: 100, mediaType: MediaType.ANIME, monthBucket: "2026-04", progressGained: 1 },
     ]);
 
     await db.insert(achievement).values([

@@ -4,12 +4,12 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {books, booksAuthors, booksGenre, booksList} from "@/lib/server/database/schema";
-import {type BookDefinition, booksDefinition} from "@/lib/server/domain/media/books/books.definition";
+import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {Book, InsertBooksWithDetails, UpdateBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 
 
-export class BooksRepository extends BaseRepository<BookDefinition> {
-    constructor(definition: BookDefinition = booksDefinition) {
+export class BooksRepository extends BaseRepository<BookServerDefinition> {
+    constructor(definition: BookServerDefinition = booksServerDefinition) {
         super(definition);
     }
 

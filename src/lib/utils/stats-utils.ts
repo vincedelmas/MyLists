@@ -1,47 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
-import {MediaNaming, NamedValue} from "@/lib/types/stats.types";
-
-
-export const getMediaNaming = (mediaType: MediaType) => {
-    const data: Record<MediaType, MediaNaming> = {
-        series: {
-            redo: "seasons re-watched",
-            durationDistributionUnit: "h",
-            totalSpecific: "Total Episodes Watched",
-            durationDistribution: "Series Duration Distribution",
-        },
-        anime: {
-            redo: "seasons re-watched",
-            durationDistributionUnit: "h",
-            totalSpecific: "Total Episodes Watched",
-            durationDistribution: "Anime Duration Distribution",
-        },
-        movies: {
-            redo: "movies re-watched",
-            durationDistributionUnit: "m.",
-            totalSpecific: "Total Movies Watched",
-            durationDistribution: "Movies Duration Distribution",
-        },
-        games: {
-            durationDistributionUnit: "h",
-            durationDistribution: "Playthrough Duration Distribution",
-        },
-        books: {
-            redo: "books re-read",
-            durationDistributionUnit: "p.",
-            totalSpecific: "Total Pages Read",
-            durationDistribution: "Pages Distribution",
-        },
-        manga: {
-            redo: "manga re-read",
-            durationDistributionUnit: "ch.",
-            totalSpecific: "Total Chapters Read",
-            durationDistribution: "Chapters Distribution",
-        },
-    }
-
-    return data[mediaType];
-}
+import {NamedValue} from "@/lib/types/stats.types";
 
 
 export const transformRatingToFeeling = (ratings: NamedValue[]) => {

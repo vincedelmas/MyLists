@@ -35,7 +35,7 @@ export function MonthlyActivityStats({ username, year, month, mediaType }: Month
             </div>
 
             {stats.mediaStats.map((stat) => {
-                const summary = getMonthlyActivityStatSummary(stat.mediaType, stat.specificTotal, stat.count);
+                const summary = getMonthlyActivityStatSummary(stat.mediaType, stat.progressTotal, stat.count);
 
                 return (
                     <div key={stat.mediaType} className="flex min-h-20 w-full min-w-0 flex-col justify-between rounded-lg border bg-background px-3 py-2">

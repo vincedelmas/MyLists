@@ -4,8 +4,9 @@ import {MediaType} from "@/lib/utils/enums";
 import {extractYear} from "@/lib/utils/date-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatMinutes} from "@/lib/utils/number-formatting";
-import {formatLocaleName} from "@/lib/utils/text-formatting";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {capitalize, formatLocaleName} from "@/lib/utils/text-formatting";
+import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
@@ -13,6 +14,9 @@ type BooksDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGri
 
 
 export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps<typeof MediaType.BOOKS>) => {
+    const booksProgressUnit = booksDefinition.progress.unit;
+    const booksProgressTiming = booksDefinition.progress.timing;
+
     return (
         <>
             <MediaInfoGridItem label="Authored By">
@@ -34,11 +38,11 @@ export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps<typeof Med
             <MediaInfoGridItem label="Language">
                 {formatLocaleName(media.language, "language")}
             </MediaInfoGridItem>
-            <MediaInfoGridItem label="Total Pages">
-                {media.pages ?? DEFAULT_DASH_FALLBACK} p.
+            <MediaInfoGridItem label={`Total ${capitalize(booksProgressUnit.plural)}`}>
+                {media.pages ?? DEFAULT_DASH_FALLBACK} {booksProgressUnit.short}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Completion">
-                {formatMinutes(media.pages * 1.7)}
+                {formatMinutes(media.pages * booksProgressTiming.minutesPerUnit)}
             </MediaInfoGridItem>
         </>
     );

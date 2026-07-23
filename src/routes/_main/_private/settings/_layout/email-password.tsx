@@ -6,11 +6,11 @@ import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {FormError} from "@/lib/client/components/forms/FormError";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {PasswordSettingsForm, passwordSettingsFormSchema} from "@/lib/schemas";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {usePasswordSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/email-password")({

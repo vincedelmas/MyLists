@@ -10,9 +10,9 @@ import {FormError} from "@/lib/client/components/forms/FormError";
 import {ForgotPassword, forgotPasswordSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {authMethodsOptions} from "@/lib/client/react-query/query-options";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_public/forgot-password")({

@@ -1,58 +1,69 @@
 import {MediaType} from "@/lib/utils/enums";
 import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
-import {booksDefinition} from "@/lib/server/domain/media/books/books.definition";
-import {gamesDefinition} from "@/lib/server/domain/media/games/games.definition";
-import {mangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
-import {moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
 import {createTvAchievementCatalog} from "@/lib/server/domain/media/tv/tv.achievements";
+import {booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
+import {mangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
+import {gamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
+import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
+import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {createBooksAchievementCatalog} from "@/lib/server/domain/media/books/books.achievements";
 import {createGamesAchievementCatalog} from "@/lib/server/domain/media/games/games.achievements";
 import {createMangaAchievementCatalog} from "@/lib/server/domain/media/manga/manga.achievements";
+import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
-import {BooksRepository, BooksService, createBooksStatistics} from "@/lib/server/domain/media/books";
-import {createGamesStatistics, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
-import {createMangaStatistics, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
-import {createMoviesStatistics, MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
-import {animeDefinition, createTvStatistics, seriesDefinition, TvRepository, TvService} from "@/lib/server/domain/media/tv";
+import {createTvMonthlyActivity, createTvStatistics, TvRepository, TvService} from "@/lib/server/domain/media/tv";
+import {BooksRepository, BooksService, createBooksMonthlyActivity, createBooksStatistics} from "@/lib/server/domain/media/books";
+import {createGamesMonthlyActivity, createGamesStatistics, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
+import {createMangaMonthlyActivity, createMangaStatistics, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
+import {createMoviesMonthlyActivity, createMoviesStatistics, MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
 
 
 export function setupMediaModule() {
     const repositories = {
-        series: new TvRepository(seriesDefinition),
-        anime: new TvRepository(animeDefinition),
-        movies: new MoviesRepository(moviesDefinition),
-        games: new GamesRepository(gamesDefinition),
-        books: new BooksRepository(booksDefinition),
-        manga: new MangaRepository(mangaDefinition),
+        series: new TvRepository(seriesServerDefinition),
+        anime: new TvRepository(animeServerDefinition),
+        movies: new MoviesRepository(moviesServerDefinition),
+        games: new GamesRepository(gamesServerDefinition),
+        books: new BooksRepository(booksServerDefinition),
+        manga: new MangaRepository(mangaServerDefinition),
     };
     const mediaRepositoryRegistry = createMediaRegistry(repositories);
 
+    const mediaMonthlyActivityRegistry = createMediaRegistry({
+        [MediaType.SERIES]: createTvMonthlyActivity(seriesServerDefinition, repositories.series),
+        [MediaType.ANIME]: createTvMonthlyActivity(animeServerDefinition, repositories.anime),
+        [MediaType.MOVIES]: createMoviesMonthlyActivity(moviesServerDefinition, repositories.movies),
+        [MediaType.GAMES]: createGamesMonthlyActivity(gamesServerDefinition, repositories.games),
+        [MediaType.BOOKS]: createBooksMonthlyActivity(booksServerDefinition, repositories.books),
+        [MediaType.MANGA]: createMangaMonthlyActivity(mangaServerDefinition, repositories.manga),
+    });
+
     const mediaAchievementsRegistry = createMediaRegistry({
-        [MediaType.SERIES]: createTvAchievementCatalog(seriesDefinition),
-        [MediaType.ANIME]: createTvAchievementCatalog(animeDefinition),
-        [MediaType.MOVIES]: createMoviesAchievementCatalog(moviesDefinition),
-        [MediaType.GAMES]: createGamesAchievementCatalog(gamesDefinition),
-        [MediaType.BOOKS]: createBooksAchievementCatalog(booksDefinition),
-        [MediaType.MANGA]: createMangaAchievementCatalog(mangaDefinition),
+        [MediaType.SERIES]: createTvAchievementCatalog(seriesServerDefinition),
+        [MediaType.ANIME]: createTvAchievementCatalog(animeServerDefinition),
+        [MediaType.MOVIES]: createMoviesAchievementCatalog(moviesServerDefinition),
+        [MediaType.GAMES]: createGamesAchievementCatalog(gamesServerDefinition),
+        [MediaType.BOOKS]: createBooksAchievementCatalog(booksServerDefinition),
+        [MediaType.MANGA]: createMangaAchievementCatalog(mangaServerDefinition),
     });
 
     const services = {
-        series: new TvService(repositories.series, seriesDefinition),
-        anime: new TvService(repositories.anime, animeDefinition),
-        movies: new MoviesService(repositories.movies, moviesDefinition),
-        games: new GamesService(repositories.games, gamesDefinition),
-        books: new BooksService(repositories.books, booksDefinition),
-        manga: new MangaService(repositories.manga, mangaDefinition),
+        series: new TvService(repositories.series, seriesServerDefinition),
+        anime: new TvService(repositories.anime, animeServerDefinition),
+        movies: new MoviesService(repositories.movies, moviesServerDefinition),
+        games: new GamesService(repositories.games, gamesServerDefinition),
+        books: new BooksService(repositories.books, booksServerDefinition),
+        manga: new MangaService(repositories.manga, mangaServerDefinition),
     };
     const mediaServiceRegistry = createMediaRegistry(services);
 
     const mediaStatRegistry = createMediaRegistry({
-        [MediaType.SERIES]: createTvStatistics(seriesDefinition),
-        [MediaType.ANIME]: createTvStatistics(animeDefinition),
-        [MediaType.MOVIES]: createMoviesStatistics(moviesDefinition),
-        [MediaType.GAMES]: createGamesStatistics(gamesDefinition),
-        [MediaType.BOOKS]: createBooksStatistics(booksDefinition),
-        [MediaType.MANGA]: createMangaStatistics(mangaDefinition),
+        [MediaType.SERIES]: createTvStatistics(seriesServerDefinition),
+        [MediaType.ANIME]: createTvStatistics(animeServerDefinition),
+        [MediaType.MOVIES]: createMoviesStatistics(moviesServerDefinition),
+        [MediaType.GAMES]: createGamesStatistics(gamesServerDefinition),
+        [MediaType.BOOKS]: createBooksStatistics(booksServerDefinition),
+        [MediaType.MANGA]: createMangaStatistics(mangaServerDefinition),
     });
 
     return {
@@ -77,6 +88,7 @@ export function setupMediaModule() {
             mediaStatistics: mediaStatRegistry,
             mediaRepository: mediaRepositoryRegistry,
             mediaAchievements: mediaAchievementsRegistry,
+            mediaMonthlyActivity: mediaMonthlyActivityRegistry,
         }
     };
 }

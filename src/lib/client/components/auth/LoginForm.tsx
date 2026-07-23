@@ -9,11 +9,11 @@ import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Link, useLocation, useNavigate, useRouter} from "@tanstack/react-router";
 import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 interface LoginFormProps {

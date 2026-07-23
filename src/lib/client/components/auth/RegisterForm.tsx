@@ -11,10 +11,10 @@ import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {authMethodsOptions} from "@/lib/client/react-query/query-options";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 interface RegisterFormProps {

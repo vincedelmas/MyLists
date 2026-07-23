@@ -7,11 +7,11 @@ import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Manga, MangaList} from "@/lib/server/domain/media/manga/manga.types";
 import {MangaRepository} from "@/lib/server/domain/media/manga/manga.repository";
 import {ChapterPayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
-import {mangaDefinition, MangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
+import {mangaServerDefinition, MangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 
 
-export class MangaService extends BaseService<MangaDefinition, MangaRepository> {
-    constructor(repository: MangaRepository, definition: MangaDefinition = mangaDefinition) {
+export class MangaService extends BaseService<MangaServerDefinition, MangaRepository> {
+    constructor(repository: MangaRepository, definition: MangaServerDefinition = mangaServerDefinition) {
         super(repository, definition);
 
         this.updateHandlers = {

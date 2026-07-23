@@ -3,16 +3,16 @@ import {logger} from "@/lib/server/core/logger";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {TopAffinity, TopAffinityDefinition} from "@/lib/types/stats.types";
-import {AnyMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
+import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {and, asc, count, countDistinct, desc, eq, gte, isNotNull, notInArray, sql} from "drizzle-orm";
 
 
-type AffinityResults<TDefinition extends AnyMediaDefinition> = {
+type AffinityResults<TDefinition extends AnyServerMediaDefinition> = {
     [K in keyof TDefinition["statistics"]["affinity"]]: TopAffinity;
 };
 
 
-type DefineMediaStatisticsOptions<TDefinition extends AnyMediaDefinition, TSpecificStats extends Record<string, unknown>> = {
+type DefineMediaStatisticsOptions<TDefinition extends AnyServerMediaDefinition, TSpecificStats extends Record<string, unknown>> = {
     definition: TDefinition;
     calculateSpecific: (context: {
         userId?: number;
@@ -23,7 +23,7 @@ type DefineMediaStatisticsOptions<TDefinition extends AnyMediaDefinition, TSpeci
 };
 
 
-const createMediaStatsQueries = <const TDefinition extends AnyMediaDefinition>(definition: TDefinition) => {
+const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinition>(definition: TDefinition) => {
     const computeTotalTags = async (userId?: number) => {
         const { tagTable } = definition.repository.tables;
         const forUser = userId ? eq(tagTable.userId, userId) : undefined;
@@ -265,7 +265,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyMediaDefinition>(d
 
 
 export const defineMediaStatistics = <
-    const TDefinition extends AnyMediaDefinition,
+    const TDefinition extends AnyServerMediaDefinition,
     TSpecificStats extends Record<string, unknown>,
 >({ definition, calculateSpecific }: DefineMediaStatisticsOptions<TDefinition, TSpecificStats>) => {
     const queries = createMediaStatsQueries(definition);

@@ -1,8 +1,8 @@
 import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
 import {GamesRepository} from "@/lib/server/domain/media/games";
-import {gamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
+import {gamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ExternalMediaProvider, MediaDetailsEnricher} from "@/lib/server/api-providers/interfaces.types";
 
@@ -23,13 +23,13 @@ const createHltbEnricher = (hltbClient: HltbApi): MediaDetailsEnricher<UpsertGam
 
 export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<UpsertGameWithDetails> => {
     const transformOptions = {
-        ...gamesDefinition.identity,
-        maxGenres: gamesDefinition.ingestion.limits.genres,
+        ...gamesServerDefinition.identity,
+        maxGenres: gamesServerDefinition.ingestion.limits.genres,
     };
 
     return {
         source: "igdb" as const,
-        mediaType: gamesDefinition.identity.mediaType,
+        mediaType: gamesServerDefinition.identity.mediaType,
 
         search: {
             async search(query: string, page = 1) {
@@ -61,7 +61,7 @@ export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<Up
 
 
 export const createGamesIngestionService = (hltbClient: HltbApi, repository: GamesRepository, provider: ExternalMediaProvider<UpsertGameWithDetails>) => {
-    const { chunkSize } = gamesDefinition.ingestion.refresh;
+    const { chunkSize } = gamesServerDefinition.ingestion.refresh;
 
     return createMediaIngestionService({
         provider,

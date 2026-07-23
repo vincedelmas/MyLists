@@ -2,10 +2,10 @@ import {Status} from "@/lib/utils/enums";
 import {and, asc, eq, isNotNull, ne, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {defineMediaStatistics} from "@/lib/server/domain/media/base/base.statistics";
-import {BookDefinition, booksDefinition} from "@/lib/server/domain/media/books/books.definition";
+import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 
 
-export const createBooksStatistics = (definition: BookDefinition = booksDefinition) => {
+export const createBooksStatistics = (definition: BookServerDefinition = booksServerDefinition) => {
     const { mediaTable, listTable } = definition.repository.tables;
 
     const computeAverageDuration = async (userId?: number) => {

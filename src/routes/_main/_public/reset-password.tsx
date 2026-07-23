@@ -6,11 +6,11 @@ import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {ResetPassword, resetPasswordSchema, tokenSchema} from "@/lib/schemas";
 import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_public/reset-password")({

@@ -4,10 +4,10 @@ import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute, redirect} from "@tanstack/react-router";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {adminAuth, checkAdminAuth} from "@/lib/server/functions/admin";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_admin/admin/")({

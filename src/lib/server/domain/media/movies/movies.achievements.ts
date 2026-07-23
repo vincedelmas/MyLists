@@ -2,12 +2,12 @@ import {AchievementDifficulty, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {movies, moviesActors, moviesList} from "@/lib/server/database/schema";
 import {count, countDistinct, eq, gte, isNotNull, lte, max} from "drizzle-orm";
-import {MovieDefinition} from "@/lib/server/domain/media/movies/movies.definition";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
+import {MovieServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-export const createMoviesAchievementCatalog = (definition: MovieDefinition) => {
+export const createMoviesAchievementCatalog = (definition: MovieServerDefinition) => {
     const { identity, repository } = definition;
     const { listTable } = repository.tables;
     const queries = createAchievementQueries(repository);

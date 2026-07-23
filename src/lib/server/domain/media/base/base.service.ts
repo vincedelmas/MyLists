@@ -5,14 +5,14 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import {AnyMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
-import {JobType, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {JobType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
-export abstract class BaseService<TDef extends AnyMediaDefinition, R extends BaseRepository<TDef>> {
+export abstract class BaseService<TDef extends AnyServerMediaDefinition, R extends BaseRepository<TDef>> {
     protected repository: R;
     protected readonly identity: TDef["identity"];
     protected readonly ingestion: TDef["ingestion"];
@@ -64,8 +64,8 @@ export abstract class BaseService<TDef extends AnyMediaDefinition, R extends Bas
         return !!await this.repository.findUserMedia(userId, mediaId);
     }
 
-    async getOrphanedMediaIds(mediaType: MediaType) {
-        return this.repository.getOrphanedMediaIds(mediaType);
+    async getOrphanedMediaIds() {
+        return this.repository.getOrphanedMediaIds();
     }
 
     async getUpcomingMedia(userId?: number, maxAWeek?: boolean) {

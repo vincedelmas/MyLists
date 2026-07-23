@@ -6,12 +6,12 @@ import {LogPayload} from "@/lib/types/user-updates.types";
 import {TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
 import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
-import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
-import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 import {EpsSeasonPayload, RedoTvPayload, StatusPayload} from "@/lib/types/user-media.types";
+import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
+import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 
 
-type TvDefinition = AnimeDefinition | SeriesDefinition;
+type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
 
 
 export class TvService extends BaseService<TvDefinition, TvRepository> {

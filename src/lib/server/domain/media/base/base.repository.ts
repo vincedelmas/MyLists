@@ -10,8 +10,8 @@ import {resolvePagination, resolveSorting} from "@/lib/server/database/paginatio
 import {ExpandedListFilters, ExportMediaList, MediaListData} from "@/lib/types/media-list.types";
 import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {createArrayFilter, type FilterDefinitions} from "@/lib/server/domain/media/base/media-list.query";
-import {AnyMediaDefinition, AnyMediaRepositoryDefinition} from "@/lib/server/domain/media/base/media-definition";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaWithTags} from "@/lib/types/user-media.types";
+import {AnyMediaRepositoryDefinition, AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user, userMediaSettings} from "@/lib/server/database/schema";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
 
@@ -21,7 +21,7 @@ const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 
 
 export abstract class BaseRepository<
-    TMediaDef extends AnyMediaDefinition,
+    TMediaDef extends AnyServerMediaDefinition,
     TRepoDef extends AnyMediaRepositoryDefinition = TMediaDef["repository"],
 > {
     readonly repoDefinition: TRepoDef;
@@ -149,7 +149,8 @@ export abstract class BaseRepository<
             .where(isNotNull(listTable.customCover));
     }
 
-    async getOrphanedMediaIds(mediaType: MediaType) {
+    async getOrphanedMediaIds() {
+        const { mediaType } = this.identity;
         const { mediaTable, listTable } = this.repoDefinition.tables;
 
         const tx = getDbClient();

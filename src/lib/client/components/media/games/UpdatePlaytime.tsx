@@ -1,6 +1,8 @@
 import {UpdateType} from "@/lib/utils/enums";
 import {KeyboardEvent, useState} from "react";
 import {Input} from "@/lib/client/components/ui/input";
+import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
+import {toActivityDisplayValue, toActivityStoredValue} from "@/lib/utils/activity-utils";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
@@ -12,7 +14,7 @@ interface UpdatePlaytimeProps {
 
 export const UpdatePlaytime = ({ playtimeInMin, updatePlaytime }: UpdatePlaytimeProps) => {
     const maxPlaytimeHours = 30000;
-    const playtimeInHours = playtimeInMin / 60;
+    const playtimeInHours = toActivityDisplayValue(gamesDefinition.identity.mediaType, playtimeInMin);
     const [currentValue, setCurrentValue] = useState(playtimeInHours.toString());
 
     const validateAndMutate = () => {
@@ -31,7 +33,7 @@ export const UpdatePlaytime = ({ playtimeInMin, updatePlaytime }: UpdatePlaytime
             return;
         }
 
-        const nextPlaytimeInMin = Math.round(parsedValue * 60);
+        const nextPlaytimeInMin = Math.round(toActivityStoredValue(gamesDefinition.identity.mediaType, parsedValue));
         if (nextPlaytimeInMin === playtimeInMin) {
             setCurrentValue(playtimeInHours.toString());
             return;
@@ -54,7 +56,7 @@ export const UpdatePlaytime = ({ playtimeInMin, updatePlaytime }: UpdatePlaytime
 
     return (
         <div className="flex justify-between items-center">
-            <div>Playtime (h)</div>
+            <div>Playtime ({gamesDefinition.statistics.durationDistribution.unit})</div>
             <Input
                 min={0}
                 step={1}

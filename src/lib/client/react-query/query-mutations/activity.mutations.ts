@@ -1,48 +1,51 @@
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
-import {postAddActivity, postBulkHideActivity, postDeleteActivity, postUpdateActivity} from "@/lib/server/functions/user-activity";
+import {
+    postAddMonthlyActivity,
+    postBulkHideActivity,
+    postRemoveMonthlyActivity,
+    postUpdateMonthlyActivity,
+} from "@/lib/server/functions/user-monthly-activity";
 
 
-export const useAddActivityMutation = (meta?: MutationMeta) => {
+export const useAddMonthlyActivityMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: postAddActivity,
+        mutationFn: postAddMonthlyActivity,
         meta: {
-            successToastMessage: "Activity added successfully!",
+            successToastMessage: "Monthly activity added!",
             ...meta,
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
-            await queryClient.invalidateQueries({ queryKey: ["specific-activity"] });
         },
     });
 };
 
 
-export const useUpdateActivityMutation = (meta?: MutationMeta) => {
+export const useUpdateMonthlyActivityMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: postUpdateActivity,
+        mutationFn: postUpdateMonthlyActivity,
         meta: {
-            successToastMessage: "Activity updated successfully!",
+            successToastMessage: "Monthly activity updated!",
             ...meta,
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
-            await queryClient.invalidateQueries({ queryKey: ["specific-activity"] });
         },
     });
 };
 
 
-export const useDeleteActivityMutation = (meta?: MutationMeta) => {
+export const useRemoveMonthlyActivityMutation = (meta?: MutationMeta) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: postDeleteActivity,
+        mutationFn: postRemoveMonthlyActivity,
         meta: {
-            successToastMessage: "Activity deleted successfully!",
+            successToastMessage: "Media removed from the month!",
             ...meta,
         },
         onSuccess: async () => {
@@ -60,7 +63,6 @@ export const useBulkHideActivityMutation = (meta?: MutationMeta) => {
         meta: { ...meta },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
-            await queryClient.invalidateQueries({ queryKey: ["specific-activity"] });
         },
     });
 };

@@ -1,4 +1,4 @@
-import z from "zod";
+import * as z from "zod";
 import {ActivityKind} from "@/lib/utils/enums";
 import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {isValidActivityDate} from "@/lib/utils/activity-utils";
@@ -6,18 +6,19 @@ import {calendarDateRangeToISOString} from "@/lib/utils/date-formatting";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, optionalSearchFieldSchema, usernameFieldSchema} from "@/lib/schemas/common.schema";
 
 
-export type AddActivity = z.infer<typeof addActivitySchema>;
-export type AddActivityInput = z.input<typeof addActivitySchema>;
-export type ActivitySearch = z.infer<typeof activitySearchSchema>;
 export type BulkHideActivity = z.infer<typeof bulkHideActivitySchema>;
-export type UpdateActivity = z.infer<typeof updateActivityPayloadSchema>;
-export type MonthlyActivityFilters = z.infer<typeof monthlyActivitySchema>;
+export type AddMonthlyActivity = z.infer<typeof addMonthlyActivitySchema>;
 export type BulkHideActivityInput = z.input<typeof bulkHideActivitySchema>;
-export type UpdateActivityInput = z.input<typeof updateActivityPayloadSchema>;
+export type MonthlyActivityFilters = z.infer<typeof monthlyActivitySchema>;
+export type AddMonthlyActivityInput = z.input<typeof addMonthlyActivitySchema>;
+export type MonthlyActivitySearch = z.infer<typeof monthlyActivitySearchSchema>;
+export type MonthlyActivityFields = z.infer<typeof monthlyActivityFieldsSchema>;
+export type MonthlyActivityFieldsInput = z.input<typeof monthlyActivityFieldsSchema>;
 export type MonthlyActivityStatsFilters = z.infer<typeof monthlyActivityStatsSchema>;
+export type UpdateMonthlyActivity = z.infer<typeof updateMonthlyActivityPayloadSchema>;
 
 
-export const activitySearchSchema = z.object({
+export const monthlyActivitySearchSchema = z.object({
     year: z.preprocess((val) => {
         const year = Number(val);
         return Number.isInteger(year) && year > 0 ? String(year) : String(new Date().getFullYear());
@@ -52,35 +53,36 @@ export const monthlyActivityStatsSchema = monthlyActivitySchema.pick({
     mediaType: mediaTypeFieldSchema.optional(),
 });
 
-export const activityAddMediaSearchSchema = z.object({
+export const monthlyActivityMediaSearchSchema = z.object({
     mediaType: mediaTypeFieldSchema,
     query: z.string().trim().min(2),
 });
 
-export const updateActivityPayloadSchema = z.object({
-    isRedo: z.boolean(),
+export const monthlyActivityFieldsSchema = z.object({
     hidden: z.boolean(),
-    isCompleted: z.boolean(),
-    specificGained: z.number().min(0, "Progress must be 0 or more."),
-    lastUpdate: z.string().refine(isValidActivityDate, `Date must be between ${MIN_ACTIVITY_DATE} and today.`),
-}).partial().refine((data) => Object.values(data).some((val) => val !== undefined), {
-    message: "Provide at least one field to update.", path: ["lastUpdate"],
+    hadCompletion: z.boolean(),
+    progressGained: z.number().min(0, "Progress must be 0 or more."),
+    redoGained: z.number().int("Redo must be a whole number.").min(0, "Redo must be 0 or more."),
+    lastActivityAt: z.string().refine(isValidActivityDate, `Date must be between ${MIN_ACTIVITY_DATE} and today.`),
 });
 
-export const updateActivitySchema = z.object({
-    payload: updateActivityPayloadSchema,
+const updateMonthlyActivityPayloadSchema = monthlyActivityFieldsSchema
+    .partial()
+    .refine((data) => Object.values(data).some((val) => val !== undefined), {
+        message: "Provide at least one field to update.", path: ["lastActivityAt"],
+    });
+
+export const updateMonthlyActivitySchema = z.object({
     activityId: coercedPositiveIntFieldSchema,
+    payload: updateMonthlyActivityPayloadSchema,
 });
 
-export const addActivitySchema = z.object({
+export const addMonthlyActivitySchema = monthlyActivityFieldsSchema.extend({
     mediaType: mediaTypeFieldSchema,
-    hidden: z.boolean().optional().default(false),
-    isRedo: z.boolean().optional().default(false),
-    isCompleted: z.boolean().optional().default(false),
     mediaId: z.coerce.number().int().positive("Choose a media first."),
-    lastUpdate: z.string().min(1, "Progress date is required.")
-        .refine(isValidActivityDate, `Date must be between ${MIN_ACTIVITY_DATE} and today.`),
-    specificGained: z.number().positive("Progress must be greater than 0."),
+}).refine((data) => data.progressGained > 0 || data.hadCompletion || data.redoGained > 0, {
+    message: "Add progress, a completion, or at least one redo.",
+    path: ["progressGained"],
 });
 
 export const bulkHideActivitySchema = z.object({
@@ -92,6 +94,6 @@ export const bulkHideActivitySchema = z.object({
     message: "Start date must be before end date.", path: ["endDate"],
 });
 
-export const deleteActivitySchema = z.object({
+export const removeMonthlyActivitySchema = z.object({
     activityId: coercedPositiveIntFieldSchema,
 });

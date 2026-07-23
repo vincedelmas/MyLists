@@ -55,25 +55,26 @@ export const userMediaUpdate = sqliteTable("user_media_update", {
     index("ix_user_media_update_timestamp").on(table.timestamp),
 ]);
 
-export const userMediaActivity = sqliteTable("user_media_activity", {
+export const userMediaMonthlyActivity = sqliteTable("user_media_monthly_activity", {
     id: integer().primaryKey().notNull(),
     userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
     mediaId: integer().notNull(),
-    mediaType: text().$type<MediaType>().notNull(),
-    specificGained: real().notNull(),
-    isCompleted: integer({ mode: "boolean" }).default(false).notNull(),
-    isRedo: integer({ mode: "boolean" }).default(false).notNull(),
     monthBucket: text().notNull(),
-    lastUpdate: text().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+    progressGained: real().notNull(),
+    mediaType: text().$type<MediaType>().notNull(),
+    redoGained: integer().default(0).notNull(),
+    lastActivityAt: text().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
     hidden: integer({ mode: "boolean" }).default(false).notNull(),
+    hadCompletion: integer({ mode: "boolean" }).default(false).notNull(),
 }, (table) => [
-    index("ix_user_media_activity_media_id").on(table.mediaId),
-    index("ix_user_media_activity_media_type").on(table.mediaType),
-    index("ix_user_media_activity_month_bucket").on(table.monthBucket),
-    index("ix_user_media_activity_user_last_update").on(table.userId, table.lastUpdate),
-    index("ix_user_media_activity_user_month_type_update").on(table.userId, table.monthBucket, table.mediaType, table.lastUpdate),
-    uniqueIndex("user_media_month_idx").on(table.userId, table.mediaId, table.mediaType, table.monthBucket),
-    check("user_media_activity_specific_nonnegative_check", sql`${table.specificGained} >= 0`),
+    index("ix_user_media_monthly_activity_media_id").on(table.mediaId),
+    index("ix_user_media_monthly_activity_media_type").on(table.mediaType),
+    index("ix_user_media_monthly_activity_month_bucket").on(table.monthBucket),
+    check("user_media_monthly_activity_redo_nonnegative_check", sql`${table.redoGained} >= 0`),
+    index("ix_user_media_monthly_activity_user_last_activity").on(table.userId, table.lastActivityAt),
+    check("user_media_monthly_activity_progress_nonnegative_check", sql`${table.progressGained} >= 0`),
+    uniqueIndex("ux_user_media_monthly_activity_bucket").on(table.userId, table.mediaId, table.mediaType, table.monthBucket),
+    index("ix_user_media_monthly_activity_user_month_type_activity").on(table.userId, table.monthBucket, table.mediaType, table.lastActivityAt),
 ]);
 
 
@@ -162,7 +163,7 @@ export const userRelations = relations(user, ({ many }) => ({
     seriesTags: many(seriesTags),
     mediadleStats: many(mediadleStats),
     userMediaUpdates: many(userMediaUpdate),
-    userMediaActivity: many(userMediaActivity),
+    userMediaMonthlyActivities: many(userMediaMonthlyActivity),
     userAchievements: many(userAchievement),
     userMediaSettings: many(userMediaSettings),
     profileCustom: many(profileCustom),
@@ -197,9 +198,9 @@ export const userMediaUpdateRelations = relations(userMediaUpdate, ({ one }) => 
     }),
 }));
 
-export const userMediaActivityRelations = relations(userMediaActivity, ({ one }) => ({
+export const userMediaMonthlyActivityRelations = relations(userMediaMonthlyActivity, ({ one }) => ({
     user: one(user, {
-        fields: [userMediaActivity.userId],
+        fields: [userMediaMonthlyActivity.userId],
         references: [user.id]
     }),
 }));

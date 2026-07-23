@@ -1,7 +1,7 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TmdbTvDetails} from "@/lib/types/provider.types";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
-import {seriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
+import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 
 
 const imageMocks = vi.hoisted(() => ({
@@ -54,12 +54,12 @@ const createTvDetails = (): TmdbTvDetails => ({
 
 
 const seriesTransformOptions = {
-    coverDirectory: seriesDefinition.identity.coverDirectory,
-    defaultDuration: seriesDefinition.ingestion.defaultDuration,
-    maxGenres: seriesDefinition.ingestion.limits.genres,
-    maxActors: seriesDefinition.ingestion.limits.actors,
-    maxNetworks: seriesDefinition.ingestion.limits.networks,
-    maxWriters: seriesDefinition.ingestion.limits.writers,
+    coverDirectory: seriesServerDefinition.identity.coverDirectory,
+    defaultDuration: seriesServerDefinition.ingestion.defaultDuration,
+    maxGenres: seriesServerDefinition.ingestion.limits.genres,
+    maxActors: seriesServerDefinition.ingestion.limits.actors,
+    maxNetworks: seriesServerDefinition.ingestion.limits.networks,
+    maxWriters: seriesServerDefinition.ingestion.limits.writers,
 };
 
 

@@ -6,11 +6,11 @@ import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {Game, GamesList} from "@/lib/server/domain/media/games/games.types";
 import {PlaytimePayload, StatusPayload} from "@/lib/types/user-media.types";
 import {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
-import {gamesDefinition, type GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
+import {gamesServerDefinition, GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 
 
-export class GamesService extends BaseService<GamesDefinition, GamesRepository> {
-    constructor(repository: GamesRepository, definition: GamesDefinition = gamesDefinition) {
+export class GamesService extends BaseService<GamesServerDefinition, GamesRepository> {
+    constructor(repository: GamesRepository, definition: GamesServerDefinition = gamesServerDefinition) {
         super(repository, definition);
 
         this.updateHandlers = {

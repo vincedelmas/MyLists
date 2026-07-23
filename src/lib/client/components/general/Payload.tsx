@@ -3,6 +3,8 @@ import {Link} from "@tanstack/react-router";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {MediaType, UpdateType} from "@/lib/utils/enums";
 import {UserUpdateType} from "@/lib/types/query.options.types";
+import {toActivityDisplayValue} from "@/lib/utils/activity-utils";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 
 
 interface PayloadProps {
@@ -17,6 +19,7 @@ export const Payload = ({ update, username }: PayloadProps) => {
 
     const oldValue = payload.old_value;
     const newValue = payload.new_value;
+    const progressUnit = getMediaDefinition(mediaType).progress.unit;
 
     switch (updateType) {
         case UpdateType.STATUS:
@@ -53,8 +56,8 @@ export const Payload = ({ update, username }: PayloadProps) => {
             return (
                 <PayloadLayout
                     username={username}
-                    oldVal={`${oldValue / 60} h`}
-                    newVal={`${newValue / 60} h`}
+                    oldVal={`${toActivityDisplayValue(mediaType, oldValue)} ${progressUnit?.short}`}
+                    newVal={`${toActivityDisplayValue(mediaType, newValue)} ${progressUnit?.short}`}
                 />
             );
 
@@ -62,8 +65,8 @@ export const Payload = ({ update, username }: PayloadProps) => {
             return (
                 <PayloadLayout
                     username={username}
-                    oldVal={`p. ${oldValue}`}
-                    newVal={`p. ${newValue}`}
+                    oldVal={`${progressUnit?.short} ${oldValue}`}
+                    newVal={`${progressUnit?.short} ${newValue}`}
                 />
             );
 
@@ -71,8 +74,8 @@ export const Payload = ({ update, username }: PayloadProps) => {
             return (
                 <PayloadLayout
                     username={username}
-                    oldVal={`chpt. ${oldValue}`}
-                    newVal={`chpt. ${newValue}`}
+                    oldVal={`${progressUnit?.short} ${oldValue}`}
+                    newVal={`${progressUnit?.short} ${newValue}`}
                 />
             );
 

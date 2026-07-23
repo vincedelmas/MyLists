@@ -3,8 +3,8 @@ import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {UserStatsService} from "@/lib/server/domain/user/user-stats.service";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {UserUpdatesService} from "@/lib/server/domain/user/user-updates.service";
-import {UserActivityService} from "@/lib/server/domain/user/user-activity.service";
 import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
+import {UserMonthlyActivityService} from "@/lib/server/domain/user/user-monthly-activity.service";
 
 
 type MediaAction = {
@@ -17,29 +17,27 @@ type MediaAction = {
 export class UserMediaService {
     constructor(
         private userStatsService: UserStatsService,
-        private userActivityService: UserActivityService,
+        private userActivityService: UserMonthlyActivityService,
         private userUpdatesService: UserUpdatesService,
         private notificationsService: NotificationsService,
         private mediaServiceRegistry: MediaServiceRegistry,
     ) {
     }
 
-    async addMediaToList({ userId, mediaType, mediaId, status, silent = false }: MediaAction & { status?: Status; silent?: boolean }) {
+    async addMediaToList({ userId, mediaType, mediaId, status }: MediaAction & { status?: Status; silent?: boolean }) {
         const mediaService = this.mediaServiceRegistry.get(mediaType);
 
         const { newState, media, delta, logPayload } = await mediaService.addMediaToUserList(userId, mediaId, status);
         await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
 
-        if (!silent) {
-            await this.userActivityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, newState });
-            await this.userUpdatesService.logUpdate({
-                media,
-                userId,
-                mediaType,
-                updateType: UpdateType.STATUS,
-                payload: { old_value: logPayload.oldValue, new_value: logPayload.newValue },
-            });
-        }
+        await this.userActivityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, updateType: UpdateType.STATUS });
+        await this.userUpdatesService.logUpdate({
+            media,
+            userId,
+            mediaType,
+            updateType: UpdateType.STATUS,
+            payload: { old_value: logPayload.oldValue, new_value: logPayload.newValue },
+        });
 
         return newState;
     }
@@ -56,7 +54,14 @@ export class UserMediaService {
         const { newState, media, delta, logPayload } = await mediaService.updateUserMediaDetails(userId, mediaId, mediaPayload);
 
         await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
-        await this.userActivityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, newState, lastUpdate: timestamp });
+        await this.userActivityService.logActivityFromDelta({
+            delta,
+            userId,
+            mediaId,
+            mediaType,
+            activityDate: timestamp,
+            updateType: mediaPayload.type,
+        });
 
         if (logPayload) {
             await this.userUpdatesService.logUpdate({

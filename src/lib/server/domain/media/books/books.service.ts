@@ -7,11 +7,11 @@ import {Book, BooksList} from "@/lib/server/domain/media/books/books.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {PagePayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
-import {BookDefinition, booksDefinition} from "@/lib/server/domain/media/books/books.definition";
+import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 
 
-export class BooksService extends BaseService<BookDefinition, BooksRepository> {
-    constructor(repository: BooksRepository, definition: BookDefinition = booksDefinition) {
+export class BooksService extends BaseService<BookServerDefinition, BooksRepository> {
+    constructor(repository: BooksRepository, definition: BookServerDefinition = booksServerDefinition) {
         super(repository, definition);
 
         this.updateHandlers = {

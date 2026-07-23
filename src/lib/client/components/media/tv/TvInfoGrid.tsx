@@ -4,9 +4,10 @@ import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {formatLocaleName} from "@/lib/utils/text-formatting";
 import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {capitalize, formatLocaleName} from "@/lib/utils/text-formatting";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
@@ -14,6 +15,7 @@ type TvDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]
 
 
 export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps<TvMediaType>) => {
+    const progressUnit = getMediaDefinition(mediaType).progress.unit!;
     const creators = media.createdBy?.split(", ").map((c) => ({ name: c })) || [];
 
     return (
@@ -47,7 +49,7 @@ export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps<TvMediaType>) =>
             <MediaInfoGridItem label="Total Seasons">
                 {media.totalSeasons ?? DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
-            <MediaInfoGridItem label="Total Episodes">
+            <MediaInfoGridItem label={`Total ${capitalize(progressUnit.plural)}`}>
                 {media.totalEpisodes ?? DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Completion">

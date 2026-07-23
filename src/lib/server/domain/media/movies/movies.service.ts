@@ -6,11 +6,11 @@ import {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
 import {Movie, MoviesList} from "@/lib/server/domain/media/movies/movies.types";
 import {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
-import {MovieDefinition, moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
+import {MovieServerDefinition, moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 
 
-export class MoviesService extends BaseService<MovieDefinition, MoviesRepository> {
-    constructor(repository: MoviesRepository, definition: MovieDefinition = moviesDefinition) {
+export class MoviesService extends BaseService<MovieServerDefinition, MoviesRepository> {
+    constructor(repository: MoviesRepository, definition: MovieServerDefinition = moviesServerDefinition) {
         super(repository, definition);
 
         this.updateHandlers = {

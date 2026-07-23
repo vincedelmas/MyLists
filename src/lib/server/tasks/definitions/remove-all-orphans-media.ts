@@ -22,7 +22,7 @@ export const removeAllOrphansMediaTask = defineTask({
 
                 await withTransaction(async (_tx) => {
                     const mediaService = mediaRegistry.get(mediaType);
-                    const mediaIdsToRemove = await mediaService.getOrphanedMediaIds(mediaType);
+                    const mediaIdsToRemove = await mediaService.getOrphanedMediaIds();
                     ctx.metric(`${mediaType}.removed`, mediaIdsToRemove.length);
 
                     // Remove in other services

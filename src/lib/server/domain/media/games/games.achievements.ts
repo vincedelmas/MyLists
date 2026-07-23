@@ -1,15 +1,17 @@
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {games, gamesCompanies, gamesList} from "@/lib/server/database/schema";
-import {GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
+import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {AchievementDifficulty, GamesPlatformsEnum, Status} from "@/lib/utils/enums";
+import {GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
 import {and, count, countDistinct, eq, gte, inArray, isNotNull, like, lte, max, notInArray, sql} from "drizzle-orm";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-export const createGamesAchievementCatalog = (definition: GamesDefinition) => {
+export const createGamesAchievementCatalog = (definition: GamesServerDefinition) => {
     const { identity, repository } = definition;
     const { listTable } = repository.tables;
+    const { minutesPerInputUnit } = gamesDefinition.progress.timing;
     const queries = createAchievementQueries(repository);
 
     const gameMode: AchievementCalculation = (achievement) => {
@@ -31,7 +33,7 @@ export const createGamesAchievementCatalog = (definition: GamesDefinition) => {
         const query = getDbClient()
             .select({
                 userId: gamesList.userId,
-                value: sql`SUM(${gamesList.playtime}) / 60`.as("value"),
+                value: sql`SUM(${gamesList.playtime}) / ${minutesPerInputUnit}`.as("value"),
             })
             .from(gamesList);
 

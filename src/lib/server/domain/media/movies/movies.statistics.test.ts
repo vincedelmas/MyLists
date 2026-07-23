@@ -1,10 +1,10 @@
 import Database from "bun:sqlite";
-import * as schema from "@/lib/server/database/schema";
-import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {Status} from "@/lib/utils/enums";
+import * as schema from "@/lib/server/database/schema";
 import {movies, moviesActors, moviesGenre, moviesList, moviesTags, user} from "@/lib/server/database/schema";
+import {migrate} from "drizzle-orm/bun-sqlite/migrator";
+import {type BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -15,7 +15,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const {createMoviesStatistics} = await import("@/lib/server/domain/media/movies/movies.statistics");
+const { createMoviesStatistics } = await import("@/lib/server/domain/media/movies/movies.statistics");
 
 
 describe("MoviesStatistics", () => {

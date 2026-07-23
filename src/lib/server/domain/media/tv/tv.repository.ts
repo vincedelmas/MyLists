@@ -4,12 +4,12 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {TvType, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
-import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
-import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
+import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
+import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, notInArray, or, sql} from "drizzle-orm";
 
 
-type TvDefinition = AnimeDefinition | SeriesDefinition;
+type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
 
 
 export class TvRepository extends BaseRepository<TvDefinition> {

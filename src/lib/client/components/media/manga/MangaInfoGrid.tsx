@@ -2,9 +2,11 @@ import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/date-formatting";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
@@ -12,6 +14,9 @@ type MangaDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGri
 
 
 export const MangaInfoGrid = ({ mediaType, media }: MangaDetailsProps<typeof MediaType.MANGA>) => {
+    const mangaProgressUnit = mangaDefinition.progress.unit;
+    const mangaProgressTiming = mangaDefinition.progress.timing;
+
     return (
         <>
             <MediaInfoGridItem label="Prod. Status">
@@ -40,14 +45,14 @@ export const MangaInfoGrid = ({ mediaType, media }: MangaDetailsProps<typeof Med
                 <br/>
                 {formatDate(media.endDate)}
             </MediaInfoGridItem>
-            <MediaInfoGridItem label="Total Chapters">
-                {media.chapters ?? DEFAULT_DASH_FALLBACK} chapters
+            <MediaInfoGridItem label={`Total ${capitalize(mangaProgressUnit.plural)}`}>
+                {media.chapters ?? DEFAULT_DASH_FALLBACK} {mangaProgressUnit.plural}
             </MediaInfoGridItem>
             <MediaInfoGridItem label=" Total Volumes">
                 {media.volumes ?? DEFAULT_DASH_FALLBACK} volumes
             </MediaInfoGridItem>
             <MediaInfoGridItem label="Completion">
-                {formatMinutes(media.chapters ? media.chapters * 7 : null)}
+                {formatMinutes(media.chapters ? media.chapters * mangaProgressTiming.minutesPerUnit : null)}
             </MediaInfoGridItem>
         </>
     );

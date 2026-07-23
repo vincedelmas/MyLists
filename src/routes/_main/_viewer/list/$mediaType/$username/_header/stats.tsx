@@ -1,7 +1,7 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {userStatsOptions} from "@/lib/client/react-query/query-options";
-import {DashboardContent} from "@/lib/client/media-stats/DashboardContent";
+import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/stats")({

@@ -13,7 +13,6 @@ import {FormError} from "@/lib/client/components/forms/FormError";
 import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
@@ -21,6 +20,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/u
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/content-lists")({

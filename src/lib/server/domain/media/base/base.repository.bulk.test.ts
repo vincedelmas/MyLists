@@ -110,7 +110,7 @@ describe("BaseRepository", () => {
             mediaType: MediaType.MOVIES,
         });
 
-        await expect(repository.getOrphanedMediaIds(MediaType.MOVIES)).resolves.toEqual([102]);
+        await expect(repository.getOrphanedMediaIds()).resolves.toEqual([102]);
     });
 
     it("scopes tag filters to the owner of the requested list", async () => {

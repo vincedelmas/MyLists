@@ -1,6 +1,6 @@
 import {UserStatsResult} from "@/lib/types/stats.types";
-import {OverviewDashboard} from "@/lib/client/media-stats/OverviewDashboard";
-import {MediaTypeDashboard} from "@/lib/client/media-stats/MediaTypeDashboard";
+import {OverviewDashboard} from "@/lib/client/components/media-stats/OverviewDashboard";
+import {MediaTypeDashboard} from "@/lib/client/components/media-stats/MediaTypeDashboard";
 
 
 interface DashboardContentProps {

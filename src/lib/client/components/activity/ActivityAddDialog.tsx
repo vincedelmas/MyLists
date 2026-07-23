@@ -14,7 +14,6 @@ import {Separator} from "@/lib/client/components/ui/separator";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {AddActivity, AddActivityInput, addActivitySchema} from "@/lib/schemas";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
@@ -24,6 +23,7 @@ import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {getActivityInputStep, getActivityUnitLabel, getDefaultActivityDate, toActivityStoredValue} from "@/lib/utils/activity-utils";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 interface ActivityAddDialogProps {

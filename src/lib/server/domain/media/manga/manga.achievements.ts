@@ -2,12 +2,12 @@ import {AchievementDifficulty, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {count, eq, gte, isNotNull, lte, max, sum} from "drizzle-orm";
 import {manga, mangaAuthors, mangaList} from "@/lib/server/database/schema";
-import {MangaDefinition} from "@/lib/server/domain/media/manga/manga.definition";
+import {MangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-export const createMangaAchievementCatalog = (definition: MangaDefinition) => {
+export const createMangaAchievementCatalog = (definition: MangaServerDefinition) => {
     const { identity, repository } = definition;
     const { listTable } = repository.tables;
     const queries = createAchievementQueries(repository);

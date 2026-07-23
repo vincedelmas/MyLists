@@ -6,12 +6,12 @@ import {normalizeGamePlatforms} from "@/lib/utils/game-platforms";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
 import {Game, UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
-import {gamesDefinition, GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms} from "@/lib/server/database/schema";
+import {gamesServerDefinition, GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 
 
-export class GamesRepository extends BaseRepository<GamesDefinition> {
-    constructor(definition: GamesDefinition = gamesDefinition) {
+export class GamesRepository extends BaseRepository<GamesServerDefinition> {
+    constructor(definition: GamesServerDefinition = gamesServerDefinition) {
         super(definition);
     }
 

@@ -4,6 +4,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
 import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
@@ -11,6 +12,7 @@ type TvDetailsProps<T extends MediaType> = Parameters<NonNullable<MediaConfig[T]
 
 
 export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<TvMediaType>) => {
+    const episodeUnit = getMediaDefinition(mediaType).progress.unit!;
     const cleanedActors = (media.actors ?? []).filter((a) => a.name !== null);
 
     return (
@@ -35,7 +37,7 @@ export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<TvMediaType
             {(media.epsPerSeason && media.epsPerSeason.length > 0) &&
                 <section>
                     <MediaSectionTitle title="Season Breakdown">
-                        {media.totalEpisodes} Episodes
+                        {media.totalEpisodes} {episodeUnit.long}
                     </MediaSectionTitle>
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 overflow-y-auto scrollbar-thin max-h-68">
                         {media.epsPerSeason.map((s) =>
@@ -43,7 +45,7 @@ export const TvExtraSections = ({ mediaType, media }: TvDetailsProps<TvMediaType
                                 key={`season-${s.season}`}
                                 name={`Season ${s.season}`}
                                 initials={`S${zeroPad(s.season)}`}
-                                subname={`${s.episodes} Episodes`}
+                                subname={`${s.episodes} ${episodeUnit.long}`}
                             />
                         )}
                     </div>

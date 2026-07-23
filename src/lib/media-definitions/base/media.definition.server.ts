@@ -173,7 +173,7 @@ type ProviderAttribution = {
 };
 
 
-export interface MediaDefinition<
+export interface ServerMediaDefinition<
     TTables extends BaseMediaTables = BaseMediaTables,
     TSortDefinitions extends SortDefinitions = SortDefinitions,
     TAffinityDefinitions extends AffinityDefinitions = AffinityDefinitions,
@@ -216,7 +216,7 @@ type AnyMediaStatisticsDefinition = {
 };
 
 
-export type AnyMediaDefinition = {
+export type AnyServerMediaDefinition = {
     readonly identity: MediaIdentity;
     readonly ingestion: MediaIngestionPolicy;
     readonly attribution: ProviderAttribution;
@@ -230,12 +230,12 @@ export type AnyMediaDefinition = {
 };
 
 
-export const defineMediaDefinition = <
+export const defineServerMediaDefinition = <
     const TTables extends BaseMediaTables,
     const TSortDefinitions extends SortDefinitions,
     const TAffinityDefinitions extends AffinityDefinitions,
     const TMediaType extends MediaType,
     const TIngestion extends MediaIngestionPolicy,
->(definition: MediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion>) => {
+>(definition: ServerMediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion>) => {
     return definition;
 }

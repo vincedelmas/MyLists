@@ -1,14 +1,12 @@
 import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
+import {BOOKS_FIXED_DURATION_MIN} from "@/lib/media-definitions/books/books.definition";
+import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
 import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 
 
-const BOOK_READING_MINUTES_PER_PAGE = 1.7;
-
-
-export const booksDefinition = defineMediaDefinition({
+export const booksServerDefinition = defineServerMediaDefinition({
     identity: {
         mediaType: MediaType.BOOKS,
         coverDirectory: "books-covers",
@@ -80,7 +78,7 @@ export const booksDefinition = defineMediaDefinition({
     statistics: {
         allUsers: {
             totalSpecific: sql<number>`COALESCE(SUM(${booksList.total}), 0)`,
-            timeSpent: sql<number>`COALESCE(SUM(${booksList.total} * ${BOOK_READING_MINUTES_PER_PAGE}), 0)`,
+            timeSpent: sql<number>`COALESCE(SUM(${booksList.total} * ${BOOKS_FIXED_DURATION_MIN}), 0)`,
         },
         affinity: {
             langsStats: {
@@ -92,8 +90,8 @@ export const booksDefinition = defineMediaDefinition({
             },
             publishersStats: {
                 metricTable: books,
-                metricNameCol: books.publishers,
                 metricIdCol: books.id,
+                metricNameCol: books.publishers,
                 mediaLinkCol: booksList.mediaId,
                 filters: [ne(booksList.status, Status.PLAN_TO_READ)],
             },
@@ -112,7 +110,7 @@ export const booksDefinition = defineMediaDefinition({
         progressTotals: (state) => ({
             totalRedo: state?.redo ?? 0,
             totalSpecific: state?.total ?? 0,
-            timeSpent: (state?.total ?? 0) * BOOK_READING_MINUTES_PER_PAGE,
+            timeSpent: (state?.total ?? 0) * BOOKS_FIXED_DURATION_MIN,
         }),
     },
     ingestion: {
@@ -126,4 +124,4 @@ export const booksDefinition = defineMediaDefinition({
 });
 
 
-export type BookDefinition = typeof booksDefinition;
+export type BookServerDefinition = typeof booksServerDefinition;

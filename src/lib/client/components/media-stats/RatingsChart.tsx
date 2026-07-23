@@ -3,7 +3,7 @@ import {getFeelingList} from "@/lib/utils/ratings-formatting";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 import {MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {transformRatingToFeeling} from "@/lib/utils/stats-utils";
-import {CustomTooltip} from "@/lib/client/media-stats/DistributionChart";
+import {CustomTooltip} from "@/lib/client/components/media-stats/DistributionChart";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Bar, BarChart, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";

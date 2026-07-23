@@ -7,9 +7,9 @@ import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {CreateCollection, createCollectionSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 import {useCreateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/collections/create")({

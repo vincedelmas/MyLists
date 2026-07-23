@@ -8,13 +8,13 @@ import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {FormError} from "@/lib/client/components/forms/FormError";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {TaskFormValues, TaskInputProperty, TaskMetadata} from "@/lib/types/tasks.types";
 import {useAdminTriggerTaskMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 interface TaskFormDialogProps {

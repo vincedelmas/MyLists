@@ -1,11 +1,11 @@
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {and, asc, desc, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
-import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
+import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createArrayFilter, createListColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
 
 
-export const gamesDefinition = defineMediaDefinition({
+export const gamesServerDefinition = defineServerMediaDefinition({
     identity: {
         mediaType: MediaType.GAMES,
         coverDirectory: "games-covers",
@@ -72,20 +72,24 @@ export const gamesDefinition = defineMediaDefinition({
                 sourceTable: gamesCompanies,
                 nameColumn: gamesCompanies.name,
                 mediaIdColumn: gamesCompanies.mediaId,
-                getFilter: (name) => and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.developer, true)),
+                getFilter: (name) => {
+                    return and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.developer, true));
+                },
             },
             [JobType.PUBLISHER]: {
                 sourceTable: gamesCompanies,
                 nameColumn: gamesCompanies.name,
                 mediaIdColumn: gamesCompanies.mediaId,
-                getFilter: (name) => and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.publisher, true)),
+                getFilter: (name) => {
+                    return and(like(gamesCompanies.name, `%${name}%`), eq(gamesCompanies.publisher, true));
+                },
             },
         },
     },
     statistics: {
         allUsers: {
-            timeSpent: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0)`,
             totalSpecific: sql<number>`0`,
+            timeSpent: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0)`,
         },
         affinity: {
             developersStats: {
@@ -155,4 +159,4 @@ export const gamesDefinition = defineMediaDefinition({
 });
 
 
-export type GamesDefinition = typeof gamesDefinition;
+export type GamesServerDefinition = typeof gamesServerDefinition;

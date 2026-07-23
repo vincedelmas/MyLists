@@ -1,17 +1,17 @@
 import {MediaType} from "@/lib/utils/enums";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {getMediaNaming} from "@/lib/utils/stats-utils";
 import {ExtractStatsByType} from "@/lib/types/stats.types";
-import {StatCard} from "@/lib/client/media-stats/StatCard";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatAvgRating} from "@/lib/utils/ratings-formatting";
-import {RatingsChart} from "@/lib/client/media-stats/RatingsChart";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {TopAffinityCard} from "@/lib/client/media-stats/TopAffinityCard";
-import {DistributionChart} from "@/lib/client/media-stats/DistributionChart";
-import {StatusDistribution} from "@/lib/client/media-stats/StatusDistribution";
-import {ActivityByMonthChart} from "@/lib/client/media-stats/ActivityByMonthChart";
+import {RatingsChart} from "@/lib/client/components/media-stats/RatingsChart";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {TopAffinityCard} from "@/lib/client/components/media-stats/TopAffinityCard";
+import {DistributionChart} from "@/lib/client/components/media-stats/DistributionChart";
 import {formatCurrency, formatHours, formatNumber} from "@/lib/utils/number-formatting";
+import {StatusDistribution} from "@/lib/client/components/media-stats/StatusDistribution";
+import {ActivityByMonthChart} from "@/lib/client/components/media-stats/ActivityByMonthChart";
 import {ChartColumn, Clock, DollarSign, Heart, Play, SquareStack, Star, Tags, XLineTop} from "lucide-react";
 
 
@@ -22,6 +22,11 @@ interface MediaTypeDashboardProps {
 
 export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
     const { mediaType, ratingSystem, specificMediaStats } = stats;
+
+    const mediaDefinition = getMediaDefinition(mediaType);
+    const mediaStatsDefinition = mediaDefinition.statistics;
+
+    const progressStatsDefinition = mediaStatsDefinition.progress;
     const ratingValue = formatAvgRating(ratingSystem, stats.avgRated);
 
     return (
@@ -31,7 +36,7 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                     title="Total Entries"
                     value={formatNumber(stats.totalEntries)}
                     icon={<MainThemeIcon type={mediaType}/>}
-                    subtitle={`${capitalize(mediaType)} in list`}
+                    subtitle={`${capitalize(mediaDefinition.terminology.entry.plural)} in list`}
                 />
                 <StatCard
                     title={"Time Spent"}
@@ -42,12 +47,12 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                         fractionDigits: 0,
                     })} hours`}
                 />
-                {mediaType !== MediaType.GAMES &&
+                {progressStatsDefinition &&
                     <StatCard
                         icon={<Play className="size-4"/>}
                         value={formatNumber(stats.totalSpecific)}
-                        title={`${getMediaNaming(mediaType).totalSpecific}`}
-                        subtitle={`Including ${formatNumber(stats.totalRedo)} ${getMediaNaming(mediaType).redo}`}
+                        title={progressStatsDefinition.totalSpecificLabel}
+                        subtitle={`Including ${formatNumber(stats.totalRedo)} ${progressStatsDefinition.redoLabel}`}
                     />
                 }
                 <StatCard
@@ -88,8 +93,8 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                     enableBinning={true}
                     mediaType={mediaType}
                     data={stats.specificMediaStats.durationDistrib}
-                    title={getMediaNaming(mediaType).durationDistribution}
-                    unit={getMediaNaming(mediaType).durationDistributionUnit}
+                    title={mediaStatsDefinition.durationDistribution.label}
+                    unit={mediaStatsDefinition.durationDistribution.unit}
                 />
                 <ActivityByMonthChart
                     mediaType={mediaType}

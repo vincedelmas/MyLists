@@ -2,12 +2,12 @@ import {AchievementDifficulty, Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {books, booksAuthors, booksList} from "@/lib/server/database/schema";
 import {count, countDistinct, eq, gte, isNotNull, lte, max} from "drizzle-orm";
-import {BookDefinition} from "@/lib/server/domain/media/books/books.definition";
+import {BookServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-export const createBooksAchievementCatalog = (definition: BookDefinition) => {
+export const createBooksAchievementCatalog = (definition: BookServerDefinition) => {
     const { identity, repository } = definition;
     const { listTable } = repository.tables;
     const queries = createAchievementQueries(repository);

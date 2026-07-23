@@ -4,7 +4,7 @@ import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {userStatsOptions} from "@/lib/client/react-query/query-options";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
-import {DashboardContent} from "@/lib/client/media-stats/DashboardContent";
+import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 
 

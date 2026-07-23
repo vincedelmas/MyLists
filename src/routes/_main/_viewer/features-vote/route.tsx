@@ -14,7 +14,6 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {FeatureStatus, isAtLeastRole, RoleType,} from "@/lib/utils/enums";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
@@ -24,6 +23,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_viewer/features-vote")({

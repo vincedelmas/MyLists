@@ -1,11 +1,12 @@
 import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
+import {MOVIES_FALLBACK_DURATION} from "@/lib/media-definitions/movies/movies.definition";
+import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
 import {movies, moviesActors, moviesGenre, moviesList, moviesTags} from "@/lib/server/database/schema/media/movies.schema";
 
 
-export const moviesDefinition = defineMediaDefinition({
+export const moviesServerDefinition = defineServerMediaDefinition({
     identity: {
         mediaType: MediaType.MOVIES,
         coverDirectory: "movies-covers",
@@ -143,7 +144,7 @@ export const moviesDefinition = defineMediaDefinition({
         }),
     },
     ingestion: {
-        defaultDuration: 100,
+        defaultDuration: MOVIES_FALLBACK_DURATION,
         externalApiSource: ApiProviderType.TMDB,
         limits: {
             genres: 5,
@@ -162,4 +163,4 @@ export const moviesDefinition = defineMediaDefinition({
 });
 
 
-export type MovieDefinition = typeof moviesDefinition;
+export type MovieServerDefinition = typeof moviesServerDefinition;

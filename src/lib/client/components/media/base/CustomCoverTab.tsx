@@ -7,11 +7,11 @@ import {Button} from "@/lib/client/components/ui/button";
 import {ImageOff, Link2, UploadCloud, X} from "lucide-react";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {UpdateUserCustomCoverInput, updateUserCustomCoverSchema} from "@/lib/schemas";
 import {useUpdateCustomCoverMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 interface CustomCoverTabProps {

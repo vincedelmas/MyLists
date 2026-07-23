@@ -1,21 +1,11 @@
 import Database from "bun:sqlite";
 import {and, eq} from "drizzle-orm";
 import * as schema from "@/lib/server/database/schema";
+import {achievement, achievementTier, anime, animeList, user, userAchievement, userMediaActivity, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {AchievementDifficulty, MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import {
-    achievement,
-    achievementTier,
-    anime,
-    animeList,
-    user,
-    userAchievement,
-    userMediaActivity,
-    userMediaSettings,
-    userMediaUpdate,
-} from "@/lib/server/database/schema";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -26,11 +16,11 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { animeDefinition } = await import("@/lib/server/domain/media/tv/anime/anime.definition");
 const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { UserStatsRepository } = await import("@/lib/server/domain/user/user-stats.repository");
 const { UserUpdatesRepository } = await import("@/lib/server/domain/user/user-updates.repository");
 const { UserActivityRepository } = await import("@/lib/server/domain/user/user-activity.repository");
+const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime/anime.definition.server");
 const { AchievementsRepository } = await import("@/lib/server/domain/achievements/achievements.repository");
 
 
@@ -55,7 +45,7 @@ describe("disabled media visibility", () => {
     });
 
     it("hides disabled media everywhere without deleting it", async () => {
-        const animeRepository = new TvRepository(animeDefinition);
+        const animeRepository = new TvRepository(animeServerDefinition);
 
         const disabledStats = await UserStatsRepository.getPreComputedStatsSummary({ userId: 42 });
         const disabledUpdates = await UserUpdatesRepository.getUserUpdates(42, 10);

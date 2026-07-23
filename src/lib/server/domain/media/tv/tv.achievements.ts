@@ -1,13 +1,13 @@
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AchievementDifficulty, MediaType, Status} from "@/lib/utils/enums";
 import {count, countDistinct, eq, gte, isNotNull, lte, max, ne} from "drizzle-orm";
-import {AnimeDefinition} from "@/lib/server/domain/media/tv/anime/anime.definition";
-import {SeriesDefinition} from "@/lib/server/domain/media/tv/series/series.definition";
 import {createAchievementQueries} from "@/lib/server/domain/media/base/achievements-queries";
+import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
+import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {AchievementCalculation, defineAchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
 
 
-type TvDefinition = AnimeDefinition | SeriesDefinition;
+type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
 
 
 export const createTvAchievementCatalog = (definition: TvDefinition) => {

@@ -6,11 +6,11 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 import {collectionIdSchema, CreateCollection, createCollectionSchema} from "@/lib/schemas";
 import {useDeleteCollectionMutation, useUpdateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/collections/$collectionId/edit")({

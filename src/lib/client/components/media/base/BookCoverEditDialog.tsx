@@ -8,12 +8,12 @@ import {Button} from "@/lib/client/components/ui/button";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {UpdateBookCoverInput, updateBookCoverSchema} from "@/lib/schemas";
 import {Link2, LoaderCircle, PencilLine, UploadCloud} from "lucide-react";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {useUpdateBookCoverMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 interface BookCoverEditDialogProps {

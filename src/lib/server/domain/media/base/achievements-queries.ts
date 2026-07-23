@@ -3,7 +3,7 @@ import {and, count, eq, SQL} from "drizzle-orm";
 import {StatsCTE} from "@/lib/types/media-common.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AchievementCalculation} from "@/lib/server/domain/achievements/achievement-catalog";
-import {AnyMediaRepositoryDefinition} from "@/lib/server/domain/media/base/media-definition";
+import {AnyMediaRepositoryDefinition} from "@/lib/media-definitions/base/media.definition.server";
 
 
 export const createAchievementQueries = <T extends AnyMediaRepositoryDefinition>(definition: T) => {

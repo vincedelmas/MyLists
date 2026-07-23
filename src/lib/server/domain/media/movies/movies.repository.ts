@@ -6,11 +6,11 @@ import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
 import {movies, moviesActors, moviesGenre, moviesList} from "@/lib/server/database/schema";
 import {Movie, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
-import {type MovieDefinition, moviesDefinition} from "@/lib/server/domain/media/movies/movies.definition";
+import {MovieServerDefinition, moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 
 
-export class MoviesRepository extends BaseRepository<MovieDefinition> {
-    constructor(definition: MovieDefinition = moviesDefinition) {
+export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
+    constructor(definition: MovieServerDefinition = moviesServerDefinition) {
         super(definition);
     }
 

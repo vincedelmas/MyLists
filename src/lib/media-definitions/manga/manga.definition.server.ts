@@ -1,14 +1,12 @@
 import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {createArrayFilter} from "@/lib/server/domain/media/base/media-list.query";
-import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
+import {MANGA_FIXED_DURATION_MIN} from "@/lib/media-definitions/manga/manga.definition";
+import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
 
 
-const MANGA_READING_MINUTES_PER_CHAPTER = 7;
-
-
-export const mangaDefinition = defineMediaDefinition({
+export const mangaServerDefinition = defineServerMediaDefinition({
     identity: {
         mediaType: MediaType.MANGA,
         coverDirectory: "manga-covers",
@@ -81,7 +79,7 @@ export const mangaDefinition = defineMediaDefinition({
     },
     statistics: {
         allUsers: {
-            timeSpent: sql<number>`COALESCE(SUM(${mangaList.total} * ${MANGA_READING_MINUTES_PER_CHAPTER}), 0)`,
+            timeSpent: sql<number>`COALESCE(SUM(${mangaList.total} * ${MANGA_FIXED_DURATION_MIN}), 0)`,
             totalSpecific: sql<number>`COALESCE(SUM(${mangaList.total}), 0)`,
         },
         affinity: {
@@ -107,7 +105,7 @@ export const mangaDefinition = defineMediaDefinition({
         progressTotals: (state) => ({
             totalRedo: state?.redo ?? 0,
             totalSpecific: state?.total ?? 0,
-            timeSpent: (state?.total ?? 0) * MANGA_READING_MINUTES_PER_CHAPTER,
+            timeSpent: (state?.total ?? 0) * MANGA_FIXED_DURATION_MIN,
         }),
     },
     ingestion: {
@@ -127,4 +125,4 @@ export const mangaDefinition = defineMediaDefinition({
 });
 
 
-export type MangaDefinition = typeof mangaDefinition;
+export type MangaServerDefinition = typeof mangaServerDefinition;

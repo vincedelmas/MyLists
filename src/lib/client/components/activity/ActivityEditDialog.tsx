@@ -9,13 +9,13 @@ import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {FormError} from "@/lib/client/components/forms/FormError";
-import {handleServerFormErrors} from "@/lib/client/components/forms/forms";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {UpdateActivity, UpdateActivityInput, updateActivityPayloadSchema} from "@/lib/schemas";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {useDeleteActivityMutation, useUpdateActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {getActivityInputStep, getActivityUnitLabel, toActivityDisplayValue, toActivityStoredValue} from "@/lib/utils/activity-utils";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 interface ActivityEditDialogProps {

@@ -1,18 +1,20 @@
 import {Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
+import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {defineMediaStatistics} from "@/lib/server/domain/media/base/base.statistics";
-import {gamesDefinition, GamesDefinition} from "@/lib/server/domain/media/games/games.definition";
+import {gamesServerDefinition, GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 
 
-export const createGamesStatistics = (definition: GamesDefinition = gamesDefinition) => {
+export const createGamesStatistics = (definition: GamesServerDefinition = gamesServerDefinition) => {
     const { mediaTable, listTable } = definition.repository.tables;
+    const { minutesPerInputUnit } = gamesDefinition.progress.timing;
 
     const computeAveragePlaytime = async (userId?: number) => {
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
 
         const result = getDbClient()
-            .select({ average: sql<number | null>`avg(${listTable.playtime} / 60)`.as("avg_playtime") })
+            .select({ average: sql<number | null>`avg(${listTable.playtime} / ${minutesPerInputUnit})`.as("avg_playtime") })
             .from(listTable)
             .where(and(forUser, ne(listTable.status, Status.PLAN_TO_PLAY), isNotNull(listTable.playtime)))
             .get();
@@ -22,7 +24,7 @@ export const createGamesStatistics = (definition: GamesDefinition = gamesDefinit
 
     const computePlaytimeDistribution = async (userId?: number) => {
         const forUser = userId ? eq(listTable.userId, userId) : undefined;
-        const playtimeHoursLog = sql<number>`floor(log(max(${listTable.playtime} / 60, 1)) / log(2))`;
+        const playtimeHoursLog = sql<number>`floor(log(max(${listTable.playtime} / ${minutesPerInputUnit}, 1)) / log(2))`;
 
         const distribution = await getDbClient()
             .select({

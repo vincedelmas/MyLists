@@ -60,13 +60,6 @@ export type UserStatsResult = OverviewStats | AdvancedMediaStats;
 
 export type NamedValue = { name: number | string; value: number };
 
-export type MediaNaming = {
-    redo?: string;
-    totalSpecific?: string;
-    durationDistribution: string;
-    durationDistributionUnit: string;
-}
-
 export type TopAffinity = {
     name: string;
     value: string;

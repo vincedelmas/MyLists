@@ -1,11 +1,12 @@
 import {asc, desc, getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {defineMediaDefinition} from "@/lib/server/domain/media/base/media-definition";
+import {ANIME_FALLBACK_DURATION} from "@/lib/media-definitions/tv/anime/anime.definition";
+import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
 import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, animeNetwork, animeTags} from "@/lib/server/database/schema/media/anime.schema";
 
 
-export const animeDefinition = defineMediaDefinition({
+export const animeServerDefinition = defineServerMediaDefinition({
     identity: {
         mediaType: MediaType.ANIME,
         coverDirectory: "anime-covers",
@@ -163,8 +164,8 @@ export const animeDefinition = defineMediaDefinition({
         }),
     },
     ingestion: {
-        defaultDuration: 24,
         externalApiSource: ApiProviderType.TMDB,
+        defaultDuration: ANIME_FALLBACK_DURATION,
         limits: {
             genres: 5,
             actors: 5,
@@ -182,4 +183,4 @@ export const animeDefinition = defineMediaDefinition({
 });
 
 
-export type AnimeDefinition = typeof animeDefinition;
+export type AnimeServerDefinition = typeof animeServerDefinition;

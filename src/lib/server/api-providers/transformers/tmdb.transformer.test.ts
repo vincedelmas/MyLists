@@ -31,7 +31,11 @@ const createTvDetails = (): TmdbTvDetails => ({
     episode_run_time: [45],
     next_episode_to_air: null,
     poster_path: null,
-    seasons: [{ season_number: 1, episode_count: 8 }],
+    seasons: [
+        { season_number: 1, episode_count: 8 },
+        { season_number: 1, episode_count: 8 },
+        { season_number: 2, episode_count: 8 },
+    ],
     networks: [
         { id: 3186, name: "HBO Max", origin_country: "" },
         { id: 8304, name: "HBO Max", origin_country: "" },
@@ -83,6 +87,10 @@ describe("tmdbTransformer", () => {
         expect(result.genresData).toEqual([
             { name: "Action" },
             { name: "Comedy" },
+        ]);
+        expect(result.seasonsData).toEqual([
+            { season: 1, episodes: 8 },
+            { season: 2, episodes: 8 },
         ]);
     });
 

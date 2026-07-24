@@ -1,4 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
+import {uniqueBy} from "@/lib/utils/arrays";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
@@ -48,7 +49,10 @@ const transformBooksDetailsResults = async (rawData: GBooksDetails, options: GBo
         }),
     }
 
-    const authorsData = rawData.volumeInfo?.authors?.map((name) => ({ name }));
+    const authors = rawData.volumeInfo?.authors?.map((name) => ({ name }));
+    const authorsData = authors
+        ? uniqueBy(authors, (author) => author.name)
+        : undefined;
 
     return { mediaData, authorsData };
 };

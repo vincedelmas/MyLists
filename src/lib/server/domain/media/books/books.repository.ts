@@ -92,8 +92,8 @@ export class BooksRepository extends BaseRepository<BookServerDefinition> {
 
         const mediaId = media.id;
         if (authorsData && authorsData.length > 0) {
-            const authorsToAdd = authorsData.map((a) => ({ mediaId, ...a }));
-            await tx.insert(booksAuthors).values(authorsToAdd)
+            const authorsToAdd = authorsData.map(a => ({ mediaId, ...a }));
+            await tx.insert(booksAuthors).values(authorsToAdd).onConflictDoNothing();
         }
 
         return mediaId;
@@ -121,7 +121,8 @@ export class BooksRepository extends BaseRepository<BookServerDefinition> {
             if (authorsData.length > 0) {
                 await tx
                     .insert(booksAuthors)
-                    .values(authorsData.map(author => ({ mediaId, ...author })));
+                    .values(authorsData.map(author => ({ mediaId, ...author })))
+                    .onConflictDoNothing();
             }
         }
 
@@ -133,7 +134,8 @@ export class BooksRepository extends BaseRepository<BookServerDefinition> {
             if (genresData.length > 0) {
                 await tx
                     .insert(booksGenre)
-                    .values(genresData.map(genre => ({ mediaId, ...genre })));
+                    .values(genresData.map(genre => ({ mediaId, ...genre })))
+                    .onConflictDoNothing();
             }
         }
 

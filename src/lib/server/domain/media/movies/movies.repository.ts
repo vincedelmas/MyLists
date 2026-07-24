@@ -150,12 +150,12 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
         const mediaId = media.id;
         if (actorsData && actorsData.length > 0) {
             const actorsToAdd = actorsData.map((a) => ({ mediaId, ...a }));
-            await tx.insert(moviesActors).values(actorsToAdd)
+            await tx.insert(moviesActors).values(actorsToAdd).onConflictDoNothing();
         }
 
         if (genresData && genresData.length > 0) {
             const genresToAdd = genresData.map((g) => ({ mediaId, ...g }));
-            await tx.insert(moviesGenre).values(genresToAdd)
+            await tx.insert(moviesGenre).values(genresToAdd).onConflictDoNothing();
         }
 
         return mediaId;
@@ -183,7 +183,8 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
             if (actorsData.length > 0) {
                 await tx
                     .insert(moviesActors)
-                    .values(actorsData.map(author => ({ mediaId, ...author })));
+                    .values(actorsData.map(actor => ({ mediaId, ...actor })))
+                    .onConflictDoNothing();
             }
         }
 
@@ -195,7 +196,8 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
             if (genresData.length > 0) {
                 await tx
                     .insert(moviesGenre)
-                    .values(genresData.map(genre => ({ mediaId, ...genre })));
+                    .values(genresData.map(genre => ({ mediaId, ...genre })))
+                    .onConflictDoNothing();
             }
         }
 

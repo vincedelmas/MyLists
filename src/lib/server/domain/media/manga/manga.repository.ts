@@ -98,12 +98,14 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
             await tx
                 .insert(mangaAuthors)
                 .values(authorsData.map(author => ({ mediaId, ...author })))
+                .onConflictDoNothing();
         }
 
         if (genresData && genresData.length > 0) {
             await tx
                 .insert(mangaGenre)
                 .values(genresData.map(genre => ({ mediaId, ...genre })))
+                .onConflictDoNothing();
         }
 
         return mediaId;
@@ -131,7 +133,8 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
             if (authorsData.length > 0) {
                 await tx
                     .insert(mangaAuthors)
-                    .values(authorsData.map(author => ({ mediaId, ...author })));
+                    .values(authorsData.map(author => ({ mediaId, ...author })))
+                    .onConflictDoNothing();
             }
         }
 
@@ -143,7 +146,8 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
             if (genresData.length > 0) {
                 await tx
                     .insert(mangaGenre)
-                    .values(genresData.map(genre => ({ mediaId, ...genre })));
+                    .values(genresData.map(genre => ({ mediaId, ...genre })))
+                    .onConflictDoNothing();
             }
         }
 

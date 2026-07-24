@@ -1,4 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
+import {uniqueBy} from "@/lib/utils/arrays";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
@@ -53,15 +54,22 @@ const transformMangaDetailsResults = async (rawData: JikanDetails, options: Jika
         }),
     }
 
-    const genresData = rawData?.genres.map((genre) => ({ name: genre.name }));
-    const authorsData = (rawData?.authors ?? [])
-        .slice(0, options.maxAuthors)
+    const genres = rawData?.genres.map((genre) => ({ name: genre.name }));
+    const genresData = genres
+        ? uniqueBy(genres, (genre) => genre.name)
+        : undefined;
+
+    const authorsData = uniqueBy(
+        (rawData?.authors ?? [])
         .map((author) => {
             const [last, first] = author.name?.split(",", 2) ?? [""];
             return first ? `${first.trim()} ${last.trim()}` : last;
         })
         .filter((name) => name.trim())
-        .map((name) => ({ name }));
+        .map((name) => ({ name })),
+        (author) => author.name,
+        options.maxAuthors,
+    );
 
     return { mediaData, authorsData, genresData };
 };

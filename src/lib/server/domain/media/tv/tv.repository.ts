@@ -180,22 +180,22 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         const mediaId = media.id;
         if (actorsData && actorsData.length > 0) {
             const actorsToAdd = actorsData.map((a) => ({ mediaId, ...a }));
-            await tx.insert(actorTable).values(actorsToAdd)
+            await tx.insert(actorTable).values(actorsToAdd).onConflictDoNothing();
         }
 
         if (genresData && genresData.length > 0) {
             const genresToAdd = genresData.map((g) => ({ mediaId, ...g }));
-            await tx.insert(genreTable).values(genresToAdd)
+            await tx.insert(genreTable).values(genresToAdd).onConflictDoNothing();
         }
 
         if (seasonsData && seasonsData.length > 0) {
             const epsPerSeasonToAdd = seasonsData.map((data) => ({ mediaId, ...data }));
-            await tx.insert(epsPerSeasonTable).values(epsPerSeasonToAdd)
+            await tx.insert(epsPerSeasonTable).values(epsPerSeasonToAdd).onConflictDoNothing();
         }
 
         if (networkData && networkData.length > 0) {
             const networkToAdd = networkData.map((n) => ({ mediaId, ...n }));
-            await tx.insert(networkTable).values(networkToAdd)
+            await tx.insert(networkTable).values(networkToAdd).onConflictDoNothing();
         }
 
         return mediaId;
@@ -219,7 +219,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
             await getDbClient().delete(actorTable).where(eq(actorTable.mediaId, mediaId));
             if (actorsData.length > 0) {
                 const actorsToAdd = actorsData.map((a) => ({ mediaId, ...a }));
-                await getDbClient().insert(actorTable).values(actorsToAdd);
+                await getDbClient().insert(actorTable).values(actorsToAdd).onConflictDoNothing();
             }
         }
 
@@ -227,7 +227,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
             await getDbClient().delete(genreTable).where(eq(genreTable.mediaId, mediaId));
             if (genresData.length > 0) {
                 const genresToAdd = genresData.map((g) => ({ mediaId, ...g }));
-                await getDbClient().insert(genreTable).values(genresToAdd);
+                await getDbClient().insert(genreTable).values(genresToAdd).onConflictDoNothing();
             }
         }
 
@@ -236,14 +236,14 @@ export class TvRepository extends BaseRepository<TvDefinition> {
 
             await getDbClient().delete(epsPerSeasonTable).where(eq(epsPerSeasonTable.mediaId, mediaId));
             const epsPerSeasonToAdd = seasonsData.map((data) => ({ mediaId, ...data }));
-            await getDbClient().insert(epsPerSeasonTable).values(epsPerSeasonToAdd);
+            await getDbClient().insert(epsPerSeasonTable).values(epsPerSeasonToAdd).onConflictDoNothing();
         }
 
         if (networkData !== undefined) {
             await getDbClient().delete(networkTable).where(eq(networkTable.mediaId, mediaId));
             if (networkData.length > 0) {
                 const networkToAdd = networkData.map((n) => ({ mediaId, ...n }));
-                await getDbClient().insert(networkTable).values(networkToAdd);
+                await getDbClient().insert(networkTable).values(networkToAdd).onConflictDoNothing();
             }
         }
 

@@ -1,3 +1,4 @@
+import {uniqueBy} from "@/lib/utils/arrays";
 import {notFound} from "@tanstack/react-router";
 import {Status, UpdateType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
@@ -64,11 +65,14 @@ export class BooksService extends BaseService<BookServerDefinition, BooksReposit
         let authorsData: { name: string }[] | undefined;
 
         if (payload?.authors !== undefined) {
-            authorsData = payload.authors
-                .split(",")
-                .map((author: string) => author.trim())
-                .filter(Boolean)
-                .map((name: string) => ({ name }));
+            authorsData = uniqueBy(
+                payload.authors
+                    .split(",")
+                    .map((author: string) => author.trim())
+                    .filter(Boolean)
+                    .map((name: string) => ({ name })),
+                (author) => author.name,
+            );
             delete payload.authors;
         }
 
@@ -131,7 +135,8 @@ description: ${book.synopsis}
 
     async addGenresToBook(bookApiId: string, booksGenres: string[]) {
         const mediaData = { apiId: bookApiId };
-        const genresData = booksGenres.map((g) => ({ name: g }));
+        const genresData = uniqueBy(booksGenres.map((name) => ({ name })), (genre) => genre.name);
+
         await this.repository.updateMediaWithDetails({ mediaData, genresData });
     }
 

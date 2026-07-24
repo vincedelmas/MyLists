@@ -134,16 +134,16 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
 
         const mediaId = media.id;
         if (companiesData && companiesData.length > 0) {
-            const companiesToAdd = companiesData.map((comp) => ({ mediaId, ...comp }));
-            await tx.insert(gamesCompanies).values(companiesToAdd);
+            const companiesToAdd = companiesData.map(comp => ({ mediaId, ...comp }));
+            await tx.insert(gamesCompanies).values(companiesToAdd).onConflictDoNothing();
         }
         if (platformsData && platformsData.length > 0) {
-            const platformsToAdd = platformsData.map((plt) => ({ mediaId, ...plt }));
-            await tx.insert(gamesPlatforms).values(platformsToAdd);
+            const platformsToAdd = platformsData.map(plt => ({ mediaId, ...plt }));
+            await tx.insert(gamesPlatforms).values(platformsToAdd).onConflictDoNothing();
         }
         if (genresData && genresData.length > 0) {
-            const genresToAdd = genresData.map((g) => ({ mediaId, ...g }));
-            await tx.insert(gamesGenre).values(genresToAdd);
+            const genresToAdd = genresData.map(g => ({ mediaId, ...g }));
+            await tx.insert(gamesGenre).values(genresToAdd).onConflictDoNothing();
         }
 
         return mediaId;
@@ -170,7 +170,8 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
             if (companiesData.length > 0) {
                 await tx
                     .insert(gamesCompanies)
-                    .values(companiesData.map(comp => ({ mediaId, ...comp })));
+                    .values(companiesData.map(comp => ({ mediaId, ...comp })))
+                    .onConflictDoNothing();
             }
         }
         if (platformsData !== undefined) {
@@ -181,7 +182,8 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
             if (platformsData.length > 0) {
                 await tx
                     .insert(gamesPlatforms)
-                    .values(platformsData.map(plt => ({ mediaId, ...plt })));
+                    .values(platformsData.map(plt => ({ mediaId, ...plt })))
+                    .onConflictDoNothing();
             }
         }
         if (genresData !== undefined) {
@@ -192,7 +194,8 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
             if (genresData.length > 0) {
                 await tx
                     .insert(gamesGenre)
-                    .values(genresData.map(genre => ({ mediaId, ...genre })));
+                    .values(genresData.map(genre => ({ mediaId, ...genre })))
+                    .onConflictDoNothing();
             }
         }
 

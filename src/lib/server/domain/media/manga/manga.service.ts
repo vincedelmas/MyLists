@@ -1,5 +1,6 @@
 import {notFound} from "@tanstack/react-router";
 import {Status, UpdateType} from "@/lib/utils/enums";
+import {uniqueBy} from "@/lib/utils/arrays";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {LogPayload} from "@/lib/types/user-updates.types";
@@ -69,7 +70,14 @@ export class MangaService extends BaseService<MangaServerDefinition, MangaReposi
             }
         }
 
-        await this.repository.updateMediaWithDetails({ mediaData: fieldsToUpdate, genresData: genres });
+        const genresData = Array.isArray(genres)
+            ? uniqueBy(
+                genres.map((genre) => typeof genre === "string" ? { name: genre } : genre),
+                (genre) => genre.name,
+            )
+            : genres;
+
+        await this.repository.updateMediaWithDetails({ mediaData: fieldsToUpdate, genresData });
     }
 
     updateRedoHandler(currentState: MangaList, payload: RedoPayload, media: Manga): [MangaList, LogPayload] {

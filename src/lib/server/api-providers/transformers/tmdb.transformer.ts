@@ -1,4 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
+import {uniqueBy} from "@/lib/utils/arrays";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {isLatin1} from "@/lib/utils/text-formatting";
 import {CoverType} from "@/lib/types/media-common.types";
@@ -46,9 +47,8 @@ const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w300";
 const toUniqueNamedData = (items: { name: string }[] | null | undefined, limit: number) => {
     if (!items) return;
 
-    return [...new Set(items.map((item) => item.name))]
-        .slice(0, limit)
-        .map((name) => ({ name }));
+    return uniqueBy(items, (item) => item.name, limit)
+        .map(({ name }) => ({ name }));
 };
 
 
@@ -101,9 +101,12 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: TmdbTv
         }),
     };
 
-    const seasonsData = rawData?.seasons?.filter((s) => s.season_number && s.season_number > 0)
-        .map((s) => ({ season: s.season_number, episodes: s.episode_count }))
-        .filter((s) => s.episodes > 0) || [];
+    const seasonsData = uniqueBy(
+        rawData?.seasons?.filter((s) => s.season_number && s.season_number > 0)
+            .map((s) => ({ season: s.season_number, episodes: s.episode_count }))
+            .filter((s) => s.episodes > 0) || [],
+        (season) => season.season,
+    );
 
     if (seasonsData.length === 0) {
         seasonsData.push({ season: 1, episodes: 1 });

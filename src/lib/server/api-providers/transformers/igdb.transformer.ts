@@ -1,4 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
+import {uniqueBy} from "@/lib/utils/arrays";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
@@ -74,14 +75,25 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails, options: I
         }
     }
 
-    genresData = genresData.slice(0, options.maxGenres);
-    const companiesData = rawData?.involved_companies?.filter(company => company.developer || company.publisher)
+    genresData = uniqueBy(genresData, (genre) => genre.name, options.maxGenres);
+
+    const companies = rawData?.involved_companies
+        ?.filter(company => company.developer || company.publisher)
         .map(company => ({
             name: company.company.name,
             developer: company.developer,
             publisher: company.publisher,
         }));
-    const platformsData = rawData?.platforms?.map((platform) => ({ name: platform.name }));
+
+    const companiesData = companies
+        ? uniqueBy(companies, (company) => JSON.stringify([company.name, company.publisher, company.developer]))
+        : undefined;
+
+    const platforms = rawData?.platforms?.map((platform) => ({ name: platform.name }));
+
+    const platformsData = platforms
+        ? uniqueBy(platforms, (platform) => platform.name)
+        : undefined;
 
     return { mediaData, companiesData, platformsData, genresData };
 };

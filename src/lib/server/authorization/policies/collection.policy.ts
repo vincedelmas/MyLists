@@ -17,8 +17,9 @@ export type CollectionSubject = {
 };
 
 
-const isModerator = (actor: Actor) => {
-    return hasRequiredRole(actor, RoleType.MANAGER);
+const canModerate = (actor: Actor, collection: CollectionSubject) => {
+    if (hasRequiredRole(actor, RoleType.ADMIN)) return true;
+    return collection.privacy !== PrivacyType.PRIVATE && hasRequiredRole(actor, RoleType.MANAGER);
 };
 
 
@@ -34,7 +35,7 @@ const decideCollectionAccess = (
     relationship: CollectionRelationship = { acceptedFollower: false },
 ): AccessDecision => {
     if (action === "edit" || action === "delete") {
-        return (isOwner(actor, collection) || isModerator(actor))
+        return (isOwner(actor, collection) || canModerate(actor, collection))
             ? allow()
             : deny(actor.kind === "anonymous"
                 ? DenialReason.AUTH_REQUIRED
@@ -53,9 +54,9 @@ const decideCollectionAccess = (
         return deny(DenialReason.AUTH_REQUIRED);
     }
 
-    // Moderators can open collections for moderation, but social interactions
-    // follow same visibility rules as regular authenticated viewers.
-    if (action === "read" && isModerator(actor)) return allow();
+    // Admins can inspect every collection. Managers can moderate only collections
+    // their owners chose to publish as public or restricted.
+    if (action === "read" && canModerate(actor, collection)) return allow();
 
     if (isOwner(actor, collection)) return allow();
 

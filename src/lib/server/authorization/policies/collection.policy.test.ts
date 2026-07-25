@@ -59,15 +59,44 @@ describe("collectionPolicy", () => {
         expect(collectionPolicy.decide(user, "read", subject).allowed).toBe(false);
     });
 
-    it("grants direct moderation but not social interactions to managers", () => {
-        const subject = collection(PrivacyType.PRIVATE);
+    it("grants managers moderation only over published collections", () => {
         const manager = toActor({ id: 20, role: RoleType.MANAGER });
 
-        expect(collectionPolicy.decide(manager, "read", subject).allowed).toBe(true);
-        expect(collectionPolicy.decide(manager, "edit", subject).allowed).toBe(true);
-        expect(collectionPolicy.decide(manager, "delete", subject).allowed).toBe(true);
-        expect(collectionPolicy.decide(manager, "like", subject).allowed).toBe(false);
-        expect(collectionPolicy.decide(manager, "copy", subject).allowed).toBe(false);
+        for (const privacy of [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]) {
+            const subject = collection(privacy, PrivacyType.PRIVATE);
+            expect(collectionPolicy.decide(manager, "read", subject), privacy).toEqual({ allowed: true });
+            expect(collectionPolicy.decide(manager, "edit", subject), privacy).toEqual({ allowed: true });
+            expect(collectionPolicy.decide(manager, "delete", subject), privacy).toEqual({ allowed: true });
+        }
+    });
+
+    it("does not let managers inspect or moderate private collections", () => {
+        const subject = collection(PrivacyType.PRIVATE, PrivacyType.PRIVATE);
+        const manager = toActor({ id: 20, role: RoleType.MANAGER });
+
+        expect(collectionPolicy.decide(manager, "read", subject))
+            .toEqual({ allowed: false, reason: DenialReason.RESOURCE_PRIVATE });
+        expect(collectionPolicy.decide(manager, "edit", subject))
+            .toEqual({ allowed: false, reason: DenialReason.INSUFFICIENT_ROLE });
+        expect(collectionPolicy.decide(manager, "delete", subject))
+            .toEqual({ allowed: false, reason: DenialReason.INSUFFICIENT_ROLE });
+        expect(collectionPolicy.decide(manager, "like", subject))
+            .toEqual({ allowed: false, reason: DenialReason.RESOURCE_PRIVATE });
+        expect(collectionPolicy.decide(manager, "copy", subject))
+            .toEqual({ allowed: false, reason: DenialReason.RESOURCE_PRIVATE });
+    });
+
+    it("lets admins inspect and moderate private collections without granting social interactions", () => {
+        const subject = collection(PrivacyType.PRIVATE, PrivacyType.PRIVATE);
+        const admin = toActor({ id: 30, role: RoleType.ADMIN });
+
+        expect(collectionPolicy.decide(admin, "read", subject)).toEqual({ allowed: true });
+        expect(collectionPolicy.decide(admin, "edit", subject)).toEqual({ allowed: true });
+        expect(collectionPolicy.decide(admin, "delete", subject)).toEqual({ allowed: true });
+        expect(collectionPolicy.decide(admin, "like", subject))
+            .toEqual({ allowed: false, reason: DenialReason.RESOURCE_PRIVATE });
+        expect(collectionPolicy.decide(admin, "copy", subject))
+            .toEqual({ allowed: false, reason: DenialReason.RESOURCE_PRIVATE });
     });
 
     it("keeps item-level additions and removals owner-only", () => {

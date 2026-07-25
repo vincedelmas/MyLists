@@ -1,6 +1,8 @@
+import {toActor} from "@/lib/server/authorization";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {simpleSearchUsernameSchema} from "@/lib/schemas";
+import {getPublishedMediaSettings} from "@/lib/utils/media-list-activation";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {contentAuthorizationMiddleware, publicPreviewMiddleware} from "@/lib/server/middlewares/authorization";
 
@@ -22,9 +24,10 @@ export const getUserProfileHeader = createServerFn({ method: "GET" })
                 privacy: targetUser.privacy,
                 createdAt: targetUser.createdAt,
                 backgroundImage: targetUser.backgroundImage,
-                userMediaSettings: targetUser.userMediaSettings.map(({ timeSpent, active }) => ({
-                    timeSpent,
+                userMediaSettings: getPublishedMediaSettings(targetUser.userMediaSettings).map(({ timeSpent, active, mediaType }) => ({
                     active,
+                    mediaType,
+                    timeSpent,
                 })),
             },
             social: {
@@ -62,7 +65,7 @@ export const getUserProfile = createServerFn({ method: "GET" })
         const { followsCount } = await userService.getFollowCount(targetUserId);
         const userFollows = await userService.getUserFollows(undefined, targetUserId);
         const userUpdates = await userUpdatesService.getUserUpdates(targetUserId);
-        const followsUpdates = await userUpdatesService.getFollowsUpdates(targetUserId, currentUser?.id);
+        const followsUpdates = await userUpdatesService.getFollowsUpdates(targetUserId, toActor(currentUser));
         const mediaGlobalSummary = await userStatsService.userPreComputedStatsSummary(targetUserId);
         const perMediaSummary = await userStatsService.userPerMediaSummaryStats(targetUserId);
         const highlightedMedia = await userProfileService.resolveHighlightedMedia(targetUserId);
@@ -85,7 +88,7 @@ export const getUserProfile = createServerFn({ method: "GET" })
                 createdAt: user.createdAt,
                 ratingSystem: user.ratingSystem,
                 backgroundImage: user.backgroundImage,
-                userMediaSettings: user.userMediaSettings.map(({ mediaType, timeSpent, active }) => ({
+                userMediaSettings: getPublishedMediaSettings(user.userMediaSettings).map(({ mediaType, timeSpent, active }) => ({
                     active,
                     mediaType,
                     timeSpent,

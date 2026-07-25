@@ -1,11 +1,11 @@
 import Database from "bun:sqlite";
 import * as schema from "@/lib/server/database/schema";
-import {collections, followers, user} from "@/lib/server/database/schema";
+import {collections, followers, user, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {toActor} from "@/lib/server/authorization/utils";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {MediaType, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
+import {MediaType, PrivacyType, RoleType, SocialState, UpdateType} from "@/lib/utils/enums";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -18,6 +18,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { profileCollectionVisibilityCondition } = await import("@/lib/server/authorization/scopes/collection.scope");
 const { communityProfileVisibilityCondition, followFeedProfileVisibilityCondition } = await import("@/lib/server/authorization/scopes/profile.scope");
+const { UserUpdatesRepository } = await import("@/lib/server/domain/user/user-updates.repository");
 
 
 describe("authorization visibility scopes", () => {
@@ -123,38 +124,76 @@ describe("authorization visibility scopes", () => {
         dbContext.db = undefined;
     });
 
-    it("shows community profiles according to authentication state", async () => {
-        const anonymousRows = await db
+    it.each([
+        ["anonymous", toActor(), [1, 2]],
+        ["regular accepted follower", toActor({ id: 1, role: RoleType.USER }), [1, 2, 3, 4]],
+        ["manager accepted follower", toActor({ id: 1, role: RoleType.MANAGER }), [1, 2, 3, 4]],
+        ["unrelated manager", toActor({ id: 99, role: RoleType.MANAGER }), [1, 2, 3]],
+        ["private profile owner", toActor({ id: 4, role: RoleType.USER }), [1, 2, 3, 4]],
+        ["admin", toActor({ id: 99, role: RoleType.ADMIN }), [1, 2, 3, 4, 5]],
+    ])("filters community profiles for %s", async (_label, actor, expectedIds) => {
+        const rows = await db
             .select({ id: user.id })
             .from(user)
-            .where(communityProfileVisibilityCondition(false))
+            .where(communityProfileVisibilityCondition(actor))
             .orderBy(user.id);
 
-        const authenticatedRows = await db
-            .select({ id: user.id })
-            .from(user)
-            .where(communityProfileVisibilityCondition(true))
-            .orderBy(user.id);
-
-        expect(anonymousRows.map(({ id }) => id)).toEqual([1, 2]);
-        expect(authenticatedRows.map(({ id }) => id)).toEqual([1, 2, 3]);
+        expect(rows.map(({ id }) => id)).toEqual(expectedIds);
     });
 
-    it("shows accepted private follows but not pending private follows", async () => {
-        const anonymousRows = await db
+    it("lets admins see private authors in another user's follows feed", async () => {
+        await db.insert(followers).values([
+            { followerId: 1, followedId: 2, status: SocialState.ACCEPTED },
+            { followerId: 1, followedId: 3, status: SocialState.ACCEPTED },
+        ]);
+        await db.insert(userMediaSettings).values([2, 3, 4, 5].map((userId) => ({
+            userId,
+            active: true,
+            mediaType: MediaType.MOVIES,
+        })));
+        await db.insert(userMediaUpdate).values([2, 3, 4, 5].map((userId) => ({
+            userId,
+            mediaId: userId,
+            id: userId,
+            mediaName: `Media ${userId}`,
+            mediaType: MediaType.MOVIES,
+            updateType: UpdateType.STATUS,
+            timestamp: `2026-01-0${userId} 00:00:00`,
+        })));
+
+        const ownerRows = await UserUpdatesRepository.getFollowsUpdates(
+            1,
+            toActor({ id: 1, role: RoleType.USER }),
+        );
+        const unrelatedViewerRows = await UserUpdatesRepository.getFollowsUpdates(
+            1,
+            toActor({ id: 2, role: RoleType.USER }),
+        );
+        const adminRows = await UserUpdatesRepository.getFollowsUpdates(
+            1,
+            toActor({ id: 99, role: RoleType.ADMIN }),
+        );
+
+        expect(ownerRows.map(({ userId }) => userId)).toEqual([4, 3, 2]);
+        expect(unrelatedViewerRows.map(({ userId }) => userId)).toEqual([3, 2]);
+        expect(adminRows.map(({ userId }) => userId)).toEqual([4, 3, 2]);
+    });
+
+    it.each([
+        ["anonymous", toActor(), [1, 2]],
+        ["regular accepted follower", toActor({ id: 1, role: RoleType.USER }), [1, 2, 3, 4]],
+        ["manager accepted follower", toActor({ id: 1, role: RoleType.MANAGER }), [1, 2, 3, 4]],
+        ["unrelated manager", toActor({ id: 99, role: RoleType.MANAGER }), [1, 2, 3]],
+        ["private profile owner", toActor({ id: 4, role: RoleType.USER }), [1, 2, 3, 4]],
+        ["admin", toActor({ id: 99, role: RoleType.ADMIN }), [1, 2, 3, 4, 5]],
+    ])("filters follow-feed authors for %s", async (_label, actor, expectedIds) => {
+        const rows = await db
             .select({ id: user.id })
             .from(user)
-            .where(followFeedProfileVisibilityCondition())
+            .where(followFeedProfileVisibilityCondition(actor))
             .orderBy(user.id);
 
-        const visitorRows = await db
-            .select({ id: user.id })
-            .from(user)
-            .where(followFeedProfileVisibilityCondition(1))
-            .orderBy(user.id);
-
-        expect(anonymousRows.map(({ id }) => id)).toEqual([1, 2]);
-        expect(visitorRows.map(({ id }) => id)).toEqual([1, 2, 3, 4]);
+        expect(rows.map(({ id }) => id)).toEqual(expectedIds);
     });
 
     it.each([

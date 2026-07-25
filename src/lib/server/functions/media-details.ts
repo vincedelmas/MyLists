@@ -44,7 +44,7 @@ export const getMediaCommunityActivity = createServerFn({ method: "GET" })
     .handler(async ({ data: { mediaType, mediaId, search }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.getMediaCommunityActivity(currentUser?.id, mediaId, search);
+        return mediaService.getMediaCommunityActivity(toActor(currentUser), mediaId, search);
     });
 
 

@@ -1,6 +1,6 @@
-import {describe, expect, it} from "vitest";
-import {getActiveMediaSettings, getActiveMediaTypes, resolveMediaTypeActive,} from "@/lib/utils/media-list-activation";
 import {MediaType} from "@/lib/utils/enums";
+import {describe, expect, it} from "vitest";
+import {getActiveMediaSettings, getActiveMediaTypes, getPublishedMediaSettings, resolveMediaTypeActive,} from "@/lib/utils/media-list-activation";
 
 
 const settings = [
@@ -25,5 +25,15 @@ describe("media-list activation helpers", () => {
 
     it("treats an absent media type as inactive", () => {
         expect(resolveMediaTypeActive(settings, MediaType.GAMES)).toBe(false);
+    });
+
+    it("redacts retained time from inactive settings published in profile headers", () => {
+        expect(getPublishedMediaSettings([
+            { mediaType: MediaType.MOVIES, active: true, timeSpent: 120 },
+            { mediaType: MediaType.ANIME, active: false, timeSpent: 900 },
+        ])).toEqual([
+            { mediaType: MediaType.MOVIES, active: true, timeSpent: 120 },
+            { mediaType: MediaType.ANIME, active: false, timeSpent: 0 },
+        ]);
     });
 });

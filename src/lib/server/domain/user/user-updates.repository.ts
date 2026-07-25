@@ -5,7 +5,7 @@ import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {LogUpdateParams} from "@/lib/types/user-updates.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType, SocialState, UpdateType} from "@/lib/utils/enums";
-import {followFeedProfileVisibilityCondition} from "@/lib/server/authorization";
+import {Actor, followFeedProfileVisibilityCondition} from "@/lib/server/authorization";
 import {followers, user, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
 import {and, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, like, SQL, sql} from "drizzle-orm";
 
@@ -96,7 +96,7 @@ export class UserUpdatesRepository {
             .orderBy(desc(userMediaUpdate.timestamp));
     }
 
-    static async getFollowsUpdates(profileOwnerId: number, visitorId?: number, limit = 10) {
+    static async getFollowsUpdates(profileOwnerId: number, actor: Actor, limit = 10) {
         // Subquery: People that Profile Owner (User B) follows
         const followedByB = getDbClient()
             .select({ id: followers.followedId })
@@ -118,7 +118,7 @@ export class UserUpdatesRepository {
             .where(and(
                 // Limit updates to people User B follows
                 inArray(userMediaUpdate.userId, followedByB),
-                followFeedProfileVisibilityCondition(visitorId),
+                followFeedProfileVisibilityCondition(actor),
             ))
             .orderBy(desc(userMediaUpdate.timestamp))
             .limit(limit);

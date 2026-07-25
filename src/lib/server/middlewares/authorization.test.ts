@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {DenialReason, PrivacyType, RoleType} from "@/lib/utils/enums";
+import {DenialReason, MediaType, PrivacyType, RoleType} from "@/lib/utils/enums";
 
 
 const mocks = vi.hoisted(() => ({
@@ -19,7 +19,12 @@ vi.mock("@/lib/schemas", () => ({
 }));
 
 
-const { contentAuthorizationMiddleware, publicPreviewMiddleware } = await import("@/lib/server/middlewares/authorization");
+const {
+    activeMediaListAuthorizationMiddleware,
+    activeMediaListPreviewMiddleware,
+    contentAuthorizationMiddleware,
+    publicPreviewMiddleware,
+} = await import("@/lib/server/middlewares/authorization");
 
 
 describe("profile authorization middleware boundaries", () => {
@@ -77,5 +82,51 @@ describe("profile authorization middleware boundaries", () => {
                 user: targetUser,
             },
         });
+    });
+});
+
+
+describe("activated media-list middleware boundaries", () => {
+    const currentUser = { id: 20, role: RoleType.USER };
+    const targetUser = {
+        id: 10,
+        name: "list-owner",
+        privacy: PrivacyType.PUBLIC,
+        userMediaSettings: [
+            { mediaType: MediaType.MOVIES, active: true },
+            { mediaType: MediaType.ANIME, active: false },
+        ],
+    };
+
+    it.each([
+        ["public preview", activeMediaListPreviewMiddleware, { targetUser, currentUser }],
+        ["authorized content", activeMediaListAuthorizationMiddleware, { user: targetUser, currentUser }],
+    ])("rejects inactive lists before running the %s handler", async (_label, middleware, context) => {
+        const next = vi.fn();
+        const runMiddleware = middleware.options.server as any;
+
+        await expect(runMiddleware({
+            next,
+            context,
+            data: { username: targetUser.name, mediaType: MediaType.ANIME },
+        })).rejects.toBeDefined();
+
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ["public preview", activeMediaListPreviewMiddleware, { targetUser, currentUser }],
+        ["authorized content", activeMediaListAuthorizationMiddleware, { user: targetUser, currentUser }],
+    ])("passes active lists through the %s boundary", async (_label, middleware, context) => {
+        const next = vi.fn().mockResolvedValue("visible");
+        const runMiddleware = middleware.options.server as any;
+
+        await expect(runMiddleware({
+            next,
+            context,
+            data: { username: targetUser.name, mediaType: MediaType.MOVIES },
+        })).resolves.toBe("visible");
+
+        expect(next).toHaveBeenCalledOnce();
     });
 });

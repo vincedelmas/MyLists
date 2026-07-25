@@ -1,11 +1,18 @@
-import {DenialReason} from "@/lib/utils/enums";
 import {notFound} from "@tanstack/react-router";
 import {baseUsernameSchema} from "@/lib/schemas";
 import {toActor} from "@/lib/server/authorization";
 import {createMiddleware} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
+import {DenialReason, MediaType} from "@/lib/utils/enums";
 import {UnauthorizedError} from "@/lib/utils/error-classes";
+import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
+
+
+type MediaListRequest = {
+    username: string;
+    mediaType: MediaType;
+};
 
 
 /**
@@ -50,6 +57,47 @@ export const contentAuthorizationMiddleware = createMiddleware({ type: "function
             context: {
                 currentUser,
                 user: targetUser,
+            },
+        });
+    });
+
+
+/**
+ * Resolves a public list-header preview only when owner has published requested media list.
+ */
+export const activeMediaListPreviewMiddleware = createMiddleware({ type: "function" })
+    .middleware([publicPreviewMiddleware])
+    .server(async ({ next, data, context: { targetUser, currentUser } }) => {
+        const { mediaType } = data as MediaListRequest;
+        if (!resolveMediaTypeActive(targetUser.userMediaSettings, mediaType)) {
+            throw notFound();
+        }
+
+        return next({
+            context: {
+                targetUser,
+                currentUser,
+            },
+        });
+    });
+
+
+/**
+ * Applies profile authorization and activated-list publication boundary
+ * before any list-derived data is loaded.
+ */
+export const activeMediaListAuthorizationMiddleware = createMiddleware({ type: "function" })
+    .middleware([contentAuthorizationMiddleware])
+    .server(async ({ next, data, context: { user, currentUser } }) => {
+        const { mediaType } = data as MediaListRequest;
+        if (!resolveMediaTypeActive(user.userMediaSettings, mediaType)) {
+            throw notFound();
+        }
+
+        return next({
+            context: {
+                user,
+                currentUser,
             },
         });
     });

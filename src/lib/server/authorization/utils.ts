@@ -11,7 +11,7 @@ type AnonymousActor = {
 };
 
 
-type AuthenticatedActor = {
+export type AuthenticatedActor = {
     id: number;
     kind: "user";
     role: RoleType;

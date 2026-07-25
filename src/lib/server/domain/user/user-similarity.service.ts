@@ -1,5 +1,7 @@
 import {TasteMatchesSearch} from "@/lib/schemas";
-import {MediaType, PrivacyType, SocialState} from "@/lib/utils/enums";
+import {MediaType, SocialState} from "@/lib/utils/enums";
+import {AuthenticatedActor} from "@/lib/server/authorization/utils";
+import {profilePolicy} from "@/lib/server/authorization/policies/profile.policy";
 import {UserSimilarityRepository} from "@/lib/server/domain/user/user-similarity.repository";
 import {calculateTasteSimilarity, emptyRatingAggregate, mergeRatingAggregates, RatingAggregate} from "@/lib/utils/taste-similarity";
 
@@ -13,8 +15,10 @@ export class UserSimilarityService {
     constructor(private repository: typeof UserSimilarityRepository) {
     }
 
-    async getTasteMatches(currentUserId: number, filters: TasteMatchesSearch, activeMediaTypes: MediaType[] = Object.values(MediaType)) {
+    async getTasteMatches(actor: AuthenticatedActor, filters: TasteMatchesSearch, activeMediaTypes: MediaType[] = Object.values(MediaType)) {
+        const currentUserId = actor.id;
         const search = filters.search?.toLocaleLowerCase() ?? "";
+
         const activeTab = filters.activeTab !== "all" && activeMediaTypes.includes(filters.activeTab) ? filters.activeTab : "all";
         const selectedMediaTypes = activeTab === "all" ? activeMediaTypes : [activeTab];
 
@@ -56,7 +60,7 @@ export class UserSimilarityService {
         const profiles = await this.repository.getCandidateProfiles(eligibleIds, currentUserId);
 
         const rankedMatches = profiles
-            .filter((profile) => profile.privacy !== PrivacyType.PRIVATE)
+            .filter((profile) => profilePolicy.decide(actor, profile, { acceptedFollower: profile.followStatus === SocialState.ACCEPTED }).allowed)
             .filter((profile) => !filters.hideFollowed || profile.followStatus !== SocialState.ACCEPTED)
             .filter((profile) => !search || profile.name.toLocaleLowerCase().includes(search))
             .map((profile) => {

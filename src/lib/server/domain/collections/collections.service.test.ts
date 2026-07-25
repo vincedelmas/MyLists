@@ -16,7 +16,7 @@ const createService = () => {
         title: "Favorites",
         description: null,
         mediaType: MediaType.MOVIES,
-        privacy: PrivacyType.PUBLIC,
+        privacy: PrivacyType.PUBLIC as PrivacyType,
         ownerPrivacy: PrivacyType.PUBLIC,
     };
 
@@ -198,6 +198,46 @@ describe("CollectionsService authorization", () => {
         expect(repository.getMaxCollectionItemOrder).not.toHaveBeenCalled();
         expect(repository.insertCollectionItem).not.toHaveBeenCalled();
         expect(repository.deleteCollectionItem).not.toHaveBeenCalled();
+    });
+
+    it("rejects manager updates and deletes for private collections before writing", async () => {
+        const { collection, repository, service } = createService();
+        const actor = toActor({ id: 20, role: RoleType.MANAGER });
+        collection.privacy = PrivacyType.PRIVATE;
+
+        await expect(service.updateCollection({
+            actor,
+            collectionId: 7,
+            title: "Changed",
+            ordered: false,
+            privacy: PrivacyType.PRIVATE,
+            items: [{ mediaId: 1 }],
+        })).rejects.toThrow(FormattedError);
+        await expect(service.deleteCollection(7, actor)).rejects.toThrow(FormattedError);
+
+        expect(repository.updateCollection).not.toHaveBeenCalled();
+        expect(repository.replaceCollectionItems).not.toHaveBeenCalled();
+        expect(repository.deleteCollection).not.toHaveBeenCalled();
+    });
+
+    it("allows admin updates and deletes for private collections", async () => {
+        const { collection, repository, service } = createService();
+        const actor = toActor({ id: 30, role: RoleType.ADMIN });
+        collection.privacy = PrivacyType.PRIVATE;
+
+        await service.updateCollection({
+            actor,
+            collectionId: 7,
+            title: "Moderated",
+            ordered: false,
+            privacy: PrivacyType.PRIVATE,
+            items: [{ mediaId: 1 }],
+        });
+        await service.deleteCollection(7, actor);
+
+        expect(repository.updateCollection).toHaveBeenCalledOnce();
+        expect(repository.replaceCollectionItems).toHaveBeenCalledOnce();
+        expect(repository.deleteCollection).toHaveBeenCalledWith(7);
     });
 
     it("does not alter likes when the interaction policy denies access", async () => {

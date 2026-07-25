@@ -8,12 +8,13 @@ import {MediaListArgs, SearchType, SimpleSearch} from "@/lib/schemas";
 import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
 import {ExpandedListFilters, ExportMediaList, MediaListData} from "@/lib/types/media-list.types";
-import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
+import {JobType, MediaType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {createArrayFilter, type FilterDefinitions} from "@/lib/server/domain/media/base/media-list.query";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {AnyMediaRepositoryDefinition, AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {animeList, booksList, collectionItems, followers, gamesList, mangaList, moviesList, seriesList, user, userMediaSettings} from "@/lib/server/database/schema";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notExists, notInArray, or, SQL, sql} from "drizzle-orm";
+import {communityProfileVisibilityCondition} from "@/lib/server/authorization";
 
 
 const SIMILAR_MAX_GENRES = 10;
@@ -599,7 +600,7 @@ export abstract class BaseRepository<
 
         const conditions = and(
             eq(listTable.mediaId, mediaId),
-            userId ? inArray(user.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]) : eq(user.privacy, PrivacyType.PUBLIC),
+            communityProfileVisibilityCondition(userId !== undefined),
         );
 
         const statsQuery = getDbClient()

@@ -3,8 +3,9 @@ import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {paginate} from "@/lib/server/database/pagination";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
+import {Actor, profileCollectionVisibilityCondition} from "@/lib/server/authorization";
+import {and, asc, count, desc, eq, getTableColumns, like, max, or, sql} from "drizzle-orm";
 import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
-import {and, asc, count, desc, eq, getTableColumns, inArray, like, max, or, sql} from "drizzle-orm";
 
 
 export class CollectionsRepository {
@@ -114,11 +115,12 @@ export class CollectionsRepository {
             .where(and(eq(collectionItems.collectionId, collectionId), eq(collectionItems.mediaId, mediaId)));
     }
 
-    static async getUserCollections(targetUserId: number, canViewPrivate: boolean, mediaType?: MediaType) {
+    static async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType) {
         return getDbClient()
             .select({
                 ownerName: user.name,
                 ownerImage: user.image,
+                ownerPrivacy: user.privacy,
                 itemsCount: sql<number>`(
                     SELECT COUNT(*) 
                     FROM ${collectionItems} ci 
@@ -141,15 +143,15 @@ export class CollectionsRepository {
             .where(and(
                 eq(collections.ownerId, targetUserId),
                 mediaType ? eq(collections.mediaType, mediaType) : undefined,
-                canViewPrivate ? undefined : inArray(collections.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]),
+                profileCollectionVisibilityCondition(actor, targetUserId),
             ))
             .orderBy(desc(collections.likeCount));
     }
 
-    static async getPaginatedUserCollections(targetUserId: number, canViewPrivate: boolean, params: Omit<UserCollectionsSearch, "username">) {
+    static async getPaginatedUserCollections(targetUserId: number, actor: Actor, params: Omit<UserCollectionsSearch, "username">) {
         const searchFilter = params.search?.trim();
         const searchCondition = searchFilter ? like(collections.title, `%${searchFilter}%`) : undefined;
-        const visibilityCondition = canViewPrivate ? undefined : inArray(collections.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]);
+        const visibilityCondition = profileCollectionVisibilityCondition(actor, targetUserId);
 
         return paginate({
             perPage: 12,
@@ -171,6 +173,7 @@ export class CollectionsRepository {
                     .select({
                         ownerName: user.name,
                         ownerImage: user.image,
+                        ownerPrivacy: user.privacy,
                         itemsCount: sql<number>`(
                             SELECT COUNT(*)
                             FROM ${collectionItems} ci
@@ -231,6 +234,7 @@ export class CollectionsRepository {
                     .select({
                         ownerName: user.name,
                         ownerImage: user.image,
+                        ownerPrivacy: user.privacy,
                         itemsCount: sql<number>`(
                             SELECT COUNT(*) 
                             FROM ${collectionItems} ci 
@@ -267,6 +271,7 @@ export class CollectionsRepository {
             .select({
                 ownerName: user.name,
                 ownerImage: user.image,
+                ownerPrivacy: user.privacy,
                 itemsCount: sql<number>`(
                     SELECT COUNT(*) 
                     FROM ${collectionItems} ci 

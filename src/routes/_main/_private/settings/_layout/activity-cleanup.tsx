@@ -7,7 +7,9 @@ import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
@@ -15,7 +17,6 @@ import {BulkHideActivity, BulkHideActivityInput, bulkHideActivitySchema} from "@
 import {useBulkHideActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/activity-cleanup")({
@@ -30,7 +31,7 @@ function ActivityCleanupSettings() {
     const today = toDateInputValue(new Date());
     const bulkMutation = useBulkHideActivityMutation({ noErrorToast: true });
     const accountCreatedAt = currentUser?.createdAt ? toDateInputValue(currentUser.createdAt) : today;
-    const availableMediaTypes = currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? Object.values(MediaType);
+    const availableMediaTypes = currentUser ? getActiveMediaTypes(currentUser.settings) : Object.values(MediaType);
     const form = useForm<BulkHideActivityInput, unknown, BulkHideActivity>({
         resolver: zodResolver(bulkHideActivitySchema),
         values: {

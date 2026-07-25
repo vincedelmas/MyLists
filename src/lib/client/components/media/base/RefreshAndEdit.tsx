@@ -1,11 +1,11 @@
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
+import {MediaType} from "@/lib/utils/enums";
 import {Pencil, RefreshCw} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useNow} from "@/lib/client/hooks/use-dates";
 import {Button} from "@/lib/client/components/ui/button";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
-import {isAtLeastRole, MediaType, RoleType} from "@/lib/utils/enums";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {useRefreshMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 
@@ -23,7 +23,7 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
     const isBook = (mediaType === MediaType.BOOKS);
     const refreshMutation = useRefreshMediaMutation(mediaType, mediaId);
     const lastUpdateDate = lastUpdate ? dateFromUTCInput(lastUpdate) : null;
-    const isManagerOrAbove = isAtLeastRole(currentUser?.role, RoleType.MANAGER);
+    const isManagerOrAbove = currentUser?.capabilities.editCatalog ?? false;
 
     if (!isManagerOrAbove && isBook) return null;
 

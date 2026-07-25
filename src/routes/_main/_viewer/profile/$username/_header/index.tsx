@@ -3,13 +3,14 @@ import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {profileOptions} from "@/lib/client/react-query/query-options";
+import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
 import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab";
 import {ProfileFollows} from "@/lib/client/components/user-profile/ProfileFollows";
-import {profileOptions} from "@/lib/client/react-query/query-options";
 import {OnboardingModal} from "@/lib/client/components/user-profile/OnboardingModal";
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
@@ -27,8 +28,8 @@ function ProfileMain() {
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
     const apiData = useSuspenseQuery(profileOptions(username)).data;
+    const activeMediaTypes = getActiveMediaTypes(apiData.userData.userMediaSettings);
     const [activeTab, setActiveTab] = useState<MediaType | "overview">("overview");
-    const activeMediaTypes = apiData.userData.userMediaSettings.filter((s) => s.active).map((s) => s.mediaType);
 
     const mediaTabs: TabItem<MediaType | "overview">[] = [
         {

@@ -11,6 +11,7 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
+import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
 import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
@@ -40,8 +41,8 @@ function CollectionViewer() {
     const toggleLikeMutation = useToggleCollectionLikeMutation(collectionId);
     const apiData = useSuspenseQuery(collectionDetailsReadOptions(collectionId)).data;
 
-    const { collection, items, isLiked, canManage } = apiData;
-    const isMediaTypeActive = currentUser?.settings.some(s => s.mediaType === collection.mediaType && s.active) ?? false;
+    const { collection, items, isLiked, capabilities } = apiData;
+    const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, collection.mediaType);
 
     const handleLikeCollection = () => {
         toggleLikeMutation.mutate({ data: { collectionId } });
@@ -63,7 +64,7 @@ function CollectionViewer() {
         >
             <div className="flex flex-wrap items-center justify-between pb-5">
                 <div className="flex items-center gap-3">
-                    {!isAnonymous &&
+                    {capabilities.like &&
                         <>
                             <Button
                                 size="sm"
@@ -74,10 +75,12 @@ function CollectionViewer() {
                                 <Heart className={isLiked ? "text-red-500" : ""}/>
                                 {collection.likeCount}
                             </Button>
-                            <Button size="sm" variant="outline" onClick={handleCopyCollection} disabled={copyMutation.isPending}>
-                                <Copy className="size-4"/> Copy
-                            </Button>
                         </>
+                    }
+                    {capabilities.copy &&
+                        <Button size="sm" variant="outline" onClick={handleCopyCollection} disabled={copyMutation.isPending}>
+                            <Copy className="size-4"/> Copy
+                        </Button>
                     }
                     <Badge variant="outline">
                         {collection.ordered ? "Ranked" : "Unranked"}
@@ -85,7 +88,7 @@ function CollectionViewer() {
                     <PrivacyIcon type={collection.privacy} className="size-4"/>
                 </div>
                 <div>
-                    {canManage &&
+                    {capabilities.edit &&
                         <Button size="sm" variant="outline" onClick={handleEditCollection}>
                             <Pencil/> Edit Collection
                         </Button>

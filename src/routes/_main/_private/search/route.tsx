@@ -10,6 +10,7 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {GlobalSearch, globalSearchSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
+import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {BookImage, Cat, Gamepad2, Library, LoaderCircle, Monitor, Popcorn, Search, User, X} from "lucide-react";
 
@@ -68,17 +69,27 @@ function SearchPage() {
                         <SelectValue/>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value={ApiProviderType.TMDB}>Media</SelectItem>
-                        {currentUser?.settings?.find(s => s.mediaType === MediaType.BOOKS)?.active &&
-                            <SelectItem value={ApiProviderType.BOOKS}>Books</SelectItem>
+                        <SelectItem value={ApiProviderType.TMDB}>
+                            Media
+                        </SelectItem>
+                        {resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS) &&
+                            <SelectItem value={ApiProviderType.BOOKS}>
+                                Books
+                            </SelectItem>
                         }
-                        {currentUser?.settings?.find(s => s.mediaType === MediaType.GAMES)?.active &&
-                            <SelectItem value={ApiProviderType.IGDB}>Games</SelectItem>
+                        {resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES) &&
+                            <SelectItem value={ApiProviderType.IGDB}>
+                                Games
+                            </SelectItem>
                         }
-                        {currentUser?.settings?.find(s => s.mediaType === MediaType.MANGA)?.active &&
-                            <SelectItem value={ApiProviderType.MANGA}>Manga</SelectItem>
+                        {resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA) &&
+                            <SelectItem value={ApiProviderType.MANGA}>
+                                Manga
+                            </SelectItem>
                         }
-                        <SelectItem value={ApiProviderType.USERS}>Users</SelectItem>
+                        <SelectItem value={ApiProviderType.USERS}>
+                            Users
+                        </SelectItem>
                     </SelectContent>
                 </Select>
             </div>

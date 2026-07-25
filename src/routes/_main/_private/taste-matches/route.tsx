@@ -8,6 +8,7 @@ import {formatNumber} from "@/lib/utils/number-formatting";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
+import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
@@ -32,12 +33,12 @@ function TasteMatchesPage() {
     const { currentUser } = useAuth();
     const filters = Route.useSearch();
     const { page = 1, search = "", activeTab = "all", hideFollowed = false, sorting = "match" } = filters;
-
+    
+    const activeMediaTypes = getActiveMediaTypes(currentUser?.settings);
     const apiData = useSuspenseQuery(tasteMatchesOptions(filters)).data;
-    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<TasteMatchesSearch>({ search });
 
-    const activeMediaTypes = currentUser?.settings.filter(({ active }) => active).map(({ mediaType }) => mediaType) ?? [];
     const currentActiveTab = activeTab !== "all" && activeMediaTypes.includes(activeTab) ? activeTab : "all";
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<TasteMatchesSearch>({ search });
 
     const handleSortChange = (value: TasteMatchesSearch["sorting"]) => {
         void updateFilters({ page: 1, sorting: value as TasteMatchesSearch["sorting"] });

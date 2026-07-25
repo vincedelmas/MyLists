@@ -12,6 +12,7 @@ import {Separator} from "@/lib/client/components/ui/separator";
 import {MonthlyActivityEditor} from "@/lib/types/activity.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
+import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
@@ -57,7 +58,9 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
 
     const activeMediaTypes = fixedMediaType
         ? [fixedMediaType]
-        : currentUser?.settings.filter(s => s.active).map(s => s.mediaType) ?? apiData.mediaTypes;
+        : currentUser
+            ? getActiveMediaTypes(currentUser.settings)
+            : apiData.mediaTypes;
 
     const handleFilterChange = (next: Partial<MonthlyActivitySearch>) => {
         updateFilters({ page: 1, ...next, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) });

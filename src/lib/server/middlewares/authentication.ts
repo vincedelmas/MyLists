@@ -1,11 +1,12 @@
+import {RoleType} from "@/lib/utils/enums";
 import {auth} from "@/lib/server/core/auth";
 import {logger} from "@/lib/server/core/logger";
 import {createMiddleware} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
 import {notFound, redirect} from "@tanstack/react-router";
-import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
 import {isAdminAuthenticated} from "@/lib/utils/admin-token";
+import {hasRequiredRole, toActor} from "@/lib/server/authorization";
 
 
 export const publicAuthMiddleware = createMiddleware({ type: "function" })
@@ -40,7 +41,7 @@ export const requiredAuthMiddleware = createMiddleware({ type: "function" })
 export const requiredAuthAndManagerRoleMiddleware = createMiddleware({ type: "function" })
     .middleware([requiredAuthMiddleware])
     .server(async ({ next, context: { currentUser } }) => {
-        if (!isAtLeastRole(currentUser.role as RoleType, RoleType.MANAGER)) {
+        if (!hasRequiredRole(toActor(currentUser), RoleType.MANAGER)) {
             throw notFound();
         }
 
@@ -51,7 +52,7 @@ export const requiredAuthAndManagerRoleMiddleware = createMiddleware({ type: "fu
 export const requiredAuthAndAdminRoleMiddleware = createMiddleware({ type: "function" })
     .middleware([requiredAuthAndManagerRoleMiddleware])
     .server(async ({ next, context: { currentUser } }) => {
-        if (!isAtLeastRole(currentUser.role as RoleType, RoleType.ADMIN)) {
+        if (!hasRequiredRole(toActor(currentUser), RoleType.ADMIN)) {
             throw notFound();
         }
 

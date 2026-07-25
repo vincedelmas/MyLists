@@ -3,9 +3,10 @@ import {MediaType} from "@/lib/utils/enums";
 import {MediaListArgs} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {ListPagination, UserMediaItem} from "@/lib/types/query.options.types";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 import {flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
@@ -27,9 +28,9 @@ interface MediaTableProps {
 export const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onChangePage }: MediaTableProps) => {
     const { currentUser } = useAuth();
     const isConnected = !!currentUser;
-    const isMediaTypeActive = currentUser?.settings.some((setting) => setting.mediaType === mediaType && setting.active) ?? false;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
     const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: 25 };
 
     const onPaginationChange: OnChangeFn<PaginationState> = (updaterOrValue) => {

@@ -1,12 +1,12 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {simpleSearchUsernameSchema} from "@/lib/schemas";
-import {authorizationMiddleware, resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
+import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {contentAuthorizationMiddleware, publicPreviewMiddleware} from "@/lib/server/middlewares/authorization";
 
 
 export const getUserProfileHeader = createServerFn({ method: "GET" })
-    .middleware([resolveTargetUserMiddleware])
+    .middleware([publicPreviewMiddleware])
     .handler(async ({ context: { currentUser, targetUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
@@ -45,7 +45,7 @@ export const getRandomPublicProfile = createServerFn({ method: "GET" })
 
 
 export const getUserProfile = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .handler(async ({ context: { currentUser, user } }) => {
         const targetUserId = user.id;
         const container = await getContainer();
@@ -96,7 +96,7 @@ export const getUserProfile = createServerFn({ method: "GET" })
 
 
 export const getUsersFollows = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .handler(async ({ context: { user, currentUser } }) => {
         const userService = await getContainer().then((c) => c.services.user);
         return userService.getUserFollows(currentUser?.id, user.id, 999999);
@@ -104,7 +104,7 @@ export const getUsersFollows = createServerFn({ method: "GET" })
 
 
 export const getUsersFollowers = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .handler(async ({ context: { user, currentUser } }) => {
         const userService = await getContainer().then((c) => c.services.user);
         return userService.getUserFollowers(currentUser?.id, user.id, 999999);
@@ -112,7 +112,7 @@ export const getUsersFollowers = createServerFn({ method: "GET" })
 
 
 export const getAllUpdatesHistory = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .validator(simpleSearchUsernameSchema)
     .handler(async ({ data, context: { user } }) => {
         const userUpdatesService = await getContainer().then((c) => c.services.userUpdates);

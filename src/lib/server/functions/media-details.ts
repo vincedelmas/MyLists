@@ -1,9 +1,10 @@
 import {logger} from "@/lib/server/core/logger";
 import {createServerFn} from "@tanstack/react-start";
+import {MediaType, RoleType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
-import {isAtLeastRole, MediaType, RoleType} from "@/lib/utils/enums";
+import {hasRequiredRole, toActor} from "@/lib/server/authorization";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {publicAuthMiddleware, requiredAuthAndManagerRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
@@ -75,8 +76,8 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
         const container = await getContainer();
         const adminService = container.services.admin;
         const mediaService = container.registries.mediaService.get(mediaType);
-        const isManagerOrAbove = isAtLeastRole(currentUser.role as RoleType, RoleType.MANAGER);
         const ingestionService = container.registries.ingestionServices.get(mediaType);
+        const isManagerOrAbove = hasRequiredRole(toActor(currentUser), RoleType.MANAGER);
 
         if (!isManagerOrAbove && mediaType === MediaType.BOOKS) {
             throw new FormattedError("Unauthorized to refresh book metadata.");

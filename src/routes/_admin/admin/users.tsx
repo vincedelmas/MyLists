@@ -1,8 +1,8 @@
-import {toast} from "sonner";
 import React from "react";
+import {toast} from "sonner";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {formatDate} from "@/lib/utils/date-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {formatDate} from "@/lib/utils/date-formatting";
 import {PrivacyType, RoleType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
@@ -335,7 +335,7 @@ function UserManagementPage() {
                         )}
                         <DropdownMenuSeparator/>
                         <DropdownMenuItem
-                            className="text-red-500 focus:text-red-500"
+                            className="text-red-500"
                             onSelect={() => updateUser(original.id, { deleteUser: true })}
                         >
                             <Trash2 className="mr-2 size-4"/>

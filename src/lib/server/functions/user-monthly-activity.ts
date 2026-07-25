@@ -1,8 +1,8 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
-import {authorizationMiddleware} from "@/lib/server/middlewares/authorization";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {contentAuthorizationMiddleware} from "@/lib/server/middlewares/authorization";
 import {
     addMonthlyActivitySchema,
     bulkHideActivitySchema,
@@ -15,7 +15,7 @@ import {
 
 
 export const getMonthlyActivityStats = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .validator(monthlyActivityStatsSchema)
     .handler(async ({ data, context: { user } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);
@@ -24,7 +24,7 @@ export const getMonthlyActivityStats = createServerFn({ method: "GET" })
 
 
 export const getMonthlyActivity = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .validator(monthlyActivitySchema)
     .handler(async ({ data, context: { user } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);

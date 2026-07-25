@@ -1,15 +1,14 @@
 import React from "react";
-import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
+import {authOptions} from "@/lib/client/react-query/query-options";
 import {AdminSidebar} from "@/lib/client/components/admin/AdminSidebar";
 import {createFileRoute, notFound, Outlet} from "@tanstack/react-router";
-import {authOptions} from "@/lib/client/react-query/query-options";
 import {SidebarInset, SidebarProvider, SidebarTrigger} from "@/lib/client/components/ui/sidebar";
 
 
 export const Route = createFileRoute("/_admin")({
     beforeLoad: ({ context: { queryClient } }) => {
         const currentUser = queryClient.getQueryData(authOptions.queryKey);
-        if (!currentUser || !isAtLeastRole(currentUser.role, RoleType.ADMIN)) {
+        if (!currentUser?.capabilities.enterAdminDashboard) {
             throw notFound();
         }
     },

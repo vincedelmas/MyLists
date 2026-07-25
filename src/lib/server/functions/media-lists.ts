@@ -2,12 +2,12 @@ import {notFound} from "@tanstack/react-router";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {MediaListDataByType} from "@/lib/server/domain/media/base/base.repository";
-import {authorizationMiddleware, resolveTargetUserMiddleware} from "@/lib/server/middlewares/authorization";
+import {contentAuthorizationMiddleware, publicPreviewMiddleware} from "@/lib/server/middlewares/authorization";
 import {mediaListFiltersSchema, mediaListSchema, mediaListSearchFiltersSchema, mediaTypeUsernameSchema, simpleSearchSchema} from "@/lib/schemas";
 
 
 export const getUserListHeaderSF = createServerFn({ method: "GET" })
-    .middleware([resolveTargetUserMiddleware])
+    .middleware([publicPreviewMiddleware])
     .validator(mediaTypeUsernameSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser, targetUser } }) => {
         const container = await getContainer();
@@ -25,7 +25,7 @@ export const getUserListHeaderSF = createServerFn({ method: "GET" })
 
 
 export const getMediaListSF = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .validator(mediaListSchema)
     .handler(async ({ data, context: { currentUser, user } }) => {
         const { mediaType, args } = data;
@@ -54,7 +54,7 @@ export const getMediaListSF = createServerFn({ method: "GET" })
 
 
 export const getTagsViewFn = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .validator(mediaTypeUsernameSchema.extend({ search: simpleSearchSchema }))
     .handler(async ({ data: { mediaType, search }, context: { user } }) => {
         const targetUserId = user.id;
@@ -66,7 +66,7 @@ export const getTagsViewFn = createServerFn({ method: "GET" })
 
 
 export const getMediaListFilters = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .validator(mediaListFiltersSchema)
     .handler(async ({ data: { mediaType }, context: { user } }) => {
         const container = await getContainer();
@@ -76,7 +76,7 @@ export const getMediaListFilters = createServerFn({ method: "GET" })
 
 
 export const getMediaListSearchFilters = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .validator(mediaListSearchFiltersSchema)
     .handler(async ({ data: { mediaType, query, job }, context: { user } }) => {
         const container = await getContainer();

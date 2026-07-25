@@ -8,6 +8,7 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
+import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {SimilarMedia} from "@/lib/client/components/media/base/SimilarMedia";
 import {MediaSynopsis} from "@/lib/client/components/media/base/MediaSynopsis";
@@ -17,8 +18,8 @@ import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDeta
 import {CollectionsLists} from "@/lib/client/components/media/base/CollectionsLists";
 import {MediaFollowsSection} from "@/lib/client/components/media/base/MediaFollowsSection";
 import {MediaCommunityActivity} from "@/lib/client/components/media/base/MediaCommunityActivity";
-import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
 import {DisabledMediaListNotice} from "@/lib/client/components/media/base/DisabledMediaListNotice";
+import {MediaCommunityCollections} from "@/lib/client/components/media/base/MediaCommunityCollections";
 import {useAddMediaToListMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 
@@ -43,9 +44,9 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
 function MediaDetailsPage() {
     const { currentUser, isAnonymous } = useAuth();
     const { mediaType, mediaId } = Route.useParams();
+    const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
     const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsOptions(mediaType, mediaId));
     const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsOptions(mediaType, mediaId)).data;
-    const isMediaTypeActive = currentUser?.settings.some((setting) => setting.mediaType === mediaType && setting.active) ?? false;
 
     const handleAddMediaToUser = () => {
         addMediaToListMutation.mutate({ data: { mediaType, mediaId: media.id } });

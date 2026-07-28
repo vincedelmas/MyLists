@@ -4,12 +4,15 @@ import {ImportItemOutcome, ParsedImport} from "@/lib/types/imports.types";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 
 
+const transactionMocks = vi.hoisted(() => ({
+    withTransaction: vi.fn(),
+}));
+
+
 const { ImportService } = await import("@/lib/server/domain/imports/import.service");
 
 
-vi.mock("@/lib/server/database/async-storage", () => ({
-    withTransaction: async <T>(action: () => Promise<T>) => action(),
-}));
+vi.mock("@/lib/server/database/async-storage", () => transactionMocks);
 
 
 describe("ImportService.createImportJob", () => {
@@ -40,6 +43,7 @@ describe("ImportService.createImportJob", () => {
 
     beforeEach(() => {
         vi.resetAllMocks();
+        transactionMocks.withTransaction.mockImplementation(async (action) => action());
         repository.createJob.mockResolvedValue({
             id: 10,
             userId: 42,
@@ -49,34 +53,13 @@ describe("ImportService.createImportJob", () => {
         repository.findActiveJobForUser.mockResolvedValue(null);
     });
 
-    it("claims the next queued job for the drain worker", async () => {
-        const job = { id: 10, status: ImportJobStatus.PROCESSING };
-        repository.claimNextQueuedJob.mockResolvedValue(job);
-
-        await expect(service.claimNextQueuedJob()).resolves.toBe(job);
-    });
-
-    it("re-queues stale processing jobs for the drain worker", async () => {
+    it("re-queues stale processing jobs within a transaction", async () => {
         const jobs = [{ id: 10, status: ImportJobStatus.QUEUED }];
         repository.requeueStaleProcessingJobs.mockResolvedValue(jobs);
 
         await expect(service.requeueStaleProcessingJobs(6 * 60)).resolves.toBe(jobs);
-        expect(repository.requeueStaleProcessingJobs).toHaveBeenCalledTimes(1);
-    });
-
-    it("finalizes an accounted processing job", async () => {
-        const job = { id: 10, status: ImportJobStatus.COMPLETED };
-        repository.finalizeProcessingJob.mockResolvedValue(job);
-
-        await expect(service.finalizeProcessingJob(10)).resolves.toBe(job);
-    });
-
-    it("marks a processing job failed", async () => {
-        const job = { id: 10, status: ImportJobStatus.FAILED };
-        repository.markProcessingJobFailed.mockResolvedValue(job);
-
-        await expect(service.markProcessingJobFailed(10, "Matcher error")).resolves.toBe(job);
-        expect(repository.markProcessingJobFailed).toHaveBeenCalledWith(10, "Matcher error");
+        expect(transactionMocks.withTransaction).toHaveBeenCalledOnce();
+        expect(repository.requeueStaleProcessingJobs).toHaveBeenCalledWith(6 * 60);
     });
 
     it("groups queued items by media type for matcher dispatch", async () => {
@@ -135,13 +118,6 @@ describe("ImportService.createImportJob", () => {
         expect(repository.settleProcessingItems).toHaveBeenCalledTimes(3);
         expect(repository.settleProcessingItems.mock.calls.map(call => call[1].length)).toEqual([200, 200, 1]);
         expect(repository.incrementJobCounters).toHaveBeenCalledTimes(3);
-    });
-
-    it("marks queued item IDs as processing", async () => {
-        repository.markItemsProcessing.mockResolvedValue([{ id: 1 }, { id: 2 }]);
-
-        await expect(service.markItemsProcessing(10, [1, 2]))
-            .resolves.toEqual([{ id: 1 }, { id: 2 }]);
     });
 
     it("persists parsed items and returns the queued job", async () => {

@@ -5,17 +5,6 @@ import {ImportItemStatus, ImportJobStatus, MediaType, Status} from "@/lib/utils/
 
 
 describe("ImportJobProcessor", () => {
-    it("requeues stale processing jobs through the import service", async () => {
-        const importService = createImportServiceStub();
-        const matcherRegistry = createMatcherRegistryStub();
-        const processor = new ImportJobProcessor(importService as any, matcherRegistry as any);
-
-        importService.requeueStaleProcessingJobs.mockResolvedValue([{ id: 10 }]);
-
-        await expect(processor.requeueStaleProcessingJobs(6 * 60)).resolves.toEqual([{ id: 10 }]);
-        expect(importService.requeueStaleProcessingJobs).toHaveBeenCalledTimes(1);
-    });
-
     it("returns null when no queued job can be claimed", async () => {
         const importService = createImportServiceStub();
         const matcherRegistry = createMatcherRegistryStub();

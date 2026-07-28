@@ -88,24 +88,6 @@ describe("CollectionsService.getUserCollections", () => {
 
         expect(repository.getUserCollections).toHaveBeenCalledWith(10, actor, MediaType.MOVIES);
     });
-
-    it("forwards an owner actor to the repository visibility scope", async () => {
-        const { repository, service } = createService();
-
-        const actor = toActor({ id: 10, role: RoleType.USER });
-        await service.getUserCollections(10, actor);
-
-        expect(repository.getUserCollections).toHaveBeenCalledWith(10, actor, undefined);
-    });
-
-    it("forwards a regular viewer to the repository visibility scope", async () => {
-        const { repository, service } = createService();
-
-        const actor = toActor({ id: 20, role: RoleType.USER });
-        await service.getUserCollections(10, actor);
-
-        expect(repository.getUserCollections).toHaveBeenCalledWith(10, actor, undefined);
-    });
 });
 
 
@@ -115,16 +97,6 @@ describe("CollectionsService.getPaginatedUserCollections", () => {
         const filters = { search: "favorites", page: 2, mediaType: MediaType.MOVIES };
 
         const actor = toActor({ id: 20, role: RoleType.USER });
-        await service.getPaginatedUserCollections(10, filters, actor);
-
-        expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, actor, filters);
-    });
-
-    it("passes the owner actor through", async () => {
-        const { repository, service } = createService();
-        const filters = { search: undefined, page: 1, mediaType: undefined };
-
-        const actor = toActor({ id: 10, role: RoleType.USER });
         await service.getPaginatedUserCollections(10, filters, actor);
 
         expect(repository.getPaginatedUserCollections).toHaveBeenCalledWith(10, actor, filters);

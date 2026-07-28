@@ -117,6 +117,24 @@ describe("disabled media visibility", () => {
         expect(enabledCandidate.totalRatings).toBe(15);
     });
 
+    it("keeps every profile in the Hall of Fame while redacting inactive media time", async () => {
+        await db
+            .update(user)
+            .set({ privacy: "private" })
+            .where(eq(user.id, 42));
+
+        const hallOfFame = await UserStatsRepository.userHalloFameData({});
+        const privateUser = hallOfFame.rankedUsers.find(({ id }) => id === 42);
+        const settings = hallOfFame.userSettingsMap.get(42);
+
+        expect(privateUser).toBeDefined();
+        expect(privateUser?.privacy).toBe("private");
+        expect(settings).toEqual(expect.arrayContaining([
+            expect.objectContaining({ mediaType: MediaType.MOVIES, active: true, timeSpent: 480 }),
+            expect.objectContaining({ mediaType: MediaType.ANIME, active: false, timeSpent: 0 }),
+        ]));
+    });
+
 });
 
 

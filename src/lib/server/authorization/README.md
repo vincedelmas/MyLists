@@ -119,6 +119,7 @@ authentication. External-media resolution is currently public.
 ## Intentional visibility exceptions and defaults
 
 - User search returns basic header data for every account privacy.
+- Hall of Fame entries and rankings are public for every account privacy. Inactive media types remain identifiable as inactive, but their retained time spent is redacted.
 - A public collection owned by a private account is directly public even when the owner's profile collection index is inaccessible.
 - The default profile privacy is restricted.
 - The default collection privacy is private.

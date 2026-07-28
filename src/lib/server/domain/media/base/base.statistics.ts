@@ -1,10 +1,12 @@
-import {Status} from "@/lib/utils/enums";
 import {logger} from "@/lib/server/core/logger";
+import {MediaType, Status} from "@/lib/utils/enums";
+import {SQLiteColumn} from "drizzle-orm/sqlite-core";
 import {statusUtils} from "@/lib/utils/media-mapping";
+import {userMediaSettings} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {TopAffinity, TopAffinityDefinition} from "@/lib/types/stats.types";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {and, asc, count, countDistinct, desc, eq, gte, isNotNull, notInArray, sql} from "drizzle-orm";
+import {and, asc, count, countDistinct, desc, eq, exists, gte, isNotNull, notInArray, sql} from "drizzle-orm";
 
 
 type AffinityResults<TDefinition extends AnyServerMediaDefinition> = {
@@ -12,7 +14,7 @@ type AffinityResults<TDefinition extends AnyServerMediaDefinition> = {
 };
 
 
-type DefineMediaStatisticsOptions<TDefinition extends AnyServerMediaDefinition, TSpecificStats extends Record<string, unknown>> = {
+type DefineMediaStatsOptions<TDefinition extends AnyServerMediaDefinition, TSpecificStats extends Record<string, unknown>> = {
     definition: TDefinition;
     calculateSpecific: (context: {
         userId?: number;
@@ -23,10 +25,28 @@ type DefineMediaStatisticsOptions<TDefinition extends AnyServerMediaDefinition, 
 };
 
 
+export const getMediaStatsUserScope = (listUserId: SQLiteColumn, mediaType: MediaType, userId?: number) => {
+    if (userId !== undefined) {
+        return eq(listUserId, userId);
+    }
+
+    return exists(
+        getDbClient()
+            .select({ value: sql<number>`1` })
+            .from(userMediaSettings)
+            .where(and(
+                eq(userMediaSettings.userId, listUserId),
+                eq(userMediaSettings.mediaType, mediaType),
+                eq(userMediaSettings.active, true),
+            )),
+    );
+};
+
+
 const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinition>(definition: TDefinition) => {
     const computeTotalTags = async (userId?: number) => {
         const { tagTable } = definition.repository.tables;
-        const forUser = userId ? eq(tagTable.userId, userId) : undefined;
+        const forUser = getMediaStatsUserScope(tagTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
             .select({ count: countDistinct(tagTable.name) })
@@ -122,7 +142,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
 
     const computeRatingStats = async (userId?: number) => {
         const { listTable } = definition.repository.tables;
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
+        const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const rows = await getDbClient()
             .select({
@@ -152,7 +172,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
 
     const computeReleaseDateStats = async (userId?: number) => {
         const { mediaTable, listTable } = definition.repository.tables;
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
+        const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
         const decadeExpression = sql<number>`(CAST(strftime('%Y', ${mediaTable.releaseDate}) AS INTEGER) / 10) * 10`;
 
         return getDbClient()
@@ -204,7 +224,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
 
     const computeTopAffinityStats = async (affinityDefinition: TopAffinityDefinition, mediaAvgRating: number | null, userId?: number): Promise<TopAffinity> => {
         const { mediaTable, listTable } = definition.repository.tables;
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
+        const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
         const { metricTable, metricIdCol, metricNameCol, mediaLinkCol, filters, limit = 10, minRatingCount = 3 } = affinityDefinition;
 
         const userAvg = mediaAvgRating ?? 5;
@@ -267,7 +287,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
 export const defineMediaStatistics = <
     const TDefinition extends AnyServerMediaDefinition,
     TSpecificStats extends Record<string, unknown>,
->({ definition, calculateSpecific }: DefineMediaStatisticsOptions<TDefinition, TSpecificStats>) => {
+>({ definition, calculateSpecific }: DefineMediaStatsOptions<TDefinition, TSpecificStats>) => {
     const queries = createMediaStatsQueries(definition);
 
     async function calculateAdvancedMediaStats(mediaAvgRating: number | null, userId?: number) {

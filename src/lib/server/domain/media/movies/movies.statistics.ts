@@ -1,7 +1,7 @@
 import {Status} from "@/lib/utils/enums";
 import {and, asc, eq, isNotNull, ne, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {defineMediaStatistics} from "@/lib/server/domain/media/base/base.statistics";
+import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
 import {MovieServerDefinition, moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 
 
@@ -9,7 +9,7 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
     const { mediaTable, listTable } = definition.repository.tables;
 
     const computeAverageDuration = async (userId?: number) => {
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
+        const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
             .select({ average: sql<number | null>`avg(${mediaTable.duration})` })
@@ -22,8 +22,8 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
     };
 
     const computeDurationDistribution = async (userId?: number) => {
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
         const durationBucket = sql<number>`floor(${mediaTable.duration} / 30.0) * 30`;
+        const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         return getDbClient()
             .select({
@@ -38,7 +38,7 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
     };
 
     const computeBudgetRevenue = async (userId?: number) => {
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
+        const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const data = getDbClient()
             .select({

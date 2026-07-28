@@ -10,7 +10,7 @@ import {setSignedCookie} from "@/lib/utils/signed-cookies";
 import {getAllTasksMetadata, getTask} from "@/lib/server/tasks/registry";
 import {listAdminLogFiles, readAdminLogFile} from "@/lib/server/core/admin-logs-reader";
 import {ADMIN_COOKIE_NAME, isAdminAuthenticated, setAdminCookie} from "@/lib/utils/admin-token";
-import {requiredAuthAndAdminTokenMiddleware, requiredAuthAndManagerRoleMiddleware} from "@/lib/server/middlewares/authentication";
+import {requiredAuthAndAdminRoleMiddleware, requiredAuthAndAdminTokenMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     adminApiMonitoringSchema,
     adminDeleteArchivedTaskSchema,
@@ -24,14 +24,14 @@ import {
 
 
 export const checkAdminAuth = createServerFn({ method: "GET" })
-    .middleware([requiredAuthAndManagerRoleMiddleware])
+    .middleware([requiredAuthAndAdminRoleMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         return isAdminAuthenticated(currentUser.id);
     });
 
 
 export const adminAuth = createServerFn({ method: "POST" })
-    .middleware([requiredAuthAndManagerRoleMiddleware])
+    .middleware([requiredAuthAndAdminRoleMiddleware])
     .validator((data) => z.object({ password: z.string() }).parse(data))
     .handler(async ({ data, context: { currentUser } }) => {
         if (data.password !== serverEnv.ADMIN_PASSWORD) {

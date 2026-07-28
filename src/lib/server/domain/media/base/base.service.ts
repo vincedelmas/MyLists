@@ -1,13 +1,14 @@
 import {notFound} from "@tanstack/react-router";
+import {Actor} from "@/lib/server/authorization";
 import {DeltaStats} from "@/lib/types/stats.types";
 import {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
+import {JobType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/utils/image-saver";
 import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
-import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {JobType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
@@ -144,11 +145,11 @@ export abstract class BaseService<TDef extends AnyServerMediaDefinition, R exten
         return this.repository.getMediaJobDetails(job, name, offset, perPage, userId);
     }
 
-    async getMediaCommunityActivity(userId: number | undefined, mediaId: number, search: SearchType) {
+    async getMediaCommunityActivity(actor: Actor, mediaId: number, search: SearchType) {
         const media = await this.repository.findById(mediaId);
         if (!media) throw notFound();
 
-        return this.repository.getMediaCommunityActivity(userId, mediaId, search);
+        return this.repository.getMediaCommunityActivity(actor, mediaId, search);
     }
 
     async editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {

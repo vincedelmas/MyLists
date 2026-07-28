@@ -1,10 +1,10 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {authorizationMiddleware} from "@/lib/server/middlewares/authorization";
+import {contentAuthorizationMiddleware} from "@/lib/server/middlewares/authorization";
 
 
 export const getUserAchievements = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .handler(async ({ context: { user } }) => {
         const achievementsService = await getContainer().then(c => c.services.achievements);
 

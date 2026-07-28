@@ -8,11 +8,13 @@ import {createFileRoute} from "@tanstack/react-router";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {CircleHelp, Download, TriangleAlert} from "lucide-react";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
@@ -20,7 +22,6 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/u
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/content-lists")({
@@ -62,10 +63,10 @@ function MediaListFormPage() {
             gridListView: currentUser?.gridListView ?? true,
             ratingSystem: currentUser?.ratingSystem ?? RatingSystemType.SCORE,
             searchSelector: currentUser?.searchSelector ?? ApiProviderType.TMDB,
-            [MediaType.ANIME]: currentUser?.settings.find(s => s.mediaType === MediaType.ANIME)?.active ?? false,
-            [MediaType.GAMES]: currentUser?.settings.find(s => s.mediaType === MediaType.GAMES)?.active ?? false,
-            [MediaType.BOOKS]: currentUser?.settings.find(s => s.mediaType === MediaType.BOOKS)?.active ?? false,
-            [MediaType.MANGA]: currentUser?.settings.find(s => s.mediaType === MediaType.MANGA)?.active ?? false,
+            [MediaType.ANIME]: resolveMediaTypeActive(currentUser?.settings, MediaType.ANIME),
+            [MediaType.GAMES]: resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES),
+            [MediaType.BOOKS]: resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS),
+            [MediaType.MANGA]: resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA),
         }
     });
 

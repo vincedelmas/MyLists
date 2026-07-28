@@ -8,6 +8,7 @@ import {Pagination} from "@/lib/client/components/general/Pagination";
 import {mediaDetailsJobSchema, paginationSchema} from "@/lib/schemas";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {jobDetailsOptions} from "@/lib/client/react-query/query-options";
+import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
 
 
@@ -33,8 +34,8 @@ function JobInfoPage() {
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
     const { mediaType, job, name } = Route.useParams();
+    const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
     const apiData = useSuspenseQuery(jobDetailsOptions(mediaType, job, name, filters)).data;
-    const isMediaTypeActive = currentUser?.settings.some((s) => s.mediaType === mediaType && s.active) ?? false;
 
     const onPageChange = async (newPage: number) => {
         await navigate({ search: { page: newPage } });

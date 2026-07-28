@@ -1,5 +1,4 @@
 // --- USERS ------------------------------------------------------------------------
-
 export const RoleType = {
     ADMIN: "admin",
     MANAGER: "manager",
@@ -7,16 +6,15 @@ export const RoleType = {
 } as const;
 export type RoleType = (typeof RoleType)[keyof typeof RoleType];
 
-const RoleWeight: Record<RoleType, number> = {
-    [RoleType.USER]: 10,
-    [RoleType.MANAGER]: 20,
-    [RoleType.ADMIN]: 30,
-};
 
-export const isAtLeastRole = (userRole: RoleType | undefined | null, requiredRole: RoleType): boolean => {
-    if (!userRole) return false;
-    return RoleWeight[userRole] >= RoleWeight[requiredRole];
-};
+export const DenialReason = {
+    AUTH_REQUIRED: "auth_required",
+    PROFILE_PRIVATE: "profile_private",
+    RESOURCE_PRIVATE: "resource_private",
+    INSUFFICIENT_ROLE: "insufficient_role",
+    PROFILE_RESTRICTED: "profile_restricted",
+} as const;
+export type DenialReason = (typeof DenialReason)[keyof typeof DenialReason];
 
 
 export const PrivacyType = {

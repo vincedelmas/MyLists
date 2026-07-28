@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {useForm} from "react-hook-form";
+import {FeatureStatus} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Badge} from "@/lib/client/components/ui/badge";
@@ -9,10 +10,10 @@ import {Button} from "@/lib/client/components/ui/button";
 import {formatDateTime} from "@/lib/utils/date-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Textarea} from "@/lib/client/components/ui/textarea";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {FeatureStatus, isAtLeastRole, RoleType,} from "@/lib/utils/enums";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
@@ -23,7 +24,6 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_viewer/features-vote")({
@@ -58,7 +58,7 @@ function FeatureVotesPage() {
     const toggleVoteMutation = useToggleFeatureVoteMutation();
     const apiData = useSuspenseQuery(featureVotesOptions).data;
     const [searchQuery, setSearchQuery] = useState("");
-    const isAdmin = isAtLeastRole(currentUser?.role ?? null, RoleType.ADMIN);
+    const isAdmin = currentUser?.capabilities.manageFeatureRequests ?? false;
     const createFeatureMutation = useCreateFeatureRequestMutation({ noErrorToast: true });
     const form = useForm<PostFeatureRequest>({
         resolver: zodResolver(postFeatureRequestSchema),

@@ -1,5 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
-import {MediaType, PrivacyType, SocialState} from "@/lib/utils/enums";
+import {MediaType, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
 import {UserSimilarityService} from "@/lib/server/domain/user/user-similarity.service";
 import {UserSimilarityRepository} from "@/lib/server/domain/user/user-similarity.repository";
 
@@ -14,6 +14,13 @@ const aggregate = {
     sumAbsoluteDifference: 0,
     mediaType: MediaType.MOVIES,
 };
+
+
+const actor = (role: RoleType = RoleType.USER) => ({
+    id: 99,
+    role,
+    kind: "user" as const,
+});
 
 
 const createService = () => {
@@ -49,7 +56,7 @@ const createService = () => {
 
 describe("UserSimilarityService.getTasteMatches", () => {
     it("keeps search results in the regular grid instead of featuring the first result", async () => {
-        const result = await createService().getTasteMatches(99, {
+        const result = await createService().getTasteMatches(actor(), {
             activeTab: "all",
             sorting: "match",
             search: "Followed",
@@ -62,7 +69,7 @@ describe("UserSimilarityService.getTasteMatches", () => {
     });
 
     it("removes accepted follows when requested", async () => {
-        const result = await createService().getTasteMatches(99, {
+        const result = await createService().getTasteMatches(actor(), {
             activeTab: "all",
             sorting: "match",
             hideFollowed: true,
@@ -72,7 +79,7 @@ describe("UserSimilarityService.getTasteMatches", () => {
         expect(result.featuredMatch?.name).toBe("AvailableUser");
     });
 
-    it("excludes private profiles while keeping restricted profiles", async () => {
+    it("excludes inaccessible private profiles while keeping restricted profiles", async () => {
         const repository = {
             findCandidateAggregates: vi.fn().mockResolvedValue([
                 { ...aggregate, candidateId: 3 },
@@ -99,7 +106,7 @@ describe("UserSimilarityService.getTasteMatches", () => {
             getSharedFavMedia: vi.fn().mockResolvedValue([]),
         } as unknown as typeof UserSimilarityRepository;
 
-        const result = await new UserSimilarityService(repository).getTasteMatches(99, {
+        const result = await new UserSimilarityService(repository).getTasteMatches(actor(), {
             activeTab: "all",
             hideFollowed: false,
             sorting: "match",
@@ -109,6 +116,72 @@ describe("UserSimilarityService.getTasteMatches", () => {
         expect(result.featuredMatch?.name).toBe("RestrictedUser");
     });
 
+    it("includes a private candidate only when the viewer is its accepted follower", async () => {
+        const getRepository = (followStatus: SocialState | null) => ({
+            findCandidateAggregates: vi.fn().mockResolvedValue([
+                { ...aggregate, candidateId: 3 },
+            ]),
+            getCandidateProfiles: vi.fn().mockResolvedValue([
+                {
+                    id: 3,
+                    name: "PrivateUser",
+                    image: null,
+                    privacy: PrivacyType.PRIVATE,
+                    totalRatings: 20,
+                    followStatus,
+                },
+            ]),
+            getSharedFavMedia: vi.fn().mockResolvedValue([]),
+        }) as unknown as typeof UserSimilarityRepository;
+        const filters = {
+            activeTab: "all" as const,
+            hideFollowed: false,
+            sorting: "match" as const,
+        };
+
+        const requestedResult = await new UserSimilarityService(getRepository(SocialState.REQUESTED))
+            .getTasteMatches(actor(), filters);
+        const acceptedResult = await new UserSimilarityService(getRepository(SocialState.ACCEPTED))
+            .getTasteMatches(actor(), filters);
+
+        expect(requestedResult.total).toBe(0);
+        expect(acceptedResult.total).toBe(1);
+        expect(acceptedResult.featuredMatch?.name).toBe("PrivateUser");
+    });
+
+    it("lets admins but not managers match with private candidates without following them", async () => {
+        const createRepository = () => ({
+            findCandidateAggregates: vi.fn().mockResolvedValue([
+                { ...aggregate, candidateId: 3 },
+            ]),
+            getCandidateProfiles: vi.fn().mockResolvedValue([
+                {
+                    id: 3,
+                    name: "PrivateUser",
+                    image: null,
+                    privacy: PrivacyType.PRIVATE,
+                    totalRatings: 20,
+                    followStatus: null,
+                },
+            ]),
+            getSharedFavMedia: vi.fn().mockResolvedValue([]),
+        }) as unknown as typeof UserSimilarityRepository;
+        const filters = {
+            activeTab: "all" as const,
+            hideFollowed: false,
+            sorting: "match" as const,
+        };
+
+        const managerResult = await new UserSimilarityService(createRepository())
+            .getTasteMatches(actor(RoleType.MANAGER), filters);
+        const adminResult = await new UserSimilarityService(createRepository())
+            .getTasteMatches(actor(RoleType.ADMIN), filters);
+
+        expect(managerResult.total).toBe(0);
+        expect(adminResult.total).toBe(1);
+        expect(adminResult.featuredMatch?.name).toBe("PrivateUser");
+    });
+
     it("only queries active media types and falls back from an inactive tab", async () => {
         const repository = {
             findCandidateAggregates: vi.fn().mockResolvedValue([]),
@@ -116,7 +189,7 @@ describe("UserSimilarityService.getTasteMatches", () => {
             getSharedFavMedia: vi.fn().mockResolvedValue([]),
         } as unknown as typeof UserSimilarityRepository;
 
-        await new UserSimilarityService(repository).getTasteMatches(99, {
+        await new UserSimilarityService(repository).getTasteMatches(actor(), {
             activeTab: MediaType.MANGA,
             hideFollowed: false,
             sorting: "match",

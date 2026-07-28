@@ -5,6 +5,7 @@ import type {ReactElement, ReactNode} from "react";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {getActiveMediaSettings} from "@/lib/utils/media-list-activation";
 import {Award, Calendar, ChartNoAxesColumn, ChevronDown, ListOrdered, Zap} from "lucide-react";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 
@@ -80,8 +81,7 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                     Tracking Lists
                 </MenuLabel>
                 <MenuGroup preview={preview}>
-                    {settings
-                        .filter((setting) => setting.active)
+                    {getActiveMediaSettings(settings)
                         .map((setting) =>
                             <MenuEntry
                                 preview={preview}
@@ -135,7 +135,7 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                     <MenuEntry
                         preview={preview}
                         className={highlightComingNext
-                            ? "bg-app-accent/20 font-bold text-app-accent ring-1 ring-app-accent/30 [&_svg]:text-app-accent!"
+                            ? "bg-app-accent/20 font-bold text-app-accent ring-1 ring-app-accent/30"
                             : undefined}
                         renderLink={(children) => <Link to="/coming-next">{children}</Link>}
                     >

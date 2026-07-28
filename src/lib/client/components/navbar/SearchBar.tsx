@@ -1,18 +1,19 @@
-import {useState} from "react";
+import React, {useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
+import {formatDate} from "@/lib/utils/date-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {formatDate} from "@/lib/utils/date-formatting";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {navSearchOptions} from "@/lib/client/react-query/query-options";
+import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {ChevronLeft, ChevronRight, Loader2, Search, X} from "lucide-react";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {Link, LinkProps, useRouter, useRouterState} from "@tanstack/react-router";
-import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
@@ -61,17 +62,17 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                             <SelectItem value={ApiProviderType.TMDB}>
                                 Media
                             </SelectItem>
-                            {currentUser?.settings?.find((s) => s.mediaType === MediaType.BOOKS)?.active &&
+                            {resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS) &&
                                 <SelectItem value={ApiProviderType.BOOKS}>
                                     Books
                                 </SelectItem>
                             }
-                            {currentUser?.settings?.find((s) => s.mediaType === MediaType.GAMES)?.active &&
+                            {resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES) &&
                                 <SelectItem value={ApiProviderType.IGDB}>
                                     Games
                                 </SelectItem>
                             }
-                            {currentUser?.settings?.find((s) => s.mediaType === MediaType.MANGA)?.active &&
+                            {resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA) &&
                                 <SelectItem value={ApiProviderType.MANGA}>
                                     Manga
                                 </SelectItem>
@@ -87,8 +88,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     inputMode="search"
                     onChange={handleInputChange}
                     placeholder="Search for media/users..."
-                    className="flex-1 text-sm border-none focus:outline-none focus:ring-0
-                    focus:border-none focus-visible:border-none focus-visible:ring-0 dark:bg-background"
+                    className="flex-1 text-sm border-none focus:outline-none focus:ring-0 dark:bg-background"
                 />
                 <div className="px-3 text-muted-foreground">
                     {isOpen

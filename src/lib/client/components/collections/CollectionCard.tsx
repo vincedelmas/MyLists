@@ -1,7 +1,5 @@
 import {Link} from "@tanstack/react-router";
-import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
-import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {Copy, Eye, Heart, Layers, MoreVertical, Pen, Trash2} from "lucide-react";
@@ -19,14 +17,11 @@ interface CollectionCardProps {
 
 export const CollectionCard = ({ collection, showOwner = true, showMediaType = true }: CollectionCardProps) => {
     const confirm = useConfirm();
-    const { currentUser } = useAuth();
     const deleteMutation = useDeleteCollectionMutation(collection.id);
-
-    const isOwner = currentUser?.id === collection.ownerId;
-    const canManage = isOwner || isAtLeastRole(currentUser?.role as RoleType, RoleType.MANAGER);
+    const canManage = collection.capabilities.edit || collection.capabilities.delete;
 
     const handleDelete = async () => {
-        if (!canManage || deleteMutation.isPending) return;
+        if (!collection.capabilities.delete || deleteMutation.isPending) return;
 
         if (!await confirm({
             variant: "destructive",
@@ -184,15 +179,19 @@ export const CollectionCard = ({ collection, showOwner = true, showMediaType = t
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <Link to="/collections/$collectionId/edit" params={{ collectionId: collection.id }}>
-                                    <DropdownMenuItem>
-                                        <Pen className="size-4"/> Edit
+                                {collection.capabilities.edit &&
+                                    <Link to="/collections/$collectionId/edit" params={{ collectionId: collection.id }}>
+                                        <DropdownMenuItem>
+                                            <Pen className="size-4"/> Edit
+                                        </DropdownMenuItem>
+                                    </Link>
+                                }
+                                {collection.capabilities.delete &&
+                                    <DropdownMenuItem className="focus:bg-red-500/10" onClick={handleDelete}>
+                                        <Trash2 className="text-red-500"/>
+                                        <span className="text-red-500">Delete</span>
                                     </DropdownMenuItem>
-                                </Link>
-                                <DropdownMenuItem className="focus:bg-red-500/10" onClick={handleDelete}>
-                                    <Trash2 className="text-red-500"/>
-                                    <span className="text-red-500">Delete</span>
-                                </DropdownMenuItem>
+                                }
                             </DropdownMenuContent>
                         </DropdownMenu>
                     }

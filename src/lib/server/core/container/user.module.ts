@@ -1,3 +1,4 @@
+import {AuthorizationService} from "@/lib/server/authorization";
 import {MediaModule} from "@/lib/server/core/container/media.module";
 import {WcfService} from "@/lib/server/domain/which-came-first/wcf.service";
 import {MediadleService} from "@/lib/server/domain/mediadle/mediadle.service";
@@ -55,6 +56,7 @@ export function setupUserModule(mediaModule: MediaModule) {
     const mediadleService = new MediadleService(mediadleRepository);
     const userUpdatesService = new UserUpdatesService(userUpdatesRepository);
     const userService = new UserService(userRepository, inactiveAccountService);
+    const authorizationService = new AuthorizationService(userService);
     const achievementsService = new AchievementsService(achievementsRepository);
     const notificationsService = new NotificationsService(notificationsRepository);
     const userSimilarityService = new UserSimilarityService(userSimilarityRepository);
@@ -62,7 +64,7 @@ export function setupUserModule(mediaModule: MediaModule) {
     const userProfileService = new UserProfileService(userProfileRepository, mediaServiceRegistry);
     const featureVotesService = new FeatureVotesService(featureVotesRepository, notificationsService);
     const userActivityService = new UserMonthlyActivityService(userActivityRepository, mediaActivityRegistry);
-    const collectionsService = new CollectionsService(userService, collectionsRepository, mediaServiceRegistry);
+    const collectionsService = new CollectionsService(authorizationService, collectionsRepository, mediaServiceRegistry);
     const userStatsService = new UserStatsService(userStatsRepository, userActivityService, achievementsRepository, userUpdatesRepository, mediaStatsRegistry);
     const userMediaService = new UserMediaService(userStatsService, userActivityService, userUpdatesService, notificationsService, mediaServiceRegistry);
 
@@ -84,6 +86,7 @@ export function setupUserModule(mediaModule: MediaModule) {
         },
         services: {
             user: userService,
+            authorization: authorizationService,
             mediadle: mediadleService,
             userMedia: userMediaService,
             userStats: userStatsService,

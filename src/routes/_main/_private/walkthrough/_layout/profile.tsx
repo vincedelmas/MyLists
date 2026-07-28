@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
+import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
 import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
@@ -22,7 +23,7 @@ function ProfileOnboarding() {
     const apiData = onboardingProfileFixture;
     const username = ONBOARDING_PROFILE_NAME;
     const [activeTab, setActiveTab] = useState<MediaType | "overview">("overview");
-    const activeMediaTypes = apiData.userData.userMediaSettings.filter(s => s.active).map(s => s.mediaType);
+    const activeMediaTypes = getActiveMediaTypes(apiData.userData.userMediaSettings);
 
     const mediaTabs: TabItem<MediaType | "overview">[] = [
         {

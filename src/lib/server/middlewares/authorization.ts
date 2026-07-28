@@ -1,13 +1,25 @@
 import {notFound} from "@tanstack/react-router";
 import {baseUsernameSchema} from "@/lib/schemas";
+import {toActor} from "@/lib/server/authorization";
 import {createMiddleware} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
+import {DenialReason, MediaType} from "@/lib/utils/enums";
 import {UnauthorizedError} from "@/lib/utils/error-classes";
-import {PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
+import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
 
 
-export const resolveTargetUserMiddleware = createMiddleware({ type: "function" })
+type MediaListRequest = {
+    username: string;
+    mediaType: MediaType;
+};
+
+
+/**
+ * Resolves profile and media-list headers preview data.
+ * This middleware does not grant access to profile or list content.
+ */
+export const publicPreviewMiddleware = createMiddleware({ type: "function" })
     .middleware([publicAuthMiddleware])
     .validator((data) => {
         const result = baseUsernameSchema.safeParse(data);
@@ -30,29 +42,62 @@ export const resolveTargetUserMiddleware = createMiddleware({ type: "function" }
     });
 
 
-export const authorizationMiddleware = createMiddleware({ type: "function" })
-    .middleware([resolveTargetUserMiddleware])
+export const contentAuthorizationMiddleware = createMiddleware({ type: "function" })
+    .middleware([publicPreviewMiddleware])
     .server(async ({ next, context: { targetUser, currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const authorizationService = container.services.authorization;
 
-        // Guard non-authed access to non-public pages
-        if (!currentUser && targetUser.privacy !== PrivacyType.PUBLIC) {
-            throw new UnauthorizedError(targetUser.privacy === PrivacyType.RESTRICTED ? "restricted" : "private");
-        }
-
-        // Guard private pages access requirements
-        if (targetUser.privacy === PrivacyType.PRIVATE && currentUser?.id !== targetUser.id && currentUser?.role !== RoleType.ADMIN) {
-            const followStatus = await userService.getFollowingStatus(currentUser!.id, targetUser.id);
-            if (followStatus?.status !== SocialState.ACCEPTED) {
-                throw new UnauthorizedError("private");
-            }
+        const decision = await authorizationService.decideProfile(toActor(currentUser), targetUser);
+        if (!decision.allowed) {
+            throw new UnauthorizedError(decision.reason === DenialReason.PROFILE_RESTRICTED ? "restricted" : "private");
         }
 
         return next({
             context: {
                 currentUser,
                 user: targetUser,
+            },
+        });
+    });
+
+
+/**
+ * Resolves a public list-header preview only when owner has published requested media list.
+ */
+export const activeMediaListPreviewMiddleware = createMiddleware({ type: "function" })
+    .middleware([publicPreviewMiddleware])
+    .server(async ({ next, data, context: { targetUser, currentUser } }) => {
+        const { mediaType } = data as MediaListRequest;
+        if (!resolveMediaTypeActive(targetUser.userMediaSettings, mediaType)) {
+            throw notFound();
+        }
+
+        return next({
+            context: {
+                targetUser,
+                currentUser,
+            },
+        });
+    });
+
+
+/**
+ * Applies profile authorization and activated-list publication boundary
+ * before any list-derived data is loaded.
+ */
+export const activeMediaListAuthorizationMiddleware = createMiddleware({ type: "function" })
+    .middleware([contentAuthorizationMiddleware])
+    .server(async ({ next, data, context: { user, currentUser } }) => {
+        const { mediaType } = data as MediaListRequest;
+        if (!resolveMediaTypeActive(user.userMediaSettings, mediaType)) {
+            throw notFound();
+        }
+
+        return next({
+            context: {
+                user,
+                currentUser,
             },
         });
     });

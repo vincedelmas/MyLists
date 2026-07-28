@@ -1,7 +1,7 @@
 import Database from "bun:sqlite";
-import {Status} from "@/lib/utils/enums";
+import {MediaType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
-import {movies, moviesActors, moviesGenre, moviesList, moviesTags, user} from "@/lib/server/database/schema";
+import {movies, moviesActors, moviesGenre, moviesList, moviesTags, user, userMediaSettings} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {type BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -39,7 +39,8 @@ describe("MoviesStatistics", () => {
     });
 
     it("computes the pre-computed totals owned by the statistics component", async () => {
-        const [stats] = await createMoviesStatistics().computeAllUsersStats();
+        const stats = (await createMoviesStatistics().computeAllUsersStats())
+            .find(({ userId }) => userId === 1);
 
         expect(stats).toMatchObject({
             userId: 1,
@@ -81,6 +82,29 @@ describe("MoviesStatistics", () => {
         expect(stats.directorsStats[0]).toMatchObject({ name: "Shared Director" });
         expect(stats.langsStats[0]).toMatchObject({ name: "en" });
     });
+
+    it("excludes inactive movie lists from platform statistics", async () => {
+        const stats = await createMoviesStatistics().calculateAdvancedMediaStats(7);
+
+        expect(stats.totalTags).toBe(1);
+        expect(stats.avgDuration).toBe(120);
+        expect(stats.totalBudget).toBe(60);
+        expect(stats.totalRevenue).toBe(120);
+        expect(stats.ratings.find(({ name }) => name === "10.0")?.value).toBe(0);
+        expect(stats.releaseDates).toEqual([
+            { name: 1990, value: 1 },
+            { name: 2000, value: 2 },
+        ]);
+        expect(stats.durationDistrib).toEqual([
+            { name: "90", value: 1 },
+            { name: "120", value: 1 },
+            { name: "150", value: 1 },
+        ]);
+        expect(stats.genresStats.some(({ name }) => name === "Hidden Genre")).toBe(false);
+        expect(stats.actorsStats.some(({ name }) => name === "Hidden Actor")).toBe(false);
+        expect(stats.directorsStats.some(({ name }) => name === "Hidden Director")).toBe(false);
+        expect(stats.langsStats.some(({ name }) => name === "fr")).toBe(false);
+    });
 });
 
 
@@ -93,24 +117,49 @@ async function seedStatisticsData(db: BunSQLiteDatabase<typeof schema>) {
         createdAt: "2026-01-01 00:00:00",
         updatedAt: "2026-01-01 00:00:00",
     });
+    await db.insert(user).values({
+        id: 2,
+        name: "inactive-stats-user",
+        email: "inactive-stats@example.com",
+        emailVerified: true,
+        createdAt: "2026-01-01 00:00:00",
+        updatedAt: "2026-01-01 00:00:00",
+    });
+    await db.insert(userMediaSettings).values([
+        { userId: 1, mediaType: MediaType.MOVIES, active: true },
+        { userId: 2, mediaType: MediaType.MOVIES, active: false },
+    ]);
 
     await db.insert(movies).values([
         movieRow(1, "First", "1999-01-01", 120, 10, 20),
         movieRow(2, "Second", "2005-01-01", 90, 20, 40),
         movieRow(3, "Third", "2008-01-01", 150, 30, 60),
+        {
+            ...movieRow(4, "Hidden", "2015-01-01", 300, 1000, 2000),
+            originalLanguage: "fr",
+            directorName: "Hidden Director",
+        },
     ]);
 
     await db.insert(moviesList).values([
         { id: 1, userId: 1, mediaId: 1, status: Status.COMPLETED, total: 2, redo: 1, rating: 8, favorite: true, comment: "Great" },
         { id: 2, userId: 1, mediaId: 2, status: Status.COMPLETED, total: 1, redo: 0, rating: 6 },
         { id: 3, userId: 1, mediaId: 3, status: Status.COMPLETED, total: 1, redo: 0 },
+        { id: 4, userId: 2, mediaId: 4, status: Status.COMPLETED, total: 1, redo: 0, rating: 10 },
     ]);
 
-    await db.insert(moviesGenre).values([1, 2, 3].map((mediaId) => ({ id: mediaId, mediaId, name: "Drama" })));
-    await db.insert(moviesActors).values([1, 2, 3].map((mediaId) => ({ id: mediaId, mediaId, name: "Shared Actor" })));
+    await db.insert(moviesGenre).values([
+        ...[1, 2, 3].map((mediaId) => ({ id: mediaId, mediaId, name: "Drama" })),
+        { id: 4, mediaId: 4, name: "Hidden Genre" },
+    ]);
+    await db.insert(moviesActors).values([
+        ...[1, 2, 3].map((mediaId) => ({ id: mediaId, mediaId, name: "Shared Actor" })),
+        { id: 4, mediaId: 4, name: "Hidden Actor" },
+    ]);
     await db.insert(moviesTags).values([
         { id: 1, userId: 1, mediaId: 1, name: "favorite" },
         { id: 2, userId: 1, mediaId: 2, name: "favorite" },
+        { id: 3, userId: 2, mediaId: 4, name: "hidden" },
     ]);
 }
 

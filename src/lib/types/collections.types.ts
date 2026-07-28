@@ -1,16 +1,6 @@
-import {PrivacyType} from "@/lib/utils/enums";
-
-
 export type CollectionItemInput = {
     mediaId: number;
     annotation?: string | null;
-};
-
-
-export type AssertCollection = {
-    ownerId: number;
-    privacy: PrivacyType;
-    ownerPrivacy: PrivacyType;
 };
 
 

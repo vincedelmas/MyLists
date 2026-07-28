@@ -1,6 +1,6 @@
-import {eq, inArray, sql, sum} from "drizzle-orm";
+import {and, eq, inArray, sql, sum} from "drizzle-orm";
+import {MediaType, SocialState} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {MediaType, PrivacyType, SocialState} from "@/lib/utils/enums";
 import {followers, user, userMediaSettings} from "@/lib/server/database/schema";
 
 
@@ -46,7 +46,6 @@ export class UserSimilarityRepository {
             FROM shared_ratings AS shared
             INNER JOIN user AS candidate_user ON candidate_user.id = shared.candidate_id
             WHERE candidate_user.email_verified = 1
-                AND candidate_user.privacy <> ${PrivacyType.PRIVATE}
             GROUP BY shared.candidate_id, shared.media_type
         `);
     }
@@ -69,7 +68,7 @@ export class UserSimilarityRepository {
                 )`,
             })
             .from(user)
-            .leftJoin(userMediaSettings, eq(userMediaSettings.userId, user.id))
+            .leftJoin(userMediaSettings, and(eq(userMediaSettings.userId, user.id), eq(userMediaSettings.active, true)))
             .where(inArray(user.id, candidateIds))
             .groupBy(user.id);
     }
@@ -125,6 +124,10 @@ export class UserSimilarityRepository {
             INNER JOIN ${listTable} AS candidate
                 ON candidate.media_id = mine.media_id
                 AND candidate.user_id <> mine.user_id
+            INNER JOIN user_media_settings AS candidate_settings
+                ON candidate_settings.user_id = candidate.user_id
+                AND candidate_settings.media_type = ${mediaType}
+                AND candidate_settings.active = 1
             WHERE mine.user_id = ${currentUserId}
                 AND mine.rating IS NOT NULL
                 AND candidate.rating IS NOT NULL
@@ -148,6 +151,10 @@ export class UserSimilarityRepository {
             INNER JOIN ${listTable} AS candidate
                 ON candidate.media_id = mine.media_id
                 AND candidate.user_id IN (${idList})
+            INNER JOIN user_media_settings AS candidate_settings
+                ON candidate_settings.user_id = candidate.user_id
+                AND candidate_settings.media_type = ${mediaType}
+                AND candidate_settings.active = 1
             INNER JOIN ${mediaTable} AS media ON media.id = mine.media_id
             WHERE mine.user_id = ${currentUserId}
                 AND mine.rating >= 8

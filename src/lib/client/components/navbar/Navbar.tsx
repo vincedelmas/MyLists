@@ -5,7 +5,6 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useQueryClient} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
-import {isAtLeastRole, RoleType} from "@/lib/utils/enums";
 import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
 import {authOptions} from "@/lib/client/react-query/query-options";
@@ -200,7 +199,7 @@ export const Navbar = () => {
                                                     Profile
                                                 </Link>
                                             </DropdownMenuItem>
-                                            {isAtLeastRole(currentUser.role, RoleType.ADMIN) &&
+                                            {currentUser.capabilities.enterAdminDashboard &&
                                                 <DropdownMenuItem className="focus:bg-app-rating/10" asChild>
                                                     <Link to="/admin">
                                                         <ShieldCheck className="text-app-rating"/>

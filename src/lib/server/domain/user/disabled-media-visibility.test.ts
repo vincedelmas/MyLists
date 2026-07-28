@@ -6,6 +6,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {AchievementDifficulty, MediaType, Status, UpdateType} from "@/lib/utils/enums";
+import {toActor} from "@/lib/server/authorization";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -19,6 +20,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { UserStatsRepository } = await import("@/lib/server/domain/user/user-stats.repository");
 const { UserUpdatesRepository } = await import("@/lib/server/domain/user/user-updates.repository");
+const { UserSimilarityRepository } = await import("@/lib/server/domain/user/user-similarity.repository");
 const { UserMonthlyActivityRepository } = await import("@/lib/server/domain/user/user-monthly-activity.repository");
 const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime/anime.definition.server");
 const { AchievementsRepository } = await import("@/lib/server/domain/achievements/achievements.repository");
@@ -57,7 +59,10 @@ describe("disabled media visibility", () => {
         });
         const disabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
         const disabledAchievementPage = await AchievementsRepository.getUserAchievements(42);
-        const disabledCommunity = await animeRepository.getMediaCommunityActivity(undefined, 100, {});
+        const disabledCommunity = await animeRepository.getMediaCommunityActivity(toActor(), 100, {});
+        const disabledTasteAggregates = await UserSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
+        const disabledSharedFavorites = await UserSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
+        const [disabledCandidate] = await UserSimilarityRepository.getCandidateProfiles([42], 43);
 
         expect(disabledStats.preComputedStats.totalHours).toBe(8);
         expect(disabledStats.mediaTimeDistribution.map((item) => item.name)).toEqual([MediaType.MOVIES]);
@@ -66,7 +71,10 @@ describe("disabled media visibility", () => {
         expect(disabledActivity.items.map((item) => item.mediaType)).toEqual([MediaType.MOVIES]);
         expect(disabledAchievements.map((item) => item.name)).toEqual(["Movie achievement"]);
         expect([...new Set(disabledAchievementPage.map((item) => item.achievement.mediaType))]).toEqual([MediaType.MOVIES]);
-        expect(disabledCommunity.total).toBe(0);
+        expect(disabledCommunity.items.map(({ id }) => id)).toEqual([43]);
+        expect(disabledTasteAggregates).toEqual([]);
+        expect(disabledSharedFavorites).toEqual([]);
+        expect(disabledCandidate.totalRatings).toBe(3);
 
         await db
             .update(userMediaSettings)
@@ -84,14 +92,47 @@ describe("disabled media visibility", () => {
             timeBucket: "2026-04",
         });
         const enabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
-        const enabledCommunity = await animeRepository.getMediaCommunityActivity(undefined, 100, {});
+        const enabledCommunity = await animeRepository.getMediaCommunityActivity(toActor(), 100, {});
+        const enabledTasteAggregates = await UserSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
+        const enabledSharedFavorites = await UserSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
+        const [enabledCandidate] = await UserSimilarityRepository.getCandidateProfiles([42], 43);
 
         expect(enabledStats.preComputedStats.totalHours).toBeCloseTo(1706 / 60);
         expect(enabledStats.mediaTimeDistribution.map((item) => item.name).sort()).toEqual([MediaType.ANIME, MediaType.MOVIES]);
         expect(enabledUpdates.map((item) => item.mediaType)).toEqual([MediaType.ANIME, MediaType.MOVIES]);
         expect(enabledActivity.items).toHaveLength(2);
         expect(enabledAchievements.map((item) => item.name)).toEqual(["Anime achievement", "Movie achievement"]);
-        expect(enabledCommunity.total).toBe(1);
+        expect(enabledCommunity.items.map(({ id }) => id).sort()).toEqual([42, 43]);
+        expect(enabledTasteAggregates).toMatchObject([{
+            count: 1,
+            candidateId: 42,
+            mediaType: MediaType.ANIME,
+        }]);
+        expect(enabledSharedFavorites).toMatchObject([{
+            name: "Hidden anime",
+            mediaId: 100,
+            candidateId: 42,
+            mediaType: MediaType.ANIME,
+        }]);
+        expect(enabledCandidate.totalRatings).toBe(15);
+    });
+
+    it("keeps every profile in the Hall of Fame while redacting inactive media time", async () => {
+        await db
+            .update(user)
+            .set({ privacy: "private" })
+            .where(eq(user.id, 42));
+
+        const hallOfFame = await UserStatsRepository.userHalloFameData({});
+        const privateUser = hallOfFame.rankedUsers.find(({ id }) => id === 42);
+        const settings = hallOfFame.userSettingsMap.get(42);
+
+        expect(privateUser).toBeDefined();
+        expect(privateUser?.privacy).toBe("private");
+        expect(settings).toEqual(expect.arrayContaining([
+            expect.objectContaining({ mediaType: MediaType.MOVIES, active: true, timeSpent: 480 }),
+            expect.objectContaining({ mediaType: MediaType.ANIME, active: false, timeSpent: 0 }),
+        ]));
     });
 
 });
@@ -107,10 +148,20 @@ async function seedUserData(db: BunSQLiteDatabase<typeof schema>) {
         updatedAt: "2026-01-01 00:00:00",
         createdAt: "2026-01-01 00:00:00",
     });
+    await db.insert(user).values({
+        id: 43,
+        emailVerified: true,
+        name: "taste-viewer",
+        privacy: "public",
+        email: "taste-viewer@example.com",
+        updatedAt: "2026-01-01 00:00:00",
+        createdAt: "2026-01-01 00:00:00",
+    });
 
     await db.insert(userMediaSettings).values([
-        { userId: 42, mediaType: MediaType.MOVIES, active: true, timeSpent: 480 },
-        { userId: 42, mediaType: MediaType.ANIME, active: false, timeSpent: 1226 },
+        { userId: 42, mediaType: MediaType.MOVIES, active: true, timeSpent: 480, entriesRated: 3 },
+        { userId: 42, mediaType: MediaType.ANIME, active: false, timeSpent: 1226, entriesRated: 12 },
+        { userId: 43, mediaType: MediaType.ANIME, active: true, entriesRated: 1 },
     ]);
 
     await db.insert(userMediaUpdate).values([
@@ -165,6 +216,18 @@ async function seedUserData(db: BunSQLiteDatabase<typeof schema>) {
         id: 1,
         userId: 42,
         mediaId: 100,
+        rating: 9,
+        favorite: true,
+        currentSeason: 1,
+        currentEpisode: 12,
+        status: Status.COMPLETED,
+    });
+    await db.insert(animeList).values({
+        id: 2,
+        userId: 43,
+        mediaId: 100,
+        rating: 9,
+        favorite: true,
         currentSeason: 1,
         currentEpisode: 12,
         status: Status.COMPLETED,

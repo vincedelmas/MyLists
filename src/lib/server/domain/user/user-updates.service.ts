@@ -1,5 +1,6 @@
 import {SimpleSearch} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
+import {Actor} from "@/lib/server/authorization";
 import {LogUpdateParams} from "@/lib/types/user-updates.types";
 import {UserUpdatesRepository} from "@/lib/server/domain/user/user-updates.repository";
 
@@ -34,8 +35,8 @@ export class UserUpdatesService {
         return this.repository.getUserUpdatesPaginated(filters, userId)
     }
 
-    async getFollowsUpdates(profileOwnerId: number, visitorId?: number, limit = 10) {
-        return this.repository.getFollowsUpdates(profileOwnerId, visitorId, limit);
+    async getFollowsUpdates(profileOwnerId: number, actor: Actor, limit = 10) {
+        return this.repository.getFollowsUpdates(profileOwnerId, actor, limit);
     }
 
     async deleteUserUpdates(userId: number, updateIds: number[], returnData: boolean) {

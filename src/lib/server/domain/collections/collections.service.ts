@@ -1,47 +1,41 @@
 import {notFound} from "@tanstack/react-router";
-import {UserService} from "@/lib/server/domain/user";
 import {MediaInfo} from "@/lib/types/activity.types";
+import {CollectionItemInput} from "@/lib/types/collections.types";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
+import {DenialReason, MediaType, PrivacyType} from "@/lib/utils/enums";
 import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
-import {AssertCollection, CollectionItemInput} from "@/lib/types/collections.types";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
-import {isAtLeastRole, MediaType, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
+import {Actor, AuthorizationService, CollectionAction, collectionPolicy} from "@/lib/server/authorization";
 
 
 export class CollectionsService {
     constructor(
-        private userService: UserService,
+        private authorizationService: AuthorizationService,
         private repository: typeof CollectionsRepository,
         private mediaRegistry: MediaServiceRegistry,
     ) {
     }
 
-    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actorId?: number, actorRole?: RoleType | null) {
+    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor) {
         const collection = await this.repository.getCollectionById(collectionId);
         if (!collection) throw notFound();
 
-        const isOwner = (actorId === collection.ownerId);
-        const isModerator = isAtLeastRole(actorRole, RoleType.MANAGER);
-
-        if (mode === "edit") {
-            if (!isOwner && !isModerator) {
-                throw new UnauthorizedError("private");
-            }
-        }
-        else {
-            await this._assertVisible(collection, isOwner, isModerator, actorId);
+        const decision = await this.authorizationService.decideCollection(actor, mode, collection);
+        if (!decision.allowed) {
+            throw new UnauthorizedError(decision.reason === DenialReason.PROFILE_RESTRICTED ? "restricted" : "private");
         }
 
         const [items, isLiked] = await Promise.all([
             this.repository.getCollectionItems(collectionId),
-            actorId ? this.repository.findLikedCollection(actorId, collectionId) : Promise.resolve(null),
+            actor.kind === "user" ? this.repository.findLikedCollection(actor.id, collectionId) : Promise.resolve(null),
             this.repository.incrementViewCount(collectionId),
         ]);
 
         const mediaService = this.mediaRegistry.get(collection.mediaType);
-        const mediaRows = await mediaService.getMediaDetailsByIds(items.map((item) => item.mediaId), actorId);
+        const mediaRows = await mediaService.getMediaDetailsByIds(items.map(i => i.mediaId), actor.kind === "user" ? actor.id : undefined);
         const mediaMap = new Map(mediaRows.map((m) => [m.id, m]));
+        const capabilities = await this.authorizationService.getCollectionCapabilities(actor, collection);
 
         const detailedItems = items.map((item) => {
             const media = mediaMap.get(item.mediaId)!;
@@ -58,26 +52,20 @@ export class CollectionsService {
 
         return {
             collection,
+            capabilities,
             isLiked: !!isLiked,
             items: detailedItems,
-            canManage: isOwner || isModerator,
         };
     }
 
-    async getUserCollections(targetUserId: number, actorId?: number, mediaType?: MediaType, actorRole?: RoleType | null) {
-        const isOwner = (actorId === targetUserId);
-        const canViewPrivate = isOwner || isAtLeastRole(actorRole, RoleType.ADMIN);
-        const collections = await this.repository.getUserCollections(targetUserId, canViewPrivate, mediaType);
-
-        return this._enrichWithPreviews(collections);
+    async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType) {
+        const collections = await this.repository.getUserCollections(targetUserId, actor, mediaType);
+        return this._enrichWithPreviews(collections, actor);
     }
 
-    async getPaginatedUserCollections(targetUserId: number, params: Omit<UserCollectionsSearch, "username">, actorId?: number, actorRole?: RoleType | null) {
-        const isOwner = (actorId === targetUserId);
-        const canViewPrivate = isOwner || isAtLeastRole(actorRole, RoleType.ADMIN);
-
-        const paginatedCollections = await this.repository.getPaginatedUserCollections(targetUserId, canViewPrivate, params);
-        const results = await this._enrichWithPreviews(paginatedCollections.items);
+    async getPaginatedUserCollections(targetUserId: number, params: Omit<UserCollectionsSearch, "username">, actor: Actor) {
+        const paginatedCollections = await this.repository.getPaginatedUserCollections(targetUserId, actor, params);
+        const results = await this._enrichWithPreviews(paginatedCollections.items, actor);
 
         return {
             ...paginatedCollections,
@@ -85,9 +73,9 @@ export class CollectionsService {
         };
     }
 
-    async getPublicCollections(params: CommunitySearch) {
+    async getPublicCollections(params: CommunitySearch, actor: Actor) {
         const paginatedCollections = await this.repository.getPublicCollections(params);
-        const results = await this._enrichWithPreviews(paginatedCollections.items);
+        const results = await this._enrichWithPreviews(paginatedCollections.items, actor);
 
         return {
             ...paginatedCollections,
@@ -95,20 +83,21 @@ export class CollectionsService {
         };
     }
 
-    async getMediaCommunityCollections(mediaId: number, mediaType: MediaType) {
+    async getMediaCommunityCollections(mediaId: number, mediaType: MediaType, actor: Actor) {
         const collections = await this.repository.getMediaCommunityCollections(mediaId, mediaType);
-        return this._enrichWithPreviews(collections);
+        return this._enrichWithPreviews(collections, actor);
     }
 
     async getUserCollectionMemberships(ownerId: number, mediaId: number, mediaType: MediaType) {
         return this.repository.getUserCollectionMemberships(ownerId, mediaId, mediaType);
     }
 
-    async addMediaToCollection(params: { actorId: number; mediaId: number; mediaType: MediaType; collectionId: number }) {
+    async addMediaToCollection(params: { actor: Actor; mediaId: number; mediaType: MediaType; collectionId: number }) {
         const collection = await this.repository.getCollectionById(params.collectionId);
-        if (!collection || collection.ownerId !== params.actorId || collection.mediaType !== params.mediaType) {
+        if (!collection || collection.mediaType !== params.mediaType) {
             throw new FormattedError("Unauthorized to update this collection.");
         }
+        this._assertAction(collection, params.actor, "addItem", "Unauthorized to update this collection.");
 
         const nextOrderIndex = await this.repository.getMaxCollectionItemOrder(params.collectionId) + 1;
         await this.repository.insertCollectionItem({
@@ -120,11 +109,12 @@ export class CollectionsService {
         });
     }
 
-    async removeMediaFromCollection(params: { actorId: number; mediaId: number; mediaType: MediaType; collectionId: number }) {
+    async removeMediaFromCollection(params: { actor: Actor; mediaId: number; mediaType: MediaType; collectionId: number }) {
         const collection = await this.repository.getCollectionById(params.collectionId);
-        if (!collection || collection.ownerId !== params.actorId || collection.mediaType !== params.mediaType) {
+        if (!collection || collection.mediaType !== params.mediaType) {
             throw new FormattedError("Unauthorized to update this collection.");
         }
+        this._assertAction(collection, params.actor, "removeItem", "Unauthorized to update this collection.");
 
         if (collection.itemsCount <= 1) {
             throw new FormattedError("A collection must contain at least one item.");
@@ -158,23 +148,18 @@ export class CollectionsService {
     }
 
     async updateCollection(params: {
+        actor: Actor;
         title: string;
-        actorId: number;
         ordered: boolean;
         privacy: PrivacyType;
         collectionId: number;
         description?: string | null;
-        actorRole?: RoleType | null;
         items: CollectionItemInput[];
     }) {
         const collection = await this.repository.getCollectionById(params.collectionId);
         if (!collection) throw notFound();
 
-        const isOwner = (collection.ownerId === params.actorId);
-        const isModerator = isAtLeastRole(params.actorRole, RoleType.MANAGER);
-        if (!isOwner && !isModerator) {
-            throw new FormattedError("Unauthorized to update this collection.");
-        }
+        this._assertAction(collection, params.actor, "edit", "Unauthorized to update this collection.");
 
         const sanitizedItems = this._normalizeItems(params.items);
         await this.repository.updateCollection(params.collectionId, {
@@ -193,47 +178,45 @@ export class CollectionsService {
         })));
     }
 
-    async deleteCollection(collectionId: number, actorId: number, actorRole?: RoleType | null) {
+    async deleteCollection(collectionId: number, actor: Actor) {
         const collection = await this.repository.getCollectionById(collectionId);
         if (!collection) throw notFound();
 
-        const isOwner = (collection.ownerId === actorId);
-        const isModerator = isAtLeastRole(actorRole, RoleType.MANAGER);
-        if (!isOwner && !isModerator) {
-            throw new FormattedError("Unauthorized to delete this collection.");
-        }
+        this._assertAction(collection, actor, "delete", "Unauthorized to delete this collection.");
 
         await this.repository.deleteCollection(collectionId);
     }
 
-    async toggleLike(collectionId: number, actorId: number) {
+    async toggleLike(collectionId: number, actor: Actor) {
         const collection = await this.repository.getCollectionById(collectionId);
         if (!collection) throw notFound();
+        if (actor.kind === "anonymous") throw new FormattedError("Unauthorized to like this collection.");
 
-        const isOwner = (collection.ownerId === actorId);
-        await this._assertVisible(collection, isOwner, false, actorId);
+        const decision = await this.authorizationService.decideCollection(actor, "like", collection);
+        if (!decision.allowed) throw new UnauthorizedError("private");
 
-        const existingLike = await this.repository.findLikedCollection(actorId, collectionId);
+        const existingLike = await this.repository.findLikedCollection(actor.id, collectionId);
         if (existingLike) {
             await this.repository.deleteLike(existingLike.id);
             await this.repository.decrementLikeCount(collectionId);
         }
         else {
-            await this.repository.insertLike(actorId, collectionId);
+            await this.repository.insertLike(actor.id, collectionId);
             await this.repository.incrementLikeCount(collectionId);
         }
     }
 
-    async copyCollection(collectionId: number, actorId: number) {
+    async copyCollection(collectionId: number, actor: Actor) {
         const collection = await this.repository.getCollectionById(collectionId);
         if (!collection) throw notFound();
+        if (actor.kind === "anonymous") throw new FormattedError("Unauthorized to copy this collection.");
 
-        const isOwner = (collection.ownerId === actorId);
-        await this._assertVisible(collection, isOwner, false, actorId);
+        const decision = await this.authorizationService.decideCollection(actor, "copy", collection);
+        if (!decision.allowed) throw new UnauthorizedError("private");
 
         const items = await this.repository.getCollectionItems(collectionId);
         const createdId = await this.repository.createCollection({
-            ownerId: actorId,
+            ownerId: actor.id,
             ordered: collection.ordered,
             privacy: PrivacyType.PRIVATE,
             mediaType: collection.mediaType,
@@ -265,7 +248,10 @@ export class CollectionsService {
         });
     }
 
-    private async _enrichWithPreviews(collections: Awaited<ReturnType<typeof CollectionsRepository.getUserCollections>>) {
+    private async _enrichWithPreviews(
+        collections: Awaited<ReturnType<typeof CollectionsRepository.getUserCollections>>,
+        actor: Actor,
+    ) {
         if (collections.length === 0) return [];
 
         const mediaMapByType = new Map<MediaType, Set<number>>();
@@ -286,49 +272,33 @@ export class CollectionsService {
             mediaDetails.forEach((media) => mediaLookup.set(`${mediaType}-${media.id}`, media));
         }));
 
-        return collections.map((collection) => ({
-            ...collection,
-            previews: collection.previewItems.map((id: number) => {
-                const media = mediaLookup.get(`${collection.mediaType}-${id}`);
-                if (!media) return null;
+        return collections.map((collection) => {
+            const policyCapabilities = collectionPolicy.capabilities(actor, collection);
 
-                return {
-                    mediaId: media.id,
-                    mediaName: media.name,
-                    mediaCover: media.imageCover,
-                    releaseDate: media.releaseDate,
-                };
-            }).filter((item): item is NonNullable<typeof item> => item !== null),
-        }));
+            return {
+                ...collection,
+                capabilities: {
+                    edit: policyCapabilities.edit,
+                    delete: policyCapabilities.delete,
+                },
+                previews: collection.previewItems.map((id: number) => {
+                    const media = mediaLookup.get(`${collection.mediaType}-${id}`);
+                    if (!media) return null;
+
+                    return {
+                        mediaId: media.id,
+                        mediaName: media.name,
+                        mediaCover: media.imageCover,
+                        releaseDate: media.releaseDate,
+                    };
+                }).filter((item): item is NonNullable<typeof item> => item !== null),
+            };
+        });
     }
 
-    private async _assertVisible(collection: AssertCollection, isOwner: boolean, isModerator: boolean, actorId?: number) {
-        // Owners and moderators have instant access
-        if (isOwner || isModerator) return;
-
-        // Private collections are strictly for owners
-        if (collection.privacy === PrivacyType.PRIVATE) {
-            throw new UnauthorizedError("private");
-        }
-
-        // Handle non-authed user
-        if (!actorId) {
-            if (collection.privacy === PrivacyType.RESTRICTED && collection.ownerPrivacy === PrivacyType.PUBLIC) {
-                return;
-            }
-
-            if (collection.privacy !== PrivacyType.PUBLIC) {
-                throw new UnauthorizedError(collection.ownerPrivacy === PrivacyType.RESTRICTED ? "restricted" : "private");
-            }
-            return;
-        }
-
-        // Handle Logged-in non-owner logic
-        if (collection.privacy === PrivacyType.RESTRICTED && collection.ownerPrivacy === PrivacyType.PRIVATE) {
-            const followStatus = await this.userService.getFollowingStatus(actorId, collection.ownerId);
-            if (followStatus?.status !== SocialState.ACCEPTED) {
-                throw new UnauthorizedError("private");
-            }
+    private _assertAction(collection: Parameters<typeof collectionPolicy.decide>[2], actor: Actor, action: CollectionAction, message: string) {
+        if (!collectionPolicy.decide(actor, action, collection).allowed) {
+            throw new FormattedError(message);
         }
     }
 }

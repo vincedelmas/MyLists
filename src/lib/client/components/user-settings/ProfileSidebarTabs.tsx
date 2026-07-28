@@ -1,5 +1,6 @@
 import {cn} from "@/lib/utils/classnames";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {HighlightedMediaTab, PROFILE_MAX_HIGHLIGHTED_MEDIA} from "@/lib/types/profile-custom.types";
 
@@ -13,8 +14,7 @@ interface ProfileSidebarTabsProps {
 
 export const ProfileSidebarTabs = ({ activeTab, setActiveTab, allFormValues }: ProfileSidebarTabsProps) => {
     const { currentUser } = useAuth();
-    const activeMediaTypes = currentUser!.settings.filter((s) => s.active).map((s) => s.mediaType);
-    const allTabs = ["overview", ...activeMediaTypes] as const;
+    const allTabs = ["overview", ...getActiveMediaTypes(currentUser!.settings)] as const;
 
     return (
         <div className="space-y-2 max-lg:grid max-lg:grid-cols-2 max-lg:gap-2">

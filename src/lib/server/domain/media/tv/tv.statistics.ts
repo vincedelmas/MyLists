@@ -1,9 +1,9 @@
 import {Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, asc, count, eq, ne, notInArray, sql} from "drizzle-orm";
-import {defineMediaStatistics} from "@/lib/server/domain/media/base/base.statistics";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
+import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
 
 
 type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
@@ -13,7 +13,7 @@ export const createTvStatistics = (definition: TvDefinition) => {
     const { mediaTable, listTable } = definition.repository.tables;
 
     const computeTotalSeasons = async (userId?: number) => {
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
+        const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
             .select({ totalSeasons: sql<number>`coalesce(sum(${listTable.currentSeason}), 0)` })
@@ -25,7 +25,7 @@ export const createTvStatistics = (definition: TvDefinition) => {
     };
 
     const computeAverageDuration = async (userId?: number) => {
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
+        const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
             .select({ average: sql<number | null>`AVG(${mediaTable.duration} * ${listTable.total})` })
@@ -38,7 +38,7 @@ export const createTvStatistics = (definition: TvDefinition) => {
     };
 
     const computeDurationDistribution = async (userId?: number) => {
-        const forUser = userId ? eq(listTable.userId, userId) : undefined;
+        const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
         const durationBucket = sql<number>`floor((${mediaTable.duration} * ${mediaTable.totalEpisodes}) / 600.0) * 600`;
 
         return getDbClient()

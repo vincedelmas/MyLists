@@ -4,9 +4,10 @@ import {paginate} from "@/lib/server/database/pagination";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {LogUpdateParams} from "@/lib/types/user-updates.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {MediaType, PrivacyType, SocialState, UpdateType} from "@/lib/utils/enums";
+import {MediaType, SocialState, UpdateType} from "@/lib/utils/enums";
+import {Actor, followFeedProfileVisibilityCondition} from "@/lib/server/authorization";
 import {followers, user, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
-import {and, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, like, or, SQL, sql} from "drizzle-orm";
+import {and, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, like, SQL, sql} from "drizzle-orm";
 
 
 const BULK_IMPORT_GRACE_MONTHS = 2;
@@ -95,36 +96,12 @@ export class UserUpdatesRepository {
             .orderBy(desc(userMediaUpdate.timestamp));
     }
 
-    static async getFollowsUpdates(profileOwnerId: number, visitorId?: number, limit = 10) {
+    static async getFollowsUpdates(profileOwnerId: number, actor: Actor, limit = 10) {
         // Subquery: People that Profile Owner (User B) follows
         const followedByB = getDbClient()
             .select({ id: followers.followedId })
             .from(followers)
             .where(and(eq(followers.followerId, profileOwnerId), eq(followers.status, SocialState.ACCEPTED)));
-
-        // Subquery: People that Visitor (User A) follows (Rule 3)
-        const followedByA = visitorId
-            ? getDbClient()
-                .select({ id: followers.followedId })
-                .from(followers)
-                .where(and(eq(followers.followerId, visitorId), eq(followers.status, SocialState.ACCEPTED)))
-            : null;
-
-        // Define privacy filters based on rules
-        const privacyConditions = [eq(user.privacy, PrivacyType.PUBLIC)] as any[];
-
-        if (visitorId) {
-            // Rule: Restricted updates visible only if logged in
-            privacyConditions.push(eq(user.privacy, PrivacyType.RESTRICTED));
-
-            // Rule: User A can always see their own updates
-            privacyConditions.push(eq(user.id, visitorId));
-
-            // Rule: Private updates visible only if User A follows that person
-            if (followedByA) {
-                privacyConditions.push(and(eq(user.privacy, PrivacyType.PRIVATE), inArray(user.id, followedByA)));
-            }
-        }
 
         return getDbClient()
             .select({
@@ -141,8 +118,7 @@ export class UserUpdatesRepository {
             .where(and(
                 // Limit updates to people User B follows
                 inArray(userMediaUpdate.userId, followedByB),
-                // Apply the combined privacy rules
-                or(...privacyConditions)
+                followFeedProfileVisibilityCondition(actor),
             ))
             .orderBy(desc(userMediaUpdate.timestamp))
             .limit(limit);

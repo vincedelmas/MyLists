@@ -7,8 +7,9 @@ import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {MediaListArgs, SearchType, SimpleSearch} from "@/lib/schemas";
 import {AddedMediaDetails, Tag} from "@/lib/types/media-common.types";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
+import {JobType, MediaType, SocialState, Status, TagAction} from "@/lib/utils/enums";
+import {Actor, communityProfileVisibilityCondition} from "@/lib/server/authorization";
 import {ExpandedListFilters, ExportMediaList, MediaListData} from "@/lib/types/media-list.types";
-import {JobType, MediaType, PrivacyType, SocialState, Status, TagAction} from "@/lib/utils/enums";
 import {createArrayFilter, type FilterDefinitions} from "@/lib/server/domain/media/base/media-list.query";
 import {MediaCommunityActivityStats, UserFollowsMediaData, UserMediaWithTags} from "@/lib/types/user-media.types";
 import {AnyMediaRepositoryDefinition, AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
@@ -583,7 +584,7 @@ export abstract class BaseRepository<
         return inFollowsLists;
     }
 
-    async getMediaCommunityActivity(userId: number | undefined, mediaId: number, search: SearchType) {
+    async getMediaCommunityActivity(actor: Actor, mediaId: number, search: SearchType) {
         const { tables: { listTable }, communityActivity: { aggregates } } = this.repoDefinition;
 
         const totalRedo = aggregates.totalRedo ?? sql<number>`0`;
@@ -597,10 +598,7 @@ export abstract class BaseRepository<
             perPage: search.perPage,
         });
 
-        const conditions = and(
-            eq(listTable.mediaId, mediaId),
-            userId ? inArray(user.privacy, [PrivacyType.PUBLIC, PrivacyType.RESTRICTED]) : eq(user.privacy, PrivacyType.PUBLIC),
-        );
+        const conditions = and(eq(listTable.mediaId, mediaId), communityProfileVisibilityCondition(actor));
 
         const statsQuery = getDbClient()
             .select({

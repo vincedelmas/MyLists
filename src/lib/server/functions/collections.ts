@@ -1,8 +1,8 @@
-import {RoleType} from "@/lib/utils/enums";
+import {toActor} from "@/lib/server/authorization";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
-import {authorizationMiddleware} from "@/lib/server/middlewares/authorization";
+import {contentAuthorizationMiddleware} from "@/lib/server/middlewares/authorization";
 import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     collectionIdSchema,
@@ -19,20 +19,20 @@ import {
 export const getCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
     .validator(communityCollectionsSchema)
-    .handler(async ({ data: { search, page, mediaType } }) => {
+    .handler(async ({ data: { search, page, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.getPublicCollections({ search, page, mediaType });
+        return collectionService.getPublicCollections({ search, page, mediaType }, toActor(currentUser));
     });
 
 
 export const getMediaCommunityCollections = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
     .validator(mediaCommunityCollectionsSchema)
-    .handler(async ({ data: { mediaId, mediaType } }) => {
+    .handler(async ({ data: { mediaId, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.getMediaCommunityCollections(mediaId, mediaType);
+        return collectionService.getMediaCommunityCollections(mediaId, mediaType, toActor(currentUser));
     });
 
 
@@ -42,23 +42,17 @@ export const getReadCollectionDetails = createServerFn({ method: "GET" })
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.getCollectionDetails(collectionId, "read", currentUser?.id, currentUser?.role as RoleType | null);
+        return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser));
     });
 
 
 export const getPaginatedUserCollections = createServerFn({ method: "GET" })
-    .middleware([authorizationMiddleware])
+    .middleware([contentAuthorizationMiddleware])
     .validator(userCollectionsSearchSchema)
     .handler(async ({ data: { search, page, mediaType }, context: { user, currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-
-        return collectionService.getPaginatedUserCollections(
-            user.id,
-            { search, page, mediaType },
-            currentUser?.id,
-            currentUser?.role as RoleType | null,
-        );
+        return collectionService.getPaginatedUserCollections(user.id, { search, page, mediaType }, toActor(currentUser));
     });
 
 
@@ -78,7 +72,7 @@ export const getEditCollectionDetails = createServerFn({ method: "GET" })
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.getCollectionDetails(collectionId, "edit", currentUser?.id, currentUser?.role as RoleType | null);
+        return collectionService.getCollectionDetails(collectionId, "edit", toActor(currentUser));
     });
 
 
@@ -100,7 +94,7 @@ export const postUpdateCollection = createServerFn({ method: "POST" })
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        await collectionService.updateCollection({ ...data, actorId: currentUser.id, actorRole: currentUser.role as RoleType });
+        await collectionService.updateCollection({ ...data, actor: toActor(currentUser) });
     });
 
 
@@ -110,7 +104,7 @@ export const postAddMediaToCollection = createServerFn({ method: "POST" })
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        await collectionService.addMediaToCollection({ ...data, actorId: currentUser.id });
+        await collectionService.addMediaToCollection({ ...data, actor: toActor(currentUser) });
     });
 
 
@@ -120,7 +114,7 @@ export const postRemoveMediaFromCollection = createServerFn({ method: "POST" })
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        await collectionService.removeMediaFromCollection({ ...data, actorId: currentUser.id });
+        await collectionService.removeMediaFromCollection({ ...data, actor: toActor(currentUser) });
     });
 
 
@@ -130,7 +124,7 @@ export const postDeleteCollection = createServerFn({ method: "POST" })
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        await collectionService.deleteCollection(collectionId, currentUser.id, currentUser.role as RoleType);
+        await collectionService.deleteCollection(collectionId, toActor(currentUser));
     });
 
 
@@ -140,7 +134,7 @@ export const postToggleCollectionLike = createServerFn({ method: "POST" })
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.toggleLike(collectionId, currentUser.id);
+        return collectionService.toggleLike(collectionId, toActor(currentUser));
     });
 
 
@@ -150,5 +144,5 @@ export const postCopyCollection = createServerFn({ method: "POST" })
     .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.copyCollection(collectionId, currentUser.id);
+        return collectionService.copyCollection(collectionId, toActor(currentUser));
     });

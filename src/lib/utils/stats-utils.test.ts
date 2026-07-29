@@ -49,40 +49,78 @@ describe("stats utilities", () => {
         )).toBe("1–<2 h");
     });
 
-    it("groups the weighted p95 tail without losing histogram entries", () => {
-        const result = compactHistogramBins([
-            { start: 0, endExclusive: 10, value: 95 },
-            { start: 10, endExclusive: 20, value: 3 },
-            { start: 20, endExclusive: 30, value: 2 },
-        ]);
+    it("keeps every bin when the histogram already fits", () => {
+        const bins = Array.from({ length: 8 }, (_, index) => ({
+            start: 2 ** index,
+            endExclusive: 2 ** (index + 1),
+            value: index === 7 ? 1 : 10,
+        }));
 
-        expect(result).toEqual([
-            {
-                bin: { start: 0, endExclusive: 10, value: 95 },
-                isOverflow: false,
-            },
-            {
-                bin: { start: 10, endExclusive: 30, value: 5 },
-                isOverflow: true,
-            },
-        ]);
-        expect(formatHistogramOverflowBin(result[1].bin, "min")).toBe("10+ min");
-        expect(result.reduce((sum, item) => sum + item.bin.value, 0)).toBe(100);
+        const result = compactHistogramBins(bins);
+
+        expect(result).toHaveLength(8);
+        expect(result.every(({ overflow }) => overflow === null)).toBe(true);
+        expect(result.at(-1)?.bin).toEqual({ start: 128, endExclusive: 256, value: 1 });
     });
 
-    it("caps compacted histograms at twelve bars", () => {
-        const bins = Array.from({ length: 15 }, (_, index) => ({
+    it("groups the weighted p95 tail only when more than twelve bins are needed", () => {
+        const bins = Array.from({ length: 13 }, (_, index) => ({
+            start: index * 10,
+            endExclusive: (index + 1) * 10,
+            value: index < 10 ? 10 : [2, 2, 1][index - 10],
+        }));
+
+        const result = compactHistogramBins(bins);
+
+        expect(result).toHaveLength(11);
+        expect(result.at(-1)).toEqual({
+            bin: { start: 100, endExclusive: 130, value: 5 },
+            overflow: "upper",
+            sourceBinCount: 3,
+        });
+        expect(formatHistogramOverflowBin(result.at(-1)!.bin, "upper", "min")).toBe("100+ min");
+        expect(result.reduce((sum, item) => sum + item.bin.value, 0)).toBe(105);
+    });
+
+    it("groups the weighted lower tail for chronological distributions", () => {
+        const bins = Array.from({ length: 13 }, (_, index) => ({
+            start: 1900 + index * 10,
+            endExclusive: 1910 + index * 10,
+            value: index < 3 ? [1, 2, 2][index] : 10,
+        }));
+
+        const result = compactHistogramBins(bins, { tailDirection: "lower" });
+
+        expect(result[0]).toEqual({
+            bin: { start: 1900, endExclusive: 1930, value: 5 },
+            overflow: "lower",
+            sourceBinCount: 3,
+        });
+        expect(formatHistogramOverflowBin(result[0].bin, "lower")).toBe("Before 1930");
+        expect(result.reduce((sum, item) => sum + item.bin.value, 0)).toBe(105);
+    });
+
+    it("caps compacted histograms at twelve bars using positional groups", () => {
+        const bins = Array.from({ length: 18 }, (_, index) => ({
             start: index * 10,
             endExclusive: (index + 1) * 10,
             value: 1,
         }));
 
-        const result = compactHistogramBins(bins);
+        const result = compactHistogramBins(bins, { percentile: 1 });
 
-        expect(result).toHaveLength(12);
-        expect(result[0].bin.start).toBe(0);
-        expect(result.at(-1)?.bin.endExclusive).toBe(150);
-        expect(result.reduce((sum, item) => sum + item.bin.value, 0)).toBe(15);
+        expect(result.length).toBeLessThanOrEqual(12);
+        expect(result[0]).toEqual({
+            bin: { start: 0, endExclusive: 20, value: 2 },
+            overflow: null,
+            sourceBinCount: 2,
+        });
+        expect(result.at(-1)).toEqual({
+            bin: { start: 160, endExclusive: 180, value: 2 },
+            overflow: null,
+            sourceBinCount: 2,
+        });
+        expect(result.reduce((sum, item) => sum + item.bin.value, 0)).toBe(18);
     });
 
     it("drops invalid histogram boundaries", () => {

@@ -11,6 +11,7 @@ import {RatingsChart} from "@/lib/client/components/media-stats/RatingsChart";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {HistogramChart} from "@/lib/client/components/media-stats/HistogramChart";
 import {TimeSeriesChart} from "@/lib/client/components/media-stats/TimeSeriesChart";
+import {TopAffinityCard} from "@/lib/client/components/media-stats/TopAffinityCard";
 import {StatusDistribution} from "@/lib/client/components/media-stats/StatusDistribution";
 import {mediaStatsViewConfig} from "@/lib/client/components/media-stats/media-stats.config";
 import {ActivityByMonthChart} from "@/lib/client/components/media-stats/ActivityByMonthChart";
@@ -21,6 +22,12 @@ interface MediaTypeDashboardProps {
 }
 
 
+const affinityGridClasses = {
+    3: "grid grid-cols-3 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1",
+    4: "grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1",
+} as const;
+
+
 export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
     const { mediaType, ratingSystem, specificMediaStats } = stats;
 
@@ -28,8 +35,11 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
     const mediaStatsDefinition = mediaDefinition.statistics;
     const progressStatsDefinition = mediaStatsDefinition.progress;
 
+    const viewConfig = mediaStatsViewConfig[mediaType];
     const ratingValue = formatAvgRating(ratingSystem, stats.avgRated);
-    const { SummaryStats, AffinityStats } = mediaStatsViewConfig[mediaType];
+
+    const statCards = viewConfig.getStatCards(stats);
+    const affinityCards = viewConfig.getAffinityCards(stats);
 
     return (
         <div className="space-y-6">
@@ -62,13 +72,19 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                 />
                 <StatCard
                     title="Avg. Updates"
-                    subtitle="Per active month"
+                    subtitle="Per active month, all time"
                     icon={<ChartColumn className="size-4"/>}
                     value={formatNumber(stats.avgUpdates, { fractionDigits: 1 })}
                 />
-                <SummaryStats
-                    stats={stats}
-                />
+                {statCards.map((card) =>
+                    <StatCard
+                        key={card.title}
+                        icon={card.icon}
+                        title={card.title}
+                        value={card.value}
+                        subtitle={card.subtitle}
+                    />
+                )}
                 <StatCard
                     title="Total Favorites"
                     icon={<Heart className="size-4"/>}
@@ -103,6 +119,7 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                 />
                 <HistogramChart
                     mediaType={mediaType}
+                    tailDirection="lower"
                     title="Release Date Distribution"
                     data={specificMediaStats.releaseDates}
                 />
@@ -122,9 +139,19 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                 description="From January 2020; months with at least one recorded update"
             />
 
-            <AffinityStats
-                stats={stats}
-            />
+            {affinityCards.length > 0 &&
+                <div className={affinityGridClasses[viewConfig.affinityColumns]}>
+                    {affinityCards.map((card) =>
+                        <TopAffinityCard
+                            job={card.job}
+                            key={card.title}
+                            title={card.title}
+                            mediaType={mediaType}
+                            topAffinity={card.topAffinity}
+                        />
+                    )}
+                </div>
+            }
         </div>
     );
 }

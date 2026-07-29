@@ -1,7 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
-import {HistogramBin} from "@/lib/types/stats.types";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 import {formatNumber} from "@/lib/utils/number-formatting";
+import {HistogramBin, HistogramTailDir} from "@/lib/types/stats.types";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
 import {ChartTooltip} from "@/lib/client/components/media-stats/ChartTooltip";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
@@ -15,16 +15,25 @@ interface HistogramChartProps {
     data: HistogramBin[];
     mediaType: MediaType;
     description?: string;
+    tailDirection?: HistogramTailDir;
     rangeMode?: "continuous" | "integer";
 }
 
 
-export function HistogramChart({ title, data, mediaType, unit, description, height = 300, rangeMode = "integer" }: HistogramChartProps) {
-    const compactedBins = compactHistogramBins(data);
-    const chartData = compactedBins.map(({ bin, isOverflow }) => ({
+export function HistogramChart(props: HistogramChartProps) {
+    const {
+        title, data, mediaType, unit, description,
+        height = 300, rangeMode = "integer", tailDirection = "upper",
+    } = props;
+
+    const compactedBins = compactHistogramBins(data, { tailDirection });
+    const overflow = compactedBins.find(item => item.overflow)?.overflow;
+    const hasGroupedRanges = compactedBins.some(({ overflow: itemOverflow, sourceBinCount }) => !itemOverflow && sourceBinCount > 1);
+
+    const chartData = compactedBins.map(({ bin, overflow }) => ({
         value: bin.value,
-        label: isOverflow
-            ? formatHistogramOverflowBin(bin, unit)
+        label: overflow
+            ? formatHistogramOverflowBin(bin, overflow, unit)
             : formatHistogramBin(bin, unit, rangeMode),
     }));
 
@@ -32,9 +41,14 @@ export function HistogramChart({ title, data, mediaType, unit, description, heig
 
     const valueFormatter = (val: number) => formatNumber(val, { fractionDigits: 0, locale: "fr" });
     const summary = chartData.map(({ label, value }) => ({ label, value: valueFormatter(value) }))
-    const chartDescription = compactedBins.some(({ isOverflow }) => isOverflow)
-        ? [description, "The remaining data are aggregated in the final bar."].filter(Boolean).join(" ")
-        : description;
+
+    const compactionDescription = [
+        overflow === "lower" ? "Earlier data are aggregated in the first bar." : null,
+        overflow === "upper" ? "The upper tail is aggregated in the final bar." : null,
+        hasGroupedRanges ? "Adjacent ranges are grouped consistently to keep the chart readable." : null,
+    ].filter(Boolean).join(" ");
+
+    const chartDescription = [description, compactionDescription].filter(Boolean).join(" ") || undefined;
 
     return (
         <ChartCard title={title} height={height} hasData={hasData} description={chartDescription} summary={summary}>

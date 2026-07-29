@@ -1,15 +1,16 @@
 import {Link} from "@tanstack/react-router";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 import {RatingSystemType, Status} from "@/lib/utils/enums";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
 import {PerMediaSummaryType} from "@/lib/types/query.options.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {BarChart3, ChartNoAxesColumn, MoveRight, Star} from "lucide-react";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
 import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
 import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
+import {SegmentedDistributionBar} from "@/lib/client/components/general/SegmentedDistributionBar";
 
 
 interface MediaStatsTabProps {
@@ -27,6 +28,12 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
     const ratingDisplay = ratingSystem === "score"
         ? formatNumber(rating, { fractionDigits: 2, locale: "en" })
         : getFeelingIcon(rating, { size: 28, className: "mt-1" });
+
+    const statusSegments = mediaSummary.statusList.map(({ status, percent }) => ({
+        label: status,
+        percentage: percent,
+        color: getThemeColor(status),
+    }));
 
     return (
         <div className="space-y-6">
@@ -57,16 +64,9 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
                         message="No status to display yet."
                     />
                     :
-                    <div className="flex gap-0.5 h-5 rounded-sm overflow-hidden bg-background">
-                        {mediaSummary.statusList.map((status) =>
-                            <div
-                                key={status.status}
-                                className="h-full flex items-center justify-center"
-                                title={`${status.status}: ${formatPercent(status.percent)}`}
-                                style={{ width: `${status.percent}%`, backgroundColor: getThemeColor(status.status) }}
-                            />
-                        )}
-                    </div>
+                    <SegmentedDistributionBar
+                        segments={statusSegments}
+                    />
                 }
                 <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1">
                     {mediaSummary.statusList.map((st) =>

@@ -9,6 +9,9 @@ import type {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import type {UserMonthlyActivityService, UserStatsRepository, UserStatsService, UserUpdatesRepository} from "@/lib/server/domain/user";
 
 
+export type HistogramTailDir = "lower" | "upper";
+
+
 export type NamedValue = {
     value: number,
     name: number | string;
@@ -56,6 +59,13 @@ export type TopAffinity = {
         favoriteCount: number;
     };
 }[];
+
+
+export type CompactedHistogramBin = {
+    bin: HistogramBin;
+    sourceBinCount: number;
+    overflow: HistogramTailDir | null;
+};
 
 
 type OverviewStats = Awaited<ReturnType<UserStatsService["userAdvancedSummaryStats"]>> & DashboardContext & {

@@ -4,6 +4,7 @@ import {BarChart3, ChartNoAxesColumn} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
+import {SegmentedDistributionBar} from "@/lib/client/components/general/SegmentedDistributionBar";
 
 
 interface StatusDistributionProps {
@@ -21,6 +22,12 @@ export function StatusDistribution({ statuses, total }: StatusDistributionProps)
             percentage: total > 0 ? (value / total) * 100 : 0,
         }));
 
+    const segments = distribution.map(({ name, percentage }) => ({
+        percentage,
+        label: name,
+        color: getThemeColor(name),
+    }))
+
     return (
         <DistributionContainer label="Status Distribution" icon={BarChart3}>
             {distribution.length === 0 ?
@@ -31,22 +38,10 @@ export function StatusDistribution({ statuses, total }: StatusDistributionProps)
                 />
                 :
                 <>
-                    <div
-                        role="img"
-                        className="flex h-5 w-full gap-0.5 overflow-hidden rounded-sm bg-background"
-                        aria-label={distribution
-                            .map(({ name, percentage }) => `${name}: ${formatPercent(percentage)}`)
-                            .join(", ")}
-                    >
-                        {distribution.map(({ name, percentage }) =>
-                            <div
-                                key={name}
-                                className="h-full min-w-px"
-                                title={`${name}: ${formatPercent(percentage)}`}
-                                style={{ width: `${percentage}%`, backgroundColor: getThemeColor(name) }}
-                            />
-                        )}
-                    </div>
+                    <SegmentedDistributionBar
+                        segments={segments}
+                    />
+
                     <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
                         {distribution.map(({ name, percentage, value }) =>
                             <div key={name} className="flex items-center gap-1.5 text-sm">

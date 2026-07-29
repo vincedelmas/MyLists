@@ -1,11 +1,20 @@
 import {MediaType} from "@/lib/utils/enums";
-import {HistogramBin, NamedValue} from "@/lib/types/stats.types";
 import {MonthlyActivityChartDatum} from "@/lib/types/activity.types";
+import {CompactedHistogramBin, HistogramBin, HistogramTailDir, NamedValue} from "@/lib/types/stats.types";
 
 
 const formatBucketBoundary = (value: number) => {
     return Number.isInteger(value) ? value.toString() : value.toFixed(1);
 };
+
+
+const mergeHistogramBins = (bins: HistogramBin[]) => {
+    return {
+        start: bins[0].start,
+        endExclusive: bins[bins.length - 1].endExclusive,
+        value: bins.reduce((sum, bin) => sum + bin.value, 0),
+    };
+}
 
 
 export const transformRatingToFeeling = (ratings: NamedValue[]) => {
@@ -43,78 +52,6 @@ export const toHistogramBins = (points: NamedValue[], getEndExclusive: (start: n
 };
 
 
-export const compactHistogramBins = (bins: HistogramBin[], { maxBins = 15, percentile = 0.95 }: { maxBins?: number; percentile?: number } = {}) => {
-    const sortedBins = [...bins].sort((a, b) => a.start - b.start);
-    if (sortedBins.length <= 1) {
-        return sortedBins.map((bin) => ({ bin, isOverflow: false }));
-    }
-
-    const total = sortedBins.reduce((sum, bin) => sum + Math.max(0, bin.value), 0);
-    const boundedPercentile = Math.min(1, Math.max(0, percentile));
-    const boundedMaxBins = Math.max(2, Math.floor(maxBins));
-
-    let cumulative = 0;
-    const percentileTarget = total * boundedPercentile;
-
-    const percentileEndIndex = total > 0
-        ? sortedBins.findIndex((bin) => {
-            cumulative += Math.max(0, bin.value);
-            return cumulative >= percentileTarget;
-        })
-        : sortedBins.length - 1;
-
-    const desiredRegularBins = percentileEndIndex === -1
-        ? sortedBins.length
-        : percentileEndIndex + 1;
-
-    const compactedBins = sortedBins
-        .slice(0, desiredRegularBins)
-        .map((bin) => ({ bin, isOverflow: false }));
-
-    if (desiredRegularBins < sortedBins.length) {
-        const tailBins = sortedBins.slice(desiredRegularBins);
-        compactedBins.push({
-            isOverflow: true,
-            bin: {
-                start: tailBins[0].start,
-                endExclusive: tailBins[tailBins.length - 1].endExclusive,
-                value: tailBins.reduce((sum, bin) => sum + bin.value, 0),
-            },
-        });
-    }
-
-    while (compactedBins.length > boundedMaxBins) {
-        let mergeIndex = 0;
-        let smallestPairValue = Number.POSITIVE_INFINITY;
-
-        for (let idx = 0; idx < compactedBins.length - 1; idx += 1) {
-            const nextIsOverflow = compactedBins[idx + 1].isOverflow;
-            if (nextIsOverflow && compactedBins.length > 2) continue;
-
-            const pairValue = compactedBins[idx].bin.value + compactedBins[idx + 1].bin.value;
-            if (pairValue < smallestPairValue) {
-                mergeIndex = idx;
-                smallestPairValue = pairValue;
-            }
-        }
-
-        const first = compactedBins[mergeIndex];
-        const second = compactedBins[mergeIndex + 1];
-
-        compactedBins.splice(mergeIndex, 2, {
-            isOverflow: first.isOverflow || second.isOverflow,
-            bin: {
-                start: first.bin.start,
-                endExclusive: second.bin.endExclusive,
-                value: first.bin.value + second.bin.value,
-            },
-        });
-    }
-
-    return compactedBins;
-};
-
-
 export const formatHistogramBin = (bin: HistogramBin, unit?: string, rangeMode: "continuous" | "integer" = "integer") => {
     const suffix = unit ? ` ${unit}` : "";
 
@@ -131,9 +68,74 @@ export const formatHistogramBin = (bin: HistogramBin, unit?: string, rangeMode: 
 };
 
 
-export const formatHistogramOverflowBin = (bin: HistogramBin, unit?: string) => {
+export const formatHistogramOverflowBin = (bin: HistogramBin, direction: HistogramTailDir, unit?: string) => {
     const suffix = unit ? ` ${unit}` : "";
-    return `${formatBucketBoundary(bin.start)}+${suffix}`;
+
+    return direction === "lower"
+        ? `Before ${formatBucketBoundary(bin.endExclusive)}${suffix}`
+        : `${formatBucketBoundary(bin.start)}+${suffix}`;
+};
+
+
+interface CompactHistogramParams {
+    maxBins?: number;
+    percentile?: number;
+    tailDirection?: HistogramTailDir;
+}
+
+
+export const compactHistogramBins = (bins: HistogramBin[], { maxBins = 12, percentile = 0.95, tailDirection = "upper" }: CompactHistogramParams = {}) => {
+    const sortedBins = [...bins].sort((a, b) => a.start - b.start);
+    if (sortedBins.length <= maxBins) {
+        return sortedBins.map((bin) => ({ bin, overflow: null, sourceBinCount: 1 }));
+    }
+
+    const total = sortedBins.reduce((sum, bin) => sum + bin.value, 0);
+    const isUpperTail = tailDirection === "upper";
+    const percentileTarget = total * (isUpperTail ? percentile : 1 - percentile);
+
+    let cumulative = 0;
+    const percentileIndex = sortedBins.findIndex((bin) => {
+        cumulative += bin.value;
+        return cumulative >= percentileTarget;
+    });
+
+    const regularBins = isUpperTail
+        ? sortedBins.slice(0, percentileIndex + 1)
+        : sortedBins.slice(percentileIndex);
+
+    const tailBins = isUpperTail
+        ? sortedBins.slice(percentileIndex + 1)
+        : sortedBins.slice(0, percentileIndex);
+
+    const overflowBin: CompactedHistogramBin | null = tailBins.length > 0
+        ? {
+            overflow: tailDirection,
+            sourceBinCount: tailBins.length,
+            bin: mergeHistogramBins(tailBins),
+        }
+        : null;
+
+    const compactedRegularBins: CompactedHistogramBin[] = [];
+    const availableRegularBins = maxBins - (overflowBin ? 1 : 0);
+    const groupSize = Math.ceil(regularBins.length / availableRegularBins);
+
+    for (let idx = 0; idx < regularBins.length; idx += groupSize) {
+        const groupedBins = regularBins.slice(idx, idx + groupSize);
+        compactedRegularBins.push({
+            overflow: null,
+            sourceBinCount: groupedBins.length,
+            bin: mergeHistogramBins(groupedBins),
+        });
+    }
+
+    if (!overflowBin) {
+        return compactedRegularBins;
+    }
+
+    return overflowBin.overflow === "lower"
+        ? [overflowBin, ...compactedRegularBins]
+        : [...compactedRegularBins, overflowBin];
 };
 
 

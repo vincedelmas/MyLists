@@ -1,12 +1,10 @@
 import {MediaType} from "@/lib/utils/enums";
+import {ReactElement, ReactNode} from "react";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {ComponentType, ReactElement, ReactNode} from "react";
 import {DollarSign, SquareStack, XLineTop} from "lucide-react";
 import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 import {formatCurrency, formatNumber} from "@/lib/utils/number-formatting";
 import {AnyMediaStats, MediaStatsFor, TopAffinity} from "@/lib/types/stats.types";
-import {TopAffinityCard} from "@/lib/client/components/media-stats/TopAffinityCard";
 
 
 type StatCardDefinition = {
@@ -17,14 +15,10 @@ type StatCardDefinition = {
 };
 
 
-type StatsSectionProps = {
-    stats: AnyMediaStats;
-};
-
-
 type MediaStatsViewConfig = {
-    SummaryStats: ComponentType<StatsSectionProps>;
-    AffinityStats: ComponentType<StatsSectionProps>;
+    affinityColumns: 3 | 4;
+    getStatCards: (stats: AnyMediaStats) => StatCardDefinition[];
+    getAffinityCards: (stats: AnyMediaStats) => AffinityCardDefinition[];
 };
 
 
@@ -35,13 +29,6 @@ type AffinityCardDefinition = {
 };
 
 
-type AffinityCardsProps = {
-    columns: 3 | 4;
-    mediaType: MediaType;
-    cards: AffinityCardDefinition[];
-};
-
-
 type TypedStatsConfig<T extends MediaType> = {
     affinityColumns: 3 | 4;
     getStatCards: (stats: MediaStatsFor<T>) => StatCardDefinition[];
@@ -49,65 +36,8 @@ type TypedStatsConfig<T extends MediaType> = {
 };
 
 
-const affinityGridClasses = {
-    3: "grid grid-cols-3 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1",
-    4: "grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1",
-} as const;
-
-
-const AffinityCards = ({ cards, columns, mediaType }: AffinityCardsProps) => (
-    <div className={affinityGridClasses[columns]}>
-        {cards.map((card) =>
-            <TopAffinityCard
-                job={card.job}
-                key={card.title}
-                title={card.title}
-                mediaType={mediaType}
-                topAffinity={card.topAffinity}
-            />
-        )}
-    </div>
-);
-
-
-const defineMediaStatsView = <T extends MediaType>(mediaType: T, config: TypedStatsConfig<T>): MediaStatsViewConfig => {
-    const getTypedStats = (stats: AnyMediaStats) => {
-        if (stats.mediaType !== mediaType) return null;
-        return stats as MediaStatsFor<T>;
-    };
-
-    const SummaryStats = ({ stats }: StatsSectionProps) => {
-        const typedStats = getTypedStats(stats);
-        if (!typedStats) return null;
-
-        return config.getStatCards(typedStats).map((card) =>
-            <StatCard
-                key={card.title}
-                icon={card.icon}
-                title={card.title}
-                value={card.value}
-                subtitle={card.subtitle}
-            />
-        );
-    };
-
-    const AffinityStats = ({ stats }: StatsSectionProps) => {
-        const typedStats = getTypedStats(stats);
-        if (!typedStats) return null;
-
-        const cards = config.getAffinityCards(typedStats);
-        if (cards.length === 0) return null;
-
-        return (
-            <AffinityCards
-                cards={cards}
-                mediaType={typedStats.mediaType}
-                columns={config.affinityColumns}
-            />
-        );
-    };
-
-    return { SummaryStats, AffinityStats };
+const defineMediaStatsView = <T extends MediaType>(_mediaType: T, config: TypedStatsConfig<T>) => {
+    return config as MediaStatsViewConfig;
 };
 
 

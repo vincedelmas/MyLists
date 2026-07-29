@@ -81,7 +81,7 @@ export function OverviewDashboard({ stats }: OverviewDashboardProps) {
                     title="Total Updates"
                     icon={<ChartColumn className="size-4"/>}
                     value={formatNumber(stats.updatesPerMonth.totalUpdates)}
-                    subtitle={`Avg. per active month: ${formatNumber(stats.updatesPerMonth.avgUpdates, { fractionDigits: 2 })}`}
+                    subtitle={`All-time avg. per active month: ${formatNumber(stats.updatesPerMonth.avgUpdates, { fractionDigits: 2 })}`}
                 />
                 <StatCard
                     title="Total Tags"

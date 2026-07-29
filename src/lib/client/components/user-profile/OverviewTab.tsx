@@ -1,14 +1,14 @@
 import {Link} from "@tanstack/react-router";
 import {RatingSystemType} from "@/lib/utils/enums";
-import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
 import {getThemeColor} from "@/lib/utils/theme-utils";
-import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
+import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
 import {Clock, ClockAlert, MoveRight, Star} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
 import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
-import {DistributionContainer} from "@/lib/client/components/user-profile/ProfileDistrib";
+import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
 import {MediaGlobalSummaryType, PerMediaSummaryType} from "@/lib/types/query.options.types";
 
 
@@ -24,7 +24,7 @@ interface OverviewTabProps {
 export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, highlightedMedia }: OverviewTabProps) => {
     const rating = globalStats.avgRated;
     const distributionTotalDays = perMedia.reduce((total, media) => total + media.timeSpentDays, 0);
-    
+
     const ratingDisplay = ratingSystem === "score"
         ? formatNumber(rating, { fractionDigits: 2, locale: "en" })
         : getFeelingIcon(rating, { size: 28, className: "mt-1" });

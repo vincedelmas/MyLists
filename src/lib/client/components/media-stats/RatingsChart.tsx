@@ -37,7 +37,7 @@ export function RatingsChart({ height, ratings, mediaType, ratingSystem }: Ratin
     return (
         <ChartCard title={title} summary={summary} hasData={hasData} height={chartHeight}>
             <ResponsiveContainer width="100%" height={chartHeight}>
-                <BarChart data={chartData} accessibilityLayer margin={{ top: 8, right: 4, bottom: 0, left: -20 }}>
+                <BarChart data={chartData} accessibilityLayer margin={{ top: 8, right: 4, bottom: 0, left: -30 }}>
                     <XAxis
                         dataKey="name"
                         tickLine={false}

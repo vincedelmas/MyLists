@@ -5,7 +5,6 @@ import {formatNumber} from "@/lib/utils/number-formatting";
 interface ChartTooltipProps extends Partial<Omit<TooltipContentProps<number, string>, "labelFormatter">> {
     labelFormatter?: (label: string) => string;
     valueFormatter?: (value: number) => string;
-    valueFormatter
 }
 
 

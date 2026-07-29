@@ -1,7 +1,7 @@
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
 import {ChartTooltip} from "@/lib/client/components/media-stats/ChartTooltip";
-import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {Bar, BarChart, BarShapeProps, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 
 
 type CategoricalChartDatum = {
@@ -13,9 +13,9 @@ type CategoricalChartDatum = {
 
 interface CategoricalBarChartProps {
     title: string;
-    data: CategoricalChartDatum[];
     height?: number;
     description?: string;
+    data: CategoricalChartDatum[];
     labelFormatter?: (label: string) => string;
     valueFormatter?: (value: number) => string;
 }
@@ -64,11 +64,19 @@ export function CategoricalBarChart(props: CategoricalBarChartProps) {
                             />
                         }
                     />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                        {data.map(({ name, color }) =>
-                            <Cell key={name} fill={color}/>
+                    <Bar
+                        dataKey="value"
+                        shape={({ height, payload, width, x, y }: BarShapeProps) => (
+                            <Rectangle
+                                x={x}
+                                y={y}
+                                width={width}
+                                height={height}
+                                fill={payload.color}
+                                radius={[4, 4, 0, 0]}
+                            />
                         )}
-                    </Bar>
+                    />
                 </BarChart>
             </ResponsiveContainer>
         </ChartCard>

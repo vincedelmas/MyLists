@@ -1,8 +1,10 @@
 import {describe, expect, it} from "vitest";
 import {MediaType} from "@/lib/utils/enums";
 import {
+    compactHistogramBins,
     fillMonthlyActivityTimeline,
     formatHistogramBin,
+    formatHistogramOverflowBin,
     toHistogramBins,
     transformRatingToFeeling,
 } from "@/lib/utils/stats-utils";
@@ -45,6 +47,42 @@ describe("stats utilities", () => {
             "h",
             "continuous",
         )).toBe("1–<2 h");
+    });
+
+    it("groups the weighted p95 tail without losing histogram entries", () => {
+        const result = compactHistogramBins([
+            { start: 0, endExclusive: 10, value: 95 },
+            { start: 10, endExclusive: 20, value: 3 },
+            { start: 20, endExclusive: 30, value: 2 },
+        ]);
+
+        expect(result).toEqual([
+            {
+                bin: { start: 0, endExclusive: 10, value: 95 },
+                isOverflow: false,
+            },
+            {
+                bin: { start: 10, endExclusive: 30, value: 5 },
+                isOverflow: true,
+            },
+        ]);
+        expect(formatHistogramOverflowBin(result[1].bin, "min")).toBe("10+ min");
+        expect(result.reduce((sum, item) => sum + item.bin.value, 0)).toBe(100);
+    });
+
+    it("caps compacted histograms at twelve bars", () => {
+        const bins = Array.from({ length: 15 }, (_, index) => ({
+            start: index * 10,
+            endExclusive: (index + 1) * 10,
+            value: 1,
+        }));
+
+        const result = compactHistogramBins(bins);
+
+        expect(result).toHaveLength(12);
+        expect(result[0].bin.start).toBe(0);
+        expect(result.at(-1)?.bin.endExclusive).toBe(150);
+        expect(result.reduce((sum, item) => sum + item.bin.value, 0)).toBe(15);
     });
 
     it("drops invalid histogram boundaries", () => {

@@ -2,10 +2,10 @@ import {MediaType} from "@/lib/utils/enums";
 import {HistogramBin} from "@/lib/types/stats.types";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 import {formatNumber} from "@/lib/utils/number-formatting";
-import {formatHistogramBin} from "@/lib/utils/stats-utils";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
 import {ChartTooltip} from "@/lib/client/components/media-stats/ChartTooltip";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {compactHistogramBins, formatHistogramBin, formatHistogramOverflowBin} from "@/lib/utils/stats-utils";
 
 
 interface HistogramChartProps {
@@ -20,25 +20,33 @@ interface HistogramChartProps {
 
 
 export function HistogramChart({ title, data, mediaType, unit, description, height = 300, rangeMode = "integer" }: HistogramChartProps) {
-    const chartData = data.map(bin => ({ value: bin.value, label: formatHistogramBin(bin, unit, rangeMode) }));
+    const compactedBins = compactHistogramBins(data);
+    const chartData = compactedBins.map(({ bin, isOverflow }) => ({
+        value: bin.value,
+        label: isOverflow
+            ? formatHistogramOverflowBin(bin, unit)
+            : formatHistogramBin(bin, unit, rangeMode),
+    }));
+
     const hasData = chartData.some(({ value }) => value > 0);
 
     const valueFormatter = (val: number) => formatNumber(val, { fractionDigits: 0, locale: "fr" });
     const summary = chartData.map(({ label, value }) => ({ label, value: valueFormatter(value) }))
+    const chartDescription = compactedBins.some(({ isOverflow }) => isOverflow)
+        ? [description, "The remaining data are aggregated in the final bar."].filter(Boolean).join(" ")
+        : description;
 
     return (
-        <ChartCard title={title} height={height} hasData={hasData} description={description} summary={summary}>
+        <ChartCard title={title} height={height} hasData={hasData} description={chartDescription} summary={summary}>
             <ResponsiveContainer width="100%" height={height}>
-                <BarChart accessibilityLayer data={chartData} margin={{ top: 8, right: 4, bottom: 28, left: -20 }}>
+                <BarChart accessibilityLayer data={chartData} margin={{ top: 8, right: 4, bottom: 0, left: -30 }}>
                     <XAxis
-                        angle={-30}
-                        height={48}
                         dataKey="label"
-                        minTickGap={10}
+                        minTickGap={14}
                         tickLine={false}
                         axisLine={false}
                         interval="preserveStartEnd"
-                        tick={{ fill: "var(--primary)", fontSize: 11, textAnchor: "end" }}
+                        tick={{ fill: "var(--primary)", fontSize: 11 }}
                     />
                     <YAxis
                         tickLine={false}

@@ -3,9 +3,9 @@ import {LucideIcon} from "lucide-react";
 
 
 interface DistributionContainerProps {
-    label: string,
-    icon: LucideIcon,
-    children: React.ReactNode,
+    label: string;
+    icon: LucideIcon;
+    children: React.ReactNode;
 }
 
 
@@ -22,4 +22,4 @@ export const DistributionContainer = ({ label, icon: Icon, children }: Distribut
             {children}
         </div>
     );
-}
+};

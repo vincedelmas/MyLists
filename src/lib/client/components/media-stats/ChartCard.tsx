@@ -24,7 +24,7 @@ interface ChartCardProps {
 export function ChartCard({ title, height, hasData, children, description, summary = [], emptyMessage = "No data to display yet." }: ChartCardProps) {
     return (
         <Card className="min-w-0 overflow-hidden">
-            <CardHeader className="gap-1 pb-2">
+            <CardHeader className="min-h-14 gap-1 pb-2">
                 <CardTitle className="text-base">
                     {title}
                 </CardTitle>

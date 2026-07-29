@@ -1,11 +1,10 @@
 import {MediaType} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/utils/theme-utils";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {MonthlyActivityChartDatum} from "@/lib/types/activity.types";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
-import {Bar, BarChart, Legend, ResponsiveContainer, Tooltip, TooltipContentProps, XAxis, YAxis} from "recharts";
+import {Bar, BarChart, ResponsiveContainer, Tooltip, TooltipContentProps, XAxis, YAxis} from "recharts";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 
 
@@ -44,7 +43,7 @@ export function ActivityByMonthChart({ title, data, mediaTypes, mediaType, range
             }))}
         >
             <ResponsiveContainer width="100%" height={height}>
-                <BarChart accessibilityLayer data={data} margin={{ top: 8, right: 4, bottom: 0, left: -20 }}>
+                <BarChart accessibilityLayer data={data} margin={{ top: 8, right: 4, bottom: 0, left: -30 }}>
                     <XAxis
                         minTickGap={28}
                         tickLine={false}
@@ -64,13 +63,6 @@ export function ActivityByMonthChart({ title, data, mediaTypes, mediaType, range
                         cursor={{ fill: "var(--popover)" }}
                         content={<ActivityTooltip mediaTypes={displayMediaTypes}/>}
                     />
-                    {displayMediaTypes.length > 1 &&
-                        <Legend
-                            iconSize={5}
-                            iconType="circle"
-                            formatter={(val) => capitalize(String(val))}
-                        />
-                    }
                     {displayMediaTypes.map((type) =>
                         <Bar
                             key={type}

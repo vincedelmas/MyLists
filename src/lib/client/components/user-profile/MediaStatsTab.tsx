@@ -1,15 +1,15 @@
 import {Link} from "@tanstack/react-router";
-import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
 import {getThemeColor} from "@/lib/utils/theme-utils";
-import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {RatingSystemType, Status} from "@/lib/utils/enums";
+import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
 import {PerMediaSummaryType} from "@/lib/types/query.options.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {BarChart3, ChartNoAxesColumn, MoveRight, Star} from "lucide-react";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
 import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
-import {DistributionContainer} from "@/lib/client/components/user-profile/ProfileDistrib";
+import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
 
 
 interface MediaStatsTabProps {
@@ -25,10 +25,7 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
 
     const rating = mediaSummary.avgRated;
     const ratingDisplay = ratingSystem === "score"
-        ? formatNumber(rating, {
-            fractionDigits: 2,
-            locale: "en",
-        })
+        ? formatNumber(rating, { fractionDigits: 2, locale: "en" })
         : getFeelingIcon(rating, { size: 28, className: "mt-1" });
 
     return (

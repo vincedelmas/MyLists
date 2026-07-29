@@ -43,11 +43,83 @@ export const toHistogramBins = (points: NamedValue[], getEndExclusive: (start: n
 };
 
 
+export const compactHistogramBins = (bins: HistogramBin[], { maxBins = 15, percentile = 0.95 }: { maxBins?: number; percentile?: number } = {}) => {
+    const sortedBins = [...bins].sort((a, b) => a.start - b.start);
+    if (sortedBins.length <= 1) {
+        return sortedBins.map((bin) => ({ bin, isOverflow: false }));
+    }
+
+    const total = sortedBins.reduce((sum, bin) => sum + Math.max(0, bin.value), 0);
+    const boundedPercentile = Math.min(1, Math.max(0, percentile));
+    const boundedMaxBins = Math.max(2, Math.floor(maxBins));
+
+    let cumulative = 0;
+    const percentileTarget = total * boundedPercentile;
+
+    const percentileEndIndex = total > 0
+        ? sortedBins.findIndex((bin) => {
+            cumulative += Math.max(0, bin.value);
+            return cumulative >= percentileTarget;
+        })
+        : sortedBins.length - 1;
+
+    const desiredRegularBins = percentileEndIndex === -1
+        ? sortedBins.length
+        : percentileEndIndex + 1;
+
+    const compactedBins = sortedBins
+        .slice(0, desiredRegularBins)
+        .map((bin) => ({ bin, isOverflow: false }));
+
+    if (desiredRegularBins < sortedBins.length) {
+        const tailBins = sortedBins.slice(desiredRegularBins);
+        compactedBins.push({
+            isOverflow: true,
+            bin: {
+                start: tailBins[0].start,
+                endExclusive: tailBins[tailBins.length - 1].endExclusive,
+                value: tailBins.reduce((sum, bin) => sum + bin.value, 0),
+            },
+        });
+    }
+
+    while (compactedBins.length > boundedMaxBins) {
+        let mergeIndex = 0;
+        let smallestPairValue = Number.POSITIVE_INFINITY;
+
+        for (let idx = 0; idx < compactedBins.length - 1; idx += 1) {
+            const nextIsOverflow = compactedBins[idx + 1].isOverflow;
+            if (nextIsOverflow && compactedBins.length > 2) continue;
+
+            const pairValue = compactedBins[idx].bin.value + compactedBins[idx + 1].bin.value;
+            if (pairValue < smallestPairValue) {
+                mergeIndex = idx;
+                smallestPairValue = pairValue;
+            }
+        }
+
+        const first = compactedBins[mergeIndex];
+        const second = compactedBins[mergeIndex + 1];
+
+        compactedBins.splice(mergeIndex, 2, {
+            isOverflow: first.isOverflow || second.isOverflow,
+            bin: {
+                start: first.bin.start,
+                endExclusive: second.bin.endExclusive,
+                value: first.bin.value + second.bin.value,
+            },
+        });
+    }
+
+    return compactedBins;
+};
+
+
 export const formatHistogramBin = (bin: HistogramBin, unit?: string, rangeMode: "continuous" | "integer" = "integer") => {
     const suffix = unit ? ` ${unit}` : "";
 
     if (rangeMode === "continuous") {
-        return `${formatBucketBoundary(bin.start)}–${formatBucketBoundary(bin.endExclusive)}${suffix}`;
+        return `${formatBucketBoundary(bin.start)}–<${formatBucketBoundary(bin.endExclusive)}${suffix}`;
     }
 
     const inclusiveEnd = bin.endExclusive - 1;
@@ -56,6 +128,12 @@ export const formatHistogramBin = (bin: HistogramBin, unit?: string, rangeMode: 
     }
 
     return `${formatBucketBoundary(bin.start)}–${formatBucketBoundary(inclusiveEnd)}${suffix}`;
+};
+
+
+export const formatHistogramOverflowBin = (bin: HistogramBin, unit?: string) => {
+    const suffix = unit ? ` ${unit}` : "";
+    return `${formatBucketBoundary(bin.start)}+${suffix}`;
 };
 
 

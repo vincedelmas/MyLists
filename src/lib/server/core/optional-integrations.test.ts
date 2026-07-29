@@ -24,6 +24,10 @@ describe("getDisabledOptionalIntegrations", () => {
                 missingEnvVars: ["IGDB_CLIENT_ID", "IGDB_CLIENT_SECRET"],
             },
             {
+                feature: "Manga provider and anime genre enrichment (MyAnimeList)",
+                missingEnvVars: ["MAL_CLIENT_ID"],
+            },
+            {
                 feature: "LLM book genre enrichment",
                 missingEnvVars: ["LLM_API_KEY"],
             },
@@ -36,6 +40,7 @@ describe("getDisabledOptionalIntegrations", () => {
             IGDB_CLIENT_ID: "igdb-id",
             GOOGLE_CLIENT_ID: "google-id",
             GITHUB_CLIENT_ID: "github-id",
+            MAL_CLIENT_ID: "mal-client-id",
             IGDB_CLIENT_SECRET: "igdb-secret",
             ADMIN_MAIL_PASSWORD: "mail-password",
             THEMOVIEDB_API_KEY: "tmdb-key",

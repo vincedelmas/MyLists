@@ -187,6 +187,7 @@ Missing optional integration credentials do not stop the container:
 
 - Without mail credentials, create verified users with the CLI. Email registration, password reset, email changes, and inactive-account email maintenance are disabled.
 - TMDB and IGDB credentials enable their respective external media providers. Missing credentials produce a clear error when that provider is used.
+- `MAL_CLIENT_ID` enables manga search/details and MyAnimeList anime genre enrichment. Without it, manga provider calls are unavailable and anime keeps TMDB genres.
 - GitHub and Google OAuth providers are enabled independently when both values in their credential pair are set.
 - LLM book genre enrichment is skipped when `LLM_API_KEY` is empty.
 

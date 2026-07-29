@@ -1,6 +1,6 @@
 import {logger} from "@/lib/server/core/logger";
 import {TvRepository} from "@/lib/server/domain/media/tv";
-import {JikanApi, TmdbApi} from "@/lib/server/api-providers/api";
+import {MalApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
@@ -13,25 +13,25 @@ import {seriesServerDefinition, SeriesServerDefinition} from "@/lib/media-defini
 type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
 
 
-const createAnimeGenresEnricher = (jikan: JikanApi, maxGenres: number): MediaDetailsEnricher<UpsertTvWithDetails> => {
+const createAnimeGenresEnricher = (mal: MalApi, maxGenres: number): MediaDetailsEnricher<UpsertTvWithDetails> => {
     return async (details, context) => {
-        // If isBulk is true, we don't query Jikan for the genres, so we don't want to override the genres
+        // Bulk refreshes skip MAL enrichment and preserve existing anime-specific genres
         if (context.isBulk) {
             const enriched = { ...details };
-            delete enriched.genresData; // genresData are the genres from TMDB, we want to keep the one from Jikan
+            delete enriched.genresData;
             return enriched;
         }
 
         try {
-            const jikanData = await jikan.getAnimeGenresAndDemographics(details.mediaData.name);
+            const malData = await mal.searchAnimeGenres(details.mediaData.name);
 
             return {
                 ...details,
-                genresData: tmdbTransformer.addAnimeSpecificGenres(jikanData, details.genresData, maxGenres),
+                genresData: tmdbTransformer.addAnimeSpecificGenres(malData, details.genresData, maxGenres),
             };
         }
         catch (err) {
-            logger.warn({ err, animeName: details.mediaData.name }, "Skipping Jikan anime genre enrichment");
+            logger.warn({ err, animeName: details.mediaData.name }, "Skipping MyAnimeList anime genre enrichment");
             return details;
         }
     };
@@ -119,13 +119,13 @@ export const createSeriesIngestionService = (repository: TvRepository, provider:
 };
 
 
-export const createAnimeIngestionService = (jikan: JikanApi, repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
+export const createAnimeIngestionService = (mal: MalApi, repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
     return createMediaIngestionService({
         provider,
         repository,
         refreshCandidates: createTvRefreshCandidates(repository, provider),
         enrichers: [
-            createAnimeGenresEnricher(jikan, animeServerDefinition.ingestion.limits.genres),
+            createAnimeGenresEnricher(mal, animeServerDefinition.ingestion.limits.genres),
         ],
     });
 };

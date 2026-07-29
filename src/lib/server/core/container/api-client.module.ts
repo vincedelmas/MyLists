@@ -1,12 +1,12 @@
-import {createGBooksApi, createHltbApi, createIgdbApi, createJikanApi, createLlmApi, createTmdbApi} from "@/lib/server/api-providers/api";
+import {createGBooksApi, createHltbApi, createIgdbApi, createLlmApi, createMalApi, createTmdbApi} from "@/lib/server/api-providers/api";
 
 
 export const setupApiClientsModule = async () => {
-    const [hltbClient, igdbClient, tmdbClient, jikanClient, gBookClient, llmClient] = await Promise.all([
+    const [hltbClient, igdbClient, tmdbClient, malClient, gBookClient, llmClient] = await Promise.all([
         createHltbApi(),
         createIgdbApi(),
         createTmdbApi(),
-        createJikanApi(),
+        createMalApi(),
         createGBooksApi(),
         createLlmApi(),
     ]);
@@ -14,7 +14,7 @@ export const setupApiClientsModule = async () => {
     return {
         igdb: igdbClient,
         tmdb: tmdbClient,
-        jikan: jikanClient,
+        mal: malClient,
         gBook: gBookClient,
         hltb: hltbClient,
         llmClient: llmClient,

@@ -12,7 +12,7 @@ const MANGA_API_MATCH_NOT_FOUND_REASON = "Manga API match not found";
 const MANGA_API_MATCH_AMBIGUOUS_REASON = "Manga API match is ambiguous";
 
 
-export class ExternalJikanMangaMatcher implements ExternalMediaMatcher {
+export class ExternalMalMangaMatcher implements ExternalMediaMatcher {
     constructor(
         private mangaProvider: ExternalMediaProvider<UpsertMangaWithDetails>,
         private mangaIngestion: MediaIngestionService<UpsertMangaWithDetails>,

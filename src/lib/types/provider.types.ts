@@ -120,141 +120,93 @@ export interface IgdbGameDetails {
 }
 
 
-// --- JIKAN Provider Types --------------------------------------------------------------
+// --- MyAnimeList Provider Types --------------------------------------------------------
 
-interface JikanNamedObject {
-    url: string;
+interface MalGenre {
+    id: number;
     name: string;
-    type: string;
-    mal_id: number;
 }
 
 
-interface jikanPagination {
-    current_page: number;
-    has_next_page: boolean;
-    last_visible_page: number;
-    items: {
-        count: number;
-        total: number;
-        per_page: number;
-    };
+interface MalPicture {
+    medium: string;
+    large?: string | null;
 }
 
 
-interface JikanAnime {
-    url: string;
+interface MalAlternativeTitles {
+    en?: string | null;
+    ja?: string | null;
+    synonyms?: string[] | null;
+}
+
+
+interface MalWork {
+    id: number;
     title: string;
-    type?: string;
-    rank?: number;
-    year?: number;
-    mal_id: number;
-    status: string;
-    score?: number;
-    airing: boolean;
-    source?: string;
-    season?: string;
-    episodes?: number;
-    synopsis?: string;
-    popularity?: number;
-    title_english?: string;
-    title_japanese?: string;
-    genres: JikanNamedObject[];
-    themes: JikanNamedObject[];
-    demographics: JikanNamedObject[];
-    aired: {
-        from: string;
-        to?: string | null;
-    };
-    images: {
-        jpg: {
-            image_url: string;
-            small_image_url: string;
-            large_image_url: string;
-        },
-        webp: {
-            image_url: string;
-            small_image_url: string;
-            large_image_url: string;
-        },
+    genres?: MalGenre[];
+    mean?: number | null;
+    end_date?: string | null;
+    synopsis?: string | null;
+    start_date?: string | null;
+    popularity?: number | null;
+    num_scoring_users?: number;
+    main_picture?: MalPicture | null;
+    alternative_titles?: MalAlternativeTitles | null;
+}
+
+
+interface MalAnimeSearchNode extends MalWork {
+    genres: MalGenre[];
+}
+
+
+type MalMangaSearchNode = MalWork;
+
+
+interface MalPersonRole {
+    role: string;
+    node: {
+        id: number;
+        last_name: string;
+        first_name: string;
     };
 }
 
 
-export interface JikanAnimeSearchResponse {
-    pagination: jikanPagination;
-    data: JikanAnime[];
+interface MalSerialization {
+    role: string;
+    node: {
+        id: number;
+        name: string;
+    };
 }
 
 
-export interface JikanDetails {
-    url: string;
-    type: string;
-    title: string;
-    mal_id: number;
-    status: string;
-    synopsis: string;
-    approved: boolean;
-    background: string;
-    rank: number | null;
-    publishing: boolean;
-    score: number | null;
-    scored: number | null;
-    members: number | null;
-    title_japanese: string;
-    volumes: number | null;
-    chapters: number | null;
-    favorites: number | null;
-    scored_by: number | null;
-    title_synonyms: string[];
-    popularity: number | null;
-    title_english: string | null;
-    titles: {
-        type: string,
-        title: string,
+export interface MalMangaDetails extends MalWork {
+    genres: MalGenre[];
+    num_volumes: number;
+    num_chapters: number;
+    authors: MalPersonRole[];
+    num_scoring_users: number;
+    serialization: MalSerialization[];
+    status: "finished" | "currently_publishing" | "not_yet_published";
+}
+
+
+interface MalListResponse<TNode> {
+    data: {
+        node: TNode,
     }[];
-    images: {
-        jpg: {
-            image_url: string;
-            small_image_url: string;
-            large_image_url: string;
-        };
-        webp: {
-            image_url: string;
-            small_image_url: string;
-            large_image_url: string;
-        };
+    paging?: {
+        next?: string;
+        previous?: string;
     };
-    published: {
-        string: string;
-        to: string | null;
-        from: string | null;
-        prop: {
-            from: {
-                day: number | null,
-                month: number | null,
-                year: number | null,
-            };
-            to: {
-                day: number | null,
-                month: number | null,
-                year: number | null,
-            };
-        };
-    };
-    genres: JikanNamedObject[];
-    themes: JikanNamedObject[];
-    authors: JikanNamedObject[];
-    demographics: JikanNamedObject[];
-    serializations: JikanNamedObject[];
-    explicit_genres: JikanNamedObject[];
 }
 
 
-export interface JikanMangaSearchResponse {
-    pagination: jikanPagination;
-    data: JikanDetails[];
-}
+export type MalAnimeSearchResponse = MalListResponse<MalAnimeSearchNode>;
+export type MalMangaSearchResponse = MalListResponse<MalMangaSearchNode>;
 
 
 // --- TMDB Provider Types --------------------------------------------------------------

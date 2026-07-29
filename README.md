@@ -113,6 +113,7 @@ Below is an explanation for each key found in `.env.example`:
 | **API Keys**                                |                                                             |          |                                |
 | `THEMOVIEDB_API_KEY`                        | Enables movie, series, and anime external data through TMDB | ❌       |                                |
 | `GOOGLE_BOOKS_API_KEY`                      | API key for Google Books                                    | ❌       |                                |
+| `MAL_CLIENT_ID`                             | Enables manga data and anime genres through MyAnimeList     | ❌       |                                |
 | `IGDB_CLIENT_ID` / `IGDB_CLIENT_SECRET`     | Enables game external data through IGDB                     | ❌       |                                |
 | **LLM Integration (Optional)**              |                                                             |          |                                |
 | `LLM_MODEL_ID`                              | Model ID (OpenRouter) used to generate book genres          | ❌       | `google/gemini-2.5-flash-lite` |
@@ -150,7 +151,9 @@ a clear error when used.
   created with the `create-user` CLI.
 - GitHub and Google OAuth are enabled independently when their complete client ID/secret pair is present.
 - Without TMDB, movie, series, and anime external search/details are unavailable. Without IGDB, game external search/details are unavailable.
-- Google Books and Jikan remain available without credentials. `GOOGLE_BOOKS_API_KEY` is optional.
+- Without `MAL_CLIENT_ID`, manga external search/details are unavailable and anime uses TMDB genres without MyAnimeList enrichment. Register an API client at
+  [MyAnimeList API Configuration](https://myanimelist.net/apiconfig).
+- Google Books remains available without credentials. `GOOGLE_BOOKS_API_KEY` is optional.
 - Without `LLM_API_KEY`, book genre enrichment is skipped with a task warning.
 
 For every optional credential pair, either set both values or leave both blank. A partial pair is treated as a configuration error so typos are caught early.

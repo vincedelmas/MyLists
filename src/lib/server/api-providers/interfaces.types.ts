@@ -57,7 +57,7 @@ export type MediaDetailsEnricher<UpsertWithDetails> = {
 
 
 export interface ExternalMediaProvider<TDetails> {
-    source: "tmdb" | "igdb" | "google-books" | "jikan";
+    source: "tmdb" | "igdb" | "google-books" | "mal";
     mediaType: MediaType;
 
     search: SearchCapability;

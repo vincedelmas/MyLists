@@ -20,7 +20,7 @@ describe("createMediaIngestionService", () => {
 
     it("stops bulk one-by-one refresh when the refresh policy aborts on an error", async () => {
         const provider = {
-            source: "jikan",
+            source: "mal",
             mediaType: MediaType.MANGA,
             search: {
                 search: vi.fn(),

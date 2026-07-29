@@ -6,7 +6,7 @@ import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {formatDateForDb} from "@/lib/utils/date-formatting";
 import {
-    JikanAnimeSearchResponse,
+    MalAnimeSearchResponse,
     ProviderSearchResult,
     SearchData,
     TmdbMovieDetails,
@@ -42,6 +42,7 @@ type TmdbTvTransformOptions = TmdbMovieTransformOptions & {
 
 
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w300";
+const MAL_DEMOGRAPHIC_GENRE_NAMES = new Set(["Josei", "Kids", "Seinen", "Shoujo", "Shounen"]);
 
 
 const toUniqueNamedData = (items: { name: string }[] | null | undefined, limit: number) => {
@@ -272,18 +273,12 @@ const transformTvTrends = async (
 };
 
 
-const addAnimeSpecificGenres = (
-    jikanData: JikanAnimeSearchResponse,
-    genresData: { name: string }[] | null | undefined,
-    maxGenres: number,
-) => {
-    const { genres = [], demographics = [] } = jikanData?.data?.[0] || {};
+const addAnimeSpecificGenres = (malData: MalAnimeSearchResponse, genresData: { name: string }[] | null | undefined, maxGenres: number) => {
+    const genres = malData?.data?.[0]?.node?.genres ?? [];
 
-    const genreList = toUniqueNamedData(genres, maxGenres) ?? [];
-    const demographicsList = toUniqueNamedData(demographics, maxGenres) ?? [];
-
-    const demoNames = new Set(demographicsList.map((genre) => genre.name));
-    const nonDemographicGenres = genreList.filter((genre) => !demoNames.has(genre.name));
+    const genreList = toUniqueNamedData(genres, genres.length) ?? [];
+    const demographicsList = genreList.filter((genre) => MAL_DEMOGRAPHIC_GENRE_NAMES.has(genre.name));
+    const nonDemographicGenres = genreList.filter((genre) => !MAL_DEMOGRAPHIC_GENRE_NAMES.has(genre.name));
 
     const combinedGenres = demographicsList.length >= maxGenres
         ? demographicsList

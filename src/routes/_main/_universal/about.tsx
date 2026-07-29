@@ -105,12 +105,6 @@ function AboutPage() {
                             description="Comprehensive book information. Not endorsed or certified by Google."
                         />
                         <ApiCard
-                            title="Jikan API"
-                            href="https://jikan.moe/"
-                            apiHref="https://jikan.moe/"
-                            description="Open-source PHP MyAnimeList.net API. Not endorsed or certified by Jikan."
-                        />
-                        <ApiCard
                             title="MyAnimeList API"
                             href="https://myanimelist.net/"
                             apiHref="https://myanimelist.net/apiconfig/references/api/v2"

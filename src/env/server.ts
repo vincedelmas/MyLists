@@ -43,6 +43,7 @@ export const serverEnv = createEnv({
         // ApiKeys
         THEMOVIEDB_API_KEY: z.string().trim().min(1).optional(),
         GOOGLE_BOOKS_API_KEY: z.string().trim().min(1).optional(),
+        MAL_CLIENT_ID: z.string().trim().min(1).optional(),
         IGDB_CLIENT_ID: z.string().trim().min(1).optional(),
         IGDB_CLIENT_SECRET: z.string().trim().min(1).optional(),
 
@@ -95,6 +96,10 @@ const optionalIntegrations = [
     {
         feature: "Game provider (IGDB)",
         envVars: ["IGDB_CLIENT_ID", "IGDB_CLIENT_SECRET"],
+    },
+    {
+        feature: "Manga provider and anime genre enrichment (MyAnimeList)",
+        envVars: ["MAL_CLIENT_ID"],
     },
     {
         feature: "LLM book genre enrichment",

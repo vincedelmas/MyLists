@@ -1,9 +1,9 @@
 import {MediaType} from "@/lib/utils/enums";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {GBooksDetails, IgdbGameDetails, JikanDetails} from "@/lib/types/provider.types";
+import {GBooksDetails, IgdbGameDetails, MalMangaDetails} from "@/lib/types/provider.types";
 import {gBooksTransformer} from "@/lib/server/api-providers/transformers/gbook.transformer";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
-import {jikanTransformer} from "@/lib/server/api-providers/transformers/jikan.transformer";
+import {malTransformer} from "@/lib/server/api-providers/transformers/mal.transformer";
 
 
 const imageMocks = vi.hoisted(() => ({
@@ -69,35 +69,35 @@ describe("provider relation deduplication", () => {
         ]);
     });
 
-    it("deduplicates Jikan authors before applying the author limit", async () => {
+    it("deduplicates MyAnimeList authors before applying the author limit", async () => {
         const details = {
-            url: "https://myanimelist.net/manga/1",
-            mal_id: 1,
-            volumes: 1,
-            chapters: 1,
+            id: 1,
+            num_volumes: 1,
+            num_chapters: 1,
             synopsis: "",
-            status: "Finished",
-            score: 8,
+            status: "finished",
+            mean: 8,
             title: "Manga",
-            title_english: "Manga",
-            scored_by: 100,
+            alternative_titles: { en: "Manga" },
+            num_scoring_users: 100,
             popularity: 1,
-            published: { from: "2020-01-01", to: "2020-12-31" },
-            serializations: [],
-            images: { jpg: { large_image_url: "https://example.com/manga.jpg" } },
+            start_date: "2020-01-01",
+            end_date: "2020-12-31",
+            serialization: [],
+            main_picture: { medium: "https://example.com/manga.jpg" },
             genres: [
-                { name: "Action" },
-                { name: "Action" },
-                { name: "Comedy" },
+                { id: 1, name: "Action" },
+                { id: 1, name: "Action" },
+                { id: 4, name: "Comedy" },
             ],
             authors: [
-                { name: "Doe, Jane" },
-                { name: "Doe, Jane" },
-                { name: "Smith, John" },
+                { node: { id: 1, first_name: "Jane", last_name: "Doe" }, role: "Story" },
+                { node: { id: 1, first_name: "Jane", last_name: "Doe" }, role: "Art" },
+                { node: { id: 2, first_name: "John", last_name: "Smith" }, role: "Story" },
             ],
-        } as unknown as JikanDetails;
+        } as MalMangaDetails;
 
-        const result = await jikanTransformer.transformDetailsResults(details, {
+        const result = await malTransformer.transformDetailsResults(details, {
             mediaType: MediaType.MANGA,
             coverDirectory: "manga-covers",
             maxAuthors: 2,

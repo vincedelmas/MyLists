@@ -1,4 +1,4 @@
-import {TmdbTvDetails} from "@/lib/types/provider.types";
+import {MalAnimeSearchResponse, TmdbTvDetails} from "@/lib/types/provider.types";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
@@ -125,5 +125,45 @@ describe("tmdbTransformer", () => {
         });
 
         expect(result.mediaData.createdBy).toBe("Top Writer");
+    });
+
+    it("prioritizes MAL demographic genres even when they appear after the genre limit", () => {
+        const malData = {
+            data: [{
+                node: {
+                    id: 1,
+                    title: "Anime",
+                    genres: [
+                        { id: 1, name: "Action" },
+                        { id: 2, name: "Adventure" },
+                        { id: 4, name: "Comedy" },
+                        { id: 8, name: "Drama" },
+                        { id: 10, name: "Fantasy" },
+                        { id: 27, name: "Shounen" },
+                    ],
+                },
+            }],
+            paging: {},
+        } satisfies MalAnimeSearchResponse;
+
+        expect(tmdbTransformer.addAnimeSpecificGenres(malData, [{ name: "Animation" }], 5)).toEqual([
+            { name: "Action" },
+            { name: "Adventure" },
+            { name: "Comedy" },
+            { name: "Drama" },
+            { name: "Shounen" },
+        ]);
+    });
+
+    it("falls back to TMDB genres when MAL returns no matching genres", () => {
+        const malData = { data: [], paging: {} } satisfies MalAnimeSearchResponse;
+
+        expect(tmdbTransformer.addAnimeSpecificGenres(malData, [
+            { name: "Animation" },
+            { name: "Comedy" },
+        ], 5)).toEqual([
+            { name: "Animation" },
+            { name: "Comedy" },
+        ]);
     });
 });

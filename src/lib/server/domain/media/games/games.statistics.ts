@@ -1,4 +1,5 @@
 import {Status} from "@/lib/utils/enums";
+import {toHistogramBins} from "@/lib/utils/stats-utils";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
@@ -14,7 +15,9 @@ export const createGamesStatistics = (definition: GamesServerDefinition = gamesS
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
-            .select({ average: sql<number | null>`avg(${listTable.playtime} / ${minutesPerInputUnit})`.as("avg_playtime") })
+            .select({
+                average: sql<number | null>`avg(${listTable.playtime} / ${minutesPerInputUnit})`,
+            })
             .from(listTable)
             .where(and(forUser, ne(listTable.status, Status.PLAN_TO_PLAY), isNotNull(listTable.playtime)))
             .get();
@@ -29,7 +32,7 @@ export const createGamesStatistics = (definition: GamesServerDefinition = gamesS
         const distribution = await getDbClient()
             .select({
                 name: playtimeHoursLog,
-                value: count(mediaTable.id).as("count"),
+                value: count(mediaTable.id),
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
@@ -37,7 +40,9 @@ export const createGamesStatistics = (definition: GamesServerDefinition = gamesS
             .groupBy(playtimeHoursLog)
             .orderBy(asc(playtimeHoursLog));
 
-        return distribution.map((point) => ({ name: String(Math.pow(2, point.name)), value: point.value }));
+        const points = distribution.map(point => ({ value: point.value, name: Math.pow(2, point.name) }));
+
+        return toHistogramBins(points, (start) => start * 2);
     };
 
     return defineMediaStatistics({

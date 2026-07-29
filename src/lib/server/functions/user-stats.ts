@@ -30,8 +30,10 @@ export const getUserStats = createServerFn({ method: "GET" })
 
             return {
                 ...stats,
+                mediaType: null,
                 activatedMediaTypes,
-                mediaType: undefined,
+                scope: "user" as const,
+                kind: "overview" as const,
                 ratingSystem: user.ratingSystem,
             };
         }
@@ -46,6 +48,8 @@ export const getUserStats = createServerFn({ method: "GET" })
             ...stats,
             activatedMediaTypes,
             mediaType: activeTab,
+            kind: "media" as const,
+            scope: "user" as const,
             ratingSystem: user.ratingSystem,
         } as AdvancedMediaStats;
     });

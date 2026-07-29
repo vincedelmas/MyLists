@@ -2,6 +2,7 @@ import {logger} from "@/lib/server/core/logger";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {SQLiteColumn} from "drizzle-orm/sqlite-core";
 import {statusUtils} from "@/lib/utils/media-mapping";
+import {toHistogramBins} from "@/lib/utils/stats-utils";
 import {userMediaSettings} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {TopAffinity, TopAffinityDefinition} from "@/lib/types/stats.types";
@@ -35,9 +36,9 @@ export const getMediaStatsUserScope = (listUserId: SQLiteColumn, mediaType: Medi
             .select({ value: sql<number>`1` })
             .from(userMediaSettings)
             .where(and(
+                eq(userMediaSettings.active, true),
                 eq(userMediaSettings.userId, listUserId),
                 eq(userMediaSettings.mediaType, mediaType),
-                eq(userMediaSettings.active, true),
             )),
     );
 };
@@ -175,16 +176,18 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
         const decadeExpression = sql<number>`(CAST(strftime('%Y', ${mediaTable.releaseDate}) AS INTEGER) / 10) * 10`;
 
-        return getDbClient()
+        const rows = await getDbClient()
             .select({
                 name: decadeExpression,
-                value: sql<number>`COUNT(${mediaTable.id})`,
+                value: count(mediaTable.id),
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
             .where(and(forUser, isNotNull(mediaTable.releaseDate)))
             .groupBy(decadeExpression)
             .orderBy(asc(decadeExpression));
+
+        return toHistogramBins(rows, (start) => start + 10);
     };
 
     const computeTopGenresStats = async (mediaAvgRating: number | null, userId?: number) => {

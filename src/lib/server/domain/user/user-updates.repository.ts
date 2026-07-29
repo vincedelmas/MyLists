@@ -131,14 +131,14 @@ export class UserUpdatesRepository {
 
         const query = getDbClient()
             .select({
-                name: sql<string>`strftime('%m-%Y', ${userMediaUpdate.timestamp})`.as("name"),
-                value: count(userMediaUpdate.mediaId).as("value"),
+                value: count(userMediaUpdate.mediaId),
+                name: sql<string>`strftime('%Y-%m', ${userMediaUpdate.timestamp})`,
             })
             .from(userMediaUpdate)
             .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.active, true),
                 eq(userMediaSettings.userId, userMediaUpdate.userId),
                 eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
-                eq(userMediaSettings.active, true),
             ))
             .$dynamic();
 
@@ -153,7 +153,7 @@ export class UserUpdatesRepository {
 
         const monthlyCounts = await query
             .where(conditions.length > 0 ? and(...conditions) : undefined)
-            .groupBy(sql`strftime('%m-%Y', ${userMediaUpdate.timestamp})`)
+            .groupBy(sql`strftime('%Y-%m', ${userMediaUpdate.timestamp})`)
             .orderBy(sql`strftime('%Y-%m', ${userMediaUpdate.timestamp})`);
 
         const totalUpdates = monthlyCounts.reduce((a, c) => a + c.value, 0);

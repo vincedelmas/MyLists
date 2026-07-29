@@ -1,5 +1,6 @@
 import {Status} from "@/lib/utils/enums";
-import {and, asc, eq, isNotNull, ne, sql} from "drizzle-orm";
+import {toHistogramBins} from "@/lib/utils/stats-utils";
+import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
 import {MovieServerDefinition, moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
@@ -12,7 +13,9 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
-            .select({ average: sql<number | null>`avg(${mediaTable.duration})` })
+            .select({
+                average: sql<number | null>`avg(${mediaTable.duration})`,
+            })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
             .where(and(forUser, ne(listTable.status, Status.PLAN_TO_WATCH), isNotNull(mediaTable.duration)))
@@ -25,16 +28,18 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
         const durationBucket = sql<number>`floor(${mediaTable.duration} / 30.0) * 30`;
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
-        return getDbClient()
+        const rows = await getDbClient()
             .select({
+                value: count(mediaTable.id),
                 name: durationBucket.mapWith(String),
-                value: sql`cast(count(${mediaTable.id}) as int)`.mapWith(Number).as("count"),
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
             .where(and(forUser, ne(listTable.status, Status.PLAN_TO_WATCH), isNotNull(mediaTable.duration)))
             .groupBy(durationBucket)
             .orderBy(asc(durationBucket));
+
+        return toHistogramBins(rows, (start) => start + 30);
     };
 
     const computeBudgetRevenue = async (userId?: number) => {

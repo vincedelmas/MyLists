@@ -4,7 +4,7 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Card} from "@/lib/client/components/ui/card";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {Button} from "@/lib/client/components/ui/button";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 
 
@@ -25,12 +25,17 @@ export const DisabledMediaListNotice = ({ mediaType, compact = false }: Disabled
                 <p className="text-xs text-muted-foreground">
                     Your {mediaType} list is disabled. To track this media, enable it in your settings.
                 </p>
-                <Button size="sm" variant={compact ? "outline" : "default"} className={cn(!compact && "w-full")} asChild>
-                    <Link to="/settings/content-lists">
-                        <Settings className="size-3.5"/>
-                        Enable in settings
-                    </Link>
-                </Button>
+                <Link
+                    to="/settings/content-lists"
+                    className={buttonVariants({
+                        size: "sm",
+                        className: cn(!compact && "w-full"),
+                        variant: compact ? "outline" : "default",
+                    })}
+                >
+                    <Settings className="size-3.5"/>
+                    Enable in settings
+                </Link>
             </div>
         </>
     );

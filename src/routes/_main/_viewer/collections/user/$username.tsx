@@ -4,7 +4,7 @@ import {ListOrdered, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -83,11 +83,12 @@ function UserCollectionsPage() {
 
                     <div className="col-span-1 flex items-center justify-end gap-5">
                         {isOwner &&
-                            <Button asChild className="justify-center whitespace-nowrap" size="sm" variant="emeraldy">
-                                <Route.Link to="/collections/create">
-                                    <Plus className="size-4"/> New collection
-                                </Route.Link>
-                            </Button>
+                            <Route.Link
+                                to="/collections/create"
+                                className={buttonVariants({ variant: "emeraldy", size: "sm", className: "justify-center whitespace-nowrap" })}
+                            >
+                                <Plus className="size-4"/> New collection
+                            </Route.Link>
                         }
                         <div className="pr-2">
                             <QuickActions username={username}/>

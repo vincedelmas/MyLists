@@ -21,9 +21,9 @@ export const UpdateFavorite = ({ updateFavorite, isFavorite, disabled = false }:
 
     return (
         <Button
+            size="bare"
             type="button"
-            size="iconBare"
-            variant="invisible"
+            variant="ghost"
             onClick={handleFavorite}
             aria-pressed={Boolean(isFavorite)}
             disabled={updateFavorite.isPending || disabled}

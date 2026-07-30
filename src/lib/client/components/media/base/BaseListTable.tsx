@@ -50,9 +50,9 @@ export const getBaseColumns = <T extends UserMediaItem>(props: ColumnConfigProps
                 if (isCurrent) {
                     return (
                         <Button
+                            size="bare"
                             type="button"
-                            size="iconBare"
-                            variant="invisible"
+                            variant="ghost"
                             onClick={() => onEdit(original.mediaId)}
                             className="flex w-full items-center justify-center"
                         >

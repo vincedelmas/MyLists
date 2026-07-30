@@ -367,13 +367,13 @@ const SearchFilter = ({ mediaType, username, filterKey, job, title, dataList, re
                     <Badge key={item} className="mt-2 bg-neutral-800 h-8 px-4 text-sm gap-2" variant="outline">
                         {item}
                         <Button
+                            size="bare"
                             type="button"
-                            size="iconBare"
-                            variant="invisible"
+                            variant="ghost"
                             className="hover:opacity-80 -mr-1"
                             onClick={() => handleRemoveData(item)}
                         >
-                            <X className="h-4 w-4"/>
+                            <X className="size-4"/>
                         </Button>
                     </Badge>
                 )}

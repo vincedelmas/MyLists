@@ -79,7 +79,7 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
                     <Button
                         size="bare"
                         type="button"
-                        variant="invisible"
+                        variant="ghost"
                         disabled={disabled}
                         onClick={handleEditToggle} className="disabled:opacity-40"
                     >

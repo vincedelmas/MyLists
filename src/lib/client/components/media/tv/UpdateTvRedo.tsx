@@ -44,7 +44,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
             <Button
                 size="bare"
                 type="button"
-                variant="invisible"
+                variant="ghost"
                 onClick={() => onOpenChange(true)}
                 className="w-34 text-start flex items-center justify-between bg-accent/30 h-8 rounded-md border px-3"
             >
@@ -65,7 +65,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                             <div className="flex gap-3 items-center">
                                 <Button
                                     size="bare"
-                                    variant="invisible"
+                                    variant="ghost"
                                     onClick={() => updateAllSeasons(-1)}
                                     disabled={draftRedo.every((s) => s <= 0)}
                                 >
@@ -73,7 +73,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                 </Button>
                                 <Button
                                     size="bare"
-                                    variant="invisible"
+                                    variant="ghost"
                                     onClick={() => updateAllSeasons(1)}
                                     disabled={draftRedo.every((s) => s >= REDO_MAX)}
                                 >
@@ -94,7 +94,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                     <div className="flex gap-3 items-center">
                                         <Button
                                             size="bare"
-                                            variant="invisible"
+                                            variant="ghost"
                                             disabled={season <= 0}
                                             onClick={() => updateSeason(idx, -1)}
                                         >
@@ -102,7 +102,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                         </Button>
                                         <Button
                                             size="bare"
-                                            variant="invisible"
+                                            variant="ghost"
                                             disabled={season >= REDO_MAX}
                                             onClick={() => updateSeason(idx, 1)}
                                         >

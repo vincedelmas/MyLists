@@ -1,5 +1,5 @@
 import {tokenSchema} from "@/lib/schemas";
-import {Button} from "@/lib/client/components/ui/button";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
 import {getReactivateInactiveAccount} from "@/lib/server/functions/account-lifecycle";
 
@@ -41,11 +41,9 @@ const ReactivateAccountResult = ({ success }: { success: boolean }) => (
                     : "This reactivation link is invalid, expired, or was already used."
                 }
             </p>
-            <Button asChild className="mt-6">
-                <Link to="/login">
-                    Go to Login
-                </Link>
-            </Button>
+            <Link to="/login" className={buttonVariants({ className: "mt-6" })}>
+                Go to Login
+            </Link>
         </div>
     </div>
 );

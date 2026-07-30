@@ -96,7 +96,7 @@ function UserManagementPage() {
             accessorKey: "id",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Id <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 );
@@ -107,7 +107,7 @@ function UserManagementPage() {
             accessorKey: "privacy",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -118,7 +118,7 @@ function UserManagementPage() {
             accessorKey: "name",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Username <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -153,7 +153,7 @@ function UserManagementPage() {
             accessorKey: "createdAt",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Registered <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -164,7 +164,7 @@ function UserManagementPage() {
             accessorKey: "updatedAt",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Last Seen <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -175,7 +175,7 @@ function UserManagementPage() {
             accessorKey: "showUpdateModal",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Flags <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -219,7 +219,7 @@ function UserManagementPage() {
             accessorKey: "role",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Role <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -240,7 +240,7 @@ function UserManagementPage() {
             accessorKey: "emailVerified",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Active <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )

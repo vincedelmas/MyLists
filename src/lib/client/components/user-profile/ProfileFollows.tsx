@@ -1,7 +1,7 @@
 import {UserRoundX} from "lucide-react";
 import {Link} from "@tanstack/react-router";
-import {Button} from "@/lib/client/components/ui/button";
 import {UserFollowsType} from "@/lib/types/query.options.types";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
@@ -58,11 +58,13 @@ export const ProfileFollows = ({ username, followsCount, follows }: ProfileFollo
                 </div>
 
                 {followsCount > 0 &&
-                    <Button className="mt-4" variant="dashed" asChild>
-                        <Link to="/profile/$username/follows" params={{ username }}>
-                            View all {followsCount} follows
-                        </Link>
-                    </Button>
+                    <Link
+                        params={{ username }}
+                        to="/profile/$username/follows"
+                        className={buttonVariants({ variant: "dashed", className: "mt-4" })}
+                    >
+                        View all {followsCount} follows
+                    </Link>
                 }
             </CardContent>
         </Card>

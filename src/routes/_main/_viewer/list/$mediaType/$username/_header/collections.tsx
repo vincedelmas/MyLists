@@ -4,7 +4,7 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Input} from "@/lib/client/components/ui/input";
-import {Button} from "@/lib/client/components/ui/button";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {SimpleSearch, simpleSearchSchema} from "@/lib/schemas";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -54,12 +54,13 @@ function CollectionsTab() {
 
                 <div className="flex items-center gap-5 max-sm:w-full">
                     {isOwner &&
-                        <Button asChild className="whitespace-nowrap" size="sm" variant="emeraldy">
-                            <Route.Link to="/collections/create">
-                                <Plus className="size-4"/>
-                                New collection
-                            </Route.Link>
-                        </Button>
+                        <Route.Link
+                            to="/collections/create"
+                            className={buttonVariants({ variant: "emeraldy", size: "sm", className: "whitespace-nowrap" })}
+                        >
+                            <Plus className="size-4"/>
+                            New collection
+                        </Route.Link>
                     }
                     <div className="relative w-72 max-sm:min-w-0 max-sm:flex-1">
                         <Input

@@ -75,9 +75,9 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                                                 : item
                                             }
                                             <Button
+                                                size="bare"
                                                 type="button"
-                                                size="iconBare"
-                                                variant="invisible"
+                                                variant="ghost"
                                                 className="hover:opacity-80 -mr-1"
                                                 onClick={() => removeFilter(key as keyof MediaListArgs, item)}
                                             >
@@ -99,9 +99,9 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                                 >
                                     {String(value)}
                                     <Button
+                                        size="bare"
                                         type="button"
-                                        size="iconBare"
-                                        variant="invisible"
+                                        variant="ghost"
                                         className="hover:opacity-80 -mr-1"
                                         onClick={() => removeFilter(key as keyof MediaListArgs, value)}
                                     >
@@ -134,9 +134,9 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                                     >
                                         {keyName}
                                         <Button
+                                            size="bare"
                                             type="button"
-                                            size="iconBare"
-                                            variant="invisible"
+                                            variant="ghost"
                                             className="hover:opacity-80 -mr-1"
                                             onClick={() => removeFilter(key as keyof MediaListArgs, value)}
                                         >
@@ -149,7 +149,7 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                     </div>
                 }
                 {Object.keys(localFilters).length > 0 &&
-                    <Button type="button" size="bare" variant="invisible" onClick={removeAllFilters} className="ml-2 text-muted-foreground">
+                    <Button type="button" size="bare" variant="ghost" onClick={removeAllFilters} className="ml-2 text-muted-foreground">
                         Clear All
                     </Button>
                 }

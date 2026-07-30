@@ -2,7 +2,7 @@ import {Award} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {getDifficultyColors} from "@/lib/utils/theme-utils";
-import {Button} from "@/lib/client/components/ui/button";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {AchievementsType} from "@/lib/types/query.options.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
@@ -53,11 +53,9 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                     }
                 </div>
                 {achievements.length !== 0 &&
-                    <Button className="mt-4" variant="dashed" asChild>
-                        <Link to="/achievements/$username" params={{ username }}>
-                            View all achievements
-                        </Link>
-                    </Button>
+                    <Link to="/achievements/$username" params={{ username }} className={buttonVariants({ variant: "dashed", className: "mt-4" })}>
+                        View all achievements
+                    </Link>
                 }
             </CardContent>
         </Card>

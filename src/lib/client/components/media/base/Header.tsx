@@ -60,33 +60,15 @@ export const Header = (props: HeaderProps) => {
                 </div>
 
                 <div className="flex items-center justify-start gap-3">
-                    <Button
-                        variant="outline"
-                        onClick={onFilterClick}
-                        title="Advanced Filters"
-                    >
+                    <Button variant="outline" onClick={onFilterClick} title="Advanced Filters">
                         <Filter className="size-4"/> Filters
                     </Button>
-                    <div className="flex h-9 items-center justify-center rounded-md border bg-input/30 px-1">
-                        <button
-                            onClick={onGridClick}
-                            className={cn("p-1.5 rounded-sm transition-all", isGrid
-                                ? "bg-background shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground",
-                            )}
-                        >
-                            <Grid2X2 className="size-4"/>
-                        </button>
-                        <button
-                            onClick={onGridClick}
-                            className={cn("p-1.5 rounded-sm transition-all", isGrid
-                                ? "text-muted-foreground hover:text-foreground"
-                                : "bg-background shadow-sm text-foreground",
-                            )}
-                        >
-                            <List className="size-4"/>
-                        </button>
-                    </div>
+                    <Button variant="outline" onClick={onGridClick} className="shrink-0 min-w-20">
+                        {isGrid
+                            ? <><List className="size-4"/> Table</>
+                            : <><Grid2X2 className="size-4"/> Grid</>
+                        }
+                    </Button>
                 </div>
             </div>
         );
@@ -121,30 +103,12 @@ export const Header = (props: HeaderProps) => {
                 sorting={pagination.sorting}
                 allSorting={pagination.availableSorting}
             />
-            <div className="h-9 flex items-center rounded-md border bg-input/30 px-1">
-                <button
-                    onClick={onGridClick}
-                    className={cn(
-                        "p-1.5 rounded-sm transition-all",
-                        isGrid
-                            ? "bg-background shadow-sm text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                    )}
-                >
-                    <Grid2X2 className="size-4"/>
-                </button>
-                <button
-                    onClick={onGridClick}
-                    className={cn(
-                        "p-1.5 rounded-sm transition-all",
-                        isGrid
-                            ? "text-muted-foreground hover:text-foreground"
-                            : "bg-background shadow-sm text-foreground",
-                    )}
-                >
-                    <List className="size-4"/>
-                </button>
-            </div>
+            <Button variant="outline" onClick={onGridClick} className="shrink-0 min-w-20">
+                {isGrid
+                    ? <><List className="size-4"/> Table</>
+                    : <><Grid2X2 className="size-4"/> Grid</>
+                }
+            </Button>
         </div>
     );
 };

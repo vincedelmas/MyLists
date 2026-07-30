@@ -61,7 +61,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "mediaType",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Type <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -70,7 +70,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "privacy",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -79,7 +79,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "title",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Collection <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -94,7 +94,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "ownerName",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     User <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -112,7 +112,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "viewCount",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Views <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -121,7 +121,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "likeCount",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Likes <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -130,7 +130,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "copiedCount",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Copies <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -139,7 +139,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "createdAt",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Created <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),

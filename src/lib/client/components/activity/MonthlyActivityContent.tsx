@@ -179,9 +179,9 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                     <MediaCornerCommon/>
                                     <div className="absolute right-2 top-2 z-10 flex gap-1">
                                         <Button
+                                            size="bare"
                                             type="button"
-                                            size="iconBare"
-                                            variant="invisible"
+                                            variant="ghost"
                                             onClick={() => setEditActivity(row)}
                                             title={`Edit Monthly Activity for ${row.mediaName}`}
                                         >

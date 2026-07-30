@@ -71,10 +71,10 @@ export function UserUpdate({ update, username, onDelete, canDelete, isPending, m
             </div>
             {canDelete &&
                 <Button
-                    variant="invisible"
+                    variant="ghost"
                     disabled={isPending}
                     onClick={() => handleDeleteUpdate(update.id)}
-                    className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-80 disabled:opacity-0 disabled:pointer-events-none"
+                    className="absolute bottom-0 right-0 opacity-0 group-hover:opacity-80 disabled:pointer-events-none"
                 >
                     <Trash className="size-4"/>
                 </Button>

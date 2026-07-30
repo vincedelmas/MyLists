@@ -1,6 +1,6 @@
 import dedent from "dedent";
 import {Card} from "@/lib/client/components/ui/card";
-import {Button} from "@/lib/client/components/ui/button";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
@@ -45,12 +45,15 @@ function RouteComponent() {
                 <OnboardingDemoBox>
                     <div className="flex flex-col items-center w-full max-w-md shadow-sm">
                         <div className="space-y-6 max-lg:mb-0">
-                            <Button variant="outline" className="w-full gap-2" asChild>
-                                <a href={media.providerData.url} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="size-4"/>
-                                    View on {media.providerData.name}
-                                </a>
-                            </Button>
+                            <a
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={media.providerData.url}
+                                className={buttonVariants({ variant: "outline", className: "w-full gap-2" })}
+                            >
+                                <ExternalLink className="size-4"/>
+                                View on {media.providerData.name}
+                            </a>
                             <Card>
                                 <div className="text-center space-y-2">
                                     <h3 className="text-lg font-semibold text-slate-200">

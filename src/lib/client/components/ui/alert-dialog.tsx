@@ -1,7 +1,8 @@
 import * as React from "react";
 import {cn} from "@/lib/utils/classnames";
-import {Button} from "@/lib/client/components/ui/button";
+import type {VariantProps} from "class-variance-authority";
 import {AlertDialog as AlertDialogPrimitive} from "radix-ui";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 
 
 function AlertDialog({ ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
@@ -120,30 +121,26 @@ function AlertDialogMedia({ className, ...props }: React.ComponentProps<"div">) 
 }
 
 
-function AlertDialogAction({ className, variant = "default", size = "default", ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Action> &
-    Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {
+function AlertDialogAction({ className, variant = "default", size = "default", ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Action>
+    & VariantProps<typeof buttonVariants>) {
     return (
-        <Button variant={variant} size={size} asChild>
-            <AlertDialogPrimitive.Action
-                className={cn(className)}
-                data-slot="alert-dialog-action"
-                {...props}
-            />
-        </Button>
+        <AlertDialogPrimitive.Action
+            className={cn(buttonVariants({ variant, size }), className)}
+            data-slot="alert-dialog-action"
+            {...props}
+        />
     )
 }
 
 
-function AlertDialogCancel({ className, variant = "outline", size = "default", ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel> &
-    Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {
+function AlertDialogCancel({ className, variant = "outline", size = "default", ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>
+    & VariantProps<typeof buttonVariants>) {
     return (
-        <Button variant={variant} size={size} asChild>
-            <AlertDialogPrimitive.Cancel
-                data-slot="alert-dialog-cancel"
-                className={cn(className)}
-                {...props}
-            />
-        </Button>
+        <AlertDialogPrimitive.Cancel
+            data-slot="alert-dialog-cancel"
+            className={cn(buttonVariants({ variant, size }), className)}
+            {...props}
+        />
     )
 }
 

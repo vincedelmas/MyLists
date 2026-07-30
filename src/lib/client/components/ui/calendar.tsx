@@ -116,7 +116,7 @@ function Calendar({
                     "text-muted-foreground opacity-50",
                     defaultClassNames.disabled
                 ),
-                hidden: cn("invisible", defaultClassNames.hidden),
+                hidden: cn("ghost", defaultClassNames.hidden),
                 ...classNames,
             }}
             components={{

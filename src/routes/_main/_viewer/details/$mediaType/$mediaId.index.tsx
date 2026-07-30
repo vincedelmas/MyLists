@@ -5,7 +5,7 @@ import {Card} from "@/lib/client/components/ui/card";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
@@ -114,12 +114,15 @@ function MediaDetailsPage() {
                                 mediaType={mediaType}
                             />
 
-                            <Button variant="outline" className="w-full gap-2" asChild>
-                                <a href={media.providerData.url} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="size-4"/>
-                                    View on {media.providerData.name}
-                                </a>
-                            </Button>
+                            <a
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={media.providerData.url}
+                                className={buttonVariants({ variant: "outline", className: "w-full gap-2" })}
+                            >
+                                <ExternalLink className="size-4"/>
+                                View on {media.providerData.name}
+                            </a>
 
                             {userMedia && isMediaTypeActive ?
                                 <UserMediaDetails

@@ -1,21 +1,21 @@
+import React from "react";
 import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {BookOpen, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {communityCollectionsSchema, CommunitySearch} from "@/lib/schemas";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {communityCollectionsOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import React from "react";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/discover")({
@@ -77,11 +77,16 @@ function CollectionsDiscoverPage() {
                     </div>
 
                     {!isAnonymous &&
-                        <Button asChild className="col-span-1 justify-center whitespace-nowrap sm:w-auto" size="sm" variant="emeraldy">
-                            <Link to="/collections/create">
-                                <Plus className="size-4 shrink-0"/> New collection
-                            </Link>
-                        </Button>
+                        <Link
+                            to="/collections/create"
+                            className={buttonVariants({
+                                size: "sm",
+                                variant: "emeraldy",
+                                className: "col-span-1 justify-center whitespace-nowrap sm:w-auto",
+                            })}
+                        >
+                            <Plus className="size-4 shrink-0"/> New collection
+                        </Link>
                     }
                 </div>
 

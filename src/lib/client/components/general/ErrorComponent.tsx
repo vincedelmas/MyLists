@@ -2,8 +2,8 @@ import React from "react";
 import {clientEnv} from "@/env/client";
 import {Link} from "@tanstack/react-router";
 import {ArrowLeft, Home} from "lucide-react";
-import {Button} from "@/lib/client/components/ui/button";
 import {Card, CardContent} from "@/lib/client/components/ui/card";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 
 
 interface ErrorComponentProps {
@@ -39,11 +39,9 @@ export const ErrorComponent = ({ title, icon, text, footerText }: ErrorComponent
                                 >
                                     <ArrowLeft className="size-4"/> Go Back?
                                 </Button>
-                                <Button asChild className="flex items-center gap-2" variant="emeraldy">
-                                    <Link to="/">
-                                        <Home className="size-4"/> Home
-                                    </Link>
-                                </Button>
+                                <Link to="/" className={buttonVariants({ variant: "emeraldy", className: "flex items-center gap-2" })}>
+                                    <Home className="size-4"/> Home
+                                </Link>
                             </div>
                         </div>
                         <div className="pt-3 border-t">

@@ -38,7 +38,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
             <MediaCard item={userMedia} mediaType={mediaType}>
                 <div className="absolute right-2 top-2 z-10">
                     {isCurrent &&
-                        <Button type="button" size="iconBare" variant="invisible" onClick={() => setDialogOpen(true)}>
+                        <Button type="button" size="bare" variant="ghost" onClick={() => setDialogOpen(true)}>
                             <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
                         </Button>
                     }

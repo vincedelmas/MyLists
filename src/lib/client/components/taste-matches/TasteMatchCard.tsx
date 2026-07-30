@@ -4,14 +4,14 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Card} from "@/lib/client/components/ui/card";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {Button} from "@/lib/client/components/ui/button";
 import {TasteMatch} from "@/lib/types/query.options.types";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Progress} from "@/lib/client/components/ui/progress";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; activeTab: "all" | MediaType }) => {
@@ -39,11 +39,9 @@ export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; ac
                             profileUsername={match.name}
                             social={{ followId: match.id, followStatus: match.followStatus }}
                         />
-                        <Button asChild variant="secondary">
-                            <Link to="/profile/$username" params={{ username: match.name }}>
-                                View profile
-                            </Link>
-                        </Button>
+                        <Link to="/profile/$username" params={{ username: match.name }} className={buttonVariants({ variant: "secondary" })}>
+                            View profile
+                        </Link>
                     </div>
                 </div>
 

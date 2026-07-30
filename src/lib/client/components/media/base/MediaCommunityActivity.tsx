@@ -2,8 +2,8 @@ import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ExtractFollowByType} from "@/lib/types/query.options.types";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
@@ -15,8 +15,8 @@ import {ChevronDown, CircleHelp, Clock, Eye, Heart, RotateCcw, Star} from "lucid
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 
 
-type MediaCommunityActivityQuery = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaCommunityActivityOptions>["queryFn"]>>>;
 type CommunityActivityItem = MediaCommunityActivityQuery["items"][number];
+type MediaCommunityActivityQuery = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaCommunityActivityOptions>["queryFn"]>>>;
 
 
 interface CommunityActivityProps {
@@ -64,11 +64,13 @@ export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivity
 
             {apiData.total > visibleItems.length &&
                 <div className="text-end -mt-1">
-                    <Button variant="ghost" size="xs" asChild>
-                        <Link to="/details/$mediaType/$mediaId/community" params={{ mediaType, mediaId }}>
-                            View All <ChevronDown className="size-3.5"/>
-                        </Link>
-                    </Button>
+                    <Link
+                        params={{ mediaType, mediaId }}
+                        to="/details/$mediaType/$mediaId/community"
+                        className={buttonVariants({ variant: "ghost", size: "xs" })}
+                    >
+                        View All <ChevronDown className="size-3.5"/>
+                    </Link>
                 </div>
             }
         </section>

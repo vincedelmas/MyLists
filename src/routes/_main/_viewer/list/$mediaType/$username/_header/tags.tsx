@@ -6,7 +6,6 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
-import {DropdownMenu} from "@radix-ui/react-dropdown-menu";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {SimpleSearch, simpleSearchSchema} from "@/lib/schemas";
 import {Layers, MoreVertical, Pen, Tags, Trash2} from "lucide-react";
@@ -15,7 +14,7 @@ import {Pagination} from "@/lib/client/components/general/Pagination";
 import {tagsViewOptions} from "@/lib/client/react-query/query-options";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/tags")({

@@ -160,7 +160,7 @@ export const Navbar = () => {
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <div className="relative">
-                                            <Button variant="invisible" className="flex items-center gap-2 text-lg font-semibold px-1">
+                                            <Button variant="ghost" className="flex items-center gap-2 text-lg font-semibold px-1">
                                                 <ProfileIcon
                                                     fallbackSize="text-base"
                                                     user={{ name: currentUser.name, image: currentUser.image! }}

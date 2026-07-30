@@ -1,11 +1,12 @@
 import {cn} from "@/lib/utils/classnames";
 import {Award, Check} from "lucide-react";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {AchCard} from "@/lib/types/query.options.types";
 import {getDifficultyColors} from "@/lib/utils/theme-utils";
-import {Progress} from "@/lib/client/components/ui/progress";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {TiersDetails} from "@/lib/client/components/achievements/TierDetails";
+import {Progress, ProgressLabel, ProgressValue} from "@/lib/client/components/ui/progress";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
 
@@ -27,9 +28,7 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
     const borderColorClass = getDifficultyColors(displayDifficulty, "border");
 
     const tierForProgressDisplay = nextTier ?? tiers[tiers.length - 1];
-    const currentCount = tierForProgressDisplay?.count ?? 0;
     const progressValue = tierForProgressDisplay?.progress ?? 0;
-    const criteriaCount = tierForProgressDisplay?.criteria.count ?? 0;
 
     return (
         <Card className={cn("px-4", borderColorClass)}>
@@ -56,28 +55,22 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
                 <CardDescription className="line-clamp-2" title={description ?? ""}>
                     {description}
                 </CardDescription>
-                <div>
-                    <div className="flex justify-between items-center mb-1 text-muted-foreground text-xs capitalize">
-                        <span>
-                            {nextTier?.difficulty ?
-                                <div>
-                                    Next: {nextTier.difficulty}{" "}
-                                    <Award className={cn("size-3.5 inline-block", getDifficultyColors(nextTier.difficulty))}/>
-                                </div>
-                                :
-                                <div className="text-app-accent">
-                                    Completed{" "}
-                                    <Check className="size-3.5 inline-block"/>
-                                </div>
-                            }
-                        </span>
-                        <p>{currentCount}/{criteriaCount} ({Math.round(currentCount / criteriaCount * 100)}%)</p>
-                    </div>
-                    <Progress
-                        value={progressValue}
-                        color={"rgba(216,216,216,0.89)"}
-                    />
-                </div>
+                <Progress value={progressValue} color="var(--app-accent)">
+                    <ProgressLabel>
+                        {nextTier?.difficulty ?
+                            <div>
+                                Next: {capitalize(nextTier.difficulty)}{" "}
+                                <Award className={cn("size-3.5 inline-block", getDifficultyColors(nextTier.difficulty))}/>
+                            </div>
+                            :
+                            <div className="text-app-accent">
+                                Completed{" "}
+                                <Check className="size-3.5 inline-block"/>
+                            </div>
+                        }
+                    </ProgressLabel>
+                    <ProgressValue/>
+                </Progress>
                 <TiersDetails
                     achievement={achievement}
                 />

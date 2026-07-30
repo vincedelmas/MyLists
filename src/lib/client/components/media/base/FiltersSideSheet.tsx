@@ -149,7 +149,7 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
                                                     <Checkbox
                                                         id="favoriteCheck"
                                                         defaultChecked={filters.favorite}
-                                                        onCheckedChange={(checked) => handleRegisterChange("favorite", !!checked)}
+                                                        onCheckedChange={(checked) => handleRegisterChange("favorite", checked)}
                                                     />
                                                     <label htmlFor="favoriteCheck" className="text-sm cursor-pointer">
                                                         Favorites
@@ -159,7 +159,7 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
                                                     <Checkbox
                                                         id="commentCheck"
                                                         defaultChecked={filters.comment}
-                                                        onCheckedChange={(checked) => handleRegisterChange("comment", !!checked)}
+                                                        onCheckedChange={(checked) => handleRegisterChange("comment", checked)}
                                                     />
                                                     <label htmlFor="commentCheck" className="text-sm cursor-pointer">
                                                         Comments
@@ -170,7 +170,7 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
                                                         <Checkbox
                                                             id="commonCheck"
                                                             defaultChecked={filters?.hideCommon ?? false}
-                                                            onCheckedChange={(checked) => handleRegisterChange("hideCommon", !!checked)}
+                                                            onCheckedChange={(checked) => handleRegisterChange("hideCommon", checked)}
                                                         />
                                                         <label htmlFor="commonCheck" className="text-sm cursor-pointer">
                                                             Hide Common

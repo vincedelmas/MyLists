@@ -103,7 +103,7 @@ export function MonthlyActivityFormFields({ mediaType, showHidden = false, movin
                         <FormControl>
                             <Checkbox
                                 checked={field.value ?? false}
-                                onCheckedChange={(value) => field.onChange(!!value)}
+                                onCheckedChange={(value) => field.onChange(value)}
                             />
                         </FormControl>
                         <FormLabel className="font-normal">
@@ -123,7 +123,7 @@ export function MonthlyActivityFormFields({ mediaType, showHidden = false, movin
                             <FormControl>
                                 <Checkbox
                                     checked={field.value ?? false}
-                                    onCheckedChange={(value) => field.onChange(!!value)}
+                                    onCheckedChange={(value) => field.onChange(value)}
                                 />
                             </FormControl>
                             <div className="space-y-1">

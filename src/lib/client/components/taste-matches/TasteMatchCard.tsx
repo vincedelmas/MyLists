@@ -160,7 +160,6 @@ const MediaScores = ({ match, activeTab }: { match: TasteMatch; activeTab: Media
                             </div>
                             <Progress
                                 color="var(--app-accent)"
-                                className="h-1.5 bg-muted"
                                 value={score?.similarity ?? 0}
                             />
                         </div>

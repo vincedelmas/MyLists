@@ -84,7 +84,7 @@ function TasteMatchesPage() {
                                 <Switch
                                     id="hide-followed"
                                     checked={hideFollowed}
-                                    className="data-[state=checked]:bg-app-accent"
+                                    className="data-checked:bg-app-accent"
                                     onCheckedChange={(checked) => updateFilters({ page: 1, hideFollowed: checked })}
                                 />
                             </label>

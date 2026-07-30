@@ -33,7 +33,6 @@ export const HofRanking = ({ userRanks }: HofRankingProps) => {
                                     </div>
                                 </div>
                                 <Progress
-                                    max={100}
                                     className="mt-1.5"
                                     color={getThemeColor(rank.mediaType)}
                                     value={100 - (rank.percent ? rank.percent : 100)}

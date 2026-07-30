@@ -60,8 +60,9 @@ function AllUpdates() {
                     {isCurrent &&
                         <Checkbox
                             aria-label="Select all"
-                            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+                            checked={table.getIsAllPageRowsSelected()}
+                            onCheckedChange={(value) => table.toggleAllPageRowsSelected(value)}
+                            indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
                         />
                     }
                 </>
@@ -72,7 +73,7 @@ function AllUpdates() {
                         <Checkbox
                             aria-label="Select row"
                             checked={row.getIsSelected()}
-                            onCheckedChange={(value) => row.toggleSelected(!!value)}
+                            onCheckedChange={(value) => row.toggleSelected(value)}
                         />
                     }
                 </>

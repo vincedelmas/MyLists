@@ -52,9 +52,8 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
                     variant="ghost"
                     onClick={handleRefresh}
                     disabled={refreshDisabled}
-                    className="h-8 gap-2 px-3 text-xs"
                 >
-                    <RefreshCw className={cn("size-3.5", refreshMutation.isPending && "animate-spin")}/> Refresh
+                    <RefreshCw className={cn(refreshMutation.isPending && "animate-spin")}/> Refresh
                 </Button>
             }
 
@@ -66,11 +65,7 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
                 <Link
                     params={{ mediaType, mediaId }}
                     to="/details/edit/$mediaType/$mediaId"
-                    className={buttonVariants({
-                        size: "sm",
-                        variant: "ghost",
-                        className: "h-8 gap-2 px-3 text-xs",
-                    })}
+                    className={buttonVariants({ size: "sm", variant: "ghost" })}
                 >
                     <Pencil className="size-3.5"/> Edit
                 </Link>

@@ -48,9 +48,9 @@ export const TiersDetails = ({ achievement }: TierDetailsProps) => {
                                     <TableCell>
                                         <div className="flex items-center space-x-2">
                                             <Progress
-                                                className="w-24 h-2"
+                                                className="w-24"
                                                 value={tier.progress}
-                                                color={"rgba(216,216,216,0.89)"}
+                                                color="var(--primary)"
                                             />
                                             <span className="text-xs">
                                                 {tier.count}/{tier.criteria.count}

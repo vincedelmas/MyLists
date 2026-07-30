@@ -104,7 +104,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
 
             <Progress
                 value={progress}
-                color="var(--color-app-accent)"
+                color="var(--app-accent)"
             />
 
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">

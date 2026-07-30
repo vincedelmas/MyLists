@@ -46,7 +46,7 @@ export type TopAffinityDefinition = {
 export type HistogramBin = {
     start: number;
     value: number;
-    endExclusive: number;
+    endExclusive: number | null;
 };
 
 

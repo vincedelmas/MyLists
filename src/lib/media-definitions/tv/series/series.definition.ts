@@ -35,7 +35,7 @@ export const seriesDefinition = defineMediaDefinition({
         },
         durationDistribution: {
             unit: "h",
-            rangeMode: "continuous",
+            rangeMode: "integer",
             label: "Series Duration Distribution",
         },
     },

@@ -55,8 +55,12 @@ export const toHistogramBins = (points: NamedValue[], getEndExclusive: (start: n
 export const formatHistogramBin = (bin: HistogramBin, unit?: string, rangeMode: "continuous" | "integer" = "integer") => {
     const suffix = unit ? ` ${unit}` : "";
 
+    if (bin.endExclusive === null) {
+        return `${formatBucketBoundary(bin.start)}+${suffix}`;
+    }
+
     if (rangeMode === "continuous") {
-        return `${formatBucketBoundary(bin.start)}–<${formatBucketBoundary(bin.endExclusive)}${suffix}`;
+        return `${formatBucketBoundary(bin.start)}–${formatBucketBoundary(bin.endExclusive)}${suffix}`;
     }
 
     const inclusiveEnd = bin.endExclusive - 1;
@@ -72,7 +76,7 @@ export const formatHistogramOverflowBin = (bin: HistogramBin, direction: Histogr
     const suffix = unit ? ` ${unit}` : "";
 
     return direction === "lower"
-        ? `Before ${formatBucketBoundary(bin.endExclusive)}${suffix}`
+        ? `Before ${formatBucketBoundary(bin.endExclusive as number)}${suffix}`
         : `${formatBucketBoundary(bin.start)}+${suffix}`;
 };
 

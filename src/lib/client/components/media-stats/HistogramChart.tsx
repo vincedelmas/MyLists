@@ -28,7 +28,6 @@ export function HistogramChart(props: HistogramChartProps) {
 
     const compactedBins = compactHistogramBins(data, { tailDirection });
     const overflow = compactedBins.find(item => item.overflow)?.overflow;
-    const hasGroupedRanges = compactedBins.some(({ overflow: itemOverflow, sourceBinCount }) => !itemOverflow && sourceBinCount > 1);
 
     const chartData = compactedBins.map(({ bin, overflow }) => ({
         value: bin.value,
@@ -45,7 +44,6 @@ export function HistogramChart(props: HistogramChartProps) {
     const compactionDescription = [
         overflow === "lower" ? "Earlier data are aggregated in the first bar." : null,
         overflow === "upper" ? "The upper tail is aggregated in the final bar." : null,
-        hasGroupedRanges ? "Adjacent ranges are grouped consistently to keep the chart readable." : null,
     ].filter(Boolean).join(" ");
 
     const chartDescription = [description, compactionDescription].filter(Boolean).join(" ") || undefined;

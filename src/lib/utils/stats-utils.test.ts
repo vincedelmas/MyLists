@@ -46,7 +46,12 @@ describe("stats utilities", () => {
             { start: 1, endExclusive: 2, value: 4 },
             "h",
             "continuous",
-        )).toBe("1–<2 h");
+        )).toBe("1–2 h");
+        expect(formatHistogramBin(
+            { start: 5000, endExclusive: null, value: 2 },
+            "h",
+            "continuous",
+        )).toBe("5000+ h");
     });
 
     it("keeps every bin when the histogram already fits", () => {

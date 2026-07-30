@@ -35,6 +35,7 @@ export const mangaDefinition = defineMediaDefinition({
         },
         durationDistribution: {
             unit: "ch.",
+            rangeMode: "integer",
             label: "Chapters Distribution",
         },
     },

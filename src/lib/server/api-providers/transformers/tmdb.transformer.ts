@@ -9,6 +9,7 @@ import {
     MalAnimeSearchResponse,
     ProviderSearchResult,
     SearchData,
+    TMDB_APPENDED_TV_SEASONS,
     TmdbMovieDetails,
     TmdbMovieSearchResult,
     TmdbMultiSearchResponse,
@@ -53,6 +54,25 @@ const toUniqueNamedData = (items: { name: string }[] | null | undefined, limit: 
 };
 
 
+const getTvDuration = (rawData: TmdbTvDetails, defaultDuration: number) => {
+    const globalDuration = rawData.episode_run_time?.[0];
+    if (globalDuration) {
+        return globalDuration;
+    }
+
+    const episodeRuntimes = TMDB_APPENDED_TV_SEASONS
+        .flatMap((season) => rawData[season]?.episodes ?? [])
+        .map((episode) => episode.runtime)
+        .filter((runtime): runtime is number => !!runtime);
+
+    if (episodeRuntimes.length === 0) {
+        return defaultDuration;
+    }
+
+    return Math.round(episodeRuntimes.reduce((total, runtime) => total + runtime, 0) / episodeRuntimes.length);
+};
+
+
 const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: TmdbTvTransformOptions) => {
     const { coverDirectory, defaultDuration, maxActors, maxGenres, maxNetworks, maxWriters } = options;
 
@@ -90,9 +110,9 @@ const transformTvDetailsResults = async (rawData: TmdbTvDetails, options: TmdbTv
         originCountry: rawData?.origin_country?.[0],
         totalSeasons: rawData?.number_of_seasons ?? 1,
         totalEpisodes: rawData?.number_of_episodes ?? 1,
+        duration: getTvDuration(rawData, defaultDuration),
         lastAirDate: formatDateForDb(rawData.last_air_date),
         releaseDate: formatDateForDb(rawData.first_air_date),
-        duration: rawData?.episode_run_time?.[0] ?? defaultDuration,
         seasonToAir: rawData?.next_episode_to_air?.season_number ?? null,
         episodeToAir: rawData?.next_episode_to_air?.episode_number ?? null,
         nextEpisodeToAir: formatDateForDb(rawData?.next_episode_to_air?.air_date),

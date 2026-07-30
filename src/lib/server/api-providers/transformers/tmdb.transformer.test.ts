@@ -112,6 +112,40 @@ describe("tmdbTransformer", () => {
         expect(result.networkData).toEqual([{ name: "HBO Max" }]);
     });
 
+    it("uses the episode-weighted average when TMDB has no global TV runtime", async () => {
+        const details = createTvDetails();
+        details.episode_run_time = [];
+        details["season/1"] = {
+            episodes: [
+                { runtime: 20 },
+                { runtime: 20 },
+            ],
+        } as typeof details["season/1"];
+        details["season/2"] = {
+            episodes: [
+                { runtime: 50 },
+            ],
+        } as typeof details["season/2"];
+
+        const result = await tmdbTransformer.transformTvDetailsResults(details, seriesTransformOptions);
+
+        expect(result.mediaData.duration).toBe(30);
+    });
+
+    it("prefers TMDB's global TV runtime over appended episode runtimes", async () => {
+        const details = createTvDetails();
+        details["season/1"] = {
+            episodes: [
+                { runtime: 20 },
+                { runtime: 20 },
+            ],
+        } as typeof details["season/1"];
+
+        const result = await tmdbTransformer.transformTvDetailsResults(details, seriesTransformOptions);
+
+        expect(result.mediaData.duration).toBe(45);
+    });
+
     it("uses the media-specific fallback writer limit", async () => {
         const details = createTvDetails();
         details.credits.crew = [

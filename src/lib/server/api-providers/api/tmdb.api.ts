@@ -4,6 +4,7 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {
     SearchData,
+    TMDB_APPENDED_TV_SEASONS,
     TmdbChangesResponse,
     TmdbMovieDetails,
     TmdbMultiSearchResponse,
@@ -68,7 +69,10 @@ export const createTmdbApi = async () => {
 
         async getTvDetails(tvId: number): Promise<TmdbTvDetails> {
             const apiKey = getApiKey();
-            const response = await http.call(`${config.baseUrl}/tv/${tvId}?api_key=${apiKey}&append_to_response=credits`);
+
+            const appendToRes = ["credits", ...TMDB_APPENDED_TV_SEASONS].join(",");
+            const response = await http.call(`${config.baseUrl}/tv/${tvId}?api_key=${apiKey}&append_to_response=${appendToRes}`);
+
             return response.json();
         },
 

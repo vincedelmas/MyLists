@@ -322,7 +322,6 @@ interface Network {
 interface Episode {
     id: number;
     name: string;
-    runtime: number;
     show_id: number;
     overview: string;
     air_date: string;
@@ -331,6 +330,7 @@ interface Episode {
     episode_type: string;
     season_number: number;
     episode_number: number;
+    runtime: number | null;
     production_code: string;
     still_path: string | null;
 }
@@ -345,6 +345,20 @@ interface Season {
     episode_count: number;
     season_number: number;
     poster_path: string | null;
+}
+
+
+export const TMDB_APPENDED_TV_SEASONS = [
+    "season/1",
+    "season/2",
+    "season/3",
+    "season/4",
+    "season/5",
+] as const;
+
+
+interface TmdbTvSeasonDetails {
+    episodes: Episode[];
 }
 
 
@@ -377,6 +391,11 @@ export interface TmdbTvDetails {
     genres: IdNamePair[];
     created_by: CreatedBy[];
     last_episode_to_air: Episode;
+    "season/1"?: TmdbTvSeasonDetails;
+    "season/2"?: TmdbTvSeasonDetails;
+    "season/3"?: TmdbTvSeasonDetails;
+    "season/4"?: TmdbTvSeasonDetails;
+    "season/5"?: TmdbTvSeasonDetails;
     next_episode_to_air: Episode | null;
     credits: {
         cast: {

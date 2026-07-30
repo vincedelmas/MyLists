@@ -1,12 +1,12 @@
 import React from "react";
 import {cn} from "@/lib/utils/classnames";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {Calendar, Clock, LucideIcon, Star} from "lucide-react";
 import {extractDate, formatCalendarRelativeDate, formatMonth} from "@/lib/utils/date-formatting";
-import {formatNumber} from "@/lib/utils/number-formatting";
 
 
 interface MediaInfoGridItemProps {
-    label: string;
+    label: React.ReactNode;
     children: React.ReactNode;
 }
 

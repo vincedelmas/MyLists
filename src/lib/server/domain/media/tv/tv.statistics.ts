@@ -1,4 +1,5 @@
 import {Status} from "@/lib/utils/enums";
+import {toHistogramBins} from "@/lib/utils/stats-utils";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, asc, count, eq, ne, notInArray, sql} from "drizzle-orm";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
@@ -16,7 +17,9 @@ export const createTvStatistics = (definition: TvDefinition) => {
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
-            .select({ totalSeasons: sql<number>`coalesce(sum(${listTable.currentSeason}), 0)` })
+            .select({
+                totalSeasons: sql<number>`coalesce(sum(${listTable.currentSeason}), 0)`,
+            })
             .from(listTable)
             .where(and(forUser, ne(listTable.status, Status.PLAN_TO_WATCH)))
             .get();
@@ -28,7 +31,9 @@ export const createTvStatistics = (definition: TvDefinition) => {
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
-            .select({ average: sql<number | null>`AVG(${mediaTable.duration} * ${listTable.total})` })
+            .select({
+                average: sql<number | null>`avg(${mediaTable.duration} * ${listTable.total})`,
+            })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
             .where(and(forUser, notInArray(listTable.status, [Status.RANDOM, Status.PLAN_TO_WATCH])))
@@ -41,16 +46,18 @@ export const createTvStatistics = (definition: TvDefinition) => {
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
         const durationBucket = sql<number>`floor((${mediaTable.duration} * ${mediaTable.totalEpisodes}) / 600.0) * 600`;
 
-        return getDbClient()
+        const rows = await getDbClient()
             .select({
+                value: count(mediaTable.id),
                 name: sql`(${durationBucket}) / 60`.mapWith(String),
-                value: count(mediaTable.id).as("count"),
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
             .where(and(forUser, notInArray(listTable.status, [Status.RANDOM, Status.PLAN_TO_WATCH])))
             .groupBy(durationBucket)
             .orderBy(asc(durationBucket));
+
+        return toHistogramBins(rows, (start) => start + 10);
     };
 
     return defineMediaStatistics({

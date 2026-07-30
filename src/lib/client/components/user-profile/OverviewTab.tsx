@@ -1,15 +1,16 @@
 import {Link} from "@tanstack/react-router";
 import {RatingSystemType} from "@/lib/utils/enums";
-import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
 import {getThemeColor} from "@/lib/utils/theme-utils";
-import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
+import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
 import {Clock, ClockAlert, MoveRight, Star} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
+import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
 import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
-import {DistributionContainer} from "@/lib/client/components/user-profile/ProfileDistrib";
+import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
 import {MediaGlobalSummaryType, PerMediaSummaryType} from "@/lib/types/query.options.types";
+import {SegmentedDistributionBar} from "@/lib/client/components/general/SegmentedDistributionBar";
 
 
 interface OverviewTabProps {
@@ -24,7 +25,15 @@ interface OverviewTabProps {
 export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, highlightedMedia }: OverviewTabProps) => {
     const rating = globalStats.avgRated;
     const distributionTotalDays = perMedia.reduce((total, media) => total + media.timeSpentDays, 0);
-    
+
+    const timeSegments = distributionTotalDays > 0
+        ? perMedia.map(({ mediaType, timeSpentDays }) => ({
+            label: mediaType,
+            color: getThemeColor(mediaType),
+            percentage: (timeSpentDays / distributionTotalDays) * 100,
+        }))
+        : [];
+
     const ratingDisplay = ratingSystem === "score"
         ? formatNumber(rating, { fractionDigits: 2, locale: "en" })
         : getFeelingIcon(rating, { size: 28, className: "mt-1" });
@@ -58,45 +67,27 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
                         message="No time to display yet."
                     />
                     :
-                    <div className="flex w-full gap-0.5 h-5 rounded-sm overflow-hidden bg-background">
-                        {perMedia.map((media) => {
-                            const percentage = (media.timeSpentDays / distributionTotalDays) * 100;
-                            if (percentage <= 0) return null;
-
-                            return (
-                                <div
-                                    key={media.mediaType}
-                                    className="h-full flex items-center justify-center transition-all"
-                                    title={`${media.mediaType}: ${formatPercent(percentage)}`}
-                                    style={{
-                                        width: `${percentage}%`,
-                                        backgroundColor: getThemeColor(media.mediaType),
-                                    }}
-                                >
-                                    {percentage > 5 &&
-                                        <span className="text-xs truncate tracking-wider font-medium text-black px-0.5">
-                                        {formatPercent(percentage, { fractionDigits: 0 })}
-                                    </span>
-                                    }
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <SegmentedDistributionBar
+                        segments={timeSegments}
+                        renderSegment={({ percentage }) => percentage > 5 ?
+                            <span className="truncate px-0.5 text-xs font-medium tracking-wider text-black">
+                                {formatPercent(percentage, { fractionDigits: 0 })}
+                            </span>
+                            :
+                            null
+                        }
+                    />
                 }
                 <div className="flex w-full gap-1 mt-1 pb-2">
-                    {perMedia.map((media) => {
-                        const percentage = (media.timeSpentDays / distributionTotalDays) * 100;
-
-                        return (
-                            <div key={media.mediaType} className="overflow-hidden" style={{ width: `${percentage}%` }}>
-                                {percentage > 5 &&
-                                    <span className="block font-medium text-xs text-muted-foreground uppercase tracking-wider truncate">
-                                        {media.mediaType}
-                                    </span>
-                                }
-                            </div>
-                        );
-                    })}
+                    {timeSegments.map(({ label, percentage }) =>
+                        <div key={label} className="basis-0 overflow-hidden" style={{ flexGrow: percentage }}>
+                            {percentage > 5 &&
+                                <span className="block font-medium text-xs text-muted-foreground uppercase tracking-wider truncate">
+                                    {label}
+                                </span>
+                            }
+                        </div>
+                    )}
                 </div>
             </DistributionContainer>
 

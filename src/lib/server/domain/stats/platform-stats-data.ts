@@ -11,7 +11,9 @@ export const getPlatformStatsData = async (activeTab: StatsActiveTab) => {
         const platformStats = await userStatsService.platformAdvancedStatsSummary();
         return {
             ...platformStats,
-            mediaType: undefined,
+            mediaType: null,
+            kind: "overview" as const,
+            scope: "platform" as const,
             ratingSystem: RatingSystemType.SCORE,
             activatedMediaTypes: Object.values(MediaType),
         };
@@ -21,6 +23,8 @@ export const getPlatformStatsData = async (activeTab: StatsActiveTab) => {
     return {
         ...mediaStats,
         mediaType: activeTab,
+        kind: "media" as const,
+        scope: "platform" as const,
         ratingSystem: RatingSystemType.SCORE,
         activatedMediaTypes: Object.values(MediaType),
     } as AdvancedMediaStats;

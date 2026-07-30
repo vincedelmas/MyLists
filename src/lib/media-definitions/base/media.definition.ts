@@ -24,6 +24,7 @@ type MediaStatsDefinition = Readonly<{
     durationDistribution: Readonly<{
         unit: string;
         label: string;
+        rangeMode?: "continuous" | "integer";
     }>;
 }>;
 

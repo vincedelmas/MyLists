@@ -69,13 +69,13 @@ describe("MoviesStatistics", () => {
         expect(stats.ratings.find(({ name }) => name === "6.0")?.value).toBe(1);
         expect(stats.ratings.find(({ name }) => name === "8.0")?.value).toBe(1);
         expect(stats.releaseDates).toEqual([
-            { name: 1990, value: 1 },
-            { name: 2000, value: 2 },
+            { start: 1990, endExclusive: 2000, value: 1 },
+            { start: 2000, endExclusive: 2010, value: 2 },
         ]);
         expect(stats.durationDistrib).toEqual([
-            { name: "90", value: 1 },
-            { name: "120", value: 1 },
-            { name: "150", value: 1 },
+            { start: 90, endExclusive: 120, value: 1 },
+            { start: 120, endExclusive: 150, value: 1 },
+            { start: 150, endExclusive: 180, value: 1 },
         ]);
         expect(stats.genresStats[0]).toMatchObject({ name: "Drama" });
         expect(stats.actorsStats[0]).toMatchObject({ name: "Shared Actor" });
@@ -92,13 +92,13 @@ describe("MoviesStatistics", () => {
         expect(stats.totalRevenue).toBe(120);
         expect(stats.ratings.find(({ name }) => name === "10.0")?.value).toBe(0);
         expect(stats.releaseDates).toEqual([
-            { name: 1990, value: 1 },
-            { name: 2000, value: 2 },
+            { start: 1990, endExclusive: 2000, value: 1 },
+            { start: 2000, endExclusive: 2010, value: 2 },
         ]);
         expect(stats.durationDistrib).toEqual([
-            { name: "90", value: 1 },
-            { name: "120", value: 1 },
-            { name: "150", value: 1 },
+            { start: 90, endExclusive: 120, value: 1 },
+            { start: 120, endExclusive: 150, value: 1 },
+            { start: 150, endExclusive: 180, value: 1 },
         ]);
         expect(stats.genresStats.some(({ name }) => name === "Hidden Genre")).toBe(false);
         expect(stats.actorsStats.some(({ name }) => name === "Hidden Actor")).toBe(false);

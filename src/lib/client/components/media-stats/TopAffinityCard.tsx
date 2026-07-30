@@ -1,9 +1,9 @@
 import React from "react";
 import {Link} from "@tanstack/react-router";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {TopAffinity} from "@/lib/types/stats.types";
 import {JobType, MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {CircleHelp, CircleOff, Heart, Play, Star} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
@@ -37,7 +37,7 @@ export const TopAffinityCard = ({ title, topAffinity, job, mediaType }: TopAffin
                 />
                 :
                 topAffinity.map((item, idx) =>
-                    <div key={item.name} className="flex items-center justify-between rounded-md px-2 py-1.5
+                    <div key={item.name} className="flex items-center justify-between rounded-md pr-2 py-1.5
                         transition-colors hover:bg-muted/50">
                         <div className="flex min-w-0 items-center gap-2">
                                 <span className="w-5 text-sm text-muted-foreground">
@@ -47,7 +47,7 @@ export const TopAffinityCard = ({ title, topAffinity, job, mediaType }: TopAffin
                                 <span className="truncate text-sm font-medium">
                                     {job && mediaType ?
                                         <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job, name: item.name }}>
-                                            <>{capitalize(item.name)}</>
+                                            {capitalize(item.name)}
                                         </Link>
                                         :
                                         <>{capitalize(item.name)}</>
@@ -87,7 +87,10 @@ export const TopAffinityCard = ({ title, topAffinity, job, mediaType }: TopAffin
 const AffinityPopover = () => {
     return (
         <Popover>
-            <PopoverTrigger className="opacity-70 hover:opacity-100">
+            <PopoverTrigger
+                aria-label="How the affinity score is calculated"
+                className="rounded-sm opacity-70 outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring"
+            >
                 <CircleHelp className="size-4"/>
             </PopoverTrigger>
             <PopoverContent className="w-75">

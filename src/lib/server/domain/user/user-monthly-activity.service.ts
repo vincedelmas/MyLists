@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {fillMonthlyActivityTimeline} from "@/lib/utils/stats-utils";
 import {MediaMonthlyActivityRegistry} from "@/lib/server/domain/media/media.registries";
 import {MonthlyActivityMedia} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {calendarDateRangeToISOString, compareDateInputs} from "@/lib/utils/date-formatting";
@@ -141,11 +142,22 @@ export class UserMonthlyActivityService {
     }
 
     async getActivityStatsByMonth(filters: { userId?: number, mediaType?: MediaType, startYear?: number, excludeBulkImports?: boolean } = {}) {
+        const now = new Date();
+        const currentYear = now.getUTCFullYear();
+        const startYear = filters.startYear ?? currentYear;
+
+        const startMonth = `${startYear}-01`;
         const mediaTypes = filters.mediaType ? [filters.mediaType] : Object.values(MediaType);
+
+        const endMonth = startYear === currentYear
+            ? `${currentYear}-${zeroPad(now.getUTCMonth() + 1)}`
+            : `${startYear}-12`;
+
         const activities = await this.repository.getProgressStatsByMonth({
+            endMonth,
+            startMonth,
             userId: filters.userId,
             mediaType: filters.mediaType,
-            startMonth: `${filters.startYear ?? 2026}-01`,
             excludeBulkImports: filters.excludeBulkImports,
         });
 
@@ -172,19 +184,13 @@ export class UserMonthlyActivityService {
         }
 
         const sortedData = [...chartMap.values()].sort((a, b) => a.month.localeCompare(b.month));
-        const lastMonth = sortedData.at(-1)?.month ?? `${filters.startYear ?? 2026}-01`;
-        const endDate = new Date(`${lastMonth}-01T00:00:00.000Z`);
-        const currentDate = new Date(`${filters.startYear ?? 2026}-01-01T00:00:00.000Z`);
-        const byMonth = new Map(sortedData.map((entry) => [entry.month, entry]));
-        const result: MonthlyActivityChartDatum[] = [];
+        const result = fillMonthlyActivityTimeline({ data: sortedData, endMonth, mediaTypes, startMonth });
 
-        while (currentDate <= endDate) {
-            const month = `${currentDate.getUTCFullYear()}-${zeroPad(currentDate.getUTCMonth() + 1)}`;
-            result.push(byMonth.get(month) ?? ({ month, total: 0 } as MonthlyActivityChartDatum));
-            currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
-        }
-
-        return { mediaTypes, data: result };
+        return {
+            mediaTypes,
+            data: result,
+            range: { startMonth, endMonth },
+        };
     }
 
     private async _getMediaByType(activities: MonthlyActivityMediaRef[]) {

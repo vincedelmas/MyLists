@@ -9,7 +9,7 @@ interface DashboardContentProps {
 
 
 export const DashboardContent = ({ data }: DashboardContentProps) => {
-    if (data.mediaType === undefined) {
+    if (data.kind === "overview") {
         return <OverviewDashboard stats={data}/>;
     }
 

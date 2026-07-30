@@ -1,6 +1,7 @@
 import {Status} from "@/lib/utils/enums";
-import {and, asc, eq, isNotNull, ne, sql} from "drizzle-orm";
+import {toHistogramBins} from "@/lib/utils/stats-utils";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {and, asc, count, eq, isNotNull, ne, sql} from "drizzle-orm";
 import {defineMediaStatistics, getMediaStatsUserScope} from "@/lib/server/domain/media/base/base.statistics";
 import {mangaServerDefinition, MangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 
@@ -12,7 +13,9 @@ export const createMangaStatistics = (definition: MangaServerDefinition = mangaS
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
-            .select({ average: sql<number | null>`avg(${mediaTable.chapters})` })
+            .select({
+                average: sql<number | null>`avg(${mediaTable.chapters})`,
+            })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
             .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(mediaTable.chapters)))
@@ -25,16 +28,18 @@ export const createMangaStatistics = (definition: MangaServerDefinition = mangaS
         const durationBucket = sql<number>`floor(${mediaTable.chapters} / 50.0) * 50`;
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
-        return getDbClient()
+        const rows = await getDbClient()
             .select({
+                value: count(mediaTable.id),
                 name: durationBucket.mapWith(String),
-                value: sql`cast(count(${mediaTable.id}) as int)`.mapWith(Number).as("count"),
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
             .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(mediaTable.chapters)))
             .groupBy(durationBucket)
             .orderBy(asc(durationBucket));
+
+        return toHistogramBins(rows, (start) => start + 50);
     };
 
     return defineMediaStatistics({

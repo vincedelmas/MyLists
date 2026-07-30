@@ -70,13 +70,15 @@ export class UserMonthlyActivityRepository {
             .orderBy(asc(userMediaMonthlyActivity.lastActivityAt));
     }
 
-    static async getProgressStatsByMonth(filters: { userId?: number, mediaType?: MediaType, startMonth: string, excludeBulkImports?: boolean }) {
+    static async getProgressStatsByMonth(filters: { userId?: number; mediaType?: MediaType; startMonth: string; endMonth: string; excludeBulkImports?: boolean }) {
         const conditions: SQL[] = [
             eq(userMediaMonthlyActivity.hidden, false),
             gt(userMediaMonthlyActivity.progressGained, 0),
+            lte(userMediaMonthlyActivity.monthBucket, filters.endMonth),
             gte(userMediaMonthlyActivity.monthBucket, filters.startMonth),
             sql`strftime('%Y-%m', ${userMediaMonthlyActivity.monthBucket} || '-01') = ${userMediaMonthlyActivity.monthBucket}`,
         ];
+
         if (filters.userId) conditions.push(eq(userMediaMonthlyActivity.userId, filters.userId));
         if (filters.mediaType) conditions.push(eq(userMediaMonthlyActivity.mediaType, filters.mediaType));
 

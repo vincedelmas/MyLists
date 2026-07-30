@@ -1,3 +1,4 @@
+import React from "react";
 import {cn} from "@/lib/utils/classnames";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 
@@ -13,8 +14,8 @@ interface StatCardProps {
 
 export function StatCard({ title, value, subtitle, icon, className }: StatCardProps) {
     return (
-        <Card className={cn("relative overflow-hidden", className)}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <Card className={cn("relative min-w-0 overflow-hidden", className)}>
+            <CardHeader className="flex min-w-0 flex-row items-center justify-between gap-2 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                     {title}
                 </CardTitle>
@@ -24,8 +25,8 @@ export function StatCard({ title, value, subtitle, icon, className }: StatCardPr
                     </div>
                 }
             </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">
+            <CardContent className="min-w-0">
+                <div className="wrap-break-word text-2xl font-bold">
                     {value}
                 </div>
                 {subtitle &&

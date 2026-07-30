@@ -35,6 +35,7 @@ export const booksDefinition = defineMediaDefinition({
         },
         durationDistribution: {
             unit: "p.",
+            rangeMode: "integer",
             label: "Pages Distribution",
         },
     },

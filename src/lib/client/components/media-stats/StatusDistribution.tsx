@@ -1,8 +1,10 @@
-import {Status} from "@/lib/utils/enums";
 import {NamedValue} from "@/lib/types/stats.types";
-import {formatPercent} from "@/lib/utils/number-formatting";
-import {StatusBullet} from "@/lib/client/components/general/StatusBullet";
-import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {getThemeColor} from "@/lib/utils/theme-utils";
+import {BarChart3, ChartNoAxesColumn} from "lucide-react";
+import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
+import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
+import {SegmentedDistributionBar} from "@/lib/client/components/general/SegmentedDistributionBar";
 
 
 interface StatusDistributionProps {
@@ -12,38 +14,49 @@ interface StatusDistributionProps {
 
 
 export function StatusDistribution({ statuses, total }: StatusDistributionProps) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-base mb-0">
-                    Status Distribution
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-x-12 gap-y-4">
-                {statuses.map(({ name, value }) => {
-                    const percentage = total > 0 ? (value / total) * 100 : 0;
+    const distribution = statuses
+        .filter(({ value }) => value > 0)
+        .map(({ name, value }) => ({
+            value,
+            name: String(name),
+            percentage: total > 0 ? (value / total) * 100 : 0,
+        }));
 
-                    return (
-                        <div key={name} className="flex items-center justify-start font-semibold">
-                            <StatusBullet
-                                className="size-4 mr-3"
-                                status={name as Status}
-                            />
-                            <div>
-                                <div className="text-muted-foreground">
+    const segments = distribution.map(({ name, percentage }) => ({
+        percentage,
+        label: name,
+        color: getThemeColor(name),
+    }))
+
+    return (
+        <DistributionContainer label="Status Distribution" icon={BarChart3}>
+            {distribution.length === 0 ?
+                <EmptyState
+                    className="min-h-24"
+                    icon={ChartNoAxesColumn}
+                    message="No statuses to display yet."
+                />
+                :
+                <>
+                    <SegmentedDistributionBar
+                        segments={segments}
+                    />
+
+                    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
+                        {distribution.map(({ name, percentage, value }) =>
+                            <div key={name} className="flex items-center gap-1.5 text-sm">
+                                <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: getThemeColor(name) }}/>
+                                <span className="font-medium text-muted-foreground">
                                     {name}
-                                </div>
-                                <div className="flex items-baseline gap-1 text-lg max-sm:text-base">
-                                    {value}
-                                    <div className="text-xs">
-                                        ({formatPercent(percentage)})
-                                    </div>
-                                </div>
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    {formatNumber(value)} · {formatPercent(percentage)}
+                                </span>
                             </div>
-                        </div>
-                    );
-                })}
-            </CardContent>
-        </Card>
+                        )}
+                    </div>
+                </>
+            }
+        </DistributionContainer>
     );
 }

@@ -3,8 +3,9 @@ import {getThemeColor} from "@/lib/utils/theme-utils";
 import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {MonthlyActivityChartDatum} from "@/lib/types/activity.types";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
-import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
+import {Bar, BarChart, ResponsiveContainer, Tooltip, TooltipContentProps, XAxis, YAxis} from "recharts";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 
 
 interface ActivityByMonthChartProps {
@@ -13,84 +14,108 @@ interface ActivityByMonthChartProps {
     mediaType?: MediaType;
     mediaTypes: MediaType[];
     data: MonthlyActivityChartDatum[];
+    range: {
+        endMonth: string;
+        startMonth: string;
+    };
 }
 
 
-export function ActivityByMonthChart({ title, data, mediaTypes, mediaType, stacked = false }: ActivityByMonthChartProps) {
-    const displayMediaTypes = mediaType ? [mediaType] : mediaTypes;
+export function ActivityByMonthChart({ title, data, mediaTypes, mediaType, range, stacked = false }: ActivityByMonthChartProps) {
+    const hasData = data.some(({ total }) => total > 0);
+    const requestedMediaTypes = mediaType ? [mediaType] : mediaTypes;
+
+    const description = `${formatMonthYear(range.startMonth)} – ${formatMonthYear(range.endMonth)}`;
+    const populatedMediaTypes = requestedMediaTypes.filter(mt => data.some((datum) => Number(datum[mt]) > 0));
+
+    const displayMediaTypes = populatedMediaTypes.length > 0 ? populatedMediaTypes : requestedMediaTypes;
     const height = displayMediaTypes.length > 1 ? 350 : 300;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-base">
-                    {title}
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={height}>
-                    <BarChart data={data} className="-ml-6">
-                        <XAxis
-                            dataKey="month"
-                            tickLine={false}
-                            axisLine={false}
-                            tick={{ fontSize: 12, fill: "var(--primary)" }}
-                            tickFormatter={(value) => formatMonthYear(value)}
+        <ChartCard
+            title={title}
+            height={height}
+            hasData={hasData}
+            description={description}
+            summary={data.map(({ month, total }) => ({
+                label: formatMonthYear(month),
+                value: `${formatNumber(total)} hours`,
+            }))}
+        >
+            <ResponsiveContainer width="100%" height={height}>
+                <BarChart accessibilityLayer data={data} margin={{ top: 8, right: 4, bottom: 0, left: -30 }}>
+                    <XAxis
+                        minTickGap={28}
+                        tickLine={false}
+                        axisLine={false}
+                        dataKey={"month"}
+                        interval="preserveStartEnd"
+                        tick={{ fontSize: 11, fill: "var(--primary)" }}
+                        tickFormatter={(val) => formatMonthYear(String(val))}
+                    />
+                    <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 11, fill: "var(--primary)" }}
+                        tickFormatter={(val) => formatNumber(val, { notation: "compact" })}
+                    />
+                    <Tooltip
+                        cursor={{ fill: "var(--popover)" }}
+                        content={<ActivityTooltip mediaTypes={displayMediaTypes}/>}
+                    />
+                    {displayMediaTypes.map((type) =>
+                        <Bar
+                            key={type}
+                            dataKey={type}
+                            fill={getThemeColor(type)}
+                            stackId={stacked ? "activity" : undefined}
+                            radius={stacked || displayMediaTypes.length > 1 ? 0 : [4, 4, 0, 0]}
                         />
-                        <YAxis
-                            tickLine={false}
-                            axisLine={false}
-                            tick={{ fill: "var(--primary)", fontSize: 12 }}
-                            tickFormatter={(value) => formatNumber(value, { notation: "compact" })}
-                        />
-                        <Tooltip
-                            content={<ActivityTooltip mediaTypes={displayMediaTypes}/>}
-                            cursor={{ fill: "var(--popover)" }}
-                        />
-                        {displayMediaTypes.map((type) =>
-                            <Bar
-                                key={type}
-                                dataKey={type}
-                                fill={getThemeColor(type)}
-                                stackId={stacked ? "activity" : undefined}
-                                radius={stacked || displayMediaTypes.length > 1 ? 0 : [4, 4, 0, 0]}
-                            />
-                        )}
-                    </BarChart>
-                </ResponsiveContainer>
-            </CardContent>
-        </Card>
+                    )}
+                </BarChart>
+            </ResponsiveContainer>
+        </ChartCard>
     );
 }
 
 
-function ActivityTooltip({ active, payload, label, mediaTypes }: any & { mediaTypes: MediaType[] }) {
+interface ActivityTooltipProps extends Partial<TooltipContentProps<number, string>> {
+    mediaTypes: MediaType[];
+}
+
+
+function ActivityTooltip({ active, payload, label, mediaTypes }: ActivityTooltipProps) {
     if (!active || !payload?.length) return null;
 
     const rows = payload
-        .filter((entry: any) => Number(entry.value) > 0)
-        .sort((a: any, b: any) => Number(b.value) - Number(a.value));
+        .filter((entry) => Number(entry.value) > 0)
+        .sort((a, b) => Number(b.value) - Number(a.value));
 
     return (
-        <div className="rounded-md bg-gray-800 px-4 py-2 text-sm text-white">
-            <p className="mb-1 font-medium">{formatMonthYear(label)}</p>
+        <div className="rounded-md border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
+            <p className="mb-2 font-medium">
+                {formatMonthYear(String(label ?? ""), { month: "long" })}
+            </p>
+
             {rows.length === 0 ?
-                <p>No activity</p>
+                <p className="text-muted-foreground">
+                    No activity.
+                </p>
                 :
-                rows.map((entry: any) =>
-                    <p key={entry.dataKey} className="grid grid-cols-2 gap-2 capitalize">
-                        <div>{entry.dataKey}:</div>
-                        <div>{formatNumber(Number(entry.value), { fractionDigits: 1, notation: "compact" })}h</div>
-                    </p>
+                rows.map((entry) =>
+                    <div key={String(entry.dataKey)} className="grid grid-cols-2 gap-6 space-y-1.5">
+                        <span className="flex gap-1.5 items-center capitalize">
+                            <MainThemeIcon type={String(entry.dataKey) as MediaType} size={14}/> {String(entry.dataKey)}:
+                        </span>
+                        <span className="text-right text-muted-foreground">
+                            {formatNumber(Number(entry.value), { fractionDigits: 0 })} hours
+                        </span>
+                    </div>
                 )}
+
             {mediaTypes.length > 1 && rows.length > 0 &&
-                <p className="mt-1 border-t border-white/20 pt-1">
-                    Total: {
-                        formatNumber(
-                            rows.reduce((sum: number, entry: any) => sum + Number(entry.value), 0),
-                            { fractionDigits: 1, notation: "compact" },
-                        )
-                    }h
+                <p className="mt-1 border-t pt-1">
+                    Total: {formatNumber(rows.reduce((s, e) => s + Number(e.value), 0), { fractionDigits: 0 })} hours
                 </p>
             }
         </div>

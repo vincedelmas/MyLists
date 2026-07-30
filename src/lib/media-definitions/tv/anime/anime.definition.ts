@@ -35,6 +35,7 @@ export const animeDefinition = defineMediaDefinition({
         },
         durationDistribution: {
             unit: "h",
+            rangeMode: "integer",
             label: "Anime Duration Distribution",
         },
     },

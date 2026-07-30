@@ -28,6 +28,7 @@ export const gamesDefinition = defineMediaDefinition({
     statistics: {
         durationDistribution: {
             unit: "h",
+            rangeMode: "integer",
             label: "Playthrough Duration Distribution",
         },
     },

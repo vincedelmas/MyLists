@@ -35,6 +35,7 @@ export const moviesDefinition = defineMediaDefinition({
         },
         durationDistribution: {
             unit: "m.",
+            rangeMode: "integer",
             label: "Movies Duration Distribution",
         },
     },

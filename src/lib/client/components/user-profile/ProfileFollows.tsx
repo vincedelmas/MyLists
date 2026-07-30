@@ -39,15 +39,17 @@ export const ProfileFollows = ({ username, followsCount, follows }: ProfileFollo
                             <div key={follow.id} className="flex flex-col items-center group">
                                 <div className="group-hover:border-app-accent">
                                     <Tooltip key={follow.id}>
-                                        <TooltipTrigger asChild>
-                                            <Link key={follow.username} to="/profile/$username" params={{ username: follow.username }}>
-                                                <ProfileIcon
-                                                    fallbackSize="text-lg"
-                                                    user={{ image: follow.image, name: follow.username }}
-                                                    className="size-12 border-none hover:ring-2 hover:ring-app-accent"
-                                                />
-                                            </Link>
-                                        </TooltipTrigger>
+                                        <TooltipTrigger
+                                            render={
+                                                <Link key={follow.username} to="/profile/$username" params={{ username: follow.username }}>
+                                                    <ProfileIcon
+                                                        fallbackSize="text-lg"
+                                                        user={{ image: follow.image, name: follow.username }}
+                                                        className="size-12 border-none hover:ring-2 hover:ring-app-accent"
+                                                    />
+                                                </Link>
+                                            }
+                                        />
                                         <TooltipContent>
                                             {follow.username}
                                         </TooltipContent>

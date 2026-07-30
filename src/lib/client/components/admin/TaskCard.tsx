@@ -56,12 +56,13 @@ export function TaskCard({ task }: TaskCardProps) {
         <Card className="max-w-3xl">
             <CardHeader className="cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
                 <div className="flex items-center gap-3">
-                    <StatusIcon className={cn("size-5", config.color)}/>
+                    <StatusIcon
+                        className={cn("size-5", config.color)}
+                    />
                     <CardTitle>{logs.taskName}</CardTitle>
-                    {isExpanded ?
-                        <ChevronDown className="size-4 text-muted-foreground"/>
-                        :
-                        <ChevronRight className="size-4 text-muted-foreground"/>
+                    {isExpanded
+                        ? <ChevronDown className="size-4 text-muted-foreground"/>
+                        : <ChevronRight className="size-4 text-muted-foreground"/>
                     }
                 </div>
                 <CardAction>
@@ -70,14 +71,14 @@ export function TaskCard({ task }: TaskCardProps) {
                             {capitalize(logs.status)}
                         </Badge>
                         <Button
-                            size="xs"
-                            variant="destructive"
+                            size="icon"
+                            variant="outline"
                             onClick={(ev) => {
                                 ev.stopPropagation();
                                 deleteTaskMutation.mutate({ data: { taskId: task.taskId } });
                             }}
                         >
-                            <Trash className="size-4"/>
+                            <Trash className="size-4 text-destructive"/>
                         </Button>
                     </div>
                 </CardAction>

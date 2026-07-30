@@ -1,5 +1,5 @@
 import {collectionIdSchema} from "@/lib/schemas";
-import {Copy, Heart, Pencil} from "lucide-react";
+import {Copy, Heart, List, ListOrdered, Pencil} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -63,7 +63,7 @@ function CollectionViewer() {
             subtitle={`${collection.ownerName} • ${capitalize(collection.mediaType)} • ${collection.itemsCount} media`}
         >
             <div className="flex flex-wrap items-center justify-between pb-5">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {capabilities.like &&
                         <>
                             <Button
@@ -83,13 +83,22 @@ function CollectionViewer() {
                         </Button>
                     }
                     <Badge variant="outline">
-                        {collection.ordered ? "Ranked" : "Unranked"}
+                        {collection.ordered
+                            ? <><ListOrdered className="size-3"/> Ranked</>
+                            : <><List className="size-3"/> Unranked</>
+                        }
                     </Badge>
-                    <PrivacyIcon type={collection.privacy} className="size-4"/>
+                    <Badge variant="outline">
+                        <PrivacyIcon
+                            className="size-4"
+                            type={collection.privacy}
+                        />
+                        {collection.privacy}
+                    </Badge>
                 </div>
                 <div>
                     {capabilities.edit &&
-                        <Button size="sm" variant="outline" onClick={handleEditCollection}>
+                        <Button variant="outline" onClick={handleEditCollection}>
                             <Pencil/> Edit Collection
                         </Button>
                     }

@@ -362,18 +362,12 @@ const SearchFilter = ({ mediaType, username, filterKey, job, title, dataList, re
                     </div>
                 </SearchContainer>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-2">
                 {selectedData.map(item =>
-                    <Badge key={item} className="mt-2 bg-neutral-800 h-8 px-4 text-sm gap-2" variant="outline">
+                    <Badge key={item} variant="outline">
                         {item}
-                        <Button
-                            size="bare"
-                            type="button"
-                            variant="ghost"
-                            className="hover:opacity-80 -mr-1"
-                            onClick={() => handleRemoveData(item)}
-                        >
-                            <X className="size-4"/>
+                        <Button size="bare" type="button" variant="ghost" onClick={() => handleRemoveData(item)}>
+                            <X/>
                         </Button>
                     </Badge>
                 )}

@@ -8,6 +8,7 @@ import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {TiersDetails} from "@/lib/client/components/achievements/TierDetails";
 import {Progress, ProgressLabel, ProgressValue} from "@/lib/client/components/ui/progress";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 
 
 interface AchievementCardProps {
@@ -46,8 +47,8 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
                     </div>
                 </CardTitle>
                 <CardAction>
-                    <Badge variant="secondary" className="capitalize">
-                        {mediaType}
+                    <Badge variant="outline" className="capitalize">
+                        <MainThemeIcon type={mediaType}/> {mediaType}
                     </Badge>
                 </CardAction>
             </CardHeader>

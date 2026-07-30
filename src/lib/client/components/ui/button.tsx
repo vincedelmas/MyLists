@@ -19,14 +19,14 @@ const buttonVariants = cva("group/button inline-flex shrink-0 items-center justi
                 dashed: "border border-dashed text-muted-foreground text-xs w-full bg-background hover:bg-accent hover:text-accent-foreground " +
                     "dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
 
+                link: "text-primary underline-offset-4 hover:underline",
+                ghost: "hover:text-foreground aria-expanded:text-foreground",
                 outline: "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted " +
                     "aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
-                ghost: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
                 secondary: "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] " +
                     "aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
                 destructive: "bg-destructive/10 text-primary hover:bg-destructive/20 focus-visible:border-destructive/40 " +
                     "focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-                link: "text-primary underline-offset-4 hover:underline",
             },
             size: {
                 icon: "size-8",

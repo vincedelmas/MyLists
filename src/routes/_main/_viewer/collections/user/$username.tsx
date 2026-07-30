@@ -85,7 +85,7 @@ function UserCollectionsPage() {
                         {isOwner &&
                             <Route.Link
                                 to="/collections/create"
-                                className={buttonVariants({ variant: "emeraldy", size: "sm", className: "justify-center whitespace-nowrap" })}
+                                className={buttonVariants({ variant: "emeraldy", className: "justify-center whitespace-nowrap" })}
                             >
                                 <Plus className="size-4"/> New collection
                             </Route.Link>

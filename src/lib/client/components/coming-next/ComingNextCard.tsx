@@ -76,9 +76,9 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
                             status={item.status}
                         />
                         {relativeTime !== "never" &&
-                            <Badge variant="black" className="capitalize">
+                            <Badge variant="outline" className="capitalize">
                                 <Calendar/>
-                                <span>{relativeTime}</span>
+                                {relativeTime}
                             </Badge>
                         }
                     </div>

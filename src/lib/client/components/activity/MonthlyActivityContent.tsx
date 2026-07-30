@@ -168,10 +168,12 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
             {apiData.items.length > 0 &&
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {apiData.items.map((row) =>
-                        <MediaCard key={row.id} item={{ ...row, mediaCover: row.mediaCover }} mediaType={row.mediaType}>
-                            <div className="absolute left-1.5 top-1.5 z-10 flex flex-col items-start gap-1">
+                        <MediaCard key={row.id} mediaType={row.mediaType} item={{ ...row, mediaCover: row.mediaCover }}>
+                            <div className="absolute left-1.5 top-1 z-10">
                                 {row.hidden &&
-                                    <Badge variant="destructive">Hidden</Badge>
+                                    <Badge variant="secondary">
+                                        Hidden
+                                    </Badge>
                                 }
                             </div>
                             {canEdit &&

@@ -74,12 +74,15 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                             <h2 className="font-semibold tracking-tight">
                                 2. Collection details
                             </h2>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Badge variant="outline" className="gap-1 text-xs capitalize">
-                                    <MainThemeIcon type={mediaType} size={14}/> {mediaType}
+                            <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="capitalize">
+                                    <MainThemeIcon type={mediaType}/> {mediaType}
                                 </Badge>
-                                <Badge variant="outline" className="gap-1 text-xs">
-                                    {ordered ? <ListOrdered className="size-3"/> : <List className="size-3"/>}
+                                <Badge variant="outline">
+                                    {ordered
+                                        ? <ListOrdered className="size-3"/>
+                                        : <List className="size-3"/>
+                                    }
                                     {orderedLabel}
                                 </Badge>
                             </div>
@@ -209,7 +212,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                     {[PrivacyType.PRIVATE, PrivacyType.RESTRICTED, PrivacyType.PUBLIC].map((pt) =>
                                                         <FormItem key={pt} className="flex items-start space-x-3 space-y-0">
                                                             <FormControl>
-                                                                <RadioGroupItem value={pt} className="mt-1"/>
+                                                                <RadioGroupItem value={pt}/>
                                                             </FormControl>
                                                             <div className="grid gap-1.5 leading-none">
                                                                 <FormLabel className="font-normal flex items-center gap-1">

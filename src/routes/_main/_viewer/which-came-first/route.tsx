@@ -231,7 +231,7 @@ function GameSetup({ selectedTypes, onToggle, isPending, onStart }: GameSetupPro
                         </div>
                         <div className="mt-5 flex flex-wrap gap-1.5">
                             {selectedTypes.length > 0 ? selectedTypes.map((mediaType) =>
-                                    <Badge key={mediaType} variant="outline" className="bg-background/70 capitalize gap-1">
+                                    <Badge key={mediaType} variant="black" className="capitalize">
                                         <MainThemeIcon type={mediaType}/>
                                         {mediaType}
                                     </Badge>
@@ -296,9 +296,8 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                             {run.round.number} / {WCF_MAX_ROUNDS}
                         </p>
                     </div>
-                    <Badge variant="outline" className="hidden gap-1.5 bg-muted/40 font-normal sm:inline-flex">
-                        <Gauge className="size-3"/>
-                        {run.round.difficulty} apart
+                    <Badge variant="outline">
+                        <Gauge/> {run.round.difficulty} apart
                     </Badge>
                 </div>
                 {!result &&
@@ -505,18 +504,18 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
                     className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"
                 />
             </div>
+
             <div className="absolute inset-0 bg-linear-to-t from-black via-black/10 to-black/15"/>
-            <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full border border-white/15
-                bg-black/55 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-md
-                max-sm:left-2 max-sm:top-2">
-                <MainThemeIcon type={card.mediaType} size={12}/>
+
+            <Badge variant="black" className="absolute left-2 top-2">
+                <MainThemeIcon type={card.mediaType}/>
                 {card.mediaType}
-            </div>
+            </Badge>
             {state !== "neutral" &&
                 <div className={cn(
                     "absolute right-3 top-3 flex size-7 animate-in zoom-in-75 items-center justify-center",
                     "rounded-full text-black shadow-lg max-sm:right-2 max-sm:top-2 max-sm:size-8",
-                    state === "correct" ? "bg-emerald-400" : "bg-red-400",
+                    state === "correct" ? "bg-app-accent" : "bg-destructive",
                 )}>
                     {state === "correct" ? <Check/> : <X/>}
                 </div>

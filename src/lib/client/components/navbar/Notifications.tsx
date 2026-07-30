@@ -54,14 +54,14 @@ export const Notifications = () => {
         {
             id: "media",
             label: (
-                <>
-                    Media{" "}
+                <div className="flex items-center gap-2">
+                    Media
                     {!!counts?.media &&
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        <Badge variant="secondary">
                             {counts.media}
                         </Badge>
                     }
-                </>
+                </div>
             ),
             isAccent: true,
             icon: <Play className="size-4"/>
@@ -69,14 +69,14 @@ export const Notifications = () => {
             id: "social",
             isAccent: true,
             label: (
-                <>
-                    Social{" "}
+                <div className="flex items-center gap-2">
+                    Social
                     {!!counts?.social &&
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        <Badge variant="secondary">
                             {counts.social}
                         </Badge>
                     }
-                </>
+                </div>
             ),
             icon: <Users className="size-4"/>
         }

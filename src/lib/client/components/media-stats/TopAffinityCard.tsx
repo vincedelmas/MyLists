@@ -72,7 +72,7 @@ export const TopAffinityCard = ({ title, topAffinity, job, mediaType }: TopAffin
                             </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                            <Badge variant="secondary" className="ml-2 shrink-0">
+                            <Badge variant="secondary" className="shrink-0">
                                 {item.value}
                             </Badge>
                         </div>

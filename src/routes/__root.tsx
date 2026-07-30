@@ -9,6 +9,7 @@ import {Toaster} from "@/lib/client/components/ui/sonner";
 import {Navbar} from "@/lib/client/components/navbar/Navbar";
 import {useNProgress} from "@/lib/client/hooks/use-nprogress";
 import {Footer} from "@/lib/client/components/general/Footer";
+import {TooltipProvider} from "@/lib/client/components/ui/tooltip";
 import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
 import {PostHogAuthSync} from "@/lib/client/components/general/PostHogAuthSync";
 import {AuthSessionSync} from "@/lib/client/components/general/AuthSessionSync";
@@ -95,7 +96,7 @@ function RootComponent() {
 
 function AppShell() {
     return (
-        <>
+        <TooltipProvider>
             <AuthSessionSync/>
             <Toaster/>
             <ConfirmDialogHost/>
@@ -104,6 +105,6 @@ function AppShell() {
             <Outlet/>
             <Footer/>
             <FeatureVoteLink/>
-        </>
+        </TooltipProvider>
     );
 }

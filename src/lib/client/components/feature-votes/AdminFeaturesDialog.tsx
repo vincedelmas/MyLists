@@ -6,14 +6,14 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {Textarea} from "@/lib/client/components/ui/textarea";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PostFeatureStatus, postFeatureStatusSchema} from "@/lib/schemas";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useAdminDeleteFeatureMutation, useAdminUpdateFeatureMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 interface AdminFeatureDialogProps {
@@ -21,6 +21,11 @@ interface AdminFeatureDialogProps {
     currentStatus: FeatureStatus;
     currentComment: string | null;
 }
+
+
+const featureStatusItems = Object.values(FeatureStatus).map((status) => {
+    return { label: status, value: status };
+});
 
 
 export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentComment }: AdminFeatureDialogProps) => {
@@ -99,18 +104,26 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
                                 render={({ field }) =>
                                     <FormItem>
                                         <FormLabel>Feature Status</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
+                                        <Select
+                                            value={field.value}
+                                            items={featureStatusItems}
+                                            onValueChange={(value) => {
+                                                if (value !== null) field.onChange(value);
+                                            }}
+                                        >
                                             <FormControl>
                                                 <SelectTrigger className="w-full">
                                                     <SelectValue/>
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {Object.values(FeatureStatus).map((fs) =>
-                                                    <SelectItem key={fs} value={fs}>
-                                                        {fs}
-                                                    </SelectItem>
-                                                )}
+                                                <SelectGroup>
+                                                    {featureStatusItems.map((item) =>
+                                                        <SelectItem key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage/>

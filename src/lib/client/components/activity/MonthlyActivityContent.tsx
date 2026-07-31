@@ -24,7 +24,7 @@ import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActi
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
 import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 interface MonthlyActivityContentProps {
@@ -61,6 +61,27 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
         : currentUser
             ? getActiveMediaTypes(currentUser.settings)
             : apiData.mediaTypes;
+            
+    const mediaTypeFilters = [
+        {
+            value: "all",
+            label: (
+                <div className="flex items-center gap-2">
+                    <MainThemeIcon type="all"/>
+                    <span>All Types</span>
+                </div>
+            ),
+        },
+        ...apiData.mediaTypes.map((mediaType) => ({
+            value: mediaType,
+            label: (
+                <div className="flex items-center gap-2 capitalize">
+                    <MainThemeIcon type={mediaType}/>
+                    <span>{mediaType}</span>
+                </div>
+            ),
+        })),
+    ];
 
     const handleFilterChange = (next: Partial<MonthlyActivitySearch>) => {
         updateFilters({ page: 1, ...next, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) });
@@ -92,40 +113,47 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                         />
                     </div>
                     <div className="col-span-1 sm:order-1 sm:shrink-0">
-                        <Select value={activityKind} onValueChange={(v) => handleFilterChange({ activityKind: v as ActivityKind })}>
+                        <Select
+                            items={activityKindFilters}
+                            value={activityKind}
+                            onValueChange={(value) => {
+                                if (value !== null) handleFilterChange({ activityKind: value as ActivityKind });
+                            }}
+                        >
                             <SelectTrigger className="w-full sm:w-42">
                                 <SelectValue placeholder="Activity Kind"/>
                             </SelectTrigger>
                             <SelectContent>
-                                {activityKindFilters.map((filter) =>
-                                    <SelectItem key={filter.value} value={filter.value}>
-                                        {filter.label}
-                                    </SelectItem>
-                                )}
+                                <SelectGroup>
+                                    {activityKindFilters.map((filter) =>
+                                        <SelectItem key={filter.value} value={filter.value}>
+                                            {filter.label}
+                                        </SelectItem>
+                                    )}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>
                     {!fixedMediaType &&
                         <div className="col-span-1 sm:order-3 sm:shrink-0">
-                            <Select value={activeTab} onValueChange={(v) => handleFilterChange({ activeTab: v as MediaType | "all" })}>
+                            <Select
+                                items={mediaTypeFilters}
+                                value={activeTab}
+                                onValueChange={(value) => {
+                                    if (value !== null) handleFilterChange({ activeTab: value as MediaType | "all" });
+                                }}
+                            >
                                 <SelectTrigger className="w-full sm:w-36">
                                     <SelectValue placeholder="Media type"/>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">
-                                        <div className="flex items-center gap-2">
-                                            <MainThemeIcon type="all"/>
-                                            <span>All Types</span>
-                                        </div>
-                                    </SelectItem>
-                                    {apiData.mediaTypes.map((mediaType) =>
-                                        <SelectItem key={mediaType} value={mediaType}>
-                                            <div className="flex items-center gap-2 capitalize">
-                                                <MainThemeIcon type={mediaType}/>
-                                                <span>{mediaType}</span>
-                                            </div>
-                                        </SelectItem>
-                                    )}
+                                    <SelectGroup>
+                                        {mediaTypeFilters.map((filter) =>
+                                            <SelectItem key={filter.value} value={filter.value}>
+                                                {filter.label}
+                                            </SelectItem>
+                                        )}
+                                    </SelectGroup>
                                 </SelectContent>
                             </Select>
                         </div>

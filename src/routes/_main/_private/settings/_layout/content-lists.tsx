@@ -20,7 +20,7 @@ import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
@@ -73,6 +73,33 @@ function MediaListFormPage() {
     const isGamesActive = useWatch({ control: form.control, name: MediaType.GAMES });
     const isBooksActive = useWatch({ control: form.control, name: MediaType.BOOKS });
     const isMangaActive = useWatch({ control: form.control, name: MediaType.MANGA });
+
+    const viewModeItems = [
+        { label: "Grid", value: "grid" },
+        { label: "Table", value: "table" },
+    ];
+
+    const ratingSystemItems = [
+        { label: "Score (numeric)", value: RatingSystemType.SCORE },
+        { label: "Feeling (emoticons)", value: RatingSystemType.FEELING },
+    ];
+
+    const searchSelectorItems = [
+        { label: "Media", value: ApiProviderType.TMDB },
+        {
+            label: <>{!isBooksActive && <TriangleAlert className="text-amber-600"/>} Books</>,
+            value: ApiProviderType.BOOKS,
+        },
+        {
+            label: <>{!isGamesActive && <TriangleAlert className="text-amber-600"/>} Games</>,
+            value: ApiProviderType.IGDB,
+        },
+        {
+            label: <>{!isMangaActive && <TriangleAlert className="text-amber-600"/>} Manga</>,
+            value: ApiProviderType.MANGA,
+        },
+        { label: "Users", value: ApiProviderType.USERS },
+    ];
 
     const handleCheckedChange = (field: any, checked: boolean, apiProvider?: ApiProviderType) => {
         field.onChange(checked);
@@ -163,28 +190,34 @@ function MediaListFormPage() {
                                             Navbar Search Selector
                                             <SearchPopover/>
                                         </FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select
+                                            value={field.value}
+                                            items={searchSelectorItems}
+                                            onValueChange={(value) => {
+                                                if (value !== null) field.onChange(value);
+                                            }}
+                                        >
                                             <FormControl>
                                                 <SelectTrigger className="w-full">
                                                     <SelectValue placeholder="Select a search selector"/>
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value={ApiProviderType.TMDB}>
-                                                    Media
-                                                </SelectItem>
-                                                <SelectItem value={ApiProviderType.BOOKS} disabled={!isBooksActive}>
-                                                    {!isBooksActive && <TriangleAlert className="text-amber-600"/>} Books
-                                                </SelectItem>
-                                                <SelectItem value={ApiProviderType.IGDB} disabled={!isGamesActive}>
-                                                    {!isGamesActive && <TriangleAlert className="text-amber-600"/>} Games
-                                                </SelectItem>
-                                                <SelectItem value={ApiProviderType.MANGA} disabled={!isMangaActive}>
-                                                    {!isMangaActive && <TriangleAlert className="text-amber-600"/>} Manga
-                                                </SelectItem>
-                                                <SelectItem value={ApiProviderType.USERS}>
-                                                    Users
-                                                </SelectItem>
+                                                <SelectGroup>
+                                                    {searchSelectorItems.map((item) =>
+                                                        <SelectItem
+                                                            key={item.value}
+                                                            value={item.value}
+                                                            disabled={
+                                                                (item.value === ApiProviderType.BOOKS && !isBooksActive) ||
+                                                                (item.value === ApiProviderType.IGDB && !isGamesActive) ||
+                                                                (item.value === ApiProviderType.MANGA && !isMangaActive)
+                                                            }
+                                                        >
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage/>
@@ -202,19 +235,26 @@ function MediaListFormPage() {
                                             Rating System
                                             <RatingSystemPopover/>
                                         </FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select
+                                            value={field.value}
+                                            items={ratingSystemItems}
+                                            onValueChange={(value) => {
+                                                if (value !== null) field.onChange(value);
+                                            }}
+                                        >
                                             <FormControl>
                                                 <SelectTrigger className="w-full">
                                                     <SelectValue placeholder="Select a rating system"/>
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value={RatingSystemType.SCORE}>
-                                                    Score (numeric)
-                                                </SelectItem>
-                                                <SelectItem value={RatingSystemType.FEELING}>
-                                                    Feeling (emoticons)
-                                                </SelectItem>
+                                                <SelectGroup>
+                                                    {ratingSystemItems.map((item) =>
+                                                        <SelectItem key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage/>
@@ -229,15 +269,26 @@ function MediaListFormPage() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Default List View Mode</FormLabel>
-                                        <Select onValueChange={(v) => field.onChange(v === "grid")} value={field.value ? "grid" : "table"}>
+                                        <Select
+                                            items={viewModeItems}
+                                            value={field.value ? "grid" : "table"}
+                                            onValueChange={(value) => {
+                                                if (value !== null) field.onChange(value === "grid");
+                                            }}
+                                        >
                                             <FormControl>
                                                 <SelectTrigger className="w-full">
                                                     <SelectValue placeholder="Select a view mode"/>
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="grid">Grid</SelectItem>
-                                                <SelectItem value="table">Table</SelectItem>
+                                                <SelectGroup>
+                                                    {viewModeItems.map((item) =>
+                                                        <SelectItem key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage/>
@@ -262,16 +313,27 @@ function MediaListFormPage() {
                 </div>
                 <div className="flex flex-wrap items-end gap-3">
                     <div className="grow">
-                        <Select onValueChange={(value) => setSelectedListForExport(value as MediaType)} value={selectedListForExport}>
+                        <Select
+                            value={selectedListForExport}
+                            items={mediaTypesForExport.map(({ label, value }) => ({
+                                value,
+                                label: <><MainThemeIcon type={value}/> {label}</>,
+                            }))}
+                            onValueChange={(value) => {
+                                if (value !== null) setSelectedListForExport(value as MediaType);
+                            }}
+                        >
                             <SelectTrigger id="list-export-select" className="w-40 max-sm:max-w-full">
                                 <SelectValue placeholder="Select a media list..."/>
                             </SelectTrigger>
                             <SelectContent>
-                                {mediaTypesForExport.map(({ label, value }) => (
-                                    <SelectItem key={value} value={value}>
-                                        <MainThemeIcon type={value}/> {label}
-                                    </SelectItem>
-                                ))}
+                                <SelectGroup>
+                                    {mediaTypesForExport.map(({ label, value }) => (
+                                        <SelectItem key={value} value={value}>
+                                            <MainThemeIcon type={value}/> {label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>

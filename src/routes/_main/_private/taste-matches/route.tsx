@@ -16,7 +16,7 @@ import {tasteMatchesOptions} from "@/lib/client/react-query/query-options";
 import {TasteMatchesSearch, tasteMatchesSearchSchema} from "@/lib/schemas";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {FeaturedTasteMatch, TasteMatchCard} from "@/lib/client/components/taste-matches/TasteMatchCard";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_private/taste-matches")({
@@ -27,6 +27,12 @@ export const Route = createFileRoute("/_main/_private/taste-matches")({
     },
     component: TasteMatchesPage,
 });
+
+
+const sortingItems = [
+    { label: "Best match", value: "match" },
+    { label: "Shared ratings", value: "overlap" },
+];
 
 
 function TasteMatchesPage() {
@@ -40,7 +46,8 @@ function TasteMatchesPage() {
     const currentActiveTab = activeTab !== "all" && activeMediaTypes.includes(activeTab) ? activeTab : "all";
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<TasteMatchesSearch>({ search });
 
-    const handleSortChange = (value: TasteMatchesSearch["sorting"]) => {
+    const handleSortChange = (value: TasteMatchesSearch["sorting"] | null) => {
+        if (value === null) return;
         void updateFilters({ page: 1, sorting: value as TasteMatchesSearch["sorting"] });
     }
 
@@ -91,13 +98,18 @@ function TasteMatchesPage() {
                             <span className="text-sm text-muted-foreground">
                                 Sort by
                             </span>
-                            <Select value={sorting} onValueChange={handleSortChange}>
+                            <Select items={sortingItems} value={sorting} onValueChange={handleSortChange}>
                                 <SelectTrigger className="w-40 max-sm:w-fit">
                                     <SelectValue/>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="match">Best match</SelectItem>
-                                    <SelectItem value="overlap">Shared ratings</SelectItem>
+                                    <SelectGroup>
+                                        {sortingItems.map((item) =>
+                                            <SelectItem key={item.value} value={item.value}>
+                                                {item.label}
+                                            </SelectItem>
+                                        )}
+                                    </SelectGroup>
                                 </SelectContent>
                             </Select>
                         </div>

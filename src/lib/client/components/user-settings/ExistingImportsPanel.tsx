@@ -7,7 +7,7 @@ import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {allUserJobsOptions} from "@/lib/client/react-query/query-options";
 import {SelectedImportJob} from "@/lib/client/components/user-settings/SelectedImportJob";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 interface ImportJobListItem {
@@ -39,6 +39,7 @@ export function ExistingImportsPanel() {
     const selectedValue = search.jobId ? String(search.jobId) : undefined;
     const selectPlaceholder = importJobs.length === 0 ? "No imports yet" : "Select import job";
     const selectedJobLabel = selectedJob ? formatImportLabel(selectedJob) : search.jobId ? `Job #${search.jobId}` : undefined;
+    const importJobItems = importJobs.map((job) => ({ label: formatImportLabel(job), value: String(job.id) }));
 
     const handleSelectOpenChange = (isOpen: boolean) => {
         if (isOpen) setIsOpen(true);
@@ -48,7 +49,8 @@ export function ExistingImportsPanel() {
         void navigate({ search: prev => ({ ...prev, page: 1, jobId: undefined }), resetScroll: false });
     };
 
-    const handleJobChange = (jobId: string) => {
+    const handleJobChange = (jobId: string | null) => {
+        if (jobId === null) return;
         void navigate({ search: prev => ({ ...prev, page: 1, jobId: Number(jobId) }), resetScroll: false });
     };
 
@@ -72,7 +74,12 @@ export function ExistingImportsPanel() {
                         </CardDescription>
                     </div>
 
-                    <Select value={selectedValue} onValueChange={handleJobChange} onOpenChange={handleSelectOpenChange}>
+                    <Select
+                        value={selectedValue}
+                        items={importJobItems}
+                        onValueChange={handleJobChange}
+                        onOpenChange={handleSelectOpenChange}
+                    >
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder={selectPlaceholder}>
                                 {selectedJobLabel}
@@ -90,11 +97,13 @@ export function ExistingImportsPanel() {
                                             No imports yet.
                                         </div>
                                         :
-                                        importJobs.map((job) =>
-                                            <SelectItem key={job.id} value={String(job.id)}>
-                                                {formatImportLabel(job)}
-                                            </SelectItem>
-                                        )
+                                        <SelectGroup>
+                                            {importJobItems.map((item) =>
+                                                <SelectItem key={item.value} value={item.value}>
+                                                    {item.label}
+                                                </SelectItem>
+                                            )}
+                                        </SelectGroup>
                             }
                         </SelectContent>
                     </Select>

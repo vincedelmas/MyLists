@@ -1,7 +1,7 @@
 import {getRedoList} from "@/lib/utils/media-mapping";
 import {UpdateType} from "@/lib/utils/enums";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 interface RedoDropProps {
@@ -12,23 +12,28 @@ interface RedoDropProps {
 
 
 export const UpdateRedo = ({ name, redo, updateRedo }: RedoDropProps) => {
-    const handleRedoChange = (redo: string) => {
+    const redoItems = getRedoList().map((value) => ({ label: String(value), value: String(value) }));
+
+    const handleRedoChange = (redo: string | null) => {
+        if (redo === null) return;
         updateRedo.mutate({ payload: { redo: parseInt(redo), type: UpdateType.REDO } });
     };
 
     return (
         <div className="flex justify-between items-center">
             <div>{name}</div>
-            <Select value={redo?.toString()} onValueChange={handleRedoChange} disabled={updateRedo?.isPending}>
+            <Select items={redoItems} value={redo?.toString()} onValueChange={handleRedoChange} disabled={updateRedo?.isPending}>
                 <SelectTrigger size="sm" className="w-34">
                     <SelectValue/>
                 </SelectTrigger>
                 <SelectContent>
-                    {getRedoList().map(val =>
-                        <SelectItem key={val} value={val.toString()}>
-                            {`${val}`}
-                        </SelectItem>
-                    )}
+                    <SelectGroup>
+                        {redoItems.map((item) =>
+                            <SelectItem key={item.value} value={item.value}>
+                                {item.label}
+                            </SelectItem>
+                        )}
+                    </SelectGroup>
                 </SelectContent>
             </Select>
         </div>

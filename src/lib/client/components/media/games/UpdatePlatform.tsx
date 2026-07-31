@@ -3,7 +3,7 @@ import {useQuery} from "@tanstack/react-query";
 import {GamesPlatformsEnum, UpdateType} from "@/lib/utils/enums";
 import {gameCompatiblePlatformsOptions} from "@/lib/client/react-query/query-options";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
@@ -24,9 +24,13 @@ export const UpdatePlatform = ({ platform, mediaId, updatePlatform, disabled = f
 
     const selectedPlatformIsMissing = platform && !availablePlatforms.includes(platform);
     const allPlatforms = [DEFAULT_DASH_FALLBACK, ...(selectedPlatformIsMissing ? [platform] : []), ...availablePlatforms];
+    const platformItems = [
+        ...(isLoading ? [{ label: "Loading...", value: "__loading" }] : []),
+        ...allPlatforms.map((platform) => ({ label: platform, value: platform })),
+    ];
 
-    const handleSelect = (value: string) => {
-        if (disabled) return;
+    const handleSelect = (value: string | null) => {
+        if (value === null || disabled) return;
         const valueToSend = value === DEFAULT_DASH_FALLBACK ? null : value as GamesPlatformsEnum;
         updatePlatform.mutate({ payload: { platform: valueToSend, type: UpdateType.PLATFORM } });
     };
@@ -35,6 +39,7 @@ export const UpdatePlatform = ({ platform, mediaId, updatePlatform, disabled = f
         <div className="flex justify-between items-center">
             <div>Platform</div>
             <Select
+                items={platformItems}
                 open={open}
                 onOpenChange={setOpen}
                 onValueChange={handleSelect}
@@ -45,16 +50,13 @@ export const UpdatePlatform = ({ platform, mediaId, updatePlatform, disabled = f
                     <SelectValue/>
                 </SelectTrigger>
                 <SelectContent className="max-h-73 overflow-y-auto scrollbar-thin">
-                    {isLoading &&
-                        <SelectItem value="__loading" disabled>
-                            Loading...
-                        </SelectItem>
-                    }
-                    {allPlatforms.map((platform) =>
-                        <SelectItem key={platform} value={platform}>
-                            {platform}
-                        </SelectItem>
-                    )}
+                    <SelectGroup>
+                        {platformItems.map((item) =>
+                            <SelectItem key={item.value} value={item.value} disabled={item.value === "__loading"}>
+                                {item.label}
+                            </SelectItem>
+                        )}
+                    </SelectGroup>
                 </SelectContent>
             </Select>
         </div>

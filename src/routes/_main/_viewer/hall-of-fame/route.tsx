@@ -14,7 +14,7 @@ import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {hallOfFameOptions} from "@/lib/client/react-query/query-options";
 import {HofRanking} from "@/lib/client/components/hall-of-fame/HofRanking";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_viewer/hall-of-fame")({
@@ -33,6 +33,11 @@ function HallOfFamePage() {
     const apiData = useSuspenseQuery(hallOfFameOptions(filters)).data;
     const { page = 1, sorting = "normalized", search = "" } = filters;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<HallOfFameSearch>({ search });
+    const sortingItems = [
+        { label: "Normalized", value: "normalized" },
+        { label: "Profile", value: "profile" },
+        ...Object.values(MediaType).map((mediaType) => ({ label: capitalize(mediaType), value: mediaType })),
+    ];
 
     return (
         <PageTitle title="Hall of Fame" subtitle="Showcase of all the active profiles ranked">
@@ -49,21 +54,24 @@ function HallOfFamePage() {
                         </div>
                         <div>
                             <Select
+                                items={sortingItems}
                                 value={sorting}
                                 disabled={apiData.items.length === 0}
-                                onValueChange={(val) => updateFilters({ page: 1, sorting: val })}
+                                onValueChange={(value) => {
+                                    if (value !== null) updateFilters({ page: 1, sorting: value });
+                                }}
                             >
                                 <SelectTrigger className="w-32.5 font-medium bg-outline border">
                                     <SelectValue/>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="normalized">Normalized</SelectItem>
-                                    <SelectItem value="profile">Profile</SelectItem>
-                                    {Object.values(MediaType).map((mt) =>
-                                        <SelectItem key={mt} value={mt}>
-                                            {capitalize(mt)}
-                                        </SelectItem>
-                                    )}
+                                    <SelectGroup>
+                                        {sortingItems.map((item) =>
+                                            <SelectItem key={item.value} value={item.value}>
+                                                {item.label}
+                                            </SelectItem>
+                                        )}
+                                    </SelectGroup>
                                 </SelectContent>
                             </Select>
                         </div>

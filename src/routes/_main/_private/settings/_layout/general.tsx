@@ -6,6 +6,7 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
@@ -13,13 +14,19 @@ import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/general")({
     component: GeneralSettingsPage,
 });
+
+
+const privacyItems = [
+    { label: "Public", value: PrivacyType.PUBLIC },
+    { label: "Restricted", value: PrivacyType.RESTRICTED },
+    { label: "Private", value: PrivacyType.PRIVATE },
+];
 
 
 function GeneralSettingsPage() {
@@ -84,16 +91,26 @@ function GeneralSettingsPage() {
                                         <PrivacyPopover/>
                                     </div>
                                 </FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select
+                                    value={field.value}
+                                    items={privacyItems}
+                                    onValueChange={(value) => {
+                                        if (value !== null) field.onChange(value);
+                                    }}
+                                >
                                     <FormControl>
                                         <SelectTrigger className="w-full">
                                             <SelectValue placeholder="Select a privacy mode"/>
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value={PrivacyType.PUBLIC}>Public</SelectItem>
-                                        <SelectItem value={PrivacyType.RESTRICTED}>Restricted</SelectItem>
-                                        <SelectItem value={PrivacyType.PRIVATE}>Private</SelectItem>
+                                        <SelectGroup>
+                                            {privacyItems.map((item) =>
+                                                <SelectItem key={item.value} value={item.value}>
+                                                    {item.label}
+                                                </SelectItem>
+                                            )}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage/>

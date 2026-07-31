@@ -11,7 +11,7 @@ import {GlobalSearch, globalSearchSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {BookImage, Cat, Gamepad2, Library, LoaderCircle, Monitor, Popcorn, Search, User, X} from "lucide-react";
 
 
@@ -30,6 +30,19 @@ function SearchPage() {
     const [selectDrop, setSelectDrop] = useState(apiProvider);
     const [currentSearch, setCurrentSearch] = useState(query);
     const { data: apiData, isLoading, error } = useQuery(navSearchOptions(query, 1, apiProvider));
+    const searchProviderItems = [
+        { label: "Media", value: ApiProviderType.TMDB },
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS)
+            ? [{ label: "Books", value: ApiProviderType.BOOKS }]
+            : []),
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES)
+            ? [{ label: "Games", value: ApiProviderType.IGDB }]
+            : []),
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA)
+            ? [{ label: "Manga", value: ApiProviderType.MANGA }]
+            : []),
+        { label: "Users", value: ApiProviderType.USERS },
+    ];
 
     const fetchData = async (params: GlobalSearch) => {
         await navigate({ search: params });
@@ -46,7 +59,8 @@ function SearchPage() {
         await fetchData({ query: currentSearch, apiProvider: selectDrop });
     }
 
-    const onTypeChanged = async (value: ApiProviderType) => {
+    const onTypeChanged = async (value: ApiProviderType | null) => {
+        if (value === null) return;
         setSelectDrop(value);
     };
 
@@ -64,32 +78,22 @@ function SearchPage() {
                         onChange={(ev) => setCurrentSearch(ev.target.value)}
                     />
                 </div>
-                <Select value={selectDrop} onValueChange={(value: ApiProviderType) => onTypeChanged(value)}>
+                <Select
+                    items={searchProviderItems}
+                    value={selectDrop}
+                    onValueChange={onTypeChanged}
+                >
                     <SelectTrigger className="w-30">
                         <SelectValue/>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value={ApiProviderType.TMDB}>
-                            Media
-                        </SelectItem>
-                        {resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS) &&
-                            <SelectItem value={ApiProviderType.BOOKS}>
-                                Books
-                            </SelectItem>
-                        }
-                        {resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES) &&
-                            <SelectItem value={ApiProviderType.IGDB}>
-                                Games
-                            </SelectItem>
-                        }
-                        {resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA) &&
-                            <SelectItem value={ApiProviderType.MANGA}>
-                                Manga
-                            </SelectItem>
-                        }
-                        <SelectItem value={ApiProviderType.USERS}>
-                            Users
-                        </SelectItem>
+                        <SelectGroup>
+                            {searchProviderItems.map((item) =>
+                                <SelectItem key={item.value} value={item.value}>
+                                    {item.label}
+                                </SelectItem>
+                            )}
+                        </SelectGroup>
                     </SelectContent>
                 </Select>
             </div>

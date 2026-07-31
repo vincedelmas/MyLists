@@ -16,7 +16,8 @@ import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting
 import {BulkHideActivity, BulkHideActivityInput, bulkHideActivitySchema} from "@/lib/schemas";
 import {useBulkHideActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import React from "react";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/activity-cleanup")({
@@ -40,6 +41,22 @@ function ActivityCleanupSettings() {
             endDate: shiftDateInputValue(accountCreatedAt, { days: 60, max: today }),
         },
     });
+
+    const mediaTypeItems = [
+        {
+            value: "all",
+            label: (
+                <div className="flex items-center gap-2">
+                    <MainThemeIcon type="all"/>
+                    <span>All Types</span>
+                </div>
+            ),
+        },
+        ...availableMediaTypes.map((mediaType) => ({
+            value: mediaType,
+            label: <><MainThemeIcon type={mediaType} className="size-3.5"/> {mediaType}</>,
+        })),
+    ];
 
     const applyPreset = (days: number) => {
         form.setValue("startDate", accountCreatedAt, { shouldDirty: true });
@@ -131,19 +148,26 @@ function ActivityCleanupSettings() {
                         render={({ field }) =>
                             <FormItem>
                                 <FormLabel>Media type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? "all"}>
+                                <Select
+                                    items={mediaTypeItems}
+                                    value={field.value ?? "all"}
+                                    onValueChange={(value) => {
+                                        if (value !== null) field.onChange(value);
+                                    }}
+                                >
                                     <FormControl>
                                         <SelectTrigger className="w-full capitalize">
                                             <SelectValue/>
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="all">All types</SelectItem>
-                                        {availableMediaTypes.map((mediaType) =>
-                                            <SelectItem key={mediaType} value={mediaType} className="capitalize">
-                                                <MainThemeIcon type={mediaType} className="size-3.5"/> {mediaType}
-                                            </SelectItem>
-                                        )}
+                                        <SelectGroup>
+                                            {mediaTypeItems.map((item) =>
+                                                <SelectItem key={item.value} value={item.value} className="capitalize">
+                                                    {item.label}
+                                                </SelectItem>
+                                            )}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage/>

@@ -15,7 +15,7 @@ import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {userCollectionsFiltersSchema, UserCollectionsSearch} from "@/lib/schemas";
 import {paginatedUserCollectionsOptions} from "@/lib/client/react-query/query-options";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/user/$username")({
@@ -33,13 +33,30 @@ function UserCollectionsPage() {
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
     const mediaTypes = Object.values(MediaType);
+    const isOwner = currentUser?.name === username;
+
     const { page = 1, search = "", mediaType } = filters;
     const apiData = useSuspenseQuery(paginatedUserCollectionsOptions({ username, ...filters })).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<UserCollectionsSearch>({ search });
 
-    const isOwner = currentUser?.name === username;
+    const mediaTypeItems = [
+        {
+            value: "all",
+            label: (
+                <div className="flex items-center gap-2">
+                    <MainThemeIcon type="all"/>
+                    <span>All Types</span>
+                </div>
+            ),
+        },
+        ...mediaTypes.map((mediaType) => ({
+            value: mediaType,
+            label: <><MainThemeIcon type={mediaType}/> {mediaType}</>,
+        })),
+    ];
 
-    const handleMediaTypeChange = (value: string) => {
+    const handleMediaTypeChange = (value: string | null) => {
+        if (value === null) return;
         void updateFilters({ page: 1, mediaType: value === "all" ? undefined : (value as MediaType) })
     }
 
@@ -60,23 +77,18 @@ function UserCollectionsPage() {
                     </div>
 
                     <div className="col-span-1 sm:mr-auto sm:w-40">
-                        <Select value={mediaType ?? "all"} onValueChange={handleMediaTypeChange}>
+                        <Select items={mediaTypeItems} value={mediaType ?? "all"} onValueChange={handleMediaTypeChange}>
                             <SelectTrigger className="w-full capitalize">
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">
-                                    <div className="flex items-center gap-2">
-                                        <MainThemeIcon type="all"/>
-                                        <span>All Types</span>
-                                    </div>
-                                </SelectItem>
-                                {mediaTypes.map((type) =>
-                                    <SelectItem key={type} value={type} className="capitalize">
-                                        <MainThemeIcon type={type}/>
-                                        {type}
-                                    </SelectItem>
-                                )}
+                                <SelectGroup>
+                                    {mediaTypeItems.map((item) =>
+                                        <SelectItem key={item.value} value={item.value} className="capitalize">
+                                            {item.label}
+                                        </SelectItem>
+                                    )}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>

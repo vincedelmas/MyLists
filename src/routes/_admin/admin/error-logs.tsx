@@ -12,7 +12,7 @@ import {FileIcon, FileX, RefreshCw, ServerCrash, Terminal} from "lucide-react";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {adminLogFileOptions, adminLogFilesOptions} from "@/lib/client/react-query/query-options/admin.options";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 type LogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "text";
@@ -248,16 +248,25 @@ function AdminRuntimeLogsPage() {
                         </div>
 
                         <div className="flex gap-2 max-sm:w-full">
-                            <Select value={selectedFileName} disabled={logFiles.length === 0} onValueChange={setSelectedFileName}>
+                            <Select
+                                value={selectedFileName}
+                                disabled={logFiles.length === 0}
+                                items={logFiles.map((file) => ({ label: file.fileName, value: file.fileName }))}
+                                onValueChange={(value) => {
+                                    if (value !== null) setSelectedFileName(value);
+                                }}
+                            >
                                 <SelectTrigger className="w-72 max-w-[70vw] max-sm:w-full">
                                     <SelectValue placeholder="No log files"/>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {logFiles.map((file) =>
-                                        <SelectItem key={file.fileName} value={file.fileName}>
-                                            {file.fileName}
-                                        </SelectItem>
-                                    )}
+                                    <SelectGroup>
+                                        {logFiles.map((file) =>
+                                            <SelectItem key={file.fileName} value={file.fileName}>
+                                                {file.fileName}
+                                            </SelectItem>
+                                        )}
+                                    </SelectGroup>
                                 </SelectContent>
                             </Select>
                             <Button

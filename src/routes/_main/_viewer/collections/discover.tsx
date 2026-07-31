@@ -15,7 +15,7 @@ import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {communityCollectionsSchema, CommunitySearch} from "@/lib/schemas";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {communityCollectionsOptions} from "@/lib/client/react-query/query-options";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/discover")({
@@ -36,6 +36,22 @@ function CollectionsDiscoverPage() {
     const apiData = useSuspenseQuery(communityCollectionsOptions(filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<CommunitySearch>({ search });
 
+    const mediaTypeItems = [
+        {
+            value: "all",
+            label: (
+                <div className="flex items-center gap-2">
+                    <MainThemeIcon type="all"/>
+                    <span>All Types</span>
+                </div>
+            ),
+        },
+        ...mediaTypes.map((mediaType) => ({
+            value: mediaType,
+            label: <><MainThemeIcon type={mediaType} className="size-3.5"/> {mediaType}</>,
+        })),
+    ];
+
     return (
         <PageTitle title="Community collections" subtitle="Public collections created and shared by the community.">
             <div className="pt-2">
@@ -51,6 +67,7 @@ function CollectionsDiscoverPage() {
 
                     <div className={cn("sm:w-40 col-span-1", !isAnonymous && "sm:mr-auto")}>
                         <Select
+                            items={mediaTypeItems}
                             value={mediaType ?? "all"}
                             onValueChange={(val) => {
                                 return updateFilters({ page: 1, mediaType: val === "all" ? undefined : (val as MediaType) })
@@ -60,18 +77,13 @@ function CollectionsDiscoverPage() {
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">
-                                    <div className="flex items-center gap-2">
-                                        <MainThemeIcon type="all"/>
-                                        <span>All Types</span>
-                                    </div>
-                                </SelectItem>
-                                {mediaTypes.map((mediaType) =>
-                                    <SelectItem key={mediaType} value={mediaType} className="capitalize">
-                                        <MainThemeIcon type={mediaType} className="size-3.5"/>
-                                        {mediaType}
-                                    </SelectItem>
-                                )}
+                                <SelectGroup>
+                                    {mediaTypeItems.map((item) =>
+                                        <SelectItem key={item.value} value={item.value} className="capitalize">
+                                            {item.label}
+                                        </SelectItem>
+                                    )}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>

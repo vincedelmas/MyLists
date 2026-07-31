@@ -14,8 +14,8 @@ import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {adminMediaRefreshOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_admin/admin/media-refresh")({
@@ -46,9 +46,6 @@ const rangeOptions = [
 ] as const;
 
 
-type RefreshRange = (typeof rangeOptions)[number]["value"];
-
-
 function MediaRefreshPage() {
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
@@ -68,7 +65,7 @@ function MediaRefreshPage() {
         .sort((a, b) => b.count - a.count);
 
     const onNavigate = (params: AdminMediaRefreshStatsParams) => {
-        navigate({ search: params, resetScroll: false });
+        void navigate({ search: params, resetScroll: false });
     }
 
     return (
@@ -108,16 +105,24 @@ function MediaRefreshPage() {
                             <CardTitle>Daily Refreshes</CardTitle>
                             <CardDescription>Stacked by media type</CardDescription>
                             <CardAction>
-                                <Select value={dailyRange} onValueChange={(value: RefreshRange) => onNavigate({ dailyRange: value })}>
+                                <Select
+                                    value={dailyRange}
+                                    items={rangeOptions}
+                                    onValueChange={(value) => {
+                                        if (value !== null) onNavigate({ dailyRange: value });
+                                    }}
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select Range"/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {rangeOptions.map((opt) =>
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </SelectItem>
-                                        )}
+                                        <SelectGroup>
+                                            {rangeOptions.map((opt) =>
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            )}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                             </CardAction>
@@ -227,16 +232,24 @@ function MediaRefreshPage() {
                             <CardTitle>Top 8 Refreshers</CardTitle>
                             <CardDescription>Most Active Users</CardDescription>
                             <CardAction>
-                                <Select value={topRange} onValueChange={(value: RefreshRange) => onNavigate({ topRange: value })}>
+                                <Select
+                                    value={topRange}
+                                    items={rangeOptions}
+                                    onValueChange={(value) => {
+                                        if (value !== null) onNavigate({ topRange: value });
+                                    }}
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select Range"/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {rangeOptions.map((opt) =>
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </SelectItem>
-                                        )}
+                                        <SelectGroup>
+                                            {rangeOptions.map((opt) =>
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            )}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                             </CardAction>

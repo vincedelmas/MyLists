@@ -11,7 +11,7 @@ import {FormError} from "@/lib/client/components/forms/FormError";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {TaskFormValues, TaskInputProperty, TaskMetadata} from "@/lib/types/tasks.types";
 import {useAdminTriggerTaskMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
@@ -112,6 +112,7 @@ interface TaskFormFieldProps {
 function TaskFormField({ name, property, required, control }: TaskFormFieldProps) {
     const type = property.type ?? "string";
     const enumValues = property.enum?.filter((value): value is string => typeof value === "string");
+    const enumItems = enumValues?.map((value) => ({ label: value, value })) ?? [];
     const arrayEnumValues = type === "array" && property.items && !Array.isArray(property.items)
         ? property.items.enum?.filter((value): value is string => typeof value === "string")
         : undefined;
@@ -125,18 +126,26 @@ function TaskFormField({ name, property, required, control }: TaskFormFieldProps
                     return (
                         <FormItem>
                             <TaskFormLabel name={name} required={required}/>
-                            <Select value={String(field.value ?? "")} onValueChange={field.onChange}>
+                            <Select
+                                items={enumItems}
+                                value={String(field.value ?? "")}
+                                onValueChange={(value) => {
+                                    if (value !== null) field.onChange(value);
+                                }}
+                            >
                                 <FormControl>
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder={`Select ${name.toLowerCase()}`}/>
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {enumValues.map((option) =>
-                                        <SelectItem key={option} value={option}>
-                                            {option}
-                                        </SelectItem>
-                                    )}
+                                    <SelectGroup>
+                                        {enumItems.map((item) =>
+                                            <SelectItem key={item.value} value={item.value}>
+                                                {item.label}
+                                            </SelectItem>
+                                        )}
+                                    </SelectGroup>
                                 </SelectContent>
                             </Select>
                             <TaskFormDescription

@@ -1,5 +1,6 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {AdminApiMonitoringParams} from "@/lib/types/admin.types";
 import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -10,11 +11,10 @@ import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {formatMs, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {Activity, AlertTriangle, BarChart3, Clock, Gauge, Radio} from "lucide-react";
-import {AdminApiMonitoringParams, ApiMonitoringRange} from "@/lib/types/admin.types";
 import {adminApiMonitoringOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_admin/admin/api-monitoring")({
@@ -151,16 +151,24 @@ function ApiMonitoringPage() {
                                 {selectedProviderRange} · share, errors, and avg. latency
                             </CardDescription>
                             <CardAction>
-                                <Select value={range} onValueChange={(value: ApiMonitoringRange) => onNavigate({ range: value })}>
+                                <Select
+                                    value={range}
+                                    items={rangeOptions}
+                                    onValueChange={(value) => {
+                                        if (value !== null) onNavigate({ range: value });
+                                    }}
+                                >
                                     <SelectTrigger aria-label="Provider Mix range">
                                         <SelectValue placeholder="Select Range"/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {rangeOptions.map((opt) =>
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </SelectItem>
-                                        )}
+                                        <SelectGroup>
+                                            {rangeOptions.map((opt) =>
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            )}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                             </CardAction>
@@ -286,17 +294,22 @@ function ApiMonitoringPage() {
                             <CardAction>
                                 <Select
                                     value={dailyRange}
-                                    onValueChange={(value: Exclude<ApiMonitoringRange, "24h">) => onNavigate({ dailyRange: value })}
+                                    items={dailyRangeOptions}
+                                    onValueChange={(value) => {
+                                        if (value !== null) onNavigate({ dailyRange: value });
+                                    }}
                                 >
                                     <SelectTrigger aria-label="Daily Provider Calls range">
                                         <SelectValue placeholder="Select Range"/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {dailyRangeOptions.map((opt) =>
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </SelectItem>
-                                        )}
+                                        <SelectGroup>
+                                            {dailyRangeOptions.map((opt) =>
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            )}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                             </CardAction>

@@ -20,7 +20,7 @@ import {AddMonthlyActivity, AddMonthlyActivityInput, addMonthlyActivitySchema} f
 import {MonthlyActivityFormFields} from "@/lib/client/components/activity/MonthlyActivityFormFields";
 import {useAddMonthlyActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
@@ -55,7 +55,18 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
     const selectedType = form.watch("mediaType");
     const { data: searchResults = [], isFetching, error } = useQuery(monthlyActivityMediaSearchOptions(selectedType, debouncedSearch));
 
-    const handleTypeChange = (value: MediaType) => {
+    const mediaTypeItems = mediaTypes.map((mediaType) => ({
+        value: mediaType,
+        label: (
+            <>
+                <MainThemeIcon type={mediaType} className="size-3.5"/>
+                {mediaType}
+            </>
+        ),
+    }));
+
+    const handleTypeChange = (value: MediaType | null) => {
+        if (value === null) return;
         resetSearch();
         setSelectedMedia(null);
         form.clearErrors("mediaId");
@@ -109,19 +120,20 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                 render={({ field }) =>
                                     <FormItem className="w-36">
                                         <FormLabel>MediaType</FormLabel>
-                                        <Select value={field.value} onValueChange={handleTypeChange}>
+                                        <Select items={mediaTypeItems} value={field.value} onValueChange={handleTypeChange}>
                                             <FormControl>
                                                 <SelectTrigger className="w-36 capitalize">
                                                     <SelectValue/>
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {mediaTypes.map((mediaType) =>
-                                                    <SelectItem key={mediaType} value={mediaType} className="capitalize">
-                                                        <MainThemeIcon type={mediaType} className="size-3.5"/>
-                                                        {mediaType}
-                                                    </SelectItem>
-                                                )}
+                                                <SelectGroup>
+                                                    {mediaTypeItems.map((item) =>
+                                                        <SelectItem key={item.value} value={item.value} className="capitalize">
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage/>

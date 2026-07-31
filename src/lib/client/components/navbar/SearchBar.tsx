@@ -36,14 +36,29 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
         setSelectDrop(currentUser?.searchSelector ?? ApiProviderType.USERS);
     }
 
+    const searchProviderItems = [
+        { label: "Media", value: ApiProviderType.TMDB },
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS)
+            ? [{ label: "Books", value: ApiProviderType.BOOKS }]
+            : []),
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES)
+            ? [{ label: "Games", value: ApiProviderType.IGDB }]
+            : []),
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA)
+            ? [{ label: "Manga", value: ApiProviderType.MANGA }]
+            : []),
+        { label: "Users", value: ApiProviderType.USERS },
+    ];
+
     const handleInputChange = (ev: any) => {
         setPage(1);
         setSearch(ev.target.value);
     };
 
-    const handleValueChange = (value: string) => {
+    const handleValueChange = (value: ApiProviderType | null) => {
+        if (value === null) return;
         reset();
-        setSelectDrop(value as ApiProviderType);
+        setSelectDrop(value);
     };
 
     return (
@@ -52,34 +67,23 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                 "focus-within:ring-2 focus-within:ring-app-accent/50 focus-within:border-app-accent",
                 selectOpen ? "ring-2 ring-app-accent/50 border-app-accent" : "border"
             )}>
-                <Select value={selectDrop} onValueChange={handleValueChange} onOpenChange={setSelectOpen}>
+                <Select
+                    items={searchProviderItems}
+                    value={selectDrop}
+                    onValueChange={handleValueChange}
+                    onOpenChange={setSelectOpen}
+                >
                     <SelectTrigger className="h-10 rounded-none w-30 border-y-0 border-l-0 border-r border-input bg-accent/50
                     focus:ring-0 focus:ring-offset-0">
                         <SelectValue/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectItem value={ApiProviderType.TMDB}>
-                                Media
-                            </SelectItem>
-                            {resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS) &&
-                                <SelectItem value={ApiProviderType.BOOKS}>
-                                    Books
+                            {searchProviderItems.map((item) =>
+                                <SelectItem key={item.value} value={item.value}>
+                                    {item.label}
                                 </SelectItem>
-                            }
-                            {resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES) &&
-                                <SelectItem value={ApiProviderType.IGDB}>
-                                    Games
-                                </SelectItem>
-                            }
-                            {resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA) &&
-                                <SelectItem value={ApiProviderType.MANGA}>
-                                    Manga
-                                </SelectItem>
-                            }
-                            <SelectItem value={ApiProviderType.USERS}>
-                                Users
-                            </SelectItem>
+                            )}
                         </SelectGroup>
                     </SelectContent>
                 </Select>

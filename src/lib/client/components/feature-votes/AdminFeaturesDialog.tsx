@@ -79,11 +79,9 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                    <Settings2 className="size-3"/>
-                    Admin
-                </Button>
+            <DialogTrigger render={<Button variant="outline"/>}>
+                <Settings2 className="size-3"/>
+                Admin
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -141,7 +139,7 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
                         <FormError/>
                         <DialogFooter>
                             <div className="mr-auto">
-                                <Button size="sm" type="button" variant="destructive" onClick={handleDelete} disabled={mutationsPending}>
+                                <Button type="button" variant="destructive" onClick={handleDelete} disabled={mutationsPending}>
                                     Delete Request
                                 </Button>
                             </div>

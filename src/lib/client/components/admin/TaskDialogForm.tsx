@@ -55,11 +55,9 @@ export function TaskFormDialog({ task }: TaskFormDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button size="sm" disabled={triggerTaskMutation.isPending}>
-                    {triggerTaskMutation.isPending ? <Loader2 className="size-4 animate-spin"/> : <Settings2 className="size-4"/>}
-                    {triggerTaskMutation.isPending ? "Running" : "Configure"}
-                </Button>
+            <DialogTrigger render={<Button size="sm" disabled={triggerTaskMutation.isPending}/>}>
+                {triggerTaskMutation.isPending ? <Loader2 className="size-4 animate-spin"/> : <Settings2 className="size-4"/>}
+                {triggerTaskMutation.isPending ? "Running" : "Configure"}
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <Form {...form}>

@@ -34,19 +34,12 @@ export function ConfirmDialogHost() {
             ev.preventDefault();
             return;
         }
-
         confirm();
-    }
-
-    const handleOnOpenAutoFocus = (ev: Event) => {
-        if (!requiresText) return;
-        ev.preventDefault();
-        inputRef.current?.focus();
     }
 
     return (
         <AlertDialog open={open} onOpenChange={handleOpenChange}>
-            <AlertDialogContent onOpenAutoFocus={handleOnOpenAutoFocus}>
+            <AlertDialogContent initialFocus={() => requiresText ? inputRef.current : true}>
                 <AlertDialogHeader>
                     <AlertDialogTitle className={isDestructive ? "text-destructive" : undefined}>
                         {options.title}

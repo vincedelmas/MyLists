@@ -1,11 +1,11 @@
-import React from "react";
+import React, {useId} from "react";
 import {Input} from "@/lib/client/components/ui/input";
-import {Label} from "@/lib/client/components/ui/label";
 import {Controller, useFormContext, useWatch} from "react-hook-form";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
 import {CuratedMediaManager} from "@/lib/client/components/user-settings/CuratedMediaManager";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab} from "@/lib/types/profile-custom.types";
 
 
@@ -24,7 +24,8 @@ const modeOptions = [
 
 
 export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache }: TabCustomContentProps) => {
-    const { register, control } = useFormContext<HighlightedMediaSettings>();
+    const fieldId = useId();
+    const { control } = useFormContext<HighlightedMediaSettings>();
     const activeMode = useWatch({ control, name: `${activeTab}.mode` });
 
     return (
@@ -41,44 +42,63 @@ export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache }: T
                     }
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="space-y-2">
-                    <Label htmlFor="highlighted-media-title">Custom Title</Label>
-                    <Input
-                        maxLength={50}
-                        id="highlighted-media-title"
-                        placeholder="Highlighted Media"
-                        {...register(`${activeTab}.title`)}
-                    />
-                </div>
+            <CardContent>
+                <FieldGroup className="gap-6">
+                <Controller
+                    control={control}
+                    name={`${activeTab}.title`}
+                    render={({field, fieldState}) =>
+                        <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={`${fieldId}-title`}>Custom Title</FieldLabel>
+                            <Input
+                                {...field}
+                                id={`${fieldId}-title`}
+                                maxLength={50}
+                                placeholder="Highlighted Media"
+                                aria-invalid={fieldState.invalid}
+                            />
+                            <FieldError errors={[fieldState.error]}/>
+                        </Field>
+                    }
+                />
 
-                <div className="space-y-3">
-                    <Label>Display Mode</Label>
-                    <Controller
+                <Controller
                         control={control}
                         name={`${activeTab}.mode`}
-                        render={({ field }) =>
-                            <RadioGroup value={field.value} onValueChange={field.onChange}>
-                                {modeOptions.map((option) =>
-                                    <Label key={option.value} className="flex items-start gap-3 rounded-lg border p-3 font-normal">
-                                        <RadioGroupItem
-                                            className="mt-0.5"
-                                            value={option.value}
-                                        />
-                                        <div>
-                                            <div className="font-medium text-primary">
-                                                {option.label}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {option.description}
-                                            </div>
-                                        </div>
-                                    </Label>
-                                )}
-                            </RadioGroup>
+                        render={({field, fieldState}) =>
+                            <Field data-invalid={fieldState.invalid}>
+                                <FieldSet>
+                                    <FieldLegend id={`${fieldId}-mode`} variant="label">Display Mode</FieldLegend>
+                                    <RadioGroup
+                                        value={field.value}
+                                        onValueChange={field.onChange}
+                                        aria-invalid={fieldState.invalid}
+                                        aria-labelledby={`${fieldId}-mode`}
+                                        className="flex flex-col gap-3"
+                                    >
+                                        {modeOptions.map((option) =>
+                                            <Field key={option.value} orientation="horizontal" className="items-start rounded-lg border p-3">
+                                                <RadioGroupItem
+                                                    id={`${fieldId}-mode-${option.value}`}
+                                                    className="mt-0.5"
+                                                    value={option.value}
+                                                />
+                                                <FieldContent>
+                                                    <FieldLabel htmlFor={`${fieldId}-mode-${option.value}`} className="font-normal">
+                                                        {option.label}
+                                                    </FieldLabel>
+                                                    <FieldDescription className="text-xs">
+                                                        {option.description}
+                                                    </FieldDescription>
+                                                </FieldContent>
+                                            </Field>
+                                        )}
+                                    </RadioGroup>
+                                </FieldSet>
+                                <FieldError errors={[fieldState.error]}/>
+                            </Field>
                         }
                     />
-                </div>
 
                 {activeMode === "curated" &&
                     <CuratedMediaManager
@@ -87,6 +107,7 @@ export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache }: T
                         setPreviewCache={setPreviewCache}
                     />
                 }
+                </FieldGroup>
             </CardContent>
         </Card>
     );

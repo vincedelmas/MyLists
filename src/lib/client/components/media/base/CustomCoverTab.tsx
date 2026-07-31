@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {useForm} from "react-hook-form";
+import {useId, useState} from "react";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import {MediaType} from "@/lib/utils/enums";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
@@ -10,7 +10,7 @@ import {UserMedia, UserMediaItem} from "@/lib/types/query.options.types";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {UpdateUserCustomCoverInput, updateUserCustomCoverSchema} from "@/lib/schemas";
 import {useUpdateCustomCoverMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
@@ -22,6 +22,7 @@ interface CustomCoverTabProps {
 
 
 export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }: CustomCoverTabProps) => {
+    const fieldId = useId();
     const [fileInputKey, setFileInputKey] = useState(0);
     const [mode, setMode] = useState<"link" | "upload">("link");
     const form = useForm<UpdateUserCustomCoverInput>({
@@ -131,58 +132,60 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
                 </Button>
             </div>
 
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pb-6 border-b">
-                    <fieldset disabled={onUpdateMutation.isPending} className="space-y-4">
+            <FormProvider {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4 border-b pb-6">
+                    <FieldSet disabled={onUpdateMutation.isPending}>
+                        <FieldGroup>
                         {mode === "link" ?
-                            <FormField
+                            <Controller
                                 name="imageUrl"
                                 control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Cover URL</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                value={field.value ?? ""}
-                                                placeholder="https://example.com/cover.jpg"
-                                                onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={onUpdateMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-image-url`}>Cover URL</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-image-url`}
+                                            value={field.value ?? ""}
+                                            placeholder="https://example.com/cover.jpg"
+                                            aria-invalid={fieldState.invalid}
+                                            onChange={(ev) => field.onChange(ev.target.value.trim() ? ev.target.value : undefined)}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 }
                             />
                             :
-                            <FormField
+                            <Controller
                                 name="imageFile"
                                 control={form.control}
-                                render={({ field: { onChange, onBlur, name, ref } }) =>
-                                    <FormItem>
-                                        <FormLabel>Upload Cover</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                ref={ref}
-                                                type="file"
-                                                name={name}
-                                                onBlur={onBlur}
-                                                accept="image/*"
-                                                key={fileInputKey}
-                                                onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                                render={({field: {onChange, onBlur, name, ref}, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={onUpdateMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-image-file`}>Upload Cover</FieldLabel>
+                                        <Input
+                                            id={`${fieldId}-image-file`}
+                                            ref={ref}
+                                            type="file"
+                                            name={name}
+                                            onBlur={onBlur}
+                                            accept="image/*"
+                                            key={fileInputKey}
+                                            aria-invalid={fieldState.invalid}
+                                            onChange={(ev) => onChange(ev.target.files?.[0] ?? undefined)}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 }
                             />
                         }
-                    </fieldset>
+                        </FieldGroup>
+                    </FieldSet>
                     <FormError/>
                     <FormSubmitButton className="w-full" isLoading={onUpdateMutation.isPending}>
                         Save Custom Cover
                     </FormSubmitButton>
                 </form>
-            </Form>
+            </FormProvider>
         </div>
     );
 };

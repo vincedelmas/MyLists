@@ -4,6 +4,7 @@ import {Input} from "@/lib/client/components/ui/input";
 
 
 interface SearchInputUIProps {
+    id?: string;
     value: string;
     disabled?: boolean;
     className?: string;
@@ -12,7 +13,7 @@ interface SearchInputUIProps {
 }
 
 
-export const SearchInput = ({ value, onChange, placeholder, className, disabled }: SearchInputUIProps) => {
+export const SearchInput = ({ id, value, onChange, placeholder, className, disabled }: SearchInputUIProps) => {
     return (
         <div className="relative">
             <Search
@@ -20,6 +21,7 @@ export const SearchInput = ({ value, onChange, placeholder, className, disabled 
                 className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
             <Input
+                id={id}
                 type="search"
                 value={value}
                 disabled={disabled}

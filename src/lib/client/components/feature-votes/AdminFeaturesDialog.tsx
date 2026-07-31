@@ -1,6 +1,6 @@
-import {useState} from "react";
+import {useId, useState} from "react";
 import {Settings2} from "lucide-react";
-import {useForm} from "react-hook-form";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import {FeatureStatus} from "@/lib/utils/enums";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Button} from "@/lib/client/components/ui/button";
@@ -10,7 +10,7 @@ import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PostFeatureStatus, postFeatureStatusSchema} from "@/lib/schemas";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useAdminDeleteFeatureMutation, useAdminUpdateFeatureMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
@@ -29,6 +29,7 @@ const featureStatusItems = Object.values(FeatureStatus).map((status) => {
 
 
 export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentComment }: AdminFeatureDialogProps) => {
+    const fieldId = useId();
     const confirm = useConfirm();
     const [open, setOpen] = useState(false);
     const updateStatusMutation = useAdminUpdateFeatureMutation({ noErrorToast: true });
@@ -95,15 +96,16 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
                         Update the status of this feature request and add a public comment.
                     </DialogDescription>
                 </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleOnSubmit)} className="space-y-4">
-                        <fieldset className="space-y-4" disabled={mutationsPending}>
-                            <FormField
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(handleOnSubmit)} className="flex flex-col gap-4">
+                        <FieldSet disabled={mutationsPending}>
+                            <FieldGroup>
+                            <Controller
                                 name="status"
                                 control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Feature Status</FormLabel>
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={mutationsPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-status`}>Feature Status</FieldLabel>
                                         <Select
                                             value={field.value}
                                             items={featureStatusItems}
@@ -111,11 +113,9 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
                                                 if (value !== null) field.onChange(value);
                                             }}
                                         >
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue/>
-                                                </SelectTrigger>
-                                            </FormControl>
+                                            <SelectTrigger id={`${fieldId}-status`} className="w-full" aria-invalid={fieldState.invalid}>
+                                                <SelectValue/>
+                                            </SelectTrigger>
                                             <SelectContent>
                                                 <SelectGroup>
                                                     {featureStatusItems.map((item) =>
@@ -126,29 +126,30 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage/>
-                                    </FormItem>
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 }
                             />
-                            <FormField
+                            <Controller
                                 name="adminComment"
                                 control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Admin Note</FormLabel>
-                                        <FormControl>
-                                            <Textarea
-                                                className="min-h-25"
-                                                value={field.value ?? ""}
-                                                onChange={field.onChange}
-                                                placeholder="Provide context on why this status was chosen..."
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={mutationsPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-admin-comment`}>Admin Note</FieldLabel>
+                                        <Textarea
+                                            {...field}
+                                            id={`${fieldId}-admin-comment`}
+                                            className="min-h-25"
+                                            value={field.value ?? ""}
+                                            aria-invalid={fieldState.invalid}
+                                            placeholder="Provide context on why this status was chosen..."
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 }
                             />
-                        </fieldset>
+                            </FieldGroup>
+                        </FieldSet>
                         <FormError/>
                         <DialogFooter>
                             <div className="mr-auto">
@@ -167,7 +168,7 @@ export const AdminFeatureControlsDialog = ({ featureId, currentStatus, currentCo
                             </FormSubmitButton>
                         </DialogFooter>
                     </form>
-                </Form>
+                </FormProvider>
             </DialogContent>
         </Dialog>
     );

@@ -17,7 +17,7 @@ export const LinkSidebar = ({ items }: { items: LinkSidebarItem[] }) => {
         <nav
             className={cn(
                 "flex flex-row overflow-x-auto pb-4 gap-2 scrollbar-thin",
-                "md:flex-col md:overflow-visible md:pb-0 md:gap-3",
+                "md:flex-col md:overflow-visible md:pb-0 md:gap-2",
                 "border-b md:border-none bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60",
             )}
         >
@@ -31,7 +31,7 @@ export const LinkSidebar = ({ items }: { items: LinkSidebarItem[] }) => {
                         to={item.to}
                         key={item.id}
                         activeProps={{ className: "bg-emerald-500/50 text-primary" }}
-                        className={buttonVariants({ variant: "ghost", className: "justify-start text-sm shrink-0 whitespace-nowrap" })}
+                        className={buttonVariants({ variant: "hover", className: "justify-start text-sm shrink-0 whitespace-nowrap" })}
                     >
                         {item.label}
                     </Link>

@@ -2,12 +2,14 @@ import React, {useState} from "react";
 import Cropper, {Area} from "react-easy-crop";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
-import {FormDescription} from "@/lib/client/components/ui/form";
+import {FieldDescription} from "@/lib/client/components/ui/field";
 
 
 interface ImageCropperProps {
     aspect?: number;
+    inputId?: string;
     fileName: string;
+    "aria-invalid"?: boolean;
     sliceHeight?: number;
     resultClassName?: string;
     cropShape: "round" | "rect";
@@ -28,7 +30,7 @@ interface CropState {
 }
 
 
-export const ImageCropper = ({ aspect, fileName, sliceHeight, cropShape, onCropApplied, resultClassName = "" }: ImageCropperProps) => {
+export const ImageCropper = ({ aspect, inputId, fileName, sliceHeight, cropShape, onCropApplied, resultClassName = "", "aria-invalid": ariaInvalid }: ImageCropperProps) => {
     const [state, setState] = useState<CropState>({
         zoom: 1,
         open: true,
@@ -132,13 +134,15 @@ export const ImageCropper = ({ aspect, fileName, sliceHeight, cropShape, onCropA
         <div>
             <Input
                 type="file"
+                id={inputId}
                 accept="image/*"
                 onChange={onFileChange}
+                aria-invalid={ariaInvalid}
                 className="file:text-muted-foreground cursor-pointer"
             />
-            <FormDescription>
+            <FieldDescription>
                 Choose an image to crop and resize.
-            </FormDescription>
+            </FieldDescription>
             {(state.imageSrc && state.open) &&
                 <div className="space-y-4 mt-6 bg-popover rounded-lg p-3">
                     <div>

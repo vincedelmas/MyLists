@@ -1,4 +1,4 @@
-import {useForm} from "react-hook-form";
+import {useId} from "react";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {splitIntoColumns} from "@/lib/utils/arrays";
 import {toast} from "@/lib/client/components/ui/toast";
@@ -9,12 +9,13 @@ import {Textarea} from "@/lib/client/components/ui/textarea";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {useEditMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {EditMediaDetailsPayload, editMediaDetailsPayloadSchema, mediaTypeMediaIdSchema} from "@/lib/schemas";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 
 
 export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$mediaId")({
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$m
 
 
 function MediaEditPage() {
+    const fieldId = useId();
     const { history } = useRouter();
     const { mediaType, mediaId } = Route.useParams();
     const editMediaMutation = useEditMediaMutation({ noErrorToast: true });
@@ -97,21 +99,19 @@ function MediaEditPage() {
         const [key, _] = fieldEntry;
 
         return (
-            <FormField
+            <Controller
                 key={key}
                 name={key}
                 control={myForm.control}
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>{capitalize(key.replaceAll("_", " "))}</FormLabel>
-                        <FormControl>
-                            {key === "synopsis"
-                                ? <Textarea {...field} className="h-60"/>
-                                : <Input {...field}/>
-                            }
-                        </FormControl>
-                        <FormMessage/>
-                    </FormItem>
+                render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid} data-disabled={editMediaMutation.isPending}>
+                        <FieldLabel htmlFor={`${fieldId}-${key}`}>{capitalize(key.replaceAll("_", " "))}</FieldLabel>
+                        {key === "synopsis"
+                            ? <Textarea {...field} id={`${fieldId}-${key}`} className="h-60" aria-invalid={fieldState.invalid}/>
+                            : <Input {...field} id={`${fieldId}-${key}`} aria-invalid={fieldState.invalid}/>
+                        }
+                        <FieldError errors={[fieldState.error]}/>
+                    </Field>
                 )}
             />
         );
@@ -119,34 +119,32 @@ function MediaEditPage() {
 
     return (
         <PageTitle title={`Edit ${capitalize(mediaType)} Details`} subtitle={`Update the media information`}>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-5 mx-auto w-full">
-                    <fieldset disabled={editMediaMutation.isPending} className="space-y-5">
+            <FormProvider {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="mx-auto mt-6 flex w-full flex-col gap-5">
+                    <FieldSet disabled={editMediaMutation.isPending}>
                         <div className="grid grid-cols-3 gap-8 max-sm:grid-cols-1">
-                            <div className="space-y-4">
-                                <FormField
+                            <FieldGroup className="gap-4">
+                                <Controller
                                     name="imageCover"
                                     control={form.control}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>ImageCover URL</FormLabel>
-                                            <FormControl>
-                                                <Input {...field}/>
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid} data-disabled={editMediaMutation.isPending}>
+                                            <FieldLabel htmlFor={`${fieldId}-image-cover`}>Image Cover URL</FieldLabel>
+                                            <Input {...field} id={`${fieldId}-image-cover`} aria-invalid={fieldState.invalid}/>
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
                                     )}
                                 />
                                 {parts[0].map(array => renderField(form, array))}
-                            </div>
-                            <div className="space-y-4">
+                            </FieldGroup>
+                            <FieldGroup className="gap-4">
                                 {parts[1].map(array => renderField(form, array))}
-                            </div>
-                            <div className="space-y-4">
+                            </FieldGroup>
+                            <FieldGroup className="gap-4">
                                 {parts[2].map(arr => renderField(form, arr))}
-                            </div>
+                            </FieldGroup>
                         </div>
-                    </fieldset>
+                    </FieldSet>
                     <FormError/>
                     <div className="flex justify-end">
                         <FormSubmitButton isLoading={editMediaMutation.isPending}>
@@ -154,7 +152,7 @@ function MediaEditPage() {
                         </FormSubmitButton>
                     </div>
                 </form>
-            </Form>
+            </FormProvider>
         </PageTitle>
     );
 }

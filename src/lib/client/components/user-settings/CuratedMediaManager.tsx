@@ -1,7 +1,6 @@
 import {useQuery} from "@tanstack/react-query";
-import {Dispatch, SetStateAction} from "react";
+import {type Dispatch, type SetStateAction, useId} from "react";
 import {toItemKey} from "@/lib/utils/media-mapping";
-import {Label} from "@/lib/client/components/ui/label";
 import {Input} from "@/lib/client/components/ui/input";
 import {ArrowDown, ArrowUp, Trash2} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
@@ -10,6 +9,7 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {profileCustomSearchOptions} from "@/lib/client/react-query/query-options";
 import {HighlightedMediaRef, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab, PROFILE_MAX_HIGHLIGHTED_MEDIA} from "@/lib/types/profile-custom.types";
+import {Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 
 
 interface CuratedMediaManagerProps {
@@ -20,6 +20,7 @@ interface CuratedMediaManagerProps {
 
 
 export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache }: CuratedMediaManagerProps) => {
+    const fieldId = useId();
     const { clearErrors, control } = useFormContext<HighlightedMediaSettings>();
     const { fields, append, remove, swap } = useFieldArray({ control, name: `${activeTab}.items` });
     const { containerRef, search, setSearch, isOpen, debouncedSearch, reset } = useSearchContainer({
@@ -38,17 +39,17 @@ export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache }
     };
 
     return (
-        <div className="space-y-6">
-            <div className="space-y-2">
-                <Label htmlFor="highlighted-media-search">
+        <FieldGroup className="gap-6">
+            <Field>
+                <FieldLabel htmlFor={`${fieldId}-search`}>
                     Add Media
-                </Label>
+                </FieldLabel>
                 <div ref={containerRef} className="relative">
                     <Input
+                        id={`${fieldId}-search`}
                         value={search}
                         inputMode="search"
                         className="text-xs"
-                        id="highlighted-media-search"
                         onChange={(ev) => setSearch(ev.target.value)}
                         placeholder={activeTab === "overview"
                             ? "Search in your lists..."
@@ -99,25 +100,23 @@ export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache }
                         </div>
                     </SearchContainer>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <FieldDescription className="text-xs">
                     Search only uses your list data. Overview can mix media types.
-                </p>
-            </div>
+                </FieldDescription>
+            </Field>
 
-            <div className="space-y-3">
-                <div>
-                    <Label>Curated Items</Label>
-                    <p className="text-xs text-muted-foreground mt-1">
+            <FieldSet>
+                    <FieldLegend variant="label">Curated Items</FieldLegend>
+                    <FieldDescription>
                         Up to {PROFILE_MAX_HIGHLIGHTED_MEDIA} items. Use arrows to control order.
-                    </p>
-                </div>
+                    </FieldDescription>
 
                 {fields.length === 0 ?
                     <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                         No Media Selected Yet.
                     </div>
                     :
-                    <div className="space-y-2">
+                    <div className="flex flex-col gap-2">
                         {fields.map((field: any, idx) => {
                             const itemKey = toItemKey(field);
                             const preview = previewCache[itemKey] || searchResults?.find(r => toItemKey(r) === itemKey);
@@ -136,8 +135,8 @@ export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache }
                         })}
                     </div>
                 }
-            </div>
-        </div>
+            </FieldSet>
+        </FieldGroup>
     )
 }
 

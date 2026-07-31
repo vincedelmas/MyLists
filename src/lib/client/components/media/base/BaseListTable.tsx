@@ -31,9 +31,7 @@ export const getBaseColumns = <T extends UserMediaItem>(props: ColumnConfigProps
                     <div className="flex items-center gap-3">
                         {original.mediaName}
                         {!isCurrent && isMediaTypeActive && original.common &&
-                            <CircleCheck
-                                className="h-4 w-4 text-green-500"
-                            />
+                            <CircleCheck className="size-4 text-green-500"/>
                         }
                     </div>
                 </Link>
@@ -56,7 +54,7 @@ export const getBaseColumns = <T extends UserMediaItem>(props: ColumnConfigProps
                             onClick={() => onEdit(original.mediaId)}
                             className="flex w-full items-center justify-center"
                         >
-                            <Settings2 className="w-4 h-4 opacity-70"/>
+                            <Settings2 className="size-4 opacity-70"/>
                         </Button>
                     );
                 }

@@ -1,11 +1,12 @@
-import {useForm} from "react-hook-form";
+import {Controller, FormProvider, useForm} from "react-hook-form";
+import {useId} from "react";
 import {useMutation} from "@tanstack/react-query";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute, redirect} from "@tanstack/react-router";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {adminAuth, checkAdminAuth} from "@/lib/server/functions/admin";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
@@ -29,6 +30,7 @@ type AdminAuthForm = {
 
 
 function AdminStepUpPage() {
+    const fieldId = useId();
     const navigate = Route.useNavigate();
     const adminAuthMutation = useMutation({ mutationFn: adminAuth, meta: { noErrorToast: true } });
     const form = useForm<AdminAuthForm>({
@@ -60,25 +62,31 @@ function AdminStepUpPage() {
                     <CardTitle>Admin Step Up</CardTitle>
                     <CardDescription>Enter your admin password to access elevated privileges.</CardDescription>
                 </CardHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <fieldset disabled={adminAuthMutation.isPending} className="space-y-4">
-                            <CardContent className="space-y-4">
-                                <FormField
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+                        <FieldSet disabled={adminAuthMutation.isPending}>
+                            <CardContent>
+                                <FieldGroup>
+                                <Controller
                                     control={form.control}
                                     name="password"
-                                    render={({ field }) =>
-                                        <FormItem>
-                                            <FormLabel>Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" placeholder="Enter admin password" {...field} />
-                                            </FormControl>
-                                            <FormMessage/>
-                                        </FormItem>
+                                    render={({field, fieldState}) =>
+                                        <Field data-invalid={fieldState.invalid} data-disabled={adminAuthMutation.isPending}>
+                                            <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
+                                            <Input
+                                                {...field}
+                                                id={`${fieldId}-password`}
+                                                type="password"
+                                                placeholder="Enter admin password"
+                                                aria-invalid={fieldState.invalid}
+                                            />
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
                                     }
                                 />
+                                </FieldGroup>
                             </CardContent>
-                        </fieldset>
+                        </FieldSet>
                         <div className="px-6">
                             <FormError/>
                         </div>
@@ -88,7 +96,7 @@ function AdminStepUpPage() {
                             </FormSubmitButton>
                         </CardFooter>
                     </form>
-                </Form>
+                </FormProvider>
             </Card>
         </div>
     )

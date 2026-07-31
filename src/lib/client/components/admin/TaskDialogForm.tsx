@@ -1,8 +1,8 @@
 import {z} from "zod";
 import {toast} from "@/lib/client/components/ui/toast";
-import {useState} from "react";
+import {useId, useState} from "react";
 import {Loader2, Settings2} from "lucide-react";
-import {Control, useForm} from "react-hook-form";
+import {Controller, type Control, FormProvider, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
@@ -12,7 +12,7 @@ import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {TaskFormValues, TaskInputProperty, TaskMetadata} from "@/lib/types/tasks.types";
 import {useAdminTriggerTaskMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
@@ -60,14 +60,14 @@ export function TaskFormDialog({ task }: TaskFormDialogProps) {
                 {triggerTaskMutation.isPending ? "Running" : "Configure"}
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                        <fieldset disabled={triggerTaskMutation.isPending} className="space-y-4">
-                            <DialogHeader>
-                                <DialogTitle>{task.name}</DialogTitle>
-                                <DialogDescription>{task.description}</DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
+                        <DialogHeader>
+                            <DialogTitle>{task.name}</DialogTitle>
+                            <DialogDescription>{task.description}</DialogDescription>
+                        </DialogHeader>
+                        <FieldSet disabled={triggerTaskMutation.isPending}>
+                            <FieldGroup className="py-4">
                                 {Object.entries(task.inputSchema.properties).map(([name, property]) =>
                                     <TaskFormField
                                         key={name}
@@ -77,8 +77,8 @@ export function TaskFormDialog({ task }: TaskFormDialogProps) {
                                         required={requiredFields.has(name)}
                                     />
                                 )}
-                            </div>
-                        </fieldset>
+                            </FieldGroup>
+                        </FieldSet>
                         <FormError/>
                         <DialogFooter>
                             <Button
@@ -94,7 +94,7 @@ export function TaskFormDialog({ task }: TaskFormDialogProps) {
                             </FormSubmitButton>
                         </DialogFooter>
                     </form>
-                </Form>
+                </FormProvider>
             </DialogContent>
         </Dialog>
     );
@@ -110,6 +110,7 @@ interface TaskFormFieldProps {
 
 
 function TaskFormField({ name, property, required, control }: TaskFormFieldProps) {
+    const fieldId = useId();
     const type = property.type ?? "string";
     const enumValues = property.enum?.filter((value): value is string => typeof value === "string");
     const enumItems = enumValues?.map((value) => ({ label: value, value })) ?? [];
@@ -118,14 +119,14 @@ function TaskFormField({ name, property, required, control }: TaskFormFieldProps
         : undefined;
 
     return (
-        <FormField
+        <Controller
             name={name}
             control={control}
-            render={({ field }) => {
+            render={({field, fieldState}) => {
                 if (enumValues?.length) {
                     return (
-                        <FormItem>
-                            <TaskFormLabel name={name} required={required}/>
+                        <Field data-invalid={fieldState.invalid}>
+                            <TaskFormLabel id={fieldId} name={name} required={required}/>
                             <Select
                                 items={enumItems}
                                 value={String(field.value ?? "")}
@@ -133,11 +134,9 @@ function TaskFormField({ name, property, required, control }: TaskFormFieldProps
                                     if (value !== null) field.onChange(value);
                                 }}
                             >
-                                <FormControl>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder={`Select ${name.toLowerCase()}`}/>
-                                    </SelectTrigger>
-                                </FormControl>
+                                <SelectTrigger id={fieldId} className="w-full" aria-invalid={fieldState.invalid}>
+                                    <SelectValue placeholder={`Select ${name.toLowerCase()}`}/>
+                                </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
                                         {enumItems.map((item) =>
@@ -151,56 +150,57 @@ function TaskFormField({ name, property, required, control }: TaskFormFieldProps
                             <TaskFormDescription
                                 description={property.description}
                             />
-                            <FormMessage/>
-                        </FormItem>
+                            <FieldError errors={[fieldState.error]}/>
+                        </Field>
                     );
                 }
 
                 if (type === "boolean") {
                     return (
-                        <FormItem className="flex items-start gap-2 space-y-0">
-                            <FormControl>
-                                <Checkbox
-                                    checked={Boolean(field.value)}
-                                    onCheckedChange={field.onChange}
-                                />
-                            </FormControl>
-                            <div className="grid gap-1.5 leading-none">
+                        <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+                            <Checkbox
+                                id={fieldId}
+                                checked={Boolean(field.value)}
+                                aria-invalid={fieldState.invalid}
+                                onCheckedChange={field.onChange}
+                            />
+                            <FieldContent>
                                 <TaskFormLabel
+                                    id={fieldId}
                                     name={name}
                                     required={required}
                                 />
                                 <TaskFormDescription
                                     description={property.description}
                                 />
-                                <FormMessage/>
-                            </div>
-                        </FormItem>
+                                <FieldError errors={[fieldState.error]}/>
+                            </FieldContent>
+                        </Field>
                     );
                 }
 
                 if (type === "number" || type === "integer") {
                     return (
-                        <FormItem>
-                            <TaskFormLabel name={name} required={required}/>
-                            <FormControl>
-                                <Input
-                                    type="number"
-                                    ref={field.ref}
-                                    name={field.name}
-                                    onBlur={field.onBlur}
-                                    min={property.minimum}
-                                    max={property.maximum}
-                                    value={field.value ?? ""}
-                                    step={property.multipleOf ?? (type === "integer" ? 1 : undefined)}
-                                    onChange={ev => field.onChange(ev.target.value === "" ? undefined : ev.target.valueAsNumber)}
-                                />
-                            </FormControl>
+                        <Field data-invalid={fieldState.invalid}>
+                            <TaskFormLabel id={fieldId} name={name} required={required}/>
+                            <Input
+                                id={fieldId}
+                                type="number"
+                                ref={field.ref}
+                                name={field.name}
+                                onBlur={field.onBlur}
+                                min={property.minimum}
+                                max={property.maximum}
+                                value={field.value ?? ""}
+                                aria-invalid={fieldState.invalid}
+                                step={property.multipleOf ?? (type === "integer" ? 1 : undefined)}
+                                onChange={ev => field.onChange(ev.target.value === "" ? undefined : ev.target.valueAsNumber)}
+                            />
                             <TaskFormDescription
                                 description={property.description}
                             />
-                            <FormMessage/>
-                        </FormItem>
+                            <FieldError errors={[fieldState.error]}/>
+                        </Field>
                     );
                 }
 
@@ -209,14 +209,19 @@ function TaskFormField({ name, property, required, control }: TaskFormFieldProps
 
                     if (arrayEnumValues?.length) {
                         return (
-                            <FormItem>
-                                <TaskFormLabel name={name} required={required}/>
-                                <FormControl>
-                                    <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
-                                        {arrayEnumValues.map((option) =>
-                                            <label key={option} className="flex items-center gap-2 text-sm capitalize">
+                            <Field data-invalid={fieldState.invalid}>
+                                <FieldSet>
+                                    <FieldLegend variant="label">
+                                        {formatFieldName(name)}
+                                        {required && <span className="ml-1 text-destructive">*</span>}
+                                    </FieldLegend>
+                                    <FieldGroup data-slot="checkbox-group" className="grid grid-cols-2 gap-2 rounded-md border p-3">
+                                        {arrayEnumValues.map((option, index) =>
+                                            <Field key={option} orientation="horizontal">
                                                 <Checkbox
+                                                    id={`${fieldId}-option-${index}`}
                                                     checked={arrayValue.includes(option)}
+                                                    aria-invalid={fieldState.invalid}
                                                     onCheckedChange={(checked) => {
                                                         field.onChange(checked
                                                             ? [...arrayValue, option]
@@ -224,61 +229,63 @@ function TaskFormField({ name, property, required, control }: TaskFormFieldProps
                                                         );
                                                     }}
                                                 />
-                                                {option}
-                                            </label>
+                                                <FieldLabel htmlFor={`${fieldId}-option-${index}`} className="font-normal capitalize">
+                                                    {option}
+                                                </FieldLabel>
+                                            </Field>
                                         )}
-                                    </div>
-                                </FormControl>
+                                    </FieldGroup>
+                                </FieldSet>
                                 <TaskFormDescription
                                     description={property.description}
                                 />
-                                <FormMessage/>
-                            </FormItem>
+                                <FieldError errors={[fieldState.error]}/>
+                            </Field>
                         );
                     }
 
                     return (
-                        <FormItem>
-                            <TaskFormLabel name={name} required={required}/>
-                            <FormControl>
-                                <Input
-                                    type="text"
-                                    ref={field.ref}
-                                    name={field.name}
-                                    onBlur={field.onBlur}
-                                    placeholder="Comma-separated values"
-                                    value={arrayValue.join(", ")}
-                                    onChange={(ev) => {
-                                        const value = ev.target.value.trim();
-                                        field.onChange(value ? value.split(",").map((item) => item.trim()) : []);
-                                    }}
-                                />
-                            </FormControl>
+                        <Field data-invalid={fieldState.invalid}>
+                            <TaskFormLabel id={fieldId} name={name} required={required}/>
+                            <Input
+                                id={fieldId}
+                                type="text"
+                                ref={field.ref}
+                                name={field.name}
+                                onBlur={field.onBlur}
+                                placeholder="Comma-separated values"
+                                value={arrayValue.join(", ")}
+                                aria-invalid={fieldState.invalid}
+                                onChange={(ev) => {
+                                    const value = ev.target.value.trim();
+                                    field.onChange(value ? value.split(",").map((item) => item.trim()) : []);
+                                }}
+                            />
                             <TaskFormDescription
                                 description={property.description}
                             />
-                            <FormMessage/>
-                        </FormItem>
+                            <FieldError errors={[fieldState.error]}/>
+                        </Field>
                     );
                 }
 
                 return (
-                    <FormItem>
-                        <TaskFormLabel name={name} required={required}/>
-                        <FormControl>
-                            <Input
-                                {...field}
-                                value={field.value ?? ""}
-                                minLength={property.minLength}
-                                maxLength={property.maxLength}
-                                type={property.format === "email" ? "email" : "text"}
-                            />
-                        </FormControl>
+                    <Field data-invalid={fieldState.invalid}>
+                        <TaskFormLabel id={fieldId} name={name} required={required}/>
+                        <Input
+                            {...field}
+                            id={fieldId}
+                            value={field.value ?? ""}
+                            minLength={property.minLength}
+                            maxLength={property.maxLength}
+                            aria-invalid={fieldState.invalid}
+                            type={property.format === "email" ? "email" : "text"}
+                        />
                         <TaskFormDescription
                             description={property.description}
                         />
-                        <FormMessage/>
-                    </FormItem>
+                        <FieldError errors={[fieldState.error]}/>
+                    </Field>
                 );
             }}
         />
@@ -286,14 +293,14 @@ function TaskFormField({ name, property, required, control }: TaskFormFieldProps
 }
 
 
-function TaskFormLabel({ name, required }: { name: string; required: boolean }) {
+function TaskFormLabel({ id, name, required }: { id: string; name: string; required: boolean }) {
     return (
-        <FormLabel>
+        <FieldLabel htmlFor={id}>
             {formatFieldName(name)}
             {required &&
                 <span className="text-destructive ml-1">*</span>
             }
-        </FormLabel>
+        </FieldLabel>
     );
 }
 
@@ -310,9 +317,9 @@ function formatFieldName(name: string) {
 function TaskFormDescription({ description }: { description?: string }) {
     if (!description) return null;
     return (
-        <FormDescription className="text-xs">
+        <FieldDescription className="text-xs">
             {description}
-        </FormDescription>
+        </FieldDescription>
     );
 }
 

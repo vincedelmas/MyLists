@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {useForm} from "react-hook-form";
+import {useId, useState} from "react";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import {FeatureStatus} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -21,7 +21,7 @@ import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 
@@ -52,6 +52,7 @@ const STATUS_STYLES: Record<FeatureStatus, string> = {
 
 
 function FeatureVotesPage() {
+    const fieldId = useId();
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
     const { currentUser, isAnonymous } = useAuth();
@@ -161,43 +162,45 @@ function FeatureVotesPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmitAddNewFeature)} className="space-y-4">
-                                    <fieldset disabled={createFeatureMutation.isPending || isAnonymous} className="space-y-4">
-                                        <FormField
+                            <FormProvider {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmitAddNewFeature)} className="flex flex-col gap-4">
+                                    <FieldSet disabled={createFeatureMutation.isPending || isAnonymous}>
+                                        <FieldGroup>
+                                        <Controller
                                             name="title"
                                             control={form.control}
-                                            render={({ field }) =>
-                                                <FormItem>
-                                                    <FormLabel>Title</FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            {...field}
-                                                            placeholder="Feature title"
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage/>
-                                                </FormItem>
+                                            render={({field, fieldState}) =>
+                                                <Field data-invalid={fieldState.invalid} data-disabled={createFeatureMutation.isPending || isAnonymous}>
+                                                    <FieldLabel htmlFor={`${fieldId}-title`}>Title</FieldLabel>
+                                                    <Input
+                                                        {...field}
+                                                        id={`${fieldId}-title`}
+                                                        placeholder="Feature title"
+                                                        aria-invalid={fieldState.invalid}
+                                                    />
+                                                    <FieldError errors={[fieldState.error]}/>
+                                                </Field>
                                             }
                                         />
-                                        <FormField
+                                        <Controller
                                             name="description"
                                             control={form.control}
-                                            render={({ field }) =>
-                                                <FormItem>
-                                                    <FormLabel>Description</FormLabel>
-                                                    <FormControl>
-                                                        <Textarea
-                                                            {...field}
-                                                            rows={3}
-                                                            placeholder="Optional: add a short context or use-case."
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage/>
-                                                </FormItem>
+                                            render={({field, fieldState}) =>
+                                                <Field data-invalid={fieldState.invalid} data-disabled={createFeatureMutation.isPending || isAnonymous}>
+                                                    <FieldLabel htmlFor={`${fieldId}-description`}>Description</FieldLabel>
+                                                    <Textarea
+                                                        {...field}
+                                                        id={`${fieldId}-description`}
+                                                        rows={3}
+                                                        placeholder="Optional: add a short context or use-case."
+                                                        aria-invalid={fieldState.invalid}
+                                                    />
+                                                    <FieldError errors={[fieldState.error]}/>
+                                                </Field>
                                             }
                                         />
-                                    </fieldset>
+                                        </FieldGroup>
+                                    </FieldSet>
                                     <FormError/>
                                     <div className="flex items-center justify-center">
                                         <FormSubmitButton disabled={isAnonymous} isLoading={createFeatureMutation.isPending}>
@@ -205,7 +208,7 @@ function FeatureVotesPage() {
                                         </FormSubmitButton>
                                     </div>
                                 </form>
-                            </Form>
+                            </FormProvider>
                         </CardContent>
                     </Card>
                 </div>

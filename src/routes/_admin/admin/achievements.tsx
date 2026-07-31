@@ -1,8 +1,7 @@
-import {useState} from "react";
+import {useId, useState} from "react";
 import {AchievementTier} from "@/lib/schemas";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
-import {Label} from "@/lib/client/components/ui/label";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -15,6 +14,7 @@ import {adminAchievementsOptions} from "@/lib/client/react-query/query-options/a
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {useAdminUpdateAchievementMutation, useAdminUpdateTiersMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
+import {Field, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 
 
 export const Route = createFileRoute("/_admin/admin/achievements")({
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/_admin/admin/achievements")({
 
 
 function AchievementPage() {
+    const fieldId = useId();
     const updateTiersMutation = useAdminUpdateTiersMutation();
     const [editedName, setEditedName] = useState("");
     const [editedDesc, setEditedDesc] = useState("");
@@ -143,28 +144,28 @@ function AchievementPage() {
                         <DialogDescription>Modify the core details of the achievement.</DialogDescription>
                     </DialogHeader>
                     {editingAchievement &&
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name" className="text-right">Name</Label>
+                        <FieldGroup className="py-4">
+                            <Field className="grid grid-cols-4 items-center gap-4" data-disabled={updateAchievementMutation.isPending}>
+                                <FieldLabel htmlFor={`${fieldId}-name`} className="text-right">Name</FieldLabel>
                                 <Input
-                                    id="name"
+                                    id={`${fieldId}-name`}
                                     value={editedName}
                                     className="col-span-3"
                                     disabled={updateAchievementMutation.isPending}
                                     onChange={(ev) => setEditedName(ev.target.value)}
                                 />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="description" className="text-right">Description</Label>
+                            </Field>
+                            <Field className="grid grid-cols-4 items-center gap-4" data-disabled={updateAchievementMutation.isPending}>
+                                <FieldLabel htmlFor={`${fieldId}-description`} className="text-right">Description</FieldLabel>
                                 <Textarea
-                                    id="description"
+                                    id={`${fieldId}-description`}
                                     value={editedDesc}
                                     className="col-span-3"
                                     disabled={updateAchievementMutation.isPending}
                                     onChange={(ev) => setEditedDesc(ev.target.value)}
                                 />
-                            </div>
-                        </div>
+                            </Field>
+                        </FieldGroup>
                     }
                     <DialogFooter>
                         <Button
@@ -187,24 +188,24 @@ function AchievementPage() {
                         <DialogDescription>Adjust the criteria count for each difficulty tier.</DialogDescription>
                     </DialogHeader>
                     {editingAchievement && (
-                        <div className="grid gap-4 py-4">
+                        <FieldGroup className="py-4">
                             {editableTiers.map((tier) =>
-                                <div key={tier.difficulty} className="grid grid-cols-3 items-center gap-4">
-                                    <Label htmlFor={`tier-${tier.difficulty}`} className="text-right">
+                                <Field key={tier.difficulty} className="grid grid-cols-3 items-center gap-4" data-disabled={updateAchievementMutation.isPending}>
+                                    <FieldLabel htmlFor={`${fieldId}-tier-${tier.id}`} className="text-right">
                                         {capitalize(tier.difficulty)}
-                                    </Label>
+                                    </FieldLabel>
                                     <Input
                                         min="0"
                                         type="number"
                                         className="col-span-2"
-                                        id={tier.id.toString()}
+                                        id={`${fieldId}-tier-${tier.id}`}
                                         value={tier.criteria.count}
                                         disabled={updateAchievementMutation.isPending}
                                         onChange={(ev) => handleTierCountChange(tier.id, ev.target.value)}
                                     />
-                                </div>
+                                </Field>
                             )}
-                        </div>
+                        </FieldGroup>
                     )}
                     <DialogFooter>
                         <Button

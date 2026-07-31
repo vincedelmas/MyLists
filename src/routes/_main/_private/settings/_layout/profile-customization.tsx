@@ -2,11 +2,11 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {useState} from "react";
 import {toItemKey} from "@/lib/utils/media-mapping";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Form} from "@/lib/client/components/ui/form";
+import {FieldSet} from "@/lib/client/components/ui/field";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {highlightedMediaSettingsSchema} from "@/lib/schemas";
-import {FieldErrors, useForm, useWatch} from "react-hook-form";
+import {type FieldErrors, FormProvider, useForm, useWatch} from "react-hook-form";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {profileCustomOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
@@ -61,9 +61,9 @@ function ProfileCustomForm() {
     };
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
-                <fieldset disabled={mutation.isPending} className="space-y-6">
+        <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col gap-6">
+                <FieldSet disabled={mutation.isPending}>
                     <div>
                         <h2 className="text-lg font-semibold text-primary">
                             Profile Customization
@@ -86,13 +86,13 @@ function ProfileCustomForm() {
                             setPreviewCache={setLocalPreviewCache}
                         />
                     </div>
-                </fieldset>
+                </FieldSet>
                 <FormError/>
                 <FormSubmitButton disabled={!form.formState.isDirty} isLoading={mutation.isPending}>
                     Save Customization
                 </FormSubmitButton>
             </form>
-        </Form>
+        </FormProvider>
     );
 }
 

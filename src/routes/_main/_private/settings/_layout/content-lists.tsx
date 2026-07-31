@@ -1,6 +1,6 @@
 import {toast} from "@/lib/client/components/ui/toast";
-import React, {useState} from "react";
-import {useForm, useWatch} from "react-hook-form";
+import React, {useId, useState} from "react";
+import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {capitalize} from "@/lib/utils/text-formatting";
@@ -19,7 +19,7 @@ import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
@@ -53,6 +53,7 @@ const mediaTypeConfigs = [
 
 
 function MediaListFormPage() {
+    const fieldId = useId();
     const { currentUser, setCurrentUser } = useAuth();
     const downloadListAsCSVMutation = useDownloadListAsCSVMutation();
     const listSettingsMutation = useListSettingsMutation({ noErrorToast: true });
@@ -144,52 +145,52 @@ function MediaListFormPage() {
 
     return (
         <div className="space-y-6">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="w-90 max-sm:w-full space-y-8">
-                    <fieldset disabled={listSettingsMutation.isPending} className="space-y-8">
-                        <div className="space-y-3">
-                            <div className="text-sm font-medium mb-2">
-                                Active Content
-                                <div className="text-xs font-normal text-muted-foreground">
+            <FormProvider {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-90 flex-col gap-8 max-sm:w-full">
+                    <FieldSet disabled={listSettingsMutation.isPending}>
+                        <FieldGroup className="gap-8">
+                        <FieldSet>
+                            <FieldLegend variant="label">Active Content</FieldLegend>
+                            <FieldDescription>
                                     Disabled media are hidden from your profile, stats, feeds, activity, achievements, etc.
                                     Your data are kept and returns if you re-enable it.
-                                </div>
-                            </div>
+                            </FieldDescription>
+                            <FieldGroup data-slot="checkbox-group" className="gap-3">
                             {mediaTypeConfigs.map((config) => (
-                                <FormField
+                                <Controller
                                     key={config.name}
                                     name={config.name}
                                     control={form.control}
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between space-x-3 rounded-md border p-3">
-                                            <FormLabel className="font-normal">
+                                    render={({field, fieldState}) => (
+                                        <Field orientation="horizontal" className="justify-between rounded-md border p-3" data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
+                                            <FieldLabel htmlFor={`${fieldId}-${config.name}`} className="font-normal">
                                                 <MainThemeIcon
                                                     size={15}
                                                     type={config.name}
                                                 />
                                                 {config.label} List
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Switch
-                                                    checked={field.value}
-                                                    onCheckedChange={(checked) => handleCheckedChange(field, checked, config.apiProvider)}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
+                                            </FieldLabel>
+                                            <Switch
+                                                id={`${fieldId}-${config.name}`}
+                                                checked={field.value}
+                                                aria-invalid={fieldState.invalid}
+                                                onCheckedChange={(checked) => handleCheckedChange(field, checked, config.apiProvider)}
+                                            />
+                                        </Field>
                                     )}
                                 />
                             ))}
-                        </div>
-                        <div>
-                            <FormField
+                            </FieldGroup>
+                        </FieldSet>
+                            <Controller
                                 name="searchSelector"
                                 control={form.control}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            Navbar Search Selector
+                                render={({field, fieldState}) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
+                                        <div className="flex items-center gap-2">
+                                            <FieldLabel htmlFor={`${fieldId}-search-selector`}>Navbar Search Selector</FieldLabel>
                                             <SearchPopover/>
-                                        </FormLabel>
+                                        </div>
                                         <Select
                                             value={field.value}
                                             items={searchSelectorItems}
@@ -197,11 +198,9 @@ function MediaListFormPage() {
                                                 if (value !== null) field.onChange(value);
                                             }}
                                         >
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a search selector"/>
-                                                </SelectTrigger>
-                                            </FormControl>
+                                            <SelectTrigger id={`${fieldId}-search-selector`} className="w-full" aria-invalid={fieldState.invalid}>
+                                                <SelectValue placeholder="Select a search selector"/>
+                                            </SelectTrigger>
                                             <SelectContent>
                                                 <SelectGroup>
                                                     {searchSelectorItems.map((item) =>
@@ -220,21 +219,19 @@ function MediaListFormPage() {
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage/>
-                                    </FormItem>
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 )}
                             />
-                        </div>
-                        <div>
-                            <FormField
+                            <Controller
                                 name="ratingSystem"
                                 control={form.control}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            Rating System
+                                render={({field, fieldState}) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
+                                        <div className="flex items-center gap-2">
+                                            <FieldLabel htmlFor={`${fieldId}-rating-system`}>Rating System</FieldLabel>
                                             <RatingSystemPopover/>
-                                        </FormLabel>
+                                        </div>
                                         <Select
                                             value={field.value}
                                             items={ratingSystemItems}
@@ -242,11 +239,9 @@ function MediaListFormPage() {
                                                 if (value !== null) field.onChange(value);
                                             }}
                                         >
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a rating system"/>
-                                                </SelectTrigger>
-                                            </FormControl>
+                                            <SelectTrigger id={`${fieldId}-rating-system`} className="w-full" aria-invalid={fieldState.invalid}>
+                                                <SelectValue placeholder="Select a rating system"/>
+                                            </SelectTrigger>
                                             <SelectContent>
                                                 <SelectGroup>
                                                     {ratingSystemItems.map((item) =>
@@ -257,18 +252,16 @@ function MediaListFormPage() {
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage/>
-                                    </FormItem>
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 )}
                             />
-                        </div>
-                        <div>
-                            <FormField
+                            <Controller
                                 name="gridListView"
                                 control={form.control}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Default List View Mode</FormLabel>
+                                render={({field, fieldState}) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-grid-list-view`}>Default List View Mode</FieldLabel>
                                         <Select
                                             items={viewModeItems}
                                             value={field.value ? "grid" : "table"}
@@ -276,11 +269,9 @@ function MediaListFormPage() {
                                                 if (value !== null) field.onChange(value === "grid");
                                             }}
                                         >
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a view mode"/>
-                                                </SelectTrigger>
-                                            </FormControl>
+                                            <SelectTrigger id={`${fieldId}-grid-list-view`} className="w-full" aria-invalid={fieldState.invalid}>
+                                                <SelectValue placeholder="Select a view mode"/>
+                                            </SelectTrigger>
                                             <SelectContent>
                                                 <SelectGroup>
                                                     {viewModeItems.map((item) =>
@@ -291,18 +282,18 @@ function MediaListFormPage() {
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage/>
-                                    </FormItem>
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 )}
                             />
-                        </div>
-                    </fieldset>
+                        </FieldGroup>
+                    </FieldSet>
                     <FormError/>
                     <FormSubmitButton disabled={!form.formState.isDirty} isLoading={listSettingsMutation.isPending}>
                         Update Settings
                     </FormSubmitButton>
                 </form>
-            </Form>
+            </FormProvider>
             <Separator/>
             <div className="w-90 max-sm:w-full space-y-4">
                 <div className="text-base font-medium mb-3">

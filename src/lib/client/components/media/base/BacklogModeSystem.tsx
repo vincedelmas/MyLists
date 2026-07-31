@@ -79,16 +79,18 @@ export const BacklogModeSystem = ({ date, onDateChange, onEnabledChange, disable
                 })}
 
                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            size="icon"
-                            disabled={disabled}
-                            variant="secondary"
-                            title="Choose backlog date"
-                            className="h-7 w-full bg-background text-muted-foreground hover:bg-background/80"
-                        >
-                            <CalendarIcon className="size-4"/>
-                        </Button>
+                    <PopoverTrigger
+                        render={
+                            <Button
+                                size="icon"
+                                disabled={disabled}
+                                variant="secondary"
+                                title="Choose backlog date"
+                                className="h-7 w-full bg-background text-muted-foreground hover:bg-background/80"
+                            />
+                        }
+                    >
+                        <CalendarIcon className="size-4"/>
                     </PopoverTrigger>
                     <PopoverContent align="end" className="w-auto p-0">
                         <Calendar

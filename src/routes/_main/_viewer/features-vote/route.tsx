@@ -304,7 +304,6 @@ function FeatureVotesPage() {
                                     <div className="flex flex-wrap gap-2 items-center justify-between">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Button
-                                                size="sm"
                                                 onClick={() => handleVote(req.id)}
                                                 variant={req.hasUserVote ? "emeraldy" : "outline"}
                                                 disabled={toggleVoteMutation.isPending || isLocked || isAnonymous}

@@ -429,14 +429,16 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
 
             {feature.details &&
                 <Popover>
-                    <PopoverTrigger asChild>
-                        <button className="w-full py-2 bg-popover border-t text-xs font-medium text-app-accent
-                        transition-colors flex items-center justify-center gap-1 hover:bg-popover/50">
-                            Learn More
-                            <ChevronDown className="size-3"/>
-                        </button>
+                    <PopoverTrigger
+                        render={
+                            <button className="w-full py-2 bg-popover border-t text-xs font-medium text-app-accent
+                            transition-colors flex items-center justify-center gap-1 hover:bg-popover/50"/>
+                        }
+                    >
+                        Learn More
+                        <ChevronDown className="size-3"/>
                     </PopoverTrigger>
-                    <PopoverContent className="w-(--radix-popover-trigger-width) p-4 text-sm shadow-xl">
+                    <PopoverContent className="w-(--anchor-width) p-4 text-sm shadow-xl">
                         <div className="space-y-2">
                             <h4 className="font-bold flex items-center gap-2">
                                 <Icon className="size-4 text-app-accent"/>

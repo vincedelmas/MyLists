@@ -301,7 +301,7 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                     </Badge>
                 </div>
                 {!result &&
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={onAbandon}>
+                    <Button variant="ghost" className="text-muted-foreground hover:text-destructive" onClick={onAbandon}>
                         <X/>
                         <span className="max-sm:hidden">End run</span>
                     </Button>
@@ -581,7 +581,6 @@ function Stats({ stats, canReset }: StatsProps) {
                     </h3>
                 </div>
                 <Button
-                    size="sm"
                     variant="ghost"
                     onClick={() => setResetDialogOpen(true)}
                     className="text-muted-foreground hover:text-destructive"

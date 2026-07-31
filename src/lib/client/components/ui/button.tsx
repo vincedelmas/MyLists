@@ -15,6 +15,7 @@ const buttonVariants = cva("group/button inline-flex shrink-0 items-center justi
             variant: {
                 default: "bg-primary text-primary-foreground hover:bg-primary/80",
 
+                hover: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
                 emeraldy: "bg-app-accent/30 text-primary hover:bg-app-accent/50 backdrop-blur-xl",
                 dashed: "border border-dashed text-muted-foreground text-xs w-full bg-background hover:bg-accent hover:text-accent-foreground " +
                     "dark:bg-input/30 dark:border-input dark:hover:bg-input/50",

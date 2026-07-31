@@ -25,12 +25,12 @@ export const Footer = () => {
                         </p>
                         <div className="flex flex-wrap items-center gap-3 mt-2">
                             <a href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`}>
-                                <Button variant="outline" size="sm" className="gap-2">
+                                <Button variant="outline" className="gap-2">
                                     <Mail className="size-4"/> Contact Me
                                 </Button>
                             </a>
                             <a target="_blank" rel="noopener noreferrer" href="https://www.buymeacoffee.com/crossoufire">
-                                <Button variant="emeraldy" size="sm">
+                                <Button variant="emeraldy">
                                     <Coffee className="size-4"/> Buy Me A Coffee
                                 </Button>
                             </a>

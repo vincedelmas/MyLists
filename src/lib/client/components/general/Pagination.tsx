@@ -61,7 +61,6 @@ export const Pagination = ({ currentPage, totalPages, onChangePage, showNav = tr
                 {showNav &&
                     <li>
                         <Button
-                            size="sm"
                             disabled={!canGoPrevious}
                             className="has-[>svg]:px-1.5"
                             aria-label="Go to previous page"
@@ -80,7 +79,6 @@ export const Pagination = ({ currentPage, totalPages, onChangePage, showNav = tr
                             </span>
                             :
                             <Button
-                                size="sm"
                                 className="px-2.5"
                                 aria-label={`Go to page ${page}`}
                                 onClick={() => handlePageChange(page)}
@@ -95,7 +93,6 @@ export const Pagination = ({ currentPage, totalPages, onChangePage, showNav = tr
                 {showNav &&
                     <li>
                         <Button
-                            size="sm"
                             disabled={!canGoNext}
                             aria-label="Go to next page"
                             className="has-[>svg]:px-1.5"

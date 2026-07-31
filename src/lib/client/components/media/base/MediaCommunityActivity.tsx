@@ -39,11 +39,9 @@ export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivity
         <section className="space-y-4">
             <MediaSectionTitle title="Community Activity" className="justify-start gap-3">
                 <Popover>
-                    <PopoverTrigger asChild>
-                        <button type="button" className="cursor-help">
-                            <CircleHelp className="size-4"/>
-                            <span className="sr-only">Community activity visibility note</span>
-                        </button>
+                    <PopoverTrigger render={<button type="button" className="cursor-help"/>}>
+                        <CircleHelp className="size-4"/>
+                        <span className="sr-only">Community activity visibility note</span>
                     </PopoverTrigger>
                     <PopoverContent className="w-60 px-3 py-2 text-xs" side="top">
                         These data include only community profiles.

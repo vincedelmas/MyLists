@@ -58,7 +58,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
 
     return (
         <Credenza open={isOpen} onOpenChange={setIsOpen}>
-            <CredenzaTrigger className="text-muted-foreground text-sm -mb-1">
+            <CredenzaTrigger className="font-medium text-muted-foreground text-sm -mb-1 hover:text-primary">
                 Manage
             </CredenzaTrigger>
             <CredenzaContent
@@ -94,8 +94,8 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                             {showCreateButton ?
                                 <Button
                                     size="sm"
-                                    className="h-7 bg-app-accent/50 hover:bg-app-accent/70 text-[10px]
-                                    font-bold px-2.5 rounded shadow-sm transition-all text-primary/90"
+                                    variant="emeraldy"
+                                    className="text-[10px]"
                                     onClick={() => handleAction({ name: searchQuery.trim() }, TagAction.ADD)}
                                 >
                                     {mutation.isPending ? "..." : "CREATE"}

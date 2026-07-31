@@ -154,7 +154,6 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                                             </div>
                                                         </div>
                                                         <Button
-                                                            size="sm"
                                                             type="button"
                                                             variant="outline"
                                                             onClick={() => {

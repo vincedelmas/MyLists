@@ -67,7 +67,6 @@ function CollectionViewer() {
                     {capabilities.like &&
                         <>
                             <Button
-                                size="sm"
                                 variant="outline"
                                 onClick={handleLikeCollection}
                                 disabled={toggleLikeMutation.isPending}
@@ -78,7 +77,7 @@ function CollectionViewer() {
                         </>
                     }
                     {capabilities.copy &&
-                        <Button size="sm" variant="outline" onClick={handleCopyCollection} disabled={copyMutation.isPending}>
+                        <Button variant="outline" onClick={handleCopyCollection} disabled={copyMutation.isPending}>
                             <Copy className="size-4"/> Copy
                         </Button>
                     }

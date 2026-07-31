@@ -18,10 +18,8 @@ interface TierDetailsProps {
 export const TiersDetails = ({ achievement }: TierDetailsProps) => {
     return (
         <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full">
-                    View Tiers
-                </Button>
+            <PopoverTrigger render={<Button variant="outline" className="w-full"/>}>
+                View Tiers
             </PopoverTrigger>
             <PopoverContent className="w-full" align="center">
                 <h3 className="font-semibold mb-2">{achievement.name} Tiers</h3>

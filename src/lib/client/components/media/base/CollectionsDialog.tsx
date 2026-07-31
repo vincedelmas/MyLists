@@ -70,7 +70,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
 
     return (
         <Credenza open={isOpen} onOpenChange={setIsOpen}>
-            <CredenzaTrigger className="text-muted-foreground text-sm -mb-1">
+            <CredenzaTrigger className="font-medium text-muted-foreground text-sm -mb-1 hover:text-primary">
                 Manage
             </CredenzaTrigger>
             <CredenzaContent

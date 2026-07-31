@@ -98,8 +98,8 @@ function MediaDetailsPage() {
                     </Suspense>
                 </div>
                 <div className="col-span-4 space-y-6 max-lg:col-span-1 max-lg:order-1">
-                    <div className="space-y-6 max-lg:grid max-lg:grid-cols-2 max-md:grid-cols-1 max-lg:gap-6">
-                        <div className="space-y-6 max-lg:mb-0">
+                    <div className="space-y-5 max-lg:grid max-lg:grid-cols-2 max-md:grid-cols-1 max-lg:gap-6">
+                        <div className="space-y-5 max-lg:mb-0">
                             {!isAnonymous &&
                                 <RefreshAndEdit
                                     mediaId={media.id}
@@ -118,7 +118,7 @@ function MediaDetailsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={media.providerData.url}
-                                className={buttonVariants({ variant: "outline", className: "w-full gap-2" })}
+                                className={buttonVariants({ size: "lg", variant: "outline", className: "w-full gap-2" })}
                             >
                                 <ExternalLink className="size-4"/>
                                 View on {media.providerData.name}

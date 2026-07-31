@@ -88,13 +88,13 @@ function ActivityCleanupSettings() {
                             </div>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
-                            <Button type="button" size="sm" variant="outline" onClick={() => applyPreset(30)}>
+                            <Button type="button" variant="outline" onClick={() => applyPreset(30)}>
                                 30 days
                             </Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => applyPreset(60)}>
+                            <Button type="button" variant="outline" onClick={() => applyPreset(60)}>
                                 60 days
                             </Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => applyPreset(90)}>
+                            <Button type="button" variant="outline" onClick={() => applyPreset(90)}>
                                 90 days
                             </Button>
                         </div>

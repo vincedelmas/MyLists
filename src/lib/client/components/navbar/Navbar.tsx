@@ -140,10 +140,10 @@ export const Navbar = () => {
                     <div className="flex items-center gap-1 max-sm:gap-2">
                         {isAnonymous ?
                             <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => openLogin(location.href)}>
+                                <Button variant="ghost" onClick={() => openLogin(location.href)}>
                                     Login
                                 </Button>
-                                <Button size="sm" variant="emeraldy" onClick={() => openRegister(location.href)}>
+                                <Button variant="emeraldy" onClick={() => openRegister(location.href)}>
                                     Register
                                 </Button>
                             </div>

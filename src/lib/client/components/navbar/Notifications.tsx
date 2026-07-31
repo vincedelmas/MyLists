@@ -18,9 +18,9 @@ import {notificationsCountOptions, notificationsOptions} from "@/lib/client/reac
 import {useDeleteSocialNotif, useMarkAllNotifAsRead, useRespondFollowRequest} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
-type NotificationUnion = Awaited<ReturnType<NonNullable<ReturnType<typeof notificationsOptions>["queryFn"]>>>;
 type MediaNotif = Exclude<NotificationUnion[number], { actor: any }>;
 type SocialNotif = Extract<NotificationUnion[number], { actor: any }>;
+type NotificationUnion = Awaited<ReturnType<NonNullable<ReturnType<typeof notificationsOptions>["queryFn"]>>>;
 
 
 export const Notifications = () => {
@@ -84,18 +84,16 @@ export const Notifications = () => {
 
     return (
         <Popover modal={isBelowLg} open={open} onOpenChange={handleOpenChange}>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative mr-3">
-                    <Bell className="size-5"/>
-                    {!!counts?.total &&
-                        <Badge
-                            variant="destructive"
-                            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
-                        >
-                            {counts.total > 99 ? "99+" : counts.total}
-                        </Badge>
-                    }
-                </Button>
+            <PopoverTrigger render={<Button variant="hover" size="icon" className="relative mr-3"/>}>
+                <Bell className="size-5"/>
+                {!!counts?.total &&
+                    <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+                    >
+                        {counts.total > 99 ? "99+" : counts.total}
+                    </Badge>
+                }
             </PopoverTrigger>
             <PopoverContent className="p-0 w-82 max-h-76 overflow-y-auto scrollbar-thin max-sm:max-h-88" align="end">
                 <TabHeader

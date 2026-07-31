@@ -42,6 +42,10 @@ const DIFFICULTY_COLORS: Record<string, string> = {
     "border-silver": "border-slate-400",
     "border-gold": "border-yellow-600",
     "border-platinum": "border-teal-600",
+    "ring-bronze": "ring-amber-700",
+    "ring-silver": "ring-slate-400",
+    "ring-gold": "ring-yellow-600",
+    "ring-platinum": "ring-teal-600",
     "bg-bronze": "bg-amber-700",
     "bg-silver": "bg-slate-400",
     "bg-gold": "bg-yellow-600",
@@ -59,7 +63,7 @@ export const getThemeColor = (type: MediaType | Status | string | undefined) => 
 };
 
 
-export const getDifficultyColors = (difficulty: AchievementDifficulty | "total" | undefined, variant: "text" | "border" | "bg" = "text") => {
+export const getDifficultyColors = (difficulty: AchievementDifficulty | "total" | undefined, variant: "text" | "border" | "ring" | "bg" = "text") => {
     if (!difficulty) return "";
     return DIFFICULTY_COLORS[`${variant}-${difficulty}`];
 };

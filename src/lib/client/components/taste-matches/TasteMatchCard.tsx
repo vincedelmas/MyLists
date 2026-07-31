@@ -16,7 +16,7 @@ import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIc
 
 export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; activeTab: "all" | MediaType }) => {
     return (
-        <Card className="border-app-rating/40 bg-linear-to-br from-app-rating/8 via-card to-card p-6 md:p-8">
+        <Card className="bg-linear-to-br from-app-rating/8 via-card to-card p-6 ring-app-rating/40 md:p-8">
             <div className="grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-center">
                 <div className="space-y-6">
                     <div className="inline-flex w-fit items-center gap-2 rounded-full border border-app-rating/40
@@ -68,7 +68,7 @@ export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; ac
 
 export const TasteMatchCard = ({ match, activeTab }: { match: TasteMatch; activeTab: MediaType | "all" }) => {
     return (
-        <Card className="h-full justify-between transition-colors hover:border-app-accent/40">
+        <Card className="h-full justify-between transition-colors hover:ring-app-accent/40">
             <div className="space-y-5">
                 <div className="flex items-start justify-between gap-4">
                     <UserIdentity

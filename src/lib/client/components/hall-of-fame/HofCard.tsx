@@ -32,7 +32,7 @@ export const HofCard = ({ userData }: HofCardProps) => {
         <Card
             key={userData.name}
             onClick={handleMobileToggle}
-            className={cn("p-2 py-0 mb-3 bg-card", currentUser?.id === userData.id && "bg-app-accent/5 border-app-accent/50")}
+            className={cn("mb-3 bg-card p-2 py-0", currentUser?.id === userData.id && "bg-app-accent/5 ring-app-accent/50")}
         >
             <CardContent className="p-0">
                 <div className="grid grid-cols-12 py-4">

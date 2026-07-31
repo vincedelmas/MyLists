@@ -63,7 +63,7 @@ function AdminWhichCameFirstPage() {
             />
 
             <div className="space-y-6">
-                <Card className="relative overflow-hidden border-app-accent/20">
+                <Card className="relative overflow-hidden ring-app-accent/20">
                     <div className="pointer-events-none absolute -right-24 -top-28 size-80 rounded-full bg-app-accent/10 blur-3xl"/>
                     <CardContent className="relative grid gap-5 md:grid-cols-[minmax(0,1fr)_18rem]">
                         <div>

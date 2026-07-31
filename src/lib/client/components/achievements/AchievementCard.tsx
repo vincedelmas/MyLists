@@ -26,13 +26,13 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
 
     const displayDifficulty = highestCompletedTier?.difficulty;
     const iconColorClass = getDifficultyColors(displayDifficulty);
-    const borderColorClass = getDifficultyColors(displayDifficulty, "border");
+    const ringColorClass = getDifficultyColors(displayDifficulty, "ring");
 
     const tierForProgressDisplay = nextTier ?? tiers[tiers.length - 1];
     const progressValue = tierForProgressDisplay?.progress ?? 0;
 
     return (
-        <Card className={cn("px-4", borderColorClass)}>
+        <Card className={ringColorClass}>
             <CardHeader>
                 <CardTitle>
                     <div className="flex items-center gap-2">

@@ -113,7 +113,7 @@ function FeatureVotesPage() {
         <PageTitle title="Feature Voting Hub" subtitle="Submit ideas, search, and vote on what MyLists should have next.">
             <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1">
-                    <Card className="border-gray-500">
+                    <Card className="ring-gray-500">
                         <CardHeader>
                             <CardTitle>Quick Q&A</CardTitle>
                         </CardHeader>
@@ -147,7 +147,7 @@ function FeatureVotesPage() {
                             </dl>
                         </CardContent>
                     </Card>
-                    <Card className="relative overflow-hidden border-app-accent/40">
+                    <Card className="relative overflow-hidden ring-app-accent/40">
                         <LockedContent
                             showAuthButtons={true}
                             isAnonymous={isAnonymous}
@@ -209,7 +209,7 @@ function FeatureVotesPage() {
                         </CardContent>
                     </Card>
                 </div>
-                <Card className="border-app-rating h-fit">
+                <Card className="h-fit ring-app-rating">
                     <CardHeader>
                         <CardTitle>Discussions</CardTitle>
                     </CardHeader>

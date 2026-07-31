@@ -116,7 +116,7 @@ function SearchPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3 lg:gap-4 lg:grid-cols-5 sm:gap-5">
                         {apiData.data.map((item) =>
-                            <Card key={item.id} className="rounded-lg py-0 border-none">
+                            <Card key={item.id} className="rounded-lg py-0 ring-0">
                                 <div className="relative aspect-2/3 h-full rounded-lg border border-black">
                                     {item.itemType === ApiProviderType.USERS ?
                                         <Link to="/profile/$username" params={{ username: item.name }}>

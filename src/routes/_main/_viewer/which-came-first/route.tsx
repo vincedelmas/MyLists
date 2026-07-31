@@ -155,7 +155,7 @@ function GameSetup({ selectedTypes, onToggle, isPending, onStart }: GameSetupPro
     };
 
     return (
-        <Card className="relative mx-auto max-w-4xl overflow-hidden border-border/80 p-0 shadow-lg shadow-black/5">
+        <Card className="relative mx-auto max-w-4xl overflow-hidden p-0 shadow-lg shadow-black/5 ring-border/80">
             <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-app-accent/10 blur-3xl"/>
             <div className="grid md:grid-cols-[minmax(0,1fr)_17rem]">
                 <div className="relative p-6 sm:p-8">
@@ -381,7 +381,7 @@ function GameOverScreen({ run, result, isStarting, onMainMenu, onPlayAgain }: Ga
 
     return (
         <Card className={cn("relative mx-auto max-w-4xl animate-in overflow-hidden p-0 shadow-xl shadow-black/5",
-            "fade-in zoom-in-95 duration-300", completedWithoutLoss ? "border-app-accent/30" : "border-destructive/30")}>
+            "fade-in zoom-in-95 duration-300", completedWithoutLoss ? "ring-app-accent/30" : "ring-destructive/30")}>
             <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b to-transparent",
                 completedWithoutLoss ? "from-app-accent/8" : "from-destructive/8")}/>
             <CardContent className="relative space-y-7 px-6 py-9 text-center sm:px-10">

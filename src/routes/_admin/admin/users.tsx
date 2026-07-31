@@ -26,6 +26,7 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -258,89 +259,96 @@ function UserManagementPage() {
             enableSorting: false,
             cell: ({ row: { original } }) => (
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="size-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="size-4"/>
-                        </Button>
+                    <DropdownMenuTrigger render={<Button variant="ghost" className="size-8 p-0"/>}>
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="size-4"/>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>
-                            Actions for {" "}
-                            <span className="text-yellow-500">{original.name}</span>
-                        </DropdownMenuLabel>
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>
+                                Actions for {" "}
+                                <span className="text-yellow-500">{original.name}</span>
+                            </DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => impersonateUser(original.id, original.name)}>
+                                <UserPen className="size-4"/>
+                                <span>Impersonate </span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateUser(original.id, { emailVerified: !original.emailVerified })}>
+                                {original.emailVerified ?
+                                    <>
+                                        <UserX className="size-4"/>
+                                        <span>Disable account</span>
+                                    </>
+                                    :
+                                    <>
+                                        <UserCheck className="size-4"/>
+                                        <span>Enable account</span>
+                                    </>
+                                }
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
                         <DropdownMenuSeparator/>
-                        <DropdownMenuItem onClick={() => impersonateUser(original.id, original.name)}>
-                            <UserPen className="size-4"/>
-                            <span>Impersonate </span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateUser(original.id, { emailVerified: !original.emailVerified })}>
-                            {original.emailVerified ?
-                                <>
-                                    <UserX className="size-4"/>
-                                    <span>Disable account</span>
-                                </>
-                                :
-                                <>
-                                    <UserCheck className="size-4"/>
-                                    <span>Enable account</span>
-                                </>
-                            }
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuLabel>Features Settings</DropdownMenuLabel>
-                        <DropdownMenuCheckboxItem
-                            checked={original.showUpdateModal}
-                            onCheckedChange={() => updateUser(original.id, { showUpdateModal: !original.showUpdateModal })}
-                        >
-                            Update Modal
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                            checked={original.showOnboarding}
-                            onCheckedChange={() => updateUser(original.id, { showOnboarding: !original.showOnboarding })}
-                        >
-                            Onboarding
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuLabel>Privacy Settings</DropdownMenuLabel>
-                        <DropdownMenuCheckboxItem
-                            checked={original.privacy === PrivacyType.PUBLIC}
-                            onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.PUBLIC })}
-                        >
-                            Public
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                            checked={original.privacy === PrivacyType.RESTRICTED}
-                            onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.RESTRICTED })}
-                        >
-                            Restricted
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                            checked={original.privacy === PrivacyType.PRIVATE}
-                            onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.PRIVATE })}
-                        >
-                            Private
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuLabel>Role Settings</DropdownMenuLabel>
-                        {Object.values(RoleType).map((role) =>
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>Features Settings</DropdownMenuLabel>
                             <DropdownMenuCheckboxItem
-                                key={role}
-                                className="capitalize"
-                                checked={original.role === role}
-                                onCheckedChange={() => updateUser(original.id, { role })}
+                                checked={original.showUpdateModal}
+                                onCheckedChange={() => updateUser(original.id, { showUpdateModal: !original.showUpdateModal })}
                             >
-                                {role}
+                                Update Modal
                             </DropdownMenuCheckboxItem>
-                        )}
+                            <DropdownMenuCheckboxItem
+                                checked={original.showOnboarding}
+                                onCheckedChange={() => updateUser(original.id, { showOnboarding: !original.showOnboarding })}
+                            >
+                                Onboarding
+                            </DropdownMenuCheckboxItem>
+                        </DropdownMenuGroup>
                         <DropdownMenuSeparator/>
-                        <DropdownMenuItem
-                            className="text-red-500"
-                            onSelect={() => updateUser(original.id, { deleteUser: true })}
-                        >
-                            <Trash2 className="mr-2 size-4"/>
-                            <span>Delete user</span>
-                        </DropdownMenuItem>
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>Privacy Settings</DropdownMenuLabel>
+                            <DropdownMenuCheckboxItem
+                                checked={original.privacy === PrivacyType.PUBLIC}
+                                onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.PUBLIC })}
+                            >
+                                Public
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem
+                                checked={original.privacy === PrivacyType.RESTRICTED}
+                                onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.RESTRICTED })}
+                            >
+                                Restricted
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem
+                                checked={original.privacy === PrivacyType.PRIVATE}
+                                onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.PRIVATE })}
+                            >
+                                Private
+                            </DropdownMenuCheckboxItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>Role Settings</DropdownMenuLabel>
+                            {Object.values(RoleType).map((role) =>
+                                <DropdownMenuCheckboxItem
+                                    key={role}
+                                    className="capitalize"
+                                    checked={original.role === role}
+                                    onCheckedChange={() => updateUser(original.id, { role })}
+                                >
+                                    {role}
+                                </DropdownMenuCheckboxItem>
+                            )}
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem
+                                className="text-red-500"
+                                onClick={() => updateUser(original.id, { deleteUser: true })}
+                            >
+                                <Trash2 className="mr-2 size-4"/>
+                                <span>Delete user</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),

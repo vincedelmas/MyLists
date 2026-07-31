@@ -77,10 +77,10 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
     return (
         <div className="grid grid-cols-2">
             <div className="bg-muted/30 px-3 pt-1 pb-2">
-                <MenuLabel preview={preview}>
-                    Tracking Lists
-                </MenuLabel>
                 <MenuGroup preview={preview}>
+                    <MenuLabel preview={preview}>
+                        Tracking Lists
+                    </MenuLabel>
                     {getActiveMediaSettings(settings)
                         .map((setting) =>
                             <MenuEntry
@@ -102,10 +102,10 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                 </MenuGroup>
             </div>
             <div className="border-l px-3 pt-1 pb-2">
-                <MenuLabel preview={preview}>
-                    Personal
-                </MenuLabel>
                 <MenuGroup preview={preview}>
+                    <MenuLabel preview={preview}>
+                        Personal
+                    </MenuLabel>
                     <MenuEntry
                         preview={preview}
                         renderLink={(children) =>
@@ -208,9 +208,5 @@ const MenuEntry = ({ preview, children, className, renderLink }: MenuEntryProps)
         );
     }
 
-    return (
-        <DropdownMenuItem className={className} asChild>
-            {renderLink(children)}
-        </DropdownMenuItem>
-    );
+    return <DropdownMenuItem className={className} render={renderLink(children)}/>;
 };

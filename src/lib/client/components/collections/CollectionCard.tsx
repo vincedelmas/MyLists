@@ -173,18 +173,21 @@ export const CollectionCard = ({ collection, showOwner = true, showMediaType = t
                     </div>
                     {canManage &&
                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button>
-                                    <MoreVertical className="size-4 opacity-60 hover:opacity-100"/>
-                                </button>
+                            <DropdownMenuTrigger render={<button/>}>
+                                <MoreVertical className="size-4 opacity-60 hover:opacity-100"/>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 {collection.capabilities.edit &&
-                                    <Link to="/collections/$collectionId/edit" params={{ collectionId: collection.id }}>
-                                        <DropdownMenuItem>
-                                            <Pen className="size-4"/> Edit
-                                        </DropdownMenuItem>
-                                    </Link>
+                                    <DropdownMenuItem
+                                        render={
+                                            <Link
+                                                to="/collections/$collectionId/edit"
+                                                params={{ collectionId: collection.id }}
+                                            />
+                                        }
+                                    >
+                                        <Pen className="size-4"/> Edit
+                                    </DropdownMenuItem>
                                 }
                                 {collection.capabilities.delete &&
                                     <DropdownMenuItem className="focus:bg-red-500/10" onClick={handleDelete}>

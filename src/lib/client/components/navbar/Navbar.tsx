@@ -96,32 +96,22 @@ export const Navbar = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-fit" align="end">
                                 <DropdownMenuGroup>
-                                    <DropdownMenuItem asChild>
-                                        <Link to="/moviedle">
-                                            <Clapperboard className="size-3.5"/> Moviedle
-                                        </Link>
+                                    <DropdownMenuItem render={<Link to="/moviedle"/>}>
+                                        <Clapperboard className="size-3.5"/> Moviedle
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link to="/which-came-first">
-                                            <GitCompareArrows className="size-3.5"/> Which Came First?
-                                        </Link>
+                                    <DropdownMenuItem render={<Link to="/which-came-first"/>}>
+                                        <GitCompareArrows className="size-3.5"/> Which Came First?
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator className="mx-1"/>
-                                    <DropdownMenuItem asChild>
-                                        <Link to="/collections/discover">
-                                            <ListOrdered className="size-3.5"/> Collections
-                                        </Link>
+                                    <DropdownMenuItem render={<Link to="/collections/discover"/>}>
+                                        <ListOrdered className="size-3.5"/> Collections
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link to="/hall-of-fame">
-                                            <Trophy className="size-3.5"/> Hall of Fame
-                                        </Link>
+                                    <DropdownMenuItem render={<Link to="/hall-of-fame"/>}>
+                                        <Trophy className="size-3.5"/> Hall of Fame
                                     </DropdownMenuItem>
                                     {!isAnonymous &&
-                                        <DropdownMenuItem asChild>
-                                            <Link to="/taste-matches">
-                                                <UsersRound className="size-3.5"/> Taste Matches
-                                            </Link>
+                                        <DropdownMenuItem render={<Link to="/taste-matches"/>}>
+                                            <UsersRound className="size-3.5"/> Taste Matches
                                         </DropdownMenuItem>
                                     }
                                 </DropdownMenuGroup>
@@ -158,25 +148,30 @@ export const Navbar = () => {
                                 <Notifications/>
 
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <div className="relative">
-                                            <Button variant="ghost" className="flex items-center gap-2 text-lg font-semibold px-1">
-                                                <ProfileIcon
-                                                    fallbackSize="text-base"
-                                                    user={{ name: currentUser.name, image: currentUser.image! }}
-                                                    className="size-10 border-none hover:ring-2 hover:ring-app-accent"
+                                    <div className="relative">
+                                        <DropdownMenuTrigger
+                                            render={
+                                                <Button
+                                                    variant="ghost"
+                                                    className="flex items-center gap-2 text-lg font-semibold px-1"
                                                 />
-                                            </Button>
-                                            {currentUser.showUpdateModal &&
-                                                <div className="absolute right-0 top-0">
-                                                    <div className="relative">
-                                                        <div className="absolute rounded-full h-2 w-2 bg-app-accent opacity-75"/>
-                                                        <div className="rounded-full h-2 w-2 bg-linear-to-r from-app-accent to-app-accent/50 animate-ping"/>
-                                                    </div>
-                                                </div>
                                             }
-                                        </div>
-                                    </DropdownMenuTrigger>
+                                        >
+                                            <ProfileIcon
+                                                fallbackSize="text-base"
+                                                user={{ name: currentUser.name, image: currentUser.image! }}
+                                                className="size-10 border-none hover:ring-2 hover:ring-app-accent"
+                                            />
+                                        </DropdownMenuTrigger>
+                                        {currentUser.showUpdateModal &&
+                                            <div className="absolute right-0 top-0">
+                                                <div className="relative">
+                                                    <div className="absolute rounded-full h-2 w-2 bg-app-accent opacity-75"/>
+                                                    <div className="rounded-full h-2 w-2 bg-linear-to-r from-app-accent to-app-accent/50 animate-ping"/>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
                                     <DropdownMenuContent align="end" className="w-56">
                                         <DropdownMenuItem className="block focus:bg-transparent cursor-default">
                                             <div className="flex items-center justify-between gap-2">
@@ -193,48 +188,47 @@ export const Navbar = () => {
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator/>
                                         <DropdownMenuGroup>
-                                            <DropdownMenuItem asChild>
-                                                <Link to="/profile/$username" params={{ username: currentUser.name }}>
-                                                    <User/>
-                                                    Profile
-                                                </Link>
+                                            <DropdownMenuItem render={<Link to="/profile/$username" params={{ username: currentUser.name }}/>}>
+                                                <User/> Profile
                                             </DropdownMenuItem>
                                             {currentUser.capabilities.enterAdminDashboard &&
-                                                <DropdownMenuItem className="focus:bg-app-rating/10" asChild>
-                                                    <Link to="/admin">
-                                                        <ShieldCheck className="text-app-rating"/>
-                                                        <span className="text-app-rating">
-                                                            Admin Panel
-                                                        </span>
-                                                    </Link>
+                                                <DropdownMenuItem className="focus:bg-app-rating/10" render={<Link to="/admin"/>}>
+                                                    <ShieldCheck className="text-app-rating"/>
+                                                    <span className="text-app-rating">
+                                                        Admin Panel
+                                                    </span>
                                                 </DropdownMenuItem>
                                             }
-                                            <DropdownMenuItem asChild>
-                                                <Link to="/features" className="relative w-full" onClick={onFeaturesClick}>
-                                                    <div className="flex w-full items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <Activity className="size-4 text-app-accent"/>
-                                                            <span>News & Features</span>
-                                                        </div>
-                                                        {currentUser.showUpdateModal &&
-                                                            <div className="bg-app-accent px-2 py-0.5 text-[10px] font-bold
-                                                            text-black rounded-md animate-pulse">
-                                                                NEW
-                                                            </div>
-                                                        }
+                                            <DropdownMenuItem
+                                                render={
+                                                    <Link
+                                                        to="/features"
+                                                        onClick={onFeaturesClick}
+                                                        className="relative w-full"
+                                                    />
+                                                }
+                                            >
+                                                <div className="flex w-full items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <Activity className="size-4 text-app-accent"/>
+                                                        <span>News & Features</span>
                                                     </div>
-                                                </Link>
+                                                    {currentUser.showUpdateModal &&
+                                                        <div className="bg-app-accent px-2 py-0.5 text-[10px] font-bold
+                                                            text-black rounded-md animate-pulse">
+                                                            NEW
+                                                        </div>
+                                                    }
+                                                </div>
                                             </DropdownMenuItem>
                                         </DropdownMenuGroup>
                                         <DropdownMenuSeparator/>
                                         <DropdownMenuGroup>
-                                            <DropdownMenuItem asChild>
-                                                <Link to="/settings">
-                                                    <Settings/>
-                                                    Settings
-                                                </Link>
+                                            <DropdownMenuItem render={<Link to="/settings"/>}>
+                                                <Settings/>
+                                                Settings
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="focus:bg-red-500/10" onSelect={logoutUser}>
+                                            <DropdownMenuItem className="focus:bg-red-500/10" onClick={logoutUser}>
                                                 <LogOut className="text-red-500"/>
                                                 <span className="text-red-500">Logout</span>
                                             </DropdownMenuItem>

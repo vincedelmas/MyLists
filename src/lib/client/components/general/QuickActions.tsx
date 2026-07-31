@@ -56,17 +56,20 @@ export const QuickActions = ({ username, mediaType }: { username: string, mediaT
                 {actions
                     .filter((action) => pathname !== action.match)
                     .map((action) =>
-                        <Link
-                            to={action.to}
+                        <DropdownMenuItem
                             key={action.to}
-                            params={action.params}
-                            search={"search" in action ? action.search : undefined}
+                            className="cursor-pointer"
+                            render={
+                                <Link
+                                    to={action.to}
+                                    params={action.params}
+                                    search={"search" in action ? action.search : undefined}
+                                />
+                            }
                         >
-                            <DropdownMenuItem className="cursor-pointer">
-                                <action.icon className="size-4 text-muted-foreground"/>
-                                <span>{action.label}</span>
-                            </DropdownMenuItem>
-                        </Link>
+                            <action.icon className="size-4 text-muted-foreground"/>
+                            <span>{action.label}</span>
+                        </DropdownMenuItem>
                     )}
             </DropdownMenuContent>
         </DropdownMenu>

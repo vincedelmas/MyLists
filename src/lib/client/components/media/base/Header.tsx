@@ -139,22 +139,19 @@ const StatusComponent = ({ filters, allStatuses, onStatusChange, className }: St
     }
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" className={cn("justify-between focus:outline-none focus:ring-none", className)}>
-                    <span className="flex items-center gap-2 truncate">
-                        <ListFilter className="size-4 text-muted-foreground"/>
-                        <span>{activeStatus}</span>
-                    </span>
-                    <ChevronDown className="size-4 opacity-50"/>
-                </Button>
+        <DropdownMenu closeParentOnEsc={true}>
+            <DropdownMenuTrigger render={<Button variant="outline" className={cn("justify-between", className)}/>}>
+                <span className="flex items-center gap-2 truncate">
+                    <ListFilter/> {activeStatus}
+                </span>
+                <ChevronDown className="opacity-50"/>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-40 max-w-45">
                 {allStatusesWithAll.map((s) =>
                     <DropdownMenuCheckboxItem
                         key={s}
                         checked={checkIfChecked(s)}
-                        onSelect={() => handleStatusChange(s)}
+                        onCheckedChange={() => handleStatusChange(s)}
                     >
                         {s}
                     </DropdownMenuCheckboxItem>
@@ -180,14 +177,16 @@ const SortComponent = ({ sorting, allSorting, applySorting, className }: SortCom
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" className={cn("justify-between focus-visible:ring-none", className)}>
-                    <span className="flex items-center gap-2 truncate">
-                        <ArrowUpDown className="size-4 text-muted-foreground"/>
-                        <span>{sorting}</span>
-                    </span>
-                    <ChevronDown className="size-4 opacity-50"/>
-                </Button>
+            <DropdownMenuTrigger
+                render={
+                    <Button variant="outline" className={cn("justify-between focus-visible:ring-none", className)}/>
+                }
+            >
+                <span className="flex items-center gap-2 truncate">
+                    <ArrowUpDown className="size-4 text-muted-foreground"/>
+                    <span>{sorting}</span>
+                </span>
+                <ChevronDown className="size-4 opacity-50"/>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-40 max-w-45">
                 <DropdownMenuRadioGroup value={sorting} onValueChange={handleSortChange}>

@@ -234,10 +234,8 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
                         </div>
                         {(isOwner && !isEditing) &&
                             <DropdownMenu>
-                                <DropdownMenuTrigger className="pt-1" asChild>
-                                    <button>
-                                        <MoreVertical className="size-4 opacity-60 hover:opacity-100"/>
-                                    </button>
+                                <DropdownMenuTrigger className="pt-1" render={<button/>}>
+                                    <MoreVertical className="size-4 opacity-60 hover:opacity-100"/>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => {

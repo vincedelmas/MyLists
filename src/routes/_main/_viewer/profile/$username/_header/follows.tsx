@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -152,7 +152,7 @@ function FollowActionButton({ targetUserId, followStatus, profileOwner, isViewin
         const mutation = followStatus ? unfollowMutation : followMutation;
 
         mutation.mutate({ data: { targetUserId } }, {
-            onError: () => toast.error("Sorry, an error occurred...")
+            onError: () => toast.add({title: "Sorry, an error occurred...", type: "error", priority: "high"})
         });
     };
 

@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import React, {useState} from "react";
 import {useForm, useWatch} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -131,7 +131,7 @@ function MediaListFormPage() {
                     saveAsFile(formattedData, `mylists-${selectedListForExport}.csv`, "text/csv");
                 }
                 catch {
-                    toast.error("An error occurred while formatting the CSV.");
+                    toast.add({title: "An error occurred while formatting the CSV.", type: "error", priority: "high"});
                 }
             }
         });

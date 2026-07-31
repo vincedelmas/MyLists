@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {LoginForm} from "@/lib/client/components/auth/LoginForm";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {createFileRoute, Link, useSearch} from "@tanstack/react-router";
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_main/_public/login")({
 function LoginPage() {
     const { message, redirect } = useSearch({ from: "/_main/_public" });
 
-    if (message) toast.warning(message);
+    if (message) toast.add({title: message, type: "warning"});
 
     return (
         <PageTitle title="Login" onlyHelmet>

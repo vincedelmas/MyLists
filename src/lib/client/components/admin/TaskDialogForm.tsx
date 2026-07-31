@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useState} from "react";
 import {Loader2, Settings2} from "lucide-react";
 import {Control, useForm} from "react-hook-form";
@@ -38,7 +38,7 @@ export function TaskFormDialog({ task }: TaskFormDialogProps) {
             },
             onSuccess: () => {
                 setOpen(false);
-                toast.info(`Task ${task.name} Finished`);
+                toast.add({title: `Task ${task.name} Finished`, type: "info"});
             },
         });
     };

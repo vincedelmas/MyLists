@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -55,7 +55,7 @@ function ResetPasswordPage() {
             onSuccess: async () => {
                 form.reset();
                 await navigate({ to: "/login", replace: true });
-                toast.success("Your password was modified successfully!");
+                toast.add({title: "Your password was modified successfully!", type: "success"});
             },
         });
     };

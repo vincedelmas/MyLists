@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useForm} from "react-hook-form";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -81,7 +81,10 @@ function ActivityCleanupSettings() {
                 handleServerFormErrors(form, error);
             },
             onSuccess: (result) => {
-                toast.success(`Hidden ${result.count} Activit${result.count === 1 ? "y" : "ies"}`);
+                toast.add({
+                    title: `Hidden ${result.count} Activit${result.count === 1 ? "y" : "ies"}`,
+                    type: "success",
+                });
             },
         });
     };

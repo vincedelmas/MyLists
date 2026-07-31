@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useState} from "react";
 import {useForm} from "react-hook-form";
 import {useQuery} from "@tanstack/react-query";
@@ -77,7 +77,7 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
             onSuccess: () => {
                 resetForm();
                 setOpen(false);
-                toast.success("Cover updated. Thanks for contributing!");
+                toast.add({title: "Cover updated. Thanks for contributing!", type: "success"});
             },
         });
     };

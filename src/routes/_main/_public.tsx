@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {authRedirectSearchSchema} from "@/lib/schemas";
 import {createFileRoute, redirect} from "@tanstack/react-router";
 import {authOptions} from "@/lib/client/react-query/query-options";
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_main/_public")({
         if (search.authExpired) {
             await queryClient.invalidateQueries({ queryKey: authOptions.queryKey });
             queryClient.clear();
-            toast.warning("You need to sign in to access this content.");
+            toast.add({ title: "You need to sign in to access this content.", type: "warning" });
             throw redirect({ to: "/login", replace: true });
         }
 

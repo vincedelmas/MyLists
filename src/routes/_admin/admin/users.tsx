@@ -1,5 +1,5 @@
 import React from "react";
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {formatDate} from "@/lib/utils/date-formatting";
@@ -84,7 +84,7 @@ function UserManagementPage() {
 
     const impersonateUser = (userId: number, username: string) => {
         impersonateMutation.mutate({ data: { userId } }, {
-            onError: (error) => toast.error(error.message),
+            onError: (error) => toast.add({title: error.message, type: "error", priority: "high"}),
             onSuccess: async () => {
                 await setCurrentUser();
                 await navigate({ to: "/profile/$username", params: { username } });

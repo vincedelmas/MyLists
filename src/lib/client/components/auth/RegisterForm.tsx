@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
 import {FaGithub, FaGoogle} from "react-icons/fa";
@@ -55,7 +55,10 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
             onSuccess: () => {
                 form.reset();
                 onOpenChange?.(false);
-                toast.success("Your account has been created. Check your email to activate your account.");
+                toast.add({
+                    title: "Your account has been created. Check your email to activate your account.",
+                    type: "success",
+                });
             },
         });
     };
@@ -63,7 +66,7 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
     const withProvider = async (provider: "google" | "github") => {
         await authClient.signIn.social({ provider, callbackURL: getRedirectTarget() }, {
             onError: (ctx) => {
-                toast.error(ctx.error.message);
+                toast.add({title: ctx.error.message, type: "error", priority: "high"});
             },
         });
     };

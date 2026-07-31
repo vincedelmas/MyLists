@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Loader2, Play} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -25,7 +25,7 @@ function AdminTasksPage() {
 
     const executeTask = (taskName: string, input = {}) => {
         taskTriggerMutation.mutate({ data: { taskName, input } }, {
-            onSettled: () => toast.info(`Task ${taskName} Finished`),
+            onSettled: () => toast.add({title: `Task ${taskName} Finished`, type: "info"}),
         });
     };
 

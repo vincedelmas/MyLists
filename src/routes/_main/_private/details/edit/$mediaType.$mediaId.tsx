@@ -1,11 +1,12 @@
-import {toast} from "sonner";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {splitIntoColumns} from "@/lib/utils/arrays";
+import {toast} from "@/lib/client/components/ui/toast";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Textarea} from "@/lib/client/components/ui/textarea";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
@@ -14,7 +15,6 @@ import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {useEditMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {EditMediaDetailsPayload, editMediaDetailsPayloadSchema, mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$mediaId")({
@@ -88,7 +88,7 @@ function MediaEditPage() {
             },
             onSuccess: async () => {
                 history.go(-1);
-                toast.success("Media successfully updated!");
+                toast.add({ title: "Media successfully updated!", type: "success" });
             },
         });
     };

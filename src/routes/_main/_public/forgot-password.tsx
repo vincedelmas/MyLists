@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useState} from "react";
 import {useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
@@ -41,7 +41,11 @@ function ForgotPasswordPage() {
             },
             onSuccess: async () => {
                 setEmailSent(true);
-                toast.success(`You will be redirected to the login page in 5 seconds.`, { duration: 5 * 1000 });
+                toast.add({
+                    title: "You will be redirected to the login page in 5 seconds.",
+                    type: "success",
+                    timeout: 5 * 1000,
+                });
                 setTimeout(async () => {
                     await navigate({ to: "/login", replace: true });
                 }, 5 * 1000);

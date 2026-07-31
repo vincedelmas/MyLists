@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useRef} from "react";
 import {CreateCollection} from "@/lib/schemas";
 import {Badge} from "@/lib/client/components/ui/badge";
@@ -53,7 +53,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
 
     const handleAddItem = (item: DraftItem) => {
         if (fields.some((field) => field.mediaId === item.mediaId)) {
-            toast.warning("That media is already in your collection.");
+            toast.add({title: "That media is already in your collection.", type: "warning"});
             return;
         }
 

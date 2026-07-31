@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {cn} from "@/lib/utils/classnames";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -84,7 +84,7 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
         })) return;
 
         removeMutation.mutate({ data: { followerId: follower.id } }, {
-            onSuccess: () => toast.success("Follower removed!"),
+            onSuccess: () => toast.add({title: "Follower removed!", type: "success"}),
         });
     };
 
@@ -186,7 +186,7 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
         const mutation = shouldUnfollow ? unfollowMutation : followMutation;
 
         mutation.mutate({ data: { targetUserId: followerId } }, {
-            onError: () => toast.error("Sorry, an error occurred..."),
+            onError: () => toast.add({title: "Sorry, an error occurred...", type: "error", priority: "high"}),
         });
     };
 

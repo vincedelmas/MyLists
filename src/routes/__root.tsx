@@ -5,7 +5,7 @@ import {clientEnv} from "@/env/client";
 import {PostHogProvider} from "posthog-js/react";
 import {QueryClient} from "@tanstack/react-query";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
-import {Toaster} from "@/lib/client/components/ui/sonner";
+import {Toaster} from "@/lib/client/components/ui/toast";
 import {Navbar} from "@/lib/client/components/navbar/Navbar";
 import {useNProgress} from "@/lib/client/hooks/use-nprogress";
 import {Footer} from "@/lib/client/components/general/Footer";

@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
 import {Login, loginSchema} from "@/lib/schemas";
@@ -70,7 +70,7 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
     const withProvider = async (provider: "google" | "github") => {
         await authClient.signIn.social({ provider, callbackURL: getRedirectTarget() }, {
             onError: (ctx) => {
-                toast.error(ctx.error.message);
+                toast.add({title: ctx.error.message, type: "error", priority: "high"});
             },
         });
     };

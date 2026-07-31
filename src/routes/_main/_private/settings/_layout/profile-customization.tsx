@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useState} from "react";
 import {toItemKey} from "@/lib/utils/media-mapping";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -45,7 +45,7 @@ function ProfileCustomForm() {
             },
             onSuccess: () => {
                 setLocalPreviewCache({});
-                toast.success("Customization updated");
+                toast.add({title: "Customization updated", type: "success"});
             },
         });
     };

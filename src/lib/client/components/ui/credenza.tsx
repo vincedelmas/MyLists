@@ -17,21 +17,19 @@ interface RootCredenzaProps extends BaseProps {
 
 
 interface CredenzaProps extends BaseProps {
-    asChild?: true;
     className?: string;
     onClick?: () => void;
     onEscapeKeyDown?: (ev: any) => void;
 }
 
 
-const CredenzaContext = React.createContext<{ isMobile: boolean }>({
-    isMobile: false,
-})
+const CredenzaContext = React.createContext<{ isMobile: boolean }>({ isMobile: false });
+
 
 const useCredenzaContext = () => {
-    const context = React.use(CredenzaContext)
-    if (!context) throw new Error("Credenza components cannot be rendered outside the Credenza Context")
-    return context
+    const context = React.use(CredenzaContext);
+    if (!context) throw new Error("Credenza components cannot be rendered outside the Credenza Context");
+    return context;
 }
 
 const Credenza = ({ children, ...props }: RootCredenzaProps) => {
@@ -40,77 +38,77 @@ const Credenza = ({ children, ...props }: RootCredenzaProps) => {
 
     return (
         <CredenzaContext value={{ isMobile }}>
-            <Credenza {...props} {...(isMobile && { autoFocus: true })}>
+            <Credenza {...props}>
                 {children}
             </Credenza>
         </CredenzaContext>
-    )
+    );
 }
 
 const CredenzaTrigger = ({ className, children, ...props }: CredenzaProps) => {
-    const { isMobile } = useCredenzaContext()
-    const CredenzaTrigger = isMobile ? DrawerTrigger : DialogTrigger
+    const { isMobile } = useCredenzaContext();
+    const CredenzaTrigger = isMobile ? DrawerTrigger : DialogTrigger;
 
     return (
         <CredenzaTrigger className={className} {...props}>
             {children}
         </CredenzaTrigger>
-    )
+    );
 }
 
 const CredenzaClose = ({ className, children, ...props }: CredenzaProps) => {
-    const { isMobile } = useCredenzaContext()
-    const CredenzaClose = isMobile ? DrawerClose : DialogClose
+    const { isMobile } = useCredenzaContext();
+    const CredenzaClose = isMobile ? DrawerClose : DialogClose;
 
     return (
         <CredenzaClose className={className} {...props}>
             {children}
         </CredenzaClose>
-    )
+    );
 }
 
 const CredenzaContent = ({ className, children, ...props }: CredenzaProps) => {
-    const { isMobile } = useCredenzaContext()
-    const CredenzaContent = isMobile ? DrawerContent : DialogContent
+    const { isMobile } = useCredenzaContext();
+    const CredenzaContent = isMobile ? DrawerContent : DialogContent;
 
     return (
         <CredenzaContent className={className} {...props}>
             {children}
         </CredenzaContent>
-    )
+    );
 }
 
 const CredenzaDescription = ({ className, children, ...props }: CredenzaProps) => {
-    const { isMobile } = useCredenzaContext()
-    const CredenzaDescription = isMobile ? DrawerDescription : DialogDescription
+    const { isMobile } = useCredenzaContext();
+    const CredenzaDescription = isMobile ? DrawerDescription : DialogDescription;
 
     return (
         <CredenzaDescription className={className} {...props}>
             {children}
         </CredenzaDescription>
-    )
+    );
 }
 
 const CredenzaHeader = ({ className, children, ...props }: CredenzaProps) => {
-    const { isMobile } = useCredenzaContext()
-    const CredenzaHeader = isMobile ? DrawerHeader : DialogHeader
+    const { isMobile } = useCredenzaContext();
+    const CredenzaHeader = isMobile ? DrawerHeader : DialogHeader;
 
     return (
         <CredenzaHeader className={className} {...props}>
             {children}
         </CredenzaHeader>
-    )
+    );
 }
 
 const CredenzaTitle = ({ className, children, ...props }: CredenzaProps) => {
-    const { isMobile } = useCredenzaContext()
-    const CredenzaTitle = isMobile ? DrawerTitle : DialogTitle
+    const { isMobile } = useCredenzaContext();
+    const CredenzaTitle = isMobile ? DrawerTitle : DialogTitle;
 
     return (
         <CredenzaTitle className={className} {...props}>
             {children}
         </CredenzaTitle>
-    )
+    );
 }
 
 const CredenzaBody = ({ className, children, ...props }: CredenzaProps) => {
@@ -118,18 +116,18 @@ const CredenzaBody = ({ className, children, ...props }: CredenzaProps) => {
         <div className={cn("px-4 md:px-0", className)} {...props}>
             {children}
         </div>
-    )
+    );
 }
 
 const CredenzaFooter = ({ className, children, ...props }: CredenzaProps) => {
-    const { isMobile } = useCredenzaContext()
-    const CredenzaFooter = isMobile ? DrawerFooter : DialogFooter
+    const { isMobile } = useCredenzaContext();
+    const CredenzaFooter = isMobile ? DrawerFooter : DialogFooter;
 
     return (
         <CredenzaFooter className={className} {...props}>
             {children}
         </CredenzaFooter>
-    )
+    );
 }
 
 

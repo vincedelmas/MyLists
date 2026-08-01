@@ -23,7 +23,7 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                     Recent Achievements
                 </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
                 <div className="space-y-3">
                     {achievements.length === 0 ?
                         <EmptyState
@@ -53,8 +53,8 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                     }
                 </div>
                 {achievements.length !== 0 &&
-                    <Link to="/achievements/$username" params={{ username }} className={buttonVariants({ variant: "dashed", className: "mt-4" })}>
-                        View all achievements
+                    <Link to="/achievements/$username" params={{ username }} className={cn(buttonVariants({ variant: "dashed" }))}>
+                        View all Achievements
                     </Link>
                 }
             </CardContent>

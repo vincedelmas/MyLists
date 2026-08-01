@@ -9,7 +9,7 @@ import {mediaDetailsJobSchema, paginationSchema} from "@/lib/schemas";
 import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {jobDetailsOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
-import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
+import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
 
 
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$name")({
@@ -48,7 +48,7 @@ function JobInfoPage() {
         >
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-4">
                 {apiData.items.map((item) =>
-                    <MediaCard key={item.mediaId} mediaType={mediaType} item={item}>
+                    <MediaCard key={item.mediaId} mediaType={mediaType} item={item} showShade={(isMediaTypeActive && item.inUserList)}>
                         <div className="absolute bottom-0 w-full space-y-1 rounded-b-sm p-3">
                             <div className="flex w-full items-center justify-between space-x-2 max-sm:text-sm">
                                 <h3 className="grow truncate font-semibold" title={item.mediaName}>
@@ -62,9 +62,7 @@ function JobInfoPage() {
                             </div>
                         </div>
                         {isMediaTypeActive && item.inUserList &&
-                            <MediaCornerCommon
-                                isCommon={item.inUserList}
-                            />
+                            <DisplayInUserListCheck/>
                         }
                     </MediaCard>
                 )}

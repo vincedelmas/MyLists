@@ -14,7 +14,7 @@ import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
-import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
+import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
 import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 
@@ -118,16 +118,19 @@ function CollectionViewer() {
                 :
                 <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {items.map((item) =>
-                        <MediaCard key={item.mediaId} item={item} mediaType={collection.mediaType}>
+                        <MediaCard
+                            item={item}
+                            key={item.mediaId}
+                            mediaType={collection.mediaType}
+                            showShade={(!isAnonymous && isMediaTypeActive && item.inUserList)}
+                        >
                             {collection.ordered &&
                                 <div className="absolute top-2 left-2 self-start rounded-md bg-black/70 px-3 py-0.5 text-sm font-semibold text-white">
                                     #{item.orderIndex}
                                 </div>
                             }
                             {!isAnonymous && isMediaTypeActive && item.inUserList &&
-                                <MediaCornerCommon
-                                    isCommon={item.inUserList}
-                                />
+                                <DisplayInUserListCheck/>
                             }
                             <div className="absolute bottom-0 w-full space-y-1 rounded-b-sm p-3">
                                 <div className="flex w-full items-center justify-between space-x-2 text-sm">

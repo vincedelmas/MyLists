@@ -1,12 +1,13 @@
 import React from "react";
+import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {Link} from "@tanstack/react-router";
-import {cn} from "@/lib/utils/classnames";
 
 
 interface MediaCardProps {
     external?: boolean;
     className?: string;
+    showShade?: boolean;
     mediaType: MediaType;
     children: React.ReactNode;
     item: {
@@ -18,7 +19,7 @@ interface MediaCardProps {
 }
 
 
-export const MediaCard = ({ children, item, mediaType, className, external = false }: MediaCardProps) => {
+export const MediaCard = ({ children, item, mediaType, className, showShade, external = false }: MediaCardProps) => {
     const image = (
         <>
             <img
@@ -32,8 +33,8 @@ export const MediaCard = ({ children, item, mediaType, className, external = fal
     );
 
     return (
-        <div className={cn("group relative aspect-2/3 h-full overflow-hidden rounded-lg border text-white transition-all " +
-            "duration-300 hover:border-brand/50", className)}
+        <div className={cn("group relative aspect-2/3 h-full overflow-hidden rounded-lg border " +
+            "text-white transition-all duration-300 hover:border-brand/50", className)}
         >
             {external ?
                 <Link to="/details/$mediaType/external/$apiId" params={{ mediaType, apiId: item.mediaId.toString() }}>
@@ -44,6 +45,14 @@ export const MediaCard = ({ children, item, mediaType, className, external = fal
                     {image}
                 </Link>
             }
+
+            {showShade &&
+                <div
+                    className="absolute top-0 right-0 border-solid border-t-0 border-r-55 border-b-55 border-l-0
+                    border-[transparent_#030712] opacity-70 rounded-tr-md"
+                />
+            }
+
             {children}
         </div>
     );

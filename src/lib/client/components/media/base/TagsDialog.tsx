@@ -1,18 +1,20 @@
-import {useState} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
+import React, {useId, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {cn} from "@/lib/utils/classnames";
+import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {displayContainerError} from "@/lib/utils/error-display";
+import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options";
-import {Check, ChevronRight, LoaderCircle, PlusCircle, Tags} from "lucide-react";
+import {ChevronRight, LoaderCircle, Pencil, PlusCircle, Tags} from "lucide-react";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 
 
 interface TagsDialogProps {
@@ -24,6 +26,7 @@ interface TagsDialogProps {
 
 
 export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogProps) => {
+    const fieldId = useId();
     const { currentUser } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -58,8 +61,10 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
 
     return (
         <Credenza open={isOpen} onOpenChange={setIsOpen}>
-            <CredenzaTrigger className="-mb-1 text-sm font-medium text-muted-foreground hover:text-brand">
-                Manage
+            <CredenzaTrigger className="text-muted-foreground">
+                <Button type="button" size="bare" variant="ghost" className="text-xs">
+                    <Pencil className="mr-1"/> Manage
+                </Button>
             </CredenzaTrigger>
             <CredenzaContent
                 className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full"
@@ -132,42 +137,29 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                                 </div>
                                 :
                                 <div className="grid gap-0.5">
-                                    {filteredTags.map((col) => {
+                                    {filteredTags.map((col, idx) => {
+                                        const checkboxId = `${fieldId}-${idx}`;
                                         const isActive = activeIds.has(col.name);
 
                                         return (
-                                            <button
+                                            <Field
                                                 key={col.name}
-                                                disabled={mutation.isPending}
-                                                onClick={() => handleAction(col, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
-                                                className={cn("flex items-center justify-between w-full px-3 py-3 " +
-                                                    "rounded-lg text-sm transition-all group", isActive
-                                                    ? "bg-brand/4 text-brand" : "text-foreground/90 hover:bg-popover"
+                                                orientation="horizontal"
+                                                data-disabled={mutation.isPending}
+                                                className={cn("p-3 rounded-lg", isActive
+                                                    ? "bg-brand/4 text-brand" : "hover:bg-popover"
                                                 )}
                                             >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={cn(
-                                                        "size-4.5 rounded border flex items-center justify-center transition-all",
-                                                        isActive
-                                                            ? "bg-primary border-primary scale-110"
-                                                            : "bg-popover group-hover:border-muted-foreground"
-                                                    )}>
-                                                        {isActive && <Check className="size-3 text-popover stroke-4"/>}
-                                                    </div>
-                                                    <span className="font-medium">
-                                                        # {col.name}
-                                                    </span>
-                                                </div>
-
-                                                {isActive &&
-                                                    <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95">
-                                                        <div className="size-1.5 rounded-full bg-brand"/>
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest">
-                                                            active
-                                                        </span>
-                                                    </div>
-                                                }
-                                            </button>
+                                                <Checkbox
+                                                    id={checkboxId}
+                                                    checked={isActive}
+                                                    disabled={mutation.isPending}
+                                                    onCheckedChange={() => handleAction(col, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
+                                                />
+                                                <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">
+                                                    # {col.name}
+                                                </FieldLabel>
+                                            </Field>
                                         );
                                     })}
                                 </div>

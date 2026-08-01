@@ -10,7 +10,7 @@ import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorite";
-import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
+import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 
 
@@ -35,32 +35,31 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
 
     return (
         <>
-            <MediaCard item={userMedia} mediaType={mediaType}>
-                <div className="absolute right-2 top-2 z-10">
-                    {isCurrent &&
-                        <Button type="button" size="icon-sm" variant="overlay" onClick={() => setDialogOpen(true)}>
-                            <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
+            <MediaCard item={userMedia} mediaType={mediaType} showShade={isConnected}>
+                {isCurrent &&
+                    <div className="absolute right-1.5 top-1.5 z-10">
+                        <Button type="button" size="bare" variant="ghost" onClick={() => setDialogOpen(true)}>
+                            <Settings2 className="size-4 opacity-70 group-hover:opacity-90"/>
                         </Button>
-                    }
-                    {!isCurrent && !isCommon && isConnected &&
-                        <div className="absolute right-0 -top-0.5 z-10">
-                            <QuickAddMedia
-                                mediaType={mediaType}
-                                queryOption={queryOption}
-                                allStatuses={allStatuses}
-                                mediaId={userMedia.mediaId}
-                                isMediaTypeActive={isMediaTypeActive}
-                            />
-                        </div>
-                    }
-                </div>
-                <div className="absolute left-2 top-2 z-10 rounded-md bg-black/70 px-2 text-white backdrop-blur-sm">
-                    {mediaDetailsDisplay}
-                </div>
-                {isConnected &&
-                    <MediaCornerCommon
-                        isCommon={isCommon}
+                    </div>
+                }
+
+                {(isConnected && !isCurrent && !isCommon) &&
+                    <QuickAddMedia
+                        mediaType={mediaType}
+                        queryOption={queryOption}
+                        allStatuses={allStatuses}
+                        mediaId={userMedia.mediaId}
+                        isMediaTypeActive={isMediaTypeActive}
                     />
+                }
+
+                <Badge variant="overlay" className="absolute top-2 left-2 z-10">
+                    {mediaDetailsDisplay}
+                </Badge>
+
+                {(isConnected && isCommon) &&
+                    <DisplayInUserListCheck/>
                 }
 
                 <div className="absolute bottom-0 w-full space-y-2 rounded-b-sm p-3">

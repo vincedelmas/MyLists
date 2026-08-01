@@ -3,7 +3,8 @@ import {cn} from "@/lib/utils/classnames";
 import {Popover as PopoverPrimitive} from "@base-ui/react/popover";
 
 
-type PopoverContentProps = PopoverPrimitive.Popup.Props & Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset">;
+type PopoverContentProps = PopoverPrimitive.Popup.Props & Pick<PopoverPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "positionMethod" | "side" | "sideOffset">;
 
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {

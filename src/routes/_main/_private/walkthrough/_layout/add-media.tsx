@@ -1,8 +1,9 @@
 import dedent from "dedent";
+import {cn} from "@/lib/utils/classnames";
 import {Card} from "@/lib/client/components/ui/card";
-import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {ExternalLink, Heart, List, MessageCircle, Plus, RotateCcw, Star, Tags} from "lucide-react";
@@ -49,7 +50,7 @@ function RouteComponent() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={media.providerData.url}
-                                className={buttonVariants({ variant: "outline", className: "w-full gap-2" })}
+                                className={cn(buttonVariants({ variant: "outline", className: "w-full gap-2" }))}
                             >
                                 <ExternalLink className="size-4"/>
                                 View on {media.providerData.name}

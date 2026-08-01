@@ -54,11 +54,7 @@ export const UserUpdates = ({ username, updates }: UserUpdatesProps) => {
                     </div>
                 }
                 {updates.length !== 0 &&
-                    <Link
-                        params={{ username }}
-                        to="/profile/$username/history"
-                        className={buttonVariants({ variant: "dashed" })}
-                    >
+                    <Link params={{ username }} to="/profile/$username/history" className={cn(buttonVariants({ variant: "dashed" }))}>
                         View all Feed
                     </Link>
                 }

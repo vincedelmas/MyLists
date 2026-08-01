@@ -17,7 +17,7 @@ interface DisabledMediaListNoticeProps {
 export const DisabledMediaListNotice = ({ mediaType, compact = false }: DisabledMediaListNoticeProps) => {
     const content = (
         <>
-            <div className={cn("space-y-2 text-center", !compact && "space-y-3")}>
+            <div className={cn("space-y-3 text-center", !compact && "space-y-3")}>
                 <h3 className={cn("font-semibold flex gap-2 items-center justify-center", compact ? "text-sm" : "text-lg")}>
                     <MainThemeIcon type={mediaType} size={compact ? 18 : 22}/>
                     {capitalize(mediaType)} List Disabled
@@ -27,14 +27,9 @@ export const DisabledMediaListNotice = ({ mediaType, compact = false }: Disabled
                 </p>
                 <Link
                     to="/settings/content-lists"
-                    className={buttonVariants({
-                        size: "sm",
-                        className: cn(!compact && "w-full"),
-                        variant: compact ? "outline" : "default",
-                    })}
+                    className={buttonVariants({ size: "sm", className: cn(!compact && "w-full") })}
                 >
-                    <Settings className="size-3.5"/>
-                    Enable in settings
+                    <Settings/> Enable in settings
                 </Link>
             </div>
         </>

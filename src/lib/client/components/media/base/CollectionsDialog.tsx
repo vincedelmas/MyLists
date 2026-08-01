@@ -1,16 +1,18 @@
-import {useState} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
+import React, {useId, useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {cn} from "@/lib/utils/classnames";
-import {displayContainerError} from "@/lib/utils/error-display";
+import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {displayContainerError} from "@/lib/utils/error-display";
+import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {Check, ChevronRight, Folder, LoaderCircle, PlusCircle} from "lucide-react";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {ChevronRight, Folder, LoaderCircle, PlusCircle} from "lucide-react";
 import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
 import {useAddMediaToCollectionMutation, useCreateCollectionMutation, useRemoveMediaFromCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
@@ -22,6 +24,7 @@ interface CollectionsDialogProps {
 
 
 export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps) => {
+    const fieldId = useId();
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
@@ -145,53 +148,35 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                                 </div>
                                 :
                                 <div className="grid gap-0.5">
-                                    {filteredCollections.map((collection) => {
+                                    {filteredCollections.map((collection, idx) => {
+                                        const checkboxId = `${fieldId}-${idx}`;
                                         const isActive = activeIds.has(collection.id);
 
                                         return (
-                                            <button
+                                            <Field
                                                 key={collection.id}
-                                                disabled={isPending}
-                                                onClick={() => handleToggle(collection)}
-                                                className={cn("flex items-center justify-between w-full px-3 py-3 " +
-                                                    "rounded-lg text-sm transition-all group", isActive ?
-                                                    "bg-brand/4 text-brand" : "text-foreground/90 hover:bg-popover"
-                                                )}
+                                                orientation="horizontal"
+                                                data-disabled={isPending}
+                                                className={cn("rounded-lg p-3", isActive ? "bg-brand/4 text-brand" : "hover:bg-popover")}
                                             >
-                                                <div className="flex min-w-0 flex-1 items-start gap-3">
-                                                    <div className={cn("size-4.5 rounded border flex items-center " +
-                                                        "justify-center transition-all shrink-0 mt-0.5", isActive
-                                                        ? "bg-primary border-primary scale-110"
-                                                        : "bg-popover group-hover:border-muted-foreground",
-                                                    )}>
-                                                        {isActive &&
-                                                            <Check className="size-3 text-popover stroke-4"/>
-                                                        }
-                                                    </div>
-                                                    <div className="min-w-0 space-y-1 text-left">
-                                                        <span className="font-medium line-clamp-2 leading-snug" title={collection.title}>
+                                                <Checkbox
+                                                    id={checkboxId}
+                                                    checked={isActive}
+                                                    disabled={isPending}
+                                                    onCheckedChange={() => handleToggle(collection)}
+                                                />
+                                                <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">
+                                                    <div className="min-w-0 space-y-1">
+                                                        <span className="font-medium line-clamp-2" title={collection.title}>
                                                             {collection.title}
                                                         </span>
-                                                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-                                                            <span className="inline-flex items-center gap-1 capitalize">
-                                                                <PrivacyIcon type={collection.privacy}/>
-                                                            </span>
-                                                            <span>
-                                                                {collection.itemsCount} item{collection.itemsCount > 1 ? "s" : ""}
-                                                            </span>
+                                                        <div className="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
+                                                            <PrivacyIcon type={collection.privacy}/>
+                                                            {collection.itemsCount} item{collection.itemsCount > 1 ? "s" : ""}
                                                         </div>
                                                     </div>
-                                                </div>
-
-                                                {isActive &&
-                                                    <div className="ml-3 flex shrink-0 items-center gap-1.5 animate-in fade-in zoom-in-95">
-                                                        <div className="size-1.5 rounded-full bg-brand"/>
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest">
-                                                            active
-                                                        </span>
-                                                    </div>
-                                                }
-                                            </button>
+                                                </FieldLabel>
+                                            </Field>
                                         );
                                     })}
                                 </div>

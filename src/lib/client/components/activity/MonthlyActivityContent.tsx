@@ -188,7 +188,13 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
             {apiData.items.length > 0 &&
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {apiData.items.map((row) =>
-                        <MediaCard key={row.id} mediaType={row.mediaType} item={{ ...row, mediaCover: row.mediaCover }} className="text-sm">
+                        <MediaCard
+                            key={row.id}
+                            className="text-sm"
+                            showShade={canEdit}
+                            mediaType={row.mediaType}
+                            item={{ ...row, mediaCover: row.mediaCover }}
+                        >
                             <div className="absolute left-1.5 top-1 z-10">
                                 {row.hidden &&
                                     <Badge variant="overlay">
@@ -197,15 +203,15 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                 }
                             </div>
                             {canEdit &&
-                                <div className="absolute right-1 top-1 z-10">
+                                <div className="absolute right-1.5 top-1.5 z-10">
                                     <Button
+                                        size="bare"
                                         type="button"
-                                        size="icon-sm"
-                                        variant="overlay"
+                                        variant="ghost"
                                         onClick={() => setEditActivity(row)}
                                         title={`Edit Monthly Activity for ${row.mediaName}`}
                                     >
-                                        <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
+                                        <Settings2 className="size-4 opacity-60 group-hover:opacity-90"/>
                                     </Button>
                                 </div>
                             }

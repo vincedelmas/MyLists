@@ -48,9 +48,9 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
     };
 
     return (
-        <>
-            <h4 className="text-lg flex justify-between items-center mt-5 font-semibold">
-                Tags
+        <div className="mt-5">
+            <h4 className="text-md flex justify-between items-center font-medium">
+                <span>Tags</span>
                 <TagsDialog
                     tags={tags}
                     mediaId={mediaId}
@@ -58,10 +58,10 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
                     updateTag={updateTagNames}
                 />
             </h4>
-            <Separator className="mb-1"/>
-            <div className="flex flex-wrap gap-2">
+            <Separator/>
+            <div className="flex flex-wrap gap-1 mt-1">
                 {tags.length === 0 ?
-                    <div className="text-muted-foreground text-sm">
+                    <div className="mt-1 text-muted-foreground text-sm">
                         Not tag added yet.
                     </div>
                     :
@@ -73,14 +73,12 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
                             params={{ mediaType, username: currentUser!.name }}
                         >
                             <Badge key={tag.name} variant="tag" className="max-w-50">
-                                <div className="flex justify-between gap-2">
-                                    # {tag.name}
-                                </div>
+                                # {tag.name}
                             </Badge>
                         </Link>
                     )
                 }
             </div>
-        </>
+        </div>
     );
 };

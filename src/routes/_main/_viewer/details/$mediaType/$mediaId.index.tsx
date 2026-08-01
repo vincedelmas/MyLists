@@ -1,14 +1,15 @@
 import {Suspense} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {ExternalLink, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Card} from "@/lib/client/components/ui/card";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {SimilarMedia} from "@/lib/client/components/media/base/SimilarMedia";
 import {MediaSynopsis} from "@/lib/client/components/media/base/MediaSynopsis";
@@ -98,8 +99,8 @@ function MediaDetailsPage() {
                     </Suspense>
                 </div>
                 <div className="col-span-4 space-y-6 max-lg:col-span-1 max-lg:order-1">
-                    <div className="space-y-5 max-lg:grid max-lg:grid-cols-2 max-md:grid-cols-1 max-lg:gap-6">
-                        <div className="space-y-5 max-lg:mb-0">
+                    <div className="space-y-6 max-lg:grid max-lg:grid-cols-2 max-md:grid-cols-1 max-lg:gap-6">
+                        <div className="space-y-6 max-lg:mb-0">
                             {!isAnonymous &&
                                 <RefreshAndEdit
                                     mediaId={media.id}
@@ -118,7 +119,7 @@ function MediaDetailsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={media.providerData.url}
-                                className={buttonVariants({ size: "lg", variant: "outline", className: "w-full" })}
+                                className={cn(buttonVariants({ size: "lg", variant: "outline", className: "w-full" }))}
                             >
                                 View on {media.providerData.name} <ExternalLink/>
                             </a>

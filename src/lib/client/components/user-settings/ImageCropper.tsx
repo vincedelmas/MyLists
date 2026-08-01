@@ -132,19 +132,21 @@ export const ImageCropper = ({ aspect, inputId, fileName, sliceHeight, cropShape
 
     return (
         <div>
-            <Input
-                type="file"
-                id={inputId}
-                accept="image/*"
-                onChange={onFileChange}
-                aria-invalid={ariaInvalid}
-                className="file:text-muted-foreground cursor-pointer"
-            />
-            <FieldDescription>
-                Choose an image to crop and resize.
-            </FieldDescription>
+            <div>
+                <Input
+                    type="file"
+                    id={inputId}
+                    accept="image/*"
+                    onChange={onFileChange}
+                    aria-invalid={ariaInvalid}
+                    className="file:text-muted-foreground cursor-pointer"
+                />
+                <FieldDescription>
+                    Choose an image to crop and resize.
+                </FieldDescription>
+            </div>
             {(state.imageSrc && state.open) &&
-                <div className="space-y-4 mt-6 bg-popover rounded-lg p-3">
+                <div className="space-y-4 mt-6 bg-card rounded-lg p-3">
                     <div>
                         <h4 className="font-medium">
                             Crop Your Image
@@ -176,7 +178,7 @@ export const ImageCropper = ({ aspect, inputId, fileName, sliceHeight, cropShape
                 </div>
             }
             {(state.showResult && state.croppedImage) &&
-                <div className="space-y-4 mt-4 bg-popover rounded-lg p-3">
+                <div className="space-y-4 mt-4 bg-card rounded-lg p-3">
                     <h4 className="font-medium">
                         Selected Image
                     </h4>

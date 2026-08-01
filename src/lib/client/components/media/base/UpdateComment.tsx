@@ -67,35 +67,39 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
     };
 
     return (
-        <>
-            <h4 className="text-lg flex justify-between items-center mt-4 font-semibold">
-                Comment
-                <div className="flex items-center gap-1 text-muted-foreground text-sm mt-1">
+        <div className="mt-4">
+            <h4 className="text-md flex justify-between items-center font-medium">
+                <span>Comment</span>
+                <div className="flex items-center gap-1 text-muted-foreground">
                     {shouldShowExpandedReader && !isEditing &&
                         <Button variant="ghost" size="xs" onClick={handleOpenExpandedReader}>
-                            <Maximize2 className="size-3.5"/>
+                            <Maximize2/>
                         </Button>
                     }
-                    <Button size="bare" type="button" variant="ghost" disabled={disabled} onClick={handleEditToggle} className="disabled:opacity-40 gap-1">
-                        {content
-                            ? <><Pencil/> Edit</>
-                            : <><Plus/> Add</>
-                        }
+                    <Button
+                        size="bare"
+                        type="button"
+                        variant="ghost"
+                        disabled={disabled}
+                        className="text-xs"
+                        onClick={handleEditToggle}
+                    >
+                        {content ? <><Pencil/> Edit</> : <><Plus/> Add</>}
                     </Button>
                 </div>
             </h4>
-            <Separator className="-mt-2 mb-1"/>
+            <Separator/>
             {isEditing ?
                 <div className="space-y-2">
                     <Textarea
                         value={comment ?? ""}
                         disabled={updateComment.isPending}
-                        className="w-full h-35 scrollbar-thin"
+                        className="mt-2 h-35 scrollbar-thin"
                         onChange={(ev) => setComment(ev.target.value)}
                         placeholder={"Enter your comment, you can:\n\n- Add bullet points\n- Leave blank lines between paragraphs"}
                     />
                     <div className="flex items-center justify-between">
-                        <span className={`text-xs -mt-5 ${isOverLimit ? "text-destructive" : "text-muted-foreground"}`}>
+                        <span className={`text-xs -mt-4 ${isOverLimit ? "text-destructive" : "text-muted-foreground"}`}>
                             {currentLength} / {maxChars}
                         </span>
                         <div className="flex gap-2">
@@ -118,7 +122,7 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
                     </div>
                 </div>
                 :
-                <div className="text-muted-foreground text-sm wrap-break-word max-h-37 overflow-y-auto scrollbar-thin pr-1">
+                <div className="mt-1 text-muted-foreground text-sm wrap-break-word max-h-37 overflow-y-auto scrollbar-thin pr-1">
                     {content
                         ? <StructuredComment content={content}/>
                         : "No comments added yet."
@@ -185,6 +189,6 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
                     }
                 </DialogContent>
             </Dialog>
-        </>
+        </div>
     );
 };

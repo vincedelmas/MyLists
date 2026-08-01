@@ -1,6 +1,6 @@
 import {MediaListArgs} from "@/lib/schemas";
-import React, {useId, useRef, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
+import React, {useId, useRef, useState} from "react";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
@@ -15,26 +15,31 @@ import {GamesPlatformsEnum, JobType, MediaType, Status} from "@/lib/utils/enums"
 import {ChevronDown, ChevronUp, CircleHelp, LoaderCircle, X} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {filterSearchOptions, listFiltersOptions} from "@/lib/client/react-query/query-options";
-import {Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle} from "@/lib/client/components/ui/sheet";
 import {Field, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
+import {Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle} from "@/lib/client/components/ui/sheet";
 
 
 interface FiltersSideSheetProps {
+    open: boolean;
     username: string;
     isCurrent: boolean;
-    onClose: () => void;
     mediaType: MediaType;
     filters: MediaListArgs;
+    onOpenChange: (open: boolean) => void;
     onFilterApply: (filters: Partial<MediaListArgs>) => void;
 }
 
 
-export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onClose, onFilterApply }: FiltersSideSheetProps) => {
+export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent, onOpenChange, onFilterApply }: FiltersSideSheetProps) => {
     const fieldId = useId();
     const localFiltersRef = useRef<Partial<MediaListArgs>>({});
-    const { data: listFilters, isPending, error } = useQuery(listFiltersOptions(mediaType, username));
-
     const activeFiltersConfig = mediaConfig[mediaType].sheetFilters();
+    const { data: listFilters, isPending, error } = useQuery({ ...listFiltersOptions(mediaType, username), enabled: open });
+
+    const handleSheetOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen) localFiltersRef.current = {};
+        onOpenChange(nextOpen);
+    };
 
     const handleRegisterChange = (filterType: keyof MediaListArgs, value: string[] | boolean) => {
         const updatedFilters = { ...localFiltersRef.current };
@@ -71,13 +76,13 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
     };
 
     const handleOnSubmit = async (ev: React.SubmitEvent<HTMLFormElement>) => {
-        onClose();
         ev.preventDefault();
         onFilterApply(localFiltersRef.current);
+        handleSheetOpenChange(false);
     };
 
     return (
-        <Sheet defaultOpen={true} onOpenChange={onClose}>
+        <Sheet open={open} onOpenChange={handleSheetOpenChange}>
             <SheetContent className="max-sm:w-full" side="right">
                 <SheetHeader>
                     <SheetTitle>Additional Filters</SheetTitle>

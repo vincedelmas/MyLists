@@ -1,13 +1,12 @@
-import {toast} from "@/lib/client/components/ui/toast";
 import {useId, useRef} from "react";
 import {CreateCollection} from "@/lib/schemas";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {DraftItem} from "@/lib/types/collections.types";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
-import {Controller, FormProvider, useFieldArray, type UseFormReturn} from "react-hook-form";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {GripVertical, List, ListOrdered, Trash2} from "lucide-react";
@@ -17,6 +16,7 @@ import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {CollectionSearch} from "@/lib/client/components/collections/CollectionSearch";
+import {Controller, FormProvider, useFieldArray, UseFormReturn, useWatch} from "react-hook-form";
 import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet, FieldTitle} from "@/lib/client/components/ui/field";
 
 
@@ -32,7 +32,7 @@ interface CollectionEditorProps {
 export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSubmitting }: CollectionEditorProps) => {
     const fieldId = useId();
     const { isDirty } = form.formState;
-    const ordered = form.watch("ordered");
+    const ordered = useWatch({ control: form.control, name: "ordered" });
     const orderedLabel = ordered ? "Ranked" : "Unranked";
     const dragIndex = useRef<number | null>(null);
     const { fields, append, remove, move } = useFieldArray({ control: form.control, name: "items" });
@@ -54,7 +54,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
 
     const handleAddItem = (item: DraftItem) => {
         if (fields.some((field) => field.mediaId === item.mediaId)) {
-            toast.add({title: "That media is already in your collection.", type: "warning"});
+            toast.add({ title: "That media is already in your collection.", type: "warning" });
             return;
         }
 
@@ -95,14 +95,14 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                             <Controller
                                 name="title"
                                 control={form.control}
-                                render={({field, fieldState}) =>
+                                render={({ field, fieldState }) =>
                                     <Field data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
                                         <FieldLabel htmlFor={`${fieldId}-title`}>Title</FieldLabel>
                                         <Input
                                             {...field}
                                             id={`${fieldId}-title`}
-                                            placeholder="Ex: Top 50 Animated Films"
                                             aria-invalid={fieldState.invalid}
+                                            placeholder="Ex: Top 50 Animated Films"
                                         />
                                         <FieldError errors={[fieldState.error]}/>
                                     </Field>
@@ -111,7 +111,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                             <Controller
                                 name="description"
                                 control={form.control}
-                                render={({field, fieldState}) =>
+                                render={({ field, fieldState }) =>
                                     <Field data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
                                         <FieldLabel htmlFor={`${fieldId}-description`}>Description</FieldLabel>
                                         <Textarea
@@ -134,7 +134,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                             <Controller
                                 name="items"
                                 control={form.control}
-                                render={({fieldState}) => (
+                                render={({ fieldState }) => (
                                     <Field data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
                                         <FieldTitle id={`${fieldId}-items`}>Items ({fields.length})</FieldTitle>
                                         <CollectionSearch
@@ -205,7 +205,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                 <Controller
                                     name="privacy"
                                     control={form.control}
-                                    render={({field, fieldState}) =>
+                                    render={({ field, fieldState }) =>
                                         <Field data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
                                             <FieldSet>
                                                 <FieldLegend id={`${fieldId}-privacy`} className="text-base">Privacy Settings</FieldLegend>
@@ -214,13 +214,15 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                     onValueChange={field.onChange}
                                                     aria-invalid={fieldState.invalid}
                                                     aria-labelledby={`${fieldId}-privacy`}
-                                                    className="flex flex-col gap-3"
                                                 >
                                                     {[PrivacyType.PRIVATE, PrivacyType.RESTRICTED, PrivacyType.PUBLIC].map((pt) =>
                                                         <Field key={pt} orientation="horizontal">
                                                             <RadioGroupItem id={`${fieldId}-privacy-${pt}`} value={pt}/>
                                                             <FieldContent>
-                                                                <FieldLabel htmlFor={`${fieldId}-privacy-${pt}`} className="flex items-center gap-1 font-normal">
+                                                                <FieldLabel
+                                                                    htmlFor={`${fieldId}-privacy-${pt}`}
+                                                                    className="flex items-center gap-1 font-normal"
+                                                                >
                                                                     <PrivacyIcon type={pt}/>
                                                                     {pt === PrivacyType.RESTRICTED
                                                                         ? "Profile Only" : pt === PrivacyType.PRIVATE
@@ -262,8 +264,13 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                 <Controller
                                     name="ordered"
                                     control={form.control}
-                                    render={({field, fieldState}) =>
-                                        <Field orientation="horizontal" className="justify-between rounded-md border px-3 py-2" data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
+                                    render={({ field, fieldState }) =>
+                                        <Field
+                                            orientation="horizontal"
+                                            data-disabled={isSubmitting}
+                                            data-invalid={fieldState.invalid}
+                                            className="justify-between rounded-md border px-3 py-2"
+                                        >
                                             <FieldContent>
                                                 <FieldLabel htmlFor={`${fieldId}-ordered`} className="text-sm font-semibold">
                                                     Ranked list
@@ -274,10 +281,10 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                 <FieldError errors={[fieldState.error]}/>
                                             </FieldContent>
                                             <Switch
-                                                id={`${fieldId}-ordered`}
                                                 checked={field.value}
-                                                aria-invalid={fieldState.invalid}
+                                                id={`${fieldId}-ordered`}
                                                 onCheckedChange={field.onChange}
+                                                aria-invalid={fieldState.invalid}
                                             />
                                         </Field>
                                     }

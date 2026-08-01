@@ -11,14 +11,13 @@ interface DistributionContainerProps {
 
 export const DistributionContainer = ({ label, icon: Icon, children }: DistributionContainerProps) => {
     return (
-        <div className="bg-card border rounded-xl p-4 px-5 shadow-sm">
+        <div className="border rounded-xl p-4 px-5 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-                <Icon className="size-4 text-app-accent"/>
-                <span className="text-sm font-semibold text-primary">
+                <Icon className="size-4 text-brand"/>
+                <span className="text-sm font-semibold text-foreground">
                     {label}
                 </span>
             </div>
-
             {children}
         </div>
     );

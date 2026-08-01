@@ -29,7 +29,7 @@ export const ProfileSidebarTabs = ({ activeTab, setActiveTab, allFormValues }: P
                         type="button"
                         onClick={() => setActiveTab(tab)}
                         className={cn("w-full rounded-lg border p-3 text-left transition-colors",
-                            activeTab === tab ? "border-app-accent bg-app-accent/10" : "hover:bg-accent/40",
+                            activeTab === tab ? "border-brand bg-brand/10" : "hover:bg-accent/40",
                         )}
                     >
                         <div className="flex items-center gap-2 font-medium capitalize">
@@ -37,10 +37,9 @@ export const ProfileSidebarTabs = ({ activeTab, setActiveTab, allFormValues }: P
                             {tab}
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground capitalize">
-                            {tabMode === "curated" ?
-                                <>{tabMode} - {tabItemsCount}/{PROFILE_MAX_HIGHLIGHTED_MEDIA}</>
-                                :
-                                <>{tabMode}</>
+                            {tabMode === "curated"
+                                ? <>{tabMode} - {tabItemsCount}/{PROFILE_MAX_HIGHLIGHTED_MEDIA}</>
+                                : <>{tabMode}</>
                             }
                         </div>
                     </button>

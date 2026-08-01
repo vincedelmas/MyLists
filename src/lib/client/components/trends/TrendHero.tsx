@@ -16,26 +16,26 @@ export const TrendHero = ({ trend }: { trend: TrendsMedia }) => {
                     alt={trend.displayName}
                     className="w-full h-full object-cover opacity-40 blur-sm scale-105"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-neutral-950 via-neutral-950/60 to-transparent"/>
-                <div className="absolute inset-0 bg-linear-to-r from-neutral-950 via-neutral-950/40 to-transparent"/>
+                <div className="absolute inset-0 bg-linear-to-t from-black via-black/60 to-transparent"/>
+                <div className="absolute inset-0 bg-linear-to-r from-black via-black/40 to-transparent"/>
             </div>
 
             <div className="absolute bottom-0 left-0 p-6 md:p-10 max-w-2xl z-10">
-                <div className="flex items-center gap-2 mb-2 text-app-accent font-bold text-xs uppercase tracking-widest">
-                    <Flame className="size-4 fill-app-rating text-app-rating"/> #1 Trending
+                <div className="flex items-center gap-2 mb-2 text-brand font-bold text-xs uppercase tracking-widest">
+                    <Flame className="size-4 fill-achievement text-achievement"/> #1 Trending
                 </div>
-                <h1 className="text-3xl md:text-5xl font-bold text-primary mb-3 drop-shadow-lg">
+                <h1 className="mb-3 text-3xl font-bold text-white drop-shadow-lg md:text-5xl">
                     {trend.displayName}
                 </h1>
-                <div className="flex items-center gap-4 text-muted-foreground text-sm mb-4">
-                    <span className="bg-popover px-2 py-0.5 rounded border">
+                <div className="mb-4 flex items-center gap-4 text-sm text-white/70">
+                    <span className="rounded border border-white/15 bg-black/35 px-2 py-0.5 text-white">
                         {formatDate(trend.releaseDate)}
                     </span>
                     <span className="capitalize">
                         {trend.mediaType}
                     </span>
                 </div>
-                <p className="text-muted-foreground text-sm md:text-base line-clamp-2 md:line-clamp-3 mb-6 max-w-lg">
+                <p className="mb-6 max-w-lg line-clamp-2 text-sm text-white/70 md:line-clamp-3 md:text-base">
                     {trend.overview}
                 </p>
                 <div className="flex items-center gap-3">
@@ -43,7 +43,7 @@ export const TrendHero = ({ trend }: { trend: TrendsMedia }) => {
                         to="/details/$mediaType/external/$apiId"
                         params={{ mediaType: trend.mediaType, apiId: trend.apiId.toString() }}
                     >
-                        <Button variant="emeraldy" size="lg">
+                        <Button size="lg">
                             <Eye className="size-4"/> See Details
                         </Button>
                     </Link>

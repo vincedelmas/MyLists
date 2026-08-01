@@ -14,7 +14,15 @@ import {MyMediaMenu} from "@/lib/client/components/navbar/MyMediaMenu";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
 import {useFeatureFlagMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/lib/client/components/ui/dropdown-menu";
 import {
     Activity,
     BarChart2,
@@ -32,9 +40,10 @@ import {
     UsersRound,
     X,
 } from "lucide-react";
+import {Badge} from "@/lib/client/components/ui/badge";
 
 
-const navStyle = cva("inline-flex items-center justify-center px-4 text-sm font-medium hover:text-app-accent " +
+const navStyle = cva("inline-flex items-center justify-center px-4 text-sm font-medium hover:text-brand " +
     "disabled:pointer-events-none disabled:opacity-50 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none"
 )
 
@@ -68,7 +77,7 @@ export const Navbar = () => {
                         <Link to="/">
                             <div className="flex shrink-0 items-center gap-2">
                                 <img alt="MyLists logo" className="size-5" src="/logo192.png"/>
-                                <span className="text-xl font-bold text-primary block tracking-tight max-sm:hidden">
+                                <span className="text-xl font-bold text-foreground block tracking-tight max-sm:hidden">
                                     MyLists
                                 </span>
                             </div>
@@ -77,7 +86,7 @@ export const Navbar = () => {
                         <Link to="/profile/$username" params={{ username: currentUser.name }}>
                             <div className="flex shrink-0 items-center gap-2">
                                 <img alt="MyLists logo" className="size-5" src="/logo192.png"/>
-                                <span className="text-xl font-bold text-primary block tracking-tight max-sm:hidden">
+                                <span className="text-xl font-bold text-foreground block tracking-tight max-sm:hidden">
                                     MyLists
                                 </span>
                             </div>
@@ -118,11 +127,11 @@ export const Navbar = () => {
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <Link to="/platform-stats" className={navStyle()} activeProps={{ className: "text-app-accent" }}>
+                        <Link to="/platform-stats" className={navStyle()} activeProps={{ className: "text-brand" }}>
                             Stats
                         </Link>
 
-                        <Link to="/trends" className={navStyle()} activeProps={{ className: "text-app-accent" }}>
+                        <Link to="/trends" className={navStyle()} activeProps={{ className: "text-brand" }}>
                             Trends
                         </Link>
                     </div>
@@ -133,7 +142,7 @@ export const Navbar = () => {
                                 <Button variant="ghost" onClick={() => openLogin(location.href)}>
                                     Login
                                 </Button>
-                                <Button variant="emeraldy" onClick={() => openRegister(location.href)}>
+                                <Button onClick={() => openRegister(location.href)}>
                                     Register
                                 </Button>
                             </div>
@@ -160,64 +169,57 @@ export const Navbar = () => {
                                             <ProfileIcon
                                                 fallbackSize="text-base"
                                                 user={{ name: currentUser.name, image: currentUser.image! }}
-                                                className="size-10 border-none hover:ring-2 hover:ring-app-accent"
+                                                className="size-10 border-none hover:ring-2 hover:ring-brand"
                                             />
                                         </DropdownMenuTrigger>
                                         {currentUser.showUpdateModal &&
                                             <div className="absolute right-0 top-0">
                                                 <div className="relative">
-                                                    <div className="absolute rounded-full h-2 w-2 bg-app-accent opacity-75"/>
-                                                    <div className="rounded-full h-2 w-2 bg-linear-to-r from-app-accent to-app-accent/50 animate-ping"/>
+                                                    <div className="absolute rounded-full h-2 w-2 bg-brand opacity-75"/>
+                                                    <div className="rounded-full h-2 w-2 bg-linear-to-r from-brand to-brand/50 animate-ping"/>
                                                 </div>
                                             </div>
                                         }
                                     </div>
                                     <DropdownMenuContent align="end" className="w-56">
-                                        <DropdownMenuItem className="block focus:bg-transparent cursor-default">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <p className="text-sm font-medium text-primary">
-                                                    {currentUser.name}
+                                        <DropdownMenuGroup>
+                                            <DropdownMenuLabel>
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-sm font-medium text-foreground">
+                                                        {currentUser.name}
+                                                    </p>
+                                                    <p title={`${capitalize(currentUser.privacy)} account`}>
+                                                        <PrivacyIcon type={currentUser.privacy}/>
+                                                    </p>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground truncate">
+                                                    {currentUser.email}
                                                 </p>
-                                                <p className="text-sm font-medium text-primary" title={`${capitalize(currentUser.privacy)} account`}>
-                                                    <PrivacyIcon type={currentUser.privacy}/>
-                                                </p>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground truncate">
-                                                {currentUser.email}
-                                            </p>
-                                        </DropdownMenuItem>
+                                            </DropdownMenuLabel>
+                                        </DropdownMenuGroup>
                                         <DropdownMenuSeparator/>
                                         <DropdownMenuGroup>
                                             <DropdownMenuItem render={<Link to="/profile/$username" params={{ username: currentUser.name }}/>}>
                                                 <User/> Profile
                                             </DropdownMenuItem>
                                             {currentUser.capabilities.enterAdminDashboard &&
-                                                <DropdownMenuItem className="focus:bg-app-rating/10" render={<Link to="/admin"/>}>
-                                                    <ShieldCheck className="text-app-rating"/>
-                                                    <span className="text-app-rating">
+                                                <DropdownMenuItem className="hover:text-warning" render={<Link to="/admin"/>}>
+                                                    <ShieldCheck className="text-warning"/>
+                                                    <span className="text-warning">
                                                         Admin Panel
                                                     </span>
                                                 </DropdownMenuItem>
                                             }
-                                            <DropdownMenuItem
-                                                render={
-                                                    <Link
-                                                        to="/features"
-                                                        onClick={onFeaturesClick}
-                                                        className="relative w-full"
-                                                    />
-                                                }
-                                            >
+                                            <DropdownMenuItem render={<Link to="/features" onClick={onFeaturesClick}/>}>
                                                 <div className="flex w-full items-center justify-between">
                                                     <div className="flex items-center gap-2">
-                                                        <Activity className="size-4 text-app-accent"/>
+                                                        <Activity className="text-brand"/>
                                                         <span>News & Features</span>
                                                     </div>
                                                     {currentUser.showUpdateModal &&
-                                                        <div className="bg-app-accent px-2 py-0.5 text-[10px] font-bold
-                                                            text-black rounded-md animate-pulse">
+                                                        <Badge className="animate-pulse text-[10px] font-bold text-primary-foreground">
                                                             NEW
-                                                        </div>
+                                                        </Badge>
                                                     }
                                                 </div>
                                             </DropdownMenuItem>
@@ -225,12 +227,10 @@ export const Navbar = () => {
                                         <DropdownMenuSeparator/>
                                         <DropdownMenuGroup>
                                             <DropdownMenuItem render={<Link to="/settings"/>}>
-                                                <Settings/>
-                                                Settings
+                                                <Settings/> Settings
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="focus:bg-red-500/10" onClick={logoutUser}>
-                                                <LogOut className="text-red-500"/>
-                                                <span className="text-red-500">Logout</span>
+                                            <DropdownMenuItem variant="destructive" onClick={logoutUser}>
+                                                <LogOut/> Logout
                                             </DropdownMenuItem>
                                         </DropdownMenuGroup>
                                     </DropdownMenuContent>
@@ -241,7 +241,7 @@ export const Navbar = () => {
                         <button
                             aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="lg:hidden p-2 text-muted-foreground hover:text-primary"
+                            className="lg:hidden p-2 text-muted-foreground hover:text-foreground"
                         >
                             {isMobileMenuOpen ? <X className="size-6"/> : <Menu className="size-6"/>}
                         </button>
@@ -257,44 +257,44 @@ export const Navbar = () => {
                         <div className="p-2 max-h-[70vh] overflow-y-auto scrollbar-thin mt-3">
                             <div className="flex flex-wrap justify-around items-center gap-x-4 gap-y-4 px-2">
                                 <Link to="/moviedle" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
                                         <Clapperboard className="size-4"/>
                                         <span className="text-[10px]">Moviedle</span>
                                     </button>
                                 </Link>
                                 <Link to="/which-came-first" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
                                         <GitCompareArrows className="size-4"/>
                                         <span className="text-[10px]">WCF?</span>
                                     </button>
                                 </Link>
                                 <Link to="/collections/discover" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
                                         <ListOrdered className="size-4"/>
                                         <span className="text-[10px]">Collections</span>
                                     </button>
                                 </Link>
                                 <Link to="/hall-of-fame" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
                                         <Trophy className="size-4"/>
                                         <span className="text-[10px]">HoF</span>
                                     </button>
                                 </Link>
                                 <Link to="/platform-stats" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
                                         <BarChart2 className="size-4"/>
                                         <span className="text-[10px]">Stats</span>
                                     </button>
                                 </Link>
                                 <Link to="/trends" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
                                         <TrendingUp className="size-4"/>
                                         <span className="text-[10px]">Trends</span>
                                     </button>
                                 </Link>
                                 {!isAnonymous &&
                                     <Link to="/taste-matches" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-app-accent">
+                                        <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
                                             <UsersRound className="size-4"/>
                                             <span className="text-[10px]">Matches</span>
                                         </button>

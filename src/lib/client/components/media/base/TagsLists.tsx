@@ -72,7 +72,7 @@ export const TagsLists = ({ queryOption, mediaType, mediaId, tags }: TagListsPro
                             to="/list/$mediaType/$username"
                             params={{ mediaType, username: currentUser!.name }}
                         >
-                            <Badge key={tag.name} variant="emerald" className="max-w-50">
+                            <Badge key={tag.name} variant="tag" className="max-w-50">
                                 <div className="flex justify-between gap-2">
                                     # {tag.name}
                                 </div>

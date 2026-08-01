@@ -52,7 +52,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
                 <SimpleStatCard
                     title="Avg. Rating"
                     value={ratingDisplay}
-                    icon={<Star className="size-5 text-app-rating mt-1"/>}
+                    icon={<Star className="size-5 text-rating mt-1"/>}
                 />
                 <SimpleStatCard
                     title="Rated Media"
@@ -95,7 +95,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
                 config={highlightedMedia}
             />
 
-            <div className="flex justify-end items-center gap-2 -mt-4 font-semibold text-muted-foreground">
+            <div className="flex justify-end items-center gap-2 -mt-4 font-medium text-muted-foreground">
                 <Link to="/stats/$username" params={{ username }}>
                     <div className="flex justify-end items-center gap-2">
                         Advanced Stats <MoveRight className="size-4"/>

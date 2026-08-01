@@ -18,7 +18,7 @@ function SearchMediaOnboarding() {
                 description={
                     <span>
                         Everything on MyLists starts with a search. You can find the search bar
-                        at the <span className="text-primary font-semibold">top of your screen</span> in the navbar.
+                        at the <span className="text-foreground font-semibold">top of your screen</span> in the navbar.
                     </span>
                 }
             >
@@ -35,7 +35,7 @@ function SearchMediaOnboarding() {
                     <div className="flex items-center w-full max-w-md shadow-sm opacity-70">
                         <SearchBar/>
                     </div>
-                    <div className="absolute bottom-0 left-10 bg-app-accent text-primary-foreground font-bold text-[10px] px-2 py-1
+                    <div className="absolute bottom-0 left-10 bg-primary text-primary-foreground font-bold text-[10px] px-2 py-1
                     rounded flex items-center gap-1">
                         HERE TO CHANGE MEDIA TYPE <ArrowBigUpDash className="size-3 animate-bounce"/>
                     </div>

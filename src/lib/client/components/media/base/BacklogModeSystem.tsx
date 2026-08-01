@@ -1,5 +1,4 @@
 import {useState} from "react";
-import {cn} from "@/lib/utils/classnames";
 import {Button} from "@/lib/client/components/ui/button";
 import {Calendar} from "@/lib/client/components/ui/calendar";
 import {Calendar as CalendarIcon, TriangleAlert} from "lucide-react";
@@ -52,7 +51,7 @@ export const BacklogModeSystem = ({ date, onDateChange, onEnabledChange, disable
         <div className="-mt-1 mb-5 space-y-1">
             <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Log for:{" "}
-                <span className="text-app-accent">
+                <span className="text-brand">
                     {selectedLabel}
                 </span>
             </div>
@@ -66,12 +65,8 @@ export const BacklogModeSystem = ({ date, onDateChange, onEnabledChange, disable
                             size="sm"
                             key={preset.label}
                             disabled={disabled}
-                            variant={isSelected ? "default" : "secondary"}
+                            variant={isSelected ? "default" : "outline"}
                             onClick={() => selectDate(preset.value, preset.enabled)}
-                            className={cn("h-7 w-full text-xs", isSelected
-                                ? "bg-app-accent text-black hover:bg-app-accent/90"
-                                : "bg-background text-muted-foreground hover:bg-background/80",
-                            )}
                         >
                             {preset.label}
                         </Button>
@@ -82,11 +77,10 @@ export const BacklogModeSystem = ({ date, onDateChange, onEnabledChange, disable
                     <PopoverTrigger
                         render={
                             <Button
-                                size="icon"
+                                size="sm"
+                                variant="outline"
                                 disabled={disabled}
-                                variant="secondary"
                                 title="Choose backlog date"
-                                className="h-7 w-full bg-background text-muted-foreground hover:bg-background/80"
                             />
                         }
                     >
@@ -95,7 +89,7 @@ export const BacklogModeSystem = ({ date, onDateChange, onEnabledChange, disable
                     <PopoverContent align="end" className="w-auto p-0">
                         <Calendar
                             mode="single"
-                            fixedWeeks
+                            fixedWeeks={true}
                             endMonth={todayDate}
                             selected={selectedDate}
                             captionLayout="dropdown"
@@ -107,10 +101,9 @@ export const BacklogModeSystem = ({ date, onDateChange, onEnabledChange, disable
                 </Popover>
             </div>
             {selectedLabel !== "TODAY" &&
-                <div className="pt-0.5 flex justify-center items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-app-rating">
+                <div className="pt-0.5 flex justify-center items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-warning">
                     <TriangleAlert className="size-4"/>
                     You are backlogging
-                    <TriangleAlert className="size-4"/>
                 </div>
             }
         </div>

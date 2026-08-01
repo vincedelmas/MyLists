@@ -60,11 +60,11 @@ export const TopAffinityCard = ({ title, topAffinity, job, mediaType }: TopAffin
                                             {item.metadata.entriesCount}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <Heart className="size-3 text-red-500"/>
+                                            <Heart className="size-3 text-favorite"/>
                                             {item.metadata.favoriteCount}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <Star className="size-3 text-app-rating"/>
+                                            <Star className="size-3 text-rating"/>
                                             {item.metadata.avgRating}
                                         </span>
                                     </div>
@@ -87,14 +87,11 @@ export const TopAffinityCard = ({ title, topAffinity, job, mediaType }: TopAffin
 const AffinityPopover = () => {
     return (
         <Popover>
-            <PopoverTrigger
-                aria-label="How the affinity score is calculated"
-                className="rounded-sm opacity-70 outline-none hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring"
-            >
+            <PopoverTrigger aria-label="How the affinity score is calculated" className="opacity-60 hover:opacity-100 cursor-help">
                 <CircleHelp className="size-4"/>
             </PopoverTrigger>
             <PopoverContent className="w-75">
-                <div className="mb-3 flex items-center gap-2 font-semibold">
+                <div className="flex items-center gap-2 font-semibold">
                     Affinity Score <span className="-ml-1 text-sm text-destructive">*</span>
                 </div>
                 <div className="text-sm text-muted-foreground space-y-3">

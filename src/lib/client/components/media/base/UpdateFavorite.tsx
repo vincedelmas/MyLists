@@ -32,7 +32,7 @@ export const UpdateFavorite = ({ updateFavorite, isFavorite, disabled = false }:
             <Heart
                 className={cn(
                     "size-5 opacity-100",
-                    isFavorite && "text-red-700",
+                    isFavorite && "text-favorite",
                     (updateFavorite.isPending || disabled) && "opacity-20",
                 )}
             />

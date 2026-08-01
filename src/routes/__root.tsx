@@ -16,6 +16,8 @@ import {AuthSessionSync} from "@/lib/client/components/general/AuthSessionSync";
 import {ConfirmDialogHost} from "@/lib/client/components/confirm/ConfirmDialogHost";
 import {AuthModalProvider} from "@/lib/client/components/general/AuthModalProvider";
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
+import {ThemeProvider} from "@/lib/client/components/general/ThemeProvider";
+import {themeInitializationScript} from "@/lib/client/theme";
 import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
 import {createRootRouteWithContext, HeadContent, Outlet, Scripts} from "@tanstack/react-router";
 
@@ -37,7 +39,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         ],
         meta: [
             { charSet: "utf-8" },
-            { name: "theme-color", content: "#020617" },
+            { name: "theme-color", content: "#ffffff" },
             { name: "viewport", content: "width=device-width, initial-scale=1" },
             ...addSeo({
                 canonical: "/",
@@ -57,9 +59,10 @@ function RootComponent() {
     const app = <AppShell/>;
 
     return (
-        <html lang="en" className="dark" suppressHydrationWarning>
+        <html lang="en" suppressHydrationWarning>
         <head>
             <HeadContent/>
+            <script dangerouslySetInnerHTML={{ __html: themeInitializationScript }}/>
         </head>
         <body>
 
@@ -96,15 +99,17 @@ function RootComponent() {
 
 function AppShell() {
     return (
-        <TooltipProvider>
-            <AuthSessionSync/>
-            <Toaster/>
-            <ConfirmDialogHost/>
-            <AuthModalProvider/>
-            <Navbar/>
-            <Outlet/>
-            <Footer/>
-            <FeatureVoteLink/>
-        </TooltipProvider>
+        <ThemeProvider>
+            <TooltipProvider>
+                <AuthSessionSync/>
+                <Toaster/>
+                <ConfirmDialogHost/>
+                <AuthModalProvider/>
+                <Navbar/>
+                <Outlet/>
+                <Footer/>
+                <FeatureVoteLink/>
+            </TooltipProvider>
+        </ThemeProvider>
     );
 }

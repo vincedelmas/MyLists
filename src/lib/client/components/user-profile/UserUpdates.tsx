@@ -28,15 +28,15 @@ export const UserUpdates = ({ username, updates }: UserUpdatesProps) => {
     };
 
     return (
-        <Card className={cn(updates.length === 0 && "h-fit")}>
+        <Card>
             <CardHeader>
                 <CardTitle>Recent Feed</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
                 {updates.length === 0 ?
                     <EmptyState
                         icon={Activity}
-                        className="py-2"
+                        className="py-4"
                         message="No recent feed found."
                     />
                     :
@@ -57,7 +57,7 @@ export const UserUpdates = ({ username, updates }: UserUpdatesProps) => {
                     <Link
                         params={{ username }}
                         to="/profile/$username/history"
-                        className={buttonVariants({ variant: "dashed", className: "mt-4" })}
+                        className={buttonVariants({ variant: "dashed" })}
                     >
                         View all Feed
                     </Link>

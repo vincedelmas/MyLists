@@ -19,12 +19,12 @@ import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
-import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
 import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Label} from "@/lib/client/components/ui/label";
 
 
 interface MonthlyActivityContentProps {
@@ -61,7 +61,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
         : currentUser
             ? getActiveMediaTypes(currentUser.settings)
             : apiData.mediaTypes;
-            
+
     const mediaTypeFilters = [
         {
             value: "all",
@@ -161,24 +161,16 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                 </div>
                 {canEdit &&
                     <div className="flex items-center gap-3 sm:justify-end shrink-0">
-                        <Button
-                            variant="outline"
-                            onClick={() => setAddActivity(true)}
-                            className="flex-1 sm:flex-initial justify-center gap-2"
-                        >
-                            <Plus className="size-4 shrink-0"/>
-                            <span>Add Activity</span>
+                        <Button onClick={() => setAddActivity(true)}>
+                            <Plus/> Add Activity
                         </Button>
-                        <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3
-                        shadow-sm flex-1 sm:flex-initial justify-center cursor-pointer select-none">
+                        <div className="flex items-center space-x-2">
                             <Switch
                                 id="hidden-only"
                                 checked={hiddenOnly}
                                 onCheckedChange={(checked) => handleFilterChange({ hiddenOnly: checked })}
                             />
-                            <label htmlFor="hidden-only" className="text-sm font-medium leading-none cursor-pointer">
-                                Hidden Only
-                            </label>
+                            <Label htmlFor="hidden-only">Hidden Only</Label>
                         </div>
                     </div>
                 }
@@ -189,36 +181,33 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                     iconSize={50}
                     className="py-20"
                     icon={LayoutGrid}
-                    message={hiddenOnly ? "No hidden monthly activity." : "No activity recorded for this month."}
+                    message={hiddenOnly ? "No hidden monthly activity." : "No activity recorded this month."}
                 />
             }
 
             {apiData.items.length > 0 &&
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {apiData.items.map((row) =>
-                        <MediaCard key={row.id} mediaType={row.mediaType} item={{ ...row, mediaCover: row.mediaCover }}>
+                        <MediaCard key={row.id} mediaType={row.mediaType} item={{ ...row, mediaCover: row.mediaCover }} className="text-sm">
                             <div className="absolute left-1.5 top-1 z-10">
                                 {row.hidden &&
-                                    <Badge variant="secondary">
+                                    <Badge variant="overlay">
                                         Hidden
                                     </Badge>
                                 }
                             </div>
                             {canEdit &&
-                                <>
-                                    <MediaCornerCommon/>
-                                    <div className="absolute right-2 top-2 z-10 flex gap-1">
-                                        <Button
-                                            size="bare"
-                                            type="button"
-                                            variant="ghost"
-                                            onClick={() => setEditActivity(row)}
-                                            title={`Edit Monthly Activity for ${row.mediaName}`}
-                                        >
-                                            <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
-                                        </Button>
-                                    </div>
-                                </>
+                                <div className="absolute right-1 top-1 z-10">
+                                    <Button
+                                        type="button"
+                                        size="icon-sm"
+                                        variant="overlay"
+                                        onClick={() => setEditActivity(row)}
+                                        title={`Edit Monthly Activity for ${row.mediaName}`}
+                                    >
+                                        <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
+                                    </Button>
+                                </div>
                             }
                             <div className="absolute bottom-0 w-full space-y-2 rounded-b-sm p-3">
                                 <div className="flex w-full items-center justify-between space-x-2 max-sm:text-sm">
@@ -226,9 +215,9 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                         {row.mediaName}
                                     </h3>
                                 </div>
-                                <div className="flex w-full flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
+                                <div className="flex w-full flex-wrap items-center gap-2 text-xs font-medium text-white/70">
                                     <MainThemeIcon type={row.mediaType} size={14}/>
-                                    <span>-</span>
+                                    <span>•</span>
                                     <span>{formatMinutes(row.timeGained)}</span>
                                     <MonthlyActivityStatusIcons row={row}/>
                                 </div>

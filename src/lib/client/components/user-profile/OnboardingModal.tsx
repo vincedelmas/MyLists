@@ -38,7 +38,7 @@ export const OnboardingModal = () => {
                     <div className="space-y-4">
                         <div className="flex items-start gap-4">
                             <div className="mt-1 p-2 rounded-md bg-accent/50">
-                                <Search className="size-4 text-app-accent"/>
+                                <Search className="size-4 text-brand"/>
                             </div>
                             <div>
                                 <p className="text-sm font-medium">
@@ -52,7 +52,7 @@ export const OnboardingModal = () => {
 
                         <div className="flex items-start gap-4">
                             <div className="mt-1 p-2 rounded-md bg-accent/50">
-                                <LayoutDashboard className="size-4 text-app-accent"/>
+                                <LayoutDashboard className="size-4 text-brand"/>
                             </div>
                             <div>
                                 <p className="text-sm font-medium">
@@ -66,7 +66,7 @@ export const OnboardingModal = () => {
 
                         <div className="flex items-start gap-4">
                             <div className="mt-1 p-2 rounded-md bg-accent/50">
-                                <Settings2 className="size-4 text-app-accent"/>
+                                <Settings2 className="size-4 text-brand"/>
                             </div>
                             <div>
                                 <p className="text-sm font-medium">
@@ -80,7 +80,7 @@ export const OnboardingModal = () => {
                     </div>
 
                     <div className="flex items-center gap-3 max-sm:flex-col">
-                        <Button variant="emeraldy" onClick={handleStartTour}>
+                        <Button onClick={handleStartTour}>
                             Start Walkthrough <ArrowRight/>
                         </Button>
 

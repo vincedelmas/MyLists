@@ -293,7 +293,7 @@ const FEATURES_DATA: FeatureData[] = [
                         URL Pattern
                     </div>
                     <div className="font-mono text-xs text-muted-foreground break-all">
-                        https://mylists.info/search?q=<span className="text-emerald-400">term</span>&apiProvider=<span className="text-orange-400">provider</span>
+                        https://mylists.info/search?q=<span className="text-success">term</span>&apiProvider=<span className="text-warning">provider</span>
                     </div>
                 </div>
 
@@ -301,12 +301,12 @@ const FEATURES_DATA: FeatureData[] = [
                     <div className="font-semibold mb-2">
                         Providers
                     </div>
-                    <ul className="space-y-1 text-xs text-slate-400 font-mono">
-                        <li><span className="text-blue-400">{ApiProviderType.TMDB}</span> - Series, Anime, Movies</li>
-                        <li><span className="text-blue-400">{ApiProviderType.IGDB}</span> - Games</li>
-                        <li><span className="text-blue-400">{ApiProviderType.BOOKS}</span> - Books</li>
-                        <li><span className="text-blue-400">{ApiProviderType.MANGA}</span> - Manga</li>
-                        <li><span className="text-blue-400">{ApiProviderType.USERS}</span> - Users</li>
+                    <ul className="space-y-1 text-xs text-muted-foreground font-mono">
+                        <li><span className="text-info">{ApiProviderType.TMDB}</span> - Series, Anime, Movies</li>
+                        <li><span className="text-info">{ApiProviderType.IGDB}</span> - Games</li>
+                        <li><span className="text-info">{ApiProviderType.BOOKS}</span> - Books</li>
+                        <li><span className="text-info">{ApiProviderType.MANGA}</span> - Manga</li>
+                        <li><span className="text-info">{ApiProviderType.USERS}</span> - Users</li>
                     </ul>
                 </div>
             </div>
@@ -369,7 +369,7 @@ const FEATURES_DATA: FeatureData[] = [
         description: (
             <span>
                 Have an idea? Add it and vote for what you would like me to build next{" "}
-                <Link to="/features-vote" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
+                <Link to="/features-vote" className="inline-flex gap-1 items-center text-brand font-medium hover:text-brand/80">
                     here
                 </Link>.
             </span>
@@ -383,7 +383,7 @@ const FEATURES_DATA: FeatureData[] = [
         description: (
             <span>
                 New here? There is a small walkthrough to help you add your first media and understand the basics{" "}
-                <Link to="/walkthrough/search-media" className="inline-flex gap-1 items-center text-app-accent font-medium hover:text-app-accent/80">
+                <Link to="/walkthrough/search-media" className="inline-flex gap-1 items-center text-brand font-medium hover:text-brand/80">
                     here
                 </Link>.
             </span>
@@ -413,7 +413,7 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
         <div className="relative overflow-hidden rounded-lg border transition-all duration-300 flex flex-col bg-background">
             <div className="p-4 flex-1">
                 <div className="flex items-start gap-3">
-                    <div className="p-2.5 rounded-lg shrink-0 bg-app-accent/20 text-primary">
+                    <div className="p-2.5 rounded-lg shrink-0 bg-brand/20 text-brand">
                         <Icon className="size-5"/>
                     </div>
                     <div>
@@ -431,7 +431,7 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
                 <Popover>
                     <PopoverTrigger
                         render={
-                            <button className="w-full py-2 bg-popover border-t text-xs font-medium text-app-accent
+                            <button className="w-full py-2 bg-popover border-t text-xs font-medium text-brand
                             transition-colors flex items-center justify-center gap-1 hover:bg-popover/50"/>
                         }
                     >
@@ -441,7 +441,7 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
                     <PopoverContent className="w-(--anchor-width) p-4 text-sm shadow-xl">
                         <div className="space-y-2">
                             <h4 className="font-bold flex items-center gap-2">
-                                <Icon className="size-4 text-app-accent"/>
+                                <Icon className="size-4 text-brand"/>
                                 {feature.name}
                             </h4>
                             <div className="pt-2 border-t text-muted-foreground leading-relaxed">
@@ -459,8 +459,8 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
 const SectionHeader = ({ title, icon: Icon, description }: { title: string, icon: LucideIcon, description?: string }) => (
     <div className="mb-6">
         <div className="flex items-center gap-2">
-            <Icon className="size-4 text-app-accent"/>
-            <h2 className="text-lg font-bold text-primary tracking-wide">
+            <Icon className="size-4 text-brand"/>
+            <h2 className="text-lg font-bold text-foreground tracking-wide">
                 {title}
             </h2>
         </div>
@@ -469,7 +469,7 @@ const SectionHeader = ({ title, icon: Icon, description }: { title: string, icon
                 {description}
             </p>
         }
-        <div className="h-1 w-30 bg-linear-to-r from-app-accent to-transparent rounded-full mb-2"/>
+        <div className="h-1 w-30 bg-linear-to-r from-brand to-transparent rounded-full mb-2"/>
     </div>
 );
 
@@ -483,11 +483,11 @@ const ReleaseCard = ({ release }: { release: ReleaseData }) => {
                 <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
                     <div>
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg shrink-0 bg-app-accent/20 text-primary md:p-3">
+                            <div className="p-2 rounded-lg shrink-0 bg-brand/20 text-brand md:p-3">
                                 <Icon className="size-5 md:size-7"/>
                             </div>
                             <div className="flex flex-col">
-                                <h3 className="text-xl font-bold text-primary leading-tight md:text-2xl">
+                                <h3 className="text-xl font-bold text-foreground leading-tight md:text-2xl">
                                     {release.title}
                                 </h3>
                                 <span className="mt-0.5 text-xs text-muted-foreground font-medium">
@@ -521,10 +521,10 @@ const ReleaseItem = ({ item }: { item: FeatureData }) => {
     return (
         <div className="p-5">
             <div className="mb-3 flex items-center gap-2">
-                <Icon className="size-4 text-app-accent"/>
+                <Icon className="size-4 text-brand"/>
                 <UpdateTypeBadge type={item.type}/>
             </div>
-            <h4 className="font-bold text-primary mb-2">
+            <h4 className="font-bold text-foreground mb-2">
                 {item.name}
             </h4>
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -539,15 +539,15 @@ const UpdateTypeBadge = ({ type }: { type: UpdateType }) => {
     const config = {
         New: {
             icon: BadgePlus,
-            className: "border-app-accent/40 bg-app-accent/15 text-primary ",
+            className: "border-brand/40 bg-brand/15 text-brand",
         },
         Revamped: {
             icon: Wrench,
-            className: "border-cyan-500/40 bg-cyan-500/10 text-cyan-300",
+            className: "border-info/40 bg-info/10 text-info",
         },
         Improved: {
             icon: SlidersHorizontal,
-            className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+            className: "border-success/40 bg-success/10 text-success",
         },
         Existing: {
             icon: CheckCheck,

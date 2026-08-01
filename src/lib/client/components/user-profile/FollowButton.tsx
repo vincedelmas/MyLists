@@ -27,9 +27,9 @@ const getButtonConfig = (status?: SocialState) => {
                 HoverIcon: UserX,
                 label: "Following",
                 hoverLabel: "Unfollow",
-                variant: "emeraldy" as const,
+                variant: "selected" as const,
                 action: "unfollow" as FollowAction,
-                className: "hover:bg-destructive/40 hover:text-primary hover:border-destructive/50",
+                className: "hover:bg-destructive/40 hover:text-foreground",
             };
         case SocialState.REQUESTED:
             return {
@@ -39,7 +39,7 @@ const getButtonConfig = (status?: SocialState) => {
                 hoverLabel: "Cancel",
                 variant: "secondary" as const,
                 action: "unfollow" as FollowAction,
-                className: "hover:bg-destructive/40 hover:text-primary hover:border-destructive/50",
+                className: "hover:bg-destructive/40 hover:text-foreground",
             };
         default:
             return {

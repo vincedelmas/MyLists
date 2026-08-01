@@ -38,7 +38,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
             <MediaCard item={userMedia} mediaType={mediaType}>
                 <div className="absolute right-2 top-2 z-10">
                     {isCurrent &&
-                        <Button type="button" size="bare" variant="ghost" onClick={() => setDialogOpen(true)}>
+                        <Button type="button" size="icon-sm" variant="overlay" onClick={() => setDialogOpen(true)}>
                             <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
                         </Button>
                     }
@@ -54,7 +54,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                         </div>
                     }
                 </div>
-                <div className="absolute left-2 top-2 z-10 rounded-md bg-neutral-950 px-2 text-primary/95">
+                <div className="absolute left-2 top-2 z-10 rounded-md bg-black/70 px-2 text-white backdrop-blur-sm">
                     {mediaDetailsDisplay}
                 </div>
                 {isConnected &&
@@ -75,7 +75,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                         </div>
                     </div>
                     <div className="flex w-full flex-wrap items-center justify-between">
-                        <Badge variant="outline" className="shrink-0 backdrop-blur-md">
+                        <Badge variant="overlay" className="shrink-0">
                             {userMedia.status}
                         </Badge>
                         <div className="flex shrink-0 items-center gap-2">

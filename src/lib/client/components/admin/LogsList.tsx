@@ -29,7 +29,7 @@ export function LogsList({ logs }: { logs: TaskLog[] }) {
                         return (
                             <div key={i} className="p-2 flex items-start gap-2 text-sm">
                                 <Icon
-                                    className={cn("size-4 mt-0.5 shrink-0", isError ? "text-destructive" : "text-yellow-500")}
+                                    className={cn("size-4 mt-0.5 shrink-0", isError ? "text-destructive" : "text-warning")}
                                 />
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline gap-2">
@@ -42,7 +42,7 @@ export function LogsList({ logs }: { logs: TaskLog[] }) {
                                             </span>
                                         }
                                     </div>
-                                    <p className={cn(isError ? "text-destructive" : "text-yellow-400")}>
+                                    <p className={cn(isError ? "text-destructive" : "text-warning")}>
                                         {log.message}
                                     </p>
                                     {log.data &&

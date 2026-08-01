@@ -49,7 +49,7 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
                 <SimpleStatCard
                     title="Avg. Rating"
                     value={ratingDisplay}
-                    icon={<Star className="size-5 text-app-rating mt-1"/>}
+                    icon={<Star className="size-5 text-rating mt-1"/>}
                 />
                 <SimpleStatCard
                     title="Completed"
@@ -77,7 +77,7 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
                                 search={{ status: [st.status] as Status[] }}
                                 params={{ mediaType: mediaSummary.mediaType, username }}
                             >
-                                <span className="text-sm font-medium text-muted-foreground hover:text-app-accent">
+                                <span className="text-sm font-medium text-muted-foreground hover:text-brand">
                                     {st.status}{" "}
                                     <span className="text-xs">
                                         ({st.count})

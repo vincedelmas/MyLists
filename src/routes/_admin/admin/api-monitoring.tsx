@@ -110,37 +110,37 @@ function ApiMonitoringPage() {
                         title="Total Calls"
                         description="Lifetime volume"
                         value={formatNumber(apiData.summary.total)}
-                        icon={<Radio className="text-app-accent size-5"/>}
+                        icon={<Radio className="text-brand size-5"/>}
                     />
                     <UserStats
                         title="Avg. / Day"
                         description="Since monitoring began"
-                        icon={<BarChart3 className="text-app-accent size-5"/>}
+                        icon={<BarChart3 className="text-brand size-5"/>}
                         value={formatNumber(apiData.summary.avgPerDay, { maximumFractionDigits: 1 })}
                     />
                     <UserStats
                         title="Avg. / Sec"
                         description="Since monitoring began"
-                        icon={<Gauge className="text-app-accent size-5"/>}
+                        icon={<Gauge className="text-brand size-5"/>}
                         value={formatPerSecond(apiData.summary.avgPerSecond)}
                     />
                     <UserStats
                         title="Max Burst"
                         description="Max peak in one sec."
-                        icon={<Activity className="text-app-accent size-5"/>}
+                        icon={<Activity className="text-brand size-5"/>}
                         value={formatNumber(apiData.summary.busiestSecondCount)}
                     />
                     <UserStats
                         title="Errors"
                         value={formatNumber(totalErrors)}
-                        icon={<AlertTriangle className="text-app-accent size-5"/>}
+                        icon={<AlertTriangle className="text-brand size-5"/>}
                         description={`${formatPercent(errorRate)} lifetime failure rate`}
                     />
                     <UserStats
                         title="Avg. Latency"
                         description="All calls, all providers"
                         value={formatMs(apiData.summary.avgDurationMs)}
-                        icon={<Clock className="text-app-accent size-5"/>}
+                        icon={<Clock className="text-brand size-5"/>}
                     />
                 </div>
                 <div className="grid gap-4 grid-cols-7 max-lg:grid-cols-1">
@@ -269,7 +269,7 @@ function ApiMonitoringPage() {
                                                             <p className="text-[0.68rem] text-muted-foreground">{formatNumber(row.count)} calls</p>
                                                         </div>
                                                         <div className="text-right tabular-nums max-sm:text-left">
-                                                            <p className={row.errors > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "font-semibold"}>
+                                                            <p className={row.errors > 0 ? "font-semibold text-warning" : "font-semibold"}>
                                                                 {formatPercent(row.errorRate, { fractionDigits: row.errorRate > 0 && row.errorRate < 0.1 ? 2 : 1 })}
                                                             </p>
                                                             <p className="text-[0.68rem] text-muted-foreground">{formatNumber(row.errors)} failed</p>

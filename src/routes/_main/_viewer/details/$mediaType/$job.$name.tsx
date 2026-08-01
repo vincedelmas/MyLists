@@ -51,12 +51,12 @@ function JobInfoPage() {
                     <MediaCard key={item.mediaId} mediaType={mediaType} item={item}>
                         <div className="absolute bottom-0 w-full space-y-1 rounded-b-sm p-3">
                             <div className="flex w-full items-center justify-between space-x-2 max-sm:text-sm">
-                                <h3 className="grow truncate font-semibold text-primary" title={item.mediaName}>
+                                <h3 className="grow truncate font-semibold" title={item.mediaName}>
                                     {item.mediaName}
                                 </h3>
                             </div>
                             <div className="flex w-full flex-wrap items-center justify-between">
-                                <div className="shrink-0 text-xs font-medium text-muted-foreground">
+                                <div className="shrink-0 text-xs font-medium text-white/70">
                                     {formatDate(item.releaseDate)}
                                 </div>
                             </div>

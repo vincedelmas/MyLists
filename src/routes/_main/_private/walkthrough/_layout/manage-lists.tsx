@@ -143,7 +143,7 @@ function ListsOnboarding() {
                         title="On Others' Lists (Fast Add)"
                         description={
                             <span>
-                                See something you like on a follows's list? Click the <PlusCircle className="inline size-4 text-primary"/>
+                                See something you like on a follows's list? Click the <PlusCircle className="inline size-4 text-foreground"/>
                                 {" "} button to instantly add it to your list.
                             </span>
                         }

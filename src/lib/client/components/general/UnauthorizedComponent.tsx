@@ -27,10 +27,10 @@ export const UnauthorizedComponent = ({ type }: UnauthorizedComponentProps) => {
             </div>
             <div className="relative z-10 flex flex-col items-center justify-center px-6 py-12 text-center space-y-4">
                 <div className="flex items-center justify-center size-16 rounded-full bg-popover border shadow-inner group">
-                    <Lock className="size-7 text-primary/90"/>
+                    <Lock className="size-7 text-foreground/90"/>
                 </div>
                 <div className="space-y-2">
-                    <h3 className="text-xl font-semibold tracking-tight text-primary">
+                    <h3 className="text-xl font-semibold tracking-tight text-foreground">
                         {title}
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-70 mx-auto leading-relaxed">

@@ -124,8 +124,8 @@ function AllUpdates() {
     });
 
     return (
-        <PageTitle title="History" subtitle={isCurrent ? "All of your media updates." : `All the updates of ${username}.`}>
-            <div className="w-full max-w-5xl mx-auto mt-6">
+        <PageTitle title="History" subtitle={isCurrent ? "All of your media feeds." : `All the feeds of ${username}.`}>
+            <div className="w-full max-w-5xl mx-auto mt-4">
                 <div className="flex justify-between items-center pb-3">
                     <div className="flex items-center gap-2">
                         <SearchInput

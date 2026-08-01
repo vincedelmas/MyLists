@@ -15,7 +15,7 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
 
     return (
         <Link to="/details/$mediaType/$mediaId" params={{ mediaType, mediaId: item.mediaId }}>
-            <div className="flex flex-row h-32 border rounded-lg overflow-hidden hover:bg-popover/50 max-sm:h-full max-sm:flex-col">
+            <div className="flex flex-row h-32 border rounded-lg overflow-hidden hover:bg-popover/50 max-sm:h-full max-sm:flex-col hover:border-brand/50">
                 <div className="relative h-full shrink-0 max-sm:h-32 max-sm:w-full">
                     <img
                         alt={item.mediaName}
@@ -33,9 +33,7 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <span className="hidden md:flex items-center justify-center size-4">
-                                    <MainThemeIcon
-                                        type={mediaType}
-                                    />
+                                    <MainThemeIcon type={mediaType}/>
                                 </span>
                                 <h3 className="font-medium transition-colors line-clamp-1">
                                     {item.mediaName}
@@ -44,18 +42,18 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
 
                             <div className="text-sm text-muted-foreground flex items-center gap-2">
                                 {isTvShow && item.seasonToAir && item.episodeToAir ?
-                                    <div className="flex items-center gap-2 text-primary">
+                                    <div className="flex items-center gap-2 text-foreground">
                                         <span>
                                             S{zeroPad(item.seasonToAir)}.E{zeroPad(item.episodeToAir)}
                                         </span>
                                         {item.episodeToAir === 1 &&
-                                            <span className="text-[10px] text-destructive px-1.5 rounded border border-red-500">
+                                            <span className="rounded border border-destructive px-1.5 text-[10px] text-destructive">
                                                 Premiere
                                             </span>
                                         }
                                     </div>
                                     :
-                                    <span className="text-primary">
+                                    <span className="text-foreground">
                                         {mediaType === "games" ? "Releasing" : "Movie Premiere"}
                                     </span>
                                 }
@@ -63,7 +61,7 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
                         </div>
 
                         <div className="text-right shrink-0">
-                            <div className="text-lg font-bold">
+                            <div className="text-lg font-medium">
                                 {formatDate(item.date)}
                             </div>
                             <div className="text-xs text-muted-foreground mt-0.5">

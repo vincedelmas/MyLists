@@ -28,7 +28,7 @@ export function ImportJobIssuesTable({ jobId, page }: ImportJobIssuesTableProps)
         <div className="space-y-3">
             <div>
                 <h3 className="flex items-center gap-2 text-base font-bold">
-                    <AlertTriangle className="size-4 text-amber-500"/>
+                    <AlertTriangle className="size-4 text-warning"/>
                     Media to Add by Hand
                 </h3>
                 <p className="text-sm text-muted-foreground">

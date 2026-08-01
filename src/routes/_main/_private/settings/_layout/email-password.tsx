@@ -91,7 +91,7 @@ function EmailAndPasswordPage() {
                         </FieldGroup>
                     </FieldSet>
                     {changeEmailSuccess &&
-                        <p className="text-xs text-green-600 font-medium">
+                        <p className="text-xs font-medium text-success">
                             Check your inbox to confirm your change of email address.
                         </p>
                     }

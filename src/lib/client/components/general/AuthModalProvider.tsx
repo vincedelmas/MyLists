@@ -34,7 +34,7 @@ interface LoginModalProps {
 function LoginModal({ open, redirect, onOpenChange }: LoginModalProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-sm:w-full w-87 bg-neutral-950">
+            <DialogContent className="w-87 max-sm:w-full">
                 <DialogHeader>
                     <DialogTitle>Login to MyLists</DialogTitle>
                     <DialogDescription></DialogDescription>
@@ -59,7 +59,7 @@ interface RegisterModalProps {
 function RegisterModal({ open, redirect, onOpenChange }: RegisterModalProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-sm:w-full w-87 bg-neutral-950">
+            <DialogContent className="w-87 max-sm:w-full">
                 <DialogHeader>
                     <DialogTitle>Register to MyLists</DialogTitle>
                     <DialogDescription></DialogDescription>

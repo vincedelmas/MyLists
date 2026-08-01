@@ -21,7 +21,7 @@ export const ErrorComponent = ({ title, icon, text, footerText }: ErrorComponent
                 <CardContent>
                     <div className="text-center space-y-6">
                         <div className="space-y-6">
-                            <div className="flex flex-col justify-center items-center text-3xl font-semibold text-gray-300">
+                            <div className="flex flex-col items-center justify-center text-3xl font-semibold text-foreground">
                                 <div>{icon}</div>
                                 <h2>{title}</h2>
                             </div>
@@ -39,15 +39,15 @@ export const ErrorComponent = ({ title, icon, text, footerText }: ErrorComponent
                                 >
                                     <ArrowLeft className="size-4"/> Go Back?
                                 </Button>
-                                <Link to="/" className={buttonVariants({ variant: "emeraldy", className: "flex items-center gap-2" })}>
+                                <Link to="/" className={buttonVariants({ variant: "default", className: "flex items-center gap-2" })}>
                                     <Home className="size-4"/> Home
                                 </Link>
                             </div>
                         </div>
                         <div className="pt-3 border-t">
-                            <p className="text-sm text-destructive-foreground">
+                            <p className="text-sm text-muted-foreground">
                                 {footerText}{" "}
-                                <a href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`} className="font-semibold text-app-accent">
+                                <a href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`} className="font-semibold text-brand">
                                     Contact Me
                                 </a>
                             </p>

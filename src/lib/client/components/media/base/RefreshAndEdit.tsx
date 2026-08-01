@@ -49,7 +49,7 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
             {canRefreshThisType &&
                 <Button
                     size="sm"
-                    variant="ghost"
+                    variant="hover"
                     onClick={handleRefresh}
                     disabled={refreshDisabled}
                 >
@@ -65,7 +65,7 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
                 <Link
                     params={{ mediaType, mediaId }}
                     to="/details/edit/$mediaType/$mediaId"
-                    className={buttonVariants({ size: "sm", variant: "ghost" })}
+                    className={buttonVariants({ size: "sm", variant: "hover" })}
                 >
                     <Pencil className="size-3.5"/> Edit
                 </Link>

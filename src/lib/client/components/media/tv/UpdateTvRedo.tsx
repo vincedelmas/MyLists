@@ -44,9 +44,9 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
             <Button
                 size="bare"
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={() => onOpenChange(true)}
-                className="w-34 text-start flex items-center justify-between bg-accent/30 h-8 rounded-md border px-3"
+                className="w-34 justify-between"
             >
                 <div className="text-sm">
                     {totalRedo} Seasons

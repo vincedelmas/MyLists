@@ -104,7 +104,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
 
             <Progress
                 value={progress}
-                color="var(--app-accent)"
+                color="var(--primary)"
             />
 
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -153,7 +153,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
 
 const ImportStatusBadge = ({ status }: { status: string }) => {
     if (status === ImportJobStatus.COMPLETED) {
-        return <Badge variant="emerald"><CheckCircle2 className="size-3"/>Completed</Badge>;
+        return <Badge variant="success"><CheckCircle2 className="size-3"/>Completed</Badge>;
     }
 
     if (status === ImportJobStatus.COMPLETED_WITH_ERRORS) {

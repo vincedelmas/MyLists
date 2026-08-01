@@ -22,7 +22,9 @@ export const TiersDetails = ({ achievement }: TierDetailsProps) => {
                 View Tiers
             </PopoverTrigger>
             <PopoverContent className="w-full" align="center">
-                <h3 className="font-semibold mb-2">{achievement.name} Tiers</h3>
+                <h3 className="font-semibold">
+                    {achievement.name} Tiers
+                </h3>
                 <Table>
                     <TableHeader>
                         <TableRow>

@@ -88,15 +88,15 @@ function MediaListFormPage() {
     const searchSelectorItems = [
         { label: "Media", value: ApiProviderType.TMDB },
         {
-            label: <>{!isBooksActive && <TriangleAlert className="text-amber-600"/>} Books</>,
+            label: <>{!isBooksActive && <TriangleAlert className="text-warning"/>} Books</>,
             value: ApiProviderType.BOOKS,
         },
         {
-            label: <>{!isGamesActive && <TriangleAlert className="text-amber-600"/>} Games</>,
+            label: <>{!isGamesActive && <TriangleAlert className="text-warning"/>} Games</>,
             value: ApiProviderType.IGDB,
         },
         {
-            label: <>{!isMangaActive && <TriangleAlert className="text-amber-600"/>} Manga</>,
+            label: <>{!isMangaActive && <TriangleAlert className="text-warning"/>} Manga</>,
             value: ApiProviderType.MANGA,
         },
         { label: "Users", value: ApiProviderType.USERS },

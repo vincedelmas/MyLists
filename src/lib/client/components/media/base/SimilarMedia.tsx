@@ -37,8 +37,8 @@ export const SimilarMedia = ({ mediaType, similarMedia }: { mediaType: MediaType
             </div>
 
             {!isBelowSm && similarMedia.length > INITIAL_COUNT &&
-                <div className="text-end -mt-1">
-                    <Button variant="ghost" size="xs" onClick={handleToggle}>
+                <div className="text-end -mt-2">
+                    <Button variant="hover" size="sm" onClick={handleToggle}>
                         {isExpanded
                             ? <>Show Less <ChevronUp className="size-3.5"/></>
                             : <>Show More <ChevronDown className="size-3.5"/></>
@@ -56,7 +56,7 @@ export const SimilarMediaCard = ({ mediaType, item }: { mediaType: MediaType; it
         <MediaCard mediaType={mediaType} item={item}>
             <div className="absolute bottom-0 w-full rounded-b-sm p-3 pb-2">
                 <div className="flex w-full items-center justify-between text-xs">
-                    <h3 className="grow truncate font-semibold text-primary" title={item.mediaName}>
+                    <h3 className="grow truncate font-semibold" title={item.mediaName}>
                         {item.mediaName}
                     </h3>
                 </div>

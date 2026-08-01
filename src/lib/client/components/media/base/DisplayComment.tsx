@@ -28,7 +28,7 @@ export const DisplayComment = ({ content, size = 15 }: DisplayCommentProps) => {
                 <PopoverTrigger>
                     <MessageCircle
                         size={size}
-                        className="text-blue-500"
+                        className="text-info"
                     />
                 </PopoverTrigger>
                 <PopoverContent align="center" side="top" className="max-h-[60vh] min-w-80 overflow-y-auto scrollbar-thin">

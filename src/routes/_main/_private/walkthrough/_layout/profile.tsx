@@ -132,7 +132,7 @@ function ProfileOnboarding() {
                             }
                         </div>
                     </div>
-                    <div className="absolute bottom-0 right-25 bg-app-accent text-primary-foreground font-bold text-[10px]
+                    <div className="absolute bottom-0 right-25 bg-primary text-primary-foreground font-bold text-[10px]
                     px-2 py-1 rounded flex items-center gap-1">
                         ACCESS ADVANCED STATS<ArrowBigUpDash className="size-3 animate-bounce"/>
                     </div>

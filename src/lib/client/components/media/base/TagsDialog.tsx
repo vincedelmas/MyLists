@@ -58,7 +58,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
 
     return (
         <Credenza open={isOpen} onOpenChange={setIsOpen}>
-            <CredenzaTrigger className="font-medium text-muted-foreground text-sm -mb-1 hover:text-primary">
+            <CredenzaTrigger className="-mb-1 text-sm font-medium text-muted-foreground hover:text-brand">
                 Manage
             </CredenzaTrigger>
             <CredenzaContent
@@ -86,7 +86,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                             value={searchQuery}
                             disabled={isLoading}
                             onKeyDown={onSearchKeyDown}
-                            className="h-11 bg-popover/50"
+                            className="h-9 bg-popover/50"
                             placeholder="Find or create a tag..."
                             onChange={(ev) => setSearchQuery(ev.target.value)}
                         />
@@ -94,7 +94,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                             {showCreateButton ?
                                 <Button
                                     size="sm"
-                                    variant="emeraldy"
+                                    variant="default"
                                     className="text-[10px]"
                                     onClick={() => handleAction({ name: searchQuery.trim() }, TagAction.ADD)}
                                 >
@@ -119,10 +119,10 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                             : filteredTags.length === 0 ?
                                 <div className="flex flex-col items-center justify-center h-full text-center p-6">
                                     <PlusCircle className="size-8 text-muted-foreground mb-3 opacity-50"/>
-                                    <p className="text-sm text-zinc-400 font-medium">
+                                    <p className="text-sm text-muted-foreground font-medium">
                                         No tag found
                                     </p>
-                                    <p className="text-xs text-zinc-600 mt-1">
+                                    <p className="text-xs text-muted-foreground/70 mt-1">
                                         {searchQuery ?
                                             `Click 'create' to create '${searchQuery.trim()}' tags.`
                                             :
@@ -142,15 +142,15 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                                                 onClick={() => handleAction(col, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
                                                 className={cn("flex items-center justify-between w-full px-3 py-3 " +
                                                     "rounded-lg text-sm transition-all group", isActive
-                                                    ? "bg-app-accent/4 text-app-accent" : "text-primary/90 hover:bg-popover"
+                                                    ? "bg-brand/4 text-brand" : "text-foreground/90 hover:bg-popover"
                                                 )}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className={cn(
                                                         "size-4.5 rounded border flex items-center justify-center transition-all",
                                                         isActive
-                                                            ? "bg-app-accent border-app-accent scale-110"
-                                                            : "bg-popover group-hover:border-zinc-500"
+                                                            ? "bg-primary border-primary scale-110"
+                                                            : "bg-popover group-hover:border-muted-foreground"
                                                     )}>
                                                         {isActive && <Check className="size-3 text-popover stroke-4"/>}
                                                     </div>
@@ -161,7 +161,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
 
                                                 {isActive &&
                                                     <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95">
-                                                        <div className="size-1.5 rounded-full bg-app-accent"/>
+                                                        <div className="size-1.5 rounded-full bg-brand"/>
                                                         <span className="text-[10px] font-bold uppercase tracking-widest">
                                                             active
                                                         </span>
@@ -186,13 +186,13 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                         <Link
                             to="/list/$mediaType/$username/tags"
                             params={{ mediaType, username: currentUser!.name }}
-                            className="flex items-center gap-1.5 text-xs text-primary/90 hover:text-app-accent transition-colors"
+                            className="flex items-center gap-1.5 text-xs text-foreground/90 hover:text-brand transition-colors"
                         >
                             <Tags className="size-3"/>
                             Open Tags
                             <ChevronRight className="size-3 mt-0.5"/>
                         </Link>
-                        <Button size="sm" variant="secondary" className="text-primary/90" onClick={() => setIsOpen(false)}>
+                        <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
                             Done
                         </Button>
                     </div>

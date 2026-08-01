@@ -33,18 +33,18 @@ const DEFAULT = { search: "", page: 1 } satisfies SearchType;
 
 function StatusBadge({ status, retryCount }: { status: string, retryCount: number }) {
     if (status === "mail_failed" && retryCount < 3) {
-        return <Badge variant="outline" className="text-amber-600">Retrying</Badge>;
+        return <Badge variant="warning">Retrying</Badge>;
     }
 
     switch (status) {
         case "warned":
-            return <Badge variant="outline" className="text-cyan-500">Warned</Badge>;
+            return <Badge variant="info">Warned</Badge>;
         case "resurrected":
-            return <Badge variant="outline" className="text-green-600">Resurrected</Badge>;
+            return <Badge variant="success">Resurrected</Badge>;
         case "deleted":
-            return <Badge variant="outline" className="text-red-600">Deleted</Badge>;
+            return <Badge variant="destructive">Deleted</Badge>;
         case "mail_failed":
-            return <Badge variant="outline" className="text-orange-600">Mail failed</Badge>;
+            return <Badge variant="warning">Mail failed</Badge>;
         default:
             return <Badge variant="outline">{status}</Badge>;
     }

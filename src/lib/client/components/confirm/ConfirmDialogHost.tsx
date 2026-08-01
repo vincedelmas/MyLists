@@ -76,7 +76,7 @@ export function ConfirmDialogHost() {
                         type="button"
                         onClick={handleOnConfirm}
                         disabled={confirmDisabled}
-                        variant={isDestructive ? "destructive" : "emeraldy"}
+                        variant={isDestructive ? "destructive" : "default"}
                     >
                         {options.confirmLabel}
                     </AlertDialogAction>

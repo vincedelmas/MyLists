@@ -17,7 +17,7 @@ interface OnboardingSectionProps {
 export const OnboardingSection = ({ title, icon: Icon, description, children }: OnboardingSectionProps) => (
     <section className="space-y-4">
         <div className="flex items-center gap-3">
-            <div className="p-3 rounded-lg shrink-0 bg-app-accent/20 text-primary">
+            <div className="p-3 rounded-lg shrink-0 bg-brand/20 text-brand">
                 <Icon className="size-6"/>
             </div>
             <h2 className="text-3xl font-bold tracking-tight">
@@ -44,7 +44,7 @@ export const OnboardingSubSection = ({ title, description, icon: Icon, children 
     <section className="space-y-6">
         <div className="space-y-2">
             <h3 className="text-xl font-semibold flex items-center gap-2">
-                {Icon && <Icon className="size-5 text-app-accent"/>}
+                {Icon && <Icon className="size-5 text-brand"/>}
                 {title}
             </h3>
             <div className="text-muted-foreground">
@@ -81,7 +81,7 @@ export const OnboardingNote = ({ title, children, icon: Icon = Info, variant = "
     <section className="p-4 rounded-lg bg-card border flex gap-4">
         <div className="mt-1">
             <Icon
-                className={cn("size-5", variant === "info" ? "text-app-accent" : "text-app-rating")}
+                className={cn("size-5", variant === "info" ? "text-info" : "text-warning")}
             />
         </div>
         <div>
@@ -113,9 +113,9 @@ interface OnboardingFeatureCardProps {
 
 
 export const OnboardingFeatureCard = ({ icon: Icon, title, description }: OnboardingFeatureCardProps) => (
-    <div className="p-5 rounded-xl border bg-card hover:border-app-accent/50 transition-colors">
+    <div className="p-5 rounded-xl border bg-card hover:border-brand/50 transition-colors">
         <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg shrink-0 bg-app-accent/20 text-primary">
+            <div className="p-2 rounded-lg shrink-0 bg-brand/20 text-brand">
                 <Icon className="size-5"/>
             </div>
             <h4 className="font-bold capitalize">
@@ -178,7 +178,7 @@ export const OnboardingNav = ({ username, items, position }: OnboardingNavProps)
                         Next <ChevronRight/>
                     </Button>
                     :
-                    <Button size="sm" variant="emeraldy" onClick={handleSkip}>
+                    <Button size="sm" onClick={handleSkip}>
                         Finish Walkthrough
                     </Button>
                 }

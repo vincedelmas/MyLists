@@ -13,7 +13,7 @@ export const MediaSynopsis = ({ media }: MediaSynopsisProps) => {
         <div className="space-y-4">
             <section>
                 <MediaSectionTitle title="Synopsis"/>
-                <p className="text-primary leading-relaxed text-base">
+                <p className="text-foreground leading-relaxed text-base">
                     {media.synopsis}
                 </p>
                 {("tagline" in media && media.tagline) &&
@@ -25,7 +25,7 @@ export const MediaSynopsis = ({ media }: MediaSynopsisProps) => {
 
             <section className="flex flex-wrap gap-2">
                 {media.genres.map((genre) =>
-                    <Badge key={genre.id} variant="black">
+                    <Badge key={genre.id} variant="overlay">
                         {genre.name}
                     </Badge>
                 )}

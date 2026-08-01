@@ -76,7 +76,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
     ]
 
     return (
-        <Card className="bg-popover w-full">
+        <Card className="bg-popover w-full p-3">
             <TabHeader tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} className="px-2.5">
                 <UpdateFavorite
                     disabled={backlogMode}

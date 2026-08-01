@@ -13,14 +13,14 @@ export const MangaOverTitle = ({ mediaType, media }: MangaDetailsProps<typeof Me
 
     return (
         <>
-            <Badge variant="black">
+            <Badge variant="overlay">
                 {media.prodStatus}
             </Badge>
             {hasAuthors &&
                 <>
                     <span className="text-muted-foreground">•</span>
                     {media.authors?.slice(0, 2).map((author) =>
-                        <Badge key={author.id} variant="black">
+                        <Badge key={author.id} variant="overlay">
                             <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: author.name }}>
                                 {author.name}
                             </Link>

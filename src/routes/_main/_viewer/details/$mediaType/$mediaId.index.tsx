@@ -60,7 +60,7 @@ function MediaDetailsPage() {
             />
             <div className="grid grid-cols-12 gap-8 mx-auto px-4 py-2 max-sm:py-0 max-lg:grid-cols-1">
                 <div className="col-span-8 space-y-8 max-lg:col-span-1 max-lg:order-2">
-                    <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 border-y border-app-accent/30">
+                    <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 border-y border-brand/30">
                         <MediaComponent
                             media={media}
                             name="infoGrid"
@@ -118,10 +118,9 @@ function MediaDetailsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={media.providerData.url}
-                                className={buttonVariants({ size: "lg", variant: "outline", className: "w-full gap-2" })}
+                                className={buttonVariants({ size: "lg", variant: "outline", className: "w-full" })}
                             >
-                                <ExternalLink className="size-4"/>
-                                View on {media.providerData.name}
+                                View on {media.providerData.name} <ExternalLink/>
                             </a>
 
                             {userMedia && isMediaTypeActive ?
@@ -148,7 +147,7 @@ function MediaDetailsPage() {
                                         :
                                         <Card>
                                             <div className="text-center space-y-2">
-                                                <h3 className="text-lg font-semibold text-slate-200">
+                                                <h3 className="text-lg font-semibold text-foreground">
                                                     Are you interested in this?
                                                 </h3>
                                                 <p className="text-sm text-muted-foreground">

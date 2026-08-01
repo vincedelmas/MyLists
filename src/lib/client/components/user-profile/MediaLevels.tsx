@@ -22,9 +22,7 @@ export const MediaLevels = ({ username, settings }: MediaLevelsProps) => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>
-                    Level Breakdown
-                </CardTitle>
+                <CardTitle>Level Breakdown</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-6">
@@ -57,7 +55,7 @@ const MediaLevelBar = ({ mediaType, username, level }: MediaLevelBarProps) => {
     return (
         <div>
             <div className="flex justify-between items-end mb-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <MainThemeIcon
                         size={16}
                         type={mediaType}
@@ -69,10 +67,10 @@ const MediaLevelBar = ({ mediaType, username, level }: MediaLevelBarProps) => {
                     </Link>
                 </div>
                 <span className="inline-block font-semibold text-sm tracking-wide" style={{ color: getThemeColor(mediaType) }}>
-                    <div className="inline-block text-[11px] text-muted-foreground text-right">
+                    <div className="font-medium inline-block text-[11px] text-muted-foreground text-right">
                         ({formatPercent(percent, { fractionDigits: 0 })})
                     </div>
-                    &nbsp; Lvl {intLevel}
+                    {" "} Lvl {intLevel}
                 </span>
             </div>
             <Progress

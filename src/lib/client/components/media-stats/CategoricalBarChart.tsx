@@ -47,12 +47,12 @@ export function CategoricalBarChart(props: CategoricalBarChartProps) {
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={labelFormatter}
-                        tick={{ fill: "var(--primary)", fontSize: 11 }}
+                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
                     />
                     <YAxis
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fill: "var(--primary)", fontSize: 11 }}
+                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
                         tickFormatter={(value) => formatNumber(value, { notation: "compact" })}
                     />
                     <Tooltip

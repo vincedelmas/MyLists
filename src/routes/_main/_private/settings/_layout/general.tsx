@@ -189,15 +189,15 @@ const PrivacyPopover = () => {
                 </div>
                 <ul className="text-sm list-disc space-y-3 pl-4">
                     <li>
-                        <span className="font-semibold text-green-500">Public:</span>
+                        <span className="font-semibold text-success">Public:</span>
                         {" "}Anyone can see your profile, lists, stats, and media updates.
                     </li>
                     <li>
-                        <span className="font-semibold text-amber-500">Restricted (default):</span>
+                        <span className="font-semibold text-warning">Restricted (default):</span>
                         {" "}Only logged-in users can see your profile, lists, stats, and media updates.
                     </li>
                     <li>
-                        <span className="font-semibold text-red-500">Private:</span>
+                        <span className="font-semibold text-destructive">Private:</span>
                         {" "}Only approved followers can see your profile, lists, stats, and media updates.
                     </li>
                 </ul>

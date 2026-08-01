@@ -56,7 +56,7 @@ function RouteComponent() {
                             </a>
                             <Card>
                                 <div className="text-center space-y-2">
-                                    <h3 className="text-lg font-semibold text-slate-200">
+                                    <h3 className="text-lg font-semibold text-foreground">
                                         Are you interested in this?
                                     </h3>
                                     <p className="text-sm text-muted-foreground">
@@ -105,7 +105,7 @@ function RouteComponent() {
                             <div>
                                 Give either a score (0-10) or a feeling (6 emoticons system).
                                 Default to score, can be changed on the {" "}
-                                <Link to="/settings" className="text-app-accent flex items-center gap-1 font-bold">
+                                <Link to="/settings" className="text-brand flex items-center gap-1 font-bold">
                                     settings <ExternalLink className="size-3"/>.
                                 </Link>
                             </div>

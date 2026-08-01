@@ -17,6 +17,7 @@ import {TasteMatchesSearch, tasteMatchesSearchSchema} from "@/lib/schemas";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {FeaturedTasteMatch, TasteMatchCard} from "@/lib/client/components/taste-matches/TasteMatchCard";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Label} from "@/lib/client/components/ui/label";
 
 
 export const Route = createFileRoute("/_main/_private/taste-matches")({
@@ -39,7 +40,7 @@ function TasteMatchesPage() {
     const { currentUser } = useAuth();
     const filters = Route.useSearch();
     const { page = 1, search = "", activeTab = "all", hideFollowed = false, sorting = "match" } = filters;
-    
+
     const activeMediaTypes = getActiveMediaTypes(currentUser?.settings);
     const apiData = useSuspenseQuery(tasteMatchesOptions(filters)).data;
 
@@ -86,18 +87,6 @@ function TasteMatchesPage() {
                             placeholder="Search by username..."
                         />
                         <div className="flex flex-wrap items-center gap-4">
-                            <label htmlFor="hide-followed" className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-                                Hide follows
-                                <Switch
-                                    id="hide-followed"
-                                    checked={hideFollowed}
-                                    className="data-checked:bg-app-accent"
-                                    onCheckedChange={(checked) => updateFilters({ page: 1, hideFollowed: checked })}
-                                />
-                            </label>
-                            <span className="text-sm text-muted-foreground">
-                                Sort by
-                            </span>
                             <Select items={sortingItems} value={sorting} onValueChange={handleSortChange}>
                                 <SelectTrigger className="w-40 max-sm:w-fit">
                                     <SelectValue/>
@@ -112,6 +101,16 @@ function TasteMatchesPage() {
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="hide-followed"
+                                    checked={hideFollowed}
+                                    onCheckedChange={(checked) => updateFilters({ page: 1, hideFollowed: checked })}
+                                />
+                                <Label htmlFor="hide-followed">
+                                    Hide follows
+                                </Label>
+                            </div>
                         </div>
                     </div>
                 </div>

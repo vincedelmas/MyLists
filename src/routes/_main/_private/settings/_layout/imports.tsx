@@ -81,10 +81,10 @@ function SettingsImportsPage() {
                             </p>
                         </div>
 
-                        <div className="rounded-xl border border-app-accent/80 p-4">
+                        <div className="rounded-xl border border-brand/80 p-4">
                             <div className="space-y-2 text-sm leading-relaxed">
-                                <div className="flex gap-2 items-center font-semibold text-primary">
-                                    <Info className="size-4 text-app-accent"/>
+                                <div className="flex gap-2 items-center font-semibold text-foreground">
+                                    <Info className="size-4 text-brand"/>
                                     Info
                                 </div>
                                 <ul className="list-disc pl-8 space-y-1 text-muted-foreground">
@@ -105,10 +105,10 @@ function SettingsImportsPage() {
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-app-rating/80 p-4">
+                        <div className="rounded-xl border border-warning/80 p-4">
                             <div className="space-y-2 text-sm leading-relaxed">
-                                <div className="flex gap-2 items-center font-semibold text-primary">
-                                    <TriangleAlert className="size-4 text-app-rating"/>
+                                <div className="flex gap-2 items-center font-semibold text-foreground">
+                                    <TriangleAlert className="size-4 text-warning"/>
                                     Caveat
                                 </div>
                                 <div className="text-muted-foreground">
@@ -150,8 +150,8 @@ function SettingsImportsPage() {
                                         <Field data-invalid={fieldState.invalid} data-disabled={createMutation.isPending}>
                                             <FieldLabel htmlFor={`${fieldId}-file`} className="group flex min-h-44 w-full cursor-pointer flex-col items-center justify-center rounded-xl border
                                             border-dashed border-muted-foreground/60 bg-background/40 p-6 text-center transition
-                                            hover:border-app-accent hover:bg-app-accent/5">
-                                                <UploadCloud className="mb-2 size-8 text-muted-foreground transition group-hover:text-app-accent"/>
+                                            hover:border-brand hover:bg-brand/5">
+                                                <UploadCloud className="mb-2 size-8 text-muted-foreground transition group-hover:text-brand"/>
                                                 <span className="text-sm font-medium">
                                                     {selectedFile ? selectedFile.name : "Drop file here or click to upload"}
                                                 </span>

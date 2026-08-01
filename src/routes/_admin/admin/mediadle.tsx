@@ -56,7 +56,7 @@ function AdminMediadlePage() {
                             <Link to="/profile/$username" params={{ username: original.name }} className="hover:underline hover:underline-offset-2">
                                 {original.name}
                             </Link>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 {original.email}
                             </p>
                         </div>

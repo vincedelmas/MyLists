@@ -14,8 +14,8 @@ export const ComingNextSection = ({ title, items }: ComingNextSectionProps) => {
 
     return (
         <section>
-            <h2 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
-                <span className="w-2 h-8 rounded bg-app-accent block mr-1"/>
+            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                <span className="w-2 h-8 rounded bg-brand block mr-1"/>
                 {title}
             </h2>
             <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">

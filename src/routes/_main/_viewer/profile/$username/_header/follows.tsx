@@ -11,6 +11,7 @@ import {Clock, Loader2, UserCheck, UserPlus, UserX} from "lucide-react";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {followsOptions} from "@/lib/client/react-query/query-options";
 import {useFollowMutation, useUnfollowMutation,} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {cn} from "@/lib/utils/classnames";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/follows")({
@@ -38,7 +39,7 @@ function ProfileFollows() {
                         key={follow.id}
                         follow={follow}
                         profileOwner={profileOwner}
-                        currentUserName={currentUser?.name}
+                        currentUsername={currentUser?.name}
                         isViewingOwnProfile={isViewingOwnProfile}
                     />
                 )}
@@ -58,6 +59,9 @@ function ProfileFollows() {
 
 
 interface FollowCardProps {
+    profileOwner: string;
+    currentUsername?: string;
+    isViewingOwnProfile: boolean;
     follow: {
         id: number;
         username: string;
@@ -65,17 +69,14 @@ interface FollowCardProps {
         image: string | null;
         myFollowStatus: SocialState | null;
     };
-    profileOwner: string;
-    currentUserName?: string;
-    isViewingOwnProfile: boolean;
 }
 
 
-function FollowCard({ follow, currentUserName, profileOwner, isViewingOwnProfile }: FollowCardProps) {
-    const isMe = currentUserName === follow.username;
+function FollowCard({ follow, currentUsername, profileOwner, isViewingOwnProfile }: FollowCardProps) {
+    const isOwner = currentUsername === follow.username;
 
     return (
-        <div className="bg-background flex flex-col justify-between rounded-xl border p-4">
+        <div className="flex flex-col justify-between rounded-xl border p-4 space-y-5">
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                     <div className="relative">
@@ -88,35 +89,34 @@ function FollowCard({ follow, currentUserName, profileOwner, isViewingOwnProfile
                             title={`Privacy: ${follow.privacy}`}
                             className="bg-background absolute -bottom-1 -right-1 rounded-full border p-0.5"
                         >
-                            <div className="bg-background rounded-full p-0.5">
+                            <div className="rounded-full p-0.5">
                                 <PrivacyIcon type={follow.privacy}/>
                             </div>
                         </div>
                     </div>
                     <div>
                         <Link to="/profile/$username" params={{ username: follow.username }}>
-                            <h3 className="text-primary hover:text-app-accent font-medium leading-none">
+                            <h3 className="text-foreground hover:text-brand font-medium leading-none">
                                 {follow.username}
                             </h3>
                         </Link>
-                        <p className="mt-1 text-xs capitalize text-slate-500">
+                        <p className="mt-1 text-xs capitalize text-muted-foreground">
                             {follow.privacy} Profile
                         </p>
                     </div>
                 </div>
             </div>
-
-            <div className="mt-5 flex gap-2">
-                {!currentUserName &&
-                    <Button variant="outline" className="flex-1" disabled>
+            <div className="flex gap-2">
+                {!currentUsername &&
+                    <Button variant="outline" className="flex-1" disabled={true}>
                         Log-In to Follow
                     </Button>
                 }
 
-                {currentUserName &&
+                {currentUsername &&
                     <>
-                        {isMe ?
-                            <Button variant="secondary" className="flex-1" disabled>
+                        {isOwner ?
+                            <Button variant="secondary" className="flex-1" disabled={true}>
                                 You
                             </Button>
                             :
@@ -152,25 +152,26 @@ function FollowActionButton({ targetUserId, followStatus, profileOwner, isViewin
         const mutation = followStatus ? unfollowMutation : followMutation;
 
         mutation.mutate({ data: { targetUserId } }, {
-            onError: () => toast.add({title: "Sorry, an error occurred...", type: "error", priority: "high"})
+            onError: () => toast.add({ title: "Sorry, an error occurred...", type: "error", priority: "high" })
         });
     };
 
-    const variant = followStatus === SocialState.ACCEPTED ? "emeraldy"
-        : followStatus === SocialState.REQUESTED ? "secondary" : "outline";
-
-    const hoverClass = followStatus ? "hover:border-destructive/50 hover:bg-destructive/40 hover:text-primary" : "";
+    const variant = followStatus === SocialState.ACCEPTED
+        ? "selected" : followStatus === SocialState.REQUESTED
+            ? "secondary" : "outline";
 
     return (
         <Button
             variant={variant}
             disabled={isPending}
             onClick={handleClick}
-            className={`group flex-1 font-bold transition-all ${hoverClass}`}
+            className={cn("group flex-1 font-medium transition-all",
+                followStatus && "hover:bg-destructive/30 hover:text-foreground")}
         >
             {isPending ?
                 <Loader2 className="size-3.5 animate-spin"/>
-                : followStatus === SocialState.ACCEPTED ?
+                :
+                followStatus === SocialState.ACCEPTED ?
                     <>
                         <span className="flex items-center gap-2 group-hover:hidden">
                             <UserCheck className="size-3.5"/> Following
@@ -179,7 +180,8 @@ function FollowActionButton({ targetUserId, followStatus, profileOwner, isViewin
                             <UserX className="size-3.5"/> Unfollow
                         </span>
                     </>
-                    : followStatus === SocialState.REQUESTED ?
+                    :
+                    followStatus === SocialState.REQUESTED ?
                         <>
                             <span className="flex items-center gap-2 group-hover:hidden">
                                 <Clock className="size-3.5"/> Requested

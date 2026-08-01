@@ -45,7 +45,7 @@ function ProfileCustomForm() {
             },
             onSuccess: () => {
                 setLocalPreviewCache({});
-                toast.add({title: "Customization updated", type: "success"});
+                toast.add({ title: "Customization updated", type: "success" });
             },
         });
     };
@@ -65,7 +65,7 @@ function ProfileCustomForm() {
             <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col gap-6">
                 <FieldSet disabled={mutation.isPending}>
                     <div>
-                        <h2 className="text-lg font-semibold text-primary">
+                        <h2 className="text-lg font-semibold text-foreground">
                             Profile Customization
                         </h2>
                         <p className="text-sm text-muted-foreground">
@@ -88,7 +88,7 @@ function ProfileCustomForm() {
                     </div>
                 </FieldSet>
                 <FormError/>
-                <FormSubmitButton disabled={!form.formState.isDirty} isLoading={mutation.isPending}>
+                <FormSubmitButton className="w-fit" disabled={!form.formState.isDirty} isLoading={mutation.isPending}>
                     Save Customization
                 </FormSubmitButton>
             </form>

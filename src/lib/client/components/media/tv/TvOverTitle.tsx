@@ -14,14 +14,14 @@ export const TvOverTitle = ({ mediaType, media }: TvDetailsProps<TvMediaType>) =
 
     return (
         <>
-            <Badge variant="black">
+            <Badge variant="overlay">
                 {media.prodStatus}
             </Badge>
             {hasNetwork &&
                 <>
                     <span className="text-muted-foreground">•</span>
                     {media.networks?.slice(0, 2).map((net) =>
-                        <Badge key={net.id} variant="black">
+                        <Badge key={net.id} variant="overlay">
                             <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "platform", name: net.name }}>
                                 {net.name}
                             </Link>

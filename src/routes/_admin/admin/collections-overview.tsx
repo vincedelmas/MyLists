@@ -251,7 +251,7 @@ function AdminCollectionsOverviewPage() {
                                         dataKey="count"
                                         fill="currentColor"
                                         radius={[4, 4, 0, 0]}
-                                        className="fill-gray-400"
+                                        className="fill-muted-foreground"
                                     />
                                 </BarChart>
                             </ResponsiveContainer>

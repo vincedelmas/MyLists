@@ -37,7 +37,7 @@ export const ProfileFollows = ({ username, followsCount, follows }: ProfileFollo
                         :
                         follows.follows.map((follow) =>
                             <div key={follow.id} className="flex flex-col items-center group">
-                                <div className="group-hover:border-app-accent">
+                                <div className="group-hover:border-brand">
                                     <Tooltip key={follow.id}>
                                         <TooltipTrigger
                                             render={
@@ -45,7 +45,7 @@ export const ProfileFollows = ({ username, followsCount, follows }: ProfileFollo
                                                     <ProfileIcon
                                                         fallbackSize="text-lg"
                                                         user={{ image: follow.image, name: follow.username }}
-                                                        className="size-12 border-none hover:ring-2 hover:ring-app-accent"
+                                                        className="size-12 border-none hover:ring-2 hover:ring-brand"
                                                     />
                                                 </Link>
                                             }

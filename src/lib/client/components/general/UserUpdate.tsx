@@ -24,10 +24,10 @@ export function UserUpdate({ update, username, onDelete, canDelete, isPending, m
 
     const handleDeleteUpdate = async (updateId: number) => {
         if (!await confirm({
-            title: "Delete this update?",
-            description: "This update will be permanently deleted.",
-            confirmLabel: "Delete update",
             variant: "destructive",
+            title: "Delete this update?",
+            confirmLabel: "Delete update",
+            description: "This update will be permanently deleted.",
         })) return;
 
         onDelete?.(updateId);
@@ -36,11 +36,11 @@ export function UserUpdate({ update, username, onDelete, canDelete, isPending, m
     return (
         <div className={cn("relative group flex gap-3 py-3 px-2 border-b hover:bg-muted/30 rounded-lg",
             (mediaIdBeingDeleted === update.id && isPending) && "opacity-30")}>
-            <div className="mt-0.5">
+            <div className="mt-1">
                 <div className="flex items-center justify-center">
                     <MainThemeIcon
+                        className="size-4"
                         type={update.mediaType}
-                        className="size-4 mt-0.5"
                     />
                 </div>
             </div>
@@ -52,7 +52,7 @@ export function UserUpdate({ update, username, onDelete, canDelete, isPending, m
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: update.mediaType, mediaId: update.mediaId }}
                         >
-                             <span title={update.mediaName} className="font-medium text-foreground line-clamp-1 hover:text-app-accent">
+                             <span title={update.mediaName} className="font-medium text-foreground line-clamp-1 hover:text-brand">
                                 {update.mediaName}
                             </span>
                         </Link>
@@ -71,6 +71,7 @@ export function UserUpdate({ update, username, onDelete, canDelete, isPending, m
             </div>
             {canDelete &&
                 <Button
+                    size="icon"
                     variant="ghost"
                     disabled={isPending}
                     onClick={() => handleDeleteUpdate(update.id)}

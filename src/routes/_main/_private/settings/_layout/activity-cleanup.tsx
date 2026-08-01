@@ -192,7 +192,7 @@ function ActivityCleanupSettings() {
                                 </Field>
                             }
                         />
-                        <div className="rounded-xl border p-3 text-sm border-app-accent bg-app-accent/10">
+                        <div className="rounded-xl border p-3 text-sm border-brand bg-brand/10">
                             This is not month-specific. It applies to all activities with a progress date inside the selected range.
                         </div>
                     </FieldGroup>

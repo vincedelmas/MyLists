@@ -104,15 +104,11 @@ function ToastDescription({ className, ...props }: ToastPrimitive.Description.Pr
 }
 
 
-function ToastAction({
-                         className,
-                         render = <Button variant="outline" size="sm"/>,
-                         ...props
-                     }: ToastPrimitive.Action.Props) {
+function ToastAction({ className, render = <Button variant="outline" size="sm"/>, ...props }: ToastPrimitive.Action.Props) {
     return (
         <ToastPrimitive.Action
-            data-slot="toast-action"
             render={render}
+            data-slot="toast-action"
             className={cn("shrink-0", className)}
             {...props}
         />
@@ -120,20 +116,15 @@ function ToastAction({
 }
 
 
-function ToastClose({
-                        className,
-                        children,
-                        render = <Button variant="ghost" size="icon-sm"/>,
-                        ...props
-                    }: ToastPrimitive.Close.Props) {
+function ToastClose({ className, children, render = <Button variant="ghost" size="icon-sm"/>, ...props }: ToastPrimitive.Close.Props) {
     return (
         <ToastPrimitive.Close
             data-slot="toast-close"
             aria-label="Close toast"
             render={render}
             className={cn(
-                "relative shrink-0 text-muted-foreground after:absolute after:-inset-2 after:content-[''] hover:text-foreground",
-                className
+                "relative shrink-0 text-muted-foreground after:absolute after:-inset-2 after:content-[''] " +
+                "hover:text-foreground", className
             )}
             {...props}
         >
@@ -146,19 +137,16 @@ function ToastClose({
 function ToastIcon({ type }: { type: string | undefined }) {
     let icon: React.ReactNode = null;
 
-    if (type === "success") icon = <CircleCheckIcon aria-hidden="true"/>;
-    if (type === "info") icon = <InfoIcon aria-hidden="true"/>;
-    if (type === "warning") icon = <TriangleAlertIcon aria-hidden="true"/>;
+    if (type === "success") icon = <CircleCheckIcon className="text-success" aria-hidden="true"/>;
+    if (type === "info") icon = <InfoIcon className="text-info" aria-hidden="true"/>;
+    if (type === "warning") icon = <TriangleAlertIcon className="text-warning" aria-hidden="true"/>;
     if (type === "error") icon = <OctagonXIcon className="text-destructive" aria-hidden="true"/>;
     if (type === "loading") icon = <Loader2Icon className="animate-spin" aria-hidden="true"/>;
 
     if (!icon) return null;
 
     return (
-        <span
-            data-slot="toast-icon"
-            className="shrink-0 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4"
-        >
+        <span data-slot="toast-icon" className="shrink-0 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4">
             {icon}
         </span>
     );
@@ -184,11 +172,7 @@ function ToastList() {
 }
 
 
-function Toaster({
-                     children,
-                     toastManager = toast,
-                     ...props
-                 }: ToastPrimitive.Provider.Props) {
+function Toaster({ children, toastManager = toast, ...props }: ToastPrimitive.Provider.Props) {
     return (
         <ToastProvider toastManager={toastManager} {...props}>
             {children}
@@ -202,10 +186,6 @@ function Toaster({
 }
 
 
-const createToastManager = ToastPrimitive.createToastManager;
-const useToastManager = ToastPrimitive.useToastManager;
-
-
 export {
     Toaster,
     Toast,
@@ -217,7 +197,5 @@ export {
     ToastProvider,
     ToastTitle,
     ToastViewport,
-    createToastManager,
     toast,
-    useToastManager,
 }

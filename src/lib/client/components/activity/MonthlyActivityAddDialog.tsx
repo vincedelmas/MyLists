@@ -182,8 +182,8 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                                     </div>
                                                     :
                                                     <div ref={containerRef} className="relative">
-                                                        <div className="flex items-center overflow-hidden focus-within:border-app-accent
-                                                        rounded-md border focus-within:ring-2 focus-within:ring-app-accent/50">
+                                                        <div className="flex items-center overflow-hidden focus-within:border-brand
+                                                        rounded-md border focus-within:ring-2 focus-within:ring-brand/50">
                                                             <div className="px-3 text-muted-foreground">
                                                                 <Search className="size-4"/>
                                                             </div>

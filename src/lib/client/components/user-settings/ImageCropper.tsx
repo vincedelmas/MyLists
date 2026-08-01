@@ -150,7 +150,7 @@ export const ImageCropper = ({ aspect, inputId, fileName, sliceHeight, cropShape
                             Crop Your Image
                         </h4>
                         <div className="text-sm text-muted-foreground">
-                            Crop the image to your liking.
+                            You can zoom in and out and drag the image around.
                         </div>
                     </div>
                     <div className="relative h-60 w-full">

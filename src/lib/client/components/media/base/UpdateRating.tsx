@@ -38,7 +38,7 @@ export const UpdateRating = ({ rating, onUpdateMutation, disabled = false }: Rat
                 <SelectTrigger size="sm" className="w-34">
                     <SelectValue/>
                 </SelectTrigger>
-                <SelectContent className="max-h-75 overflow-y-auto">
+                <SelectContent className="max-h-75 overflow-y-auto scrollbar-thin">
                     <SelectGroup>
                         {ratingItems.map((item) =>
                             <SelectItem key={item.value} value={item.value}>

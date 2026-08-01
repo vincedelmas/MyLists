@@ -1,10 +1,12 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {Link} from "@tanstack/react-router";
+import {cn} from "@/lib/utils/classnames";
 
 
 interface MediaCardProps {
     external?: boolean;
+    className?: string;
     mediaType: MediaType;
     children: React.ReactNode;
     item: {
@@ -16,7 +18,7 @@ interface MediaCardProps {
 }
 
 
-export const MediaCard = ({ children, item, mediaType, external = false }: MediaCardProps) => {
+export const MediaCard = ({ children, item, mediaType, className, external = false }: MediaCardProps) => {
     const image = (
         <>
             <img
@@ -30,7 +32,9 @@ export const MediaCard = ({ children, item, mediaType, external = false }: Media
     );
 
     return (
-        <div className="group relative aspect-2/3 h-full rounded-lg border overflow-hidden transition-all duration-300 hover:border-app-accent/50">
+        <div className={cn("group relative aspect-2/3 h-full overflow-hidden rounded-lg border text-white transition-all " +
+            "duration-300 hover:border-brand/50", className)}
+        >
             {external ?
                 <Link to="/details/$mediaType/external/$apiId" params={{ mediaType, apiId: item.mediaId.toString() }}>
                     {image}

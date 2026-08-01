@@ -117,7 +117,7 @@ function HomePage() {
                                 <div
                                     key={idx}
                                     style={{ animationDelay: `${delay}s` }}
-                                    className="bg-linear-to-br from-primary/20 to-accent/20 rounded-lg float-animation"
+                                    className="bg-linear-to-br from-brand/20 to-accent/20 rounded-lg float-animation"
                                 />
                             )}
                         </div>
@@ -133,7 +133,7 @@ function HomePage() {
                     </p>
                     {randomProfile &&
                         <Link to="/profile/$username" params={{ username: randomProfile.name }}>
-                            <Button variant="emeraldy" size="lg" className="gap-2">
+                            <Button size="lg" className="gap-2">
                                 <Shuffle className="size-4"/>
                                 Explore a random profile
                                 <ArrowRight className="size-4"/>
@@ -147,7 +147,7 @@ function HomePage() {
 
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     <div className="order-2 md:order-1 space-y-6">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 text-brand text-sm font-medium">
                             <LayoutGrid className="size-4"/>
                             <span>Unified Library</span>
                         </div>
@@ -161,14 +161,14 @@ function HomePage() {
                         <ul className="space-y-3">
                             {["List Per Media", "Advanced Statistics", "Advanced Filtering"].map((item) => (
                                 <li key={item} className="font-medium flex items-center gap-2">
-                                    <div className="size-1.5 rounded-full bg-primary"/>
+                                    <div className="size-1.5 rounded-full bg-brand"/>
                                     {item}
                                 </li>
                             ))}
                         </ul>
                     </div>
                     <div className="order-2 space-y-6">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-app-accent/50 text-sm font-medium">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/50 text-sm font-medium">
                             <Trophy className="size-4"/>
                             <span>Gamification</span>
                         </div>
@@ -182,7 +182,7 @@ function HomePage() {
                         <ul className="space-y-3">
                             {["Level System", "Unique Achievements", "Global Leaderboards"].map((item) => (
                                 <li key={item} className="font-medium flex items-center gap-2">
-                                    <div className="size-1.5 rounded-full bg-app-accent"/>
+                                    <div className="size-1.5 rounded-full bg-brand"/>
                                     {item}
                                 </li>
                             ))}
@@ -192,7 +192,7 @@ function HomePage() {
 
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     <div className="order-1 space-y-6">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/30 text-sm font-medium">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-info/15 px-3 py-1 text-sm font-medium text-info">
                             <Users className="size-4"/>
                             <span>Community</span>
                         </div>
@@ -221,7 +221,7 @@ function HomePage() {
                 <div className="container mx-auto px-6">
                     <div className="mx-auto max-w-4xl">
                         <div className="mb-10 space-y-4 text-center">
-                            <div className="inline-flex items-center gap-2 rounded-full bg-app-accent/15 px-3 py-1 text-sm font-medium">
+                            <div className="inline-flex items-center gap-2 rounded-full bg-brand/15 px-3 py-1 text-sm font-medium">
                                 <Lightbulb className="size-4"/>
                                 <span>FAQ</span>
                             </div>
@@ -266,7 +266,7 @@ function HomePage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
                         {features.map((feature) =>
                             <div key={feature.title} className="flex items-start gap-4 p-6 rounded-xl hover:bg-card transition-colors">
-                                <div className="size-12 bg-app-accent/30 rounded-lg flex items-center justify-center shrink-0">
+                                <div className="size-12 bg-brand/30 rounded-lg flex items-center justify-center shrink-0">
                                     {feature.icon}
                                 </div>
                                 <div>

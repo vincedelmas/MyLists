@@ -64,8 +64,8 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     return (
         <div ref={containerRef}>
             <div className={cn("flex items-center bg-background border rounded-lg transition-all duration-200 overflow-hidden",
-                "focus-within:ring-2 focus-within:ring-app-accent/50 focus-within:border-app-accent",
-                selectOpen ? "ring-2 ring-app-accent/50 border-app-accent" : "border"
+                "focus-within:ring-2 focus-within:ring-brand/50 focus-within:border-brand",
+                selectOpen ? "ring-2 ring-brand/50 border-brand" : "border"
             )}>
                 <Select
                     items={searchProviderItems}
@@ -92,7 +92,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     inputMode="search"
                     onChange={handleInputChange}
                     placeholder="Search for media/users..."
-                    className="flex-1 text-sm border-none focus:outline-none focus:ring-0 dark:bg-background"
+                    className="flex-1 border-none bg-background text-sm focus:outline-none focus:ring-0"
                 />
                 <div className="px-3 text-muted-foreground">
                     {isOpen
@@ -204,7 +204,7 @@ const SearchComponent = ({ item, resetSearch, setMobileMenu }: SearchComponentPr
                         }
                         {isLoadingItem &&
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <Loader2 className="size-8 animate-spin text-app-accent"/>
+                                <Loader2 className="size-8 animate-spin text-primary"/>
                             </div>
                         }
                     </div>
@@ -212,7 +212,7 @@ const SearchComponent = ({ item, resetSearch, setMobileMenu }: SearchComponentPr
                         <div className="font-semibold mb-2 line-clamp-2">
                             {item.name}
                         </div>
-                        <div className="text-primary capitalize">
+                        <div className="text-foreground capitalize">
                             {item.itemType}
                         </div>
                         <div className="text-muted-foreground text-sm">

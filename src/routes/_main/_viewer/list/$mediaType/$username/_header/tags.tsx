@@ -96,8 +96,7 @@ function TagsView() {
                                 size="sm"
                                 onClick={handleCreateTag}
                                 disabled={editMutation.isPending}
-                                className="h-7 bg-app-accent/80 hover:bg-app-accent text-[10px] font-bold px-2.5
-                                    rounded shadow-sm transition-all text-primary/90"
+                                className="text-[10px]"
                             >
                                 CREATE
                             </Button>
@@ -185,7 +184,7 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
                 className={isEditing ? "pointer-events-none" : ""}
                 search={{ tags: [tag.tagName] }}
             >
-                <div className="aspect-video rounded-lg border overflow-hidden duration-200 hover:border-app-accent/50">
+                <div className="aspect-video rounded-lg border overflow-hidden duration-200 hover:border-brand/50">
                     <div className="relative flex h-full items-center justify-center p-6">
                         {tag.medias.map((item, idx, arr) => {
                             const offset = idx - (arr.length - 1) / 2;
@@ -244,9 +243,9 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
                                     }}>
                                         <Pen className="size-4"/> Rename
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="focus:bg-red-500/10" onClick={handleDelete}>
-                                        <Trash2 className="text-red-500"/>
-                                        <span className="text-red-500">Delete</span>
+                                    <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+                                        <Trash2/>
+                                        <span>Delete</span>
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>

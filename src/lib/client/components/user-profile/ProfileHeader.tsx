@@ -28,8 +28,8 @@ export const ProfileHeader = ({ profileUser, social }: ProfileHeaderProps) => {
 
     return (
         <div className="relative mb-20 w-screen left-1/2 right-1/2 ml-[-50vw] mr-[-50vw] max-sm:mb-2">
-            <div className="h-64 w-full bg-neutral-800 overflow-hidden relative max-sm:h-42">
-                <div className="absolute inset-0 bg-linear-to-t from-neutral-950 to-transparent opacity-20 z-10"/>
+            <div className="relative h-64 w-full overflow-hidden bg-muted max-sm:h-42">
+                <div className="absolute inset-0 z-10 bg-linear-to-t from-black to-transparent opacity-20"/>
                 <img
                     alt="Cover"
                     src={profileUser.backgroundImage}
@@ -46,7 +46,7 @@ export const ProfileHeader = ({ profileUser, social }: ProfileHeaderProps) => {
                             user={{ name: profileUser.name, image: profileUser.image }}
                         />
                         <div className="absolute -bottom-2 left-12 w-18 h-7 z-20 flex items-center justify-center
-                    rounded-full font-bold text-xs bg-app-accent/70 border-4 border-background shadow-lg">
+                    rounded-full border-4 border-background bg-primary/70 text-xs font-bold text-primary-foreground shadow-lg">
                             Lvl. {profileLevel}
                         </div>
                     </div>
@@ -97,7 +97,7 @@ export const ProfileHeader = ({ profileUser, social }: ProfileHeaderProps) => {
                                 user={{ name: profileUser.name, image: profileUser.image }}
                             />
                             <div className="absolute -bottom-2 -right-2 w-18 h-7 z-20 flex items-center justify-center
-                            rounded-full font-bold text-xs bg-app-accent text-black border-4 border-background shadow-lg">
+                            rounded-full font-bold text-xs bg-primary text-primary-foreground border-4 border-background shadow-lg">
                                 Lvl. {profileLevel}
                             </div>
                         </div>

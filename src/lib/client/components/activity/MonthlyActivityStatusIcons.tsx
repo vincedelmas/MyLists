@@ -9,19 +9,19 @@ export function MonthlyActivityStatusIcons({ row }: { row: MonthlyActivityEditor
                 <Hourglass
                     size={12}
                     aria-label="Progressed"
-                    className="text-neutral-300"
+                    className="text-white/70"
                 />
             }
             {row.hadCompletion &&
                 <CheckCircle
                     size={12}
                     aria-label="Completed"
-                    className="text-neutral-300"
+                    className="text-white/70"
                 />
             }
             {row.redoGained > 0 &&
                 <span className="flex items-center gap-0.5" title={`${row.redoGained} re-experience${row.redoGained === 1 ? "" : "s"}`}>
-                    <RotateCw size={12} className="text-neutral-300"/>
+                    <RotateCw size={12} className="text-white/70"/>
                     {row.redoGained > 1 && <span>{row.redoGained}</span>}
                 </span>
             }

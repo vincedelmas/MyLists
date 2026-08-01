@@ -17,7 +17,7 @@ export const CommonInfoTableCell = ({ userMedia }: { userMedia: UserMediaItem })
                 />
             }
             {userMedia.favorite &&
-                <Heart className="w-4 h-4 text-red-500"/>
+                <Heart className="size-4 text-favorite"/>
             }
             {userMedia.comment &&
                 <DisplayComment content={userMedia.comment}/>

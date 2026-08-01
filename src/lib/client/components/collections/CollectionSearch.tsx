@@ -58,7 +58,7 @@ export const CollectionSearch = ({ mediaType, onAdd, disabled }: CollectionSearc
     return (
         <div ref={containerRef} className="relative">
             <div className={cn("flex items-center border rounded-lg transition-all duration-200 overflow-hidden",
-                "focus-within:ring-2 focus-within:ring-app-accent/50 focus-within:border-app-accent")}>
+                "focus-within:ring-2 focus-within:ring-brand/50 focus-within:border-brand")}>
                 <div className="px-3 text-muted-foreground">
                     <Search className="size-4"/>
                 </div>
@@ -98,7 +98,7 @@ export const CollectionSearch = ({ mediaType, onAdd, disabled }: CollectionSearc
                                         />
                                         {resolvingId === item.id &&
                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                <Loader2 className="size-6 animate-spin text-app-accent"/>
+                                                <Loader2 className="size-6 animate-spin text-primary"/>
                                             </div>
                                         }
                                     </div>
@@ -106,7 +106,7 @@ export const CollectionSearch = ({ mediaType, onAdd, disabled }: CollectionSearc
                                         <div className="font-semibold mb-1 line-clamp-2">
                                             {item.name}
                                         </div>
-                                        <div className="text-primary text-xs">
+                                        <div className="text-foreground text-xs">
                                             {capitalize(item.itemType)}
                                         </div>
                                         <div className="text-muted-foreground text-xs">

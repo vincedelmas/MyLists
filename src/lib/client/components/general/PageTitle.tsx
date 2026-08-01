@@ -18,7 +18,7 @@ export const PageTitle = ({ children, title, subtitle, onlyHelmet = false }: Pag
                 :
                 <div className="flex flex-col mx-auto mb-8 pt-6">
                     <div>
-                        <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                             {title}
                         </h2>
                         <p className="text-sm text-muted-foreground">

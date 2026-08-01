@@ -44,14 +44,14 @@ export function RatingsChart({ height, ratings, mediaType, ratingSystem }: Ratin
                         axisLine={false}
                         tick={ratingSystem === RatingSystemType.FEELING
                             ? <FeelingTickXAxis/>
-                            : { fill: "var(--primary)", fontSize: 11 }
+                            : { fill: "var(--primary-foreground)", fontSize: 11 }
                         }
                     />
                     <YAxis
                         tickLine={false}
                         axisLine={false}
                         allowDecimals={false}
-                        tick={{ fill: "var(--primary)", fontSize: 11 }}
+                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
                     />
                     <Tooltip
                         cursor={{ fill: "var(--popover)" }}

@@ -117,7 +117,7 @@ function SearchPage() {
                     <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3 lg:gap-4 lg:grid-cols-5 sm:gap-5">
                         {apiData.data.map((item) =>
                             <Card key={item.id} className="rounded-lg py-0 ring-0">
-                                <div className="relative aspect-2/3 h-full rounded-lg border border-black">
+                                <div className="relative aspect-2/3 h-full rounded-lg border">
                                     {item.itemType === ApiProviderType.USERS ?
                                         <Link to="/profile/$username" params={{ username: item.name }}>
                                             <img
@@ -138,7 +138,7 @@ function SearchPage() {
                                             />
                                         </Link>
                                     }
-                                    <div className="absolute bottom-0 px-4 pt-2 pb-2 space-y-1 bg-gray-900 w-full rounded-b-sm text-center">
+                                    <div className="absolute bottom-0 flex w-full flex-col gap-1 rounded-b-sm bg-black/70 px-4 pt-2 pb-2 text-center text-white backdrop-blur-sm">
                                         <div className="truncate">{item.name}</div>
                                         <div>{formatDate(item.date)}</div>
                                     </div>

@@ -173,21 +173,21 @@ const MediaNotificationItem = ({ notif }: { notif: MediaNotif }) => {
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: notif.mediaType, mediaId: notif.mediaId }}
                         >
-                            <span title={notif.name} className="font-medium text-foreground line-clamp-1 max-w-55 hover:text-app-accent">
+                            <span title={notif.name} className="font-medium text-foreground line-clamp-1 max-w-55 hover:text-brand">
                                 {notif.name}
                             </span>
                         </Link>
                     </p>
                 </div>
                 <div className="flex items-baseline justify-between">
-                    <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-primary/80">
+                    <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-foreground/80">
                         <span>
                             {isTvNotification
                                 ? `S${zeroPad(notif.season)}.E${zeroPad(notif.episode)} ${notif.isSeasonFinale ? "(Finale)" : ""}`
                                 : <div>Release</div>
                             }
                         </span>
-                        <MoveRight className="size-4 text-app-accent"/>
+                        <MoveRight className="size-4 text-brand"/>
                         <span>{formatDate(notif.releaseDate)}</span>
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -196,7 +196,7 @@ const MediaNotificationItem = ({ notif }: { notif: MediaNotif }) => {
                 </div>
             </div>
             {isUnread &&
-                <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-cyan-500 shrink-0"/>
+                <div className="absolute top-3 right-3 size-2 shrink-0 rounded-full bg-info"/>
             }
         </div>
     );
@@ -258,7 +258,7 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
                         {notification.featureRequest &&
                             <>
                                 {": "}
-                                <Link to="/features-vote" className="font-medium text-app-accent">
+                                <Link to="/features-vote" className="font-medium text-brand">
                                     here
                                 </Link>
                             </>
@@ -269,7 +269,7 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
                     </p>
                 </div>
                 {isUnread &&
-                    <div className="size-2 shrink-0 rounded-full bg-blue-500"/>
+                    <div className="size-2 shrink-0 rounded-full bg-brand"/>
                 }
                 <button
                     onClick={deleteNotif}
@@ -284,7 +284,7 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
                 <div className="ml-13 flex gap-2">
                     <Button
                         size="xs"
-                        variant="emeraldy"
+                        variant="default"
                         onClick={() => respond("accept")}
                         disabled={deleteMutation.isPending || respondMutation.isPending}
                     >

@@ -1,11 +1,11 @@
 import React from "react";
 import {Ban, TrendingUp} from "lucide-react";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {getThemeColor} from "@/lib/utils/theme-utils";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {HofUserRank} from "@/lib/types/query.options.types";
+import {formatPercent} from "@/lib/utils/number-formatting";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {Card, CardContent} from "@/lib/client/components/ui/card";
-import {formatPercent} from "@/lib/utils/number-formatting";
 
 
 interface HofRankingProps {
@@ -21,7 +21,7 @@ export const HofRanking = ({ userRanks }: HofRankingProps) => {
             </div>
             <div className="grid grid-cols-2 w-full gap-3">
                 {userRanks.map((rank) =>
-                    <Card key={rank.mediaType} className="p-2 max-sm:py-0 bg-card">
+                    <Card key={rank.mediaType} className="p-2 max-sm:py-0">
                         {rank.active ?
                             <CardContent className="max-sm:py-4 p-2">
                                 <div className="flex items-center justify-between gap-4">
@@ -39,7 +39,7 @@ export const HofRanking = ({ userRanks }: HofRankingProps) => {
                                 />
                                 <div className="text-xs font-semibold mt-2">
                                     <div className="flex items-center gap-1">
-                                        <TrendingUp className="text-app-accent size-4"/>
+                                        <TrendingUp className="text-brand size-4"/>
                                         {rank.percent
                                             ? <>Top {formatPercent(rank.percent)}</>
                                             : <>Top - %</>

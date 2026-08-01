@@ -142,7 +142,7 @@ function UserManagementPage() {
                                     {original.name}
                                 </Link>
                             </div>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 {original.email}
                             </p>
                         </div>
@@ -189,11 +189,11 @@ function UserManagementPage() {
                                 News:
                             </span>
                             {original.showUpdateModal ?
-                                <Badge variant="outline" className="text-green-600 py-0 h-4 text-[10px]">
+                                <Badge variant="success" className="h-4 py-0 text-[10px]">
                                     Enabled
                                 </Badge>
                                 :
-                                <Badge variant="outline" className="text-red-500 py-0 h-4 text-[10px]">
+                                <Badge variant="destructive" className="h-4 py-0 text-[10px]">
                                     Disabled
                                 </Badge>
                             }
@@ -203,11 +203,11 @@ function UserManagementPage() {
                                 Tuto:
                             </span>
                             {original.showOnboarding ?
-                                <Badge variant="outline" className="text-green-600 py-0 h-4 text-[10px]">
+                                <Badge variant="success" className="h-4 py-0 text-[10px]">
                                     Enabled
                                 </Badge>
                                 :
-                                <Badge variant="outline" className="text-red-500 py-0 h-4 text-[10px]">
+                                <Badge variant="destructive" className="h-4 py-0 text-[10px]">
                                     Disabled
                                 </Badge>
                             }
@@ -228,12 +228,12 @@ function UserManagementPage() {
             cell: ({ row: { original } }) => {
                 switch (original.role) {
                     case RoleType.ADMIN:
-                        return <Badge variant="outline" className="text-cyan-600">Admin</Badge>
+                        return <Badge variant="info">Admin</Badge>
                     case RoleType.MANAGER:
-                        return <Badge variant="outline" className="text-yellow-600">Manager</Badge>
+                        return <Badge variant="achievement">Manager</Badge>
                     case RoleType.USER:
                     default:
-                        return <Badge variant="outline" className="text-green-600">User</Badge>
+                        return <Badge variant="success">User</Badge>
                 }
             },
         },
@@ -248,9 +248,9 @@ function UserManagementPage() {
             },
             cell: ({ row: { original } }) => {
                 return original.emailVerified ?
-                    <Badge variant="outline" className="text-green-600">Yes</Badge>
+                    <Badge variant="success">Yes</Badge>
                     :
-                    <Badge variant="outline" className="text-red-600">No</Badge>
+                    <Badge variant="destructive">No</Badge>
             },
         },
         {
@@ -267,7 +267,7 @@ function UserManagementPage() {
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>
                                 Actions for {" "}
-                                <span className="text-yellow-500">{original.name}</span>
+                                <span className="text-brand">{original.name}</span>
                             </DropdownMenuLabel>
                             <DropdownMenuItem onClick={() => impersonateUser(original.id, original.name)}>
                                 <UserPen className="size-4"/>
@@ -342,7 +342,7 @@ function UserManagementPage() {
                         <DropdownMenuSeparator/>
                         <DropdownMenuGroup>
                             <DropdownMenuItem
-                                className="text-red-500"
+                                variant="destructive"
                                 onClick={() => updateUser(original.id, { deleteUser: true })}
                             >
                                 <Trash2 className="mr-2 size-4"/>

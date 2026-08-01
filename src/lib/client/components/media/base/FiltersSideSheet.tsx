@@ -266,9 +266,9 @@ const FilterInfoPopover = () => (
             <div className="space-y-3">
                 <div className="space-y-3 text-sm">
                     <div className="flex gap-3">
-                        <div className="size-2 rounded-full bg-gray-400 mt-1.5 shrink-0"/>
+                        <div className="size-2 rounded-full bg-muted-foreground mt-1.5 shrink-0"/>
                         <div>
-                            <span className="font-medium text-cyan-500">
+                            <span className="font-medium text-info">
                                 Same category filters:{" "}
                             </span>
                             Results include media matching <i>any</i> selected filter.
@@ -276,9 +276,9 @@ const FilterInfoPopover = () => (
                         </div>
                     </div>
                     <div className="flex gap-3">
-                        <div className="size-2 rounded-full bg-gray-400 mt-1.5 shrink-0"/>
+                        <div className="size-2 rounded-full bg-muted-foreground mt-1.5 shrink-0"/>
                         <div>
-                            <span className="font-medium text-amber-500">
+                            <span className="font-medium text-warning">
                                 Different category filters:{" "}
                             </span>
                             Results include media matching <i>all</i> selected filters.

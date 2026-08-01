@@ -31,7 +31,7 @@ export const getBaseColumns = <T extends UserMediaItem>(props: ColumnConfigProps
                     <div className="flex items-center gap-3">
                         {original.mediaName}
                         {!isCurrent && isMediaTypeActive && original.common &&
-                            <CircleCheck className="size-4 text-green-500"/>
+                            <CircleCheck className="size-4 text-success"/>
                         }
                     </div>
                 </Link>

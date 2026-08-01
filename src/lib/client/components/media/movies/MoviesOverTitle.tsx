@@ -12,7 +12,7 @@ export const MoviesOverTitle = ({ mediaType, media }: MoviesDetailsProps<typeof 
     return (
         <>
             {media.directorName &&
-                <Badge variant="black">
+                <Badge variant="overlay">
                     <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: media.directorName }}>
                         {media.directorName}
                     </Link>

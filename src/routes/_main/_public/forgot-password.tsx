@@ -57,7 +57,7 @@ function ForgotPasswordPage() {
         <PageTitle title="Forgot password" subtitle="Enter the email associated with your account to reset your password">
             <div className="mt-4 max-w-75">
                 {!authMethods.email
-                    ? <div className="rounded-md border border-amber-900/60 bg-amber-950/20 p-3 text-sm text-amber-100">
+                    ? <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
                         Password reset is unavailable because email delivery was not configured on this instance.
                     </div>
                     : <FormProvider {...form}>
@@ -84,7 +84,7 @@ function ForgotPasswordPage() {
                                 </FieldGroup>
                             </FieldSet>
                             {emailSent &&
-                                <p className="text-sm text-center font-medium text-green-600">
+                                <p className="text-center text-sm font-medium text-success">
                                     An email has been sent to reset your password. Please check your inbox.
                                 </p>
                             }

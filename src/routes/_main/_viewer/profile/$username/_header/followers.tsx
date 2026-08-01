@@ -84,12 +84,12 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
         })) return;
 
         removeMutation.mutate({ data: { followerId: follower.id } }, {
-            onSuccess: () => toast.add({title: "Follower removed!", type: "success"}),
+            onSuccess: () => toast.add({ title: "Follower removed!", type: "success" }),
         });
     };
 
     return (
-        <div className="bg-background flex flex-col justify-between rounded-xl border p-4">
+        <div className="flex flex-col justify-between rounded-xl border p-4">
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                     <div className="relative">
@@ -109,11 +109,11 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                     </div>
                     <div>
                         <Link to="/profile/$username" params={{ username: follower.username }}>
-                            <h3 className="text-primary hover:text-app-accent font-medium leading-none">
+                            <h3 className="text-foreground hover:text-brand font-medium leading-none">
                                 {follower.username}
                             </h3>
                         </Link>
-                        <p className="mt-1 text-xs capitalize text-slate-500">
+                        <p className="mt-1 text-xs capitalize text-muted-foreground">
                             {follower.privacy} Profile
                         </p>
                     </div>
@@ -148,7 +148,7 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                                         title="Remove Follower"
                                         onClick={handleRemoveFollower}
                                         disabled={removeMutation.isPending}
-                                        className="hover:bg-destructive/10 hover:text-destructive shrink-0"
+                                        className="hover:bg-destructive/30 hover:text-foreground hover:border-transparent shrink-0"
                                     >
                                         {removeMutation.isPending ?
                                             <Loader2 className="size-4 animate-spin"/> : <UserX className="size-4"/>
@@ -186,7 +186,7 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
         const mutation = shouldUnfollow ? unfollowMutation : followMutation;
 
         mutation.mutate({ data: { targetUserId: followerId } }, {
-            onError: () => toast.add({title: "Sorry, an error occurred...", type: "error", priority: "high"}),
+            onError: () => toast.add({ title: "Sorry, an error occurred...", type: "error", priority: "high" }),
         });
     };
 
@@ -194,9 +194,9 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
         <Button
             disabled={isPending}
             onClick={handleClick}
-            variant={isFollowing ? "emeraldy" : isRequested ? "secondary" : "outline"}
-            className={cn("group flex-1 font-bold transition-all", shouldUnfollow &&
-                "hover:border-destructive/50 hover:bg-destructive/40 hover:text-primary"
+            variant={isFollowing ? "selected" : isRequested ? "secondary" : "outline"}
+            className={cn("group flex-1 font-medium transition-all",
+                shouldUnfollow && "hover:bg-destructive/30 hover:text-foreground"
             )}
         >
             {isPending ?

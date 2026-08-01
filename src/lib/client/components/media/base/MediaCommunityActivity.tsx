@@ -61,11 +61,11 @@ export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivity
             />
 
             {apiData.total > visibleItems.length &&
-                <div className="text-end -mt-1">
+                <div className="text-end -mt-2">
                     <Link
                         params={{ mediaType, mediaId }}
                         to="/details/$mediaType/$mediaId/community"
-                        className={buttonVariants({ variant: "ghost", size: "xs" })}
+                        className={buttonVariants({ variant: "hover", size: "sm" })}
                     >
                         View All <ChevronDown className="size-3.5"/>
                     </Link>
@@ -100,7 +100,7 @@ export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivitySt
         {
             icon: Star,
             label: "community avg.",
-            iconColor: "text-app-rating fill-app-rating",
+            iconColor: "text-rating fill-rating",
             value: formatNumber(stats.averageRating, { locale: "en", fractionDigits: 1 }),
         },
         {
@@ -128,7 +128,7 @@ export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivitySt
             {items.map(({ icon: Icon, label, value, iconColor }) =>
                 <div key={label} className="flex min-w-0 items-center gap-1.5">
                     <Icon className={`size-4 shrink-0 ${iconColor}`}/>
-                    <span className="font-semibold text-primary">{value}</span>
+                    <span className="font-semibold text-foreground">{value}</span>
                     <span className="truncate">{label}</span>
                 </div>
             )}

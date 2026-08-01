@@ -30,7 +30,7 @@ export const LinkSidebar = ({ items }: { items: LinkSidebarItem[] }) => {
                     <Link
                         to={item.to}
                         key={item.id}
-                        activeProps={{ className: "bg-emerald-500/50 text-primary" }}
+                        activeProps={{ className: "bg-primary" }}
                         className={buttonVariants({ variant: "hover", className: "justify-start text-sm shrink-0 whitespace-nowrap" })}
                     >
                         {item.label}

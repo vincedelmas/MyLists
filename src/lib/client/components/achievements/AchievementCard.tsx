@@ -4,11 +4,11 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {AchCard} from "@/lib/types/query.options.types";
 import {getDifficultyColors} from "@/lib/utils/theme-utils";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {TiersDetails} from "@/lib/client/components/achievements/TierDetails";
 import {Progress, ProgressLabel, ProgressValue} from "@/lib/client/components/ui/progress";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 
 
 interface AchievementCardProps {
@@ -56,7 +56,7 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
                 <CardDescription className="line-clamp-2" title={description ?? ""}>
                     {description}
                 </CardDescription>
-                <Progress value={progressValue} color="var(--app-accent)">
+                <Progress value={progressValue} color="var(--primary)">
                     <ProgressLabel>
                         {nextTier?.difficulty ?
                             <div>
@@ -64,7 +64,7 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
                                 <Award className={cn("size-3.5 inline-block", getDifficultyColors(nextTier.difficulty))}/>
                             </div>
                             :
-                            <div className="text-app-accent">
+                            <div className="text-brand">
                                 Completed{" "}
                                 <Check className="size-3.5 inline-block"/>
                             </div>

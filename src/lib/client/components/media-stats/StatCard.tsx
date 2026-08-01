@@ -15,12 +15,12 @@ interface StatCardProps {
 export function StatCard({ title, value, subtitle, icon, className }: StatCardProps) {
     return (
         <Card className={cn("relative min-w-0 overflow-hidden", className)}>
-            <CardHeader className="flex min-w-0 flex-row items-center justify-between gap-2 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardHeader className="flex min-w-0 flex-row items-center justify-between gap-2">
+                <CardTitle className="text-sm text-muted-foreground">
                     {title}
                 </CardTitle>
                 {icon &&
-                    <div className="text-app-accent">
+                    <div className="text-brand">
                         {icon}
                     </div>
                 }

@@ -36,7 +36,7 @@ export const SearchContainer = (props: SearchContainerProps) => {
             position === "bottom" ? "top-full mt-1" : "bottom-full mb-1", className)}
         >
             {isPending &&
-                <div className="flex items-center justify-center p-6 text-app-accent">
+                <div className="flex items-center justify-center p-6 text-primary">
                     <Loader2 className="size-6 animate-spin"/>
                 </div>
             }

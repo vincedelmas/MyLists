@@ -56,7 +56,7 @@ function CollectionsTab() {
                     {isOwner &&
                         <Route.Link
                             to="/collections/create"
-                            className={buttonVariants({ variant: "emeraldy", size: "sm", className: "whitespace-nowrap" })}
+                            className={buttonVariants({ variant: "default", className: "whitespace-nowrap" })}
                         >
                             <Plus className="size-4"/>
                             New collection
@@ -68,7 +68,7 @@ function CollectionsTab() {
                             value={localSearch}
                             onChange={handleInputChange}
                             placeholder="Find collection..."
-                            className="h-10 bg-popover/50 pr-14"
+                            className="h-9 bg-popover/50 pr-14"
                             onKeyDown={(event) => {
                                 if (event.key === "Escape") clearSearch();
                             }}

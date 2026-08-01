@@ -18,7 +18,7 @@ interface OverviewDashboardProps {
 export function OverviewDashboard({ stats }: OverviewDashboardProps) {
     const { ratingSystem, avgRated } = stats;
     const ratingValue = formatAvgRating(ratingSystem, avgRated);
-    const averageBasis = stats.scope === "platform" ? "User" : "Active media Type";
+    const averageBasis = stats.scope === "platform" ? "User" : "Media Type";
 
     const mediaTimeDistribution = stats.mediaTimeDistribution.map(({ name, value }) => {
         return ({ value, name: String(name), color: getThemeColor(String(name)) })
@@ -69,19 +69,19 @@ export function OverviewDashboard({ stats }: OverviewDashboardProps) {
                     title="Total Favorites"
                     icon={<Heart className="size-4"/>}
                     value={formatNumber(stats.totalFavorites)}
-                    subtitle={`Avg. per ${averageBasis}: ${formatNumber(stats.avgFavorites, { fractionDigits: 2 })}`}
+                    subtitle={`Avg. / ${averageBasis}: ${formatNumber(stats.avgFavorites, { fractionDigits: 0 })}`}
                 />
                 <StatCard
                     title="Total Comments"
                     value={formatNumber(stats.totalComments)}
                     icon={<MessageSquare className="size-4"/>}
-                    subtitle={`Avg. per ${averageBasis}: ${formatNumber(stats.avgComments, { fractionDigits: 2 })}`}
+                    subtitle={`Avg. / ${averageBasis}: ${formatNumber(stats.avgComments, { fractionDigits: 0 })}`}
                 />
                 <StatCard
                     title="Total Updates"
                     icon={<ChartColumn className="size-4"/>}
                     value={formatNumber(stats.updatesPerMonth.totalUpdates)}
-                    subtitle={`All-time avg. per active month: ${formatNumber(stats.updatesPerMonth.avgUpdates, { fractionDigits: 2 })}`}
+                    subtitle={`Avg. / active month: ${formatNumber(stats.updatesPerMonth.avgUpdates, { fractionDigits: 0 })}`}
                 />
                 <StatCard
                     title="Total Tags"
@@ -109,9 +109,9 @@ export function OverviewDashboard({ stats }: OverviewDashboardProps) {
             </div>
 
             <TimeSeriesChart
-                title="Updates by Month"
                 minPeriod="2020-01"
-                color="var(--app-accent)"
+                color="var(--brand)"
+                title="Updates by Month"
                 data={stats.updatesPerMonth.updatesDistribution}
                 description="From January 2020; months with at least one recorded update"
             />

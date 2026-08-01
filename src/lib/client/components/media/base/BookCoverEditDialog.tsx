@@ -102,11 +102,11 @@ export const BookCoverEditDialog = ({ mediaId, mediaName }: BookCoverEditDialogP
                         <FieldSet disabled={updateCoverMutation.isPending}>
                             <FieldGroup>
                             <div className="grid grid-cols-2 gap-3">
-                                <Button type="button" onClick={setImageLinkMode} variant={mode === "link" ? "emeraldy" : "outline"}>
+                                <Button type="button" onClick={setImageLinkMode} variant={mode === "link" ? "selected" : "outline"}>
                                     <Link2 className="size-4"/>{" "}
                                     Image link
                                 </Button>
-                                <Button type="button" variant={mode === "upload" ? "emeraldy" : "outline"} onClick={setImageUploadMode}>
+                                <Button type="button" variant={mode === "upload" ? "selected" : "outline"} onClick={setImageUploadMode}>
                                     <UploadCloud className="size-4"/>{" "}
                                     Upload image
                                 </Button>

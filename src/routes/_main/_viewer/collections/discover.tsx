@@ -92,7 +92,7 @@ function CollectionsDiscoverPage() {
                         <Link
                             to="/collections/create"
                             className={buttonVariants({
-                                variant: "emeraldy",
+                                variant: "default",
                                 className: "col-span-1 justify-center whitespace-nowrap sm:w-auto",
                             })}
                         >

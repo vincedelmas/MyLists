@@ -15,6 +15,7 @@ interface PayloadProps {
 
 export const Payload = ({ update, username }: PayloadProps) => {
     const { payload, mediaType, updateType } = update;
+
     if (!payload) return null;
 
     const oldValue = payload.old_value;
@@ -30,7 +31,6 @@ export const Payload = ({ update, username }: PayloadProps) => {
                     username={username}
                 />
             );
-
         case UpdateType.TV:
             return (
                 <PayloadLayout
@@ -39,7 +39,6 @@ export const Payload = ({ update, username }: PayloadProps) => {
                     newVal={`S${zeroPad(newValue[0])}.E${zeroPad(newValue[1])}`}
                 />
             );
-
         case UpdateType.REDO: {
             const name = mediaType === MediaType.BOOKS ? "Re-read" : "Re-watched";
             const suffix = mediaType === MediaType.SERIES || mediaType === MediaType.ANIME ? "x S." : "x";
@@ -51,7 +50,6 @@ export const Payload = ({ update, username }: PayloadProps) => {
                 />
             );
         }
-
         case UpdateType.PLAYTIME:
             return (
                 <PayloadLayout
@@ -60,7 +58,6 @@ export const Payload = ({ update, username }: PayloadProps) => {
                     newVal={`${toActivityDisplayValue(mediaType, newValue)} ${progressUnit?.short}`}
                 />
             );
-
         case UpdateType.PAGE:
             return (
                 <PayloadLayout
@@ -69,7 +66,6 @@ export const Payload = ({ update, username }: PayloadProps) => {
                     newVal={`${progressUnit?.short} ${newValue}`}
                 />
             );
-
         case UpdateType.CHAPTER:
             return (
                 <PayloadLayout
@@ -78,7 +74,6 @@ export const Payload = ({ update, username }: PayloadProps) => {
                     newVal={`${progressUnit?.short} ${newValue}`}
                 />
             );
-
         default:
             return null;
     }
@@ -95,24 +90,22 @@ interface PayloadLayoutProps {
 const PayloadLayout = ({ oldVal, newVal, username }: PayloadLayoutProps) => {
     return (
         <>
-            <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold">
+            <div className="mt-1 flex items-center gap-1.5 text-xs font-medium">
                 {oldVal &&
                     <span className="text-muted-foreground">
                         {oldVal}
                     </span>
                 }
                 {oldVal &&
-                    <MoveRight className="size-4 text-app-accent"/>
+                    <MoveRight className="size-4 text-brand"/>
                 }
-                <span className="text-primary/95">
+                <span className="text-foreground/95">
                     {newVal}
                 </span>
             </div>
             {username &&
-                <Link to="/profile/$username" params={{ username }}>
-                    <div className="text-xs font-semibold text-app-accent">
-                        {username}{"  "}
-                    </div>
+                <Link to="/profile/$username" params={{ username }} className="text-xs font-medium text-brand">
+                    {username}{"  "}
                 </Link>
             }
         </>

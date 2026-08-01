@@ -42,7 +42,7 @@ export function CalendarNav({ onDateChange, activeMonth, activeYear }: CalendarN
                         onClick={() => onYearChange(year)}
                         className={cn("cursor-pointer rounded px-2 py-0.5 text-xs font-bold uppercase tracking-wider transition-colors",
                             activeYear === year
-                                ? "bg-app-accent text-background"
+                                ? "bg-primary text-primary-foreground"
                                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                         )}
                     >
@@ -64,7 +64,7 @@ export function CalendarNav({ onDateChange, activeMonth, activeYear }: CalendarN
                             onClick={() => handleSelect(activeYear, monthIdx)}
                             className={cn("flex h-7 items-center justify-center rounded text-[11px] font-medium transition-all",
                                 active
-                                    ? "bg-app-accent/20 text-app-accent ring-1 ring-app-accent/50"
+                                    ? "bg-brand/20 text-brand ring-1 ring-brand/50"
                                     : disabled
                                         ? "cursor-default opacity-20"
                                         : "cursor-pointer text-muted-foreground hover:bg-secondary hover:text-foreground"

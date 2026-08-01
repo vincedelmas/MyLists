@@ -43,11 +43,11 @@ const ACTIVE_STATUSES: FeatureStatus[] = [
 
 
 const STATUS_STYLES: Record<FeatureStatus, string> = {
-    [FeatureStatus.PLANNED]: "border-sky-500/40 text-sky-200 bg-sky-500/10",
-    [FeatureStatus.REJECTED]: "border-rose-500/40 text-rose-200 bg-rose-500/10",
-    [FeatureStatus.COMPLETED]: "border-violet-500/40 text-violet-200 bg-violet-500/10",
-    [FeatureStatus.IN_PROGRESS]: "border-emerald-500/40 text-emerald-200 bg-emerald-500/10",
-    [FeatureStatus.UNDER_CONSIDERATION]: "border-amber-500/40 text-amber-200 bg-amber-500/10",
+    [FeatureStatus.PLANNED]: "border-info/40 bg-info/10 text-info",
+    [FeatureStatus.REJECTED]: "border-destructive/40 bg-destructive/10 text-destructive",
+    [FeatureStatus.COMPLETED]: "border-success/40 bg-success/10 text-success",
+    [FeatureStatus.IN_PROGRESS]: "border-brand/40 bg-brand/10 text-brand",
+    [FeatureStatus.UNDER_CONSIDERATION]: "border-warning/40 bg-warning/10 text-warning",
 };
 
 
@@ -114,14 +114,14 @@ function FeatureVotesPage() {
         <PageTitle title="Feature Voting Hub" subtitle="Submit ideas, search, and vote on what MyLists should have next.">
             <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1">
-                    <Card className="ring-gray-500">
+                    <Card className="ring-border">
                         <CardHeader>
                             <CardTitle>Quick Q&A</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <dl className="space-y-4 text-sm text-muted-foreground">
                                 <div>
-                                    <dt className="font-semibold text-primary">
+                                    <dt className="font-semibold text-foreground">
                                         How do votes work?
                                     </dt>
                                     <dd>
@@ -129,7 +129,7 @@ function FeatureVotesPage() {
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="font-semibold text-primary">
+                                    <dt className="font-semibold text-foreground">
                                         Can I vote more than once?
                                     </dt>
                                     <dd>
@@ -137,7 +137,7 @@ function FeatureVotesPage() {
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="font-semibold text-primary">
+                                    <dt className="font-semibold text-foreground">
                                         Will I be notified about feature updates?
                                     </dt>
                                     <dd>
@@ -148,7 +148,7 @@ function FeatureVotesPage() {
                             </dl>
                         </CardContent>
                     </Card>
-                    <Card className="relative overflow-hidden ring-app-accent/40">
+                    <Card className="relative overflow-hidden ring-brand/40">
                         <LockedContent
                             showAuthButtons={true}
                             isAnonymous={isAnonymous}
@@ -212,7 +212,7 @@ function FeatureVotesPage() {
                         </CardContent>
                     </Card>
                 </div>
-                <Card className="h-fit ring-app-rating">
+                <Card className="h-fit ring-brand/40">
                     <CardHeader>
                         <CardTitle>Discussions</CardTitle>
                     </CardHeader>
@@ -223,7 +223,7 @@ function FeatureVotesPage() {
                         </div>
                         <div className="text-center">
                             <a href="https://github.com/Crossoufire/MyLists/discussions" target="_blank" rel="noreferrer">
-                                <Button variant="emeraldy">
+                                <Button>
                                     Github Discussions <ExternalLink/>
                                 </Button>
                             </a>
@@ -262,7 +262,7 @@ function FeatureVotesPage() {
                                             <Link
                                                 to="/profile/$username"
                                                 params={{ username: req.author.name }}
-                                                className="inline-flex items-center gap-1.5 text-primary hover:text-app-accent"
+                                                className="inline-flex items-center gap-1.5 text-foreground hover:text-brand"
                                             >
                                                 <ProfileIcon
                                                     className="size-5 border"
@@ -297,7 +297,7 @@ function FeatureVotesPage() {
 
                                     {req.adminComment &&
                                         <div className="rounded-lg border border-dashed px-3 py-2 text-sm">
-                                            <div className="text-sm font-semibold text-app-accent">
+                                            <div className="text-sm font-semibold text-brand">
                                                 Admin note:
                                             </div>
                                             {req.adminComment}
@@ -308,7 +308,7 @@ function FeatureVotesPage() {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Button
                                                 onClick={() => handleVote(req.id)}
-                                                variant={req.hasUserVote ? "emeraldy" : "outline"}
+                                                variant={req.hasUserVote ? "selected" : "outline"}
                                                 disabled={toggleVoteMutation.isPending || isLocked || isAnonymous}
                                             >
                                                 {voteLabel}

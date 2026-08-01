@@ -124,10 +124,10 @@ export const CustomCoverTabContent = ({ mediaType, userMedia, onUpdateMutation }
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-                <Button type="button" variant={mode === "link" ? "emeraldy" : "outline"} onClick={setImageLinkMode}>
+                <Button type="button" variant={mode === "link" ? "selected" : "outline"} onClick={setImageLinkMode}>
                     <Link2 className="size-4"/> Cover Link
                 </Button>
-                <Button type="button" variant={mode === "upload" ? "emeraldy" : "outline"} onClick={setImageUploadMode}>
+                <Button type="button" variant={mode === "upload" ? "selected" : "outline"} onClick={setImageUploadMode}>
                     <UploadCloud className="size-4"/> Upload Cover
                 </Button>
             </div>

@@ -71,7 +71,7 @@ function CollectionViewer() {
                                 onClick={handleLikeCollection}
                                 disabled={toggleLikeMutation.isPending}
                             >
-                                <Heart className={isLiked ? "text-red-500" : ""}/>
+                                <Heart className={isLiked ? "text-favorite" : ""}/>
                                 {collection.likeCount}
                             </Button>
                         </>
@@ -120,7 +120,7 @@ function CollectionViewer() {
                     {items.map((item) =>
                         <MediaCard key={item.mediaId} item={item} mediaType={collection.mediaType}>
                             {collection.ordered &&
-                                <div className="absolute top-2 left-2 self-start rounded-md bg-black/70 px-3 py-0.5 text-sm font-semibold">
+                                <div className="absolute top-2 left-2 self-start rounded-md bg-black/70 px-3 py-0.5 text-sm font-semibold text-white">
                                     #{item.orderIndex}
                                 </div>
                             }
@@ -131,12 +131,12 @@ function CollectionViewer() {
                             }
                             <div className="absolute bottom-0 w-full space-y-1 rounded-b-sm p-3">
                                 <div className="flex w-full items-center justify-between space-x-2 text-sm">
-                                    <h3 className="grow truncate font-medium text-primary" title={item.mediaName}>
+                                    <h3 className="grow truncate font-medium" title={item.mediaName}>
                                         {item.mediaName}
                                     </h3>
                                 </div>
                                 <div className="flex w-full flex-wrap items-center justify-between">
-                                    <div className="shrink-0 text-xs font-medium text-muted-foreground">
+                                    <div className="shrink-0 text-xs font-medium text-white/70">
                                         {formatDate(item.releaseDate)}
                                     </div>
                                     {item.annotation &&

@@ -117,6 +117,7 @@ interface StatusComponentProps {
 
 const StatusComponent = ({ filters, allStatuses, onStatusChange, className }: StatusComponentProps) => {
     const selectItems = ["All Media", ...allStatuses].map(status => ({ label: status, value: status }));
+    const selectedStatus = filters.status?.find(status => allStatuses.includes(status)) ?? "All Media";
 
     const handleStatusChange = (status: string | null) => {
         if (status === null) return;
@@ -125,7 +126,7 @@ const StatusComponent = ({ filters, allStatuses, onStatusChange, className }: St
     };
 
     return (
-        <Select items={selectItems} defaultValue="All Media" onValueChange={(val) => handleStatusChange(val)}>
+        <Select items={selectItems} value={selectedStatus} onValueChange={(val) => handleStatusChange(val)}>
             <SelectTrigger className={cn("w-full max-w-48", className)}>
                 <SelectValue/>
             </SelectTrigger>
@@ -153,6 +154,7 @@ interface SortComponentProps {
 
 const SortComponent = ({ sorting, allSorting, applySorting, className }: SortComponentProps) => {
     const sortItems = allSorting.map(sort => ({ label: sort, value: sort }));
+    const selectedSorting = allSorting.includes(sorting) ? sorting : (allSorting[0] ?? null);
 
     const handleSortChange = (sort: string | null) => {
         if (sort === null) return;
@@ -160,7 +162,7 @@ const SortComponent = ({ sorting, allSorting, applySorting, className }: SortCom
     };
 
     return (
-        <Select items={sortItems} defaultValue={sorting} onValueChange={(val) => handleSortChange(val)}>
+        <Select items={sortItems} value={selectedSorting} onValueChange={(val) => handleSortChange(val)}>
             <SelectTrigger className={cn("w-full max-w-48", className)}>
                 <SelectValue/>
             </SelectTrigger>

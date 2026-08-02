@@ -1,18 +1,18 @@
-import {useState} from "react";
+import React, {useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {useQuery} from "@tanstack/react-query";
-import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {formatDate} from "@/lib/utils/date-formatting";
+import {ChevronLeft, ChevronRight} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
-import {ChevronLeft, ChevronRight, Search} from "lucide-react";
+import {navSearchOptions} from "@/lib/client/react-query/query-options";
+import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
-import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {useAddMediaToCollectionMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 
 
@@ -58,20 +58,12 @@ export const CollectionSearch = ({ mediaType, onAdd, disabled }: CollectionSearc
 
     return (
         <div ref={containerRef} className="relative">
-            <div className={cn("flex items-center border rounded-lg transition-all duration-200 overflow-hidden",
-                "focus-within:ring-2 focus-within:ring-brand/50 focus-within:border-brand")}>
-                <div className="px-3 text-muted-foreground">
-                    <Search className="size-4"/>
-                </div>
-                <Input
-                    value={search}
-                    inputMode="search"
-                    disabled={disabled}
-                    onChange={handleInputChange}
-                    placeholder={`Search ${capitalize(mediaType)}...`}
-                    className="flex-1 text-sm border-none focus:outline-none focus:ring-0 focus-visible:ring-0"
-                />
-            </div>
+            <SearchInput
+                value={search}
+                disabled={disabled}
+                onChange={handleInputChange}
+                placeholder={`Search ${capitalize(mediaType)}...`}
+            />
 
             <SearchContainer
                 error={error}

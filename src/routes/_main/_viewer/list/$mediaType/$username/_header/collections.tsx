@@ -3,11 +3,11 @@ import {ListOrdered, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Input} from "@/lib/client/components/ui/input";
-import {buttonVariants} from "@/lib/client/components/ui/button";
 import {SimpleSearch, simpleSearchSchema} from "@/lib/schemas";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
+import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {paginatedUserCollectionsOptions} from "@/lib/client/react-query/query-options";
@@ -28,17 +28,12 @@ function CollectionsTab() {
     const { currentUser } = useAuth();
     const { mediaType, username } = Route.useParams();
     const { data } = useSuspenseQuery(paginatedUserCollectionsOptions({ username, mediaType, ...filters }));
-    const { localSearch, setLocalSearch, handleInputChange, updateFilters } = useSearchNavigate<SimpleSearch>({
+    const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SimpleSearch>({
         search: filters.search ?? "",
         options: { resetScroll: false },
     });
 
     const isOwner = (currentUser?.name === username);
-
-    const clearSearch = () => {
-        setLocalSearch("");
-        updateFilters({ search: undefined, page: 1 });
-    };
 
     return (
         <>
@@ -52,33 +47,18 @@ function CollectionsTab() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-5 max-sm:w-full">
+                <div className="flex items-center gap-4 max-sm:w-full">
                     {isOwner &&
-                        <Route.Link
-                            to="/collections/create"
-                            className={buttonVariants({ variant: "default", className: "whitespace-nowrap" })}
-                        >
-                            <Plus className="size-4"/>
-                            New collection
+                        <Route.Link to="/collections/create" className={buttonVariants({ className: "whitespace-nowrap" })}>
+                            <Plus/> New collection
                         </Route.Link>
                     }
-                    <div className="relative w-72 max-sm:min-w-0 max-sm:flex-1">
-                        <Input
-                            type="search"
-                            value={localSearch}
-                            onChange={handleInputChange}
-                            placeholder="Find collection..."
-                            className="h-9 bg-popover/50 pr-14"
-                            onKeyDown={(event) => {
-                                if (event.key === "Escape") clearSearch();
-                            }}
-                        />
-                        <div className="absolute right-1.5 top-1/2 flex h-8 -translate-y-1/2 items-center">
-                            <div className="rounded border bg-popover/50 px-2 py-1 font-mono text-[10px] tracking-tighter text-muted-foreground">
-                                ESC
-                            </div>
-                        </div>
-                    </div>
+                    <SearchInput
+                        value={localSearch}
+                        onChange={handleInputChange}
+                        placeholder="Find in collection..."
+                        className="w-max-md max-sm:min-w-0 max-sm:flex-1"
+                    />
                 </div>
             </div>
 

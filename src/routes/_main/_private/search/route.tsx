@@ -3,17 +3,17 @@ import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Card} from "@/lib/client/components/ui/card";
 import {formatDate} from "@/lib/utils/date-formatting";
-import {Input} from "@/lib/client/components/ui/input";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {GlobalSearch, globalSearchSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
-import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {BookImage, Cat, Gamepad2, Library, Monitor, Popcorn, Search, User, X} from "lucide-react";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_private/search")({
@@ -68,17 +68,13 @@ function SearchPage() {
     return (
         <PageTitle title="Search" subtitle="Search for movies, TV shows, users, and more.">
             <div className="flex justify-center items-center gap-3 mt-3 mb-6">
-                <div className="relative max-sm:w-full">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground size-4"/>
-                    <Input
-                        type="search"
-                        value={currentSearch}
-                        placeholder="Search for media/users..."
-                        className="pl-8 rounded-md w-md max-sm:w-full"
-                        onKeyDown={(ev) => onSearchEnter(ev)}
-                        onChange={(ev) => setCurrentSearch(ev.target.value)}
-                    />
-                </div>
+                <SearchInput
+                    value={currentSearch}
+                    placeholder="Search for media/users..."
+                    className="w-md max-sm:w-full"
+                    onKeyDown={(ev) => onSearchEnter(ev)}
+                    onChange={(ev) => setCurrentSearch(ev.target.value)}
+                />
                 <Select
                     items={searchProviderItems}
                     value={selectDrop}

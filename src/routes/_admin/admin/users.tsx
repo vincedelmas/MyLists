@@ -84,7 +84,7 @@ function UserManagementPage() {
 
     const impersonateUser = (userId: number, username: string) => {
         impersonateMutation.mutate({ data: { userId } }, {
-            onError: (error) => toast.add({title: error.message, type: "error", priority: "high"}),
+            onError: (error) => toast.add({ title: error.message, type: "error", priority: "high" }),
             onSuccess: async () => {
                 await setCurrentUser();
                 await navigate({ to: "/profile/$username", params: { username } });

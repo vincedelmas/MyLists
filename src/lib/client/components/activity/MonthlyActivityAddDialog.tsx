@@ -1,15 +1,14 @@
 import {useId, useState} from "react";
-import {Search} from "lucide-react";
-import {Controller, FormProvider, useForm} from "react-hook-form";
 import {MediaType} from "@/lib/utils/enums";
 import {useQuery} from "@tanstack/react-query";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {Controller, FormProvider, useForm} from "react-hook-form";
+import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
@@ -116,41 +115,41 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="mt-2 flex flex-col gap-6">
                         <FieldSet disabled={addMutation.isPending}>
                             <FieldGroup>
-                            <Controller
-                                name="mediaType"
-                                control={form.control}
-                                render={({field, fieldState}) =>
-                                    <Field className="w-36" data-invalid={fieldState.invalid} data-disabled={addMutation.isPending}>
-                                        <FieldLabel htmlFor={`${fieldId}-media-type`}>Media Type</FieldLabel>
-                                        <Select items={mediaTypeItems} value={field.value} onValueChange={handleTypeChange}>
-                                            <SelectTrigger
-                                                id={`${fieldId}-media-type`}
-                                                className="w-36 capitalize"
-                                                aria-invalid={fieldState.invalid}
-                                            >
-                                                <SelectValue/>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    {mediaTypeItems.map((item) =>
-                                                        <SelectItem key={item.value} value={item.value} className="capitalize">
-                                                            {item.label}
-                                                        </SelectItem>
-                                                    )}
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                }
-                            />
-                            <Controller
-                                name="mediaId"
-                                control={form.control}
-                                render={({fieldState}) =>
-                                    <Field data-invalid={fieldState.invalid} data-disabled={addMutation.isPending}>
-                                        <FieldTitle id={`${fieldId}-media-label`}>Media</FieldTitle>
-                                        <div aria-labelledby={`${fieldId}-media-label`}>
+                                <Controller
+                                    name="mediaType"
+                                    control={form.control}
+                                    render={({ field, fieldState }) =>
+                                        <Field className="w-36" data-invalid={fieldState.invalid} data-disabled={addMutation.isPending}>
+                                            <FieldLabel htmlFor={`${fieldId}-media-type`}>Media Type</FieldLabel>
+                                            <Select items={mediaTypeItems} value={field.value} onValueChange={handleTypeChange}>
+                                                <SelectTrigger
+                                                    id={`${fieldId}-media-type`}
+                                                    className="w-36 capitalize"
+                                                    aria-invalid={fieldState.invalid}
+                                                >
+                                                    <SelectValue/>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        {mediaTypeItems.map((item) =>
+                                                            <SelectItem key={item.value} value={item.value} className="capitalize">
+                                                                {item.label}
+                                                            </SelectItem>
+                                                        )}
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    }
+                                />
+                                <Controller
+                                    name="mediaId"
+                                    control={form.control}
+                                    render={({ fieldState }) =>
+                                        <Field data-invalid={fieldState.invalid} data-disabled={addMutation.isPending}>
+                                            <FieldTitle id={`${fieldId}-media-label`}>Media</FieldTitle>
+                                            <div aria-labelledby={`${fieldId}-media-label`}>
                                                 {selectedMedia ?
                                                     <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
                                                         <div className="flex min-w-0 items-center gap-3">
@@ -182,22 +181,14 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                                     </div>
                                                     :
                                                     <div ref={containerRef} className="relative">
-                                                        <div className="flex items-center overflow-hidden focus-within:border-brand
-                                                        rounded-md border focus-within:ring-2 focus-within:ring-brand/50">
-                                                            <div className="px-3 text-muted-foreground">
-                                                                <Search className="size-4"/>
-                                                            </div>
-                                                            <Input
-                                                                id={`${fieldId}-media-search`}
-                                                                value={search}
-                                                                inputMode="search"
-                                                                aria-invalid={fieldState.invalid}
-                                                                aria-labelledby={`${fieldId}-media-label`}
-                                                                className="border-none focus-visible:ring-0"
-                                                                onChange={(ev) => setSearch(ev.target.value)}
-                                                                placeholder={`Search your ${capitalize(selectedType)} list...`}
-                                                            />
-                                                        </div>
+                                                        <SearchInput
+                                                            value={search}
+                                                            id={`${fieldId}-media-search`}
+                                                            aria-invalid={fieldState.invalid}
+                                                            aria-labelledby={`${fieldId}-media-label`}
+                                                            onChange={(ev) => setSearch(ev.target.value)}
+                                                            placeholder={`Search your ${capitalize(selectedType)} list...`}
+                                                        />
                                                         <SearchContainer
                                                             error={error}
                                                             search={search}
@@ -239,15 +230,15 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                                         </SearchContainer>
                                                     </div>
                                                 }
-                                        </div>
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                }
-                            />
+                                            </div>
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    }
+                                />
 
-                            <MonthlyActivityFormFields
-                                mediaType={selectedType}
-                            />
+                                <MonthlyActivityFormFields
+                                    mediaType={selectedType}
+                                />
                             </FieldGroup>
                         </FieldSet>
                         <FormError/>

@@ -13,15 +13,16 @@ import {Textarea} from "@/lib/client/components/ui/textarea";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {CalendarClock, ChevronUp, ExternalLink} from "lucide-react";
+import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
-import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 
@@ -166,39 +167,49 @@ function FeatureVotesPage() {
                                 <form onSubmit={form.handleSubmit(onSubmitAddNewFeature)} className="flex flex-col gap-4">
                                     <FieldSet disabled={createFeatureMutation.isPending || isAnonymous}>
                                         <FieldGroup>
-                                        <Controller
-                                            name="title"
-                                            control={form.control}
-                                            render={({field, fieldState}) =>
-                                                <Field data-invalid={fieldState.invalid} data-disabled={createFeatureMutation.isPending || isAnonymous}>
-                                                    <FieldLabel htmlFor={`${fieldId}-title`}>Title</FieldLabel>
-                                                    <Input
-                                                        {...field}
-                                                        id={`${fieldId}-title`}
-                                                        placeholder="Feature title"
-                                                        aria-invalid={fieldState.invalid}
-                                                    />
-                                                    <FieldError errors={[fieldState.error]}/>
-                                                </Field>
-                                            }
-                                        />
-                                        <Controller
-                                            name="description"
-                                            control={form.control}
-                                            render={({field, fieldState}) =>
-                                                <Field data-invalid={fieldState.invalid} data-disabled={createFeatureMutation.isPending || isAnonymous}>
-                                                    <FieldLabel htmlFor={`${fieldId}-description`}>Description</FieldLabel>
-                                                    <Textarea
-                                                        {...field}
-                                                        id={`${fieldId}-description`}
-                                                        rows={3}
-                                                        placeholder="Optional: add a short context or use-case."
-                                                        aria-invalid={fieldState.invalid}
-                                                    />
-                                                    <FieldError errors={[fieldState.error]}/>
-                                                </Field>
-                                            }
-                                        />
+                                            <Controller
+                                                name="title"
+                                                control={form.control}
+                                                render={({ field, fieldState }) =>
+                                                    <Field
+                                                        data-invalid={fieldState.invalid}
+                                                        data-disabled={createFeatureMutation.isPending || isAnonymous}
+                                                    >
+                                                        <FieldLabel htmlFor={`${fieldId}-title`}>
+                                                            Title
+                                                        </FieldLabel>
+                                                        <Input
+                                                            {...field}
+                                                            id={`${fieldId}-title`}
+                                                            placeholder="Feature title"
+                                                            aria-invalid={fieldState.invalid}
+                                                        />
+                                                        <FieldError errors={[fieldState.error]}/>
+                                                    </Field>
+                                                }
+                                            />
+                                            <Controller
+                                                name="description"
+                                                control={form.control}
+                                                render={({ field, fieldState }) =>
+                                                    <Field
+                                                        data-invalid={fieldState.invalid}
+                                                        data-disabled={createFeatureMutation.isPending || isAnonymous}
+                                                    >
+                                                        <FieldLabel htmlFor={`${fieldId}-desc`}>
+                                                            Description
+                                                        </FieldLabel>
+                                                        <Textarea
+                                                            {...field}
+                                                            rows={3}
+                                                            id={`${fieldId}-desc`}
+                                                            placeholder="Optional: add a short context or use-case."
+                                                            aria-invalid={fieldState.invalid}
+                                                        />
+                                                        <FieldError errors={[fieldState.error]}/>
+                                                    </Field>
+                                                }
+                                            />
                                         </FieldGroup>
                                     </FieldSet>
                                     <FormError/>
@@ -231,16 +242,12 @@ function FeatureVotesPage() {
                     </CardContent>
                 </Card>
 
-                <div className="relative max-w-sm max-sm:w-full mb-1">
-                    <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground"/>
-                    <Input
-                        type="search"
-                        className="pl-8"
-                        value={searchQuery}
-                        placeholder="Search by title or description..."
-                        onChange={(ev) => setSearchQuery(ev.target.value)}
-                    />
-                </div>
+                <SearchInput
+                    value={searchQuery}
+                    className="max-w-sm max-sm:w-full mb-2"
+                    placeholder="Search by title or description..."
+                    onChange={(ev) => setSearchQuery(ev.target.value)}
+                />
 
                 <TabHeader
                     tabs={statusTabs}

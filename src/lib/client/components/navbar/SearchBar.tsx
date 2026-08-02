@@ -2,19 +2,19 @@ import React, {useState} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Input} from "@/lib/client/components/ui/input";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {ChevronLeft, ChevronRight, Search, X} from "lucide-react";
+import {ChevronLeft, ChevronRight, Search} from "lucide-react";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {Link, LinkProps, useRouter, useRouterState} from "@tanstack/react-router";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
@@ -26,7 +26,6 @@ interface SearchBarProps {
 export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     const { currentUser } = useAuth();
     const [page, setPage] = useState(1);
-    const [selectOpen, setSelectOpen] = useState(false);
     const [prevSelector, setPrevSelector] = useState(currentUser?.searchSelector);
     const [selectDrop, setSelectDrop] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.USERS);
     const { search, setSearch, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer({ onReset: () => setPage(1) });
@@ -64,44 +63,33 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
 
     return (
         <div ref={containerRef}>
-            <div className={cn("flex items-center bg-background border rounded-lg transition-all duration-200 overflow-hidden",
-                "focus-within:ring-2 focus-within:ring-brand/50 focus-within:border-brand",
-                selectOpen ? "ring-2 ring-brand/50 border-brand" : "border"
-            )}>
-                <Select
-                    value={selectDrop}
-                    items={searchProviderItems}
-                    onOpenChange={setSelectOpen}
-                    onValueChange={handleValueChange}
-                >
-                    <SelectTrigger className="h-10 rounded-none w-30 border-y-0 border-l-0 border-r border-input bg-accent/50
-                    focus:ring-0 focus:ring-offset-0">
-                        <SelectValue/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            {searchProviderItems.map((item) =>
-                                <SelectItem key={item.value} value={item.value}>
-                                    {item.label}
-                                </SelectItem>
-                            )}
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
-                <Input
+            <InputGroup>
+                <InputGroupInput
+                    type="search"
                     value={search}
-                    inputMode="search"
                     onChange={handleInputChange}
-                    placeholder="Search for media/users..."
-                    className="flex-1 border-none bg-background text-sm focus:outline-none focus:ring-0"
+                    placeholder="Search for media / users..."
                 />
-                <div className="px-3 text-muted-foreground">
-                    {isOpen
-                        ? <X className="size-4 cursor-pointer" onClick={reset}/>
-                        : <Search className="size-4"/>
-                    }
-                </div>
-            </div>
+                <InputGroupAddon align="inline-start">
+                    <Search aria-hidden="true"/>
+                </InputGroupAddon>
+                <InputGroupAddon align="inline-end">
+                    <Select value={selectDrop} items={searchProviderItems} onValueChange={handleValueChange}>
+                        <SelectTrigger aria-label="Search provider">
+                            <SelectValue/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                {searchProviderItems.map((item) =>
+                                    <SelectItem key={item.value} value={item.value}>
+                                        {item.label}
+                                    </SelectItem>
+                                )}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </InputGroupAddon>
+            </InputGroup>
 
             <SearchContainer
                 error={error}
@@ -112,7 +100,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                 debouncedSearch={debouncedSearch}
                 hasResults={!!searchResults?.data.length}
             >
-                <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-91">
+                <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-90">
                     {searchResults?.data.map((item) =>
                         <SearchComponent
                             item={item}

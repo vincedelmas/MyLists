@@ -214,7 +214,7 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --card: oklch(0.178 0 0);
     --card-foreground: oklch(0.97 0 0);
 
-    --popover: var(--background);
+    --popover: hsl(0 0% 3%);
     --popover-foreground: oklch(0.985 0 0);
 
     --primary: oklch(0.432 0.095 166.913);

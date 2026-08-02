@@ -11,7 +11,7 @@ import {formatMinutes, formatNumber} from "@/lib/utils/number-formatting";
 import {MediaFollowCard} from "@/lib/client/components/media/base/MediaFollowCard";
 import {mediaCommunityActivityOptions} from "@/lib/client/react-query/query-options";
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
-import {ChevronDown, CircleHelp, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
+import {CircleHelp, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 
 
@@ -67,7 +67,7 @@ export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivity
                         to="/details/$mediaType/$mediaId/community"
                         className={buttonVariants({ variant: "hover", size: "sm" })}
                     >
-                        View All <ChevronDown className="size-3.5"/>
+                        View All
                     </Link>
                 </div>
             }

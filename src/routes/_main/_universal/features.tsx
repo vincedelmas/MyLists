@@ -31,6 +31,7 @@ import {
     Users,
     Wrench,
 } from "lucide-react";
+import {Button} from "@/lib/client/components/ui/button";
 
 
 export const Route = createFileRoute("/_main/_universal/features")({
@@ -429,14 +430,9 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
 
             {feature.details &&
                 <Popover>
-                    <PopoverTrigger
-                        render={
-                            <button className="w-full py-2 bg-popover border-t text-xs font-medium text-brand
-                            transition-colors flex items-center justify-center gap-1 hover:bg-popover/50"/>
-                        }
-                    >
+                    <PopoverTrigger render={<Button variant="outline"/>}>
                         Learn More
-                        <ChevronDown className="size-3"/>
+                        <ChevronDown/>
                     </PopoverTrigger>
                     <PopoverContent className="w-(--anchor-width) p-4 text-sm shadow-xl">
                         <div className="space-y-2">

@@ -1,5 +1,6 @@
 import React from "react";
 import {cn} from "@/lib/utils/classnames";
+import {Filter, Grid2X2, List} from "lucide-react";
 import {Status} from "@/lib/utils/enums";
 import {MediaListArgs, SearchType} from "@/lib/schemas";
 import {Button} from "@/lib/client/components/ui/button";
@@ -7,15 +8,7 @@ import {ListPagination} from "@/lib/types/query.options.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
-import {ArrowUpDown, ChevronDown, Filter, Grid2X2, List, ListFilter} from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuTrigger
-} from "@/lib/client/components/ui/dropdown-menu";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 interface HeaderProps {
@@ -123,41 +116,29 @@ interface StatusComponentProps {
 
 
 const StatusComponent = ({ filters, allStatuses, onStatusChange, className }: StatusComponentProps) => {
-    const activeStatus = filters.status?.[0] ?? "All Media";
-    const allStatusesWithAll = ["All Media", ...allStatuses];
+    const selectItems = ["All Media", ...allStatuses].map(status => ({ label: status, value: status }));
 
-    const handleStatusChange = (status: string) => {
-        if (status === "All Media") {
-            return onStatusChange({ status: [] });
-        }
+    const handleStatusChange = (status: string | null) => {
+        if (status === null) return;
+        if (status === "All Media") return onStatusChange({ status: [] });
         onStatusChange({ status: [...(filters.status || []), status as Status] });
     };
 
-    const checkIfChecked = (status: string) => {
-        if (status === "All Media" && activeStatus === "All Media") return true;
-        return filters.status ? filters.status.includes(status as Status) : false;
-    }
-
     return (
-        <DropdownMenu closeParentOnEsc={true}>
-            <DropdownMenuTrigger render={<Button variant="outline" className={cn("justify-between", className)}/>}>
-                <span className="flex items-center gap-2 truncate">
-                    <ListFilter/> {activeStatus}
-                </span>
-                <ChevronDown className="opacity-50"/>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-40 max-w-45">
-                {allStatusesWithAll.map((s) =>
-                    <DropdownMenuCheckboxItem
-                        key={s}
-                        checked={checkIfChecked(s)}
-                        onCheckedChange={() => handleStatusChange(s)}
-                    >
-                        {s}
-                    </DropdownMenuCheckboxItem>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <Select items={selectItems} defaultValue="All Media" onValueChange={(val) => handleStatusChange(val)}>
+            <SelectTrigger className={cn("w-full max-w-48", className)}>
+                <SelectValue/>
+            </SelectTrigger>
+            <SelectContent>
+                <SelectGroup>
+                    {selectItems.map((item) =>
+                        <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                        </SelectItem>
+                    )}
+                </SelectGroup>
+            </SelectContent>
+        </Select>
     );
 };
 
@@ -171,32 +152,27 @@ interface SortComponentProps {
 
 
 const SortComponent = ({ sorting, allSorting, applySorting, className }: SortComponentProps) => {
-    const handleSortChange = (sort: string) => {
+    const sortItems = allSorting.map(sort => ({ label: sort, value: sort }));
+
+    const handleSortChange = (sort: string | null) => {
+        if (sort === null) return;
         applySorting({ sorting: sort });
     };
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger
-                render={
-                    <Button variant="outline" className={cn("justify-between focus-visible:ring-none", className)}/>
-                }
-            >
-                <span className="flex items-center gap-2 truncate">
-                    <ArrowUpDown className="size-4 text-muted-foreground"/>
-                    <span>{sorting}</span>
-                </span>
-                <ChevronDown className="size-4 opacity-50"/>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-40 max-w-45">
-                <DropdownMenuRadioGroup value={sorting} onValueChange={handleSortChange}>
-                    {allSorting.map((sort) =>
-                        <DropdownMenuRadioItem key={sort} value={sort}>
-                            {sort}
-                        </DropdownMenuRadioItem>
+        <Select items={sortItems} defaultValue={sorting} onValueChange={(val) => handleSortChange(val)}>
+            <SelectTrigger className={cn("w-full max-w-48", className)}>
+                <SelectValue/>
+            </SelectTrigger>
+            <SelectContent>
+                <SelectGroup>
+                    {sortItems.map((item) =>
+                        <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                        </SelectItem>
                     )}
-                </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
+                </SelectGroup>
+            </SelectContent>
+        </Select>
     );
 };

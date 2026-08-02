@@ -57,8 +57,8 @@ export const MoviesExtraSections = ({ mediaType, media }: MoviesDetailsProps<typ
                     {!isBelowSm && collection.length > INITIAL_COUNT &&
                         <Button variant="hover" size="sm" onClick={() => setIsExpanded((prev) => !prev)}>
                             {isExpanded
-                                ? <>Show Less <ChevronUp className="size-3.5"/></>
-                                : <>Show More <ChevronDown className="size-3.5"/></>
+                                ? <>Show Less <ChevronUp/></>
+                                : <>Show More <ChevronDown/></>
                             }
                         </Button>
                     }

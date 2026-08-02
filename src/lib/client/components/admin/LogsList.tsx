@@ -15,9 +15,7 @@ export function LogsList({ logs }: { logs: TaskLog[] }) {
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="flex items-center gap-2 text-sm font-medium mb-2 hover:text-foreground/80 transition-colors"
             >
-                <ChevronDown
-                    className={cn("size-4 transition-transform", !isExpanded && "-rotate-90")}
-                />
+                <ChevronDown className={cn("size-4 transition-transform", !isExpanded && "-rotate-90")}/>
                 Warnings & Errors ({logs.length})
             </button>
             {isExpanded &&

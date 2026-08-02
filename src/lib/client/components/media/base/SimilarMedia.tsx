@@ -40,8 +40,8 @@ export const SimilarMedia = ({ mediaType, similarMedia }: { mediaType: MediaType
                 <div className="text-end -mt-2">
                     <Button variant="hover" size="sm" onClick={handleToggle}>
                         {isExpanded
-                            ? <>Show Less <ChevronUp className="size-3.5"/></>
-                            : <>Show More <ChevronDown className="size-3.5"/></>
+                            ? <>Show Less <ChevronUp/></>
+                            : <>Show More <ChevronDown/></>
                         }
                     </Button>
                 </div>

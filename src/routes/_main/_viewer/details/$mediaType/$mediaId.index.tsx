@@ -2,7 +2,7 @@ import {Suspense} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {ExternalLink, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Card} from "@/lib/client/components/ui/card";
+import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -119,7 +119,7 @@ function MediaDetailsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={media.providerData.url}
-                                className={cn(buttonVariants({ size: "lg", variant: "outline", className: "w-full" }))}
+                                className={cn(buttonVariants({ size: "lg", variant: "tame", className: "w-full" }))}
                             >
                                 View on {media.providerData.name} <ExternalLink/>
                             </a>
@@ -147,17 +147,19 @@ function MediaDetailsPage() {
                                         />
                                         :
                                         <Card>
-                                            <div className="text-center space-y-2">
-                                                <h3 className="text-lg font-semibold text-foreground">
-                                                    Are you interested in this?
-                                                </h3>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Add this {mediaType} to your list to track your progress.
-                                                </p>
-                                            </div>
-                                            <Button className="w-full mt-2" onClick={handleAddMediaToUser}>
-                                                <Plus className="size-4"/> Add to List
-                                            </Button>
+                                            <CardContent className="text-center space-y-4">
+                                                <div className="space-y-3">
+                                                    <h3 className="text-lg font-semibold text-foreground">
+                                                        Are you interested in this?
+                                                    </h3>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Add this {mediaType} to your list to track your progress.
+                                                    </p>
+                                                </div>
+                                                <Button className="w-full" onClick={handleAddMediaToUser}>
+                                                    <Plus/> Add to List
+                                                </Button>
+                                            </CardContent>
                                         </Card>
                             }
                             <CollectionsLists

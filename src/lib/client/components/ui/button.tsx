@@ -15,21 +15,20 @@ const buttonVariants = cva("group/button inline-flex shrink-0 items-center justi
             variant: {
                 default: "bg-primary text-primary-foreground hover:bg-primary/90",
 
+                ghost: "hover:text-foreground aria-expanded:text-foreground",
                 hover: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
-                selected: "bg-primary hover:bg-primary/25 aria-expanded:bg-primary/20",
-                overlay: "border-white/15 bg-black/35 text-white backdrop-blur-xl hover:bg-black/50 aria-expanded:bg-black/50",
                 dashed: "border border-dashed text-muted-foreground text-xs w-full hover:bg-accent hover:text-accent-foreground " +
                     "border-input",
+                tame: "border bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input " +
+                    "dark:hover:bg-input/50",
 
-                link: "text-brand underline-offset-4 hover:underline",
-                ghost: "hover:text-foreground aria-expanded:text-foreground",
                 outline: "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted " +
                     "aria-expanded:text-foreground",
                 secondary: "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] " +
                     "aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
                 destructive: "bg-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 " +
                     "focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-                "destructive-ghost": "text-muted-foreground hover:bg-destructive/10 hover:text-destructive " +
+                destructiveGhost: "text-muted-foreground hover:bg-destructive/10 hover:text-destructive " +
                     "aria-expanded:bg-destructive/10 aria-expanded:text-destructive",
             },
             size: {

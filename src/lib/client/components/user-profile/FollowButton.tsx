@@ -27,7 +27,7 @@ const getButtonConfig = (status?: SocialState) => {
                 HoverIcon: UserX,
                 label: "Following",
                 hoverLabel: "Unfollow",
-                variant: "selected" as const,
+                variant: "default" as const,
                 action: "unfollow" as FollowAction,
                 className: "hover:bg-destructive/40 hover:text-foreground",
             };

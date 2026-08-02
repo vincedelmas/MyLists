@@ -301,7 +301,7 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                     </Badge>
                 </div>
                 {!result &&
-                    <Button variant="destructive-ghost" onClick={onAbandon}>
+                    <Button variant="destructiveGhost" onClick={onAbandon}>
                         <X/>
                         <span className="max-sm:hidden">End run</span>
                     </Button>
@@ -583,7 +583,7 @@ function Stats({ stats, canReset }: StatsProps) {
                     </h3>
                 </div>
                 <Button
-                    variant="destructive-ghost"
+                    variant="destructiveGhost"
                     onClick={() => setResetDialogOpen(true)}
                     disabled={!hasStats || !canReset || resetStatsMutation.isPending}
                 >

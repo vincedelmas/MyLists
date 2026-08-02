@@ -42,77 +42,82 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
     return (
         <>
             <Button
-                size="bare"
+                size="sm"
                 type="button"
                 variant="outline"
+                className="w-34 justify-between bg-input/30"
                 onClick={() => onOpenChange(true)}
-                className="w-34 justify-between"
             >
                 <div className="text-sm">
                     {totalRedo} Seasons
                 </div>
-                <Pencil className="size-4 text-muted-foreground"/>
+                <Pencil className="text-muted-foreground"/>
             </Button>
+
             <Credenza open={open} onOpenChange={onOpenChange}>
-                <CredenzaContent className="w-100 max-sm:w-full max-sm:pb-5">
+                <CredenzaContent className="w-90 max-sm:w-full max-sm:pb-5">
                     <CredenzaHeader>
                         <CredenzaTitle>Re-watched Seasons Manager</CredenzaTitle>
                         <CredenzaDescription>Manage your re-watched seasons</CredenzaDescription>
                     </CredenzaHeader>
-                    <div className="mt-2">
-                        <div className="flex justify-between items-center p-2 px-3">
-                            <span className="font-semibold">All Seasons</span>
-                            <div className="flex gap-3 items-center">
-                                <Button
-                                    size="bare"
-                                    variant="ghost"
-                                    onClick={() => updateAllSeasons(-1)}
-                                    disabled={draftRedo.every((s) => s <= 0)}
-                                >
-                                    <MinusCircle className="size-5"/>
-                                </Button>
-                                <Button
-                                    size="bare"
-                                    variant="ghost"
-                                    onClick={() => updateAllSeasons(1)}
-                                    disabled={draftRedo.every((s) => s >= REDO_MAX)}
-                                >
-                                    <PlusCircle className="size-5"/>
-                                </Button>
-                            </div>
-                        </div>
-                        <Separator className="mb-3"/>
-                        <div className="overflow-y-auto scrollbar-thin max-h-73">
-                            {draftRedo.map((season, idx) =>
-                                <div key={idx} className="flex justify-between items-center px-3">
-                                    <div className="flex items-center gap-6">
-                                        <div className="font-semibold">
-                                            Season {idx + 1}:
-                                        </div>
-                                        <div>{season}x</div>
-                                    </div>
-                                    <div className="flex gap-3 items-center">
-                                        <Button
-                                            size="bare"
-                                            variant="ghost"
-                                            disabled={season <= 0}
-                                            onClick={() => updateSeason(idx, -1)}
-                                        >
-                                            <MinusCircle className="size-5"/>
-                                        </Button>
-                                        <Button
-                                            size="bare"
-                                            variant="ghost"
-                                            disabled={season >= REDO_MAX}
-                                            onClick={() => updateSeason(idx, 1)}
-                                        >
-                                            <PlusCircle className="size-5"/>
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
+
+                    <div className="flex items-center justify-between">
+                        <span className="font-semibold">
+                            All Seasons
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={() => updateAllSeasons(-1)}
+                                disabled={draftRedo.every((s) => s <= 0)}
+                            >
+                                <MinusCircle/>
+                            </Button>
+                            <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={() => updateAllSeasons(1)}
+                                disabled={draftRedo.every((s) => s >= REDO_MAX)}
+                            >
+                                <PlusCircle/>
+                            </Button>
                         </div>
                     </div>
+
+                    <Separator/>
+
+                    <div className="overflow-auto scrollbar-thin max-h-70">
+                        {draftRedo.map((season, idx) =>
+                            <div key={idx} className="flex justify-between items-center not-last:mb-2">
+                                <div className="flex items-center gap-6">
+                                    <div className="font-semibold">
+                                        Season {idx + 1}:
+                                    </div>
+                                    <div>{season}x</div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        size="icon"
+                                        variant="outline"
+                                        disabled={season <= 0}
+                                        onClick={() => updateSeason(idx, -1)}
+                                    >
+                                        <MinusCircle/>
+                                    </Button>
+                                    <Button
+                                        size="icon"
+                                        variant="outline"
+                                        disabled={season >= REDO_MAX}
+                                        onClick={() => updateSeason(idx, 1)}
+                                    >
+                                        <PlusCircle/>
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <CredenzaFooter>
                         <Button type="button" className="w-full" onClick={onUpdateRedoValues} disabled={onUpdateMutation.isPending}>
                             Update

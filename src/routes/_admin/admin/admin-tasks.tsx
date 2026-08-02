@@ -26,7 +26,7 @@ function AdminTasksPage() {
 
     const executeTask = (taskName: string, input = {}) => {
         taskTriggerMutation.mutate({ data: { taskName, input } }, {
-            onSettled: () => toast.add({title: `Task ${taskName} Finished`, type: "info"}),
+            onSettled: () => toast.add({ title: `Task ${taskName} Finished`, type: "info" }),
         });
     };
 
@@ -39,7 +39,7 @@ function AdminTasksPage() {
 
                     return (
                         <Card key={task.name}>
-                            <CardHeader>
+                            <CardHeader className="h-full">
                                 <CardTitle>{task.name}</CardTitle>
                                 <CardDescription>{task.description}</CardDescription>
                             </CardHeader>
@@ -50,8 +50,14 @@ function AdminTasksPage() {
                                     />
                                     :
                                     <Button size="sm" disabled={isRunning} onClick={() => executeTask(task.name)}>
-                                        {isRunning ? <Spinner data-icon="inline-start" aria-hidden="true"/> : <Play className="size-4"/>}
-                                        {isRunning ? "Running" : "Run Task"}
+                                        {isRunning
+                                            ? <Spinner data-icon="inline-start"/>
+                                            : <Play className="size-4"/>
+                                        }
+                                        {isRunning
+                                            ? "Running"
+                                            : "Run Task"
+                                        }
                                     </Button>
                                 }
                             </CardContent>

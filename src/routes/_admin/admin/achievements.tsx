@@ -112,7 +112,7 @@ function AchievementPage() {
                                     {achievement.description}
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="w-[60%]">
+                            <CardContent className="w-[60%] h-full">
                                 <div className="space-y-4">
                                     <h3 className="font-semibold">Achievement Tiers</h3>
                                     <div className="space-y-2">

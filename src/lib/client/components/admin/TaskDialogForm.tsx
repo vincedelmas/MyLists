@@ -2,7 +2,7 @@ import {z} from "zod";
 import {toast} from "@/lib/client/components/ui/toast";
 import {useId, useState} from "react";
 import {Settings2} from "lucide-react";
-import {Controller, type Control, FormProvider, useForm} from "react-hook-form";
+import {type Control, Controller, FormProvider, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
@@ -39,7 +39,7 @@ export function TaskFormDialog({ task }: TaskFormDialogProps) {
             },
             onSuccess: () => {
                 setOpen(false);
-                toast.add({title: `Task ${task.name} Finished`, type: "info"});
+                toast.add({ title: `Task ${task.name} Finished`, type: "info" });
             },
         });
     };
@@ -57,8 +57,14 @@ export function TaskFormDialog({ task }: TaskFormDialogProps) {
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger render={<Button size="sm" disabled={triggerTaskMutation.isPending}/>}>
-                {triggerTaskMutation.isPending ? <Spinner data-icon="inline-start" aria-hidden="true"/> : <Settings2 className="size-4"/>}
-                {triggerTaskMutation.isPending ? "Running" : "Configure"}
+                {triggerTaskMutation.isPending
+                    ? <Spinner data-icon="inline-start"/>
+                    : <Settings2/>
+                }
+                {triggerTaskMutation.isPending
+                    ? "Running"
+                    : "Configure"
+                }
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <FormProvider {...form}>
@@ -123,7 +129,7 @@ function TaskFormField({ name, property, required, control }: TaskFormFieldProps
         <Controller
             name={name}
             control={control}
-            render={({field, fieldState}) => {
+            render={({ field, fieldState }) => {
                 if (enumValues?.length) {
                     return (
                         <Field data-invalid={fieldState.invalid}>

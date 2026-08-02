@@ -57,33 +57,35 @@ function AdminStepUpPage() {
 
     return (
         <div className="mt-16 flex items-center justify-center">
-            <Card className="w-full max-w-87 mx-auto">
+            <Card className="w-full max-w-85 mx-auto">
                 <CardHeader>
                     <CardTitle>Admin Step Up</CardTitle>
-                    <CardDescription>Enter your admin password to access elevated privileges.</CardDescription>
+                    <CardDescription>Enter the admin password for elevated privileges.</CardDescription>
                 </CardHeader>
                 <FormProvider {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
                         <FieldSet disabled={adminAuthMutation.isPending}>
                             <CardContent>
                                 <FieldGroup>
-                                <Controller
-                                    control={form.control}
-                                    name="password"
-                                    render={({field, fieldState}) =>
-                                        <Field data-invalid={fieldState.invalid} data-disabled={adminAuthMutation.isPending}>
-                                            <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
-                                            <Input
-                                                {...field}
-                                                id={`${fieldId}-password`}
-                                                type="password"
-                                                placeholder="Enter admin password"
-                                                aria-invalid={fieldState.invalid}
-                                            />
-                                            <FieldError errors={[fieldState.error]}/>
-                                        </Field>
-                                    }
-                                />
+                                    <Controller
+                                        control={form.control}
+                                        name="password"
+                                        render={({ field, fieldState }) =>
+                                            <Field data-invalid={fieldState.invalid} data-disabled={adminAuthMutation.isPending}>
+                                                <FieldLabel htmlFor={`${fieldId}-p`}>
+                                                    Password
+                                                </FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    type="password"
+                                                    id={`${fieldId}-p`}
+                                                    aria-invalid={fieldState.invalid}
+                                                    placeholder="Enter admin password"
+                                                />
+                                                <FieldError errors={[fieldState.error]}/>
+                                            </Field>
+                                        }
+                                    />
                                 </FieldGroup>
                             </CardContent>
                         </FieldSet>

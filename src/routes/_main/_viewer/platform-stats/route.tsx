@@ -1,12 +1,12 @@
-import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
+import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
 import {platformStatsOptions} from "@/lib/client/react-query/query-options";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
+import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/platform-stats")({
@@ -22,26 +22,12 @@ export const Route = createFileRoute("/_main/_viewer/platform-stats")({
 function PlatformStatsPage() {
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
-    const mediaTypes = Object.values(MediaType);
     const apiData = useSuspenseQuery(platformStatsOptions(activeTab)).data;
+    const mediaTabs = createMediaTabItems(ALL_MEDIA_TYPES, { leading: "overview" });
 
     const handleTabChange = async (value: StatsActiveTab) => {
         await navigate({ search: { activeTab: value } });
     };
-
-    const mediaTabs: TabItem<StatsActiveTab>[] = [
-        {
-            id: "overview",
-            isAccent: true,
-            label: "Overview",
-            icon: <MainThemeIcon size={15} type="overview"/>,
-        },
-        ...mediaTypes.map((mediaType) => ({
-            id: mediaType,
-            label: mediaType,
-            icon: <MainThemeIcon size={15} type={mediaType}/>,
-        })),
-    ];
 
     return (
         <PageTitle title="MyLists Statistics" subtitle="Comprehensive media tracking insights">

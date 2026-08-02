@@ -1,9 +1,9 @@
 import {UserX} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {HofCard} from "@/lib/client/components/hall-of-fame/HofCard";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -33,10 +33,11 @@ function HallOfFamePage() {
     const apiData = useSuspenseQuery(hallOfFameOptions(filters)).data;
     const { page = 1, sorting = "normalized", search = "" } = filters;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<HallOfFameSearch>({ search });
+    
     const sortingItems = [
         { label: "Normalized", value: "normalized" },
         { label: "Profile", value: "profile" },
-        ...Object.values(MediaType).map((mediaType) => ({ label: capitalize(mediaType), value: mediaType })),
+        ...ALL_MEDIA_TYPES.map(mt => ({ label: capitalize(mt), value: mt })),
     ];
 
     return (

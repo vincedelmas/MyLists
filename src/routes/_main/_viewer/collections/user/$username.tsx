@@ -4,17 +4,18 @@ import {ListOrdered, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {userCollectionsFiltersSchema, UserCollectionsSearch} from "@/lib/schemas";
 import {paginatedUserCollectionsOptions} from "@/lib/client/react-query/query-options";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
@@ -32,28 +33,11 @@ function UserCollectionsPage() {
     const filters = Route.useSearch();
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
-    const mediaTypes = Object.values(MediaType);
     const isOwner = currentUser?.name === username;
-
     const { page = 1, search = "", mediaType } = filters;
     const apiData = useSuspenseQuery(paginatedUserCollectionsOptions({ username, ...filters })).data;
+    const mediaTypeItems = createMediaSelectItems(ALL_MEDIA_TYPES, { leading: "all", leadingLabel: "All Types" });
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<UserCollectionsSearch>({ search });
-
-    const mediaTypeItems = [
-        {
-            value: "all",
-            label: (
-                <div className="flex items-center gap-2">
-                    <MainThemeIcon type="all"/>
-                    <span>All Types</span>
-                </div>
-            ),
-        },
-        ...mediaTypes.map((mediaType) => ({
-            value: mediaType,
-            label: <><MainThemeIcon type={mediaType}/> {mediaType}</>,
-        })),
-    ];
 
     const handleMediaTypeChange = (value: string | null) => {
         if (value === null) return;

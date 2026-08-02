@@ -9,12 +9,12 @@ import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {monthlyActivityMediaSearchOptions} from "@/lib/client/react-query/query-options";
 import {getDefaultActivityDate, toActivityStoredValue} from "@/lib/utils/activity-utils";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {AddMonthlyActivity, AddMonthlyActivityInput, addMonthlyActivitySchema} from "@/lib/schemas";
 import {MonthlyActivityFormFields} from "@/lib/client/components/activity/MonthlyActivityFormFields";
 import {useAddMonthlyActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
@@ -34,11 +34,13 @@ interface MonthlyActivityAddDialogProps {
 
 export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange }: MonthlyActivityAddDialogProps) => {
     const fieldId = useId();
+    const mediaTypeItems = createMediaSelectItems(mediaTypes);
     const addMutation = useAddMonthlyActivityMutation({ noErrorToast: true });
     const [selectedMedia, setSelectedMedia] = useState<{ id: number; name: string; imageCover: string } | null>(null);
     const { search, setSearch, debouncedSearch, isOpen, reset: resetSearch, containerRef } = useSearchContainer({
         onReset: () => undefined,
     });
+    
     const form = useForm<AddMonthlyActivityInput, unknown, AddMonthlyActivity>({
         resolver: zodResolver(addMonthlyActivitySchema),
         defaultValues: {
@@ -55,15 +57,6 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
     const selectedType = form.watch("mediaType");
     const { data: searchResults = [], isFetching, error } = useQuery(monthlyActivityMediaSearchOptions(selectedType, debouncedSearch));
 
-    const mediaTypeItems = mediaTypes.map((mediaType) => ({
-        value: mediaType,
-        label: (
-            <>
-                <MainThemeIcon type={mediaType} className="size-3.5"/>
-                {mediaType}
-            </>
-        ),
-    }));
 
     const handleTypeChange = (value: MediaType | null) => {
         if (value === null) return;

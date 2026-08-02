@@ -1,12 +1,11 @@
-import {toast} from "@/lib/client/components/ui/toast";
 import React, {useId, useState} from "react";
-import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {capitalize} from "@/lib/utils/text-formatting";
+import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {CircleHelp, Download, TriangleAlert} from "lucide-react";
@@ -15,13 +14,15 @@ import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
+import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
-import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/content-lists")({
@@ -132,16 +133,13 @@ function MediaListFormPage() {
                     saveAsFile(formattedData, `mylists-${selectedListForExport}.csv`, "text/csv");
                 }
                 catch {
-                    toast.add({title: "An error occurred while formatting the CSV.", type: "error", priority: "high"});
+                    toast.add({ title: "An error occurred while formatting the CSV.", type: "error", priority: "high" });
                 }
             }
         });
     };
 
-    const mediaTypesForExport = Object.values(MediaType).map((mediaType) => ({
-        label: `${capitalize(mediaType)} List`,
-        value: mediaType,
-    }));
+    const mediaTypesForExport = createMediaSelectItems(ALL_MEDIA_TYPES);
 
     return (
         <div className="space-y-6">
@@ -149,43 +147,48 @@ function MediaListFormPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-90 flex-col gap-8 max-sm:w-full">
                     <FieldSet disabled={listSettingsMutation.isPending}>
                         <FieldGroup className="gap-8">
-                        <FieldSet>
-                            <FieldLegend variant="label">Active Content</FieldLegend>
-                            <FieldDescription>
+                            <FieldSet>
+                                <FieldLegend variant="label">Active Content</FieldLegend>
+                                <FieldDescription>
                                     Disabled media are hidden from your profile, stats, feeds, activity, achievements, etc.
                                     Your data are kept and returns if you re-enable it.
-                            </FieldDescription>
-                            <FieldGroup data-slot="checkbox-group" className="gap-3">
-                            {mediaTypeConfigs.map((config) => (
-                                <Controller
-                                    key={config.name}
-                                    name={config.name}
-                                    control={form.control}
-                                    render={({field, fieldState}) => (
-                                        <Field orientation="horizontal" className="justify-between rounded-md border p-3" data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
-                                            <FieldLabel htmlFor={`${fieldId}-${config.name}`} className="font-normal">
-                                                <MainThemeIcon
-                                                    size={15}
-                                                    type={config.name}
-                                                />
-                                                {config.label} List
-                                            </FieldLabel>
-                                            <Switch
-                                                id={`${fieldId}-${config.name}`}
-                                                checked={field.value}
-                                                aria-invalid={fieldState.invalid}
-                                                onCheckedChange={(checked) => handleCheckedChange(field, checked, config.apiProvider)}
-                                            />
-                                        </Field>
-                                    )}
-                                />
-                            ))}
-                            </FieldGroup>
-                        </FieldSet>
+                                </FieldDescription>
+                                <FieldGroup data-slot="checkbox-group" className="gap-2!">
+                                    {mediaTypeConfigs.map((config) => (
+                                        <Controller
+                                            key={config.name}
+                                            name={config.name}
+                                            control={form.control}
+                                            render={({ field, fieldState }) => (
+                                                <Field
+                                                    orientation="horizontal"
+                                                    data-invalid={fieldState.invalid}
+                                                    data-disabled={listSettingsMutation.isPending}
+                                                    className="justify-between rounded-lg border p-2"
+                                                >
+                                                    <FieldLabel htmlFor={`${fieldId}-${config.name}`} className="font-normal">
+                                                        <MainThemeIcon
+                                                            size={15}
+                                                            type={config.name}
+                                                        />
+                                                        {config.label} List
+                                                    </FieldLabel>
+                                                    <Switch
+                                                        id={`${fieldId}-${config.name}`}
+                                                        checked={field.value}
+                                                        aria-invalid={fieldState.invalid}
+                                                        onCheckedChange={(checked) => handleCheckedChange(field, checked, config.apiProvider)}
+                                                    />
+                                                </Field>
+                                            )}
+                                        />
+                                    ))}
+                                </FieldGroup>
+                            </FieldSet>
                             <Controller
                                 name="searchSelector"
                                 control={form.control}
-                                render={({field, fieldState}) => (
+                                render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
                                         <div className="flex items-center gap-2">
                                             <FieldLabel htmlFor={`${fieldId}-search-selector`}>Navbar Search Selector</FieldLabel>
@@ -226,7 +229,7 @@ function MediaListFormPage() {
                             <Controller
                                 name="ratingSystem"
                                 control={form.control}
-                                render={({field, fieldState}) => (
+                                render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
                                         <div className="flex items-center gap-2">
                                             <FieldLabel htmlFor={`${fieldId}-rating-system`}>Rating System</FieldLabel>
@@ -259,7 +262,7 @@ function MediaListFormPage() {
                             <Controller
                                 name="gridListView"
                                 control={form.control}
-                                render={({field, fieldState}) => (
+                                render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
                                         <FieldLabel htmlFor={`${fieldId}-grid-list-view`}>Default List View Mode</FieldLabel>
                                         <Select
@@ -305,23 +308,20 @@ function MediaListFormPage() {
                 <div className="flex flex-wrap items-end gap-3">
                     <div className="grow">
                         <Select
+                            items={mediaTypesForExport}
                             value={selectedListForExport}
-                            items={mediaTypesForExport.map(({ label, value }) => ({
-                                value,
-                                label: <><MainThemeIcon type={value}/> {label}</>,
-                            }))}
                             onValueChange={(value) => {
                                 if (value !== null) setSelectedListForExport(value as MediaType);
                             }}
                         >
                             <SelectTrigger id="list-export-select" className="w-40 max-sm:max-w-full">
-                                <SelectValue placeholder="Select a media list..."/>
+                                <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectGroup>
-                                    {mediaTypesForExport.map(({ label, value }) => (
-                                        <SelectItem key={value} value={value}>
-                                            <MainThemeIcon type={value}/> {label}
+                                    {mediaTypesForExport.map((item) => (
+                                        <SelectItem key={item.value} value={item.value}>
+                                            {item.label}
                                         </SelectItem>
                                     ))}
                                 </SelectGroup>

@@ -4,6 +4,7 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Card} from "@/lib/client/components/ui/card";
 import {capitalize} from "@/lib/utils/text-formatting";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {TasteMatch} from "@/lib/types/query.options.types";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Progress} from "@/lib/client/components/ui/progress";
@@ -123,7 +124,7 @@ const MatchScore = ({ score, featured = false }: { score: number; featured?: boo
 
 
 const MediaScores = ({ match, activeTab }: { match: TasteMatch; activeTab: MediaType | "all" }) => {
-    const displayedTypes = activeTab === "all" ? Object.values(MediaType) : [activeTab];
+    const displayedTypes = activeTab === "all" ? ALL_MEDIA_TYPES : [activeTab];
 
     return (
         <div className="grid grid-cols-2 gap-x-5 gap-y-2">

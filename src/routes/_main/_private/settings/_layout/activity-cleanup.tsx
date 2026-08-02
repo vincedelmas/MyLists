@@ -1,5 +1,4 @@
 import {useId} from "react";
-import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {toast} from "@/lib/client/components/ui/toast";
@@ -7,13 +6,14 @@ import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {BulkHideActivity, BulkHideActivityInput, bulkHideActivitySchema} from "@/lib/schemas";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {useBulkHideActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
@@ -34,7 +34,10 @@ function ActivityCleanupSettings() {
 
     const bulkMutation = useBulkHideActivityMutation({ noErrorToast: true });
     const accountCreatedAt = currentUser?.createdAt ? toDateInputValue(currentUser.createdAt) : today;
-    const availableMediaTypes = currentUser ? getActiveMediaTypes(currentUser.settings) : Object.values(MediaType);
+
+    const availableMediaTypes = currentUser ? getActiveMediaTypes(currentUser.settings) : ALL_MEDIA_TYPES;
+    const mediaTypeItems = createMediaSelectItems(availableMediaTypes, { leading: "all", leadingLabel: "All Types" });
+
     const form = useForm<BulkHideActivityInput, unknown, BulkHideActivity>({
         resolver: zodResolver(bulkHideActivitySchema),
         values: {
@@ -43,22 +46,6 @@ function ActivityCleanupSettings() {
             endDate: shiftDateInputValue(accountCreatedAt, { days: 60, max: today }),
         },
     });
-
-    const mediaTypeItems = [
-        {
-            value: "all",
-            label: (
-                <div className="flex items-center gap-2">
-                    <MainThemeIcon type="all"/>
-                    <span>All Types</span>
-                </div>
-            ),
-        },
-        ...availableMediaTypes.map((mediaType) => ({
-            value: mediaType,
-            label: <><MainThemeIcon type={mediaType} className="size-3.5"/> {mediaType}</>,
-        })),
-    ];
 
     const applyPreset = (days: number) => {
         form.setValue("startDate", accountCreatedAt, { shouldDirty: true });

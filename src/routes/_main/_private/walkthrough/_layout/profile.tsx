@@ -1,13 +1,13 @@
 import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
+import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
 import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab";
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
+import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
 import {Activity, ArrowBigUpDash, ArrowUp10, Award, ChartNoAxesColumn, LayoutGrid, User} from "lucide-react";
 import {ONBOARDING_PROFILE_NAME, onboardingProfileFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
@@ -23,21 +23,7 @@ function ProfileOnboarding() {
     const apiData = onboardingProfileFixture;
     const username = ONBOARDING_PROFILE_NAME;
     const [activeTab, setActiveTab] = useState<MediaType | "overview">("overview");
-    const activeMediaTypes = getActiveMediaTypes(apiData.userData.userMediaSettings);
-
-    const mediaTabs: TabItem<MediaType | "overview">[] = [
-        {
-            id: "overview",
-            isAccent: true,
-            label: "Overview",
-            icon: <MainThemeIcon size={15} type="overview"/>,
-        },
-        ...activeMediaTypes.map((mediaType) => ({
-            id: mediaType,
-            label: mediaType,
-            icon: <MainThemeIcon size={15} type={mediaType}/>,
-        })),
-    ];
+    const mediaTabs = createMediaTabItems(getActiveMediaTypes(apiData.userData.userMediaSettings), { leading: "overview" });
 
     const effectiveActiveTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "overview";
 

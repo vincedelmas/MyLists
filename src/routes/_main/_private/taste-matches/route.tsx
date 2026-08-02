@@ -1,23 +1,23 @@
 import {UsersRound} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {Label} from "@/lib/client/components/ui/label";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {tasteMatchesOptions} from "@/lib/client/react-query/query-options";
 import {TasteMatchesSearch, tasteMatchesSearchSchema} from "@/lib/schemas";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {FeaturedTasteMatch, TasteMatchCard} from "@/lib/client/components/taste-matches/TasteMatchCard";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {Label} from "@/lib/client/components/ui/label";
 
 
 export const Route = createFileRoute("/_main/_private/taste-matches")({
@@ -44,6 +44,7 @@ function TasteMatchesPage() {
     const activeMediaTypes = getActiveMediaTypes(currentUser?.settings);
     const apiData = useSuspenseQuery(tasteMatchesOptions(filters)).data;
 
+    const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "all" });
     const currentActiveTab = activeTab !== "all" && activeMediaTypes.includes(activeTab) ? activeTab : "all";
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<TasteMatchesSearch>({ search });
 
@@ -55,20 +56,6 @@ function TasteMatchesPage() {
     const handleTabChange = async (value: string) => {
         void updateFilters({ page: 1, activeTab: value as ("all" | MediaType) })
     };
-
-    const mediaTabs: TabItem<"all" | MediaType>[] = [
-        {
-            id: "all",
-            label: "All",
-            isAccent: true,
-            icon: <MainThemeIcon size={15} type="all"/>,
-        },
-        ...activeMediaTypes.map((mediaType) => ({
-            id: mediaType,
-            label: mediaType,
-            icon: <MainThemeIcon size={15} type={mediaType}/>,
-        })),
-    ];
 
     return (
         <PageTitle title="Find your taste matches" subtitle="Members ranked by how closely their ratings line up with yours.">

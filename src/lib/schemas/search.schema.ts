@@ -7,11 +7,16 @@ export type GlobalSearch = z.infer<typeof globalSearchSchema>;
 export type TrendsActiveTab = z.infer<typeof trendsActiveTabSchema>;
 
 
+export const TREND_MEDIA_TYPES = [
+    MediaType.SERIES,
+    MediaType.MOVIES,
+    MediaType.GAMES,
+] as const;
+
+
 const trendsActiveTabSchema = z.union([
     z.literal("all"),
-    z.literal(MediaType.SERIES),
-    z.literal(MediaType.MOVIES),
-    z.literal(MediaType.GAMES),
+    z.enum(TREND_MEDIA_TYPES),
 ]);
 
 

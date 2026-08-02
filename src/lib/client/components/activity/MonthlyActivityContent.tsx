@@ -2,6 +2,7 @@ import React, {useState} from "react";
 import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {Label} from "@/lib/client/components/ui/label";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {LayoutGrid, Plus, Settings2} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
@@ -19,12 +20,12 @@ import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
 import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {Label} from "@/lib/client/components/ui/label";
 
 
 interface MonthlyActivityContentProps {
@@ -50,6 +51,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
     const [editActivity, setEditActivity] = useState<MonthlyActivityEditor | null>(null);
 
     const apiData = useSuspenseQuery(monthlyActivityOptions(username, activeFilters)).data;
+    const mediaTypeFilters = createMediaSelectItems(apiData.mediaTypes, { leading: "all", leadingLabel: "All Types" });
     const { activeTab = "all", activityKind = ActivityKind.ALL, hiddenOnly = false, search = "", page = 1, ...dateFilters } = activeFilters;
 
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<MonthlyActivitySearch>({
@@ -61,27 +63,6 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
         : currentUser
             ? getActiveMediaTypes(currentUser.settings)
             : apiData.mediaTypes;
-
-    const mediaTypeFilters = [
-        {
-            value: "all",
-            label: (
-                <div className="flex items-center gap-2">
-                    <MainThemeIcon type="all"/>
-                    <span>All Types</span>
-                </div>
-            ),
-        },
-        ...apiData.mediaTypes.map((mediaType) => ({
-            value: mediaType,
-            label: (
-                <div className="flex items-center gap-2 capitalize">
-                    <MainThemeIcon type={mediaType}/>
-                    <span>{mediaType}</span>
-                </div>
-            ),
-        })),
-    ];
 
     const handleFilterChange = (next: Partial<MonthlyActivitySearch>) => {
         updateFilters({ page: 1, ...next, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) });

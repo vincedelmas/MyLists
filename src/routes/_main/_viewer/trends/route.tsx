@@ -2,13 +2,13 @@ import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute} from "@tanstack/react-router";
 import {compareDateInputs} from "@/lib/utils/date-formatting";
-import {TrendsActiveTab, trendsSearchSchema} from "@/lib/schemas";
 import {TrendGrid} from "@/lib/client/components/trends/TrendGrid";
 import {TrendHero} from "@/lib/client/components/trends/TrendHero";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {trendsOptions} from "@/lib/client/react-query/query-options";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {TREND_MEDIA_TYPES, TrendsActiveTab, trendsSearchSchema} from "@/lib/schemas";
+import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/trends")({
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/_main/_viewer/trends")({
 function TrendsPage() {
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
+    const mediaTabs = createMediaTabItems(TREND_MEDIA_TYPES, { leading: "all" });
     const { seriesTrends, moviesTrends, gamesTrends } = useSuspenseQuery(trendsOptions).data;
 
     const setActiveTab = (newTab: TrendsActiveTab) => {
@@ -48,20 +49,6 @@ function TrendsPage() {
 
     const heroMedia = getHeroMedia();
     const filteredTrends = getFilteredData();
-
-    const mediaTabs: TabItem<TrendsActiveTab>[] = [
-        {
-            id: "all",
-            label: "All",
-            isAccent: true,
-            icon: <MainThemeIcon size={15} type="all"/>,
-        },
-        ...[MediaType.SERIES, MediaType.MOVIES, MediaType.GAMES].map((mediaType) => ({
-            id: mediaType,
-            label: mediaType,
-            icon: <MainThemeIcon size={15} type={mediaType}/>,
-        })),
-    ];
 
     return (
         <PageTitle title="Week Trends" subtitle="Top Series, Movies and Games trending this week">

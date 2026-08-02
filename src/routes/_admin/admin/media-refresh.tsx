@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatDate} from "@/lib/utils/date-formatting";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
@@ -51,12 +52,11 @@ function MediaRefreshPage() {
     const navigate = Route.useNavigate();
     const apiData = useSuspenseQuery(adminMediaRefreshOptions(filters)).data;
 
-    const mediaTypes = Object.values(MediaType);
     const { topRange = "all", dailyRange = "30d" } = filters;
     const totalsByRoleMap = new Map(apiData.totalsByRole.map((row) => [row.role, Number(row.count)]));
     const totalsByTypeMap = new Map(apiData.totalsByType.map((row) => [row.mediaType, Number(row.count)]));
 
-    const mediaTypeRows = mediaTypes
+    const mediaTypeRows = ALL_MEDIA_TYPES
         .map((mt) => ({ mediaType: mt, count: totalsByTypeMap.get(mt) ?? 0 }))
         .sort((a, b) => b.count - a.count);
 
@@ -147,7 +147,7 @@ function MediaRefreshPage() {
                                             border: "1px solid var(--border)",
                                         }}
                                     />
-                                    {mediaTypes.map((mt) =>
+                                    {ALL_MEDIA_TYPES.map((mt) =>
                                         <Bar
                                             key={mt}
                                             dataKey={mt}

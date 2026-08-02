@@ -12,6 +12,7 @@ import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, 
 
 const defaultTriggerClassName = "inline-flex items-center justify-center px-4 text-sm font-medium hover:text-brand";
 
+
 const previewItemClassName = "[&_svg:not([class*='text-'])]:text-muted-foreground relative flex items-center gap-2 " +
     "rounded-sm px-2 py-1.5 text-sm select-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
 
@@ -87,10 +88,7 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                                 preview={preview}
                                 key={setting.mediaType}
                                 renderLink={(children) =>
-                                    <Link
-                                        to="/list/$mediaType/$username"
-                                        params={{ mediaType: setting.mediaType, username }}
-                                    >
+                                    <Link to="/list/$mediaType/$username" params={{ mediaType: setting.mediaType, username }}>
                                         {children}
                                     </Link>
                                 }
@@ -178,7 +176,7 @@ const MenuLabel = ({ preview, children }: { preview: boolean; children: ReactNod
     }
 
     return (
-        <DropdownMenuLabel className="mb-2 px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {children}
         </DropdownMenuLabel>
     );
@@ -186,7 +184,10 @@ const MenuLabel = ({ preview, children }: { preview: boolean; children: ReactNod
 
 
 const MenuGroup = ({ preview, children }: { preview: boolean; children: ReactNode }) => {
-    if (preview) return <div>{children}</div>;
+    if (preview) {
+        return <div>{children}</div>;
+    }
+
     return <DropdownMenuGroup>{children}</DropdownMenuGroup>;
 };
 
@@ -208,5 +209,10 @@ const MenuEntry = ({ preview, children, className, renderLink }: MenuEntryProps)
         );
     }
 
-    return <DropdownMenuItem className={className} render={renderLink(children)}/>;
+    return (
+        <DropdownMenuItem
+            className={className}
+            render={renderLink(children)}
+        />
+    );
 };

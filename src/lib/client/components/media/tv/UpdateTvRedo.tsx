@@ -45,7 +45,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                 size="sm"
                 type="button"
                 variant="outline"
-                className="w-34 justify-between bg-input/30"
+                className="w-34 justify-between bg-input/30 hover:bg-input/50"
                 onClick={() => onOpenChange(true)}
             >
                 <div className="text-sm">
@@ -87,7 +87,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
 
                     <Separator/>
 
-                    <div className="overflow-auto scrollbar-thin max-h-70">
+                    <div className="max-h-70 overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-gutter-stable">
                         {draftRedo.map((season, idx) =>
                             <div key={idx} className="flex justify-between items-center not-last:mb-2">
                                 <div className="flex items-center gap-6">
@@ -102,6 +102,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                         variant="outline"
                                         disabled={season <= 0}
                                         onClick={() => updateSeason(idx, -1)}
+                                        className="transition-colors active:not-aria-[haspopup]:translate-y-0"
                                     >
                                         <MinusCircle/>
                                     </Button>
@@ -110,6 +111,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                         variant="outline"
                                         disabled={season >= REDO_MAX}
                                         onClick={() => updateSeason(idx, 1)}
+                                        className="transition-colors active:not-aria-[haspopup]:translate-y-0"
                                     >
                                         <PlusCircle/>
                                     </Button>

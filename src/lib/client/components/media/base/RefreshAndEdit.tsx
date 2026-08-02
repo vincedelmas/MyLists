@@ -1,4 +1,3 @@
-import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Pencil, RefreshCw} from "lucide-react";
@@ -6,6 +5,7 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useNow} from "@/lib/client/hooks/use-dates";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {useRefreshMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 
@@ -53,7 +53,11 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
                     onClick={handleRefresh}
                     disabled={refreshDisabled}
                 >
-                    <RefreshCw className={cn(refreshMutation.isPending && "animate-spin")}/> Refresh
+                    {refreshMutation.isPending
+                        ? <Spinner data-icon="inline-start" aria-hidden="true"/>
+                        : <RefreshCw/>
+                    }
+                    Refresh
                 </Button>
             }
 

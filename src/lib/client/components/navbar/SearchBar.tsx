@@ -5,13 +5,14 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {ChevronLeft, ChevronRight, Search, X} from "lucide-react";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
-import {ChevronLeft, ChevronRight, Loader2, Search, X} from "lucide-react";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {Link, LinkProps, useRouter, useRouterState} from "@tanstack/react-router";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
@@ -68,10 +69,10 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                 selectOpen ? "ring-2 ring-brand/50 border-brand" : "border"
             )}>
                 <Select
-                    items={searchProviderItems}
                     value={selectDrop}
-                    onValueChange={handleValueChange}
+                    items={searchProviderItems}
                     onOpenChange={setSelectOpen}
+                    onValueChange={handleValueChange}
                 >
                     <SelectTrigger className="h-10 rounded-none w-30 border-y-0 border-l-0 border-r border-input bg-accent/50
                     focus:ring-0 focus:ring-offset-0">
@@ -204,7 +205,7 @@ const SearchComponent = ({ item, resetSearch, setMobileMenu }: SearchComponentPr
                         }
                         {isLoadingItem &&
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <Loader2 className="size-8 animate-spin text-primary"/>
+                                <Spinner className="size-8"/>
                             </div>
                         }
                     </div>

@@ -10,9 +10,10 @@ import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {displayContainerError} from "@/lib/utils/error-display";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {ChevronRight, Folder, LoaderCircle, PlusCircle} from "lucide-react";
+import {ChevronRight, Folder, PlusCircle} from "lucide-react";
 import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
 import {useAddMediaToCollectionMutation, useCreateCollectionMutation, useRemoveMediaFromCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
@@ -128,7 +129,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                     <div className="h-70 overflow-y-auto p-2 scrollbar-thin">
                         {isLoading ?
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-                                <LoaderCircle className="size-6 animate-spin"/>
+                                <Spinner className="size-6" aria-hidden="true"/>
                                 <span className="text-xs font-medium">Syncing...</span>
                             </div>
                             : filteredCollections.length === 0 ?

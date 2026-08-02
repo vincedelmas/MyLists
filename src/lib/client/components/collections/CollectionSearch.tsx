@@ -5,10 +5,11 @@ import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
-import {ChevronLeft, ChevronRight, Loader2, Search} from "lucide-react";
+import {ChevronLeft, ChevronRight, Search} from "lucide-react";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
@@ -98,7 +99,7 @@ export const CollectionSearch = ({ mediaType, onAdd, disabled }: CollectionSearc
                                         />
                                         {resolvingId === item.id &&
                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                <Loader2 className="size-6 animate-spin text-primary"/>
+                                                <Spinner className="size-6"/>
                                             </div>
                                         }
                                     </div>

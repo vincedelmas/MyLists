@@ -1,7 +1,8 @@
 import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {Grid2X2XIcon, Loader2} from "lucide-react";
+import {Grid2X2XIcon} from "lucide-react";
 import {formatDate} from "@/lib/utils/date-formatting";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useNavigate, useSearch} from "@tanstack/react-router";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {allUserJobsOptions} from "@/lib/client/react-query/query-options";
@@ -87,7 +88,7 @@ export function ExistingImportsPanel() {
                         </SelectTrigger>
                         <SelectContent>
                             {isLoading ?
-                                <Loader2 className="size-5 animate-spin mx-auto"/>
+                                <Spinner className="mx-auto size-5"/>
                                 : isError ?
                                     <div className="px-2 py-1.5 text-sm text-destructive">
                                         Imports could not be loaded.

@@ -3,7 +3,9 @@ import {useQuery} from "@tanstack/react-query";
 import React, {useId, useRef, useState} from "react";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
+import {ChevronDown, ChevronUp, CircleHelp, X} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
@@ -12,7 +14,6 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {GamesPlatformsEnum, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {ChevronDown, ChevronUp, CircleHelp, LoaderCircle, X} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {filterSearchOptions, listFiltersOptions} from "@/lib/client/react-query/query-options";
 import {Field, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
@@ -75,7 +76,7 @@ export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent
         localFiltersRef.current = updatedFilters;
     };
 
-    const handleOnSubmit = async (ev: React.SubmitEvent<HTMLFormElement>) => {
+    const handleOnSubmit = (ev: React.SubmitEvent<HTMLFormElement>) => {
         ev.preventDefault();
         onFilterApply(localFiltersRef.current);
         handleSheetOpenChange(false);
@@ -103,7 +104,7 @@ export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent
                             :
                             isPending ?
                                 <div className="flex items-center justify-center h-[70vh]">
-                                    <LoaderCircle className="size-10 animate-spin text-brand"/>
+                                    <Spinner className="size-10"/>
                                 </div>
                                 :
                                 <FieldGroup>

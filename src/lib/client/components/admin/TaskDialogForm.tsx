@@ -1,11 +1,12 @@
 import {z} from "zod";
 import {toast} from "@/lib/client/components/ui/toast";
 import {useId, useState} from "react";
-import {Loader2, Settings2} from "lucide-react";
+import {Settings2} from "lucide-react";
 import {Controller, type Control, FormProvider, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
@@ -56,7 +57,7 @@ export function TaskFormDialog({ task }: TaskFormDialogProps) {
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger render={<Button size="sm" disabled={triggerTaskMutation.isPending}/>}>
-                {triggerTaskMutation.isPending ? <Loader2 className="size-4 animate-spin"/> : <Settings2 className="size-4"/>}
+                {triggerTaskMutation.isPending ? <Spinner data-icon="inline-start" aria-hidden="true"/> : <Settings2 className="size-4"/>}
                 {triggerTaskMutation.isPending ? "Running" : "Configure"}
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">

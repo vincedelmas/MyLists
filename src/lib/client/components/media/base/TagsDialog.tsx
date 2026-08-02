@@ -11,8 +11,9 @@ import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {displayContainerError} from "@/lib/utils/error-display";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options";
-import {ChevronRight, LoaderCircle, Pencil, PlusCircle, Tags} from "lucide-react";
+import {ChevronRight, Pencil, PlusCircle, Tags} from "lucide-react";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
 
@@ -118,7 +119,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                     <div className="h-70 overflow-y-auto p-2 scrollbar-thin">
                         {isLoading ?
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-                                <LoaderCircle className="size-6 animate-spin"/>
+                                <Spinner className="size-6" aria-hidden="true"/>
                                 <span className="text-xs font-medium">Syncing...</span>
                             </div>
                             : filteredTags.length === 0 ?

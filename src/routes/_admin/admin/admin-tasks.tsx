@@ -1,8 +1,9 @@
 import {toast} from "@/lib/client/components/ui/toast";
-import {Loader2, Play} from "lucide-react";
+import {Play} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {TaskFormDialog} from "@/lib/client/components/admin/TaskDialogForm";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
@@ -49,7 +50,7 @@ function AdminTasksPage() {
                                     />
                                     :
                                     <Button size="sm" disabled={isRunning} onClick={() => executeTask(task.name)}>
-                                        {isRunning ? <Loader2 className="size-4 animate-spin"/> : <Play className="size-4"/>}
+                                        {isRunning ? <Spinner data-icon="inline-start" aria-hidden="true"/> : <Play className="size-4"/>}
                                         {isRunning ? "Running" : "Run Task"}
                                     </Button>
                                 }

@@ -1,15 +1,16 @@
-import {toast} from "@/lib/client/components/ui/toast";
 import {cn} from "@/lib/utils/classnames";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {Clock, Loader2, UserCheck, UserPlus, UserX} from "lucide-react";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {followersOptions} from "@/lib/client/react-query/query-options";
 import {useFollowMutation, useRemoveFollowerMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -151,7 +152,7 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                                         className="hover:bg-destructive/30 hover:text-foreground hover:border-transparent shrink-0"
                                     >
                                         {removeMutation.isPending ?
-                                            <Loader2 className="size-4 animate-spin"/> : <UserX className="size-4"/>
+                                            <Spinner data-icon="inline-start"/> : <UserX className="size-4"/>
                                         }
                                     </Button>
                                 }
@@ -194,13 +195,11 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
         <Button
             disabled={isPending}
             onClick={handleClick}
-            variant={isFollowing ? "selected" : isRequested ? "secondary" : "outline"}
-            className={cn("group flex-1 font-medium transition-all",
-                shouldUnfollow && "hover:bg-destructive/30 hover:text-foreground"
-            )}
+            variant={isFollowing ? "default" : isRequested ? "secondary" : "outline"}
+            className={cn("group flex-1 font-medium transition-all", shouldUnfollow && "hover:bg-destructive/30 hover:text-foreground")}
         >
             {isPending ?
-                <Loader2 className="size-3.5 animate-spin"/>
+                <Spinner data-icon="inline-start" className="size-3.5"/>
                 : isFollowing ?
                     <>
                         <span className="flex items-center gap-2 group-hover:hidden">

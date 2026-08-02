@@ -2,8 +2,9 @@ import React from "react";
 import {useQuery} from "@tanstack/react-query";
 import {ImportItemStatus} from "@/lib/utils/enums";
 import {useNavigate} from "@tanstack/react-router";
-import {AlertTriangle, Loader2} from "lucide-react";
+import {AlertTriangle} from "lucide-react";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {importJobIssuesOptions} from "@/lib/client/react-query/query-options";
@@ -38,7 +39,7 @@ export function ImportJobIssuesTable({ jobId, page }: ImportJobIssuesTableProps)
 
             {issueQuery.isLoading ?
                 <div className="rounded-xl border bg-muted/20 p-5 text-sm text-muted-foreground">
-                    <Loader2 className="size-4 animate-spin"/>
+                    <Spinner/>
                 </div>
                 :
                 issueQuery.isError || !issueQuery.data ?

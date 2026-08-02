@@ -2,6 +2,7 @@ import {cn} from "@/lib/utils/classnames";
 import {useVirtualizer} from "@tanstack/react-virtual";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useEffect, useMemo, useRef, useState} from "react";
 import {formatDateTime} from "@/lib/utils/date-formatting";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
@@ -276,7 +277,10 @@ function AdminRuntimeLogsPage() {
                                 disabled={!selectedFileName || logFileQuery.isFetching}
                                 onClick={() => logFileQuery.refetch()}
                             >
-                                <RefreshCw className={logFileQuery.isFetching ? "animate-spin" : ""}/>
+                                {logFileQuery.isFetching
+                                    ? <Spinner data-icon="inline-start"/>
+                                    : <RefreshCw/>
+                                }
                             </Button>
                         </div>
                     </div>

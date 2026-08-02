@@ -1,6 +1,6 @@
 import React from "react";
-import {LoaderCircle} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useDelayedLoading} from "@/lib/client/hooks/use-delayed-loading";
 
 
@@ -22,9 +22,9 @@ export function FormSubmitButton({ children, className, disabled, isLoading = fa
             aria-busy={isLoading || showLoading}
         >
             {showLoading &&
-                <LoaderCircle
+                <Spinner
+                    data-icon="inline-start"
                     aria-hidden="true"
-                    className="size-4 animate-spin"
                 />
             }
             {children}

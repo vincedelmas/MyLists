@@ -3,11 +3,12 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {Clock, Loader2, UserCheck, UserPlus, UserX} from "lucide-react";
+import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {followsOptions} from "@/lib/client/react-query/query-options";
 import {useFollowMutation, useUnfollowMutation,} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -169,7 +170,7 @@ function FollowActionButton({ targetUserId, followStatus, profileOwner, isViewin
                 followStatus && "hover:bg-destructive/30 hover:text-foreground")}
         >
             {isPending ?
-                <Loader2 className="size-3.5 animate-spin"/>
+                <Spinner data-icon="inline-start" className="size-3.5"/>
                 :
                 followStatus === SocialState.ACCEPTED ?
                     <>

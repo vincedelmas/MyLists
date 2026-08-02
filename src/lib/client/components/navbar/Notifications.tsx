@@ -5,6 +5,7 @@ import {SocialNotifType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {NotifTab} from "@/lib/types/notifications.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
@@ -12,7 +13,7 @@ import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
-import {Bell, LoaderCircle, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
+import {Bell, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
 import {formatCalendarRelativeDate, formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
 import {notificationsCountOptions, notificationsOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteSocialNotif, useMarkAllNotifAsRead, useRespondFollowRequest} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -106,7 +107,7 @@ export const Notifications = () => {
                     {activeTab === "media" && (
                         isLoading ?
                             <div className="flex items-center justify-center py-10 px-6">
-                                <LoaderCircle className="size-6 animate-spin"/>
+                                <Spinner className="size-6"/>
                             </div>
                             :
                             notifications?.length === 0 ?
@@ -127,7 +128,7 @@ export const Notifications = () => {
                     {activeTab === "social" && (
                         isLoading ?
                             <div className="flex items-center justify-center py-10 px-6">
-                                <LoaderCircle className="size-6 animate-spin"/>
+                                <Spinner className="size-6"/>
                             </div>
                             :
                             notifications?.length === 0 ?

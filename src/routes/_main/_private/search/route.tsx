@@ -5,6 +5,7 @@ import {Card} from "@/lib/client/components/ui/card";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {Input} from "@/lib/client/components/ui/input";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {GlobalSearch, globalSearchSchema} from "@/lib/schemas";
@@ -12,7 +13,7 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {BookImage, Cat, Gamepad2, Library, LoaderCircle, Monitor, Popcorn, Search, User, X} from "lucide-react";
+import {BookImage, Cat, Gamepad2, Library, Monitor, Popcorn, Search, User, X} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_private/search")({
@@ -100,7 +101,7 @@ function SearchPage() {
 
             {isLoading &&
                 <div className="flex items-center justify-center p-3.5">
-                    <LoaderCircle className="size-8 animate-spin"/>
+                    <Spinner className="size-8"/>
                 </div>
             }
 

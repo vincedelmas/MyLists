@@ -430,7 +430,7 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
 
             {feature.details &&
                 <Popover>
-                    <PopoverTrigger render={<Button variant="outline"/>}>
+                    <PopoverTrigger render={<Button variant="tame"/>} className="m-2 mt-0">
                         Learn More
                         <ChevronDown/>
                     </PopoverTrigger>

@@ -1,8 +1,9 @@
 import * as React from "react";
 import {cn} from "@/lib/utils/classnames";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Toast as ToastPrimitive} from "@base-ui/react/toast";
-import {CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon, XIcon} from "lucide-react";
+import {CircleCheckIcon, InfoIcon, OctagonXIcon, TriangleAlertIcon, XIcon} from "lucide-react";
 
 
 const toast = ToastPrimitive.createToastManager();
@@ -141,7 +142,7 @@ function ToastIcon({ type }: { type: string | undefined }) {
     if (type === "info") icon = <InfoIcon className="text-info" aria-hidden="true"/>;
     if (type === "warning") icon = <TriangleAlertIcon className="text-warning" aria-hidden="true"/>;
     if (type === "error") icon = <OctagonXIcon className="text-destructive" aria-hidden="true"/>;
-    if (type === "loading") icon = <Loader2Icon className="animate-spin" aria-hidden="true"/>;
+    if (type === "loading") icon = <Spinner aria-hidden="true"/>;
 
     if (!icon) return null;
 

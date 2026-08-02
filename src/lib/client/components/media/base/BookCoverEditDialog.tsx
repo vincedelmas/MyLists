@@ -7,9 +7,10 @@ import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {UpdateBookCoverInput, updateBookCoverSchema} from "@/lib/schemas";
-import {Link2, LoaderCircle, PencilLine, UploadCloud} from "lucide-react";
+import {Link2, PencilLine, UploadCloud} from "lucide-react";
 import {suggestBookCoverOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useUpdateBookCoverMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
@@ -205,7 +206,7 @@ const SuggestedBookCover = ({ open, mediaName, onUseCover }: SuggestedBookCoverP
             </div>
             {isLoading &&
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <LoaderCircle className="size-4 animate-spin"/>
+                    <Spinner aria-hidden="true"/>
                     Looking for a suggested cover...
                 </div>
             }

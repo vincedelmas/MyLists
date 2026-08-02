@@ -1,7 +1,8 @@
 import {cn} from "@/lib/utils/classnames";
 import {SocialState} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {Clock, Loader2, UserCheck, UserPlus, UserX} from "lucide-react";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
 import {ProfileHeaderOptionsType} from "@/lib/types/query.options.types";
 import {useFollowMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
@@ -74,7 +75,7 @@ export const FollowButton = ({ profileUsername, social, className }: FollowButto
             className={cn("group w-30 font-bold transition-all", config.className, className)}
         >
             {isPending
-                ? <Loader2 className="size-3.5 animate-spin"/>
+                ? <Spinner data-icon="inline-start" className="size-3.5"/>
                 : <>
                     <span className={cn("flex items-center gap-2", config.hoverLabel && "group-hover:hidden")}>
                         <config.Icon className="size-3.5"/>

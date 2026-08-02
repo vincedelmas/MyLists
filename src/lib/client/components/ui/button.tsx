@@ -14,7 +14,8 @@ const buttonVariants = cva("group/button inline-flex shrink-0 items-center justi
         variants: {
             variant: {
                 default: "bg-primary text-primary-foreground hover:bg-primary/90",
-
+                
+                selected: "bg-primary hover:bg-primary/25 aria-expanded:bg-primary/20",
                 ghost: "hover:text-foreground aria-expanded:text-foreground",
                 hover: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
                 dashed: "border border-dashed text-muted-foreground text-xs w-full hover:bg-accent hover:text-accent-foreground " +

@@ -2,12 +2,13 @@ import {useQuery} from "@tanstack/react-query";
 import {ImportJobStatus} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {importJobOptions} from "@/lib/client/react-query/query-options";
 import {ImportJobIssuesTable} from "@/lib/client/components/user-settings/ImportJobIssuesTable";
 import {useDeleteImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
-import {AlertTriangle, CheckCircle2, Clock3, ListRestart, Loader2, RefreshCw, Trash2} from "lucide-react";
+import {AlertTriangle, CheckCircle2, Clock3, ListRestart, RefreshCw, Trash2} from "lucide-react";
 
 
 interface SelectedImportJobProps {
@@ -33,7 +34,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
     if (isLoading) {
         return (
             <div className="rounded-xl border bg-muted/20 p-5 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin"/>
+                <Spinner/>
             </div>
         );
     }

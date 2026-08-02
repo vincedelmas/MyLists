@@ -1,40 +1,13 @@
 import {clientEnv} from "@/env/client";
 import {FaGithub} from "react-icons/fa";
 import {Link} from "@tanstack/react-router";
-import {Activity, Coffee, Mail, MonitorIcon, MoonIcon, SunIcon} from "lucide-react";
+import {Activity, Coffee, Mail} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuLabel,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuTrigger,
-} from "@/lib/client/components/ui/dropdown-menu";
-import {useTheme} from "@/lib/client/components/general/ThemeProvider";
-import type {ThemePreference} from "@/lib/client/theme";
-
-
-const THEME_LABELS: Record<ThemePreference, string> = {
-    system: "System",
-    light: "Light",
-    dark: "Dark",
-};
-
-
-const THEME_ICONS = {
-    system: MonitorIcon,
-    light: SunIcon,
-    dark: MoonIcon,
-};
 
 
 export const Footer = () => {
     const currentYear = new Date().getFullYear();
-    const { theme, setTheme } = useTheme();
-    const ThemeIcon = THEME_ICONS[theme];
 
     return (
         <footer className="mt-20 w-full border-t bg-background">
@@ -118,38 +91,9 @@ export const Footer = () => {
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
                     <p>© 2019-{currentYear} — MyLists.info</p>
-                    <div className="flex items-center gap-2">
-                        <p className="flex items-center gap-1 italic">
-                            Made with ❤️ in France
-                        </p>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger
-                                render={<Button variant="ghost" size="sm" aria-label={`Theme: ${THEME_LABELS[theme]}`}/>}
-                            >
-                                <ThemeIcon data-icon="inline-start"/>
-                                {THEME_LABELS[theme]}
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent side="top" align="end" className="w-36">
-                                <DropdownMenuGroup>
-                                    <DropdownMenuLabel>Theme</DropdownMenuLabel>
-                                </DropdownMenuGroup>
-                                <DropdownMenuRadioGroup
-                                    value={theme}
-                                    onValueChange={(value) => setTheme(value as ThemePreference)}
-                                >
-                                    <DropdownMenuRadioItem value="system">
-                                        <MonitorIcon/> System
-                                    </DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="light">
-                                        <SunIcon/> Light
-                                    </DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="dark">
-                                        <MoonIcon/> Dark
-                                    </DropdownMenuRadioItem>
-                                </DropdownMenuRadioGroup>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+                    <p className="flex items-center gap-1 italic">
+                        Made with ❤️ in France
+                    </p>
                 </div>
             </div>
         </footer>

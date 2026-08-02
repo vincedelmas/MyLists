@@ -252,11 +252,11 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --sidebar-ring: var(--primary);
 
     --series: oklch(0.72 0.10 210);
-    --anime: oklch(0.72 0.13 40);
-    --movies: oklch(0.80 0.12 92);
+    --anime: oklch(0.704 0.127 39.618);
+    --movies: oklch(0.758 0.115 91.787);
     --books: oklch(0.72 0.11 300);
-    --games: oklch(0.667 0.146 144.808);
-    --manga: oklch(0.70 0.15 25);
+    --games: oklch(0.613 0.139 144.552);
+    --manga: oklch(0.686 0.161 25.326);
     --user: oklch(0.72 0 0);
 
     --playing: oklch(0.72 0.09 220);

@@ -5,7 +5,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {MinusCircle, Pencil, PlusCircle} from "lucide-react";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {Credenza, CredenzaContent, CredenzaDescription, CredenzaFooter, CredenzaHeader, CredenzaTitle} from "@/lib/client/components/ui/credenza";
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
 interface UpdateTvRedoProps {
@@ -54,12 +54,12 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                 <Pencil className="text-muted-foreground"/>
             </Button>
 
-            <Credenza open={open} onOpenChange={onOpenChange}>
-                <CredenzaContent className="w-90 max-sm:w-full max-sm:pb-5">
-                    <CredenzaHeader>
-                        <CredenzaTitle>Re-watched Seasons Manager</CredenzaTitle>
-                        <CredenzaDescription>Manage your re-watched seasons</CredenzaDescription>
-                    </CredenzaHeader>
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="w-90 max-sm:w-full max-sm:pb-5">
+                    <DialogHeader>
+                        <DialogTitle>Re-watched Seasons Manager</DialogTitle>
+                        <DialogDescription>Manage your re-watched seasons</DialogDescription>
+                    </DialogHeader>
 
                     <div className="flex items-center justify-between">
                         <span className="font-semibold">
@@ -119,14 +119,13 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                             </div>
                         )}
                     </div>
-
-                    <CredenzaFooter>
+                    <DialogFooter>
                         <Button type="button" className="w-full" onClick={onUpdateRedoValues} disabled={onUpdateMutation.isPending}>
                             Update
                         </Button>
-                    </CredenzaFooter>
-                </CredenzaContent>
-            </Credenza>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 };

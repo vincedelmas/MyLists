@@ -5,16 +5,17 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {DialogRootChangeEventDetails} from "@base-ui/react";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
+import {ChevronRight, Folder, PlusCircle} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {displayContainerError} from "@/lib/utils/error-display";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {ChevronRight, Folder, PlusCircle} from "lucide-react";
 import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
-import {Spinner} from "@/lib/client/components/ui/spinner";
-import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 import {useAddMediaToCollectionMutation, useCreateCollectionMutation, useRemoveMediaFromCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 
@@ -72,29 +73,30 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
         }
     };
 
+    const onOpenChange = (open: boolean, ev: DialogRootChangeEventDetails) => {
+        if (!open && ev.reason === "escape-key" && searchQuery.length > 0) {
+            ev.cancel();
+            setSearchQuery("");
+            return;
+        }
+        setIsOpen(open);
+    };
+
     return (
-        <Credenza open={isOpen} onOpenChange={setIsOpen}>
-            <CredenzaTrigger className="-mb-1 text-sm font-medium text-muted-foreground hover:text-brand">
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogTrigger className="-mb-1 text-sm font-medium text-muted-foreground hover:text-brand">
                 Manage
-            </CredenzaTrigger>
-            <CredenzaContent
-                className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full"
-                onEscapeKeyDown={(ev) => {
-                    if (searchQuery.length > 0) {
-                        ev.preventDefault();
-                        setSearchQuery("");
-                    }
-                }}
-            >
+            </DialogTrigger>
+            <DialogContent className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full">
                 <div className="p-6 pb-4">
-                    <CredenzaHeader className="p-0 mb-6 mt-2">
-                        <CredenzaTitle>
+                    <DialogHeader className="p-0 mb-6 mt-2">
+                        <DialogTitle>
                             Manage Collections
-                        </CredenzaTitle>
-                        <CredenzaDescription>
+                        </DialogTitle>
+                        <DialogDescription>
                             Add this {mediaType} to your own collections.
-                        </CredenzaDescription>
-                    </CredenzaHeader>
+                        </DialogDescription>
+                    </DialogHeader>
 
                     <div className="relative group">
                         <Input
@@ -207,7 +209,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                         </Button>
                     </div>
                 </div>
-            </CredenzaContent>
-        </Credenza>
+            </DialogContent>
+        </Dialog>
     );
 };

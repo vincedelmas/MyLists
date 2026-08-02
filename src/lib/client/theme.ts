@@ -1,17 +1,26 @@
-export const THEME_STORAGE_KEY = "mylists-theme";
-
-export const THEME_OPTIONS = ["system", "light", "dark"] as const;
-
 export type ThemePreference = typeof THEME_OPTIONS[number];
 export type ResolvedTheme = Exclude<ThemePreference, "system">;
 
+
+export const THEME_STORAGE_KEY = "mylists-theme";
+
+
+const THEME_OPTIONS = ["system", "light", "dark"] as const;
+
+
 const THEME_COLORS: Record<ResolvedTheme, string> = {
-    light: "#ffffff",
     dark: "#0d0d0d",
+    light: "#ffffff",
 };
 
 
-export const isThemePreference = (value: unknown): value is ThemePreference => {
+const getSystemTheme = (): ResolvedTheme => {
+    if (typeof window === "undefined") return "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+};
+
+
+const isThemePreference = (value: unknown): value is ThemePreference => {
     return typeof value === "string" && THEME_OPTIONS.includes(value as ThemePreference);
 };
 
@@ -22,15 +31,10 @@ export const getStoredTheme = (): ThemePreference => {
     try {
         const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
         return isThemePreference(storedTheme) ? storedTheme : "system";
-    } catch {
+    }
+    catch {
         return "system";
     }
-};
-
-
-export const getSystemTheme = (): ResolvedTheme => {
-    if (typeof window === "undefined") return "light";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
 
@@ -63,10 +67,12 @@ export const persistTheme = (theme: ThemePreference) => {
     try {
         if (theme === "system") {
             window.localStorage.removeItem(THEME_STORAGE_KEY);
-        } else {
+        }
+        else {
             window.localStorage.setItem(THEME_STORAGE_KEY, theme);
         }
-    } catch {
+    }
+    catch {
         // The in-memory preference still works when storage is unavailable.
     }
 };

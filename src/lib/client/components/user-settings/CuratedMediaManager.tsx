@@ -1,15 +1,16 @@
 import {useQuery} from "@tanstack/react-query";
-import {type Dispatch, type SetStateAction, useId} from "react";
 import {toItemKey} from "@/lib/utils/media-mapping";
+import {Dispatch, SetStateAction, useId} from "react";
 import {ArrowDown, ArrowUp, Trash2} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {useFieldArray, useFormContext} from "react-hook-form";
+import {ButtonGroup} from "@/lib/client/components/ui/button-group";
+import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
-import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {profileCustomSearchOptions} from "@/lib/client/react-query/query-options";
-import {HighlightedMediaRef, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab, PROFILE_MAX_HIGHLIGHTED_MEDIA} from "@/lib/types/profile-custom.types";
 import {Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
+import {HighlightedMediaRef, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab, PROFILE_MAX_HIGHLIGHTED_MEDIA} from "@/lib/types/profile-custom.types";
 
 
 interface CuratedMediaManagerProps {
@@ -165,34 +166,36 @@ const CuratedItemRow = ({ idx, total, item, preview, onMove, onRemove }: Curated
                 </div>
             </div>
             <div className="flex items-center gap-2">
+                <ButtonGroup aria-label={`Reorder ${preview?.mediaName ?? `media ${item.mediaId}`}`}>
+                    <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="outline"
+                        disabled={idx === 0}
+                        aria-label="Move item up"
+                        onClick={() => onMove(idx, idx - 1)}
+                    >
+                        <ArrowUp/>
+                    </Button>
+                    <Button
+                        size="icon-sm"
+                        type="button"
+                        variant="outline"
+                        aria-label="Move item down"
+                        disabled={idx === total - 1}
+                        onClick={() => onMove(idx, idx + 1)}
+                    >
+                        <ArrowDown/>
+                    </Button>
+                </ButtonGroup>
                 <Button
-                    size="sm"
+                    size="icon-sm"
                     type="button"
-                    variant="outline"
-                    disabled={idx === 0}
-                    aria-label="Move item up"
-                    onClick={() => onMove(idx, idx - 1)}
-                >
-                    <ArrowUp size={16}/>
-                </Button>
-                <Button
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                    aria-label="Move item down"
-                    disabled={idx === total - 1}
-                    onClick={() => onMove(idx, idx + 1)}
-                >
-                    <ArrowDown size={16}/>
-                </Button>
-                <Button
-                    size="sm"
-                    type="button"
-                    variant="outline"
+                    variant="destructiveGhost"
                     aria-label="Delete item"
                     onClick={() => onRemove(idx)}
                 >
-                    <Trash2 size={16}/>
+                    <Trash2/>
                 </Button>
             </div>
         </div>

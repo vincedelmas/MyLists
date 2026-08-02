@@ -4,6 +4,7 @@ import {REDO_MAX} from "@/lib/utils/constants";
 import {Button} from "@/lib/client/components/ui/button";
 import {MinusCircle, Pencil, PlusCircle} from "lucide-react";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
@@ -61,14 +62,15 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                         <DialogDescription>Manage your re-watched seasons</DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pr-2.5">
                         <span className="font-semibold">
                             All Seasons
                         </span>
-                        <div className="flex items-center gap-2">
+                        <ButtonGroup aria-label="Adjust all seasons rewatch count">
                             <Button
                                 size="icon"
                                 variant="outline"
+                                aria-label="Decrease all seasons rewatch count"
                                 onClick={() => updateAllSeasons(-1)}
                                 disabled={draftRedo.every((s) => s <= 0)}
                             >
@@ -77,12 +79,13 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                             <Button
                                 size="icon"
                                 variant="outline"
+                                aria-label="Increase all seasons rewatch count"
                                 onClick={() => updateAllSeasons(1)}
                                 disabled={draftRedo.every((s) => s >= REDO_MAX)}
                             >
                                 <PlusCircle/>
                             </Button>
-                        </div>
+                        </ButtonGroup>
                     </div>
 
                     <Separator/>
@@ -96,12 +99,13 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                     </div>
                                     <div>{season}x</div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <ButtonGroup aria-label={`Adjust season ${idx + 1} rewatch count`}>
                                     <Button
                                         size="icon"
                                         variant="outline"
                                         disabled={season <= 0}
                                         onClick={() => updateSeason(idx, -1)}
+                                        aria-label={`Decrease season ${idx + 1} rewatch count`}
                                         className="transition-colors active:not-aria-[haspopup]:translate-y-0"
                                     >
                                         <MinusCircle/>
@@ -111,11 +115,12 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                                         variant="outline"
                                         disabled={season >= REDO_MAX}
                                         onClick={() => updateSeason(idx, 1)}
+                                        aria-label={`Increase season ${idx + 1} rewatch count`}
                                         className="transition-colors active:not-aria-[haspopup]:translate-y-0"
                                     >
                                         <PlusCircle/>
                                     </Button>
-                                </div>
+                                </ButtonGroup>
                             </div>
                         )}
                     </div>

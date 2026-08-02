@@ -8,6 +8,7 @@ import {ListPagination} from "@/lib/types/query.options.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
@@ -54,14 +55,12 @@ export const Header = (props: HeaderProps) => {
 
                 <div className="flex items-center justify-start gap-3">
                     <Button variant="outline" onClick={onFilterClick} title="Advanced Filters">
-                        <Filter className="size-4"/> Filters
+                        <Filter/> Filters
                     </Button>
-                    <Button variant="outline" onClick={onGridClick} className="shrink-0 min-w-20">
-                        {isGrid
-                            ? <><List className="size-4"/> Table</>
-                            : <><Grid2X2 className="size-4"/> Grid</>
-                        }
-                    </Button>
+                    <ViewModeToggle
+                        isGrid={isGrid}
+                        onGridClick={onGridClick}
+                    />
                 </div>
             </div>
         );
@@ -94,15 +93,49 @@ export const Header = (props: HeaderProps) => {
                 title="Advanced Filters"
                 className="w-full md:w-auto"
             >
-                <Filter className="size-4"/> Filters
+                <Filter/> Filters
             </Button>
-            <Button variant="outline" onClick={onGridClick} className="shrink-0 min-w-20">
-                {isGrid
-                    ? <><List className="size-4"/> Table</>
-                    : <><Grid2X2 className="size-4"/> Grid</>
-                }
-            </Button>
+            <ViewModeToggle
+                isGrid={isGrid}
+                onGridClick={onGridClick}
+            />
         </div>
+    );
+};
+
+
+interface ViewModeToggleProps {
+    isGrid: boolean;
+    onGridClick: () => void;
+}
+
+
+const ViewModeToggle = ({ isGrid, onGridClick }: ViewModeToggleProps) => {
+    const handleValueChange = (value: string[]) => {
+        const nextMode = value[0];
+        if (!nextMode) return;
+
+        const nextIsGrid = nextMode === "grid";
+        if (nextIsGrid !== isGrid) {
+            onGridClick();
+        }
+    };
+
+    return (
+        <ToggleGroup
+            spacing={0}
+            variant="brand"
+            onValueChange={handleValueChange}
+            value={[isGrid ? "grid" : "table"]}
+            aria-label="Media list display mode"
+        >
+            <ToggleGroupItem value="grid" aria-label="Grid view" title="Grid view">
+                <Grid2X2/>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="Table view" title="Table view">
+                <List/>
+            </ToggleGroupItem>
+        </ToggleGroup>
     );
 };
 

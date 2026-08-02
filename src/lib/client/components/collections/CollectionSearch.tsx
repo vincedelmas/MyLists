@@ -9,6 +9,7 @@ import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
+import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
@@ -112,23 +113,27 @@ export const CollectionSearch = ({ mediaType, onAdd, disabled }: CollectionSearc
                         </div>
                     )}
                     {searchResults && searchResults.data.length > 0 &&
-                        <div className="flex justify-end gap-2 items-center p-3">
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={page === 1}
-                                onClick={() => setPage((p) => p - 1)}
-                            >
-                                <ChevronLeft/>
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={!searchResults?.hasNextPage}
-                                onClick={() => setPage((p) => p + 1)}
-                            >
-                                <ChevronRight/>
-                            </Button>
+                        <div className="flex justify-end items-center p-3">
+                            <ButtonGroup aria-label="Collection search result pages">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={page === 1}
+                                    aria-label="Previous collection search result page"
+                                    onClick={() => setPage((p) => p - 1)}
+                                >
+                                    <ChevronLeft/> Prev.
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={!searchResults?.hasNextPage}
+                                    aria-label="Next collection search result page"
+                                    onClick={() => setPage((p) => p + 1)}
+                                >
+                                    Next <ChevronRight/>
+                                </Button>
+                            </ButtonGroup>
                         </div>
                     }
                 </div>

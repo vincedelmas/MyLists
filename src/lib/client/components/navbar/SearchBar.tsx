@@ -8,6 +8,7 @@ import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {ChevronLeft, ChevronRight, Search} from "lucide-react";
+import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
@@ -110,23 +111,27 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                         />
                     )}
                     {searchResults && searchResults.data.length > 0 &&
-                        <div className="flex justify-end gap-2 items-center p-4">
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={page === 1}
-                                onClick={() => setPage((p) => p - 1)}
-                            >
-                                <ChevronLeft/>
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={!searchResults?.hasNextPage}
-                                onClick={() => setPage((p) => p + 1)}
-                            >
-                                <ChevronRight/>
-                            </Button>
+                        <div className="flex justify-end items-center p-4">
+                            <ButtonGroup aria-label="Search result pages">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={page === 1}
+                                    aria-label="Previous search result page"
+                                    onClick={() => setPage((p) => p - 1)}
+                                >
+                                    <ChevronLeft/> Prev.
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    aria-label="Next search result page"
+                                    disabled={!searchResults?.hasNextPage}
+                                    onClick={() => setPage((p) => p + 1)}
+                                >
+                                    Next <ChevronRight/>
+                                </Button>
+                            </ButtonGroup>
                         </div>
                     }
                 </div>

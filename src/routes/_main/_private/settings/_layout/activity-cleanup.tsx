@@ -10,6 +10,7 @@ import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
+import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/date-formatting";
@@ -97,17 +98,17 @@ function ActivityCleanupSettings() {
                                     Days since your account creation.
                                 </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                <Button type="button" variant="outline" onClick={() => applyPreset(30)}>
+                            <ButtonGroup className="w-full" aria-label="Quick cleanup ranges">
+                                <Button className="flex-1" type="button" variant="outline" onClick={() => applyPreset(30)}>
                                     30 days
                                 </Button>
-                                <Button type="button" variant="outline" onClick={() => applyPreset(60)}>
+                                <Button className="flex-1" type="button" variant="outline" onClick={() => applyPreset(60)}>
                                     60 days
                                 </Button>
-                                <Button type="button" variant="outline" onClick={() => applyPreset(90)}>
+                                <Button className="flex-1" type="button" variant="outline" onClick={() => applyPreset(90)}>
                                     90 days
                                 </Button>
-                            </div>
+                            </ButtonGroup>
                         </div>
                         <Controller
                             name="startDate"

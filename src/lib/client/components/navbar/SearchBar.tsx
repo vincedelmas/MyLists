@@ -73,12 +73,12 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                 <InputGroupAddon align="inline-start">
                     <Search aria-hidden="true"/>
                 </InputGroupAddon>
-                <InputGroupAddon align="inline-end">
+                <InputGroupAddon align="inline-end" className="h-full p-0 has-[>button]:mr-0">
                     <Select value={selectDrop} items={searchProviderItems} onValueChange={handleValueChange}>
-                        <SelectTrigger aria-label="Search provider">
+                        <SelectTrigger variant="inputGroup" aria-label="Search provider" className="min-w-25">
                             <SelectValue/>
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent align="start">
                             <SelectGroup>
                                 {searchProviderItems.map((item) =>
                                     <SelectItem key={item.value} value={item.value}>

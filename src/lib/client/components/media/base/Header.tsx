@@ -82,6 +82,12 @@ export const Header = (props: HeaderProps) => {
                     placeholder={`Search in ${filters.status ?? "All Media"}...`}
                 />
             </div>
+            <SortComponent
+                className="w-45"
+                applySorting={onSortChange}
+                sorting={pagination.sorting}
+                allSorting={pagination.availableSorting}
+            />
             <Button
                 variant="outline"
                 onClick={onFilterClick}
@@ -90,12 +96,6 @@ export const Header = (props: HeaderProps) => {
             >
                 <Filter className="size-4"/> Filters
             </Button>
-            <SortComponent
-                className="w-45"
-                applySorting={onSortChange}
-                sorting={pagination.sorting}
-                allSorting={pagination.availableSorting}
-            />
             <Button variant="outline" onClick={onGridClick} className="shrink-0 min-w-20">
                 {isGrid
                     ? <><List className="size-4"/> Table</>

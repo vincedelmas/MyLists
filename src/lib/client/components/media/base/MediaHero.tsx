@@ -15,7 +15,7 @@ export function MediaHero({ media, mediaType }: MediaHeroProps) {
         filter: "blur(20px)",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundImage: `linear-gradient(to bottom, rgba(15, 15, 15, 0.7), rgba(15, 15, 15, 1)), url(${media.imageCover})`,
+        backgroundImage: `linear-gradient(to bottom, rgba(15, 15, 15, 0.7), var(--background)), url(${media.imageCover})`,
     };
 
     return (

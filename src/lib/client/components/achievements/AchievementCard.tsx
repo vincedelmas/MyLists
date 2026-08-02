@@ -52,7 +52,7 @@ export const AchievementCard = ({ achievement }: AchievementCardProps) => {
                     </Badge>
                 </CardAction>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="flex flex-col gap-4">
                 <CardDescription className="line-clamp-2" title={description ?? ""}>
                     {description}
                 </CardDescription>

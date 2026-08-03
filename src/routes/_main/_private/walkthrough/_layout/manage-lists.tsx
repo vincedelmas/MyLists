@@ -47,11 +47,11 @@ function ListsOnboarding() {
                     <Header
                         filters={{}}
                         isGrid={true}
-                        pagination={onboardingListPagination}
                         onGridClick={() => undefined}
                         onSortChange={() => undefined}
                         onFilterClick={() => undefined}
                         onStatusChange={() => undefined}
+                        pagination={onboardingListPagination}
                         allStatuses={statusUtils.byMediaType(MediaType.MOVIES)}
                     />
                 </OnboardingDemoBox>

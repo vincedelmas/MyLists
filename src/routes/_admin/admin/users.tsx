@@ -259,11 +259,11 @@ function UserManagementPage() {
             enableSorting: false,
             cell: ({ row: { original } }) => (
                 <DropdownMenu>
-                    <DropdownMenuTrigger render={<Button variant="ghost" className="size-8 p-0"/>}>
+                    <DropdownMenuTrigger render={<Button variant="ghost"/>}>
                         <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="size-4"/>
+                        <MoreHorizontal/>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-fit">
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>
                                 Actions for {" "}

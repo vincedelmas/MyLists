@@ -12,7 +12,7 @@ import {DialogRootChangeEventDetails} from "@base-ui/react";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {displayContainerError} from "@/lib/utils/error-display";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
-import {ChevronRight, Pencil, PlusCircle, Tags} from "lucide-react";
+import {ChevronRight, PlusCircle, Tags} from "lucide-react";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
@@ -74,7 +74,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogTrigger className="text-muted-foreground">
                 <Button type="button" size="bare" variant="ghost" className="text-xs">
-                    <Pencil className="mr-1"/> Manage
+                    Manage
                 </Button>
             </DialogTrigger>
             <DialogContent className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full">

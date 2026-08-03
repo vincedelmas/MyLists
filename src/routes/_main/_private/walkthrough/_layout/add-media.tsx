@@ -1,6 +1,6 @@
 import dedent from "dedent";
 import {cn} from "@/lib/utils/classnames";
-import {Card} from "@/lib/client/components/ui/card";
+import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
@@ -50,23 +50,25 @@ function RouteComponent() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 href={media.providerData.url}
-                                className={cn(buttonVariants({ variant: "outline", className: "w-full gap-2" }))}
+                                className={cn(buttonVariants({ variant: "tame", className: "w-full gap-2" }))}
                             >
                                 <ExternalLink className="size-4"/>
                                 View on {media.providerData.name}
                             </a>
                             <Card>
-                                <div className="text-center space-y-2">
-                                    <h3 className="text-lg font-semibold text-foreground">
-                                        Are you interested in this?
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Add this {MediaType.MOVIES} to your list to track your progress.
-                                    </p>
-                                </div>
-                                <Button className="w-full mt-2">
-                                    <Plus className="size-4"/> Add to List
-                                </Button>
+                                <CardContent className="text-center space-y-4">
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-foreground">
+                                            Are you interested in this?
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Add this {MediaType.MOVIES} to your list to track your progress.
+                                        </p>
+                                    </div>
+                                    <Button className="w-full">
+                                        <Plus/> Add to List
+                                    </Button>
+                                </CardContent>
                             </Card>
                         </div>
                     </div>
@@ -79,7 +81,7 @@ function RouteComponent() {
             >
                 <OnboardingDemoBox>
                     {!!userMedia &&
-                        <div className="max-w-100">
+                        <div className="max-w-90">
                             <UserMediaDetails
                                 preview
                                 userMedia={userMedia}

@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {UpdateType} from "@/lib/utils/enums";
-import {Maximize2, Pencil, Plus} from "lucide-react";
+import {Maximize2} from "lucide-react";
 import {COMMENT_MAX_LENGTH} from "@/lib/utils/constants";
 import {Button} from "@/lib/client/components/ui/button";
 import {Textarea} from "@/lib/client/components/ui/textarea";
@@ -84,7 +84,7 @@ export const UpdateComment = ({ content, updateComment, disabled = false, maxCha
                         className="text-xs"
                         onClick={handleEditToggle}
                     >
-                        {content ? <><Pencil/> Edit</> : <><Plus/> Add</>}
+                        {content ? "Edit" : "Add"}
                     </Button>
                 </div>
             </h4>

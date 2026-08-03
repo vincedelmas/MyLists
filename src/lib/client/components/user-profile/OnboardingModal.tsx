@@ -84,7 +84,7 @@ export const OnboardingModal = () => {
                             Start Walkthrough <ArrowRight/>
                         </Button>
 
-                        <Button variant="default" onClick={handleNoThanks}>
+                        <Button variant="outline" onClick={handleNoThanks}>
                             I know my way around
                         </Button>
                     </div>

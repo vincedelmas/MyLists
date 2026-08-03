@@ -15,16 +15,16 @@ interface OnboardingSectionProps {
 
 
 export const OnboardingSection = ({ title, icon: Icon, description, children }: OnboardingSectionProps) => (
-    <section className="space-y-4">
+    <section className="space-y-2">
         <div className="flex items-center gap-3">
-            <div className="p-3 rounded-lg shrink-0 bg-brand/20 text-brand">
-                <Icon className="size-6"/>
+            <div className="p-2 rounded-lg shrink-0 bg-brand/20 text-brand">
+                <Icon className="size-4"/>
             </div>
-            <h2 className="text-3xl font-bold tracking-tight">
+            <h2 className="text-2xl font-bold tracking-tight">
                 {title}
             </h2>
         </div>
-        <div className="text-muted-foreground text-lg leading-relaxed">
+        <div className="text-muted-foreground leading-relaxed">
             {description}
         </div>
         {children}
@@ -42,9 +42,9 @@ interface OnboardingSubSectionProps {
 
 export const OnboardingSubSection = ({ title, description, icon: Icon, children }: OnboardingSubSectionProps) => (
     <section className="space-y-6">
-        <div className="space-y-2">
-            <h3 className="text-xl font-semibold flex items-center gap-2">
-                {Icon && <Icon className="size-5 text-brand"/>}
+        <div className="space-y-1">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+                {Icon && <Icon className="size-4 text-brand"/>}
                 {title}
             </h3>
             <div className="text-muted-foreground">
@@ -174,7 +174,7 @@ export const OnboardingNav = ({ username, items, position }: OnboardingNavProps)
                 </Button>
 
                 {nextStep ?
-                    <Button size="sm" variant="default" onClick={() => handleNavigate(nextStep?.to)}>
+                    <Button size="sm" onClick={() => handleNavigate(nextStep?.to)}>
                         Next <ChevronRight/>
                     </Button>
                     :
@@ -183,12 +183,7 @@ export const OnboardingNav = ({ username, items, position }: OnboardingNavProps)
                     </Button>
                 }
             </div>
-            <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleSkip}
-                className="text-muted-foreground order-1 sm:order-2"
-            >
+            <Button size="sm" variant="hover" onClick={handleSkip} className="text-muted-foreground order-1 sm:order-2">
                 <X className="size-4"/> Skip Walkthrough
             </Button>
         </div>

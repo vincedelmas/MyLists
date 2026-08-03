@@ -4,18 +4,19 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatPercent} from "@/lib/utils/number-formatting";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {UserStats} from "@/lib/client/components/admin/UserStats";
+import {DataTable} from "@/lib/client/components/general/DataTable";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
+import {ColumnDef, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {Activity, CheckCircle2, MailWarning, Trash2, UsersRound} from "lucide-react";
 import {inactiveAccountDeletionsAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 export const Route = createFileRoute("/_admin/admin/inactive-accounts")({
@@ -56,12 +57,11 @@ function InactiveAccountsPage() {
     const { search = DEFAULT.search } = filters;
     const apiData = useSuspenseQuery(inactiveAccountDeletionsAdminOptions(filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search });
-    const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: filters.perPage ?? 25 };
-
-    const onPaginationChange: OnChangeFn<PaginationState> = async (updaterOrValue) => {
-        const newPagination = typeof updaterOrValue === "function" ? updaterOrValue(paginationState) : updaterOrValue;
-        updateFilters({ page: newPagination.pageIndex + 1 });
-    };
+    const { pagination, onPaginationChange } = useTablePagination({
+        page: filters.page,
+        pageSize: filters.perPage ?? 25,
+        onPageChange: (page) => updateFilters({ page }),
+    });
 
     const columns: ColumnDef<typeof apiData.items[0]>[] = useMemo(() => [
         {
@@ -142,12 +142,12 @@ function InactiveAccountsPage() {
 
     const table = useReactTable({
         columns,
+        onPaginationChange,
         manualPagination: true,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
         getCoreRowModel: getCoreRowModel(),
-        onPaginationChange: onPaginationChange,
-        state: { pagination: paginationState },
+        state: { pagination },
     });
 
     return (
@@ -205,40 +205,11 @@ function InactiveAccountsPage() {
                 />
             </div>
 
-            <div className="mt-3 rounded-md border p-3 pt-0 overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) =>
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map(header =>
-                                    <TableHead key={header.id}>
-                                        {!header.isPlaceholder && flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                )}
-                            </TableRow>
-                        )}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ?
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id}>
-                                    {row.getVisibleCells().map((cell) =>
-                                        <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
-                                    )}
-                                </TableRow>
-                            ))
-                            :
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No inactive account lifecycle rows yet.
-                                </TableCell>
-                            </TableRow>
-                        }
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable
+                table={table}
+                className="mt-3"
+                emptyMessage="No inactive account lifecycle rows yet."
+            />
             <div className="mt-3">
                 <TablePagination
                     table={table}

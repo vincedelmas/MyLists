@@ -10,18 +10,19 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {postImpersonateUser} from "@/lib/server/functions/admin";
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
+import {DataTable} from "@/lib/client/components/general/DataTable";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
 import {userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {useAdminUpdateUserMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
+import {ColumnDef, getCoreRowModel, OnChangeFn, SortingState, useReactTable} from "@tanstack/react-table";
 import {CheckCircle, ChevronsUpDown, MoreHorizontal, Trash2, UserCheck, UserPen, UserX} from "lucide-react";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, SortingState, useReactTable} from "@tanstack/react-table";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -58,12 +59,11 @@ function UserManagementPage() {
     const impersonateMutation = useMutation({ mutationFn: postImpersonateUser });
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search });
     const sortingState = [{ id: filters?.sorting ?? DEFAULT.sorting, desc: filters?.sortDesc === true }];
-    const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: filters.perPage ?? 25 };
-
-    const onPaginationChange: OnChangeFn<PaginationState> = async (updaterOrValue) => {
-        const newPagination = typeof updaterOrValue === "function" ? updaterOrValue(paginationState) : updaterOrValue;
-        updateFilters({ page: newPagination.pageIndex + 1 });
-    };
+    const { pagination, onPaginationChange } = useTablePagination({
+        page: filters.page,
+        pageSize: filters.perPage ?? 25,
+        onPageChange: (page) => updateFilters({ page }),
+    });
 
     const onSortingChange: OnChangeFn<SortingState> = async (updaterOrValue) => {
         const newSorting = typeof updaterOrValue === "function" ? updaterOrValue(sortingState) : updaterOrValue;
@@ -356,6 +356,8 @@ function UserManagementPage() {
     ];
 
     const table = useReactTable({
+        onSortingChange,
+        onPaginationChange,
         enableSorting: true,
         manualSorting: true,
         columns: usersColumns,
@@ -363,10 +365,8 @@ function UserManagementPage() {
         manualPagination: true,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
-        onSortingChange: onSortingChange,
         getCoreRowModel: getCoreRowModel(),
-        onPaginationChange: onPaginationChange,
-        state: { pagination: paginationState, sorting: sortingState },
+        state: { pagination, sorting: sortingState },
     });
 
     return (
@@ -391,42 +391,11 @@ function UserManagementPage() {
                     </Button>
                 </div>
             </div>
-            <div className="rounded-md border p-3 pt-0 overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) =>
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map(header =>
-                                    <TableHead key={header.id}>
-                                        {!header.isPlaceholder && flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                )}
-                            </TableRow>
-                        )}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ?
-                            table.getRowModel().rows.map((row) => {
-                                return (
-                                    <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                                        {row.getVisibleCells().map((cell) =>
-                                            <TableCell key={cell.id}>
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </TableCell>
-                                        )}
-                                    </TableRow>
-                                );
-                            })
-                            :
-                            <TableRow>
-                                <TableCell colSpan={usersColumns.length} className="h-24 text-center">
-                                    No results.
-                                </TableCell>
-                            </TableRow>
-                        }
-                    </TableBody>
-                </Table>
-            </div>
+
+            <DataTable
+                table={table}
+            />
+
             <div className="mt-3">
                 <TablePagination
                     table={table}

@@ -2,14 +2,15 @@ import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {MediaListArgs} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {DataTable} from "@/lib/client/components/general/DataTable";
+import {getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
+import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {ListPagination, UserMediaItem} from "@/lib/types/query.options.types";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
-import {flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 
 
 interface MediaTableProps {
@@ -25,18 +26,17 @@ interface MediaTableProps {
 }
 
 
-export const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onChangePage }: MediaTableProps) => {
+const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onChangePage }: MediaTableProps) => {
     const { currentUser } = useAuth();
     const isConnected = !!currentUser;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
-    const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: 25 };
-
-    const onPaginationChange: OnChangeFn<PaginationState> = (updaterOrValue) => {
-        const newPagination = typeof updaterOrValue === "function" ? updaterOrValue(paginationState) : updaterOrValue;
-        onChangePage({ page: newPagination.pageIndex + 1 });
-    };
+    const { pagination, onPaginationChange } = useTablePagination({
+        pageSize: 25,
+        page: filters.page,
+        onPageChange: (page) => onChangePage({ page }),
+    });
 
     const handleEdit = (mediaId: number) => {
         setEditingId(mediaId);
@@ -46,14 +46,14 @@ export const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption
     const listColumns = mediaConfig[mediaType].mediaListColumns({ isCurrent, isConnected, isMediaTypeActive, mediaType, queryOption, onEdit: handleEdit });
 
     const table = useReactTable({
+        onPaginationChange,
         manualFiltering: true,
         manualPagination: true,
         data: results.items ?? [],
         columns: listColumns as any,
         getCoreRowModel: getCoreRowModel(),
-        onPaginationChange: onPaginationChange,
-        state: { pagination: paginationState },
         rowCount: results.pagination.totalItems ?? 0,
+        state: { pagination },
     });
 
     const getCurrentEditingItem = () => {
@@ -63,40 +63,10 @@ export const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption
 
     return (
         <>
-            <div className="rounded-md border p-3 pt-0">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) =>
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) =>
-                                    <TableHead key={header.id}>
-                                        {flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                )}
-                            </TableRow>
-                        )}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ?
-                            table.getRowModel().rows.map((row) =>
-                                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                                    {row.getVisibleCells().map((cell) =>
-                                        <TableCell key={cell.id} style={{ width: getColumnWidth(cell.column.id) }}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
-                                    )}
-                                </TableRow>
-                            )
-                            :
-                            <TableRow>
-                                <TableCell colSpan={listColumns.length} className="h-24 text-center">
-                                    No results.
-                                </TableCell>
-                            </TableRow>
-                        }
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable
+                table={table}
+                getCellStyle={(cell) => ({ width: getColumnWidth(cell.column.id) })}
+            />
             <div className="mt-3">
                 <TablePagination
                     table={table}
@@ -116,6 +86,9 @@ export const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption
         </>
     );
 };
+
+
+export default MediaTable;
 
 
 function getColumnWidth(colId: string) {

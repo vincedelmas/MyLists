@@ -12,8 +12,8 @@ export const Footer = () => {
     return (
         <footer className="mt-20 w-full border-t bg-background">
             <div className="mx-auto max-w-7xl px-4 py-6">
-                <div className="grid grid-cols-12 gap-12 max-sm:grid-cols-1 max-sm:gap-8 max-sm:mb-8">
-                    <div className="md:col-span-6 flex flex-col gap-4">
+                <div className="mb-8 grid grid-cols-1 gap-8 sm:mb-0 sm:grid-cols-2 sm:gap-12 md:grid-cols-12">
+                    <div className="flex flex-col gap-4 sm:col-span-2 md:col-span-6">
                         <div className="flex items-center gap-2 text-xl font-bold">
                             <img width={20} alt="MyLists logo" src="/favicon.ico"/>
                             <span>MyLists.info</span>

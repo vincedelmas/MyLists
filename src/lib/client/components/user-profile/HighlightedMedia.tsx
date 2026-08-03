@@ -1,17 +1,20 @@
 import {HeartOff, TrendingUp} from "lucide-react";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 
 
 interface HighlightedMediaProps {
+    showMediaType?: boolean;
     config: ResolvedHighlightedMediaTabConfig;
 }
 
 
-export const HighlightedMedia = ({ config }: HighlightedMediaProps) => {
+export const HighlightedMedia = ({ config, showMediaType = false }: HighlightedMediaProps) => {
     const isBelowLg = useBreakpoint("lg");
     const itemsToDisplay = config.items.slice(0, isBelowLg ? 4 : 7);
 
@@ -35,12 +38,26 @@ export const HighlightedMedia = ({ config }: HighlightedMediaProps) => {
                         />
                         :
                         itemsToDisplay.map((item) =>
-                            <MediaCard key={`${item.mediaType}-${item.mediaId}`} item={item} mediaType={item.mediaType}>
-                                <div className="absolute bottom-0 w-full rounded-b-sm p-3 pb-2">
-                                    <h3 className="line-clamp-1 text-[10px] font-bold" title={item.mediaName}>
+                            <MediaCard item={item} mediaType={item.mediaType}>
+                                <MediaCardFooter density="compact">
+                                    <MediaCardTitle density="compact" title={item.mediaName}>
                                         {item.mediaName}
-                                    </h3>
-                                </div>
+                                    </MediaCardTitle>
+                                    <MediaCardMeta>
+                                        <MediaCardDetails density="compact">
+                                            {showMediaType &&
+                                                <MediaTypeIcon
+                                                    size={14}
+                                                    mediaType={item.mediaType}
+                                                />
+                                            }
+                                            <MediaReleaseDate
+                                                density="compact"
+                                                date={item.releaseDate}
+                                            />
+                                        </MediaCardDetails>
+                                    </MediaCardMeta>
+                                </MediaCardFooter>
                             </MediaCard>
                         )
                     }

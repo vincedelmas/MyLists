@@ -9,25 +9,25 @@ type MediaAgg = "all" | "overview";
 
 
 interface MediaItemOptions<TLeading extends MediaAgg> {
+    size?: number;
     leading: TLeading;
-    leadingLabel?: ReactNode;
 }
 
 
 export const createMediaTabItems = <T extends MediaType, L extends MediaAgg>(mediaTypes: readonly T[], options: MediaItemOptions<L>): TabItem<T | L>[] => {
-    const { leading, leadingLabel } = options;
+    const { leading, size } = options;
 
     return [
         {
             id: leading,
             isAccent: true,
-            label: leadingLabel,
-            icon: <MainThemeIcon type={leading}/>,
+            label: capitalize(leading),
+            icon: <MainThemeIcon type={leading} size={size}/>,
         },
         ...mediaTypes.map((mediaType) => ({
             id: mediaType,
             label: capitalize(mediaType),
-            icon: <MainThemeIcon type={mediaType}/>,
+            icon: <MainThemeIcon type={mediaType} size={size}/>,
         })),
     ];
 };

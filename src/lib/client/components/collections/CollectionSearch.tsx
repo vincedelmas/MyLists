@@ -1,11 +1,8 @@
 import React, {useState} from "react";
-import {cn} from "@/lib/utils/classnames";
 import {useQuery} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {formatDate} from "@/lib/utils/date-formatting";
 import {ChevronLeft, ChevronRight} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
@@ -14,6 +11,7 @@ import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
+import {MediaSearchResult} from "@/lib/client/components/media/base/MediaSearchResult";
 import {useAddMediaToCollectionMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 
 
@@ -78,36 +76,12 @@ export const CollectionSearch = ({ mediaType, onAdd, disabled }: CollectionSearc
                     {searchResults?.data.map((item) =>
                         <div key={item.id}>
                             <button
+                                type="button"
                                 disabled={resolvingId === item.id}
                                 onClick={() => handleAdd(item)}
-                                className="text-left w-full hover:bg-popover/70"
+                                className="w-full text-left"
                             >
-                                <div className="flex w-full gap-4 items-center p-3">
-                                    <div className="relative shrink-0">
-                                        <img
-                                            loading="lazy"
-                                            alt={item.name}
-                                            src={item.image}
-                                            className={cn("w-14 aspect-2/3 rounded-sm transition-opacity duration-200", resolvingId === item.id && "opacity-20")}
-                                        />
-                                        {resolvingId === item.id &&
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <Spinner className="size-6"/>
-                                            </div>
-                                        }
-                                    </div>
-                                    <div className={cn("flex-1 min-w-0 transition-opacity duration-200", resolvingId === item.id && "opacity-40")}>
-                                        <div className="font-semibold mb-1 line-clamp-2">
-                                            {item.name}
-                                        </div>
-                                        <div className="text-foreground text-xs">
-                                            {capitalize(item.itemType)}
-                                        </div>
-                                        <div className="text-muted-foreground text-xs">
-                                            {formatDate(item.date)}
-                                        </div>
-                                    </div>
-                                </div>
+                                <MediaSearchResult item={item} isPending={resolvingId === item.id}/>
                             </button>
                             <Separator className="m-0"/>
                         </div>

@@ -1,21 +1,30 @@
 import {collectionIdSchema} from "@/lib/schemas";
-import {Copy, Heart, List, ListOrdered, Pencil} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {formatDate} from "@/lib/utils/date-formatting";
 import {Button} from "@/lib/client/components/ui/button";
+import {Copy, Heart, List, ListOrdered, Pencil} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
 import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
+import {
+    MediaCard,
+    MediaCardDetails,
+    MediaCardFooter,
+    MediaCardLeftCorner,
+    MediaCardMeta,
+    MediaCardRightCorner,
+    MediaCardSignals,
+    MediaCardTitle
+} from "@/lib/client/components/media/base/MediaCard";
 import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
+import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/")({
@@ -118,37 +127,32 @@ function CollectionViewer() {
                 :
                 <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {items.map((item) =>
-                        <MediaCard
-                            item={item}
-                            key={item.mediaId}
-                            mediaType={collection.mediaType}
-                            showShade={(!isAnonymous && isMediaTypeActive && item.inUserList)}
-                        >
-                            {collection.ordered &&
-                                <div className="absolute top-2 left-2 self-start rounded-md bg-black/70 px-3 py-0.5 text-sm font-semibold text-white">
-                                    #{item.orderIndex}
-                                </div>
+                        <MediaCard item={item} mediaType={collection.mediaType}>
+                            <MediaCardLeftCorner>
+                                # {item.orderIndex}
+                            </MediaCardLeftCorner>
+
+                            {(!isAnonymous && isMediaTypeActive && item.inUserList) &&
+                                <MediaCardRightCorner>
+                                    <DisplayInUserListCheck/>
+                                </MediaCardRightCorner>
                             }
-                            {!isAnonymous && isMediaTypeActive && item.inUserList &&
-                                <DisplayInUserListCheck/>
-                            }
-                            <div className="absolute bottom-0 w-full space-y-1 rounded-b-sm p-3">
-                                <div className="flex w-full items-center justify-between space-x-2 text-sm">
-                                    <h3 className="grow truncate font-medium" title={item.mediaName}>
-                                        {item.mediaName}
-                                    </h3>
-                                </div>
-                                <div className="flex w-full flex-wrap items-center justify-between">
-                                    <div className="shrink-0 text-xs font-medium text-white/70">
-                                        {formatDate(item.releaseDate)}
-                                    </div>
+
+                            <MediaCardFooter density="compact">
+                                <MediaCardTitle title={item.mediaName}>
+                                    {item.mediaName}
+                                </MediaCardTitle>
+                                <MediaCardMeta>
+                                    <MediaCardDetails>
+                                        <MediaReleaseDate date={item.releaseDate}/>
+                                    </MediaCardDetails>
                                     {item.annotation &&
-                                        <DisplayComment
-                                            content={item.annotation}
-                                        />
+                                        <MediaCardSignals>
+                                            <DisplayComment content={item.annotation}/>
+                                        </MediaCardSignals>
                                     }
-                                </div>
-                            </div>
+                                </MediaCardMeta>
+                            </MediaCardFooter>
                         </MediaCard>
                     )}
                 </div>

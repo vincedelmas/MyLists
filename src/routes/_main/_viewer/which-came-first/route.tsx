@@ -9,7 +9,9 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {WCF_MAX_ROUNDS, WCF_MEDIA_TYPES} from "@/lib/schemas/wcf.schema";
+import {MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {dateFromUTCInput, extractDate, formatDate} from "@/lib/utils/date-formatting";
 import {whichCameFirstOptions} from "@/lib/client/react-query/query-options/wcf.options";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
@@ -507,29 +509,27 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
 
             <div className="absolute inset-0 bg-linear-to-t from-black via-black/10 to-black/15"/>
 
-            <Badge variant="overlay" className="absolute left-2 top-2">
-                <MainThemeIcon type={card.mediaType}/>
-                {card.mediaType}
-            </Badge>
             {state !== "neutral" &&
-                <div className={cn(
-                    "absolute right-3 top-3 flex size-7 animate-in zoom-in-75 items-center justify-center",
-                    "rounded-full shadow-lg max-sm:right-2 max-sm:top-2 max-sm:size-8",
-                    state === "correct"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-destructive text-destructive-foreground",
-                )}>
-                    {state === "correct" ? <Check/> : <X/>}
-                </div>
+                <MediaCardRightCorner>
+                    <div className={cn(
+                        "flex size-7 animate-in zoom-in-75 items-center justify-center rounded-full shadow-lg max-sm:size-8",
+                        state === "correct"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-destructive text-destructive-foreground",
+                    )}>
+                        {state === "correct" ? <Check/> : <X/>}
+                    </div>
+                </MediaCardRightCorner>
             }
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 pb-3 max-sm:p-3">
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3 max-sm:p-3">
                 <div className="min-w-0">
-                    <h3 className="line-clamp-2 font-semibold leading-tight sm:text-lg">
+                    <MediaCardTitle lines={2} density="strong">
                         {card.name}
-                    </h3>
-                    <span className="mt-1 block text-[10px] font-medium uppercase tracking-wider text-white/55">
-                        Release date
-                    </span>
+                    </MediaCardTitle>
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-white/55">
+                        <MediaTypeIcon mediaType={card.mediaType} size={14}/>
+                        <span>Release date</span>
+                    </div>
                 </div>
                 <strong className={cn("shrink-0 text-right text-2xl leading-none sm:text-3xl", !releaseDate && "text-white/35")}>
                     {releaseDate ? formatComparisonDate(releaseDate, otherReleaseDate!) : "?"}

@@ -25,24 +25,22 @@ function TrendsPage() {
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
     const mediaTabs = createMediaTabItems(TREND_MEDIA_TYPES, { leading: "all" });
-    const { seriesTrends, moviesTrends, gamesTrends } = useSuspenseQuery(trendsOptions).data;
+    const { seriesTrends, moviesTrends } = useSuspenseQuery(trendsOptions).data;
 
     const setActiveTab = (newTab: TrendsActiveTab) => {
         void navigate({ search: (prev) => ({ ...prev, activeTab: newTab === "all" ? undefined : newTab }) });
     };
 
-    const allTrends = [...seriesTrends, ...moviesTrends, ...gamesTrends]
+    const allTrends = [...seriesTrends, ...moviesTrends]
         .sort((a, b) => compareDateInputs(b.releaseDate, a.releaseDate));
 
     const getFilteredData = () => {
-        if (activeTab === MediaType.GAMES) return gamesTrends;
         if (activeTab === MediaType.MOVIES) return moviesTrends;
         if (activeTab === MediaType.SERIES) return seriesTrends;
         return allTrends;
     };
 
     const getHeroMedia = () => {
-        if (activeTab === MediaType.GAMES) return gamesTrends[0];
         if (activeTab === MediaType.SERIES) return seriesTrends[0];
         return moviesTrends[0];
     }

@@ -157,6 +157,7 @@ export class UserProfileService {
                 lookupMap.set(`${mediaType}|${md.id}`, {
                     mediaId: md.id,
                     mediaName: md.name,
+                    releaseDate: md.releaseDate,
                     mediaCover: md.customCover ?? md.imageCover,
                 });
             }

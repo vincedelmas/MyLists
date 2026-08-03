@@ -73,14 +73,14 @@ export const formatDateForDb = (value: number | string | null | undefined) => {
 
 
 /** Entry format is 'YYYY-MM-DD', returns an object with year, month, and day strings */
-export const extractDate = (input?: string | null) => {
+export const extractDate = (input?: string | null | undefined) => {
     const [year = DEFAULT_DASH_FALLBACK, month = DEFAULT_DASH_FALLBACK, day = DEFAULT_DASH_FALLBACK] = input?.split("-", 3) ?? [];
     return { year, month, day };
 };
 
 
 /** Entry format is 'YYYY-MM-DD', returns a year string or DEFAULT_FALLBACK */
-export const extractYear = (date?: string | null) => {
+export const extractYear = (date?: string | null | undefined) => {
     return extractDate(date).year;
 };
 

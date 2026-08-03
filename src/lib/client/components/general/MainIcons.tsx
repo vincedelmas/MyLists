@@ -8,16 +8,18 @@ interface MainThemeIconProps {
     size?: number;
     className?: string;
     type: MediaType | "overview" | "all";
+    dataIcon?: "inline-start" | "inline-end";
 }
 
 
-export const MainThemeIcon = ({ type, size, className }: MainThemeIconProps) => {
+export const MainThemeIcon = ({ type, size, className, dataIcon }: MainThemeIconProps) => {
     const IconComp = THEME_ICONS_MAP[type];
     if (!IconComp) return null;
 
     return (
         <IconComp
             size={size ?? 18}
+            data-icon={dataIcon}
             className={className}
             style={{ color: getThemeColor(type) }}
         />

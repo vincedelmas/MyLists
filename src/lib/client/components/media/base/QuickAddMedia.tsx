@@ -26,8 +26,8 @@ export const QuickAddMedia = ({ mediaType, mediaId, isMediaTypeActive, allStatus
 
     return (
         <Popover>
-            <PopoverTrigger render={<Button size="bare" variant="ghost" className="absolute right-2 top-2 z-10"/>}>
-                <CirclePlus className="opacity-60 group-hover:opacity-90"/>
+            <PopoverTrigger render={<Button size="icon-sm" variant="overlay" aria-label="Add to your list"/>}>
+                <CirclePlus data-icon="inline-start"/>
             </PopoverTrigger>
             <PopoverContent align="end" className={isMediaTypeActive ? "w-40 p-2 text-sm gap-0" : "w-65 p-3"}>
                 {isMediaTypeActive ?

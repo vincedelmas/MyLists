@@ -4,9 +4,10 @@ import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {ComingNextItem} from "@/lib/types/query.options.types";
+import {formatCalendarRelativeDate} from "@/lib/utils/date-formatting";
 import {StatusBadge} from "@/lib/client/components/general/StatusBadge";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {extractYear, formatCalendarRelativeDate, formatDate} from "@/lib/utils/date-formatting";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 
 
 export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, mediaType: MediaType }) => {
@@ -22,24 +23,19 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
                         src={item.imageCover}
                         className="w-full h-full object-cover"
                     />
-
-                    <div className="md:hidden absolute top-2 right-2 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-md text-[10px]
-                    font-bold tracking-wider text-muted-foreground border capitalize">
-                        {mediaType}
-                    </div>
                 </div>
                 <div className="flex-1 p-4 flex flex-col justify-between">
                     <div className="flex justify-between items-start gap-4">
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <span className="hidden md:flex items-center justify-center size-4">
-                                    <MainThemeIcon type={mediaType}/>
-                                </span>
+                                <MediaTypeIcon
+                                    size={16}
+                                    mediaType={mediaType}
+                                />
                                 <h3 className="font-medium transition-colors line-clamp-1">
                                     {item.mediaName}
                                 </h3>
                             </div>
-
                             <div className="text-sm text-muted-foreground flex items-center gap-2">
                                 {isTvShow && item.seasonToAir && item.episodeToAir ?
                                     <div className="flex items-center gap-2 text-foreground">
@@ -59,15 +55,7 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
                                 }
                             </div>
                         </div>
-
-                        <div className="text-right shrink-0">
-                            <div className="text-lg font-medium">
-                                {formatDate(item.date)}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-0.5">
-                                {extractYear(item.date)}
-                            </div>
-                        </div>
+                        <MediaReleaseDate date={item.date}/>
                     </div>
                     <div className="flex items-end justify-between mt-3 pt-3 border-t">
                         <StatusBadge
@@ -75,7 +63,7 @@ export const ComingNextCard = ({ item, mediaType }: { item: ComingNextItem, medi
                         />
                         {relativeTime !== "never" &&
                             <Badge variant="outline" className="capitalize">
-                                <Calendar/>
+                                <Calendar data-icon="inline-start"/>
                                 {relativeTime}
                             </Badge>
                         }

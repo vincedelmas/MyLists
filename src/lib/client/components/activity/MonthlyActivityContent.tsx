@@ -1,21 +1,17 @@
 import React, {useState} from "react";
 import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Badge} from "@/lib/client/components/ui/badge";
 import {Label} from "@/lib/client/components/ui/label";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {LayoutGrid, Plus, Settings2} from "lucide-react";
+import {LayoutGrid, Plus} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
-import {formatMinutes} from "@/lib/utils/number-formatting";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {MonthlyActivityEditor} from "@/lib/types/activity.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
-import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
@@ -24,8 +20,12 @@ import {createMediaSelectItems} from "@/lib/client/components/general/media-type
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
-import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
+import {formatMinutes} from "@/lib/utils/number-formatting";
 
 
 interface MonthlyActivityContentProps {
@@ -169,46 +169,32 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
             {apiData.items.length > 0 &&
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {apiData.items.map((row) =>
-                        <MediaCard
-                            key={row.id}
-                            className="text-sm"
-                            showShade={canEdit}
-                            mediaType={row.mediaType}
-                            item={{ ...row, mediaCover: row.mediaCover }}
-                        >
-                            <div className="absolute left-1.5 top-1 z-10">
-                                {row.hidden &&
-                                    <Badge variant="overlay">
-                                        Hidden
-                                    </Badge>
-                                }
-                            </div>
+                        <MediaCard mediaType={row.mediaType} item={{ ...row, mediaCover: row.mediaCover }}>
                             {canEdit &&
-                                <div className="absolute right-1.5 top-1.5 z-10">
-                                    <Button
-                                        size="bare"
-                                        type="button"
-                                        variant="ghost"
+                                <MediaCardRightCorner>
+                                    <MediaCardEditAction
                                         onClick={() => setEditActivity(row)}
-                                        title={`Edit Monthly Activity for ${row.mediaName}`}
-                                    >
-                                        <Settings2 className="size-4 opacity-60 group-hover:opacity-90"/>
-                                    </Button>
-                                </div>
+                                        label={`Edit Monthly Activity for ${row.mediaName}`}
+                                    />
+                                </MediaCardRightCorner>
                             }
-                            <div className="absolute bottom-0 w-full space-y-2 rounded-b-sm p-3">
-                                <div className="flex w-full items-center justify-between space-x-2 max-sm:text-sm">
-                                    <h3 className="grow truncate font-semibold" title={row.mediaName}>
-                                        {row.mediaName}
-                                    </h3>
-                                </div>
-                                <div className="flex w-full flex-wrap items-center gap-2 text-xs font-medium text-white/70">
-                                    <MainThemeIcon type={row.mediaType} size={14}/>
-                                    <span>•</span>
-                                    <span>{formatMinutes(row.timeGained)}</span>
-                                    <MonthlyActivityStatusIcons row={row}/>
-                                </div>
-                            </div>
+
+                            <MediaCardFooter>
+                                <MediaCardTitle title={row.mediaName}>
+                                    {row.mediaName}
+                                </MediaCardTitle>
+                                <MediaCardMeta>
+                                    <MediaCardDetails>
+                                        {(!fixedMediaType && activeTab === "all") &&
+                                            <MediaTypeIcon mediaType={row.mediaType}/>
+                                        }
+                                        {formatMinutes(row.timeGained)}
+                                    </MediaCardDetails>
+                                    <MediaCardSignals>
+                                        <MonthlyActivityStatusIcons row={row}/>
+                                    </MediaCardSignals>
+                                </MediaCardMeta>
+                            </MediaCardFooter>
                         </MediaCard>
                     )}
                 </div>

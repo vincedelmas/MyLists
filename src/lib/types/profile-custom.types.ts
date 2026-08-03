@@ -22,6 +22,7 @@ export interface HighlightedMediaRef {
 export interface HighlightedMediaResolvedItem extends HighlightedMediaRef {
     mediaName: string;
     mediaCover: string;
+    releaseDate: string | null;
 }
 
 

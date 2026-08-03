@@ -30,8 +30,8 @@ function ProfileMain() {
     const apiData = useSuspenseQuery(profileOptions(username)).data;
     const activeMediaTypes = getActiveMediaTypes(apiData.userData.userMediaSettings);
     const [activeTab, setActiveTab] = useState<MediaType | "overview">("overview");
-    
-    const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "overview" });
+
+    const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "overview", size: 15 });
     const effectiveActiveTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "overview";
 
     return (

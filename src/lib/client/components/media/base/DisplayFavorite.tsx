@@ -13,7 +13,7 @@ export const DisplayFavorite = ({ isFavorite, size = 15 }: DisplayFavoriteProps)
     return (
         <Heart
             size={size}
-            className={cn(isFavorite && "fill-favorite text-favorite")}
+            className={cn(isFavorite && "text-favorite")}
         />
     );
 };

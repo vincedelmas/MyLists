@@ -92,6 +92,7 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
             </DistributionContainer>
 
             <HighlightedMedia
+                showMediaType={true}
                 config={highlightedMedia}
             />
 

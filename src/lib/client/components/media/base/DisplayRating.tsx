@@ -13,11 +13,8 @@ export const DisplayRating = ({ rating, size = 15 }: DisplayRatingProps) => {
     if (rating === DEFAULT_DASH_FALLBACK) return null;
 
     return (
-        <div className="flex items-center gap-x-1">
-            <Star
-                size={size}
-                className="text-rating"
-            />
+        <div className="flex items-center gap-x-1 text-sm">
+            <Star size={size} className="text-rating"/>
             <span>{rating}</span>
         </div>
     );

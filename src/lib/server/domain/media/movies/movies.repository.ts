@@ -89,7 +89,8 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
                             SELECT COALESCE(json_group_array(json_object(
                                 'mediaId', x.id, 
                                 'mediaName', x.name, 
-                                'mediaCover', x.image_cover
+                                'mediaCover', x.image_cover,
+                                'releaseDate', x.release_date
                             )), json_array())
                             FROM (
                                 SELECT

@@ -265,9 +265,10 @@ export abstract class BaseRepository<
 
         return getDbClient()
             .select({
+                mediaId: mediaTable.id,
+                mediaName: mediaTable.name,
                 mediaCover: mediaTable.imageCover,
-                mediaId: sql<number>`${mediaTable.id}`,
-                mediaName: sql<string>`${mediaTable.name}`,
+                releaseDate: mediaTable.releaseDate,
             })
             .from(similarSub)
             .innerJoin(mediaTable, eq(mediaTable.id, similarSub.mediaId))
@@ -346,10 +347,11 @@ export abstract class BaseRepository<
 
         return getDbClient()
             .select({
+                mediaId: mediaTable.id,
+                mediaName: mediaTable.name,
                 mediaCover: mediaTable.imageCover,
                 customCover: listTable.customCover,
-                mediaId: sql<number>`${mediaTable.id}`,
-                mediaName: sql<string>`${mediaTable.name}`,
+                releaseDate: mediaTable.releaseDate,
             })
             .from(listTable)
             .where(and(eq(listTable.userId, userId), eq(listTable.favorite, true)))
@@ -366,6 +368,7 @@ export abstract class BaseRepository<
                 mediaName: mediaTable.name,
                 mediaCover: mediaTable.imageCover,
                 customCover: listTable.customCover,
+                releaseDate: mediaTable.releaseDate,
             })
             .from(listTable)
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))

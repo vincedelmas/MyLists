@@ -7,7 +7,7 @@ import {SimpleMedia} from "@/lib/types/media-common.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
-import {MediaCard, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 export const SimilarMedia = ({ mediaType, similarMedia }: { mediaType: MediaType; similarMedia: SimpleMedia[] }) => {
@@ -60,7 +60,9 @@ export const SimilarMediaCard = ({ mediaType, item }: { mediaType: MediaType; it
                     {item.mediaName}
                 </MediaCardTitle>
                 <MediaCardMeta>
-                    <MediaReleaseDate date={item.releaseDate}/>
+                    <MediaCardDetails>
+                        <MediaReleaseDate date={item.releaseDate}/>
+                    </MediaCardDetails>
                 </MediaCardMeta>
             </MediaCardFooter>
         </MediaCard>

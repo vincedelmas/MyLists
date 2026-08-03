@@ -3,7 +3,6 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -17,6 +16,7 @@ import {adminMediaRefreshOptions} from "@/lib/client/react-query/query-options/a
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/media-refresh")({
@@ -73,29 +73,29 @@ function MediaRefreshPage() {
             <DashboardHeader heading="Refresh Monitoring" description="Track metadata refresh activity and spot power users."/>
             <div className="space-y-6">
                 <div className="grid gap-4 grid-cols-4 max-sm:grid-cols-2">
-                    <UserStats
+                    <StatCard
                         icon={RefreshCw}
-                        description="All time"
+                        subtitle="All time"
                         title="Total Refreshes"
                         value={formatNumber(apiData.summary.total)}
                     />
-                    <UserStats
+                    <StatCard
                         icon={Users}
                         title="Unique Users"
-                        description="All-time refreshers"
+                        subtitle="All-time refreshers"
                         value={formatNumber(apiData.summary.uniqueUsers)}
                     />
-                    <UserStats
+                    <StatCard
                         icon={BarChart3}
                         title="Avg / Day"
-                        description="All-time average"
+                        subtitle="All-time average"
                         value={formatNumber(apiData.summary.avgPerDay)}
                     />
-                    <UserStats
+                    <StatCard
                         icon={Flame}
                         title="Busiest Day"
                         value={formatDate(apiData.summary.busiestDay)}
-                        description={`Highest Daily Volume - ${apiData.summary.busiestCount}`}
+                        subtitle={`Highest Daily Volume - ${apiData.summary.busiestCount}`}
                     />
                 </div>
 

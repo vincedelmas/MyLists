@@ -5,7 +5,6 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatPercent} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {DataTable} from "@/lib/client/components/general/DataTable";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
@@ -17,6 +16,7 @@ import {TablePagination} from "@/lib/client/components/general/TablePagination";
 import {ColumnDef, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {Activity, CheckCircle2, MailWarning, Trash2, UsersRound} from "lucide-react";
 import {inactiveAccountDeletionsAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/inactive-accounts")({
@@ -158,40 +158,40 @@ function InactiveAccountsPage() {
             />
 
             <div className="grid grid-cols-6 gap-4 max-lg:grid-cols-3 max-sm:grid-cols-2">
-                <UserStats
+                <StatCard
                     title="Warned"
                     icon={UsersRound}
+                    subtitle="Pending deletion"
                     value={apiData.stats.warned}
-                    description="Pending deletion"
                 />
-                <UserStats
+                <StatCard
                     title="Retrying"
                     icon={MailWarning}
+                    subtitle="Retrying warning"
                     value={apiData.stats.retrying}
-                    description="Retrying warning"
                 />
-                <UserStats
+                <StatCard
                     icon={MailWarning}
                     title="Mail Failed"
+                    subtitle="Max retries reached"
                     value={apiData.stats.mailFailed}
-                    description="Max retries reached"
                 />
-                <UserStats
+                <StatCard
                     icon={CheckCircle2}
                     title="Resurrected"
-                    description="Account refreshed"
+                    subtitle="Account refreshed"
                     value={apiData.stats.resurrected}
                 />
-                <UserStats
+                <StatCard
                     icon={Trash2}
                     title="Deleted"
                     value={apiData.stats.deleted}
-                    description="Deleted by inactivity"
+                    subtitle="Deleted by inactivity"
                 />
-                <UserStats
+                <StatCard
                     icon={Activity}
                     title="Resurrection"
-                    description="Among warned"
+                    subtitle="Among warned"
                     value={formatPercent(apiData.stats.resurrectionRate * 100)}
                 />
             </div>

@@ -1,7 +1,6 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {AdminApiMonitoringParams} from "@/lib/types/admin.types";
-import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {formatDate, formatDateTime} from "@/lib/utils/date-formatting";
@@ -15,6 +14,7 @@ import {adminApiMonitoringOptions} from "@/lib/client/react-query/query-options/
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/api-monitoring")({
@@ -106,41 +106,41 @@ function ApiMonitoringPage() {
                     </div>
                 </div>
                 <div className="grid gap-4 grid-cols-6 max-xl:grid-cols-3 max-sm:grid-cols-2">
-                    <UserStats
+                    <StatCard
+                        icon={Radio}
                         title="Total Calls"
-                        description="Lifetime volume"
+                        subtitle="Lifetime volume"
                         value={formatNumber(apiData.summary.total)}
-                        icon={<Radio className="text-brand size-5"/>}
                     />
-                    <UserStats
+                    <StatCard
+                        icon={BarChart3}
                         title="Avg. / Day"
-                        description="Since monitoring began"
-                        icon={<BarChart3 className="text-brand size-5"/>}
+                        subtitle="Since monitoring began"
                         value={formatNumber(apiData.summary.avgPerDay, { maximumFractionDigits: 1 })}
                     />
-                    <UserStats
+                    <StatCard
+                        icon={Gauge}
                         title="Avg. / Sec"
-                        description="Since monitoring began"
-                        icon={<Gauge className="text-brand size-5"/>}
+                        subtitle="Since monitoring began"
                         value={formatPerSecond(apiData.summary.avgPerSecond)}
                     />
-                    <UserStats
+                    <StatCard
+                        icon={Activity}
                         title="Max Burst"
-                        description="Max peak in one sec."
-                        icon={<Activity className="text-brand size-5"/>}
+                        subtitle="Max peak in one sec."
                         value={formatNumber(apiData.summary.busiestSecondCount)}
                     />
-                    <UserStats
+                    <StatCard
                         title="Errors"
+                        icon={AlertTriangle}
                         value={formatNumber(totalErrors)}
-                        icon={<AlertTriangle className="text-brand size-5"/>}
-                        description={`${formatPercent(errorRate)} lifetime failure rate`}
+                        subtitle={`${formatPercent(errorRate)} lifetime failure rate`}
                     />
-                    <UserStats
+                    <StatCard
+                        icon={Clock}
                         title="Avg. Latency"
-                        description="All calls, all providers"
+                        subtitle="All calls, all providers"
                         value={formatMs(apiData.summary.avgDurationMs)}
-                        icon={<Clock className="text-brand size-5"/>}
                     />
                 </div>
                 <div className="grid gap-4 grid-cols-7 max-lg:grid-cols-1">

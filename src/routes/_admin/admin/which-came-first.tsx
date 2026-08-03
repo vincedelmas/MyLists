@@ -3,7 +3,6 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {WCF_MAX_ROUNDS} from "@/lib/schemas/wcf.schema";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {formatDate, formatDateTime} from "@/lib/utils/date-formatting";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -15,6 +14,7 @@ import {adminWhichCameFirstOptions} from "@/lib/client/react-query/query-options
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/which-came-first")({
@@ -121,28 +121,28 @@ function AdminWhichCameFirstPage() {
                 </Card>
 
                 <div className="grid gap-4 grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
-                    <UserStats
+                    <StatCard
                         icon={Activity}
                         title="Played Sessions"
                         value={formatNumber(apiData.summary.playedRuns, { locale: "en" })}
-                        description={`${formatNumber(apiData.summary.startedRuns, { locale: "en" })} sessions started total`}
+                        subtitle={`${formatNumber(apiData.summary.startedRuns, { locale: "en" })} sessions started total`}
                     />
-                    <UserStats
+                    <StatCard
                         icon={Users}
                         title="Unique Players"
                         value={formatNumber(apiData.summary.uniquePlayers, { locale: "en" })}
-                        description="Users who answered at least one round"
+                        subtitle="Users who answered at least one round"
                     />
-                    <UserStats
+                    <StatCard
                         icon={Target}
                         title="Answer Accuracy"
                         value={formatPercent(apiData.summary.accuracy, { fractionDigits: 1 })}
-                        description={`${formatNumber(apiData.summary.correctAnswers, { locale: "en" })} correct answers`}
+                        subtitle={`${formatNumber(apiData.summary.correctAnswers, { locale: "en" })} correct answers`}
                     />
-                    <UserStats
+                    <StatCard
                         icon={CircleGauge}
                         title="Average Final Score"
-                        description="Ended played sessions only"
+                        subtitle="Ended played sessions only"
                         value={formatNumber(apiData.summary.averageScore, { locale: "en", fractionDigits: 1 })}
                     />
                 </div>

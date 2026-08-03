@@ -5,7 +5,6 @@ import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {DataTable} from "@/lib/client/components/general/DataTable";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
@@ -20,6 +19,7 @@ import {ChevronsUpDown, Copy, Eye, FolderKanban, Heart, UserPlus, Users} from "l
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {ColumnDef, getCoreRowModel, OnChangeFn, SortingState, useReactTable} from "@tanstack/react-table";
 import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/collections-overview")({
@@ -169,49 +169,49 @@ function AdminCollectionsOverviewPage() {
             />
             <div className="space-y-4">
                 <div className="grid gap-4 grid-cols-4 max-sm:grid-cols-2 max-sm:gap-3">
-                    <UserStats
+                    <StatCard
                         icon={FolderKanban}
                         title="Total Collections"
-                        description="All collections created"
+                        subtitle="All collections created"
                         value={formatNumber(stats.totalCollections)}
                     />
-                    <UserStats
+                    <StatCard
                         icon={UserPlus}
                         title="Created This Month"
                         value={formatNumber(stats.createdThisMonth.count)}
-                        description={`${newCollections ? "+" : ""}${formatNumber(stats.createdThisMonth.comparedToLastMonth)} compared to last month`}
+                        subtitle={`${newCollections ? "+" : ""}${formatNumber(stats.createdThisMonth.comparedToLastMonth)} compared to last month`}
                     />
-                    <UserStats
+                    <StatCard
                         icon={Users}
                         title="Unique Creators"
                         value={formatNumber(stats.uniqueOwners)}
-                        description="Users who created at least one collection"
+                        subtitle="Users who created at least one collection"
                     />
-                    <UserStats
+                    <StatCard
                         icon={Eye}
                         title="Total Views"
                         value={formatNumber(stats.totalViews)}
-                        description="Views across all collections"
+                        subtitle="Views across all collections"
                     />
-                    <UserStats
+                    <StatCard
                         icon={Heart}
                         title="Total Likes"
                         value={formatNumber(stats.totalLikes)}
-                        description="Likes across all collections"
+                        subtitle="Likes across all collections"
                     />
-                    <UserStats
+                    <StatCard
                         icon={Copy}
                         title="Total Copies"
                         value={formatNumber(stats.totalCopies)}
-                        description="How often collections were copied"
+                        subtitle="How often collections were copied"
                     />
                     {stats.collectionsPerPrivacy.map((pv) =>
-                        <UserStats
+                        <StatCard
                             key={pv.privacy}
                             value={formatNumber(pv.count)}
                             title={capitalize(pv.privacy) + " Collections"}
-                            icon={<PrivacyIcon type={pv.privacy} className="size-5"/>}
-                            description={"Collections with privacy set to " + pv.privacy}
+                            icon={<PrivacyIcon type={pv.privacy} className="size-4"/>}
+                            subtitle={"Collections with privacy set to " + pv.privacy}
                         />
                     )}
                 </div>

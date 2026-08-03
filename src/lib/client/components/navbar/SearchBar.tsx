@@ -66,6 +66,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     type="search"
                     value={search}
                     onChange={handleInputChange}
+                    aria-label="Search for media or users"
                     placeholder="Search for media / users..."
                 />
                 <InputGroupAddon align="inline-start">

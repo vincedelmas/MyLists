@@ -39,14 +39,18 @@ export const TrendHero = ({ trend }: { trend: TrendsMedia }) => {
                     {trend.overview}
                 </p>
                 <div className="flex items-center gap-3">
-                    <Link
-                        to="/details/$mediaType/external/$apiId"
-                        params={{ mediaType: trend.mediaType, apiId: trend.apiId.toString() }}
+                    <Button
+                        size="lg"
+                        nativeButton={false}
+                        render={
+                            <Link
+                                to="/details/$mediaType/external/$apiId"
+                                params={{ mediaType: trend.mediaType, apiId: trend.apiId.toString() }}
+                            />
+                        }
                     >
-                        <Button size="lg">
-                            <Eye className="size-4"/> See Details
-                        </Button>
-                    </Link>
+                        <Eye data-icon="inline-start"/> See Details
+                    </Button>
 
                 </div>
             </div>

@@ -27,9 +27,9 @@ export const Route = createFileRoute("/_main/_public/reset-password")({
                     <h1>Invalid reset link</h1>
                     <p>The password reset link is invalid.</p>
                 </div>
-                <Link to="/forgot-password">
-                    <Button>Request a new reset link</Button>
-                </Link>
+                <Button render={<Link to="/forgot-password"/>} nativeButton={false}>
+                    Request a new reset link
+                </Button>
             </div>
         );
     }

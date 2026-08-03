@@ -43,9 +43,13 @@ import {
 import {Badge} from "@/lib/client/components/ui/badge";
 
 
-const navStyle = cva("inline-flex items-center justify-center px-4 text-sm font-medium hover:text-brand " +
-    "disabled:pointer-events-none disabled:opacity-50 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none"
+const navStyle = cva("inline-flex items-center justify-center rounded-md px-4 text-sm font-medium hover:text-brand " +
+    "outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
 )
+
+
+const mobileNavStyle = "flex flex-col items-center gap-1 rounded-md p-1 text-muted-foreground outline-none " +
+    "hover:text-brand focus-visible:ring-3 focus-visible:ring-ring/50";
 
 
 export const Navbar = () => {
@@ -241,7 +245,8 @@ export const Navbar = () => {
                         <button
                             aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="lg:hidden p-2 text-muted-foreground hover:text-foreground"
+                            className="rounded-md p-2 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3
+                            focus-visible:ring-ring/50 lg:hidden"
                         >
                             {isMobileMenuOpen ? <X className="size-6"/> : <Menu className="size-6"/>}
                         </button>
@@ -256,48 +261,44 @@ export const Navbar = () => {
 
                         <div className="p-2 max-h-[70vh] overflow-y-auto scrollbar-thin mt-3">
                             <div className="flex flex-wrap justify-around items-center gap-x-4 gap-y-4 px-2">
-                                <Link to="/moviedle" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
-                                        <Clapperboard className="size-4"/>
-                                        <span className="text-[10px]">Moviedle</span>
-                                    </button>
+                                <Link className={mobileNavStyle} to="/moviedle" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Clapperboard className="size-4"/>
+                                    <span className="text-[10px]">Moviedle</span>
                                 </Link>
-                                <Link to="/which-came-first" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
-                                        <GitCompareArrows className="size-4"/>
-                                        <span className="text-[10px]">WCF?</span>
-                                    </button>
+                                <Link
+                                    to="/which-came-first"
+                                    className={mobileNavStyle}
+                                    aria-label="Which Came First?"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    <GitCompareArrows className="size-4"/>
+                                    <span className="text-[10px]">WCF?</span>
                                 </Link>
-                                <Link to="/collections/discover" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
-                                        <ListOrdered className="size-4"/>
-                                        <span className="text-[10px]">Collections</span>
-                                    </button>
+                                <Link className={mobileNavStyle} to="/collections/discover" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <ListOrdered className="size-4"/>
+                                    <span className="text-[10px]">Collections</span>
                                 </Link>
-                                <Link to="/hall-of-fame" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
-                                        <Trophy className="size-4"/>
-                                        <span className="text-[10px]">HoF</span>
-                                    </button>
+                                <Link
+                                    to="/hall-of-fame"
+                                    aria-label="Hall of Fame"
+                                    className={mobileNavStyle}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    <Trophy className="size-4"/>
+                                    <span className="text-[10px]">HoF</span>
                                 </Link>
-                                <Link to="/platform-stats" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
-                                        <BarChart2 className="size-4"/>
-                                        <span className="text-[10px]">Stats</span>
-                                    </button>
+                                <Link className={mobileNavStyle} to="/platform-stats" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <BarChart2 className="size-4"/>
+                                    <span className="text-[10px]">Stats</span>
                                 </Link>
-                                <Link to="/trends" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
-                                        <TrendingUp className="size-4"/>
-                                        <span className="text-[10px]">Trends</span>
-                                    </button>
+                                <Link className={mobileNavStyle} to="/trends" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <TrendingUp className="size-4"/>
+                                    <span className="text-[10px]">Trends</span>
                                 </Link>
                                 {!isAnonymous &&
-                                    <Link to="/taste-matches" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <button className="flex flex-col items-center gap-1 text-muted-foreground hover:text-brand">
-                                            <UsersRound className="size-4"/>
-                                            <span className="text-[10px]">Matches</span>
-                                        </button>
+                                    <Link className={mobileNavStyle} to="/taste-matches" onClick={() => setIsMobileMenuOpen(false)}>
+                                        <UsersRound className="size-4"/>
+                                        <span className="text-[10px]">Matches</span>
                                     </Link>
                                 }
                             </div>

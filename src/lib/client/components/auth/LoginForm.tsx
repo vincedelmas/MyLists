@@ -109,7 +109,6 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
                                         <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
                                         {authMethods.email ?
                                             <Link
-                                                tabIndex={-1}
                                                 to="/forgot-password"
                                                 className="text-sm underline"
                                                 onClick={() => onOpenChange?.(false)}

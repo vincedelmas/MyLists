@@ -491,7 +491,7 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
             disabled={disabled}
             onClick={() => onSelect(side)}
             className={cn(
-                "group relative aspect-2/3 overflow-hidden rounded-lg border-2 bg-card text-left text-white",
+                "@container/media-card group relative aspect-2/3 overflow-hidden rounded-lg border-2 bg-card text-left text-white",
                 "transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl disabled:pointer-events-none",
                 state === "correct" && "scale-[1.01] border-success shadow-lg shadow-success/30",
                 state === "incorrect" && "animate-wcf-shake border-destructive shadow-lg shadow-destructive/30",
@@ -521,9 +521,10 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
                     </div>
                 </MediaCardRightCorner>
             }
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3 max-sm:p-3">
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5
+                @min-[200px]/media-card:gap-3 @min-[200px]/media-card:p-3 @min-[250px]/media-card:p-4">
                 <div className="min-w-0">
-                    <MediaCardTitle lines={2} density="strong">
+                    <MediaCardTitle lines={2}>
                         {card.name}
                     </MediaCardTitle>
                     <div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-white/55">

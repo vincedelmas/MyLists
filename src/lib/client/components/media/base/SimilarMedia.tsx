@@ -55,8 +55,8 @@ export const SimilarMedia = ({ mediaType, similarMedia }: { mediaType: MediaType
 export const SimilarMediaCard = ({ mediaType, item }: { mediaType: MediaType; item: SimpleMedia }) => {
     return (
         <MediaCard item={item} mediaType={mediaType}>
-            <MediaCardFooter density="compact">
-                <MediaCardTitle density="compact" title={item.mediaName}>
+            <MediaCardFooter>
+                <MediaCardTitle title={item.mediaName}>
                     {item.mediaName}
                 </MediaCardTitle>
                 <MediaCardMeta>

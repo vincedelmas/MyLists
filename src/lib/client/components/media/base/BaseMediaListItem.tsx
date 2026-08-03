@@ -41,8 +41,6 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     const { isCurrent, queryOption, isConnected, isMediaTypeActive, mediaType, allStatuses, rating, userMedia, redoDisplay, mediaDetailsDisplay } = props;
 
     const isCommon = isMediaTypeActive && userMedia.common;
-    const mediaCardSlot = (isCurrent || (!isCurrent && isConnected && !isCommon)) ? "personal" : "context";
-
     return (
         <>
             <MediaCard item={userMedia} mediaType={mediaType}>
@@ -52,7 +50,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                     </MediaCardLeftCorner>
                 }
                 {isConnected &&
-                    <MediaCardRightCorner slot={mediaCardSlot}>
+                    <MediaCardRightCorner>
                         {isCurrent ?
                             <MediaCardEditAction
                                 label={`Edit ${userMedia.mediaName}`}

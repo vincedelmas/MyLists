@@ -2,13 +2,13 @@ import {extractYear, formatDate} from "@/lib/utils/date-formatting";
 
 
 interface MediaReleaseDateProps {
-    density?: "default" | "compact";
+    precision?: "date" | "year";
     date: string | number | undefined | null;
 }
 
 
-export const MediaReleaseDate = ({ date, density = "default" }: MediaReleaseDateProps) => {
-    if (density === "compact") {
+export const MediaReleaseDate = ({ date, precision = "date" }: MediaReleaseDateProps) => {
+    if (precision === "year") {
         if (typeof date === "number") return null;
 
         return (

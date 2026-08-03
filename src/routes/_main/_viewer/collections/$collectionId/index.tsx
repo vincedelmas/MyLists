@@ -138,7 +138,7 @@ function CollectionViewer() {
                                 </MediaCardRightCorner>
                             }
 
-                            <MediaCardFooter density="compact">
+                            <MediaCardFooter>
                                 <MediaCardTitle title={item.mediaName}>
                                     {item.mediaName}
                                 </MediaCardTitle>

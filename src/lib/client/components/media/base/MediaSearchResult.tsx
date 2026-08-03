@@ -5,7 +5,6 @@ import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
-import {MediaCardDetails} from "@/lib/client/components/media/base/MediaCard";
 
 
 interface MediaSearchResultProps {
@@ -53,10 +52,11 @@ export const MediaSearchResult = ({ item, isPending = false }: MediaSearchResult
                         User profile
                     </span>
                     :
-                    <MediaCardDetails className="text-xs text-muted-foreground">
+                    <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
                         <MediaReleaseDate date={item.date}/>
+                        <span aria-hidden="true">•</span>
                         <MediaTypeText mediaType={item.itemType as MediaType}/>
-                    </MediaCardDetails>
+                    </div>
                 }
             </div>
         </div>

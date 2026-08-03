@@ -39,20 +39,19 @@ export const HighlightedMedia = ({ config, showMediaType = false }: HighlightedM
                         :
                         itemsToDisplay.map((item) =>
                             <MediaCard item={item} mediaType={item.mediaType}>
-                                <MediaCardFooter density="compact">
-                                    <MediaCardTitle density="compact" title={item.mediaName}>
+                                <MediaCardFooter>
+                                    <MediaCardTitle title={item.mediaName}>
                                         {item.mediaName}
                                     </MediaCardTitle>
                                     <MediaCardMeta>
-                                        <MediaCardDetails density="compact">
+                                        <MediaCardDetails>
                                             {showMediaType &&
                                                 <MediaTypeIcon
-                                                    size={14}
                                                     mediaType={item.mediaType}
                                                 />
                                             }
                                             <MediaReleaseDate
-                                                density="compact"
+                                                precision="year"
                                                 date={item.releaseDate}
                                             />
                                         </MediaCardDetails>

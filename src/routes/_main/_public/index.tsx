@@ -1,14 +1,13 @@
 import {cn} from "@/lib/utils/classnames";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {Badge} from "@/lib/client/components/ui/badge";
-import {Button, buttonVariants} from "@/lib/client/components/ui/button";
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {randomPublicProfile} from "@/lib/client/react-query/query-options";
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDollarSign, Code, Download, LayoutGrid, Lightbulb, Popcorn, Shield, Sparkles, Trophy, Users} from "lucide-react";
 
 
@@ -110,7 +109,7 @@ function HomePage() {
     const randomProfile = useSuspenseQuery(randomPublicProfile).data;
 
     return (
-        <PageTitle title="HomePage" onlyHelmet>
+        <>
             <section className="relative -ml-2 w-[calc(100%+1rem)] overflow-hidden border-b border-border/60 sm:left-[calc(-50vw+50%)] sm:ml-0 sm:w-[99.7vw]">
                 <div aria-hidden="true" className="absolute inset-0 bg-background">
                     <div className="absolute -left-24 top-12 size-80 rounded-full bg-brand/10 blur-3xl"/>
@@ -443,6 +442,6 @@ function HomePage() {
                     </Card>
                 </div>
             </section>
-        </PageTitle>
+        </>
     );
 }

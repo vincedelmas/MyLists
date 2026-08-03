@@ -1,8 +1,7 @@
-import {useState} from "react";
-import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {ProfileActiveTab, profileSearchSchema} from "@/lib/schemas";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {profileOptions} from "@/lib/client/react-query/query-options";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
@@ -17,6 +16,7 @@ import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/")({
+    validateSearch: profileSearchSchema,
     loader: async ({ context: { queryClient }, params: { username } }) => {
         return queryClient.ensureQueryData(profileOptions(username));
     },
@@ -26,13 +26,18 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/"
 
 function ProfileMain() {
     const { currentUser } = useAuth();
+    const navigate = Route.useNavigate();
     const { username } = Route.useParams();
+    const { activeTab } = Route.useSearch();
     const apiData = useSuspenseQuery(profileOptions(username)).data;
     const activeMediaTypes = getActiveMediaTypes(apiData.userData.userMediaSettings);
-    const [activeTab, setActiveTab] = useState<MediaType | "overview">("overview");
 
     const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "overview", size: 15 });
     const effectiveActiveTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "overview";
+
+    const setActiveTab = (newTab: ProfileActiveTab) => {
+        void navigate({ search: prev => ({ ...prev, activeTab: newTab === "overview" ? undefined : newTab }), resetScroll: false });
+    };
 
     return (
         <div className="grid grid-cols-[0.26fr_0.74fr] gap-6 pt-2 max-lg:grid-cols-5 max-sm:grid-cols-1">
@@ -75,8 +80,8 @@ function ProfileMain() {
                         <MediaStatsTab
                             username={username}
                             ratingSystem={apiData.userData.ratingSystem}
-                            highlightedMedia={apiData.highlightedMedia[activeTab]}
-                            mediaSummary={apiData.perMediaSummary.find((p) => p.mediaType === activeTab)!}
+                            highlightedMedia={apiData.highlightedMedia[effectiveActiveTab]}
+                            mediaSummary={apiData.perMediaSummary.find((p) => p.mediaType === effectiveActiveTab)!}
                         />
                     }
                 </div>

@@ -8,12 +8,24 @@ import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
-import {IgdbGameCollectionIds, IgdbGameDetails, IgdbSearchResponse, IgdbSearchResultItem, IgdbTokenResponse, IgdbTrendGamesResponse, SearchData} from "@/lib/types/provider.types";
+import {
+    GameAdvancedSearchOptions,
+    IdNamePair,
+    IgdbGameCollectionIds,
+    IgdbGameDetails,
+    IgdbSearchResponse,
+    IgdbSearchResultItem,
+    IgdbTokenResponse,
+    IgdbTrendGamesResponse,
+    SearchData
+} from "@/lib/types/provider.types";
 
 
 type IgdbApiConfig = ApiClientConfig & {
     baseUrl: string;
+    genresUrl: string;
     trendingUrl: string;
+    platformsUrl: string;
     tokenCacheKey: string;
     externalGamesUrl: string;
     tokenCacheExpiryMs: number;
@@ -29,6 +41,8 @@ const createConfig = (): IgdbApiConfig => ({
     tokenCacheKey: "igdb:accessToken",
     tokenCacheExpiryMs: 24 * 60 * 60 * 1000,
     baseUrl: "https://api.igdb.com/v4/games",
+    genresUrl: "https://api.igdb.com/v4/genres",
+    platformsUrl: "https://api.igdb.com/v4/platforms",
     externalGamesUrl: "https://api.igdb.com/v4/external_games",
     trendingUrl: "https://trendingnow.games/api/public/feeds/trending",
     throttleOptions: [{
@@ -182,6 +196,37 @@ export const createIgdbApi = async () => {
                 resultsPerPage,
                 rawData: { count, result },
             }
+        },
+
+        async getAdvancedSearchOptions(): Promise<GameAdvancedSearchOptions> {
+            const headers = await getHeaders();
+
+            const fetchAllOptions = async (url: string) => {
+                const pageSize = 500;
+                const options: IdNamePair[] = [];
+
+                while (true) {
+                    const response = await http.call(url, "post", {
+                        headers,
+                        body: `fields id, name; sort name asc; limit ${pageSize}; offset ${options.length};`,
+                    });
+
+                    const page = await response.json() as IdNamePair[];
+                    options.push(...page);
+
+                    if (page.length < pageSize) return options;
+                }
+            };
+
+            const [genres, platforms] = await Promise.all([
+                fetchAllOptions(config.genresUrl),
+                fetchAllOptions(config.platformsUrl),
+            ]);
+
+            return {
+                genres: genres.filter((option) => option.name?.trim()),
+                platforms: platforms.filter((option) => option.name?.trim()),
+            };
         },
 
         async getGameDetails(apiId: number): Promise<IgdbGameDetails> {

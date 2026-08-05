@@ -13,8 +13,8 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {Link, LinkProps, useRouter, useRouterState} from "@tanstack/react-router";
 import {MediaSearchResult} from "@/lib/client/components/media/base/MediaSearchResult";
+import {AdvancedSearchDialog} from "@/lib/client/components/search/AdvancedSearchDialog";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
-import {AdvancedSearchDialog, getAdvancedSearchLabel,} from "@/lib/client/components/search/AdvancedSearchDialog";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
@@ -32,6 +32,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     const [selectDrop, setSelectDrop] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.USERS);
 
     const { search, setSearch, setIsOpen, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer({
+        resetOnOutsideClick: false,
         outsideClickEnabled: !isAdvancedDialogOpen,
         onReset: () => {
             setPage(1);
@@ -40,7 +41,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     });
 
     const submittedQuery = advancedFilters ? search : debouncedSearch;
-    const advancedSearchLabel = advancedFilters ? getAdvancedSearchLabel(advancedFilters) : debouncedSearch;
+    const advancedSearchLabel = advancedFilters ? "Advance Search" : debouncedSearch;
     const { data: searchResults, isFetching, error } = useQuery(navSearchOptions(submittedQuery, page, selectDrop, advancedFilters));
 
     if (prevSelector !== currentUser?.searchSelector) {
@@ -97,6 +98,9 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     className="placeholder:text-sm"
                     aria-label="Search for media or users"
                     placeholder="Search for media / users..."
+                    onFocus={() => {
+                        if (search.trim() || advancedFilters) setIsOpen(true);
+                    }}
                 />
                 <InputGroupAddon align="inline-start">
                     <Search aria-hidden="true"/>

@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
 
@@ -8,6 +8,10 @@ export const MANGA_FIXED_DURATION_MIN = 7;
 export const mangaDefinition = defineMediaDefinition({
     identity: {
         mediaType: MediaType.MANGA,
+    },
+    externalSearch: {
+        advancedFilters: false,
+        provider: ApiProviderType.MANGA,
     },
     terminology: {
         entry: {

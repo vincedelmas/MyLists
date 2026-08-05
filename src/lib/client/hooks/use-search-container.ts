@@ -7,10 +7,11 @@ interface UseSearchLogicOptions {
     debounceMs?: number;
     onReset?: () => void;
     outsideClickEnabled?: boolean;
+    resetOnOutsideClick?: boolean;
 }
 
 
-export function useSearchContainer({ onReset, debounceMs = 400, outsideClickEnabled = true }: UseSearchLogicOptions = {}) {
+export function useSearchContainer({ onReset, debounceMs = 400, outsideClickEnabled = true, resetOnOutsideClick = true }: UseSearchLogicOptions = {}) {
     const [search, setSearch] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const debouncedSearch = useDebounce(search, debounceMs);
@@ -35,7 +36,9 @@ export function useSearchContainer({ onReset, debounceMs = 400, outsideClickEnab
     };
 
     useOnClickOutside(containerRef, () => {
-        if (outsideClickEnabled) reset();
+        if (!outsideClickEnabled) return;
+        if (resetOnOutsideClick) reset();
+        else setIsOpen(false);
     });
 
     return {

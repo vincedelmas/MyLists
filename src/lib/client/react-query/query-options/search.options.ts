@@ -1,7 +1,7 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import {queryOptions} from "@tanstack/react-query";
 import {AdvancedSearchFilters} from "@/lib/schemas";
-import {getSearchResults} from "@/lib/server/functions/search";
+import {getGameAdvancedSearchOptions, getSearchResults} from "@/lib/server/functions/search";
 
 
 export const navSearchOptions = (query: string, page: number, apiProvider: ApiProviderType, advancedFilters?: AdvancedSearchFilters) => {
@@ -14,3 +14,10 @@ export const navSearchOptions = (query: string, page: number, apiProvider: ApiPr
         enabled: trimmedQuery.length >= 2 || advancedFilters !== undefined,
     });
 };
+
+
+export const gameAdvancedSearchOptions = () => queryOptions({
+    queryKey: ["advancedSearchOptions", ApiProviderType.IGDB],
+    queryFn: () => getGameAdvancedSearchOptions(),
+    staleTime: 1000 * 60 * 60 * 24,
+});

@@ -33,9 +33,15 @@ export interface SearchData<T> {
 }
 
 
-interface IdNamePair {
+export interface IdNamePair {
     id: number;
     name: string;
+}
+
+
+export interface GameAdvancedSearchOptions {
+    genres: IdNamePair[];
+    platforms: IdNamePair[];
 }
 
 

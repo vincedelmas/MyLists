@@ -1,4 +1,4 @@
-import type {MediaType} from "@/lib/utils/enums";
+import type {ApiProviderType, MediaType} from "@/lib/utils/enums";
 
 
 type MediaProgressTiming =
@@ -46,6 +46,10 @@ export type MediaDefinition<TMediaType extends MediaType = MediaType> = Readonly
     progress: MediaProgressDefinition;
     identity: Readonly<{
         mediaType: TMediaType;
+    }>;
+    externalSearch: Readonly<{
+        advancedFilters: boolean;
+        provider: ApiProviderType;
     }>;
     terminology: Readonly<{
         entry: Readonly<{

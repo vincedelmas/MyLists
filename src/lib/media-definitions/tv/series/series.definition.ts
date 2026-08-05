@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
 
@@ -8,6 +8,10 @@ export const SERIES_FALLBACK_DURATION = 40;
 export const seriesDefinition = defineMediaDefinition({
     identity: {
         mediaType: MediaType.SERIES,
+    },
+    externalSearch: {
+        advancedFilters: true,
+        provider: ApiProviderType.TMDB,
     },
     terminology: {
         entry: {

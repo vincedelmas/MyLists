@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
@@ -20,4 +20,11 @@ const mediaDefinitions = {
 
 export const getMediaDefinition = (mediaType: MediaType): MediaDefinition => {
     return mediaDefinitions[mediaType];
+};
+
+
+export const supportsAdvancedSearch = (provider: ApiProviderType) => {
+    return Object.values(mediaDefinitions).some((definition) => {
+        return definition.externalSearch.provider === provider && definition.externalSearch.advancedFilters;
+    });
 };

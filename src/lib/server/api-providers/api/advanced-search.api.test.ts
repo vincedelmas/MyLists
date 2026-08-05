@@ -104,6 +104,34 @@ describe("advanced provider searches", () => {
         expect(options.body).toContain("total_rating >= 75");
     });
 
+    it("loads the complete IGDB platform and genre catalogs for advanced search", async () => {
+        let platformPage = 0;
+        httpMocks.call.mockImplementation((url: string) => {
+            const values = url.endsWith("/genres")
+                ? [{ id: 12, name: "Role-playing (RPG)" }]
+                : platformPage++ === 0
+                    ? Array.from({ length: 500 }, (_, index) => ({ id: index + 1, name: `Platform ${index + 1}` }))
+                    : [{ id: 501, name: "Switch 2" }];
+
+            return Promise.resolve({ json: vi.fn().mockResolvedValue(values) });
+        });
+
+        const api = await createIgdbApi();
+        const options = await api.getAdvancedSearchOptions();
+
+        expect(options.genres).toEqual([{ id: 12, name: "Role-playing (RPG)" }]);
+        expect(options.platforms).toHaveLength(501);
+        expect(options.platforms.at(-1)).toEqual({ id: 501, name: "Switch 2" });
+
+        const platformBodies = httpMocks.call.mock.calls
+            .filter(([url]) => String(url).endsWith("/platforms"))
+            .map(([, , request]) => request.body);
+        expect(platformBodies).toEqual([
+            "fields id, name; sort name asc; limit 500; offset 0;",
+            "fields id, name; sort name asc; limit 500; offset 500;",
+        ]);
+    });
+
     it("uses TMDB title search for movies and filter-only discovery for anime", async () => {
         const api = await createTmdbApi();
 

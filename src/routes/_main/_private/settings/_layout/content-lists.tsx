@@ -1,12 +1,11 @@
-import {toast} from "sonner";
-import React, {useState} from "react";
-import {useForm, useWatch} from "react-hook-form";
+import React, {useId, useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {capitalize} from "@/lib/utils/text-formatting";
+import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {CircleHelp, Download, TriangleAlert} from "lucide-react";
@@ -15,13 +14,15 @@ import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
+import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/content-lists")({
@@ -53,6 +54,7 @@ const mediaTypeConfigs = [
 
 
 function MediaListFormPage() {
+    const fieldId = useId();
     const { currentUser, setCurrentUser } = useAuth();
     const downloadListAsCSVMutation = useDownloadListAsCSVMutation();
     const listSettingsMutation = useListSettingsMutation({ noErrorToast: true });
@@ -73,6 +75,33 @@ function MediaListFormPage() {
     const isGamesActive = useWatch({ control: form.control, name: MediaType.GAMES });
     const isBooksActive = useWatch({ control: form.control, name: MediaType.BOOKS });
     const isMangaActive = useWatch({ control: form.control, name: MediaType.MANGA });
+
+    const viewModeItems = [
+        { label: "Grid", value: "grid" },
+        { label: "Table", value: "table" },
+    ];
+
+    const ratingSystemItems = [
+        { label: "Score (numeric)", value: RatingSystemType.SCORE },
+        { label: "Feeling (emoticons)", value: RatingSystemType.FEELING },
+    ];
+
+    const searchSelectorItems = [
+        { label: "Media", value: ApiProviderType.TMDB },
+        {
+            label: <>{!isBooksActive && <TriangleAlert className="text-warning"/>} Books</>,
+            value: ApiProviderType.BOOKS,
+        },
+        {
+            label: <>{!isGamesActive && <TriangleAlert className="text-warning"/>} Games</>,
+            value: ApiProviderType.IGDB,
+        },
+        {
+            label: <>{!isMangaActive && <TriangleAlert className="text-warning"/>} Manga</>,
+            value: ApiProviderType.MANGA,
+        },
+        { label: "Users", value: ApiProviderType.USERS },
+    ];
 
     const handleCheckedChange = (field: any, checked: boolean, apiProvider?: ApiProviderType) => {
         field.onChange(checked);
@@ -104,154 +133,170 @@ function MediaListFormPage() {
                     saveAsFile(formattedData, `mylists-${selectedListForExport}.csv`, "text/csv");
                 }
                 catch {
-                    toast.error("An error occurred while formatting the CSV.");
+                    toast.add({ title: "An error occurred while formatting the CSV.", type: "error", priority: "high" });
                 }
             }
         });
     };
 
-    const mediaTypesForExport = Object.values(MediaType).map((mediaType) => ({
-        label: `${capitalize(mediaType)} List`,
-        value: mediaType,
-    }));
+    const mediaTypesForExport = createMediaSelectItems(ALL_MEDIA_TYPES);
 
     return (
         <div className="space-y-6">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="w-90 max-sm:w-full space-y-8">
-                    <fieldset disabled={listSettingsMutation.isPending} className="space-y-8">
-                        <div className="space-y-3">
-                            <div className="text-sm font-medium mb-2">
-                                Active Content
-                                <div className="text-xs font-normal text-muted-foreground">
+            <FormProvider {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-90 flex-col gap-8 max-sm:w-full">
+                    <FieldSet disabled={listSettingsMutation.isPending}>
+                        <FieldGroup className="gap-8">
+                            <FieldSet>
+                                <FieldLegend variant="label">Active Content</FieldLegend>
+                                <FieldDescription>
                                     Disabled media are hidden from your profile, stats, feeds, activity, achievements, etc.
                                     Your data are kept and returns if you re-enable it.
-                                </div>
-                            </div>
-                            {mediaTypeConfigs.map((config) => (
-                                <FormField
-                                    key={config.name}
-                                    name={config.name}
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between space-x-3 rounded-md border p-3">
-                                            <FormLabel className="font-normal">
-                                                <MainThemeIcon
-                                                    size={15}
-                                                    type={config.name}
-                                                />
-                                                {config.label} List
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Switch
-                                                    checked={field.value}
-                                                    onCheckedChange={(checked) => handleCheckedChange(field, checked, config.apiProvider)}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            ))}
-                        </div>
-                        <div>
-                            <FormField
+                                </FieldDescription>
+                                <FieldGroup data-slot="checkbox-group" className="gap-2!">
+                                    {mediaTypeConfigs.map((config) => (
+                                        <Controller
+                                            key={config.name}
+                                            name={config.name}
+                                            control={form.control}
+                                            render={({ field, fieldState }) => (
+                                                <Field
+                                                    orientation="horizontal"
+                                                    data-invalid={fieldState.invalid}
+                                                    data-disabled={listSettingsMutation.isPending}
+                                                    className="justify-between rounded-lg border p-2"
+                                                >
+                                                    <FieldLabel htmlFor={`${fieldId}-${config.name}`} className="font-normal">
+                                                        <MainThemeIcon
+                                                            size={15}
+                                                            type={config.name}
+                                                        />
+                                                        {config.label} List
+                                                    </FieldLabel>
+                                                    <Switch
+                                                        id={`${fieldId}-${config.name}`}
+                                                        checked={field.value}
+                                                        aria-invalid={fieldState.invalid}
+                                                        onCheckedChange={(checked) => handleCheckedChange(field, checked, config.apiProvider)}
+                                                    />
+                                                </Field>
+                                            )}
+                                        />
+                                    ))}
+                                </FieldGroup>
+                            </FieldSet>
+                            <Controller
                                 name="searchSelector"
                                 control={form.control}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            Navbar Search Selector
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
+                                        <div className="flex items-center gap-2">
+                                            <FieldLabel htmlFor={`${fieldId}-search-selector`}>Navbar Search Selector</FieldLabel>
                                             <SearchPopover/>
-                                        </FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a search selector"/>
-                                                </SelectTrigger>
-                                            </FormControl>
+                                        </div>
+                                        <Select
+                                            value={field.value}
+                                            items={searchSelectorItems}
+                                            onValueChange={(value) => {
+                                                if (value !== null) field.onChange(value);
+                                            }}
+                                        >
+                                            <SelectTrigger id={`${fieldId}-search-selector`} className="w-full" aria-invalid={fieldState.invalid}>
+                                                <SelectValue placeholder="Select a search selector"/>
+                                            </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value={ApiProviderType.TMDB}>
-                                                    Media
-                                                </SelectItem>
-                                                <SelectItem value={ApiProviderType.BOOKS} disabled={!isBooksActive}>
-                                                    {!isBooksActive && <TriangleAlert className="text-amber-600"/>} Books
-                                                </SelectItem>
-                                                <SelectItem value={ApiProviderType.IGDB} disabled={!isGamesActive}>
-                                                    {!isGamesActive && <TriangleAlert className="text-amber-600"/>} Games
-                                                </SelectItem>
-                                                <SelectItem value={ApiProviderType.MANGA} disabled={!isMangaActive}>
-                                                    {!isMangaActive && <TriangleAlert className="text-amber-600"/>} Manga
-                                                </SelectItem>
-                                                <SelectItem value={ApiProviderType.USERS}>
-                                                    Users
-                                                </SelectItem>
+                                                <SelectGroup>
+                                                    {searchSelectorItems.map((item) =>
+                                                        <SelectItem
+                                                            key={item.value}
+                                                            value={item.value}
+                                                            disabled={
+                                                                (item.value === ApiProviderType.BOOKS && !isBooksActive) ||
+                                                                (item.value === ApiProviderType.IGDB && !isGamesActive) ||
+                                                                (item.value === ApiProviderType.MANGA && !isMangaActive)
+                                                            }
+                                                        >
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage/>
-                                    </FormItem>
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 )}
                             />
-                        </div>
-                        <div>
-                            <FormField
+                            <Controller
                                 name="ratingSystem"
                                 control={form.control}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            Rating System
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
+                                        <div className="flex items-center gap-2">
+                                            <FieldLabel htmlFor={`${fieldId}-rating-system`}>Rating System</FieldLabel>
                                             <RatingSystemPopover/>
-                                        </FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a rating system"/>
-                                                </SelectTrigger>
-                                            </FormControl>
+                                        </div>
+                                        <Select
+                                            value={field.value}
+                                            items={ratingSystemItems}
+                                            onValueChange={(value) => {
+                                                if (value !== null) field.onChange(value);
+                                            }}
+                                        >
+                                            <SelectTrigger id={`${fieldId}-rating-system`} className="w-full" aria-invalid={fieldState.invalid}>
+                                                <SelectValue placeholder="Select a rating system"/>
+                                            </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value={RatingSystemType.SCORE}>
-                                                    Score (numeric)
-                                                </SelectItem>
-                                                <SelectItem value={RatingSystemType.FEELING}>
-                                                    Feeling (emoticons)
-                                                </SelectItem>
+                                                <SelectGroup>
+                                                    {ratingSystemItems.map((item) =>
+                                                        <SelectItem key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage/>
-                                    </FormItem>
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 )}
                             />
-                        </div>
-                        <div>
-                            <FormField
+                            <Controller
                                 name="gridListView"
                                 control={form.control}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Default List View Mode</FormLabel>
-                                        <Select onValueChange={(v) => field.onChange(v === "grid")} value={field.value ? "grid" : "table"}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder="Select a view mode"/>
-                                                </SelectTrigger>
-                                            </FormControl>
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-grid-list-view`}>Default List View Mode</FieldLabel>
+                                        <Select
+                                            items={viewModeItems}
+                                            value={field.value ? "grid" : "table"}
+                                            onValueChange={(value) => {
+                                                if (value !== null) field.onChange(value === "grid");
+                                            }}
+                                        >
+                                            <SelectTrigger id={`${fieldId}-grid-list-view`} className="w-full" aria-invalid={fieldState.invalid}>
+                                                <SelectValue placeholder="Select a view mode"/>
+                                            </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="grid">Grid</SelectItem>
-                                                <SelectItem value="table">Table</SelectItem>
+                                                <SelectGroup>
+                                                    {viewModeItems.map((item) =>
+                                                        <SelectItem key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage/>
-                                    </FormItem>
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 )}
                             />
-                        </div>
-                    </fieldset>
+                        </FieldGroup>
+                    </FieldSet>
                     <FormError/>
                     <FormSubmitButton disabled={!form.formState.isDirty} isLoading={listSettingsMutation.isPending}>
                         Update Settings
                     </FormSubmitButton>
                 </form>
-            </Form>
+            </FormProvider>
             <Separator/>
             <div className="w-90 max-sm:w-full space-y-4">
                 <div className="text-base font-medium mb-3">
@@ -262,16 +307,24 @@ function MediaListFormPage() {
                 </div>
                 <div className="flex flex-wrap items-end gap-3">
                     <div className="grow">
-                        <Select onValueChange={(value) => setSelectedListForExport(value as MediaType)} value={selectedListForExport}>
+                        <Select
+                            items={mediaTypesForExport}
+                            value={selectedListForExport}
+                            onValueChange={(value) => {
+                                if (value !== null) setSelectedListForExport(value as MediaType);
+                            }}
+                        >
                             <SelectTrigger id="list-export-select" className="w-40 max-sm:max-w-full">
-                                <SelectValue placeholder="Select a media list..."/>
+                                <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
-                                {mediaTypesForExport.map(({ label, value }) => (
-                                    <SelectItem key={value} value={value}>
-                                        <MainThemeIcon type={value}/> {label}
-                                    </SelectItem>
-                                ))}
+                                <SelectGroup>
+                                    {mediaTypesForExport.map((item) => (
+                                        <SelectItem key={item.value} value={item.value}>
+                                            {item.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>

@@ -5,10 +5,11 @@ import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {UserStats} from "@/lib/client/components/admin/UserStats";
+import {DataTable} from "@/lib/client/components/general/DataTable";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
+import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
@@ -16,9 +17,9 @@ import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "rechart
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ChevronsUpDown, Copy, Eye, FolderKanban, Heart, UserPlus, Users} from "lucide-react";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
+import {ColumnDef, getCoreRowModel, OnChangeFn, SortingState, useReactTable} from "@tanstack/react-table";
 import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
-import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, SortingState, useReactTable} from "@tanstack/react-table";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/collections-overview")({
@@ -44,13 +45,12 @@ function AdminCollectionsOverviewPage() {
     const newCollections = stats.createdThisMonth.comparedToLastMonth > 0;
     const apiData = useSuspenseQuery(adminCollectionsOptions(filters)).data;
     const sortingState = [{ id: filters?.sorting ?? DEFAULT.sorting, desc: filters?.sortDesc === true }];
-    const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: filters.perPage ?? 12 };
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search, options: { resetScroll: false } });
-
-    const onPaginationChange: OnChangeFn<PaginationState> = async (updaterOrValue) => {
-        const newPagination = typeof updaterOrValue === "function" ? updaterOrValue(paginationState) : updaterOrValue;
-        updateFilters({ page: newPagination.pageIndex + 1 });
-    };
+    const { pagination, onPaginationChange } = useTablePagination({
+        page: filters.page,
+        pageSize: filters.perPage ?? 12,
+        onPageChange: (page) => updateFilters({ page }),
+    });
 
     const onSortingChange: OnChangeFn<SortingState> = async (updaterOrValue) => {
         const newSorting = typeof updaterOrValue === "function" ? updaterOrValue(sortingState) : updaterOrValue;
@@ -61,7 +61,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "mediaType",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Type <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -70,7 +70,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "privacy",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -79,7 +79,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "title",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Collection <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -94,7 +94,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "ownerName",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     User <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -112,7 +112,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "viewCount",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Views <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -121,7 +121,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "likeCount",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Likes <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -130,7 +130,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "copiedCount",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Copies <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -139,7 +139,7 @@ function AdminCollectionsOverviewPage() {
         {
             accessorKey: "createdAt",
             header: ({ column }) => (
-                <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                     Created <ChevronsUpDown className="size-3 text-muted-foreground"/>
                 </Button>
             ),
@@ -158,7 +158,7 @@ function AdminCollectionsOverviewPage() {
         data: apiData.items ?? [],
         rowCount: apiData.total ?? 0,
         getCoreRowModel: getCoreRowModel(),
-        state: { pagination: paginationState, sorting: sortingState },
+        state: { pagination, sorting: sortingState },
     });
 
     return (
@@ -169,49 +169,49 @@ function AdminCollectionsOverviewPage() {
             />
             <div className="space-y-4">
                 <div className="grid gap-4 grid-cols-4 max-sm:grid-cols-2 max-sm:gap-3">
-                    <UserStats
+                    <StatCard
                         icon={FolderKanban}
                         title="Total Collections"
-                        description="All collections created"
+                        subtitle="All collections created"
                         value={formatNumber(stats.totalCollections)}
                     />
-                    <UserStats
+                    <StatCard
                         icon={UserPlus}
                         title="Created This Month"
                         value={formatNumber(stats.createdThisMonth.count)}
-                        description={`${newCollections ? "+" : ""}${formatNumber(stats.createdThisMonth.comparedToLastMonth)} compared to last month`}
+                        subtitle={`${newCollections ? "+" : ""}${formatNumber(stats.createdThisMonth.comparedToLastMonth)} compared to last month`}
                     />
-                    <UserStats
+                    <StatCard
                         icon={Users}
                         title="Unique Creators"
                         value={formatNumber(stats.uniqueOwners)}
-                        description="Users who created at least one collection"
+                        subtitle="Users who created at least one collection"
                     />
-                    <UserStats
+                    <StatCard
                         icon={Eye}
                         title="Total Views"
                         value={formatNumber(stats.totalViews)}
-                        description="Views across all collections"
+                        subtitle="Views across all collections"
                     />
-                    <UserStats
+                    <StatCard
                         icon={Heart}
                         title="Total Likes"
                         value={formatNumber(stats.totalLikes)}
-                        description="Likes across all collections"
+                        subtitle="Likes across all collections"
                     />
-                    <UserStats
+                    <StatCard
                         icon={Copy}
                         title="Total Copies"
                         value={formatNumber(stats.totalCopies)}
-                        description="How often collections were copied"
+                        subtitle="How often collections were copied"
                     />
                     {stats.collectionsPerPrivacy.map((pv) =>
-                        <UserStats
+                        <StatCard
                             key={pv.privacy}
                             value={formatNumber(pv.count)}
                             title={capitalize(pv.privacy) + " Collections"}
-                            icon={<PrivacyIcon type={pv.privacy} className="size-5"/>}
-                            description={"Collections with privacy set to " + pv.privacy}
+                            icon={<PrivacyIcon type={pv.privacy} className="size-4"/>}
+                            subtitle={"Collections with privacy set to " + pv.privacy}
                         />
                     )}
                 </div>
@@ -251,7 +251,7 @@ function AdminCollectionsOverviewPage() {
                                         dataKey="count"
                                         fill="currentColor"
                                         radius={[4, 4, 0, 0]}
-                                        className="fill-gray-400"
+                                        className="fill-muted-foreground"
                                     />
                                 </BarChart>
                             </ResponsiveContainer>
@@ -294,40 +294,7 @@ function AdminCollectionsOverviewPage() {
                                 {apiData.total} collections
                             </div>
                         </div>
-                        <div className="rounded-md border p-3 pt-0 overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    {table.getHeaderGroups().map((headerGroup) =>
-                                        <TableRow key={headerGroup.id}>
-                                            {headerGroup.headers.map((header) =>
-                                                <TableHead key={header.id}>
-                                                    {!header.isPlaceholder && flexRender(header.column.columnDef.header, header.getContext())}
-                                                </TableHead>
-                                            )}
-                                        </TableRow>
-                                    )}
-                                </TableHeader>
-                                <TableBody>
-                                    {table.getRowModel().rows.length ?
-                                        table.getRowModel().rows.map((row) =>
-                                            <TableRow key={row.id}>
-                                                {row.getVisibleCells().map((cell) =>
-                                                    <TableCell key={cell.id}>
-                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                    </TableCell>
-                                                )}
-                                            </TableRow>
-                                        )
-                                        :
-                                        <TableRow>
-                                            <TableCell colSpan={columns.length} className="h-24 text-center">
-                                                No collections found.
-                                            </TableCell>
-                                        </TableRow>
-                                    }
-                                </TableBody>
-                            </Table>
-                        </div>
+                        <DataTable table={table} emptyMessage="No collections found."/>
                         <TablePagination
                             table={table}
                             withSelection={false}

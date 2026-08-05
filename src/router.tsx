@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {routeTree} from "@/routeTree.gen";
 import {createRouter} from "@tanstack/react-router";
 import {ValidationError} from "@/lib/utils/error-classes";
@@ -15,7 +15,7 @@ export function getRouter() {
         queryCache: new QueryCache({
             onError: async (_error, query) => {
                 if (query?.meta?.errorToastMessage) {
-                    toast.error(query.meta.errorToastMessage);
+                    toast.add({title: query.meta.errorToastMessage, type: "error", priority: "high"});
                 }
             },
         }),
@@ -24,15 +24,15 @@ export function getRouter() {
                 if (mutation.meta?.noErrorToast || error instanceof ValidationError) return;
 
                 if ("isNotFound" in error && error.isNotFound) {
-                    toast.error(DEFAULT_NOT_FOUND_MESSAGE);
+                    toast.add({title: DEFAULT_NOT_FOUND_MESSAGE, type: "error", priority: "high"});
                     return;
                 }
 
-                toast.error(error.message || DEFAULT_ERROR_MESSAGE);
+                toast.add({title: error.message || DEFAULT_ERROR_MESSAGE, type: "error", priority: "high"});
             },
             onSuccess: (_data, _variables, _context, mutation) => {
                 if (mutation?.meta?.successToastMessage) {
-                    toast.success(mutation.meta.successToastMessage);
+                    toast.add({title: mutation.meta.successToastMessage, type: "success"});
                 }
             }
         }),

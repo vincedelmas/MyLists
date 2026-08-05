@@ -3,7 +3,6 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {WCF_MAX_ROUNDS} from "@/lib/schemas/wcf.schema";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {UserStats} from "@/lib/client/components/admin/UserStats";
 import {formatDate, formatDateTime} from "@/lib/utils/date-formatting";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -15,6 +14,7 @@ import {adminWhichCameFirstOptions} from "@/lib/client/react-query/query-options
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/which-came-first")({
@@ -38,7 +38,7 @@ const statusChartColors: Record<WcfRunStatus, string> = {
     lost: "#df5a49",
     exhausted: "#efc94c",
     abandoned: "#71717a",
-    active: "var(--app-accent)",
+    active: "var(--brand)",
 };
 
 const mediaChartColors: Record<MediaType, string> = {
@@ -63,17 +63,17 @@ function AdminWhichCameFirstPage() {
             />
 
             <div className="space-y-6">
-                <Card className="relative overflow-hidden border-app-accent/20">
-                    <div className="pointer-events-none absolute -right-24 -top-28 size-80 rounded-full bg-app-accent/10 blur-3xl"/>
+                <Card className="relative overflow-hidden ring-brand/20">
+                    <div className="pointer-events-none absolute -right-24 -top-28 size-80 rounded-full bg-brand/10 blur-3xl"/>
                     <CardContent className="relative grid gap-5 md:grid-cols-[minmax(0,1fr)_18rem]">
                         <div>
                             <div
-                                className="inline-flex items-center gap-2 rounded-full border border-app-accent/25 bg-app-accent/10
-                                px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">
+                                className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/10
+                                px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand">
                                 <GitCompareArrows className="size-3.5"/>
                                 Game telemetry
                             </div>
-                            <h3 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-primary md:text-4xl">
+                            <h3 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-foreground md:text-4xl">
                                 {formatNumber(apiData.summary.playedRuns, { locale: "en" })} played sessions
                                 across {formatNumber(apiData.summary.uniquePlayers, { locale: "en" })} players
                             </h3>
@@ -90,7 +90,7 @@ function AdminWhichCameFirstPage() {
                                 Longest Streak
                             </div>
                             <div className="mt-3 flex items-end gap-2">
-                                <span className="text-6xl font-black leading-none text-app-accent">
+                                <span className="text-6xl font-black leading-none text-brand">
                                     {apiData.summary.bestScore}
                                 </span>
                                 <span className="pb-2 text-sm text-muted-foreground">/ {WCF_MAX_ROUNDS}</span>
@@ -121,28 +121,28 @@ function AdminWhichCameFirstPage() {
                 </Card>
 
                 <div className="grid gap-4 grid-cols-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
-                    <UserStats
+                    <StatCard
                         icon={Activity}
                         title="Played Sessions"
                         value={formatNumber(apiData.summary.playedRuns, { locale: "en" })}
-                        description={`${formatNumber(apiData.summary.startedRuns, { locale: "en" })} sessions started total`}
+                        subtitle={`${formatNumber(apiData.summary.startedRuns, { locale: "en" })} sessions started total`}
                     />
-                    <UserStats
+                    <StatCard
                         icon={Users}
                         title="Unique Players"
                         value={formatNumber(apiData.summary.uniquePlayers, { locale: "en" })}
-                        description="Users who answered at least one round"
+                        subtitle="Users who answered at least one round"
                     />
-                    <UserStats
+                    <StatCard
                         icon={Target}
                         title="Answer Accuracy"
                         value={formatPercent(apiData.summary.accuracy, { fractionDigits: 1 })}
-                        description={`${formatNumber(apiData.summary.correctAnswers, { locale: "en" })} correct answers`}
+                        subtitle={`${formatNumber(apiData.summary.correctAnswers, { locale: "en" })} correct answers`}
                     />
-                    <UserStats
+                    <StatCard
                         icon={CircleGauge}
                         title="Average Final Score"
-                        description="Ended played sessions only"
+                        subtitle="Ended played sessions only"
                         value={formatNumber(apiData.summary.averageScore, { locale: "en", fractionDigits: 1 })}
                     />
                 </div>
@@ -214,7 +214,7 @@ function AdminWhichCameFirstPage() {
                                             dot={false}
                                             strokeWidth={3}
                                             dataKey="accuracy"
-                                            stroke="var(--app-accent)"
+                                            stroke="var(--brand)"
                                         />
                                     </LineChart>
                                 </ResponsiveContainer>
@@ -240,7 +240,7 @@ function AdminWhichCameFirstPage() {
                                         labelFormatter={(label) => `Score: ${label}`}
                                         formatter={(value) => formatNumber(Number(value), { locale: "en" })}
                                     />
-                                    <Bar dataKey="count" fill="var(--app-accent)" radius={[5, 5, 0, 0]}/>
+                                    <Bar dataKey="count" fill="var(--brand)" radius={[5, 5, 0, 0]}/>
                                 </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
@@ -531,13 +531,13 @@ function EmptyChart({ label }: { label: string }) {
 const getStatusBadgeClass = (status: WcfRunStatus) => {
     switch (status) {
         case "won":
-            return "border-emerald-400/30 bg-emerald-500/10 text-emerald-300";
+            return "border-success/30 bg-success/10 text-success";
         case "lost":
-            return "border-red-400/30 bg-red-500/10 text-red-300";
+            return "border-destructive/30 bg-destructive/10 text-destructive";
         case "exhausted":
-            return "border-amber-400/30 bg-amber-500/10 text-amber-300";
+            return "border-warning/30 bg-warning/10 text-warning";
         case "active":
-            return "border-app-accent/30 bg-app-accent/10 text-app-accent";
+            return "border-brand/30 bg-brand/10 text-brand";
         case "abandoned":
         default:
             return "border-muted-foreground/30 bg-muted text-muted-foreground";

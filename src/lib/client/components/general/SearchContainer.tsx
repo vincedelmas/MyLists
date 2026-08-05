@@ -1,8 +1,9 @@
 import {ReactNode} from "react";
 import {cn} from "@/lib/utils/classnames";
-import {Loader2, SearchX} from "lucide-react";
+import {SearchX} from "lucide-react";
 import {displayContainerError} from "@/lib/utils/error-display";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 
 
 interface SearchContainerProps {
@@ -36,8 +37,8 @@ export const SearchContainer = (props: SearchContainerProps) => {
             position === "bottom" ? "top-full mt-1" : "bottom-full mb-1", className)}
         >
             {isPending &&
-                <div className="flex items-center justify-center p-6 text-app-accent">
-                    <Loader2 className="size-6 animate-spin"/>
+                <div className="flex items-center justify-center p-6">
+                    <Spinner className="size-6"/>
                 </div>
             }
 

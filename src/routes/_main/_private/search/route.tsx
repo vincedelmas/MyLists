@@ -3,16 +3,17 @@ import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Card} from "@/lib/client/components/ui/card";
 import {formatDate} from "@/lib/utils/date-formatting";
-import {Input} from "@/lib/client/components/ui/input";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {GlobalSearch, globalSearchSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {BookImage, Cat, Gamepad2, Library, LoaderCircle, Monitor, Popcorn, Search, User, X} from "lucide-react";
+import {BookImage, Cat, Gamepad2, Library, Monitor, Popcorn, Search, User, X} from "lucide-react";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_private/search")({
@@ -30,6 +31,19 @@ function SearchPage() {
     const [selectDrop, setSelectDrop] = useState(apiProvider);
     const [currentSearch, setCurrentSearch] = useState(query);
     const { data: apiData, isLoading, error } = useQuery(navSearchOptions(query, 1, apiProvider));
+    const searchProviderItems = [
+        { label: "Media", value: ApiProviderType.TMDB },
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS)
+            ? [{ label: "Books", value: ApiProviderType.BOOKS }]
+            : []),
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES)
+            ? [{ label: "Games", value: ApiProviderType.IGDB }]
+            : []),
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA)
+            ? [{ label: "Manga", value: ApiProviderType.MANGA }]
+            : []),
+        { label: "Users", value: ApiProviderType.USERS },
+    ];
 
     const fetchData = async (params: GlobalSearch) => {
         await navigate({ search: params });
@@ -46,57 +60,44 @@ function SearchPage() {
         await fetchData({ query: currentSearch, apiProvider: selectDrop });
     }
 
-    const onTypeChanged = async (value: ApiProviderType) => {
+    const onTypeChanged = async (value: ApiProviderType | null) => {
+        if (value === null) return;
         setSelectDrop(value);
     };
 
     return (
         <PageTitle title="Search" subtitle="Search for movies, TV shows, users, and more.">
             <div className="flex justify-center items-center gap-3 mt-3 mb-6">
-                <div className="relative max-sm:w-full">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground size-4"/>
-                    <Input
-                        type="search"
-                        value={currentSearch}
-                        placeholder="Search for media/users..."
-                        className="pl-8 rounded-md w-md max-sm:w-full"
-                        onKeyDown={(ev) => onSearchEnter(ev)}
-                        onChange={(ev) => setCurrentSearch(ev.target.value)}
-                    />
-                </div>
-                <Select value={selectDrop} onValueChange={(value: ApiProviderType) => onTypeChanged(value)}>
+                <SearchInput
+                    value={currentSearch}
+                    placeholder="Search for media/users..."
+                    className="w-md max-sm:w-full"
+                    onKeyDown={(ev) => onSearchEnter(ev)}
+                    onChange={(ev) => setCurrentSearch(ev.target.value)}
+                />
+                <Select
+                    items={searchProviderItems}
+                    value={selectDrop}
+                    onValueChange={onTypeChanged}
+                >
                     <SelectTrigger className="w-30">
                         <SelectValue/>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value={ApiProviderType.TMDB}>
-                            Media
-                        </SelectItem>
-                        {resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS) &&
-                            <SelectItem value={ApiProviderType.BOOKS}>
-                                Books
-                            </SelectItem>
-                        }
-                        {resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES) &&
-                            <SelectItem value={ApiProviderType.IGDB}>
-                                Games
-                            </SelectItem>
-                        }
-                        {resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA) &&
-                            <SelectItem value={ApiProviderType.MANGA}>
-                                Manga
-                            </SelectItem>
-                        }
-                        <SelectItem value={ApiProviderType.USERS}>
-                            Users
-                        </SelectItem>
+                        <SelectGroup>
+                            {searchProviderItems.map((item) =>
+                                <SelectItem key={item.value} value={item.value}>
+                                    {item.label}
+                                </SelectItem>
+                            )}
+                        </SelectGroup>
                     </SelectContent>
                 </Select>
             </div>
 
             {isLoading &&
                 <div className="flex items-center justify-center p-3.5">
-                    <LoaderCircle className="size-8 animate-spin"/>
+                    <Spinner className="size-8"/>
                 </div>
             }
 
@@ -112,8 +113,8 @@ function SearchPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3 lg:gap-4 lg:grid-cols-5 sm:gap-5">
                         {apiData.data.map((item) =>
-                            <Card key={item.id} className="rounded-lg py-0 border-none">
-                                <div className="relative aspect-2/3 h-full rounded-lg border border-black">
+                            <Card key={item.id} className="rounded-lg py-0 ring-0">
+                                <div className="relative aspect-2/3 h-full rounded-lg border">
                                     {item.itemType === ApiProviderType.USERS ?
                                         <Link to="/profile/$username" params={{ username: item.name }}>
                                             <img
@@ -134,7 +135,7 @@ function SearchPage() {
                                             />
                                         </Link>
                                     }
-                                    <div className="absolute bottom-0 px-4 pt-2 pb-2 space-y-1 bg-gray-900 w-full rounded-b-sm text-center">
+                                    <div className="absolute bottom-0 flex w-full flex-col gap-1 rounded-b-sm bg-black/70 px-4 pt-2 pb-2 text-center text-white backdrop-blur-sm">
                                         <div className="truncate">{item.name}</div>
                                         <div>{formatDate(item.date)}</div>
                                     </div>

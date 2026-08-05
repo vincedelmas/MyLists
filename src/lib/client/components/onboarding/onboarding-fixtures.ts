@@ -20,24 +20,28 @@ const highlightedItems = [
         mediaId: ONBOARDING_MOVIE_ID,
         mediaName: "Interstellar",
         mediaType: MediaType.MOVIES,
+        releaseDate: "2014",
         mediaCover: "/static/movies-covers/642b983912f6118acb9813050d0d9a88.jpg",
     },
     {
         mediaId: -102,
         mediaType: MediaType.MOVIES,
         mediaName: "The Lord of the Rings: The Two Towers",
+        releaseDate: "2002",
         mediaCover: "/static/movies-covers/1b0ed5d79e487aee89309b45e1edce85.jpg",
     },
     {
         mediaId: -103,
         mediaType: MediaType.SERIES,
         mediaName: "13 Reasons Why",
+        releaseDate: "2017",
         mediaCover: "/static/series-covers/445669e4462e2b0e0a6c49a92c8ead0e.jpg",
     },
     {
         mediaId: -104,
         mediaType: MediaType.BOOKS,
         mediaName: "Journal d'un AssaSynth",
+        releaseDate: "2017",
         mediaCover: "/static/books-covers/750104f47c8fe8b13398bcbf6c286c6b.jpg",
     },
 ];

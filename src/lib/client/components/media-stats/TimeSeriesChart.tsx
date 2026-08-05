@@ -40,14 +40,14 @@ export function TimeSeriesChart({ title, data, color, minPeriod, description, he
                         tickLine={false}
                         axisLine={false}
                         interval="preserveStartEnd"
-                        tick={{ fill: "var(--primary)", fontSize: 11 }}
+                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
                         tickFormatter={(val) => formatMonthYear(String(val))}
                     />
                     <YAxis
                         tickLine={false}
                         axisLine={false}
                         allowDecimals={false}
-                        tick={{ fill: "var(--primary)", fontSize: 11 }}
+                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
                         tickFormatter={(val) => formatNumber(val, { notation: "compact", locale: "en" })}
                     />
                     <Tooltip

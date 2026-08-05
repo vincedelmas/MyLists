@@ -1,18 +1,19 @@
 import React, {useMemo} from "react";
 import {SearchType} from "@/lib/schemas";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatDateTime} from "@/lib/utils/date-formatting";
 import {formatNumber} from "@/lib/utils/number-formatting";
-import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {DataTable} from "@/lib/client/components/general/DataTable";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
+import {ColumnDef, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {adminMediadleOptions} from "@/lib/client/react-query/query-options/admin.options";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
 
 
 export const Route = createFileRoute("/_admin/admin/mediadle")({
@@ -32,13 +33,12 @@ function AdminMediadlePage() {
     const filters = Route.useSearch();
     const { search = DEFAULT.search } = filters;
     const apiData = useSuspenseQuery(adminMediadleOptions(filters)).data;
-    const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: 25 };
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search });
-
-    const onPaginationChange: OnChangeFn<PaginationState> = (updaterOrValue) => {
-        const newPagination = typeof updaterOrValue === "function" ? updaterOrValue(paginationState) : updaterOrValue;
-        updateFilters({ search: search, page: newPagination.pageIndex + 1 });
-    };
+    const { pagination, onPaginationChange } = useTablePagination({
+        pageSize: 25,
+        page: filters.page,
+        onPageChange: (page) => updateFilters({ search, page }),
+    });
 
     const mediadleColumns: ColumnDef<typeof apiData.items[0]>[] = useMemo(() => [
         {
@@ -56,7 +56,7 @@ function AdminMediadlePage() {
                             <Link to="/profile/$username" params={{ username: original.name }} className="hover:underline hover:underline-offset-2">
                                 {original.name}
                             </Link>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 {original.email}
                             </p>
                         </div>
@@ -116,14 +116,14 @@ function AdminMediadlePage() {
     ], []);
 
     const table = useReactTable({
+        onPaginationChange,
         manualFiltering: true,
         manualPagination: true,
         columns: mediadleColumns,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
         getCoreRowModel: getCoreRowModel(),
-        onPaginationChange: onPaginationChange,
-        state: { pagination: paginationState },
+        state: { pagination },
     });
 
     return (
@@ -140,42 +140,11 @@ function AdminMediadlePage() {
                     placeholder="Search by name..."
                 />
             </div>
-            <div className="rounded-md border p-3 pt-0 overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) =>
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) =>
-                                    <TableHead key={header.id}>
-                                        {!header.isPlaceholder && flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                )}
-                            </TableRow>
-                        )}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ?
-                            table.getRowModel().rows.map((row) => {
-                                return (
-                                    <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                                        {row.getVisibleCells().map((cell) =>
-                                            <TableCell key={cell.id}>
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </TableCell>
-                                        )}
-                                    </TableRow>
-                                );
-                            })
-                            :
-                            <TableRow>
-                                <TableCell colSpan={mediadleColumns.length} className="h-24 text-center">
-                                    No results.
-                                </TableCell>
-                            </TableRow>
-                        }
-                    </TableBody>
-                </Table>
-            </div>
+
+            <DataTable
+                table={table}
+            />
+
             <div className="mt-3">
                 <TablePagination
                     table={table}

@@ -1,26 +1,25 @@
-import {useState} from "react";
-import {Search} from "lucide-react";
-import {useForm} from "react-hook-form";
+import {useId, useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {useQuery} from "@tanstack/react-query";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {Controller, FormProvider, useForm} from "react-hook-form";
+import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {monthlyActivityMediaSearchOptions} from "@/lib/client/react-query/query-options";
 import {getDefaultActivityDate, toActivityStoredValue} from "@/lib/utils/activity-utils";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {AddMonthlyActivity, AddMonthlyActivityInput, addMonthlyActivitySchema} from "@/lib/schemas";
 import {MonthlyActivityFormFields} from "@/lib/client/components/activity/MonthlyActivityFormFields";
 import {useAddMonthlyActivityMutation} from "@/lib/client/react-query/query-mutations/activity.mutations";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet, FieldTitle} from "@/lib/client/components/ui/field";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
@@ -34,11 +33,14 @@ interface MonthlyActivityAddDialogProps {
 
 
 export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpenChange }: MonthlyActivityAddDialogProps) => {
+    const fieldId = useId();
+    const mediaTypeItems = createMediaSelectItems(mediaTypes);
     const addMutation = useAddMonthlyActivityMutation({ noErrorToast: true });
     const [selectedMedia, setSelectedMedia] = useState<{ id: number; name: string; imageCover: string } | null>(null);
     const { search, setSearch, debouncedSearch, isOpen, reset: resetSearch, containerRef } = useSearchContainer({
         onReset: () => undefined,
     });
+    
     const form = useForm<AddMonthlyActivityInput, unknown, AddMonthlyActivity>({
         resolver: zodResolver(addMonthlyActivitySchema),
         defaultValues: {
@@ -55,7 +57,9 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
     const selectedType = form.watch("mediaType");
     const { data: searchResults = [], isFetching, error } = useQuery(monthlyActivityMediaSearchOptions(selectedType, debouncedSearch));
 
-    const handleTypeChange = (value: MediaType) => {
+
+    const handleTypeChange = (value: MediaType | null) => {
+        if (value === null) return;
         resetSearch();
         setSelectedMedia(null);
         form.clearErrors("mediaId");
@@ -100,42 +104,45 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                     </DialogDescription>
                 </DialogHeader>
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 mt-2">
-                        <fieldset disabled={addMutation.isPending} className="space-y-6">
-                            <FormField
-                                name="mediaType"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <FormItem className="w-36">
-                                        <FormLabel>MediaType</FormLabel>
-                                        <Select value={field.value} onValueChange={handleTypeChange}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-36 capitalize">
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="mt-2 flex flex-col gap-6">
+                        <FieldSet disabled={addMutation.isPending}>
+                            <FieldGroup>
+                                <Controller
+                                    name="mediaType"
+                                    control={form.control}
+                                    render={({ field, fieldState }) =>
+                                        <Field className="w-36" data-invalid={fieldState.invalid} data-disabled={addMutation.isPending}>
+                                            <FieldLabel htmlFor={`${fieldId}-media-type`}>Media Type</FieldLabel>
+                                            <Select items={mediaTypeItems} value={field.value} onValueChange={handleTypeChange}>
+                                                <SelectTrigger
+                                                    id={`${fieldId}-media-type`}
+                                                    className="w-36 capitalize"
+                                                    aria-invalid={fieldState.invalid}
+                                                >
                                                     <SelectValue/>
                                                 </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {mediaTypes.map((mediaType) =>
-                                                    <SelectItem key={mediaType} value={mediaType} className="capitalize">
-                                                        <MainThemeIcon type={mediaType} className="size-3.5"/>
-                                                        {mediaType}
-                                                    </SelectItem>
-                                                )}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
-                            <FormField
-                                name="mediaId"
-                                control={form.control}
-                                render={() =>
-                                    <FormItem>
-                                        <FormLabel>Media</FormLabel>
-                                        <FormControl>
-                                            <div>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        {mediaTypeItems.map((item) =>
+                                                            <SelectItem key={item.value} value={item.value} className="capitalize">
+                                                                {item.label}
+                                                            </SelectItem>
+                                                        )}
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    }
+                                />
+                                <Controller
+                                    name="mediaId"
+                                    control={form.control}
+                                    render={({ fieldState }) =>
+                                        <Field data-invalid={fieldState.invalid} data-disabled={addMutation.isPending}>
+                                            <FieldTitle id={`${fieldId}-media-label`}>Media</FieldTitle>
+                                            <div aria-labelledby={`${fieldId}-media-label`}>
                                                 {selectedMedia ?
                                                     <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3">
                                                         <div className="flex min-w-0 items-center gap-3">
@@ -154,7 +161,6 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                                             </div>
                                                         </div>
                                                         <Button
-                                                            size="sm"
                                                             type="button"
                                                             variant="outline"
                                                             onClick={() => {
@@ -168,19 +174,14 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                                     </div>
                                                     :
                                                     <div ref={containerRef} className="relative">
-                                                        <div className="flex items-center overflow-hidden focus-within:border-app-accent
-                                                        rounded-md border focus-within:ring-2 focus-within:ring-app-accent/50">
-                                                            <div className="px-3 text-muted-foreground">
-                                                                <Search className="size-4"/>
-                                                            </div>
-                                                            <Input
-                                                                value={search}
-                                                                inputMode="search"
-                                                                className="border-none focus-visible:ring-0"
-                                                                onChange={(ev) => setSearch(ev.target.value)}
-                                                                placeholder={`Search your ${capitalize(selectedType)} list...`}
-                                                            />
-                                                        </div>
+                                                        <SearchInput
+                                                            value={search}
+                                                            id={`${fieldId}-media-search`}
+                                                            aria-invalid={fieldState.invalid}
+                                                            aria-labelledby={`${fieldId}-media-label`}
+                                                            onChange={(ev) => setSearch(ev.target.value)}
+                                                            placeholder={`Search your ${capitalize(selectedType)} list...`}
+                                                        />
                                                         <SearchContainer
                                                             error={error}
                                                             search={search}
@@ -223,16 +224,16 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                                     </div>
                                                 }
                                             </div>
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                }
-                            />
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    }
+                                />
 
-                            <MonthlyActivityFormFields
-                                mediaType={selectedType}
-                            />
-                        </fieldset>
+                                <MonthlyActivityFormFields
+                                    mediaType={selectedType}
+                                />
+                            </FieldGroup>
+                        </FieldSet>
                         <FormError/>
                         <DialogFooter>
                             <FormSubmitButton isLoading={addMutation.isPending}>
@@ -240,7 +241,7 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                             </FormSubmitButton>
                         </DialogFooter>
                     </form>
-                </Form>
+                </FormProvider>
             </DialogContent>
         </Dialog>
     );

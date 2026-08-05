@@ -36,44 +36,54 @@ export function AdminSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin">
-                                        <Home className="size-4"/>
-                                        <span>Overview</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin">
+                                            <Home className="size-4"/>
+                                            <span>Overview</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/media-overview">
-                                        <Play className="size-4"/>
-                                        <span>User Media</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/media-overview">
+                                            <Play className="size-4"/>
+                                            <span>User Media</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/collections-overview">
-                                        <FolderKanban className="size-4"/>
-                                        <span>Collections Usage</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/collections-overview">
+                                            <FolderKanban className="size-4"/>
+                                            <span>Collections Usage</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/users">
-                                        <Users className="size-4"/>
-                                        <span>Users Management</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/users">
+                                            <Users className="size-4"/>
+                                            <span>Users Management</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/inactive-accounts">
-                                        <UserRoundX className="size-4"/>
-                                        <span>Inactive Accounts</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/inactive-accounts">
+                                            <UserRoundX className="size-4"/>
+                                            <span>Inactive Accounts</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>
@@ -83,36 +93,44 @@ export function AdminSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/history">
-                                        <History className="size-4"/>
-                                        <span>Media History</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/history">
+                                            <History className="size-4"/>
+                                            <span>Media History</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/achievements">
-                                        <Award className="size-4"/>
-                                        <span>Achievements</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/achievements">
+                                            <Award className="size-4"/>
+                                            <span>Achievements</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/mediadle">
-                                        <Film className="size-4"/>
-                                        <span>Mediadle Stats</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/mediadle">
+                                            <Film className="size-4"/>
+                                            <span>Mediadle Stats</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/which-came-first">
-                                        <GitCompareArrows className="size-4"/>
-                                        <span>WCF Stats</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/which-came-first">
+                                            <GitCompareArrows className="size-4"/>
+                                            <span>WCF Stats</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>
@@ -122,20 +140,24 @@ export function AdminSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/admin-tasks">
-                                        <ListCheck className="size-4"/>
-                                        <span>Admin Tasks</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/admin-tasks">
+                                            <ListCheck className="size-4"/>
+                                            <span>Admin Tasks</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/archived-tasks">
-                                        <Archive className="size-4"/>
-                                        <span>Archived Tasks</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/archived-tasks">
+                                            <Archive className="size-4"/>
+                                            <span>Archived Tasks</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>
@@ -145,28 +167,34 @@ export function AdminSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/media-refresh">
-                                        <RefreshCw className="size-4"/>
-                                        <span>Refresh Monitoring</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/media-refresh">
+                                            <RefreshCw className="size-4"/>
+                                            <span>Refresh Monitoring</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/api-monitoring">
-                                        <Radio className="size-4"/>
-                                        <span>API Monitoring</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/api-monitoring">
+                                            <Radio className="size-4"/>
+                                            <span>API Monitoring</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <Link to="/admin/error-logs">
-                                        <CircleX className="size-4"/>
-                                        <span>Runtime Logs</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/error-logs">
+                                            <CircleX className="size-4"/>
+                                            <span>Runtime Logs</span>
+                                        </Link>
+                                    }
+                                />
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>

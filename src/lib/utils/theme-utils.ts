@@ -38,28 +38,32 @@ const THEME_COLOR_MAP: Record<string, string> = {
 
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-    "border-bronze": "border-amber-700",
-    "border-silver": "border-slate-400",
-    "border-gold": "border-yellow-600",
-    "border-platinum": "border-teal-600",
-    "bg-bronze": "bg-amber-700",
-    "bg-silver": "bg-slate-400",
-    "bg-gold": "bg-yellow-600",
-    "bg-platinum": "bg-teal-600",
-    "text-bronze": "text-amber-700",
-    "text-silver": "text-slate-400",
-    "text-gold": "text-yellow-600",
-    "text-platinum": "text-teal-600",
+    "border-bronze": "border-bronze",
+    "border-silver": "border-silver",
+    "border-gold": "border-gold",
+    "border-platinum": "border-platinum",
+    "ring-bronze": "ring-bronze",
+    "ring-silver": "ring-silver",
+    "ring-gold": "ring-gold",
+    "ring-platinum": "ring-platinum",
+    "bg-bronze": "bg-bronze",
+    "bg-silver": "bg-silver",
+    "bg-gold": "bg-gold",
+    "bg-platinum": "bg-platinum",
+    "text-bronze": "text-bronze",
+    "text-silver": "text-silver",
+    "text-gold": "text-gold",
+    "text-platinum": "text-platinum",
 };
 
 
 export const getThemeColor = (type: MediaType | Status | string | undefined) => {
-    if (!type) return "#CBCBCB";
-    return THEME_COLOR_MAP[type] ?? "#CBCBCB";
+    if (!type) return "var(--color-muted-foreground)";
+    return THEME_COLOR_MAP[type] ?? "var(--color-muted-foreground)";
 };
 
 
-export const getDifficultyColors = (difficulty: AchievementDifficulty | "total" | undefined, variant: "text" | "border" | "bg" = "text") => {
+export const getDifficultyColors = (difficulty: AchievementDifficulty | "total" | undefined, variant: "text" | "border" | "ring" | "bg" = "text") => {
     if (!difficulty) return "";
     return DIFFICULTY_COLORS[`${variant}-${difficulty}`];
 };

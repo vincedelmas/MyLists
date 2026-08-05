@@ -2,11 +2,11 @@ import React from "react";
 import {Link} from "@tanstack/react-router";
 import {FollowData} from "@/lib/types/query.options.types";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {StatusBadge} from "@/lib/client/components/general/StatusBadge";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorite";
+import {Badge} from "@/lib/client/components/ui/badge";
 
 
 interface BaseMediaFollowCardProps {
@@ -36,7 +36,7 @@ export const BaseMediaFollowCard = ({ followData, rating, redoDisplay, mediaDeta
             </div>
             <div className="grow min-w-0">
                 <div className="flex justify-between items-start gap-3">
-                    <p className="text-sm font-medium text-primary truncate">
+                    <p className="text-sm font-medium text-foreground truncate">
                         <Link to="/profile/$username" params={{ username: followData.name }}>
                             {followData.name}
                         </Link>
@@ -45,13 +45,12 @@ export const BaseMediaFollowCard = ({ followData, rating, redoDisplay, mediaDeta
                         {activityDate &&
                             <RelativeTime
                                 date={activityDate}
-                                className="max-w-20 truncate text-[11px] leading-tight text-muted-foreground no-underline hover:text-primary"
+                                className="max-w-20 truncate text-[11px] leading-tight text-muted-foreground no-underline hover:text-brand"
                             />
                         }
-                        <StatusBadge
-                            className="h-5"
-                            status={followData.userMedia.status}
-                        />
+                        <Badge variant="outline">
+                            {followData.userMedia.status}
+                        </Badge>
                     </div>
                 </div>
                 <div className="flex gap-x-3 text-xs text-muted-foreground mt-2">

@@ -2,7 +2,7 @@ import {Award} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {getDifficultyColors} from "@/lib/utils/theme-utils";
-import {Button} from "@/lib/client/components/ui/button";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {AchievementsType} from "@/lib/types/query.options.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
@@ -23,7 +23,7 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                     Recent Achievements
                 </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
                 <div className="space-y-3">
                     {achievements.length === 0 ?
                         <EmptyState
@@ -36,7 +36,7 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                                 <div className="flex justify-between">
                                     <div className="flex gap-2 items-center mb-1">
                                         <Award className={cn("size-4", getDifficultyColors(ach.difficulty, "text"))}/>
-                                        <div className="font-bold text-sm text-primary">
+                                        <div className="font-bold text-sm text-foreground">
                                             {ach.name}
                                         </div>
                                     </div>
@@ -53,11 +53,9 @@ export const AchievementsCard = ({ username, achievements }: AchievementsProps) 
                     }
                 </div>
                 {achievements.length !== 0 &&
-                    <Button className="mt-4" variant="dashed" asChild>
-                        <Link to="/achievements/$username" params={{ username }}>
-                            View all achievements
-                        </Link>
-                    </Button>
+                    <Link to="/achievements/$username" params={{ username }} className={cn(buttonVariants({ variant: "dashed" }))}>
+                        View all Achievements
+                    </Link>
                 }
             </CardContent>
         </Card>

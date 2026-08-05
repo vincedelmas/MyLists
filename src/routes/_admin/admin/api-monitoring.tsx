@@ -1,6 +1,6 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {UserStats} from "@/lib/client/components/admin/UserStats";
+import {AdminApiMonitoringParams} from "@/lib/types/admin.types";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {formatDate, formatDateTime} from "@/lib/utils/date-formatting";
@@ -10,11 +10,11 @@ import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {formatMs, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {Activity, AlertTriangle, BarChart3, Clock, Gauge, Radio} from "lucide-react";
-import {AdminApiMonitoringParams, ApiMonitoringRange} from "@/lib/types/admin.types";
 import {adminApiMonitoringOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/api-monitoring")({
@@ -106,41 +106,41 @@ function ApiMonitoringPage() {
                     </div>
                 </div>
                 <div className="grid gap-4 grid-cols-6 max-xl:grid-cols-3 max-sm:grid-cols-2">
-                    <UserStats
+                    <StatCard
+                        icon={Radio}
                         title="Total Calls"
-                        description="Lifetime volume"
+                        subtitle="Lifetime volume"
                         value={formatNumber(apiData.summary.total)}
-                        icon={<Radio className="text-app-accent size-5"/>}
                     />
-                    <UserStats
+                    <StatCard
+                        icon={BarChart3}
                         title="Avg. / Day"
-                        description="Since monitoring began"
-                        icon={<BarChart3 className="text-app-accent size-5"/>}
+                        subtitle="Since monitoring began"
                         value={formatNumber(apiData.summary.avgPerDay, { maximumFractionDigits: 1 })}
                     />
-                    <UserStats
+                    <StatCard
+                        icon={Gauge}
                         title="Avg. / Sec"
-                        description="Since monitoring began"
-                        icon={<Gauge className="text-app-accent size-5"/>}
+                        subtitle="Since monitoring began"
                         value={formatPerSecond(apiData.summary.avgPerSecond)}
                     />
-                    <UserStats
+                    <StatCard
+                        icon={Activity}
                         title="Max Burst"
-                        description="Max peak in one sec."
-                        icon={<Activity className="text-app-accent size-5"/>}
+                        subtitle="Max peak in one sec."
                         value={formatNumber(apiData.summary.busiestSecondCount)}
                     />
-                    <UserStats
+                    <StatCard
                         title="Errors"
+                        icon={AlertTriangle}
                         value={formatNumber(totalErrors)}
-                        icon={<AlertTriangle className="text-app-accent size-5"/>}
-                        description={`${formatPercent(errorRate)} lifetime failure rate`}
+                        subtitle={`${formatPercent(errorRate)} lifetime failure rate`}
                     />
-                    <UserStats
+                    <StatCard
+                        icon={Clock}
                         title="Avg. Latency"
-                        description="All calls, all providers"
+                        subtitle="All calls, all providers"
                         value={formatMs(apiData.summary.avgDurationMs)}
-                        icon={<Clock className="text-app-accent size-5"/>}
                     />
                 </div>
                 <div className="grid gap-4 grid-cols-7 max-lg:grid-cols-1">
@@ -151,16 +151,24 @@ function ApiMonitoringPage() {
                                 {selectedProviderRange} · share, errors, and avg. latency
                             </CardDescription>
                             <CardAction>
-                                <Select value={range} onValueChange={(value: ApiMonitoringRange) => onNavigate({ range: value })}>
+                                <Select
+                                    value={range}
+                                    items={rangeOptions}
+                                    onValueChange={(value) => {
+                                        if (value !== null) onNavigate({ range: value });
+                                    }}
+                                >
                                     <SelectTrigger aria-label="Provider Mix range">
                                         <SelectValue placeholder="Select Range"/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {rangeOptions.map((opt) =>
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </SelectItem>
-                                        )}
+                                        <SelectGroup>
+                                            {rangeOptions.map((opt) =>
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            )}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                             </CardAction>
@@ -261,7 +269,7 @@ function ApiMonitoringPage() {
                                                             <p className="text-[0.68rem] text-muted-foreground">{formatNumber(row.count)} calls</p>
                                                         </div>
                                                         <div className="text-right tabular-nums max-sm:text-left">
-                                                            <p className={row.errors > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "font-semibold"}>
+                                                            <p className={row.errors > 0 ? "font-semibold text-warning" : "font-semibold"}>
                                                                 {formatPercent(row.errorRate, { fractionDigits: row.errorRate > 0 && row.errorRate < 0.1 ? 2 : 1 })}
                                                             </p>
                                                             <p className="text-[0.68rem] text-muted-foreground">{formatNumber(row.errors)} failed</p>
@@ -286,17 +294,22 @@ function ApiMonitoringPage() {
                             <CardAction>
                                 <Select
                                     value={dailyRange}
-                                    onValueChange={(value: Exclude<ApiMonitoringRange, "24h">) => onNavigate({ dailyRange: value })}
+                                    items={dailyRangeOptions}
+                                    onValueChange={(value) => {
+                                        if (value !== null) onNavigate({ dailyRange: value });
+                                    }}
                                 >
                                     <SelectTrigger aria-label="Daily Provider Calls range">
                                         <SelectValue placeholder="Select Range"/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {dailyRangeOptions.map((opt) =>
-                                            <SelectItem key={opt.value} value={opt.value}>
-                                                {opt.label}
-                                            </SelectItem>
-                                        )}
+                                        <SelectGroup>
+                                            {dailyRangeOptions.map((opt) =>
+                                                <SelectItem key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </SelectItem>
+                                            )}
+                                        </SelectGroup>
                                     </SelectContent>
                                 </Select>
                             </CardAction>

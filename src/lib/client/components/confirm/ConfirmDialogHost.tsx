@@ -1,5 +1,5 @@
 import {Input} from "@/lib/client/components/ui/input";
-import {Label} from "@/lib/client/components/ui/label";
+import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import React, {MouseEvent, useId, useRef} from "react";
 import {useConfirmState} from "@/lib/client/hooks/use-confirm";
 import {
@@ -34,19 +34,12 @@ export function ConfirmDialogHost() {
             ev.preventDefault();
             return;
         }
-
         confirm();
-    }
-
-    const handleOnOpenAutoFocus = (ev: Event) => {
-        if (!requiresText) return;
-        ev.preventDefault();
-        inputRef.current?.focus();
     }
 
     return (
         <AlertDialog open={open} onOpenChange={handleOpenChange}>
-            <AlertDialogContent onOpenAutoFocus={handleOnOpenAutoFocus}>
+            <AlertDialogContent initialFocus={() => requiresText ? inputRef.current : true}>
                 <AlertDialogHeader>
                     <AlertDialogTitle className={isDestructive ? "text-destructive" : undefined}>
                         {options.title}
@@ -57,10 +50,10 @@ export function ConfirmDialogHost() {
                 </AlertDialogHeader>
 
                 {requiresText &&
-                    <div className="space-y-2">
-                        <Label htmlFor={inputId}>
+                    <Field>
+                        <FieldLabel htmlFor={inputId}>
                             Type <span className="font-medium text-foreground">{options.requireText}</span> to confirm.
-                        </Label>
+                        </FieldLabel>
                         <Input
                             id={inputId}
                             data-bwignore
@@ -72,7 +65,7 @@ export function ConfirmDialogHost() {
                             autoCapitalize="none"
                             onChange={(ev) => setInputValue(ev.target.value)}
                         />
-                    </div>
+                    </Field>
                 }
 
                 <AlertDialogFooter>
@@ -83,7 +76,7 @@ export function ConfirmDialogHost() {
                         type="button"
                         onClick={handleOnConfirm}
                         disabled={confirmDisabled}
-                        variant={isDestructive ? "destructive" : "emeraldy"}
+                        variant={isDestructive ? "destructive" : "default"}
                     >
                         {options.confirmLabel}
                     </AlertDialogAction>

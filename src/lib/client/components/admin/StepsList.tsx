@@ -7,8 +7,8 @@ import {AlertTriangle, CheckCircle, ChevronDown, SkipForward, XCircle} from "luc
 
 const stepStatusConfig = {
     failed: { icon: XCircle, color: "text-destructive" },
-    completed: { icon: CheckCircle, color: "text-green-500" },
-    partial: { icon: AlertTriangle, color: "text-yellow-500" },
+    completed: { icon: CheckCircle, color: "text-success" },
+    partial: { icon: AlertTriangle, color: "text-warning" },
     skipped: { icon: SkipForward, color: "text-muted-foreground" },
 };
 

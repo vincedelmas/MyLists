@@ -4,57 +4,52 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Card} from "@/lib/client/components/ui/card";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {Button} from "@/lib/client/components/ui/button";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {TasteMatch} from "@/lib/types/query.options.types";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Progress} from "@/lib/client/components/ui/progress";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 
 
 export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; activeTab: "all" | MediaType }) => {
     return (
-        <Card className="border-app-rating/40 bg-linear-to-br from-app-rating/8 via-card to-card p-6 md:p-8">
+        <Card className="bg-linear-to-br from-achievement/8 p-6 ring-achievement/40 md:p-8">
             <div className="grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-center">
                 <div className="space-y-6">
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-app-rating/40
-                    px-3 py-1.5 text-sm font-medium">
-                        <Crown className="size-4 text-app-rating"/>{" "}
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-achievement/40 px-3 py-1.5 text-sm font-medium">
+                        <Crown className="size-4 text-achievement"/>{" "}
                         Your closest taste match
                     </div>
-
                     <UserIdentity
                         match={match}
                         featured={true}
                     />
-
                     <SharedFavMedia
                         match={match}
                     />
-
                     <div className="flex flex-wrap gap-3">
                         <FollowButton
                             profileUsername={match.name}
                             social={{ followId: match.id, followStatus: match.followStatus }}
                         />
-                        <Button asChild variant="secondary">
-                            <Link to="/profile/$username" params={{ username: match.name }}>
-                                View profile
-                            </Link>
-                        </Button>
+                        <Link to="/profile/$username" params={{ username: match.name }} className={buttonVariants({ variant: "secondary" })}>
+                            View profile
+                        </Link>
                     </div>
                 </div>
 
-                <div className="rounded-xl border bg-background/50 p-5">
+                <div className="rounded-xl border bg-background p-5">
                     <div className="mb-5 flex flex-col items-center">
                         <MatchScore
                             featured={true}
                             score={match.similarity}
                         />
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Overall taste match
+                        <p className="mt-2 text-sm">
+                            Overall Taste Match
                         </p>
                     </div>
                     <MediaScores
@@ -70,23 +65,16 @@ export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; ac
 
 export const TasteMatchCard = ({ match, activeTab }: { match: TasteMatch; activeTab: MediaType | "all" }) => {
     return (
-        <Card className="h-full justify-between transition-colors hover:border-app-accent/40">
+        <Card className="p-3 h-full justify-between transition-colors hover:ring-brand/40">
             <div className="space-y-5">
                 <div className="flex items-start justify-between gap-4">
-                    <UserIdentity
-                        match={match}
-                    />
-
-                    <MatchScore
-                        score={match.similarity}
-                    />
+                    <UserIdentity match={match}/>
+                    <MatchScore score={match.similarity}/>
                 </div>
-
                 <MediaScores
                     match={match}
                     activeTab={activeTab}
                 />
-
                 <SharedFavMedia
                     match={match}
                 />
@@ -94,7 +82,7 @@ export const TasteMatchCard = ({ match, activeTab }: { match: TasteMatch; active
 
             <div className="flex items-center justify-between gap-3 border-t pt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground" title="Total ratings">
-                    <Star className="size-4 text-app-rating"/>
+                    <Star className="size-4 text-rating"/>
                     {formatNumber(match.totalRatings)} rated
                 </div>
                 <FollowButton
@@ -122,12 +110,12 @@ const MatchScore = ({ score, featured = false }: { score: number; featured?: boo
                     fill="none"
                     strokeWidth="8"
                     strokeLinecap="round"
-                    stroke="var(--app-accent)"
+                    stroke="var(--primary)"
                     strokeDasharray={2 * Math.PI * 42}
                     strokeDashoffset={(2 * Math.PI * 42) * (1 - score / 100)}
                 />
             </svg>
-            <span className={cn("absolute inset-0 flex items-center justify-center font-bold text-primary", featured ? "text-2xl" : "text-base")}>
+            <span className={cn("absolute inset-0 flex items-center justify-center font-bold text-foreground", featured ? "text-2xl" : "text-base")}>
                 {formatPercent(score, { fractionDigits: 0 })}
             </span>
         </div>
@@ -136,7 +124,7 @@ const MatchScore = ({ score, featured = false }: { score: number; featured?: boo
 
 
 const MediaScores = ({ match, activeTab }: { match: TasteMatch; activeTab: MediaType | "all" }) => {
-    const displayedTypes = activeTab === "all" ? Object.values(MediaType) : [activeTab];
+    const displayedTypes = activeTab === "all" ? ALL_MEDIA_TYPES : [activeTab];
 
     return (
         <div className="grid grid-cols-2 gap-x-5 gap-y-2">
@@ -151,7 +139,7 @@ const MediaScores = ({ match, activeTab }: { match: TasteMatch; activeTab: Media
                     >
                         <MainThemeIcon type={type} size={15}/>
                         <div>
-                            <div className="mb-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                            <div className="mb-1 flex items-center justify-between gap-2 text-xs">
                                 <span>{capitalize(type)}</span>
                                 <span>
                                     {score
@@ -161,8 +149,7 @@ const MediaScores = ({ match, activeTab }: { match: TasteMatch; activeTab: Media
                                 </span>
                             </div>
                             <Progress
-                                color="var(--app-accent)"
-                                className="h-1.5 bg-muted"
+                                color="var(--primary)"
                                 value={score?.similarity ?? 0}
                             />
                         </div>
@@ -189,7 +176,7 @@ const SharedFavMedia = ({ match }: { match: TasteMatch }) => {
                         key={`${media.mediaType}-${media.mediaId}`}
                         params={{ mediaType: media.mediaType, mediaId: media.mediaId }}
                         className="inline-flex max-w-full items-center gap-1.5 rounded-full border bg-muted/50 px-2.5 py-1
-                        text-xs text-primary transition-colors hover:border-app-accent/50 hover:bg-app-accent/10"
+                        text-xs text-foreground transition-colors hover:border-brand/50 hover:bg-brand/10"
                     >
                         <MainThemeIcon type={media.mediaType} size={13}/>
                         <span className="truncate">{media.name}</span>
@@ -214,7 +201,7 @@ const UserIdentity = ({ match, featured = false }: { match: TasteMatch; featured
                     to="/profile/$username"
                     params={{ username: match.name }}
                     className={cn(
-                        "flex items-center gap-2 truncate font-bold text-primary hover:text-app-accent",
+                        "flex items-center gap-2 truncate font-bold text-foreground hover:text-brand",
                         featured ? "text-2xl" : "text-base",
                     )}
                 >

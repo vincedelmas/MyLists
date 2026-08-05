@@ -4,8 +4,8 @@ import {MediaType} from "@/lib/utils/enums";
 import {Pencil, RefreshCw} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useNow} from "@/lib/client/hooks/use-dates";
-import {Button} from "@/lib/client/components/ui/button";
 import {dateFromUTCInput} from "@/lib/utils/date-formatting";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {useRefreshMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
 
@@ -47,14 +47,9 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
     return (
         <div className="flex items-center justify-center gap-4 rounded-lg border p-1 shadow-sm max-sm:gap-2">
             {canRefreshThisType &&
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleRefresh}
-                    disabled={refreshDisabled}
-                    className="h-8 gap-2 px-3 text-xs"
-                >
-                    <RefreshCw className={cn("size-3.5", refreshMutation.isPending && "animate-spin")}/> Refresh
+                <Button size="sm" variant="hover" onClick={handleRefresh} disabled={refreshDisabled}>
+                    <RefreshCw className={cn(refreshMutation.isPending && "animate-spin")}/>
+                    Refresh
                 </Button>
             }
 
@@ -63,11 +58,13 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
             }
 
             {isManagerOrAbove &&
-                <Button size="sm" variant="ghost" className="h-8 gap-2 px-3 text-xs" asChild>
-                    <Link to="/details/edit/$mediaType/$mediaId" params={{ mediaType, mediaId }}>
-                        <Pencil className="size-3.5"/> Edit
-                    </Link>
-                </Button>
+                <Link
+                    params={{ mediaType, mediaId }}
+                    to="/details/edit/$mediaType/$mediaId"
+                    className={buttonVariants({ size: "sm", variant: "hover" })}
+                >
+                    <Pencil className="size-3.5"/> Edit
+                </Link>
             }
 
             {(canRefreshThisType || isManagerOrAbove) &&

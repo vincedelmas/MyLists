@@ -1,20 +1,20 @@
-import {useState} from "react";
+import {useId, useState} from "react";
 import {CircleHelp} from "lucide-react";
-import {useForm} from "react-hook-form";
 import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/general")({
@@ -22,7 +22,15 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/general")
 });
 
 
+const privacyItems = [
+    { label: "Public", value: PrivacyType.PUBLIC },
+    { label: "Restricted", value: PrivacyType.RESTRICTED },
+    { label: "Private", value: PrivacyType.PRIVATE },
+];
+
+
 function GeneralSettingsPage() {
+    const fieldId = useId();
     const { currentUser, setCurrentUser } = useAuth();
     const [imageCropperResetKey, setImageCropperResetKey] = useState(0);
     const generalSettingsMutation = useGeneralSettingsMutation({ noErrorToast: true });
@@ -57,96 +65,114 @@ function GeneralSettingsPage() {
     };
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="w-90 max-sm:w-full space-y-6">
-                <fieldset disabled={generalSettingsMutation.isPending} className="space-y-6">
-                    <FormField
-                        name="username"
-                        control={form.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Username</FormLabel>
-                                <FormControl>
-                                    <Input {...field}/>
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        name="privacy"
-                        control={form.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>
+        <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-90 flex-col gap-6 max-sm:w-full">
+                <FieldSet disabled={generalSettingsMutation.isPending}>
+                    <FieldGroup>
+                        <Controller
+                            name="username"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
+                                    <FieldLabel htmlFor={`${fieldId}-username`}>
+                                        Username
+                                    </FieldLabel>
+                                    <Input
+                                        {...field}
+                                        id={`${fieldId}-username`}
+                                        aria-invalid={fieldState.invalid}
+                                    />
+                                    <FieldError errors={[fieldState.error]}/>
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            name="privacy"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
                                     <div className="flex items-center gap-2">
-                                        Privacy
+                                        <FieldLabel htmlFor={`${fieldId}-privacy`}>
+                                            Privacy
+                                        </FieldLabel>
                                         <PrivacyPopover/>
                                     </div>
-                                </FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger className="w-full">
+                                    <Select
+                                        value={field.value}
+                                        items={privacyItems}
+                                        onValueChange={(value) => {
+                                            if (value !== null) field.onChange(value);
+                                        }}
+                                    >
+                                        <SelectTrigger id={`${fieldId}-privacy`} className="w-full" aria-invalid={fieldState.invalid}>
                                             <SelectValue placeholder="Select a privacy mode"/>
                                         </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value={PrivacyType.PUBLIC}>Public</SelectItem>
-                                        <SelectItem value={PrivacyType.RESTRICTED}>Restricted</SelectItem>
-                                        <SelectItem value={PrivacyType.PRIVATE}>Private</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        name="profileImage"
-                        control={form.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Profile image</FormLabel>
-                                <FormControl>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                {privacyItems.map((item) =>
+                                                    <SelectItem key={item.value} value={item.value}>
+                                                        {item.label}
+                                                    </SelectItem>
+                                                )}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                    <FieldError errors={[fieldState.error]}/>
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            name="profileImage"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
+                                    <FieldLabel htmlFor={`${fieldId}-pi`}>
+                                        Profile image
+                                    </FieldLabel>
                                     <ImageCropper
                                         aspect={1}
                                         cropShape="round"
                                         fileName={field.name}
+                                        inputId={`${fieldId}-pi`}
                                         onCropApplied={field.onChange}
+                                        aria-invalid={fieldState.invalid}
                                         key={`profile-${imageCropperResetKey}`}
                                         resultClassName="h-[150px] rounded-full"
                                     />
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        name="backgroundImage"
-                        control={form.control}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Background Image</FormLabel>
-                                <FormControl>
+                                    <FieldError errors={[fieldState.error]}/>
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            name="backgroundImage"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
+                                    <FieldLabel htmlFor={`${fieldId}-bi`}>
+                                        Background Image
+                                    </FieldLabel>
                                     <ImageCropper
                                         cropShape="rect"
                                         sliceHeight={256}
                                         fileName={field.name}
+                                        inputId={`${fieldId}-bi`}
                                         onCropApplied={field.onChange}
+                                        aria-invalid={fieldState.invalid}
                                         key={`background-${imageCropperResetKey}`}
                                         resultClassName="w-full h-16 object-cover rounded"
                                     />
-                                </FormControl>
-                                <FormMessage/>
-                            </FormItem>
-                        )}
-                    />
-                </fieldset>
+                                    <FieldError errors={[fieldState.error]}/>
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
+                </FieldSet>
                 <FormError/>
                 <FormSubmitButton isLoading={generalSettingsMutation.isPending}>
                     Update
                 </FormSubmitButton>
             </form>
-        </Form>
+        </FormProvider>
     );
 }
 
@@ -154,8 +180,8 @@ function GeneralSettingsPage() {
 const PrivacyPopover = () => {
     return (
         <Popover>
-            <PopoverTrigger className="opacity-50 hover:opacity-80">
-                <CircleHelp className="w-4 h-4"/>
+            <PopoverTrigger className="opacity-50 hover:opacity-100 cursor-help">
+                <CircleHelp className="size-4"/>
             </PopoverTrigger>
             <PopoverContent className="p-5 w-80">
                 <div className="mb-3 text-sm font-medium text-muted-foreground">
@@ -163,15 +189,15 @@ const PrivacyPopover = () => {
                 </div>
                 <ul className="text-sm list-disc space-y-3 pl-4">
                     <li>
-                        <span className="font-semibold text-green-500">Public:</span>
+                        <span className="font-semibold text-success">Public:</span>
                         {" "}Anyone can see your profile, lists, stats, and media updates.
                     </li>
                     <li>
-                        <span className="font-semibold text-amber-500">Restricted (default):</span>
+                        <span className="font-semibold text-warning">Restricted (default):</span>
                         {" "}Only logged-in users can see your profile, lists, stats, and media updates.
                     </li>
                     <li>
-                        <span className="font-semibold text-red-500">Private:</span>
+                        <span className="font-semibold text-destructive">Private:</span>
                         {" "}Only approved followers can see your profile, lists, stats, and media updates.
                     </li>
                 </ul>

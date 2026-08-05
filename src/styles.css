@@ -9,16 +9,16 @@
 ::-webkit-scrollbar {
     width: 10px;
     scrollbar-width: thin;
-    scrollbar-color: #3f3f46 transparent;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 24%, transparent) transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #3f3f46;
+    background: color-mix(in oklch, var(--foreground) 24%, transparent);
     border-radius: 20px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #52525b;
+    background: color-mix(in oklch, var(--foreground) 34%, transparent);
 }
 
 ::-webkit-scrollbar-track {
@@ -32,27 +32,26 @@
 }
 
 #nprogress .bar {
-    background: #2b7a7f;
-    position: fixed;
-    z-index: 1031;
     top: 0;
     left: 0;
     width: 100%;
     height: 3px;
+    z-index: 1031;
+    position: fixed;
+    background: var(--primary);
 }
 
 #nprogress .peg {
-    display: block;
-    position: absolute;
     right: 0;
+    opacity: 1;
     width: 100px;
     height: 100%;
-    box-shadow: 0 0 10px hsl(var(--primary)),
-    0 0 5px hsl(var(--primary));
-    opacity: 1;
-    -webkit-transform: rotate(3deg) translate(0px, -4px);
-    -ms-transform: rotate(3deg) translate(0px, -4px);
+    display: block;
+    position: absolute;
     transform: rotate(3deg) translate(0px, -4px);
+    -ms-transform: rotate(3deg) translate(0px, -4px);
+    -webkit-transform: rotate(3deg) translate(0px, -4px);
+    box-shadow: 0 0 10px var(--primary), 0 0 5px var(--primary);
 }
 
 .nprogress-custom-parent {
@@ -71,9 +70,9 @@ input[type="search"]::-webkit-search-cancel-button {
     height: 14px;
     cursor: pointer;
     -webkit-appearance: none;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'%3E%3C/line%3E%3Cline x1='6' y1='6' x2='18' y2='18'%3E%3C/line%3E%3C/svg%3E");
+    background: var(--muted-foreground);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E") center / contain no-repeat;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 input[type="search"]::-webkit-search-cancel-button:hover {
@@ -84,8 +83,25 @@ input[type="search"]::-webkit-search-cancel-button:hover {
 /* --- TAILWIND --------------------------------------------------------------------------- */
 
 :root {
-    --app-accent: oklch(69.6% 0.17 162.48);
-    --app-rating: oklch(76.9% 0.188 70.08);
+    color-scheme: light;
+
+    /* MyLists brand highlight */
+    --brand: oklch(69.6% 0.17 162.48);
+
+    /* Semantic feedback and domain colors */
+    --success: var(--brand);
+    --success-foreground: var(--primary-foreground);
+    --warning: oklch(0.54 0.13 70);
+    --warning-foreground: oklch(0.985 0 0);
+    --info: oklch(0.52 0.13 245);
+    --info-foreground: oklch(0.985 0 0);
+    --rating: oklch(0.59 0.15 75);
+    --achievement: oklch(0.57 0.14 86);
+    --favorite: oklch(0.55 0.19 24);
+    --bronze: oklch(0.52 0.11 55);
+    --silver: oklch(0.58 0.02 255);
+    --gold: oklch(0.60 0.14 85);
+    --platinum: oklch(0.52 0.10 185);
 
     --background: oklch(1 0 0);
     --foreground: oklch(0.1450 0 0);
@@ -93,43 +109,44 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --card-foreground: oklch(0.1450 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.1450 0 0);
-    --primary: oklch(0.2050 0 0);
-    --primary-foreground: oklch(0.9850 0 0);
+    --primary: oklch(0.53 0.15 162.48);
+    --primary-foreground: oklch(0.985 0 0);
     --secondary: oklch(0.9700 0 0);
     --secondary-foreground: oklch(0.2050 0 0);
     --muted: oklch(0.9700 0 0);
     --muted-foreground: oklch(0.5560 0 0);
     --accent: oklch(0.9700 0 0);
     --accent-foreground: oklch(0.2050 0 0);
-    --destructive: oklch(70.4% 0.191 22.216);
+    --destructive: oklch(0.55 0.20 25);
     --destructive-foreground: oklch(1 0 0);
 
     --border: oklch(0.9220 0 0);
     --input: oklch(0.9220 0 0);
-    --ring: oklch(0.7080 0 0);
+    --ring: var(--primary);
 
-    --chart-1: oklch(0.8100 0.1000 252);
-    --chart-2: oklch(0.6200 0.1900 260);
-    --chart-3: oklch(0.5500 0.2200 263);
-    --chart-4: oklch(0.4900 0.2200 264);
-    --chart-5: oklch(0.4200 0.1800 266);
+    --chart-1: var(--brand);
+    --chart-2: var(--info);
+    --chart-3: var(--rating);
+    --chart-4: oklch(0.55 0.15 305);
+    --chart-5: var(--favorite);
 
     --sidebar: oklch(0.9850 0 0);
     --sidebar-foreground: oklch(0.1450 0 0);
-    --sidebar-primary: oklch(0.2050 0 0);
-    --sidebar-primary-foreground: oklch(0.9850 0 0);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
     --sidebar-accent: oklch(0.9700 0 0);
     --sidebar-accent-foreground: oklch(0.2050 0 0);
     --sidebar-border: oklch(0.9220 0 0);
-    --sidebar-ring: oklch(0.7080 0 0);
+    --sidebar-ring: var(--primary);
 
-    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
     --radius: 0.625rem;
-    --tracking-normal: 0em;
     --spacing: 0.25rem;
+    --tracking-normal: 0em;
 
     --shadow-x: 0;
     --shadow-y: 1px;
@@ -154,72 +171,123 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --manga: #a04646;
     --user: #6e6e6e;
 
-    --playing: #334d5c;
-    --reading: #334d5c;
-    --watching: #334d5c;
-    --completed: #45b29d;
-    --on_hold: #efc94c;
-    --multiplayer: #b19026;
-    --random: #e27a3f;
-    --dropped: #df5a49;
+    --playing: #456879;
+    --reading: #456879;
+    --watching: #456879;
+    --completed: #4fad9a;
+    --on_hold: #dbbb50;
+    --multiplayer: #f1c53b;
+    --random: #ed874e;
+    --dropped: #e86a5a;
     --endless: #48792c;
-    --plan_to_watch: #962d3e;
-    --plan_to_read: #962d3e;
-    --plan_to_play: #962d3e;
+    --plan_to_watch: #c65b6b;
+    --plan_to_read: #c65b6b;
+    --plan_to_play: #c65b6b;
 }
 
 .dark {
-    --app-accent: oklch(69.6% 0.17 162.48);
-    --app-rating: oklch(76.9% 0.188 70.08);
+    color-scheme: dark;
 
-    --background: hsl(0, 0%, 6%);
-    --foreground: hsl(0 0% 96%);
+    --brand: oklch(69.6% 0.17 162.48);
 
-    --card: hsl(0, 0%, 6%);
-    --card-foreground: hsl(0 0% 89%);
+    --success: var(--brand);
+    --success-foreground: var(--primary-foreground);
+
+    --warning: oklch(0.78 0.14 75);
+    --warning-foreground: oklch(0.18 0.02 70);
+
+    --info: oklch(0.75 0.13 245);
+    --info-foreground: oklch(0.145 0 0);
+
+    --rating: oklch(0.79 0.16 75);
+    --achievement: oklch(0.81 0.15 86);
+    --favorite: oklch(0.72 0.19 24);
+
+    --bronze: oklch(0.68 0.11 55);
+    --silver: oklch(0.76 0.02 255);
+    --gold: oklch(0.80 0.14 85);
+    --platinum: oklch(0.74 0.10 185);
+
+    --background: oklch(0.15 0 0);
+    --foreground: oklch(0.985 0 0);
+
+    --card: oklch(0.178 0 0);
+    --card-foreground: oklch(0.97 0 0);
 
     --popover: hsl(0 0% 3%);
-    --popover-foreground: hsl(0 0% 98%);
+    --popover-foreground: oklch(0.985 0 0);
 
-    --primary: hsl(0 0% 90%);
-    --primary-foreground: hsl(0 0% 9%);
+    --primary: oklch(0.432 0.095 166.913);
+    --primary-foreground: oklch(0.979 0.021 166.113);
 
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
 
-    --muted: hsl(0 0% 14.9%);
-    --muted-foreground: hsl(0 0% 70%);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.754 0 0);
 
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
 
-    --destructive: oklch(70.4% 0.191 22.216);
-    --destructive-foreground: hsl(0 0% 98%);
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: oklch(0.95 0 0);
 
-    --radius: 0.5rem;
-    --ring: hsl(0 0% 83.1%);
-    --input: hsl(0 0% 14.9%);
-    --border: hsl(0 0% 14.9%);
+    --ring: var(--primary);
+    --input: oklch(0.269 0 0);
+    --border: oklch(0.269 0 0);
 
-    --color-1: hsl(0 100% 63%);
-    --color-2: hsl(270 100% 63%);
-    --color-3: hsl(210 100% 63%);
-    --color-4: hsl(195 100% 63%);
-    --color-5: hsl(90 100% 63%);
+    --chart-1: var(--brand);
+    --chart-2: var(--info);
+    --chart-3: var(--rating);
+    --chart-4: oklch(0.72 0.14 305);
+    --chart-5: var(--favorite);
 
-    --sidebar: hsl(240 5.9% 10%);
-    --sidebar-primary: hsl(224.3 76.3% 48%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-accent: hsl(240 3.7% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(240 3.7% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
+    --sidebar: oklch(0.178 0 0);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-foreground: oklch(0.97 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(0.269 0 0);
+    --sidebar-ring: var(--primary);
+
+    --series: oklch(0.72 0.10 210);
+    --anime: oklch(0.704 0.127 39.618);
+    --movies: oklch(0.758 0.115 91.787);
+    --books: oklch(0.72 0.11 300);
+    --games: oklch(0.613 0.139 144.552);
+    --manga: oklch(0.686 0.161 25.326);
+    --user: oklch(0.72 0 0);
+
+    --playing: oklch(0.72 0.09 220);
+    --reading: oklch(0.72 0.09 220);
+    --watching: oklch(0.72 0.09 220);
+    --completed: oklch(0.74 0.13 165);
+    --on_hold: oklch(0.80 0.13 90);
+    --multiplayer: oklch(0.82 0.15 92);
+    --random: oklch(0.76 0.16 55);
+    --dropped: oklch(0.72 0.18 27);
+    --endless: oklch(0.70 0.13 135);
+    --plan_to_watch: oklch(0.70 0.15 15);
+    --plan_to_read: oklch(0.70 0.15 15);
+    --plan_to_play: oklch(0.70 0.15 15);
 }
 
 @theme inline {
-    --color-app-accent: var(--app-accent);
-    --color-app-rating: var(--app-rating);
+    --color-brand: var(--brand);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-rating: var(--rating);
+    --color-achievement: var(--achievement);
+    --color-favorite: var(--favorite);
+    --color-bronze: var(--bronze);
+    --color-silver: var(--silver);
+    --color-gold: var(--gold);
+    --color-platinum: var(--platinum);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -248,6 +316,12 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
 
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
@@ -290,8 +364,8 @@ input[type="search"]::-webkit-search-cancel-button:hover {
         margin: auto;
     }
 
-    a:hover {
-        @apply text-app-accent;
+    a:not([class]):hover {
+        @apply text-brand;
     }
 
     button:not(:disabled), [role="button"]:not(:disabled) {
@@ -303,8 +377,9 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     }
 
     body {
+        position: relative;
         overflow-x: hidden;
-        @apply bg-background text-foreground selection:bg-emerald-500/30;
+        @apply bg-background text-foreground selection:bg-brand/25;
     }
 
     @keyframes float {
@@ -368,16 +443,16 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     }
 
     .scrollbar-thin::-webkit-scrollbar-thumb {
-        background: #3f3f46;
         border-radius: 20px;
+        background: color-mix(in oklch, var(--foreground) 24%, transparent);
     }
 
     .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-        background: #52525b;
+        background: color-mix(in oklch, var(--foreground) 34%, transparent);
     }
 
     .scrollbar-thin {
         scrollbar-width: thin;
-        scrollbar-color: #3f3f46 transparent;
+        scrollbar-color: color-mix(in oklch, var(--foreground) 24%, transparent) transparent;
     }
 }

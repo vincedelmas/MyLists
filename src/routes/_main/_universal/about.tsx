@@ -35,7 +35,7 @@ function AboutPage() {
                     <div className="mt-4">
                         <a
                             href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`}
-                            className="inline-flex items-center gap-2 text-app-accent hover:underline font-medium"
+                            className="inline-flex items-center gap-2 text-brand hover:underline font-medium"
                         >
                             <Mail className="size-4"/>
                             Contact Me
@@ -47,7 +47,7 @@ function AboutPage() {
 
                 <section>
                     <div className="flex items-center gap-2 mb-6">
-                        <Code2 className="w-5 h-5 text-app-accent"/>
+                        <Code2 className="w-5 h-5 text-brand"/>
                         <h3 className="text-xl font-semibold">Tech Stack</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -82,7 +82,7 @@ function AboutPage() {
 
                 <section>
                     <div className="flex items-center gap-2 mb-6">
-                        <Database className="w-5 h-5 text-app-accent"/>
+                        <Database className="w-5 h-5 text-brand"/>
                         <h3 className="text-xl font-semibold">Data Sources & APIs</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -117,7 +117,7 @@ function AboutPage() {
 
                 <section>
                     <div className="flex items-center gap-2 mb-6">
-                        <Palette className="w-5 h-5 text-app-accent"/>
+                        <Palette className="w-5 h-5 text-brand"/>
                         <h3 className="text-xl font-semibold">Assets & Credits</h3>
                     </div>
                     <Card>
@@ -131,7 +131,7 @@ function AboutPage() {
                                     href="https://fr.freepik.com/vecteurs-libre/logo-degrade-colore-initial-vecteur-m_28762027.htm"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-app-accent hover:underline inline-flex items-center gap-1"
+                                    className="text-brand hover:underline inline-flex items-center gap-1"
                                 >
                                     logturnal <ExternalLink className="w-3 h-3"/>
                                 </a>.
@@ -160,7 +160,7 @@ function TechCard({ title, description, href, licenseHref }: TechCardProps) {
                 <CardTitle className="text-base flex items-center justify-between">
                     {title}
                     <a href={href} target="_blank" rel="noopener noreferrer"
-                       className="text-muted-foreground hover:text-primary transition-colors">
+                       className="text-muted-foreground transition-colors hover:text-brand">
                         <ExternalLink className="size-4"/>
                     </a>
                 </CardTitle>
@@ -170,7 +170,7 @@ function TechCard({ title, description, href, licenseHref }: TechCardProps) {
             </CardHeader>
             <CardContent className="pt-0">
                 <a href={licenseHref} target="_blank" rel="noopener noreferrer"
-                   className="text-xs text-app-accent hover:underline">
+                   className="text-xs text-brand hover:underline">
                     View License
                 </a>
             </CardContent>
@@ -195,11 +195,11 @@ function ApiCard({ title, description, href, apiHref }: ApiCardProps) {
                     {title}
                     <div className="flex gap-2">
                         <a href={href} target="_blank" rel="noopener noreferrer" title="Website"
-                           className="text-muted-foreground hover:text-primary transition-colors">
+                           className="text-muted-foreground transition-colors hover:text-brand">
                             <Info className="size-4"/>
                         </a>
                         <a href={apiHref} target="_blank" rel="noopener noreferrer" title="API Docs"
-                           className="text-muted-foreground hover:text-primary transition-colors">
+                           className="text-muted-foreground transition-colors hover:text-brand">
                             <ExternalLink className="size-4"/>
                         </a>
                     </div>

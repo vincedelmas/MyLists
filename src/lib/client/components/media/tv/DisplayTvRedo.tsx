@@ -19,7 +19,7 @@ export const DisplayTvRedo = ({ redoValues }: DisplayTvRedoProps) => {
         <Popover>
             <PopoverTrigger>
                 <div className="flex items-center gap-x-1">
-                    <RotateCw size={15} className="text-green-500"/>
+                    <RotateCw size={15} className="text-success"/>
                     <div>{totalRedo} S.</div>
                 </div>
             </PopoverTrigger>

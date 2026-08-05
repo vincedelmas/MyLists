@@ -58,13 +58,13 @@ export function HistogramChart(props: HistogramChartProps) {
                         tickLine={false}
                         axisLine={false}
                         interval="preserveStartEnd"
-                        tick={{ fill: "var(--primary)", fontSize: 11 }}
+                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
                     />
                     <YAxis
                         tickLine={false}
                         axisLine={false}
                         allowDecimals={false}
-                        tick={{ fill: "var(--primary)", fontSize: 11 }}
+                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
                         tickFormatter={(val) => formatNumber(val, { notation: "compact", locale: "en" })}
                     />
                     <Tooltip

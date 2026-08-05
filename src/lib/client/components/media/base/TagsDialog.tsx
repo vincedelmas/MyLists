@@ -1,18 +1,22 @@
-import {useState} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
+import React, {useId, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {cn} from "@/lib/utils/classnames";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {DialogRootChangeEventDetails} from "@base-ui/react";
+import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {displayContainerError} from "@/lib/utils/error-display";
+import {Field, FieldLabel} from "@/lib/client/components/ui/field";
+import {ChevronRight, PlusCircle, Tags} from "lucide-react";
 import {tagNamesOptions} from "@/lib/client/react-query/query-options";
-import {Check, ChevronRight, LoaderCircle, PlusCircle, Tags} from "lucide-react";
-import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 
 
 interface TagsDialogProps {
@@ -24,6 +28,7 @@ interface TagsDialogProps {
 
 
 export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogProps) => {
+    const fieldId = useId();
     const { currentUser } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -56,29 +61,32 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
         }
     }
 
+    const onOpenChange = (open: boolean, ev: DialogRootChangeEventDetails) => {
+        if (!open && ev.reason === "escape-key" && searchQuery.length > 0) {
+            ev.cancel();
+            setSearchQuery("");
+            return;
+        }
+        setIsOpen(open);
+    };
+
     return (
-        <Credenza open={isOpen} onOpenChange={setIsOpen}>
-            <CredenzaTrigger className="text-muted-foreground text-sm -mb-1">
-                Manage
-            </CredenzaTrigger>
-            <CredenzaContent
-                className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full"
-                onEscapeKeyDown={(ev) => {
-                    if (searchQuery.length > 0) {
-                        ev.preventDefault();
-                        setSearchQuery("");
-                    }
-                }}
-            >
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogTrigger className="text-muted-foreground">
+                <Button type="button" size="bare" variant="ghost" className="text-xs">
+                    Manage
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full">
                 <div className="p-6 pb-4">
-                    <CredenzaHeader className="p-0 mb-6 mt-2">
-                        <CredenzaTitle>
+                    <DialogHeader className="p-0 mb-6 mt-2">
+                        <DialogTitle>
                             Manage Tags
-                        </CredenzaTitle>
-                        <CredenzaDescription>
+                        </DialogTitle>
+                        <DialogDescription>
                             Add this {mediaType} to your tags to organize your list.
-                        </CredenzaDescription>
-                    </CredenzaHeader>
+                        </DialogDescription>
+                    </DialogHeader>
 
                     <div className="relative group">
                         <Input
@@ -86,7 +94,7 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                             value={searchQuery}
                             disabled={isLoading}
                             onKeyDown={onSearchKeyDown}
-                            className="h-11 bg-popover/50"
+                            className="h-9 bg-popover/50"
                             placeholder="Find or create a tag..."
                             onChange={(ev) => setSearchQuery(ev.target.value)}
                         />
@@ -94,8 +102,8 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                             {showCreateButton ?
                                 <Button
                                     size="sm"
-                                    className="h-7 bg-app-accent/50 hover:bg-app-accent/70 text-[10px]
-                                    font-bold px-2.5 rounded shadow-sm transition-all text-primary/90"
+                                    variant="default"
+                                    className="text-[10px]"
                                     onClick={() => handleAction({ name: searchQuery.trim() }, TagAction.ADD)}
                                 >
                                     {mutation.isPending ? "..." : "CREATE"}
@@ -113,16 +121,16 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                     <div className="h-70 overflow-y-auto p-2 scrollbar-thin">
                         {isLoading ?
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-                                <LoaderCircle className="size-6 animate-spin"/>
+                                <Spinner className="size-6" aria-hidden="true"/>
                                 <span className="text-xs font-medium">Syncing...</span>
                             </div>
                             : filteredTags.length === 0 ?
                                 <div className="flex flex-col items-center justify-center h-full text-center p-6">
                                     <PlusCircle className="size-8 text-muted-foreground mb-3 opacity-50"/>
-                                    <p className="text-sm text-zinc-400 font-medium">
+                                    <p className="text-sm text-muted-foreground font-medium">
                                         No tag found
                                     </p>
-                                    <p className="text-xs text-zinc-600 mt-1">
+                                    <p className="text-xs text-muted-foreground/70 mt-1">
                                         {searchQuery ?
                                             `Click 'create' to create '${searchQuery.trim()}' tags.`
                                             :
@@ -132,42 +140,29 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                                 </div>
                                 :
                                 <div className="grid gap-0.5">
-                                    {filteredTags.map((col) => {
+                                    {filteredTags.map((col, idx) => {
+                                        const checkboxId = `${fieldId}-${idx}`;
                                         const isActive = activeIds.has(col.name);
 
                                         return (
-                                            <button
+                                            <Field
                                                 key={col.name}
-                                                disabled={mutation.isPending}
-                                                onClick={() => handleAction(col, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
-                                                className={cn("flex items-center justify-between w-full px-3 py-3 " +
-                                                    "rounded-lg text-sm transition-all group", isActive
-                                                    ? "bg-app-accent/4 text-app-accent" : "text-primary/90 hover:bg-popover"
+                                                orientation="horizontal"
+                                                data-disabled={mutation.isPending}
+                                                className={cn("p-3 rounded-lg", isActive
+                                                    ? "bg-brand/4 text-brand" : "hover:bg-popover"
                                                 )}
                                             >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={cn(
-                                                        "size-4.5 rounded border flex items-center justify-center transition-all",
-                                                        isActive
-                                                            ? "bg-app-accent border-app-accent scale-110"
-                                                            : "bg-popover group-hover:border-zinc-500"
-                                                    )}>
-                                                        {isActive && <Check className="size-3 text-popover stroke-4"/>}
-                                                    </div>
-                                                    <span className="font-medium">
-                                                        # {col.name}
-                                                    </span>
-                                                </div>
-
-                                                {isActive &&
-                                                    <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95">
-                                                        <div className="size-1.5 rounded-full bg-app-accent"/>
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest">
-                                                            active
-                                                        </span>
-                                                    </div>
-                                                }
-                                            </button>
+                                                <Checkbox
+                                                    id={checkboxId}
+                                                    checked={isActive}
+                                                    disabled={mutation.isPending}
+                                                    onCheckedChange={() => handleAction(col, isActive ? TagAction.DELETE_ONE : TagAction.ADD)}
+                                                />
+                                                <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">
+                                                    # {col.name}
+                                                </FieldLabel>
+                                            </Field>
                                         );
                                     })}
                                 </div>
@@ -186,18 +181,18 @@ export const TagsDialog = ({ mediaType, mediaId, tags, updateTag }: TagsDialogPr
                         <Link
                             to="/list/$mediaType/$username/tags"
                             params={{ mediaType, username: currentUser!.name }}
-                            className="flex items-center gap-1.5 text-xs text-primary/90 hover:text-app-accent transition-colors"
+                            className="flex items-center gap-1.5 text-xs text-foreground/90 hover:text-brand transition-colors"
                         >
                             <Tags className="size-3"/>
                             Open Tags
                             <ChevronRight className="size-3 mt-0.5"/>
                         </Link>
-                        <Button size="sm" variant="secondary" className="text-primary/90" onClick={() => setIsOpen(false)}>
+                        <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
                             Done
                         </Button>
                     </div>
                 </div>
-            </CredenzaContent>
-        </Credenza>
+            </DialogContent>
+        </Dialog>
     );
 };

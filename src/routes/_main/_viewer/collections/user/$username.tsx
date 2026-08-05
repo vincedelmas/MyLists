@@ -4,18 +4,19 @@ import {ListOrdered, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {userCollectionsFiltersSchema, UserCollectionsSearch} from "@/lib/schemas";
 import {paginatedUserCollectionsOptions} from "@/lib/client/react-query/query-options";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/user/$username")({
@@ -32,14 +33,14 @@ function UserCollectionsPage() {
     const filters = Route.useSearch();
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
-    const mediaTypes = Object.values(MediaType);
+    const isOwner = currentUser?.name === username;
     const { page = 1, search = "", mediaType } = filters;
     const apiData = useSuspenseQuery(paginatedUserCollectionsOptions({ username, ...filters })).data;
+    const mediaTypeItems = createMediaSelectItems(ALL_MEDIA_TYPES, { leading: "all", leadingLabel: "All Types" });
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<UserCollectionsSearch>({ search });
 
-    const isOwner = currentUser?.name === username;
-
-    const handleMediaTypeChange = (value: string) => {
+    const handleMediaTypeChange = (value: string | null) => {
+        if (value === null) return;
         void updateFilters({ page: 1, mediaType: value === "all" ? undefined : (value as MediaType) })
     }
 
@@ -60,34 +61,30 @@ function UserCollectionsPage() {
                     </div>
 
                     <div className="col-span-1 sm:mr-auto sm:w-40">
-                        <Select value={mediaType ?? "all"} onValueChange={handleMediaTypeChange}>
+                        <Select items={mediaTypeItems} value={mediaType ?? "all"} onValueChange={handleMediaTypeChange}>
                             <SelectTrigger className="w-full capitalize">
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">
-                                    <div className="flex items-center gap-2">
-                                        <MainThemeIcon type="all"/>
-                                        <span>All Types</span>
-                                    </div>
-                                </SelectItem>
-                                {mediaTypes.map((type) =>
-                                    <SelectItem key={type} value={type} className="capitalize">
-                                        <MainThemeIcon type={type}/>
-                                        {type}
-                                    </SelectItem>
-                                )}
+                                <SelectGroup>
+                                    {mediaTypeItems.map((item) =>
+                                        <SelectItem key={item.value} value={item.value} className="capitalize">
+                                            {item.label}
+                                        </SelectItem>
+                                    )}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="col-span-1 flex items-center justify-end gap-5">
                         {isOwner &&
-                            <Button asChild className="justify-center whitespace-nowrap" size="sm" variant="emeraldy">
-                                <Route.Link to="/collections/create">
-                                    <Plus className="size-4"/> New collection
-                                </Route.Link>
-                            </Button>
+                            <Route.Link
+                                to="/collections/create"
+                                className={buttonVariants({ variant: "default", className: "justify-center whitespace-nowrap" })}
+                            >
+                                <Plus className="size-4"/> New collection
+                            </Route.Link>
                         }
                         <div className="pr-2">
                             <QuickActions username={username}/>

@@ -9,7 +9,9 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {WCF_MAX_ROUNDS, WCF_MEDIA_TYPES} from "@/lib/schemas/wcf.schema";
+import {MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {dateFromUTCInput, extractDate, formatDate} from "@/lib/utils/date-formatting";
 import {whichCameFirstOptions} from "@/lib/client/react-query/query-options/wcf.options";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
@@ -155,12 +157,12 @@ function GameSetup({ selectedTypes, onToggle, isPending, onStart }: GameSetupPro
     };
 
     return (
-        <Card className="relative mx-auto max-w-4xl overflow-hidden border-border/80 p-0 shadow-lg shadow-black/5">
-            <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-app-accent/10 blur-3xl"/>
+        <Card className="relative mx-auto max-w-4xl overflow-hidden p-0 shadow-lg shadow-black/5 ring-border/80">
+            <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-brand/10 blur-3xl"/>
             <div className="grid md:grid-cols-[minmax(0,1fr)_17rem]">
                 <div className="relative p-6 sm:p-8">
                     <CardHeader className="mb-6 gap-3">
-                        <div className="flex size-11 items-center justify-center rounded-xl border border-app-accent/20 bg-app-accent/10 text-app-accent">
+                        <div className="flex size-11 items-center justify-center rounded-xl border border-brand/20 bg-brand/10 text-brand">
                             <CalendarClock className="size-5"/>
                         </div>
                         <div>
@@ -184,7 +186,7 @@ function GameSetup({ selectedTypes, onToggle, isPending, onStart }: GameSetupPro
                                         className={cn("group relative flex min-h-20 cursor-pointer flex-col justify-between " +
                                             "overflow-hidden rounded-lg border p-3.5",
                                             "transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent/60",
-                                            selected ? "border-app-accent/60 bg-app-accent/8 shadow-sm ring-1 ring-app-accent/15"
+                                            selected ? "border-brand/60 bg-brand/8 shadow-sm ring-1 ring-brand/15"
                                                 : "border-border/80 bg-background/40",
                                         )}
                                     >
@@ -231,7 +233,7 @@ function GameSetup({ selectedTypes, onToggle, isPending, onStart }: GameSetupPro
                         </div>
                         <div className="mt-5 flex flex-wrap gap-1.5">
                             {selectedTypes.length > 0 ? selectedTypes.map((mediaType) =>
-                                    <Badge key={mediaType} variant="outline" className="bg-background/70 capitalize gap-1">
+                                    <Badge key={mediaType} variant="overlay" className="capitalize">
                                         <MainThemeIcon type={mediaType}/>
                                         {mediaType}
                                     </Badge>
@@ -246,7 +248,7 @@ function GameSetup({ selectedTypes, onToggle, isPending, onStart }: GameSetupPro
                         size="lg"
                         onClick={onStart}
                         disabled={selectedTypes.length === 0 || isPending}
-                        className="mt-5 w-full bg-app-accent text-black shadow-md shadow-app-accent/15 hover:bg-app-accent/90"
+                        className="mt-5 w-full shadow-md shadow-primary/15"
                     >
                         Start the run
                         <ArrowRight/>
@@ -275,7 +277,7 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
             <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-xl border bg-card px-3 py-2.5 shadow-sm sm:px-4">
                 <div className="flex items-center gap-3 sm:gap-5">
                     <div className="flex items-center gap-2">
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-app-accent/12 text-app-accent">
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-brand/12 text-brand">
                             <Trophy className="size-4"/>
                         </div>
                         <div>
@@ -296,13 +298,12 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                             {run.round.number} / {WCF_MAX_ROUNDS}
                         </p>
                     </div>
-                    <Badge variant="outline" className="hidden gap-1.5 bg-muted/40 font-normal sm:inline-flex">
-                        <Gauge className="size-3"/>
-                        {run.round.difficulty} apart
+                    <Badge variant="outline">
+                        <Gauge/> {run.round.difficulty} apart
                     </Badge>
                 </div>
                 {!result &&
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={onAbandon}>
+                    <Button variant="destructiveGhost" onClick={onAbandon}>
                         <X/>
                         <span className="max-sm:hidden">End run</span>
                     </Button>
@@ -317,8 +318,8 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                     disabled={isPending || !!result}
                 />
                 <div className="absolute left-1/2 top-1/2 z-20 flex size-14 -translate-x-1/2 -translate-y-1/2
-                    items-center justify-center rounded-full border-4 border-background bg-app-accent text-lg font-black
-                    tracking-wider text-background shadow-xl max-sm:size-10"
+                    items-center justify-center rounded-full border-4 border-background bg-primary text-lg font-black
+                    tracking-wider text-primary-foreground shadow-xl max-sm:size-10"
                 >
                     VS
                 </div>
@@ -333,13 +334,13 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
             <div className="min-h-12 text-center" aria-live="polite">
                 {!result ?
                     <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                        <span className="size-1.5 rounded-full bg-app-accent"/>
+                        <span className="size-1.5 rounded-full bg-brand"/>
                         Select the title that was released first
                     </div>
                     :
                     result.correct ?
                         <div className="animate-in fade-in">
-                            <p className="font-semibold text-app-accent">
+                            <p className="font-semibold text-brand">
                                 {result.won ? "Round 30 complete"
                                     : result.poolExhausted ? "No new matchups remain"
                                         : "Correct — keep going"}
@@ -382,19 +383,19 @@ function GameOverScreen({ run, result, isStarting, onMainMenu, onPlayAgain }: Ga
 
     return (
         <Card className={cn("relative mx-auto max-w-4xl animate-in overflow-hidden p-0 shadow-xl shadow-black/5",
-            "fade-in zoom-in-95 duration-300", completedWithoutLoss ? "border-app-accent/30" : "border-destructive/30")}>
+            "fade-in zoom-in-95 duration-300", completedWithoutLoss ? "ring-brand/30" : "ring-destructive/30")}>
             <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b to-transparent",
-                completedWithoutLoss ? "from-app-accent/8" : "from-destructive/8")}/>
+                completedWithoutLoss ? "from-brand/8" : "from-destructive/8")}/>
             <CardContent className="relative space-y-7 px-6 py-9 text-center sm:px-10">
                 <div className={cn("mx-auto flex size-16 items-center justify-center rounded-2xl border shadow-sm",
                     completedWithoutLoss
-                        ? "border-app-accent/20 bg-app-accent/10 text-app-accent"
+                        ? "border-brand/20 bg-brand/10 text-brand"
                         : "border-destructive/20 bg-destructive/10 text-destructive")}>
                     {completedWithoutLoss ? <Trophy className="size-10"/> : <X className="size-10"/>}
                 </div>
                 <div className="space-y-2">
                     <span className={cn("text-sm font-semibold uppercase tracking-[0.2em]",
-                        completedWithoutLoss ? "text-app-accent" : "text-destructive")}>
+                        completedWithoutLoss ? "text-brand" : "text-destructive")}>
                         {result.won ? "Run won" : result.poolExhausted ? "Pool exhausted" : "Run complete"}
                     </span>
                     <h2 className="text-4xl font-bold tracking-tight">
@@ -419,7 +420,7 @@ function GameOverScreen({ run, result, isStarting, onMainMenu, onPlayAgain }: Ga
                         value={`${roundsAnswered} / ${WCF_MAX_ROUNDS}`}
                     />
                     <SimpleStatCard title="Difficulty" className="bg-background/60 shadow-none">
-                        <span className="text-xl font-bold text-primary">
+                        <span className="text-xl font-bold text-foreground">
                             {run.round.difficulty}
                         </span>
                     </SimpleStatCard>
@@ -490,12 +491,12 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
             disabled={disabled}
             onClick={() => onSelect(side)}
             className={cn(
-                "group relative aspect-2/3 overflow-hidden rounded-lg border-2 bg-card text-left",
+                "@container/media-card group relative aspect-2/3 overflow-hidden rounded-lg border-2 bg-card text-left text-white",
                 "transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl disabled:pointer-events-none",
-                state === "correct" && "scale-[1.01] border-emerald-400 shadow-[0_0_24px_rgba(52,211,153,0.35)]",
-                state === "incorrect" && "animate-wcf-shake border-red-400 shadow-[0_0_24px_rgba(248,113,113,0.3)]",
+                state === "correct" && "scale-[1.01] border-success shadow-lg shadow-success/30",
+                state === "incorrect" && "animate-wcf-shake border-destructive shadow-lg shadow-destructive/30",
                 !!result && state === "neutral" && "opacity-55 grayscale-35",
-                !result && "border-border/80 shadow-md shadow-black/10 hover:border-app-accent/70",
+                !result && "border-border/80 shadow-md shadow-black/10 hover:border-brand/70",
             )}
         >
             <div className="absolute inset-0 overflow-hidden bg-muted">
@@ -505,30 +506,31 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
                     className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"
                 />
             </div>
+
             <div className="absolute inset-0 bg-linear-to-t from-black via-black/10 to-black/15"/>
-            <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full border border-white/15
-                bg-black/55 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-md
-                max-sm:left-2 max-sm:top-2">
-                <MainThemeIcon type={card.mediaType} size={12}/>
-                {card.mediaType}
-            </div>
+
             {state !== "neutral" &&
-                <div className={cn(
-                    "absolute right-3 top-3 flex size-7 animate-in zoom-in-75 items-center justify-center",
-                    "rounded-full text-black shadow-lg max-sm:right-2 max-sm:top-2 max-sm:size-8",
-                    state === "correct" ? "bg-emerald-400" : "bg-red-400",
-                )}>
-                    {state === "correct" ? <Check/> : <X/>}
-                </div>
+                <MediaCardRightCorner>
+                    <div className={cn(
+                        "flex size-7 animate-in zoom-in-75 items-center justify-center rounded-full shadow-lg max-sm:size-8",
+                        state === "correct"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-destructive text-destructive-foreground",
+                    )}>
+                        {state === "correct" ? <Check/> : <X/>}
+                    </div>
+                </MediaCardRightCorner>
             }
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-5 pb-3 max-sm:p-3">
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5
+                @min-[200px]/media-card:gap-3 @min-[200px]/media-card:p-3 @min-[250px]/media-card:p-4">
                 <div className="min-w-0">
-                    <h3 className="line-clamp-2 font-semibold leading-tight sm:text-lg">
+                    <MediaCardTitle lines={2}>
                         {card.name}
-                    </h3>
-                    <span className="mt-1 block text-[10px] font-medium uppercase tracking-wider text-white/55">
-                        Release date
-                    </span>
+                    </MediaCardTitle>
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-white/55">
+                        <MediaTypeIcon mediaType={card.mediaType} size={14}/>
+                        <span>Release date</span>
+                    </div>
                 </div>
                 <strong className={cn("shrink-0 text-right text-2xl leading-none sm:text-3xl", !releaseDate && "text-white/35")}>
                     {releaseDate ? formatComparisonDate(releaseDate, otherReleaseDate!) : "?"}
@@ -576,16 +578,14 @@ function Stats({ stats, canReset }: StatsProps) {
         <section className="rounded-xl border border-border/70 bg-card/50 px-3 py-3 sm:px-4">
             <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                    <Target className="size-4 text-app-accent"/>
+                    <Target className="size-4 text-brand"/>
                     <h3 className="text-sm font-semibold">
                         Your statistics
                     </h3>
                 </div>
                 <Button
-                    size="sm"
-                    variant="ghost"
+                    variant="destructiveGhost"
                     onClick={() => setResetDialogOpen(true)}
-                    className="text-muted-foreground hover:text-destructive"
                     disabled={!hasStats || !canReset || resetStatsMutation.isPending}
                 >
                     <Trash2/>
@@ -602,7 +602,7 @@ function Stats({ stats, canReset }: StatsProps) {
                 <SimpleStatCard
                     title="Best score"
                     value={stats.bestScore}
-                    icon={<Trophy className="size-4 text-app-accent"/>}
+                    icon={<Trophy className="size-4 text-brand"/>}
                     className="border-0 bg-muted/45 px-3 py-3 shadow-none [&_span:last-child]:text-2xl"
                 />
                 <SimpleStatCard

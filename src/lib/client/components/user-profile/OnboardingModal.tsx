@@ -23,11 +23,10 @@ export const OnboardingModal = () => {
     };
 
     return (
-        <Dialog open={open} onOpenChange={() => {
-        }}>
-            <DialogContent className="sm:max-w-110 gap-0 p-0 overflow-hidden" hideClose>
-                <div className="p-8">
-                    <DialogHeader className="mb-8">
+        <Dialog open={open}>
+            <DialogContent className="sm:max-w-110 gap-0 p-0 overflow-hidden" showCloseButton={false}>
+                <div className="p-8 space-y-8">
+                    <DialogHeader>
                         <DialogTitle className="text-2xl font-bold tracking-tight">
                             Master MyLists.info
                         </DialogTitle>
@@ -36,10 +35,10 @@ export const OnboardingModal = () => {
                         </p>
                     </DialogHeader>
 
-                    <div className="space-y-4 mb-8">
+                    <div className="space-y-4">
                         <div className="flex items-start gap-4">
                             <div className="mt-1 p-2 rounded-md bg-accent/50">
-                                <Search className="size-4 text-app-accent"/>
+                                <Search className="size-4 text-brand"/>
                             </div>
                             <div>
                                 <p className="text-sm font-medium">
@@ -53,7 +52,7 @@ export const OnboardingModal = () => {
 
                         <div className="flex items-start gap-4">
                             <div className="mt-1 p-2 rounded-md bg-accent/50">
-                                <LayoutDashboard className="size-4 text-app-accent"/>
+                                <LayoutDashboard className="size-4 text-brand"/>
                             </div>
                             <div>
                                 <p className="text-sm font-medium">
@@ -67,7 +66,7 @@ export const OnboardingModal = () => {
 
                         <div className="flex items-start gap-4">
                             <div className="mt-1 p-2 rounded-md bg-accent/50">
-                                <Settings2 className="size-4 text-app-accent"/>
+                                <Settings2 className="size-4 text-brand"/>
                             </div>
                             <div>
                                 <p className="text-sm font-medium">
@@ -80,19 +79,18 @@ export const OnboardingModal = () => {
                         </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <Button className="flex-1 h-11 font-semibold group" onClick={handleStartTour}>
-                            Start Walkthrough
-                            <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform"/>
+                    <div className="flex items-center gap-3 max-sm:flex-col">
+                        <Button onClick={handleStartTour}>
+                            Start Walkthrough <ArrowRight/>
                         </Button>
 
-                        <Button variant="outline" className="flex-1 h-11" onClick={handleNoThanks}>
+                        <Button variant="outline" onClick={handleNoThanks}>
                             I know my way around
                         </Button>
                     </div>
 
-                    <p className="text-[10px] text-center text-muted-foreground mt-6 uppercase tracking-widest font-medium">
-                        Takes approximately 3 minutes
+                    <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-medium">
+                        It Takes approximately 5 minutes
                     </p>
                 </div>
             </DialogContent>

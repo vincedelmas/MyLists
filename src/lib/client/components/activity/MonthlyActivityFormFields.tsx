@@ -1,4 +1,5 @@
-import {useFormContext} from "react-hook-form";
+import {useId} from "react";
+import {Controller, useFormContext} from "react-hook-form";
 import type {MediaType} from "@/lib/utils/enums";
 import {Input} from "@/lib/client/components/ui/input";
 import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
@@ -6,7 +7,7 @@ import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import type {MonthlyActivityFieldsInput} from "@/lib/schemas";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
-import {FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 
 
 type MonthlyActivityFormFieldsProps = {
@@ -18,125 +19,128 @@ type MonthlyActivityFormFieldsProps = {
 
 export function MonthlyActivityFormFields({ mediaType, showHidden = false, movingBetweenMonths = false }: MonthlyActivityFormFieldsProps) {
     const currentDate = useCurrentDate();
+    const fieldId = useId();
     const { progress } = getMediaDefinition(mediaType)
     const form = useFormContext<MonthlyActivityFieldsInput>();
 
     return (
-        <div className="space-y-6 w-full">
+        <FieldGroup className="gap-6">
             <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1">
-                <FormField
+                <Controller
                     name="progressGained"
                     control={form.control}
-                    render={({ field }) =>
-                        <FormItem>
-                            <FormLabel>
+                    render={({field, fieldState}) =>
+                        <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={`${fieldId}-progress-gained`}>
                                 {progress.unit.long}
-                            </FormLabel>
-                            <FormControl>
-                                <Input
-                                    min={0}
-                                    type="number"
-                                    ref={field.ref}
-                                    name={field.name}
-                                    onBlur={field.onBlur}
-                                    value={field.value ?? 0}
-                                    step={progress.inputStep}
-                                    onChange={(ev) => field.onChange(ev.target.valueAsNumber)}
-                                />
-                            </FormControl>
-                            <FormMessage/>
-                        </FormItem>
+                            </FieldLabel>
+                            <Input
+                                id={`${fieldId}-progress-gained`}
+                                min={0}
+                                type="number"
+                                ref={field.ref}
+                                name={field.name}
+                                onBlur={field.onBlur}
+                                value={field.value ?? 0}
+                                step={progress.inputStep}
+                                aria-invalid={fieldState.invalid}
+                                onChange={(ev) => field.onChange(ev.target.valueAsNumber)}
+                            />
+                            <FieldError errors={[fieldState.error]}/>
+                        </Field>
                     }
                 />
-                <FormField
+                <Controller
                     name="redoGained"
                     control={form.control}
-                    render={({ field }) =>
-                        <FormItem>
-                            <FormLabel>Re-Experiences Gained</FormLabel>
-                            <FormControl>
-                                <Input
-                                    min={0}
-                                    step={1}
-                                    type="number"
-                                    ref={field.ref}
-                                    name={field.name}
-                                    onBlur={field.onBlur}
-                                    value={field.value ?? 0}
-                                    onChange={(ev) => field.onChange(ev.target.valueAsNumber)}
-                                />
-                            </FormControl>
-                            <FormMessage/>
-                        </FormItem>
+                    render={({field, fieldState}) =>
+                        <Field data-invalid={fieldState.invalid}>
+                            <FieldLabel htmlFor={`${fieldId}-redo-gained`}>Re-Experiences Gained</FieldLabel>
+                            <Input
+                                id={`${fieldId}-redo-gained`}
+                                min={0}
+                                step={1}
+                                type="number"
+                                ref={field.ref}
+                                name={field.name}
+                                onBlur={field.onBlur}
+                                value={field.value ?? 0}
+                                aria-invalid={fieldState.invalid}
+                                onChange={(ev) => field.onChange(ev.target.valueAsNumber)}
+                            />
+                            <FieldError errors={[fieldState.error]}/>
+                        </Field>
                     }
                 />
             </div>
-            <FormField
+            <Controller
                 name="lastActivityAt"
                 control={form.control}
-                render={({ field }) =>
-                    <FormItem>
-                        <FormLabel>Activity Date</FormLabel>
-                        <FormControl>
-                            <Input
-                                {...field}
-                                type="date"
-                                max={currentDate}
-                                min={MIN_ACTIVITY_DATE}
-                                value={field.value ?? ""}
-                            />
-                        </FormControl>
+                render={({field, fieldState}) =>
+                    <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor={`${fieldId}-last-activity-at`}>Activity Date</FieldLabel>
+                        <Input
+                            {...field}
+                            id={`${fieldId}-last-activity-at`}
+                            type="date"
+                            max={currentDate}
+                            min={MIN_ACTIVITY_DATE}
+                            value={field.value ?? ""}
+                            aria-invalid={fieldState.invalid}
+                        />
                         {movingBetweenMonths &&
-                            <FormDescription className="text-xs">
+                            <FieldDescription className="text-xs">
                                 Changing the month moves this summary and merges it with an existing one.
-                            </FormDescription>
+                            </FieldDescription>
                         }
-                        <FormMessage/>
-                    </FormItem>
+                        <FieldError errors={[fieldState.error]}/>
+                    </Field>
                 }
             />
-            <FormField
+            <Controller
                 name="hadCompletion"
                 control={form.control}
-                render={({ field }) =>
-                    <FormItem className="flex items-center gap-2">
-                        <FormControl>
-                            <Checkbox
-                                checked={field.value ?? false}
-                                onCheckedChange={(value) => field.onChange(!!value)}
-                            />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                            Completed This Month
-                        </FormLabel>
-                        <FormMessage/>
-                    </FormItem>
+                render={({field, fieldState}) =>
+                    <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+                        <Checkbox
+                            id={`${fieldId}-had-completion`}
+                            checked={field.value ?? false}
+                            aria-invalid={fieldState.invalid}
+                            onCheckedChange={(value) => field.onChange(value)}
+                        />
+                        <FieldContent>
+                            <FieldLabel htmlFor={`${fieldId}-had-completion`} className="font-normal">
+                                Completed This Month
+                            </FieldLabel>
+                            <FieldError errors={[fieldState.error]}/>
+                        </FieldContent>
+                    </Field>
                 }
             />
 
             {showHidden &&
-                <FormField
+                <Controller
                     name="hidden"
                     control={form.control}
-                    render={({ field }) =>
-                        <FormItem className="flex flex-row items-start gap-2 space-y-0 rounded-md border border-border p-3">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value ?? false}
-                                    onCheckedChange={(value) => field.onChange(!!value)}
-                                />
-                            </FormControl>
-                            <div className="space-y-1">
-                                <FormLabel className="font-medium">Hidden</FormLabel>
-                                <FormDescription className="text-xs">
+                    render={({field, fieldState}) =>
+                        <Field orientation="horizontal" className="rounded-md border border-border p-3" data-invalid={fieldState.invalid}>
+                            <Checkbox
+                                id={`${fieldId}-hidden`}
+                                checked={field.value ?? false}
+                                aria-invalid={fieldState.invalid}
+                                onCheckedChange={(value) => field.onChange(value)}
+                            />
+                            <FieldContent>
+                                <FieldLabel htmlFor={`${fieldId}-hidden`} className="font-medium">Hidden</FieldLabel>
+                                <FieldDescription className="text-xs">
                                     Keep this summary editable, but hide it from monthly activity and yearly recap.
-                                </FormDescription>
-                                <FormMessage/>
-                            </div>
-                        </FormItem>
+                                </FieldDescription>
+                                <FieldError errors={[fieldState.error]}/>
+                            </FieldContent>
+                        </Field>
                     }
                 />
             }
-        </div>
+        </FieldGroup>
     );
 }

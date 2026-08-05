@@ -2,6 +2,7 @@ import {cn} from "@/lib/utils/classnames";
 import {useVirtualizer} from "@tanstack/react-virtual";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useEffect, useMemo, useRef, useState} from "react";
 import {formatDateTime} from "@/lib/utils/date-formatting";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
@@ -12,7 +13,7 @@ import {FileIcon, FileX, RefreshCw, ServerCrash, Terminal} from "lucide-react";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {adminLogFileOptions, adminLogFilesOptions} from "@/lib/client/react-query/query-options/admin.options";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 type LogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "text";
@@ -56,55 +57,55 @@ const logLevelFilters: Array<{ value: LogLevel; label: string; className: string
     {
         value: "fatal",
         label: "Fatal",
-        activeClassName: "bg-fuchsia-500/15 text-fuchsia-100 ring-fuchsia-500/30",
-        className: "border-fuchsia-500/25 text-fuchsia-300 hover:bg-fuchsia-500/10",
+        activeClassName: "bg-destructive/15 text-destructive ring-destructive/30",
+        className: "border-destructive/25 text-destructive hover:bg-destructive/10",
     },
     {
         value: "error",
         label: "Error",
-        activeClassName: "bg-red-500/15 text-red-100 ring-red-500/30",
-        className: "border-red-500/25 text-red-300 hover:bg-red-500/10",
+        activeClassName: "bg-destructive/15 text-destructive ring-destructive/30",
+        className: "border-destructive/25 text-destructive hover:bg-destructive/10",
     },
     {
         value: "warn",
         label: "Warn",
-        activeClassName: "bg-amber-500/15 text-amber-100 ring-amber-500/30",
-        className: "border-amber-500/25 text-amber-300 hover:bg-amber-500/10",
+        activeClassName: "bg-warning/15 text-warning ring-warning/30",
+        className: "border-warning/25 text-warning hover:bg-warning/10",
     },
     {
         value: "info",
         label: "Info",
-        activeClassName: "bg-emerald-500/15 text-emerald-100 ring-emerald-500/30",
-        className: "border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/10",
+        activeClassName: "bg-success/15 text-success ring-success/30",
+        className: "border-success/25 text-success hover:bg-success/10",
     },
     {
         value: "debug",
         label: "Debug",
-        activeClassName: "bg-sky-500/15 text-sky-100 ring-sky-500/30",
-        className: "border-sky-500/25 text-sky-300 hover:bg-sky-500/10",
+        activeClassName: "bg-info/15 text-info ring-info/30",
+        className: "border-info/25 text-info hover:bg-info/10",
     },
     {
         value: "trace",
         label: "Trace",
-        activeClassName: "bg-slate-500/15 text-slate-100 ring-slate-500/30",
-        className: "border-slate-500/25 text-slate-300 hover:bg-slate-500/10",
+        activeClassName: "bg-muted text-foreground ring-border",
+        className: "border-border text-muted-foreground hover:bg-muted",
     },
     {
         value: "text",
         label: "Text",
-        activeClassName: "bg-zinc-500/15 text-zinc-100 ring-zinc-500/30",
-        className: "border-zinc-500/25 text-zinc-300 hover:bg-zinc-500/10",
+        activeClassName: "bg-muted text-foreground ring-border",
+        className: "border-border text-muted-foreground hover:bg-muted",
     },
 ];
 
 const levelTextClasses: Record<LogLevel, string> = {
-    error: "text-red-400",
-    debug: "text-sky-400",
-    text: "text-zinc-500",
-    warn: "text-amber-400",
-    trace: "text-slate-400",
-    info: "text-emerald-400",
-    fatal: "text-fuchsia-400",
+    error: "text-destructive",
+    debug: "text-info",
+    text: "text-muted-foreground",
+    warn: "text-warning",
+    trace: "text-muted-foreground",
+    info: "text-success",
+    fatal: "text-destructive",
 };
 
 
@@ -173,7 +174,7 @@ function AdminRuntimeLogsPage() {
                         <div
                             style={{ width: `${96 - (index % 4) * 10}%` }}
                             key={index}
-                            className="h-6 animate-pulse rounded bg-zinc-900"
+                            className="h-6 animate-pulse rounded bg-muted"
                         />
                     )}
                 </div>
@@ -239,7 +240,7 @@ function AdminRuntimeLogsPage() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <CardTitle className="flex items-center gap-2">
-                                <Terminal className="size-4 text-app-accent"/>
+                                <Terminal className="size-4 text-brand"/>
                                 Log viewer
                             </CardTitle>
                             <CardDescription className="mt-1 text-muted-foreground">
@@ -248,16 +249,25 @@ function AdminRuntimeLogsPage() {
                         </div>
 
                         <div className="flex gap-2 max-sm:w-full">
-                            <Select value={selectedFileName} disabled={logFiles.length === 0} onValueChange={setSelectedFileName}>
+                            <Select
+                                value={selectedFileName}
+                                disabled={logFiles.length === 0}
+                                items={logFiles.map((file) => ({ label: file.fileName, value: file.fileName }))}
+                                onValueChange={(value) => {
+                                    if (value !== null) setSelectedFileName(value);
+                                }}
+                            >
                                 <SelectTrigger className="w-72 max-w-[70vw] max-sm:w-full">
                                     <SelectValue placeholder="No log files"/>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {logFiles.map((file) =>
-                                        <SelectItem key={file.fileName} value={file.fileName}>
-                                            {file.fileName}
-                                        </SelectItem>
-                                    )}
+                                    <SelectGroup>
+                                        {logFiles.map((file) =>
+                                            <SelectItem key={file.fileName} value={file.fileName}>
+                                                {file.fileName}
+                                            </SelectItem>
+                                        )}
+                                    </SelectGroup>
                                 </SelectContent>
                             </Select>
                             <Button
@@ -267,7 +277,10 @@ function AdminRuntimeLogsPage() {
                                 disabled={!selectedFileName || logFileQuery.isFetching}
                                 onClick={() => logFileQuery.refetch()}
                             >
-                                <RefreshCw className={logFileQuery.isFetching ? "animate-spin" : ""}/>
+                                {logFileQuery.isFetching
+                                    ? <Spinner data-icon="inline-start"/>
+                                    : <RefreshCw/>
+                                }
                             </Button>
                         </div>
                     </div>

@@ -1,15 +1,16 @@
-import {toast} from "sonner";
 import {cn} from "@/lib/utils/classnames";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {Clock, Loader2, UserCheck, UserPlus, UserX} from "lucide-react";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {followersOptions} from "@/lib/client/react-query/query-options";
 import {useFollowMutation, useRemoveFollowerMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -84,12 +85,12 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
         })) return;
 
         removeMutation.mutate({ data: { followerId: follower.id } }, {
-            onSuccess: () => toast.success("Follower removed!"),
+            onSuccess: () => toast.add({ title: "Follower removed!", type: "success" }),
         });
     };
 
     return (
-        <div className="bg-background flex flex-col justify-between rounded-xl border p-4">
+        <div className="flex flex-col justify-between rounded-xl border p-4">
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                     <div className="relative">
@@ -109,11 +110,11 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                     </div>
                     <div>
                         <Link to="/profile/$username" params={{ username: follower.username }}>
-                            <h3 className="text-primary hover:text-app-accent font-medium leading-none">
+                            <h3 className="text-foreground hover:text-brand font-medium leading-none">
                                 {follower.username}
                             </h3>
                         </Link>
-                        <p className="mt-1 text-xs capitalize text-slate-500">
+                        <p className="mt-1 text-xs capitalize text-muted-foreground">
                             {follower.privacy} Profile
                         </p>
                     </div>
@@ -148,10 +149,10 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                                         title="Remove Follower"
                                         onClick={handleRemoveFollower}
                                         disabled={removeMutation.isPending}
-                                        className="hover:bg-destructive/10 hover:text-destructive shrink-0"
+                                        className="hover:bg-destructive/30 hover:text-foreground hover:border-transparent shrink-0"
                                     >
                                         {removeMutation.isPending ?
-                                            <Loader2 className="size-4 animate-spin"/> : <UserX className="size-4"/>
+                                            <Spinner data-icon="inline-start"/> : <UserX className="size-4"/>
                                         }
                                     </Button>
                                 }
@@ -186,7 +187,7 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
         const mutation = shouldUnfollow ? unfollowMutation : followMutation;
 
         mutation.mutate({ data: { targetUserId: followerId } }, {
-            onError: () => toast.error("Sorry, an error occurred..."),
+            onError: () => toast.add({ title: "Sorry, an error occurred...", type: "error", priority: "high" }),
         });
     };
 
@@ -194,13 +195,11 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
         <Button
             disabled={isPending}
             onClick={handleClick}
-            variant={isFollowing ? "emeraldy" : isRequested ? "secondary" : "outline"}
-            className={cn("group flex-1 font-bold transition-all", shouldUnfollow &&
-                "hover:border-destructive/50 hover:bg-destructive/40 hover:text-primary"
-            )}
+            variant={isFollowing ? "default" : isRequested ? "secondary" : "outline"}
+            className={cn("group flex-1 font-medium transition-all", shouldUnfollow && "hover:bg-destructive/30 hover:text-foreground")}
         >
             {isPending ?
-                <Loader2 className="size-3.5 animate-spin"/>
+                <Spinner data-icon="inline-start" className="size-3.5"/>
                 : isFollowing ?
                     <>
                         <span className="flex items-center gap-2 group-hover:hidden">

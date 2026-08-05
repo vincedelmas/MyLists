@@ -15,9 +15,7 @@ export function LogsList({ logs }: { logs: TaskLog[] }) {
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="flex items-center gap-2 text-sm font-medium mb-2 hover:text-foreground/80 transition-colors"
             >
-                <ChevronDown
-                    className={cn("size-4 transition-transform", !isExpanded && "-rotate-90")}
-                />
+                <ChevronDown className={cn("size-4 transition-transform", !isExpanded && "-rotate-90")}/>
                 Warnings & Errors ({logs.length})
             </button>
             {isExpanded &&
@@ -29,7 +27,7 @@ export function LogsList({ logs }: { logs: TaskLog[] }) {
                         return (
                             <div key={i} className="p-2 flex items-start gap-2 text-sm">
                                 <Icon
-                                    className={cn("size-4 mt-0.5 shrink-0", isError ? "text-destructive" : "text-yellow-500")}
+                                    className={cn("size-4 mt-0.5 shrink-0", isError ? "text-destructive" : "text-warning")}
                                 />
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline gap-2">
@@ -42,7 +40,7 @@ export function LogsList({ logs }: { logs: TaskLog[] }) {
                                             </span>
                                         }
                                     </div>
-                                    <p className={cn(isError ? "text-destructive" : "text-yellow-400")}>
+                                    <p className={cn(isError ? "text-destructive" : "text-warning")}>
                                         {log.message}
                                     </p>
                                     {log.data &&

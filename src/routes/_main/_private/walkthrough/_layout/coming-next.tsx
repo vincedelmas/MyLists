@@ -26,7 +26,7 @@ function ComingNextOnboarding() {
                 icon={CalendarDays}
                 description={
                     <>
-                        Stay ahead of the curve. The <span className="text-primary font-semibold">Coming Next</span> page
+                        Stay ahead of the curve. The <span className="text-foreground font-semibold">Coming Next</span> page
                         aggregates all upcoming releases for the media types you track, so you never miss a premiere.
                     </>
                 }

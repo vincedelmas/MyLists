@@ -33,7 +33,7 @@ interface MediaSectionTitleProps {
 export const MediaSectionTitle = ({ children, title, className }: MediaSectionTitleProps) => {
     return (
         <div className={cn("flex justify-between items-end mb-3", className)}>
-            <h2 className="text-xl font-semibold text-primary">
+            <h2 className="text-xl font-semibold text-foreground">
                 {title}
             </h2>
             <span className="text-sm text-muted-foreground">
@@ -55,12 +55,12 @@ interface MediaExtraGridProps {
 export const MediaExtraGrid = ({ initials, name, subname, clickable = false }: MediaExtraGridProps) => {
     return (
         <div className="group flex items-center gap-3 p-2 rounded-lg bg-popover/30 border hover:bg-popover">
-            <div className="size-10 rounded bg-app-accent/20 text-primary flex items-center justify-center
+            <div className="size-10 rounded bg-brand/20 text-brand flex items-center justify-center
             text-sm font-bold tracking-wider shrink-0">
                 {initials}
             </div>
             <div className="min-w-0">
-                <p className={cn("text-sm font-medium text-primary truncate", clickable && "group-hover:text-app-accent")}>
+                <p className={cn("text-sm font-medium text-foreground truncate", clickable && "group-hover:text-brand")}>
                     {name}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
@@ -98,8 +98,8 @@ export const MediaUnderRating = ({ voteAverage, voteCount, divisor = 1 }: MediaU
 
     return (
         <div className="flex items-center gap-1.5">
-            <Star className="size-4 fill-app-rating text-app-rating"/>
-            <span className="text-lg text-primary">
+            <Star className="size-4 fill-rating text-rating"/>
+            <span className="text-lg text-foreground">
                 {formatNumber(voteAverage / divisor, {
                     fractionDigits: 1,
                     locale: "en",
@@ -133,7 +133,7 @@ export const UpComingAlert = ({ children, title, dateString }: UpComingAlertProp
     return (
         <div className="relative overflow-hidden rounded-xl border bg-card p-4 text-card-foreground shadow-sm">
             <div className="flex items-center gap-4">
-                <div className="flex size-12 max-sm:size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <div className="flex size-12 max-sm:size-8 items-center justify-center rounded-full bg-brand/10 text-brand">
                     <Clock className="size-6 max-sm:size-4"/>
                 </div>
 
@@ -151,7 +151,7 @@ export const UpComingAlert = ({ children, title, dateString }: UpComingAlertProp
                     </div>
                 </div>
 
-                <div className="flex min-w-10 flex-col items-center justify-center rounded-md bg-app-accent/20 px-3 py-1.5">
+                <div className="flex min-w-10 flex-col items-center justify-center rounded-md bg-brand/20 px-3 py-1.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider">
                         {formatMonth(Number(extractedDate.month), { month: "short" })}
                     </span>

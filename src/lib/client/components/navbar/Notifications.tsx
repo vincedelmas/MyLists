@@ -5,6 +5,7 @@ import {SocialNotifType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {NotifTab} from "@/lib/types/notifications.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
@@ -12,15 +13,15 @@ import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
-import {Bell, LoaderCircle, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
+import {Bell, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
 import {formatCalendarRelativeDate, formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
 import {notificationsCountOptions, notificationsOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteSocialNotif, useMarkAllNotifAsRead, useRespondFollowRequest} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
-type NotificationUnion = Awaited<ReturnType<NonNullable<ReturnType<typeof notificationsOptions>["queryFn"]>>>;
 type MediaNotif = Exclude<NotificationUnion[number], { actor: any }>;
 type SocialNotif = Extract<NotificationUnion[number], { actor: any }>;
+type NotificationUnion = Awaited<ReturnType<NonNullable<ReturnType<typeof notificationsOptions>["queryFn"]>>>;
 
 
 export const Notifications = () => {
@@ -54,14 +55,14 @@ export const Notifications = () => {
         {
             id: "media",
             label: (
-                <>
-                    Media{" "}
+                <div className="flex items-center gap-2">
+                    Media
                     {!!counts?.media &&
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        <Badge variant="secondary">
                             {counts.media}
                         </Badge>
                     }
-                </>
+                </div>
             ),
             isAccent: true,
             icon: <Play className="size-4"/>
@@ -69,14 +70,14 @@ export const Notifications = () => {
             id: "social",
             isAccent: true,
             label: (
-                <>
-                    Social{" "}
+                <div className="flex items-center gap-2">
+                    Social
                     {!!counts?.social &&
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        <Badge variant="secondary">
                             {counts.social}
                         </Badge>
                     }
-                </>
+                </div>
             ),
             icon: <Users className="size-4"/>
         }
@@ -84,18 +85,16 @@ export const Notifications = () => {
 
     return (
         <Popover modal={isBelowLg} open={open} onOpenChange={handleOpenChange}>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative mr-3">
-                    <Bell className="size-5"/>
-                    {!!counts?.total &&
-                        <Badge
-                            variant="destructive"
-                            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
-                        >
-                            {counts.total > 99 ? "99+" : counts.total}
-                        </Badge>
-                    }
-                </Button>
+            <PopoverTrigger render={<Button variant="hover" size="icon" className="relative mr-3"/>}>
+                <Bell className="size-5"/>
+                {!!counts?.total &&
+                    <Badge
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+                    >
+                        {counts.total > 99 ? "99+" : counts.total}
+                    </Badge>
+                }
             </PopoverTrigger>
             <PopoverContent className="p-0 w-82 max-h-76 overflow-y-auto scrollbar-thin max-sm:max-h-88" align="end">
                 <TabHeader
@@ -108,7 +107,7 @@ export const Notifications = () => {
                     {activeTab === "media" && (
                         isLoading ?
                             <div className="flex items-center justify-center py-10 px-6">
-                                <LoaderCircle className="size-6 animate-spin"/>
+                                <Spinner className="size-6"/>
                             </div>
                             :
                             notifications?.length === 0 ?
@@ -129,7 +128,7 @@ export const Notifications = () => {
                     {activeTab === "social" && (
                         isLoading ?
                             <div className="flex items-center justify-center py-10 px-6">
-                                <LoaderCircle className="size-6 animate-spin"/>
+                                <Spinner className="size-6"/>
                             </div>
                             :
                             notifications?.length === 0 ?
@@ -175,21 +174,21 @@ const MediaNotificationItem = ({ notif }: { notif: MediaNotif }) => {
                             to="/details/$mediaType/$mediaId"
                             params={{ mediaType: notif.mediaType, mediaId: notif.mediaId }}
                         >
-                            <span title={notif.name} className="font-medium text-foreground line-clamp-1 max-w-55 hover:text-app-accent">
+                            <span title={notif.name} className="font-medium text-foreground line-clamp-1 max-w-55 hover:text-brand">
                                 {notif.name}
                             </span>
                         </Link>
                     </p>
                 </div>
                 <div className="flex items-baseline justify-between">
-                    <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-primary/80">
+                    <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-foreground/80">
                         <span>
                             {isTvNotification
                                 ? `S${zeroPad(notif.season)}.E${zeroPad(notif.episode)} ${notif.isSeasonFinale ? "(Finale)" : ""}`
                                 : <div>Release</div>
                             }
                         </span>
-                        <MoveRight className="size-4 text-app-accent"/>
+                        <MoveRight className="size-4 text-brand"/>
                         <span>{formatDate(notif.releaseDate)}</span>
                     </div>
                     <div className="text-xs text-muted-foreground">
@@ -198,7 +197,7 @@ const MediaNotificationItem = ({ notif }: { notif: MediaNotif }) => {
                 </div>
             </div>
             {isUnread &&
-                <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-cyan-500 shrink-0"/>
+                <div className="absolute top-3 right-3 size-2 shrink-0 rounded-full bg-info"/>
             }
         </div>
     );
@@ -260,7 +259,7 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
                         {notification.featureRequest &&
                             <>
                                 {": "}
-                                <Link to="/features-vote" className="font-medium text-app-accent">
+                                <Link to="/features-vote" className="font-medium text-brand">
                                     here
                                 </Link>
                             </>
@@ -271,7 +270,7 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
                     </p>
                 </div>
                 {isUnread &&
-                    <div className="size-2 shrink-0 rounded-full bg-blue-500"/>
+                    <div className="size-2 shrink-0 rounded-full bg-brand"/>
                 }
                 <button
                     onClick={deleteNotif}
@@ -286,7 +285,7 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
                 <div className="ml-13 flex gap-2">
                     <Button
                         size="xs"
-                        variant="emeraldy"
+                        variant="default"
                         onClick={() => respond("accept")}
                         disabled={deleteMutation.isPending || respondMutation.isPending}
                     >

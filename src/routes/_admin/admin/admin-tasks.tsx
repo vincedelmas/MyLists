@@ -1,8 +1,9 @@
-import {toast} from "sonner";
-import {Loader2, Play} from "lucide-react";
+import {toast} from "@/lib/client/components/ui/toast";
+import {Play} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {TaskFormDialog} from "@/lib/client/components/admin/TaskDialogForm";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
@@ -25,7 +26,7 @@ function AdminTasksPage() {
 
     const executeTask = (taskName: string, input = {}) => {
         taskTriggerMutation.mutate({ data: { taskName, input } }, {
-            onSettled: () => toast.info(`Task ${taskName} Finished`),
+            onSettled: () => toast.add({ title: `Task ${taskName} Finished`, type: "info" }),
         });
     };
 
@@ -38,7 +39,7 @@ function AdminTasksPage() {
 
                     return (
                         <Card key={task.name}>
-                            <CardHeader>
+                            <CardHeader className="h-full">
                                 <CardTitle>{task.name}</CardTitle>
                                 <CardDescription>{task.description}</CardDescription>
                             </CardHeader>
@@ -48,9 +49,15 @@ function AdminTasksPage() {
                                         task={task}
                                     />
                                     :
-                                    <Button size="sm" variant="emeraldy" disabled={isRunning} onClick={() => executeTask(task.name)}>
-                                        {isRunning ? <Loader2 className="size-4 animate-spin"/> : <Play className="size-4"/>}
-                                        {isRunning ? "Running" : "Run Task"}
+                                    <Button size="sm" disabled={isRunning} onClick={() => executeTask(task.name)}>
+                                        {isRunning
+                                            ? <Spinner data-icon="inline-start"/>
+                                            : <Play className="size-4"/>
+                                        }
+                                        {isRunning
+                                            ? "Running"
+                                            : "Run Task"
+                                        }
                                     </Button>
                                 }
                             </CardContent>

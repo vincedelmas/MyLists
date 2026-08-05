@@ -1,11 +1,11 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {userStatsOptions} from "@/lib/client/react-query/query-options";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")({
@@ -23,24 +23,11 @@ function UserStatsPage() {
     const { username } = Route.useParams();
     const { activeTab } = Route.useSearch();
     const apiData = useSuspenseQuery(userStatsOptions(username, activeTab)).data;
+    const mediaTabs = createMediaTabItems(apiData.activatedMediaTypes, { leading: "overview" });
 
     const handleTabChange = async (value: StatsActiveTab) => {
         await navigate({ search: { activeTab: value } });
     };
-
-    const mediaTabs: TabItem<StatsActiveTab>[] = [
-        {
-            id: "overview",
-            isAccent: true,
-            label: "Overview",
-            icon: <MainThemeIcon size={15} type="overview"/>,
-        },
-        ...apiData.activatedMediaTypes.map((mediaType) => ({
-            id: mediaType,
-            label: mediaType,
-            icon: <MainThemeIcon size={15} type={mediaType}/>,
-        })),
-    ];
 
     return (
         <>

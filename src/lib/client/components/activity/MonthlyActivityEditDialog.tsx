@@ -1,6 +1,6 @@
-import {useForm} from "react-hook-form";
+import {FormProvider, useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {Form} from "@/lib/client/components/ui/form";
+import {FieldSet} from "@/lib/client/components/ui/field";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {toDateInputValue} from "@/lib/utils/date-formatting";
@@ -79,15 +79,15 @@ export const MonthlyActivityEditDialog = ({ open, activity, onOpenChange }: Mont
                     </DialogDescription>
                 </DialogHeader>
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleOnSave)} className="mt-2 space-y-5">
-                        <fieldset disabled={updateMutation.isPending || removeMutation.isPending}>
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(handleOnSave)} className="mt-2 flex flex-col gap-5">
+                        <FieldSet disabled={updateMutation.isPending || removeMutation.isPending}>
                             <MonthlyActivityFormFields
                                 showHidden
                                 movingBetweenMonths
                                 mediaType={activity.mediaType}
                             />
-                        </fieldset>
+                        </FieldSet>
                         <FormError/>
                         <DialogFooter className="gap-3">
                             <Button
@@ -103,7 +103,7 @@ export const MonthlyActivityEditDialog = ({ open, activity, onOpenChange }: Mont
                             </FormSubmitButton>
                         </DialogFooter>
                     </form>
-                </Form>
+                </FormProvider>
             </DialogContent>
         </Dialog>
     );

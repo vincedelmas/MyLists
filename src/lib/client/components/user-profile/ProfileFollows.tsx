@@ -1,7 +1,8 @@
 import {UserRoundX} from "lucide-react";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
-import {Button} from "@/lib/client/components/ui/button";
 import {UserFollowsType} from "@/lib/types/query.options.types";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
@@ -26,7 +27,7 @@ export const ProfileFollows = ({ username, followsCount, follows }: ProfileFollo
                     {followsCount} Users
                 </CardAction>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
                 <div className="grid grid-cols-4 gap-3">
                     {followsCount === 0 ?
                         <EmptyState
@@ -37,17 +38,19 @@ export const ProfileFollows = ({ username, followsCount, follows }: ProfileFollo
                         :
                         follows.follows.map((follow) =>
                             <div key={follow.id} className="flex flex-col items-center group">
-                                <div className="group-hover:border-app-accent">
+                                <div className="group-hover:border-brand">
                                     <Tooltip key={follow.id}>
-                                        <TooltipTrigger asChild>
-                                            <Link key={follow.username} to="/profile/$username" params={{ username: follow.username }}>
-                                                <ProfileIcon
-                                                    fallbackSize="text-lg"
-                                                    user={{ image: follow.image, name: follow.username }}
-                                                    className="size-12 border-none hover:ring-2 hover:ring-app-accent"
-                                                />
-                                            </Link>
-                                        </TooltipTrigger>
+                                        <TooltipTrigger
+                                            render={
+                                                <Link key={follow.username} to="/profile/$username" params={{ username: follow.username }}>
+                                                    <ProfileIcon
+                                                        fallbackSize="text-lg"
+                                                        user={{ image: follow.image, name: follow.username }}
+                                                        className="size-12 border-none hover:ring-2 hover:ring-brand"
+                                                    />
+                                                </Link>
+                                            }
+                                        />
                                         <TooltipContent>
                                             {follow.username}
                                         </TooltipContent>
@@ -58,11 +61,9 @@ export const ProfileFollows = ({ username, followsCount, follows }: ProfileFollo
                 </div>
 
                 {followsCount > 0 &&
-                    <Button className="mt-4" variant="dashed" asChild>
-                        <Link to="/profile/$username/follows" params={{ username }}>
-                            View all {followsCount} follows
-                        </Link>
-                    </Button>
+                    <Link params={{ username }} to="/profile/$username/follows" className={cn(buttonVariants({ variant: "dashed" }))}>
+                        View all {followsCount} Follows
+                    </Link>
                 }
             </CardContent>
         </Card>

@@ -5,10 +5,11 @@ import {clientEnv} from "@/env/client";
 import {PostHogProvider} from "posthog-js/react";
 import {QueryClient} from "@tanstack/react-query";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
-import {Toaster} from "@/lib/client/components/ui/sonner";
+import {Toaster} from "@/lib/client/components/ui/toast";
 import {Navbar} from "@/lib/client/components/navbar/Navbar";
 import {useNProgress} from "@/lib/client/hooks/use-nprogress";
 import {Footer} from "@/lib/client/components/general/Footer";
+import {TooltipProvider} from "@/lib/client/components/ui/tooltip";
 import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
 import {PostHogAuthSync} from "@/lib/client/components/general/PostHogAuthSync";
 import {AuthSessionSync} from "@/lib/client/components/general/AuthSessionSync";
@@ -36,7 +37,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         ],
         meta: [
             { charSet: "utf-8" },
-            { name: "theme-color", content: "#020617" },
+            { name: "color-scheme", content: "dark" },
+            { name: "theme-color", content: "#0d0d0d" },
             { name: "viewport", content: "width=device-width, initial-scale=1" },
             ...addSeo({
                 canonical: "/",
@@ -56,7 +58,7 @@ function RootComponent() {
     const app = <AppShell/>;
 
     return (
-        <html lang="en" className="dark" suppressHydrationWarning>
+        <html lang="en" className="dark" data-theme="dark" style={{ colorScheme: "dark" }}>
         <head>
             <HeadContent/>
         </head>
@@ -95,7 +97,7 @@ function RootComponent() {
 
 function AppShell() {
     return (
-        <>
+        <TooltipProvider>
             <AuthSessionSync/>
             <Toaster/>
             <ConfirmDialogHost/>
@@ -104,6 +106,6 @@ function AppShell() {
             <Outlet/>
             <Footer/>
             <FeatureVoteLink/>
-        </>
+        </TooltipProvider>
     );
 }

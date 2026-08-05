@@ -5,14 +5,30 @@ import {coercedPositiveIntFieldSchema, optionalTrimmedSearchFieldSchema} from "@
 
 export type GlobalSearch = z.infer<typeof globalSearchSchema>;
 export type TrendsActiveTab = z.infer<typeof trendsActiveTabSchema>;
+export type ProfileActiveTab = z.infer<typeof profileActiveTabSchema>;
+
+
+export const TREND_MEDIA_TYPES = [
+    MediaType.SERIES,
+    MediaType.MOVIES,
+    MediaType.GAMES,
+] as const;
 
 
 const trendsActiveTabSchema = z.union([
     z.literal("all"),
-    z.literal(MediaType.SERIES),
-    z.literal(MediaType.MOVIES),
-    z.literal(MediaType.GAMES),
+    z.enum(TREND_MEDIA_TYPES),
 ]);
+
+const profileActiveTabSchema = z.union([
+    z.literal("overview"),
+    z.enum(MediaType),
+]);
+
+
+export const profileSearchSchema = z.object({
+    activeTab: profileActiveTabSchema.optional().default("overview").catch("overview"),
+});
 
 
 export const trendsSearchSchema = z.object({

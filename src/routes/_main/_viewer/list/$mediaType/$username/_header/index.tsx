@@ -9,10 +9,10 @@ import {Header} from "@/lib/client/components/media/base/Header";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MediaGrid} from "@/lib/client/components/media/base/MediaGrid";
-import {MediaTable} from "@/lib/client/components/media/base/MediaTable";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import MediaTable from "@/lib/client/components/media/base/MediaTable";
 import {AppliedFilters} from "@/lib/client/components/media/base/AppliedFilters";
 import {FiltersSideSheet} from "@/lib/client/components/media/base/FiltersSideSheet";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/")({
@@ -129,16 +129,15 @@ function MediaList() {
                 </div>
             }
 
-            {filtersPanelOpen &&
-                <FiltersSideSheet
-                    filters={filters}
-                    username={username}
-                    mediaType={mediaType}
-                    isCurrent={isCurrent}
-                    onClose={() => setFiltersPanelOpen(false)}
-                    onFilterApply={(filters) => handleFilterChange(filters)}
-                />
-            }
+            <FiltersSideSheet
+                filters={filters}
+                username={username}
+                mediaType={mediaType}
+                isCurrent={isCurrent}
+                open={filtersPanelOpen}
+                onOpenChange={setFiltersPanelOpen}
+                onFilterApply={(filters) => handleFilterChange(filters)}
+            />
         </PageTitle>
     );
 }

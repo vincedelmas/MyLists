@@ -1,9 +1,11 @@
 import {MediaListArgs} from "@/lib/schemas";
-import React, {useRef, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
+import React, {useId, useRef, useState} from "react";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
+import {ChevronDown, ChevronUp, CircleHelp, X} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
@@ -12,27 +14,33 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {GamesPlatformsEnum, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {ChevronDown, ChevronUp, CircleHelp, LoaderCircle, X} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {filterSearchOptions, listFiltersOptions} from "@/lib/client/react-query/query-options";
+import {Field, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle} from "@/lib/client/components/ui/sheet";
 
 
 interface FiltersSideSheetProps {
+    open: boolean;
     username: string;
     isCurrent: boolean;
-    onClose: () => void;
     mediaType: MediaType;
     filters: MediaListArgs;
+    onOpenChange: (open: boolean) => void;
     onFilterApply: (filters: Partial<MediaListArgs>) => void;
 }
 
 
-export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onClose, onFilterApply }: FiltersSideSheetProps) => {
+export const FiltersSideSheet = ({ open, filters, username, mediaType, isCurrent, onOpenChange, onFilterApply }: FiltersSideSheetProps) => {
+    const fieldId = useId();
     const localFiltersRef = useRef<Partial<MediaListArgs>>({});
-    const { data: listFilters, isPending, error } = useQuery(listFiltersOptions(mediaType, username));
-
     const activeFiltersConfig = mediaConfig[mediaType].sheetFilters();
+    const { data: listFilters, isPending, error } = useQuery({ ...listFiltersOptions(mediaType, username), enabled: open });
+
+    const handleSheetOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen) localFiltersRef.current = {};
+        onOpenChange(nextOpen);
+    };
 
     const handleRegisterChange = (filterType: keyof MediaListArgs, value: string[] | boolean) => {
         const updatedFilters = { ...localFiltersRef.current };
@@ -68,14 +76,14 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
         localFiltersRef.current = updatedFilters;
     };
 
-    const handleOnSubmit = async (ev: React.SubmitEvent<HTMLFormElement>) => {
-        onClose();
+    const handleOnSubmit = (ev: React.SubmitEvent<HTMLFormElement>) => {
         ev.preventDefault();
         onFilterApply(localFiltersRef.current);
+        handleSheetOpenChange(false);
     };
 
     return (
-        <Sheet defaultOpen={true} onOpenChange={onClose}>
+        <Sheet open={open} onOpenChange={handleSheetOpenChange}>
             <SheetContent className="max-sm:w-full" side="right">
                 <SheetHeader>
                     <SheetTitle>Additional Filters</SheetTitle>
@@ -83,113 +91,111 @@ export const FiltersSideSheet = ({ filters, username, mediaType, isCurrent, onCl
                         How filters works <FilterInfoPopover/>
                     </SheetDescription>
                 </SheetHeader>
-                <div className="flex-1 overflow-y-auto">
-                    <form id="filters-form" onSubmit={handleOnSubmit} className="space-y-6">
-                        <fieldset disabled={isPending} className="space-y-6">
-                            {error ?
+
+                <form id="filters-form" onSubmit={handleOnSubmit} className="overflow-y-auto px-4">
+                    <FieldSet disabled={isPending}>
+                        {error ?
+                            <div className="flex items-center justify-center h-[70vh]">
+                                <EmptyState
+                                    icon={X}
+                                    message={error.message}
+                                />
+                            </div>
+                            :
+                            isPending ?
                                 <div className="flex items-center justify-center h-[70vh]">
-                                    <EmptyState
-                                        icon={X}
-                                        message={error.message}
-                                        className="text-destructive"
-                                    />
+                                    <Spinner className="size-10"/>
                                 </div>
                                 :
-                                isPending ?
-                                    <div className="flex items-center justify-center h-[70vh]">
-                                        <LoaderCircle className="size-10 animate-spin"/>
-                                    </div>
-                                    :
-                                    <div className="pl-4 space-y-6">
-                                        <CheckboxGroup
-                                            title="Genres"
-                                            items={listFilters?.genres ?? []}
-                                            onChange={(genre) => handleRegisterChange("genres", [genre])}
-                                            defaultChecked={(genre) => filters.genres?.includes(genre) ?? false}
-                                        />
-                                        {activeFiltersConfig.map((filter) => {
-                                            if (filter.type === "checkbox" && filter.getItems) {
-                                                const items = filter.getItems(listFilters || {} as any);
-                                                if (!items || items.length === 0) return null;
-                                                return (
-                                                    <React.Fragment key={filter.key}>
-                                                        <CheckboxGroup
-                                                            items={items}
-                                                            title={filter.title}
-                                                            onChange={(val) => handleRegisterChange(filter.key, [val])}
-                                                            render={(name) => filter.render ? filter.render(name, mediaType) : name}
-                                                            defaultChecked={(val) => (filters as any)?.[filter.key]?.includes(val) ?? false}
-                                                        />
-                                                    </React.Fragment>
-                                                );
-                                            }
-                                            if (filter.type === "search") {
-                                                return (
-                                                    <div key={filter.key} className="mb-4">
-                                                        <SearchFilter
-                                                            job={filter.job!}
-                                                            username={username}
-                                                            title={filter.title}
-                                                            mediaType={mediaType}
-                                                            filterKey={filter.key}
-                                                            dataList={(filters as any)?.[filter.key] ?? []}
-                                                            registerChange={(key, val) => handleRegisterChange(key, val)}
-                                                        />
-                                                    </div>
-                                                );
-                                            }
-                                            return null;
-                                        })}
-                                        <div className="space-y-2">
-                                            <h3 className="font-medium">
-                                                Miscellaneous
-                                            </h3>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div className="flex items-center space-x-2">
+                                <FieldGroup>
+                                    <CheckboxGroup
+                                        title="Genres"
+                                        items={listFilters?.genres ?? []}
+                                        onChange={(genre) => handleRegisterChange("genres", [genre])}
+                                        defaultChecked={(genre) => filters.genres?.includes(genre) ?? false}
+                                    />
+                                    {activeFiltersConfig.map((filter) => {
+                                        if (filter.type === "checkbox" && filter.getItems) {
+                                            const items = filter.getItems(listFilters || {} as any);
+                                            if (!items || items.length === 0) return null;
+
+                                            return (
+                                                <CheckboxGroup
+                                                    items={items}
+                                                    key={filter.key}
+                                                    title={filter.title}
+                                                    onChange={(val) => handleRegisterChange(filter.key, [val])}
+                                                    render={(name) => filter.render ? filter.render(name, mediaType) : name}
+                                                    defaultChecked={(val) => (filters as any)?.[filter.key]?.includes(val) ?? false}
+                                                />
+                                            );
+                                        }
+                                        if (filter.type === "search") {
+                                            return (
+                                                <SearchFilter
+                                                    key={filter.key}
+                                                    job={filter.job!}
+                                                    username={username}
+                                                    title={filter.title}
+                                                    mediaType={mediaType}
+                                                    filterKey={filter.key}
+                                                    dataList={(filters as any)?.[filter.key] ?? []}
+                                                    registerChange={(key, val) => handleRegisterChange(key, val)}
+                                                />
+                                            );
+                                        }
+                                        return null;
+                                    })}
+                                    <FieldSet>
+                                        <FieldLegend variant="label">
+                                            Miscellaneous
+                                        </FieldLegend>
+                                        <FieldGroup data-slot="checkbox-group" className="grid grid-cols-2 gap-2">
+                                            <Field orientation="horizontal">
+                                                <Checkbox
+                                                    id={`${fieldId}-fav`}
+                                                    defaultChecked={filters.favorite}
+                                                    onCheckedChange={(checked) => handleRegisterChange("favorite", checked)}
+                                                />
+                                                <FieldLabel htmlFor={`${fieldId}-fav`} className="cursor-pointer font-normal">
+                                                    Favorites
+                                                </FieldLabel>
+                                            </Field>
+                                            <Field orientation="horizontal">
+                                                <Checkbox
+                                                    id={`${fieldId}-comment`}
+                                                    defaultChecked={filters.comment}
+                                                    onCheckedChange={(checked) => handleRegisterChange("comment", checked)}
+                                                />
+                                                <FieldLabel htmlFor={`${fieldId}-comment`} className="cursor-pointer font-normal">
+                                                    Comments
+                                                </FieldLabel>
+                                            </Field>
+                                            {!isCurrent &&
+                                                <Field orientation="horizontal">
                                                     <Checkbox
-                                                        id="favoriteCheck"
-                                                        defaultChecked={filters.favorite}
-                                                        onCheckedChange={(checked) => handleRegisterChange("favorite", !!checked)}
+                                                        id={`${fieldId}-hc`}
+                                                        defaultChecked={filters?.hideCommon ?? false}
+                                                        onCheckedChange={(checked) => handleRegisterChange("hideCommon", checked)}
                                                     />
-                                                    <label htmlFor="favoriteCheck" className="text-sm cursor-pointer">
-                                                        Favorites
-                                                    </label>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <Checkbox
-                                                        id="commentCheck"
-                                                        defaultChecked={filters.comment}
-                                                        onCheckedChange={(checked) => handleRegisterChange("comment", !!checked)}
-                                                    />
-                                                    <label htmlFor="commentCheck" className="text-sm cursor-pointer">
-                                                        Comments
-                                                    </label>
-                                                </div>
-                                                {!isCurrent &&
-                                                    <div className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            id="commonCheck"
-                                                            defaultChecked={filters?.hideCommon ?? false}
-                                                            onCheckedChange={(checked) => handleRegisterChange("hideCommon", !!checked)}
-                                                        />
-                                                        <label htmlFor="commonCheck" className="text-sm cursor-pointer">
-                                                            Hide Common
-                                                        </label>
-                                                    </div>
-                                                }
-                                            </div>
-                                        </div>
-                                        <CheckboxGroup
-                                            title="Tags"
-                                            items={listFilters?.tags ?? []}
-                                            onChange={(col) => handleRegisterChange("tags", [col])}
-                                            defaultChecked={(col) => filters.tags?.includes(col) ?? false}
-                                        />
-                                    </div>
-                            }
-                        </fieldset>
-                    </form>
-                </div>
+                                                    <FieldLabel htmlFor={`${fieldId}-hc`} className="cursor-pointer font-normal">
+                                                        Hide Common
+                                                    </FieldLabel>
+                                                </Field>
+                                            }
+                                        </FieldGroup>
+                                    </FieldSet>
+                                    <CheckboxGroup
+                                        title="Tags"
+                                        items={listFilters?.tags ?? []}
+                                        onChange={(col) => handleRegisterChange("tags", [col])}
+                                        defaultChecked={(col) => filters.tags?.includes(col) ?? false}
+                                    />
+                                </FieldGroup>
+                        }
+                    </FieldSet>
+                </form>
+
                 <SheetFooter>
                     <FormSubmitButton form="filters-form" className="w-full" disabled={!!error} isLoading={isPending}>
                         Apply Filters
@@ -211,6 +217,7 @@ interface CheckboxGroupProps {
 
 
 const CheckboxGroup = ({ title, items, onChange, defaultChecked, render }: CheckboxGroupProps) => {
+    const fieldId = useId();
     const initVisibleItems = 14;
     const [showAll, setShowAll] = useState(false);
     const visibleItems = showAll ? items : items.slice(0, initVisibleItems);
@@ -221,39 +228,39 @@ const CheckboxGroup = ({ title, items, onChange, defaultChecked, render }: Check
     };
 
     return (
-        <div className="space-y-2">
-            <h3 className="font-medium">
+        <FieldSet>
+            <FieldLegend variant="label">
                 {title}
-            </h3>
-            <div className="grid grid-cols-2 gap-2">
+            </FieldLegend>
+            <FieldGroup data-slot="checkbox-group" className="grid grid-cols-2 gap-2">
                 {visibleItems.length === 0 ?
                     <div className="text-muted-foreground text-sm">
                         Nothing to display.
                     </div>
                     :
-                    visibleItems.map((item) =>
-                        <div key={item.name} className="flex items-center space-x-2">
+                    visibleItems.map((item, idx) =>
+                        <Field key={item.name} orientation="horizontal">
                             <Checkbox
-                                id={item.name + "-id"}
+                                id={`${fieldId}-${idx}`}
                                 defaultChecked={defaultChecked?.(item.name)}
                                 onCheckedChange={() => onChange(item.name)}
                             />
-                            <label htmlFor={item.name + "-id"} className="text-sm cursor-pointer line-clamp-1">
+                            <FieldLabel htmlFor={`${fieldId}-${idx}`} className="line-clamp-1 cursor-pointer font-normal">
                                 {render ? render(item.name) : item.name}
-                            </label>
-                        </div>
+                            </FieldLabel>
+                        </Field>
                     )
                 }
-            </div>
+            </FieldGroup>
             {items.length > initVisibleItems &&
-                <Button variant="outline" size="xs" onClick={toggleShowAll} className="mt-1">
+                <Button size="xs" variant="outline" onClick={toggleShowAll} className="w-fit">
                     {showAll
-                        ? <>Less <ChevronUp className="size-3.5"/></>
-                        : <>More <ChevronDown className="size-3.5"/></>
+                        ? <>Less <ChevronUp/></>
+                        : <>More <ChevronDown/></>
                     }
                 </Button>
             }
-        </div>
+        </FieldSet>
     );
 };
 
@@ -261,30 +268,28 @@ const CheckboxGroup = ({ title, items, onChange, defaultChecked, render }: Check
 const FilterInfoPopover = () => (
     <Popover>
         <PopoverTrigger>
-            <CircleHelp className="w-4 h-4"/>
+            <CircleHelp className="size-4 cursor-help opacity-70 hover:opacity-100"/>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-4" align="end">
-            <div className="space-y-3">
-                <div className="space-y-3 text-sm">
-                    <div className="flex gap-3">
-                        <div className="size-2 rounded-full bg-gray-400 mt-1.5 shrink-0"/>
-                        <div>
-                            <span className="font-medium text-cyan-500">
-                                Same category filters:{" "}
-                            </span>
-                            Results include media matching <i>any</i> selected filter.
-                            <div>(Filter A <strong>OR</strong> Filter B)</div>
-                        </div>
+            <div className="space-y-3 text-sm">
+                <div className="flex gap-3">
+                    <div className="size-2 rounded-full bg-muted-foreground mt-1.5 shrink-0"/>
+                    <div>
+                        <span className="font-medium text-info">
+                            Same category filters:{" "}
+                        </span>
+                        Results include media matching <i>any</i> selected filter.
+                        <div>(Filter A <strong>OR</strong> Filter B)</div>
                     </div>
-                    <div className="flex gap-3">
-                        <div className="size-2 rounded-full bg-gray-400 mt-1.5 shrink-0"/>
-                        <div>
-                            <span className="font-medium text-amber-500">
-                                Different category filters:{" "}
-                            </span>
-                            Results include media matching <i>all</i> selected filters.
-                            <div>(Filter A <strong>AND</strong> Filter B)</div>
-                        </div>
+                </div>
+                <div className="flex gap-3">
+                    <div className="size-2 rounded-full bg-muted-foreground mt-1.5 shrink-0"/>
+                    <div>
+                        <span className="font-medium text-warning">
+                            Different category filters:{" "}
+                        </span>
+                        Results include media matching <i>all</i> selected filters.
+                        <div>(Filter A <strong>AND</strong> Filter B)</div>
                     </div>
                 </div>
             </div>
@@ -305,6 +310,7 @@ interface SearchFilterProps {
 
 
 const SearchFilter = ({ mediaType, username, filterKey, job, title, dataList, registerChange }: SearchFilterProps) => {
+    const fieldId = useId();
     const [selectedData, setSelectedData] = useState(dataList ?? []);
     const { search, setSearch, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer();
     const { data: filterResults, isPending, error } = useQuery(filterSearchOptions(mediaType, username, debouncedSearch, job));
@@ -322,14 +328,15 @@ const SearchFilter = ({ mediaType, username, filterKey, job, title, dataList, re
     };
 
     return (
-        <div>
-            <h3 className="font-medium">
+        <Field>
+            <FieldLabel htmlFor={`${fieldId}-search`}>
                 {title}
-            </h3>
-            <div ref={containerRef} className="mt-1 relative">
+            </FieldLabel>
+            <div ref={containerRef} className="relative">
                 <SearchInput
                     value={search}
                     className="w-70"
+                    id={`${fieldId}-search`}
                     placeholder={`Search ${title.toLowerCase()}...`}
                     onChange={(ev) => setSearch(ev.target.value)}
                 />
@@ -345,6 +352,7 @@ const SearchFilter = ({ mediaType, username, filterKey, job, title, dataList, re
                     <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-60">
                         {filterResults?.map((item) =>
                             <button
+                                type="button"
                                 key={item.name}
                                 onClick={() => handleSearchClick(item.name!)}
                                 className="flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors"
@@ -364,20 +372,14 @@ const SearchFilter = ({ mediaType, username, filterKey, job, title, dataList, re
             </div>
             <div className="flex flex-wrap gap-2">
                 {selectedData.map(item =>
-                    <Badge key={item} className="mt-2 bg-neutral-800 h-8 px-4 text-sm gap-2" variant="outline">
+                    <Badge key={item} variant="outline">
                         {item}
-                        <Button
-                            type="button"
-                            size="iconBare"
-                            variant="invisible"
-                            className="hover:opacity-80 -mr-1"
-                            onClick={() => handleRemoveData(item)}
-                        >
-                            <X className="h-4 w-4"/>
+                        <Button size="bare" type="button" variant="ghost" onClick={() => handleRemoveData(item)}>
+                            <X/>
                         </Button>
                     </Badge>
                 )}
             </div>
-        </div>
+        </Field>
     );
 };

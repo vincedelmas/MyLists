@@ -1,12 +1,13 @@
 import React, {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {capitalize} from "@/lib/utils/text-formatting";
-import {SimpleMedia} from "@/lib/types/media-common.types";
 import {ChevronDown, ChevronUp} from "lucide-react";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
+import {SimpleMedia} from "@/lib/types/media-common.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
-import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
+import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 export const SimilarMedia = ({ mediaType, similarMedia }: { mediaType: MediaType; similarMedia: SimpleMedia[] }) => {
@@ -37,11 +38,11 @@ export const SimilarMedia = ({ mediaType, similarMedia }: { mediaType: MediaType
             </div>
 
             {!isBelowSm && similarMedia.length > INITIAL_COUNT &&
-                <div className="text-end -mt-1">
-                    <Button variant="ghost" size="xs" onClick={handleToggle}>
+                <div className="text-end -mt-2">
+                    <Button variant="hover" size="sm" onClick={handleToggle}>
                         {isExpanded
-                            ? <>Show Less <ChevronUp className="size-3.5"/></>
-                            : <>Show More <ChevronDown className="size-3.5"/></>
+                            ? <>Show Less <ChevronUp/></>
+                            : <>Show More <ChevronDown/></>
                         }
                     </Button>
                 </div>
@@ -53,14 +54,17 @@ export const SimilarMedia = ({ mediaType, similarMedia }: { mediaType: MediaType
 
 export const SimilarMediaCard = ({ mediaType, item }: { mediaType: MediaType; item: SimpleMedia }) => {
     return (
-        <MediaCard mediaType={mediaType} item={item}>
-            <div className="absolute bottom-0 w-full rounded-b-sm p-3 pb-2">
-                <div className="flex w-full items-center justify-between text-xs">
-                    <h3 className="grow truncate font-semibold text-primary" title={item.mediaName}>
-                        {item.mediaName}
-                    </h3>
-                </div>
-            </div>
+        <MediaCard item={item} mediaType={mediaType}>
+            <MediaCardFooter>
+                <MediaCardTitle title={item.mediaName}>
+                    {item.mediaName}
+                </MediaCardTitle>
+                <MediaCardMeta>
+                    <MediaCardDetails>
+                        <MediaReleaseDate date={item.releaseDate}/>
+                    </MediaCardDetails>
+                </MediaCardMeta>
+            </MediaCardFooter>
         </MediaCard>
     );
 };

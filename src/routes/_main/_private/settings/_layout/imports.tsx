@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {useForm} from "react-hook-form";
+import {useId, useState} from "react";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import {ImportSource} from "@/lib/utils/enums";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
@@ -9,7 +9,7 @@ import {FileSpreadsheet, Info, TriangleAlert, UploadCloud} from "lucide-react";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {importSearchSchema, ImportUploadFormValues, importUploadSchema} from "@/lib/schemas";
 import {ExistingImportsPanel} from "@/lib/client/components/user-settings/ExistingImportsPanel";
-import {Form, FormControl, FormField, FormItem, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {useCreateImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
 
 
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/imports")
 
 
 function SettingsImportsPage() {
+    const fieldId = useId();
     const navigate = Route.useNavigate();
     const createMutation = useCreateImportJobMutation();
     const [fileInputResetKey, setFileInputResetKey] = useState(0);
@@ -80,10 +81,10 @@ function SettingsImportsPage() {
                             </p>
                         </div>
 
-                        <div className="rounded-xl border border-app-accent/80 p-4">
+                        <div className="rounded-xl border border-brand/80 p-4">
                             <div className="space-y-2 text-sm leading-relaxed">
-                                <div className="flex gap-2 items-center font-semibold text-primary">
-                                    <Info className="size-4 text-app-accent"/>
+                                <div className="flex gap-2 items-center font-semibold text-foreground">
+                                    <Info className="size-4 text-brand"/>
                                     Info
                                 </div>
                                 <ul className="list-disc pl-8 space-y-1 text-muted-foreground">
@@ -104,10 +105,10 @@ function SettingsImportsPage() {
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-app-rating/80 p-4">
+                        <div className="rounded-xl border border-warning/80 p-4">
                             <div className="space-y-2 text-sm leading-relaxed">
-                                <div className="flex gap-2 items-center font-semibold text-primary">
-                                    <TriangleAlert className="size-4 text-app-rating"/>
+                                <div className="flex gap-2 items-center font-semibold text-foreground">
+                                    <TriangleAlert className="size-4 text-warning"/>
                                     Caveat
                                 </div>
                                 <div className="text-muted-foreground">
@@ -130,8 +131,8 @@ function SettingsImportsPage() {
                             </ol>
                         </div>
 
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                        <FormProvider {...form}>
+                            <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
                                 <div>
                                     <h3 className="text-lg font-bold">
                                         Upload CSV File
@@ -141,15 +142,16 @@ function SettingsImportsPage() {
                                     </p>
                                 </div>
 
-                                <FormField
+                                <FieldGroup>
+                                <Controller
                                     name="file"
                                     control={form.control}
-                                    render={({ field: { onChange, value: _value, ...field } }) => (
-                                        <FormItem>
-                                            <label className="group flex min-h-44 flex-col items-center justify-center rounded-xl border
+                                    render={({field: {onChange, value: _value, ...field}, fieldState}) => (
+                                        <Field data-invalid={fieldState.invalid} data-disabled={createMutation.isPending}>
+                                            <FieldLabel htmlFor={`${fieldId}-file`} className="group flex min-h-44 w-full cursor-pointer flex-col items-center justify-center rounded-xl border
                                             border-dashed border-muted-foreground/60 bg-background/40 p-6 text-center transition
-                                            cursor-pointer hover:border-app-accent hover:bg-app-accent/5">
-                                                <UploadCloud className="mb-2 size-8 text-muted-foreground transition group-hover:text-app-accent"/>
+                                            hover:border-brand hover:bg-brand/5">
+                                                <UploadCloud className="mb-2 size-8 text-muted-foreground transition group-hover:text-brand"/>
                                                 <span className="text-sm font-medium">
                                                     {selectedFile ? selectedFile.name : "Drop file here or click to upload"}
                                                 </span>
@@ -158,29 +160,30 @@ function SettingsImportsPage() {
                                                         {(selectedFile.size / 1024).toFixed(1)} KB
                                                     </span>
                                                 }
-                                                <FormControl>
-                                                    <Input
-                                                        {...field}
-                                                        type="file"
-                                                        className="sr-only"
-                                                        key={fileInputResetKey}
-                                                        accept=".csv,text/csv,text/plain"
-                                                        disabled={createMutation.isPending}
-                                                        onChange={(ev) => onChange(ev.target.files?.[0])}
-                                                    />
-                                                </FormControl>
-                                            </label>
-                                            <FormMessage/>
-                                        </FormItem>
+                                                <Input
+                                                    {...field}
+                                                    id={`${fieldId}-file`}
+                                                    type="file"
+                                                    className="sr-only"
+                                                    key={fileInputResetKey}
+                                                    accept=".csv,text/csv,text/plain"
+                                                    disabled={createMutation.isPending}
+                                                    aria-invalid={fieldState.invalid}
+                                                    onChange={(ev) => onChange(ev.target.files?.[0])}
+                                                />
+                                            </FieldLabel>
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
                                     )}
                                 />
+                                </FieldGroup>
 
                                 <FormSubmitButton disabled={!selectedFile} isLoading={createMutation.isPending}>
                                     <UploadCloud className="size-4"/>
                                     Import File
                                 </FormSubmitButton>
                             </form>
-                        </Form>
+                        </FormProvider>
                     </div>
                 </div>
             </section>

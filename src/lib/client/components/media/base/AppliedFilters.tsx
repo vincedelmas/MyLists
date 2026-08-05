@@ -63,25 +63,21 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                             {Array.isArray(value) ?
                                 value.map((item, i) =>
                                     <Fragment key={`${key}-${item}`}>
-                                        <Badge
-                                            variant="secondary"
-                                            className="h-8 px-3 text-sm gap-1 rounded-full border border-border/50
-                                            bg-secondary hover:bg-secondary/90 transition max-w-50"
-                                        >
-                                            {key === "langs" ? formatLocaleName(
+                                        <Badge variant="outline">
+                                            {key === "langs"
+                                                ? formatLocaleName(
                                                     item,
                                                     mediaType === MediaType.SERIES || mediaType === MediaType.ANIME ? "region" : "language"
                                                 )
                                                 : item
                                             }
                                             <Button
+                                                size="bare"
                                                 type="button"
-                                                size="iconBare"
-                                                variant="invisible"
-                                                className="hover:opacity-80 -mr-1"
+                                                variant="ghost"
                                                 onClick={() => removeFilter(key as keyof MediaListArgs, item)}
                                             >
-                                                <X className="size-4"/>
+                                                <X/>
                                             </Button>
                                         </Badge>
                                         {i < value.length - 1 &&
@@ -92,20 +88,15 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                                     </Fragment>
                                 )
                                 :
-                                <Badge
-                                    variant="secondary"
-                                    className="h-8 px-3 text-sm gap-1 rounded-full border border-border/50 bg-secondary
-                                        hover:bg-secondary/90 transition"
-                                >
+                                <Badge variant="outline">
                                     {String(value)}
                                     <Button
+                                        size="bare"
                                         type="button"
-                                        size="iconBare"
-                                        variant="invisible"
-                                        className="hover:opacity-80 -mr-1"
+                                        variant="ghost"
                                         onClick={() => removeFilter(key as keyof MediaListArgs, value)}
                                     >
-                                        <X className="size-4"/>
+                                        <X/>s
                                     </Button>
                                 </Badge>
                             }
@@ -126,21 +117,15 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                                     : key === "hideCommon" ? "No Common" : String(value);
 
                                 return (
-                                    <Badge
-                                        key={key}
-                                        variant="secondary"
-                                        className="h-8 px-3 text-sm gap-1 rounded-full border border-border/50 bg-secondary
-                                        hover:bg-secondary/90 transition"
-                                    >
+                                    <Badge key={key} variant="outline">
                                         {keyName}
                                         <Button
+                                            size="bare"
                                             type="button"
-                                            size="iconBare"
-                                            variant="invisible"
-                                            className="hover:opacity-80 -mr-1"
+                                            variant="ghost"
                                             onClick={() => removeFilter(key as keyof MediaListArgs, value)}
                                         >
-                                            <X className="size-4"/>
+                                            <X/>
                                         </Button>
                                     </Badge>
                                 );
@@ -149,7 +134,7 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
                     </div>
                 }
                 {Object.keys(localFilters).length > 0 &&
-                    <Button type="button" size="bare" variant="invisible" onClick={removeAllFilters} className="ml-2 text-muted-foreground">
+                    <Button type="button" size="bare" variant="ghost" onClick={removeAllFilters} className="ml-1 text-muted-foreground">
                         Clear All
                     </Button>
                 }

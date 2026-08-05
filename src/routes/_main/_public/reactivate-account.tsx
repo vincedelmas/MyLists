@@ -1,5 +1,5 @@
 import {tokenSchema} from "@/lib/schemas";
-import {Button} from "@/lib/client/components/ui/button";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
 import {getReactivateInactiveAccount} from "@/lib/server/functions/account-lifecycle";
 
@@ -28,24 +28,22 @@ function ReactivateAccountPage() {
 
 const ReactivateAccountResult = ({ success }: { success: boolean }) => (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-lg border border-neutral-800 bg-neutral-950 p-6 text-center">
-            <h1 className="text-2xl font-semibold text-white">
+        <div className="w-full max-w-md rounded-lg border bg-card p-6 text-center text-card-foreground shadow-sm">
+            <h1 className="text-2xl font-semibold">
                 {success
                     ? "Account Reactivated"
                     : "Invalid or expired link"
                 }
             </h1>
-            <p className="mt-3 text-sm text-neutral-400">
+            <p className="mt-3 text-sm text-muted-foreground">
                 {success
                     ? "Your account is active again. Happy to see you back!"
                     : "This reactivation link is invalid, expired, or was already used."
                 }
             </p>
-            <Button asChild className="mt-6">
-                <Link to="/login">
-                    Go to Login
-                </Link>
-            </Button>
+            <Link to="/login" className={buttonVariants({ className: "mt-6" })}>
+                Go to Login
+            </Link>
         </div>
     </div>
 );

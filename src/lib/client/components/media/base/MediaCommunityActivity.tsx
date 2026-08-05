@@ -2,8 +2,8 @@ import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ExtractFollowByType} from "@/lib/types/query.options.types";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
@@ -11,12 +11,12 @@ import {formatMinutes, formatNumber} from "@/lib/utils/number-formatting";
 import {MediaFollowCard} from "@/lib/client/components/media/base/MediaFollowCard";
 import {mediaCommunityActivityOptions} from "@/lib/client/react-query/query-options";
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
-import {ChevronDown, CircleHelp, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
+import {CircleHelp, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 
 
-type MediaCommunityActivityQuery = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaCommunityActivityOptions>["queryFn"]>>>;
 type CommunityActivityItem = MediaCommunityActivityQuery["items"][number];
+type MediaCommunityActivityQuery = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaCommunityActivityOptions>["queryFn"]>>>;
 
 
 interface CommunityActivityProps {
@@ -39,11 +39,9 @@ export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivity
         <section className="space-y-4">
             <MediaSectionTitle title="Community Activity" className="justify-start gap-3">
                 <Popover>
-                    <PopoverTrigger asChild>
-                        <button type="button" className="cursor-help">
-                            <CircleHelp className="size-4"/>
-                            <span className="sr-only">Community activity visibility note</span>
-                        </button>
+                    <PopoverTrigger render={<button type="button" className="cursor-help"/>}>
+                        <CircleHelp className="size-4"/>
+                        <span className="sr-only">Community activity visibility note</span>
                     </PopoverTrigger>
                     <PopoverContent className="w-60 px-3 py-2 text-xs" side="top">
                         These data include only community profiles.
@@ -63,12 +61,14 @@ export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivity
             />
 
             {apiData.total > visibleItems.length &&
-                <div className="text-end -mt-1">
-                    <Button variant="ghost" size="xs" asChild>
-                        <Link to="/details/$mediaType/$mediaId/community" params={{ mediaType, mediaId }}>
-                            View All <ChevronDown className="size-3.5"/>
-                        </Link>
-                    </Button>
+                <div className="text-end -mt-2">
+                    <Link
+                        params={{ mediaType, mediaId }}
+                        to="/details/$mediaType/$mediaId/community"
+                        className={buttonVariants({ variant: "hover", size: "sm" })}
+                    >
+                        View All
+                    </Link>
                 </div>
             }
         </section>
@@ -100,7 +100,7 @@ export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivitySt
         {
             icon: Star,
             label: "community avg.",
-            iconColor: "text-app-rating fill-app-rating",
+            iconColor: "text-rating fill-rating",
             value: formatNumber(stats.averageRating, { locale: "en", fractionDigits: 1 }),
         },
         {
@@ -128,7 +128,7 @@ export const CommunityActivityStats = ({ stats, mediaType }: CommunityActivitySt
             {items.map(({ icon: Icon, label, value, iconColor }) =>
                 <div key={label} className="flex min-w-0 items-center gap-1.5">
                     <Icon className={`size-4 shrink-0 ${iconColor}`}/>
-                    <span className="font-semibold text-primary">{value}</span>
+                    <span className="font-semibold text-foreground">{value}</span>
                     <span className="truncate">{label}</span>
                 </div>
             )}

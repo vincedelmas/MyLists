@@ -1,4 +1,5 @@
 import {Link} from "@tanstack/react-router";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -122,25 +123,24 @@ export const CollectionCard = ({ collection, showOwner = true, showMediaType = t
                         </div>
                     }
                     <div className="pointer-events-none rounded-t-lg absolute inset-0 z-10 border border-transparent
-                    group-hover/image:border-app-accent/80"/>
+                    group-hover/image:border-brand/80"/>
 
                     {showMediaType &&
-                        <div className="absolute top-2 right-2 capitalize flex gap-1.5 items-center text-xs font-semibold
-                        px-2 py-1 text-muted-foreground bg-popover rounded-md">
-                            <MainThemeIcon type={collection.mediaType} className="size-3.5"/>
+                        <Badge variant="overlay" className="absolute top-2 right-2 capitalize">
+                            <MainThemeIcon type={collection.mediaType}/>
                             {collection.mediaType}
-                        </div>
+                        </Badge>
                     }
                 </div>
             </Link>
             <div className="flex flex-col gap-2 p-4 pt-3">
-                <h3 className="text-sm font-semibold text-foreground truncate" title={collection.title}>
+                <h3 className="text-sm font-medium text-foreground truncate" title={collection.title}>
                     {collection.title}
                 </h3>
                 <div className="flex items-center justify-between">
                     {showOwner &&
                         <Link to="/profile/$username" params={{ username: collection.ownerName }}>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground -ml-1 hover:text-app-accent">
+                            <div className="-ml-1 flex items-center gap-1 text-sm text-muted-foreground hover:text-brand">
                                 <ProfileIcon
                                     fallbackSize="text-xs"
                                     className="border-popover"
@@ -173,23 +173,19 @@ export const CollectionCard = ({ collection, showOwner = true, showMediaType = t
                     </div>
                     {canManage &&
                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button>
-                                    <MoreVertical className="size-4 opacity-60 hover:opacity-100"/>
-                                </button>
+                            <DropdownMenuTrigger render={<button/>}>
+                                <MoreVertical className="size-4 opacity-60 hover:opacity-100"/>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 {collection.capabilities.edit &&
-                                    <Link to="/collections/$collectionId/edit" params={{ collectionId: collection.id }}>
-                                        <DropdownMenuItem>
-                                            <Pen className="size-4"/> Edit
-                                        </DropdownMenuItem>
-                                    </Link>
+                                    <DropdownMenuItem render={<Link to="/collections/$collectionId/edit" params={{ collectionId: collection.id }}/>}>
+                                        <Pen className="size-4"/> Edit
+                                    </DropdownMenuItem>
                                 }
                                 {collection.capabilities.delete &&
-                                    <DropdownMenuItem className="focus:bg-red-500/10" onClick={handleDelete}>
-                                        <Trash2 className="text-red-500"/>
-                                        <span className="text-red-500">Delete</span>
+                                    <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+                                        <Trash2/>
+                                        <span>Delete</span>
                                     </DropdownMenuItem>
                                 }
                             </DropdownMenuContent>

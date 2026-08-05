@@ -2,12 +2,14 @@ import React, {useState} from "react";
 import Cropper, {Area} from "react-easy-crop";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
-import {FormDescription} from "@/lib/client/components/ui/form";
+import {FieldDescription} from "@/lib/client/components/ui/field";
 
 
 interface ImageCropperProps {
     aspect?: number;
+    inputId?: string;
     fileName: string;
+    "aria-invalid"?: boolean;
     sliceHeight?: number;
     resultClassName?: string;
     cropShape: "round" | "rect";
@@ -28,7 +30,7 @@ interface CropState {
 }
 
 
-export const ImageCropper = ({ aspect, fileName, sliceHeight, cropShape, onCropApplied, resultClassName = "" }: ImageCropperProps) => {
+export const ImageCropper = ({ aspect, inputId, fileName, sliceHeight, cropShape, onCropApplied, resultClassName = "", "aria-invalid": ariaInvalid }: ImageCropperProps) => {
     const [state, setState] = useState<CropState>({
         zoom: 1,
         open: true,
@@ -130,23 +132,27 @@ export const ImageCropper = ({ aspect, fileName, sliceHeight, cropShape, onCropA
 
     return (
         <div>
-            <Input
-                type="file"
-                accept="image/*"
-                onChange={onFileChange}
-                className="file:text-muted-foreground cursor-pointer"
-            />
-            <FormDescription>
-                Choose an image to crop and resize.
-            </FormDescription>
+            <div>
+                <Input
+                    type="file"
+                    id={inputId}
+                    accept="image/*"
+                    onChange={onFileChange}
+                    aria-invalid={ariaInvalid}
+                    className="file:text-muted-foreground cursor-pointer"
+                />
+                <FieldDescription>
+                    Choose an image to crop and resize.
+                </FieldDescription>
+            </div>
             {(state.imageSrc && state.open) &&
-                <div className="space-y-4 mt-6 bg-popover rounded-lg p-3">
+                <div className="space-y-4 mt-6 bg-card rounded-lg p-3">
                     <div>
                         <h4 className="font-medium">
                             Crop Your Image
                         </h4>
                         <div className="text-sm text-muted-foreground">
-                            Crop the image to your liking.
+                            You can zoom in and out and drag the image around.
                         </div>
                     </div>
                     <div className="relative h-60 w-full">
@@ -172,7 +178,7 @@ export const ImageCropper = ({ aspect, fileName, sliceHeight, cropShape, onCropA
                 </div>
             }
             {(state.showResult && state.croppedImage) &&
-                <div className="space-y-4 mt-4 bg-popover rounded-lg p-3">
+                <div className="space-y-4 mt-4 bg-card rounded-lg p-3">
                     <h4 className="font-medium">
                         Selected Image
                     </h4>

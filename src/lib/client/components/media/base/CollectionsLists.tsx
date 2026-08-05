@@ -22,9 +22,9 @@ export const CollectionsLists = ({ mediaType, mediaId, isAnonymous }: Collection
     return (
         <Card className="bg-popover p-0 h-fit min-w-0 gap-2">
             <div className="p-4 border-b">
-                <h3 className="flex items-center justify-between gap-3 text-primary font-semibold">
+                <h3 className="flex items-center justify-between gap-3 text-foreground font-semibold">
                     <span className="flex min-w-0 items-center gap-2">
-                        <ListOrdered className="size-5 shrink-0 text-app-accent"/>
+                        <ListOrdered className="size-5 shrink-0 text-brand"/>
                         <span className="truncate">
                             Your Collections ({activeCollections.length})
                         </span>
@@ -58,7 +58,7 @@ export const CollectionsLists = ({ mediaType, mediaId, isAnonymous }: Collection
                                 >
                                     <div className="min-w-0 space-y-1">
                                         <div className="flex items-start justify-between gap-3">
-                                            <div className="truncate text-sm font-medium leading-snug text-primary" title={collection.title}>
+                                            <div className="truncate text-sm font-medium leading-snug text-foreground" title={collection.title}>
                                                 {collection.title}
                                             </div>
                                         </div>

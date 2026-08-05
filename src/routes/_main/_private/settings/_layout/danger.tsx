@@ -39,13 +39,13 @@ function DangerForm() {
     };
 
     return (
-        <div className="h-fit max-w-125 rounded-xl border border-red-900/30 bg-red-950/10 p-6">
-            <div className="flex flex-col gap-5">
+        <div className="h-fit max-w-125 rounded-xl border border-destructive/40 bg-destructive/2 p-4">
+            <div className="flex flex-col gap-4">
                 <div>
-                    <h3 className="text-base font-bold text-destructive">
+                    <h3 className="font-medium">
                         Delete Account
                     </h3>
-                    <p className="text-sm text-red-200/60 mt-1">
+                    <p className="mt-1 text-sm text-destructive/90">
                         Permanently remove your account and all associated data.
                         This action is not reversible, so please continue with caution.
                     </p>

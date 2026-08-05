@@ -1,5 +1,6 @@
-import {toast} from "sonner";
-import {useForm} from "react-hook-form";
+import {toast} from "@/lib/client/components/ui/toast";
+import {useId} from "react";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
 import {Login, loginSchema} from "@/lib/schemas";
 import {FaGithub, FaGoogle} from "react-icons/fa";
@@ -12,7 +13,7 @@ import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Link, useLocation, useNavigate, useRouter} from "@tanstack/react-router";
 import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
@@ -23,6 +24,7 @@ interface LoginFormProps {
 
 
 export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
+    const fieldId = useId();
     const router = useRouter();
     const navigate = useNavigate();
     const location = useLocation();
@@ -70,43 +72,43 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
     const withProvider = async (provider: "google" | "github") => {
         await authClient.signIn.social({ provider, callbackURL: getRedirectTarget() }, {
             onError: (ctx) => {
-                toast.error(ctx.error.message);
+                toast.add({title: ctx.error.message, type: "error", priority: "high"});
             },
         });
     };
 
     return (
         <>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <fieldset disabled={form.formState.isSubmitting} className="space-y-4">
-                        <FormField
+            <FormProvider {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+                    <FieldSet disabled={form.formState.isSubmitting}>
+                        <FieldGroup>
+                        <Controller
                             control={form.control}
                             name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            type="email"
-                                            placeholder="Email"
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
+                            render={({field, fieldState}) => (
+                                <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
+                                    <FieldLabel htmlFor={`${fieldId}-email`}>Email</FieldLabel>
+                                    <Input
+                                        {...field}
+                                        id={`${fieldId}-email`}
+                                        type="email"
+                                        placeholder="Email"
+                                        aria-invalid={fieldState.invalid}
+                                    />
+                                    <FieldError errors={[fieldState.error]}/>
+                                </Field>
                             )}
                         />
-                        <FormField
+                        <Controller
                             control={form.control}
                             name="password"
-                            render={({ field }) => (
-                                <FormItem>
+                            render={({field, fieldState}) => (
+                                <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
                                     <div className="flex items-center justify-between">
-                                        <FormLabel>Password</FormLabel>
+                                        <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
                                         {authMethods.email ?
                                             <Link
-                                                tabIndex={-1}
                                                 to="/forgot-password"
                                                 className="text-sm underline"
                                                 onClick={() => onOpenChange?.(false)}
@@ -119,24 +121,25 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
                                             </span>
                                         }
                                     </div>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            type="password"
-                                            placeholder="********"
-                                        />
-                                    </FormControl>
-                                    <FormMessage/>
-                                </FormItem>
+                                    <Input
+                                        {...field}
+                                        id={`${fieldId}-password`}
+                                        type="password"
+                                        placeholder="********"
+                                        aria-invalid={fieldState.invalid}
+                                    />
+                                    <FieldError errors={[fieldState.error]}/>
+                                </Field>
                             )}
                         />
-                    </fieldset>
+                        </FieldGroup>
+                    </FieldSet>
                     <FormError/>
                     <FormSubmitButton className="w-full" isLoading={form.formState.isSubmitting}>
                         Login
                     </FormSubmitButton>
                 </form>
-            </Form>
+            </FormProvider>
             {hasSocialProvider &&
                 <>
                     <Separator className="mt-3"/>

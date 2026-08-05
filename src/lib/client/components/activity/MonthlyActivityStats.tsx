@@ -23,7 +23,7 @@ export function MonthlyActivityStats({ username, year, month, mediaType }: Month
             <div className="flex min-h-20 w-full min-w-0 flex-col justify-between rounded-lg border bg-background px-3 py-2">
                 <div className="flex min-w-0 items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
-                        <Clock className="text-app-accent" size={15}/>
+                        <Clock className="text-brand" size={15}/>
                         <span className="truncate text-sm font-medium capitalize">
                         Monthly Time
                     </span>

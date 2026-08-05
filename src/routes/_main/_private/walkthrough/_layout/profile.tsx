@@ -1,13 +1,13 @@
 import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
+import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
 import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab";
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
+import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
 import {Activity, ArrowBigUpDash, ArrowUp10, Award, ChartNoAxesColumn, LayoutGrid, User} from "lucide-react";
 import {ONBOARDING_PROFILE_NAME, onboardingProfileFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
@@ -23,21 +23,7 @@ function ProfileOnboarding() {
     const apiData = onboardingProfileFixture;
     const username = ONBOARDING_PROFILE_NAME;
     const [activeTab, setActiveTab] = useState<MediaType | "overview">("overview");
-    const activeMediaTypes = getActiveMediaTypes(apiData.userData.userMediaSettings);
-
-    const mediaTabs: TabItem<MediaType | "overview">[] = [
-        {
-            id: "overview",
-            isAccent: true,
-            label: "Overview",
-            icon: <MainThemeIcon size={15} type="overview"/>,
-        },
-        ...activeMediaTypes.map((mediaType) => ({
-            id: mediaType,
-            label: mediaType,
-            icon: <MainThemeIcon size={15} type={mediaType}/>,
-        })),
-    ];
+    const mediaTabs = createMediaTabItems(getActiveMediaTypes(apiData.userData.userMediaSettings), { leading: "overview" });
 
     const effectiveActiveTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "overview";
 
@@ -106,8 +92,8 @@ function ProfileOnboarding() {
                     "like status breakdown, favorites, avg. rating etc... "
                 }
             >
-                <OnboardingDemoBox className="grid gap-6 pt-2 max-lg:grid-cols-5 max-sm:grid-cols-1">
-                    <div className="space-y-6 max-lg:col-span-3 max-sm:col-span-2 max-sm:space-y-4 max-sm:mt-4">
+                <OnboardingDemoBox className="pt-2">
+                    <div className="w-[95%] min-w-0 space-y-6 max-lg:w-3/5 max-sm:mt-4 max-sm:w-full max-sm:space-y-4">
                         <TabHeader
                             tabs={mediaTabs}
                             setActiveTab={setActiveTab}
@@ -132,7 +118,7 @@ function ProfileOnboarding() {
                             }
                         </div>
                     </div>
-                    <div className="absolute bottom-0 right-25 bg-app-accent text-primary-foreground font-bold text-[10px]
+                    <div className="absolute bottom-0 right-25 bg-primary text-primary-foreground font-bold text-[10px]
                     px-2 py-1 rounded flex items-center gap-1">
                         ACCESS ADVANCED STATS<ArrowBigUpDash className="size-3 animate-bounce"/>
                     </div>

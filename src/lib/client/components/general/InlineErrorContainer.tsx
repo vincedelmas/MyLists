@@ -19,7 +19,7 @@ export function InlineErrorContainer({ children, onDismiss }: InlineErrorContain
     };
 
     return (
-        <div className="relative p-2.5 w-full rounded-lg border text-xs font-medium flex items-center gap-2 bg-red-500/5 border-red-500/20 text-destructive">
+        <div className="relative flex w-full items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-2.5 text-xs font-medium text-destructive">
             <TriangleAlert className="shrink-0 size-3.5"/>
             <div className="w-[90%]">
                 {children}

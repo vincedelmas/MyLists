@@ -1,30 +1,31 @@
 import React, {useState} from "react";
 import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Badge} from "@/lib/client/components/ui/badge";
+import {Label} from "@/lib/client/components/ui/label";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {LayoutGrid, Plus, Settings2} from "lucide-react";
+import {LayoutGrid, Plus} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
-import {formatMinutes} from "@/lib/utils/number-formatting";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {MonthlyActivityEditor} from "@/lib/types/activity.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
-import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
-import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {formatMinutes} from "@/lib/utils/number-formatting";
 
 
 interface MonthlyActivityContentProps {
@@ -50,6 +51,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
     const [editActivity, setEditActivity] = useState<MonthlyActivityEditor | null>(null);
 
     const apiData = useSuspenseQuery(monthlyActivityOptions(username, activeFilters)).data;
+    const mediaTypeFilters = createMediaSelectItems(apiData.mediaTypes, { leading: "all", leadingLabel: "All Types" });
     const { activeTab = "all", activityKind = ActivityKind.ALL, hiddenOnly = false, search = "", page = 1, ...dateFilters } = activeFilters;
 
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<MonthlyActivitySearch>({
@@ -92,40 +94,47 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                         />
                     </div>
                     <div className="col-span-1 sm:order-1 sm:shrink-0">
-                        <Select value={activityKind} onValueChange={(v) => handleFilterChange({ activityKind: v as ActivityKind })}>
+                        <Select
+                            items={activityKindFilters}
+                            value={activityKind}
+                            onValueChange={(value) => {
+                                if (value !== null) handleFilterChange({ activityKind: value as ActivityKind });
+                            }}
+                        >
                             <SelectTrigger className="w-full sm:w-42">
                                 <SelectValue placeholder="Activity Kind"/>
                             </SelectTrigger>
                             <SelectContent>
-                                {activityKindFilters.map((filter) =>
-                                    <SelectItem key={filter.value} value={filter.value}>
-                                        {filter.label}
-                                    </SelectItem>
-                                )}
+                                <SelectGroup>
+                                    {activityKindFilters.map((filter) =>
+                                        <SelectItem key={filter.value} value={filter.value}>
+                                            {filter.label}
+                                        </SelectItem>
+                                    )}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>
                     {!fixedMediaType &&
                         <div className="col-span-1 sm:order-3 sm:shrink-0">
-                            <Select value={activeTab} onValueChange={(v) => handleFilterChange({ activeTab: v as MediaType | "all" })}>
+                            <Select
+                                items={mediaTypeFilters}
+                                value={activeTab}
+                                onValueChange={(value) => {
+                                    if (value !== null) handleFilterChange({ activeTab: value as MediaType | "all" });
+                                }}
+                            >
                                 <SelectTrigger className="w-full sm:w-36">
                                     <SelectValue placeholder="Media type"/>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">
-                                        <div className="flex items-center gap-2">
-                                            <MainThemeIcon type="all"/>
-                                            <span>All Types</span>
-                                        </div>
-                                    </SelectItem>
-                                    {apiData.mediaTypes.map((mediaType) =>
-                                        <SelectItem key={mediaType} value={mediaType}>
-                                            <div className="flex items-center gap-2 capitalize">
-                                                <MainThemeIcon type={mediaType}/>
-                                                <span>{mediaType}</span>
-                                            </div>
-                                        </SelectItem>
-                                    )}
+                                    <SelectGroup>
+                                        {mediaTypeFilters.map((filter) =>
+                                            <SelectItem key={filter.value} value={filter.value}>
+                                                {filter.label}
+                                            </SelectItem>
+                                        )}
+                                    </SelectGroup>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -133,24 +142,16 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                 </div>
                 {canEdit &&
                     <div className="flex items-center gap-3 sm:justify-end shrink-0">
-                        <Button
-                            variant="outline"
-                            onClick={() => setAddActivity(true)}
-                            className="flex-1 sm:flex-initial justify-center gap-2"
-                        >
-                            <Plus className="size-4 shrink-0"/>
-                            <span>Add Activity</span>
+                        <Button onClick={() => setAddActivity(true)}>
+                            <Plus/> Add Activity
                         </Button>
-                        <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-background px-3
-                        shadow-sm flex-1 sm:flex-initial justify-center cursor-pointer select-none">
+                        <div className="flex items-center space-x-2">
                             <Switch
                                 id="hidden-only"
                                 checked={hiddenOnly}
                                 onCheckedChange={(checked) => handleFilterChange({ hiddenOnly: checked })}
                             />
-                            <label htmlFor="hidden-only" className="text-sm font-medium leading-none cursor-pointer">
-                                Hidden Only
-                            </label>
+                            <Label htmlFor="hidden-only">Hidden Only</Label>
                         </div>
                     </div>
                 }
@@ -161,48 +162,39 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                     iconSize={50}
                     className="py-20"
                     icon={LayoutGrid}
-                    message={hiddenOnly ? "No hidden monthly activity." : "No activity recorded for this month."}
+                    message={hiddenOnly ? "No hidden monthly activity." : "No activity recorded this month."}
                 />
             }
 
             {apiData.items.length > 0 &&
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {apiData.items.map((row) =>
-                        <MediaCard key={row.id} item={{ ...row, mediaCover: row.mediaCover }} mediaType={row.mediaType}>
-                            <div className="absolute left-1.5 top-1.5 z-10 flex flex-col items-start gap-1">
-                                {row.hidden &&
-                                    <Badge variant="destructive">Hidden</Badge>
-                                }
-                            </div>
+                        <MediaCard key={row.id} mediaType={row.mediaType} item={{ ...row, mediaCover: row.mediaCover }}>
                             {canEdit &&
-                                <>
-                                    <MediaCornerCommon/>
-                                    <div className="absolute right-2 top-2 z-10 flex gap-1">
-                                        <Button
-                                            type="button"
-                                            size="iconBare"
-                                            variant="invisible"
-                                            onClick={() => setEditActivity(row)}
-                                            title={`Edit Monthly Activity for ${row.mediaName}`}
-                                        >
-                                            <Settings2 className="size-4 opacity-70 hover:opacity-90 transition-opacity"/>
-                                        </Button>
-                                    </div>
-                                </>
+                                <MediaCardRightCorner>
+                                    <MediaCardEditAction
+                                        onClick={() => setEditActivity(row)}
+                                        label={`Edit Monthly Activity for ${row.mediaName}`}
+                                    />
+                                </MediaCardRightCorner>
                             }
-                            <div className="absolute bottom-0 w-full space-y-2 rounded-b-sm p-3">
-                                <div className="flex w-full items-center justify-between space-x-2 max-sm:text-sm">
-                                    <h3 className="grow truncate font-semibold" title={row.mediaName}>
-                                        {row.mediaName}
-                                    </h3>
-                                </div>
-                                <div className="flex w-full flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
-                                    <MainThemeIcon type={row.mediaType} size={14}/>
-                                    <span>-</span>
-                                    <span>{formatMinutes(row.timeGained)}</span>
-                                    <MonthlyActivityStatusIcons row={row}/>
-                                </div>
-                            </div>
+
+                            <MediaCardFooter>
+                                <MediaCardTitle title={row.mediaName}>
+                                    {row.mediaName}
+                                </MediaCardTitle>
+                                <MediaCardMeta>
+                                    <MediaCardDetails>
+                                        {(!fixedMediaType && activeTab === "all") &&
+                                            <MediaTypeIcon mediaType={row.mediaType}/>
+                                        }
+                                        {formatMinutes(row.timeGained)}
+                                    </MediaCardDetails>
+                                    <MediaCardSignals>
+                                        <MonthlyActivityStatusIcons row={row}/>
+                                    </MediaCardSignals>
+                                </MediaCardMeta>
+                            </MediaCardFooter>
                         </MediaCard>
                     )}
                 </div>

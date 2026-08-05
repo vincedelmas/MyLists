@@ -27,7 +27,7 @@ export const LockedContent = ({ isAnonymous, title, description, showAuthButtons
             isOverlay ? "absolute inset-0 bg-background/30 backdrop-blur-[2px] z-10 p-4" : "w-full", className
         )}>
             <div className={cn("bg-popover p-4 px-6 rounded-xl border shadow-lg space-y-3 w-full", isOverlay ? "max-w-xs" : "w-full")}>
-                <LockIcon className="size-6 mx-auto text-primary"/>
+                <LockIcon className="size-6 mx-auto text-foreground"/>
                 <h4 className="font-semibold text-sm">
                     {title}
                 </h4>
@@ -36,10 +36,10 @@ export const LockedContent = ({ isAnonymous, title, description, showAuthButtons
                 </p>
                 {showAuthButtons &&
                     <div className="flex justify-center items-center gap-2 mt-4">
-                        <Button variant="ghost" size="sm" onClick={() => openLogin(location.href)}>
+                        <Button variant="ghost" onClick={() => openLogin(location.href)}>
                             Login
                         </Button>
-                        <Button size="sm" variant="emeraldy" onClick={() => openRegister(location.href)}>
+                        <Button onClick={() => openRegister(location.href)}>
                             Register
                         </Button>
                     </div>

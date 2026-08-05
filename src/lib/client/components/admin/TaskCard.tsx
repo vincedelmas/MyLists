@@ -25,17 +25,17 @@ type TaskCardProps = {
 const statusConfig = {
     completed: {
         icon: CheckCircle,
-        badge: "bg-green-500",
-        color: "text-green-500",
+        variant: "success",
+        color: "text-success",
     },
     partial: {
         icon: AlertTriangle,
-        badge: "bg-yellow-500",
-        color: "text-yellow-500",
+        variant: "warning",
+        color: "text-warning",
     },
     failed: {
         icon: XCircle,
-        badge: "bg-destructive",
+        variant: "destructive",
         color: "text-destructive",
     },
 } as const;
@@ -56,28 +56,29 @@ export function TaskCard({ task }: TaskCardProps) {
         <Card className="max-w-3xl">
             <CardHeader className="cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
                 <div className="flex items-center gap-3">
-                    <StatusIcon className={cn("size-5", config.color)}/>
+                    <StatusIcon
+                        className={cn("size-5", config.color)}
+                    />
                     <CardTitle>{logs.taskName}</CardTitle>
-                    {isExpanded ?
-                        <ChevronDown className="size-4 text-muted-foreground"/>
-                        :
-                        <ChevronRight className="size-4 text-muted-foreground"/>
+                    {isExpanded
+                        ? <ChevronDown className="size-4 text-muted-foreground"/>
+                        : <ChevronRight className="size-4 text-muted-foreground"/>
                     }
                 </div>
                 <CardAction>
                     <div className="flex items-center gap-3">
-                        <Badge className={cn(config.badge)}>
+                        <Badge variant={config.variant}>
                             {capitalize(logs.status)}
                         </Badge>
                         <Button
-                            size="xs"
-                            variant="destructive"
+                            size="icon"
+                            variant="outline"
                             onClick={(ev) => {
                                 ev.stopPropagation();
                                 deleteTaskMutation.mutate({ data: { taskId: task.taskId } });
                             }}
                         >
-                            <Trash className="size-4"/>
+                            <Trash className="size-4 text-destructive"/>
                         </Button>
                     </div>
                 </CardAction>
@@ -98,7 +99,7 @@ export function TaskCard({ task }: TaskCardProps) {
                             Steps
                         </span>
                         <span>
-                            <span className="text-green-500">
+                            <span className="text-success">
                                 {completedSteps}
                             </span>
                             {" / "}{logs.steps.length}
@@ -124,8 +125,8 @@ export function TaskCard({ task }: TaskCardProps) {
                 </div>
 
                 {logs.errorMessage &&
-                    <div className="mt-4 p-3 bg-destructive/50 rounded-md">
-                        <p className="text-sm text-destructive-foreground font-mono">
+                    <div className="mt-4 rounded-md bg-destructive/10 p-3">
+                        <p className="font-mono text-sm text-destructive">
                             {logs.errorMessage}
                         </p>
                     </div>

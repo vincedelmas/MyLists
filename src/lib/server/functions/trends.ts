@@ -15,15 +15,15 @@ export const getTrendsMedia = createServerFn({ method: "GET" })
             async () => {
                 const registry = container.registries.externalProviders;
 
-                const gamesProvider = registry.get(MediaType.GAMES);
+                // const gamesProvider = registry.get(MediaType.GAMES);
                 const seriesProvider = registry.get(MediaType.SERIES);
                 const moviesProvider = registry.get(MediaType.MOVIES);
 
-                const gamesTrends = await gamesProvider.trends?.getTrends() ?? [];
+                // const gamesTrends = await gamesProvider.trends?.getTrends() ?? [];
                 const seriesTrends = await seriesProvider.trends?.getTrends() ?? [];
                 const moviesTrends = await moviesProvider.trends?.getTrends() ?? [];
 
-                return { seriesTrends, moviesTrends, gamesTrends };
+                return { seriesTrends, moviesTrends };
             },
             { ttl: ONE_DAY_CACHE_TTL_MS },
         );

@@ -14,17 +14,16 @@ interface StatCardProps {
 
 export const SimpleStatCard = ({ title, value, icon, className, children }: StatCardProps) => {
     return (
-        <div className={cn(
-            "flex flex-col items-center justify-center p-4 px-5 bg-card border",
-            "rounded-xl overflow-hidden shadow-sm", className)
-        }>
+        <div className={cn("flex flex-col items-center justify-center p-4 px-5 border rounded-xl overflow-hidden shadow-sm",
+            className,
+        )}>
             <span className="text-xs text-muted-foreground uppercase font-medium tracking-wide mb-1">
                 {title}
             </span>
             <div className="flex items-center gap-2">
                 {icon}
                 {children ||
-                    <span className="text-3xl font-bold text-primary">
+                    <span className="text-3xl font-bold text-foreground">
                         {value ?? DEFAULT_DASH_FALLBACK}
                     </span>
                 }

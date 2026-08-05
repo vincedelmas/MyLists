@@ -15,7 +15,7 @@ export function MediaHero({ media, mediaType }: MediaHeroProps) {
         filter: "blur(20px)",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundImage: `linear-gradient(to bottom, rgba(15, 15, 15, 0.7), rgba(15, 15, 15, 1)), url(${media.imageCover})`,
+        backgroundImage: `linear-gradient(to bottom, rgba(15, 15, 15, 0.7), var(--background)), url(${media.imageCover})`,
     };
 
     return (
@@ -48,15 +48,15 @@ export function MediaHero({ media, mediaType }: MediaHeroProps) {
                                 mediaType={mediaType}
                             />
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-primary drop-shadow-lg">
+                        <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-lg md:text-6xl">
                             {media.name}
                         </h1>
                         {"originalName" in media && media.originalName && media.originalName !== media.name &&
-                            <div className="text-sm italic text-muted-foreground">
+                            <div className="text-sm italic text-white/70">
                                 <span className="font-medium">{media.originalName}</span>
                             </div>
                         }
-                        <div className="flex items-center flex-wrap gap-y-2 gap-x-6 text-sm text-primary font-medium">
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-white">
                             <MediaComponent
                                 media={media}
                                 name="underTitle"

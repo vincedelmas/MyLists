@@ -1,32 +1,26 @@
 import React from "react";
 import {Search} from "lucide-react";
-import {Input} from "@/lib/client/components/ui/input";
+import {cn} from "@/lib/utils/classnames";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
 
 
-interface SearchInputUIProps {
-    value: string;
-    disabled?: boolean;
+interface SearchInputProps extends Omit<React.ComponentProps<typeof InputGroupInput>, "className" | "type"> {
     className?: string;
-    placeholder: string;
-    onChange: (ev: React.ChangeEvent<HTMLInputElement>) => void;
+    inputClassName?: string;
 }
 
 
-export const SearchInput = ({ value, onChange, placeholder, className, disabled }: SearchInputUIProps) => {
+export const SearchInput = ({ className, inputClassName, ...props }: SearchInputProps) => {
     return (
-        <div className="relative">
-            <Search
-                size={16}
-                className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
+        <InputGroup className={className}>
+            <InputGroupInput
+                {...props}
                 type="search"
-                value={value}
-                disabled={disabled}
-                onChange={onChange}
-                placeholder={placeholder}
-                className={`pl-8 text-sm ${className}`}
+                className={cn("text-sm", inputClassName)}
             />
-        </div>
+            <InputGroupAddon>
+                <Search aria-hidden="true"/>
+            </InputGroupAddon>
+        </InputGroup>
     );
 };

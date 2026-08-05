@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {SearchType} from "@/lib/schemas";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {adminAchievementsOptions, adminArchivedTasksOptions, userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
@@ -18,11 +18,14 @@ export const useAdminUpdateUserMutation = (filters: SearchType) => {
         mutationFn: postAdminUpdateUser,
         onSuccess: async (_data, variables) => {
             if (variables.data.userId) {
-                if (variables.data.payload.deleteUser) toast.success("User deleted successfully");
-                else toast.success("User updated successfully");
+                if (variables.data.payload.deleteUser) {
+                    toast.add({title: "User deleted successfully", type: "success"});
+                } else {
+                    toast.add({title: "User updated successfully", type: "success"});
+                }
             }
             else {
-                toast.success("Global flag updated successfully");
+                toast.add({title: "Global flag updated successfully", type: "success"});
             }
 
             return queryClient.invalidateQueries({ queryKey: userAdminOptions(filters).queryKey })
@@ -71,4 +74,3 @@ export const useAdminDeleteTaskMutation = () => {
         },
     });
 };
-

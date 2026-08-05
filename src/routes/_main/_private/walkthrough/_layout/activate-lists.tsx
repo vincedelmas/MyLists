@@ -46,7 +46,7 @@ function ActiveListsOnboarding() {
                             <Settings className="size-4"/> Settings
                         </div>
                         <ArrowRight className="size-4 text-muted-foreground"/>
-                        <div className="flex items-center gap-2 px-5 py-2 bg-app-accent/20 border border-app-accent/50 rounded-lg font-semibold shadow-xs">
+                        <div className="flex items-center gap-2 px-5 py-2 bg-brand/20 border border-brand/50 rounded-lg font-semibold shadow-xs">
                             Content & Lists
                         </div>
                     </div>

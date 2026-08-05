@@ -101,13 +101,13 @@ function MediadlePage() {
                                 (userData && userData.completed) ?
                                     <div className="animate-fade-up rounded-lg bg-popover text-center p-4 max-w-100 mx-auto mb-8 border">
                                         {userData.succeeded
-                                            ? <PartyPopper className="size-6 text-app-rating mx-auto mb-1"/>
+                                            ? <PartyPopper className="size-6 text-success mx-auto mb-1"/>
                                             : <ThumbsDown className="size-6 text-destructive mx-auto mb-1"/>
                                         }
                                         <h3 className="font-semibold">
                                             {userData.succeeded ? "Congratulations!" : "Game Over :("}
                                         </h3>
-                                        <p className="text-sm text-neutral-300">
+                                        <p className="text-sm text-muted-foreground">
                                             {userData.succeeded
                                                 ? `You got it in ${userData.attempts} ${userData.attempts === 1 ? "try" : "tries"}!`
                                                 : "Better luck tomorrow!"
@@ -176,7 +176,7 @@ function MediadlePage() {
                                                 </SearchContainer>
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button className="flex-1" variant="emeraldy" onClick={onSkipClick}>
+                                                <Button className="flex-1" variant="secondary" onClick={onSkipClick}>
                                                     Skip
                                                 </Button>
                                                 <Button className="flex-2" onClick={onGuessClick} disabled={!search.trim()}>
@@ -253,7 +253,7 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
             </div>
 
             <div className={cn("mb-10 transition-all", isAnonymous && "blur-xs pointer-events-none select-none")}>
-                <h4 className="text-sm font-semibold text-primary mb-3">
+                <h4 className="text-sm font-semibold text-foreground mb-3">
                     Guess Distribution
                 </h4>
                 <div className="space-y-3">
@@ -263,13 +263,13 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
 
                         return (
                             <div key={num} className="flex items-center gap-3 text-sm">
-                                <span className="w-2 font-mono text-primary">{num}</span>
+                                <span className="w-2 font-mono text-foreground">{num}</span>
                                 <div className="flex-1 h-6 bg-popover rounded-r-md overflow-hidden flex items-center border border-border/40">
                                     <div
                                         style={{ width: `${Math.max(percentage, 8)}%` }}
-                                        className="h-full transition-all duration-500 bg-app-accent/50 rounded-r-md"
+                                        className="h-full transition-all duration-500 bg-primary rounded-r-md"
                                     />
-                                    <span className="ml-2 text-xs font-bold text-primary">
+                                    <span className="ml-2 text-xs font-bold text-foreground">
                                         {count}
                                     </span>
                                 </div>

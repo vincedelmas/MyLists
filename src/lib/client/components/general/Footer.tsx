@@ -10,10 +10,10 @@ export const Footer = () => {
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="w-full border-t border-t-neutral-700 bg-background mt-20">
+        <footer className="mt-20 w-full border-t bg-background">
             <div className="mx-auto max-w-7xl px-4 py-6">
-                <div className="grid grid-cols-12 gap-12 max-sm:grid-cols-1 max-sm:gap-8 max-sm:mb-8">
-                    <div className="md:col-span-6 flex flex-col gap-4">
+                <div className="mb-8 grid grid-cols-1 gap-8 sm:mb-0 sm:grid-cols-2 sm:gap-12 md:grid-cols-12">
+                    <div className="flex flex-col gap-4 sm:col-span-2 md:col-span-6">
                         <div className="flex items-center gap-2 text-xl font-bold">
                             <img width={20} alt="MyLists logo" src="/favicon.ico"/>
                             <span>MyLists.info</span>
@@ -24,16 +24,31 @@ export const Footer = () => {
                             compare progress with friends, and climb the Hall of Fame.
                         </p>
                         <div className="flex flex-wrap items-center gap-3 mt-2">
-                            <a href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`}>
-                                <Button variant="outline" size="sm" className="gap-2">
-                                    <Mail className="size-4"/> Contact Me
-                                </Button>
-                            </a>
-                            <a target="_blank" rel="noopener noreferrer" href="https://www.buymeacoffee.com/crossoufire">
-                                <Button variant="emeraldy" size="sm">
-                                    <Coffee className="size-4"/> Buy Me A Coffee
-                                </Button>
-                            </a>
+                            <Button
+                                variant="outline"
+                                nativeButton={false}
+                                render={
+                                    <a
+                                        aria-label="Contact MyLists by email"
+                                        href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`}
+                                    />
+                                }
+                            >
+                                <Mail data-icon="inline-start"/> Contact Me
+                            </Button>
+                            <Button
+                                nativeButton={false}
+                                render={
+                                    <a
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label="Support MyLists on Buy Me a Coffee"
+                                        href="https://www.buymeacoffee.com/crossoufire"
+                                    />
+                                }
+                            >
+                                <Coffee data-icon="inline-start"/> Buy Me A Coffee
+                            </Button>
                         </div>
                     </div>
                     <div className="md:col-span-3">
@@ -42,12 +57,12 @@ export const Footer = () => {
                         </h4>
                         <ul className="space-y-3 text-sm text-muted-foreground">
                             <li>
-                                <a href="https://github.com/Crossoufire/MyLists" className="flex items-center gap-2">
+                                <a href="https://github.com/Crossoufire/MyLists" className="flex items-center gap-2 transition-colors hover:text-brand">
                                     <FaGithub className="size-4"/> GitHub
                                 </a>
                             </li>
                             <li>
-                                <Link to="/features" className="flex items-center gap-2">
+                                <Link to="/features" className="flex items-center gap-2 transition-colors hover:text-brand">
                                     <Activity className="size-4"/> News & Features
                                 </Link>
                             </li>
@@ -59,12 +74,12 @@ export const Footer = () => {
                         </h4>
                         <ul className="space-y-3 text-sm text-muted-foreground">
                             <li>
-                                <Link to="/about">
+                                <Link to="/about" className="transition-colors hover:text-brand">
                                     About the Project
                                 </Link>
                             </li>
                             <li>
-                                <Link to="/privacy-policy">
+                                <Link to="/privacy-policy" className="transition-colors hover:text-brand">
                                     Privacy Policy
                                 </Link>
                             </li>

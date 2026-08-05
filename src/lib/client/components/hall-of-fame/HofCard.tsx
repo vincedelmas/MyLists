@@ -32,14 +32,14 @@ export const HofCard = ({ userData }: HofCardProps) => {
         <Card
             key={userData.name}
             onClick={handleMobileToggle}
-            className={cn("p-2 py-0 mb-3 bg-card", currentUser?.id === userData.id && "bg-app-accent/5 border-app-accent/50")}
+            className={cn("mb-3 p-2 py-0", currentUser?.id === userData.id && "bg-brand/5 ring-brand/50")}
         >
             <CardContent className="p-0">
                 <div className="grid grid-cols-12 py-4">
                     <div className="col-span-1 max-sm:col-span-2">
                         <div className="flex items-center ml-2 text-lg h-full font-medium">
                             {userData.rank === 1
-                                ? <Trophy className="text-app-rating size-6"/>
+                                ? <Trophy className="text-achievement size-6"/>
                                 : <>#{userData.rank}</>
                             }
                         </div>
@@ -59,7 +59,7 @@ export const HofCard = ({ userData }: HofCardProps) => {
                                 </h3>
                                 <div className="-ml-1.5">
                                     <div className="w-18 h-7 flex items-center justify-center text-left rounded-full font-bold
-                                    text-xs bg-app-accent text-black border-4 border-background shadow-lg">
+                                    text-xs bg-primary text-primary-foreground border-4 border-background shadow-lg">
                                         Lvl. {Math.floor(formatLevel(userData.totalTime))}
                                     </div>
                                 </div>
@@ -84,8 +84,8 @@ export const HofCard = ({ userData }: HofCardProps) => {
                                             mediaType={setting.mediaType}
                                             timeSpentMin={setting.timeSpent}
                                         />
-                                        <div className={cn("text-xs font-semibold text-muted-foreground capitalize",
-                                            setting.active && "group-hover:text-app-accent"
+                                        <div className={cn("text-xs font-medium text-muted-foreground capitalize",
+                                            setting.active && "group-hover:text-brand"
                                         )}>
                                             {setting.mediaType}
                                         </div>

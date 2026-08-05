@@ -3,8 +3,8 @@ import {Activity} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Button} from "@/lib/client/components/ui/button";
 import {UserUpdateType} from "@/lib/types/query.options.types";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {UserUpdate} from "@/lib/client/components/general/UserUpdate";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
@@ -28,15 +28,15 @@ export const UserUpdates = ({ username, updates }: UserUpdatesProps) => {
     };
 
     return (
-        <Card className={cn(updates.length === 0 && "h-fit")}>
+        <Card>
             <CardHeader>
                 <CardTitle>Recent Feed</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
                 {updates.length === 0 ?
                     <EmptyState
                         icon={Activity}
-                        className="py-2"
+                        className="py-4"
                         message="No recent feed found."
                     />
                     :
@@ -54,11 +54,9 @@ export const UserUpdates = ({ username, updates }: UserUpdatesProps) => {
                     </div>
                 }
                 {updates.length !== 0 &&
-                    <Button className="mt-4" variant="dashed" asChild>
-                        <Link to="/profile/$username/history" params={{ username }}>
-                            View all Feed
-                        </Link>
-                    </Button>
+                    <Link params={{ username }} to="/profile/$username/history" className={cn(buttonVariants({ variant: "dashed" }))}>
+                        View all Feed
+                    </Link>
                 }
             </CardContent>
         </Card>

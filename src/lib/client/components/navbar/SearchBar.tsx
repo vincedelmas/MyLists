@@ -1,19 +1,18 @@
 import React, {useState} from "react";
-import {cn} from "@/lib/utils/classnames";
 import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Input} from "@/lib/client/components/ui/input";
-import {formatDate} from "@/lib/utils/date-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {ChevronLeft, ChevronRight, Search} from "lucide-react";
+import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
-import {ChevronLeft, ChevronRight, Loader2, Search, X} from "lucide-react";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {Link, LinkProps, useRouter, useRouterState} from "@tanstack/react-router";
+import {MediaSearchResult} from "@/lib/client/components/media/base/MediaSearchResult";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
@@ -25,7 +24,6 @@ interface SearchBarProps {
 export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     const { currentUser } = useAuth();
     const [page, setPage] = useState(1);
-    const [selectOpen, setSelectOpen] = useState(false);
     const [prevSelector, setPrevSelector] = useState(currentUser?.searchSelector);
     const [selectDrop, setSelectDrop] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.USERS);
     const { search, setSearch, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer({ onReset: () => setPage(1) });
@@ -36,67 +34,61 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
         setSelectDrop(currentUser?.searchSelector ?? ApiProviderType.USERS);
     }
 
+    const searchProviderItems = [
+        { label: "Media", value: ApiProviderType.TMDB },
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS)
+            ? [{ label: "Books", value: ApiProviderType.BOOKS }]
+            : []),
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES)
+            ? [{ label: "Games", value: ApiProviderType.IGDB }]
+            : []),
+        ...(resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA)
+            ? [{ label: "Manga", value: ApiProviderType.MANGA }]
+            : []),
+        { label: "Users", value: ApiProviderType.USERS },
+    ];
+
     const handleInputChange = (ev: any) => {
         setPage(1);
         setSearch(ev.target.value);
     };
 
-    const handleValueChange = (value: string) => {
+    const handleValueChange = (value: ApiProviderType | null) => {
+        if (value === null) return;
         reset();
-        setSelectDrop(value as ApiProviderType);
+        setSelectDrop(value);
     };
 
     return (
         <div ref={containerRef}>
-            <div className={cn("flex items-center bg-background border rounded-lg transition-all duration-200 overflow-hidden",
-                "focus-within:ring-2 focus-within:ring-app-accent/50 focus-within:border-app-accent",
-                selectOpen ? "ring-2 ring-app-accent/50 border-app-accent" : "border"
-            )}>
-                <Select value={selectDrop} onValueChange={handleValueChange} onOpenChange={setSelectOpen}>
-                    <SelectTrigger className="h-10 rounded-none w-30 border-y-0 border-l-0 border-r border-input bg-accent/50
-                    focus:ring-0 focus:ring-offset-0">
-                        <SelectValue/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            <SelectItem value={ApiProviderType.TMDB}>
-                                Media
-                            </SelectItem>
-                            {resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS) &&
-                                <SelectItem value={ApiProviderType.BOOKS}>
-                                    Books
-                                </SelectItem>
-                            }
-                            {resolveMediaTypeActive(currentUser?.settings, MediaType.GAMES) &&
-                                <SelectItem value={ApiProviderType.IGDB}>
-                                    Games
-                                </SelectItem>
-                            }
-                            {resolveMediaTypeActive(currentUser?.settings, MediaType.MANGA) &&
-                                <SelectItem value={ApiProviderType.MANGA}>
-                                    Manga
-                                </SelectItem>
-                            }
-                            <SelectItem value={ApiProviderType.USERS}>
-                                Users
-                            </SelectItem>
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
-                <Input
+            <InputGroup>
+                <InputGroupInput
+                    type="search"
                     value={search}
-                    inputMode="search"
                     onChange={handleInputChange}
-                    placeholder="Search for media/users..."
-                    className="flex-1 text-sm border-none focus:outline-none focus:ring-0 dark:bg-background"
+                    aria-label="Search for media or users"
+                    placeholder="Search for media / users..."
                 />
-                <div className="px-3 text-muted-foreground">
-                    {isOpen
-                        ? <X className="size-4 cursor-pointer" onClick={reset}/>
-                        : <Search className="size-4"/>
-                    }
-                </div>
-            </div>
+                <InputGroupAddon align="inline-start">
+                    <Search aria-hidden="true"/>
+                </InputGroupAddon>
+                <InputGroupAddon align="inline-end" className="h-full p-0 has-[>button]:mr-0">
+                    <Select value={selectDrop} items={searchProviderItems} onValueChange={handleValueChange}>
+                        <SelectTrigger variant="inputGroup" aria-label="Search provider" className="min-w-25">
+                            <SelectValue/>
+                        </SelectTrigger>
+                        <SelectContent align="start">
+                            <SelectGroup>
+                                {searchProviderItems.map((item) =>
+                                    <SelectItem key={item.value} value={item.value}>
+                                        {item.label}
+                                    </SelectItem>
+                                )}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </InputGroupAddon>
+            </InputGroup>
 
             <SearchContainer
                 error={error}
@@ -107,7 +99,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                 debouncedSearch={debouncedSearch}
                 hasResults={!!searchResults?.data.length}
             >
-                <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-91">
+                <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-90">
                     {searchResults?.data.map((item) =>
                         <SearchComponent
                             item={item}
@@ -117,23 +109,27 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                         />
                     )}
                     {searchResults && searchResults.data.length > 0 &&
-                        <div className="flex justify-end gap-2 items-center p-4">
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={page === 1}
-                                onClick={() => setPage((p) => p - 1)}
-                            >
-                                <ChevronLeft/>
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={!searchResults?.hasNextPage}
-                                onClick={() => setPage((p) => p + 1)}
-                            >
-                                <ChevronRight/>
-                            </Button>
+                        <div className="flex justify-end items-center p-4">
+                            <ButtonGroup aria-label="Search result pages">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={page === 1}
+                                    aria-label="Previous search result page"
+                                    onClick={() => setPage((p) => p - 1)}
+                                >
+                                    <ChevronLeft/> Prev.
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    aria-label="Next search result page"
+                                    disabled={!searchResults?.hasNextPage}
+                                    onClick={() => setPage((p) => p + 1)}
+                                >
+                                    Next <ChevronRight/>
+                                </Button>
+                            </ButtonGroup>
                         </div>
                     }
                 </div>
@@ -181,42 +177,10 @@ const SearchComponent = ({ item, resetSearch, setMobileMenu }: SearchComponentPr
 
     return (
         <Link {...destination} onClick={handleLinkClick} disabled={isLoading}>
-            <div key={item.id} className={cn("cursor-pointer p-3 hover:bg-popover/50", isLoadingItem && "cursor-auto")}>
-                <div className="flex w-full gap-4 items-center">
-                    <div className="relative shrink-0">
-                        {item.itemType === ApiProviderType.USERS ?
-                            <ProfileIcon
-                                fallbackSize="text-lg"
-                                className="size-14 border-2"
-                                user={{ name: item.name, image: item.image }}
-                            />
-                            :
-                            <img
-                                loading="lazy"
-                                alt={item.name}
-                                src={item.image}
-                                className={cn("w-16 aspect-2/3 rounded-sm transition-opacity duration-200", isLoadingItem && "opacity-20")}
-                            />
-                        }
-                        {isLoadingItem &&
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <Loader2 className="size-8 animate-spin text-app-accent"/>
-                            </div>
-                        }
-                    </div>
-                    <div className={cn("flex-1 min-w-0 transition-opacity duration-200", isLoadingItem && "opacity-40")}>
-                        <div className="font-semibold mb-2 line-clamp-2">
-                            {item.name}
-                        </div>
-                        <div className="text-primary capitalize">
-                            {item.itemType}
-                        </div>
-                        <div className="text-muted-foreground text-sm">
-                            {formatDate(item.date)}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <MediaSearchResult
+                item={item}
+                isPending={isLoadingItem}
+            />
             <Separator className="m-0"/>
         </Link>
     );

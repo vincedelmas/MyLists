@@ -1,10 +1,12 @@
+import React from "react";
 import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {BookOpen, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -13,9 +15,8 @@ import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {communityCollectionsSchema, CommunitySearch} from "@/lib/schemas";
 import {CollectionCard} from "@/lib/client/components/collections/CollectionCard";
 import {communityCollectionsOptions} from "@/lib/client/react-query/query-options";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import React from "react";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/discover")({
@@ -31,10 +32,10 @@ export const Route = createFileRoute("/_main/_viewer/collections/discover")({
 function CollectionsDiscoverPage() {
     const { isAnonymous } = useAuth();
     const filters = Route.useSearch();
-    const mediaTypes = Object.values(MediaType);
     const { page = 1, search = "", mediaType } = filters;
     const apiData = useSuspenseQuery(communityCollectionsOptions(filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<CommunitySearch>({ search });
+    const mediaTypeItems = createMediaSelectItems(ALL_MEDIA_TYPES, { leading: "all", leadingLabel: "All Types" });
 
     return (
         <PageTitle title="Community collections" subtitle="Public collections created and shared by the community.">
@@ -51,6 +52,7 @@ function CollectionsDiscoverPage() {
 
                     <div className={cn("sm:w-40 col-span-1", !isAnonymous && "sm:mr-auto")}>
                         <Select
+                            items={mediaTypeItems}
                             value={mediaType ?? "all"}
                             onValueChange={(val) => {
                                 return updateFilters({ page: 1, mediaType: val === "all" ? undefined : (val as MediaType) })
@@ -60,28 +62,21 @@ function CollectionsDiscoverPage() {
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">
-                                    <div className="flex items-center gap-2">
-                                        <MainThemeIcon type="all"/>
-                                        <span>All Types</span>
-                                    </div>
-                                </SelectItem>
-                                {mediaTypes.map((mediaType) =>
-                                    <SelectItem key={mediaType} value={mediaType} className="capitalize">
-                                        <MainThemeIcon type={mediaType} className="size-3.5"/>
-                                        {mediaType}
-                                    </SelectItem>
-                                )}
+                                <SelectGroup>
+                                    {mediaTypeItems.map((item) =>
+                                        <SelectItem key={item.value} value={item.value} className="capitalize">
+                                            {item.label}
+                                        </SelectItem>
+                                    )}
+                                </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>
 
                     {!isAnonymous &&
-                        <Button asChild className="col-span-1 justify-center whitespace-nowrap sm:w-auto" size="sm" variant="emeraldy">
-                            <Link to="/collections/create">
-                                <Plus className="size-4 shrink-0"/> New collection
-                            </Link>
-                        </Button>
+                        <Link to="/collections/create" className={buttonVariants({ className: "max-sm:max-w-36" })}>
+                            <Plus className="shrink-0"/> New collection
+                        </Link>
                     }
                 </div>
 

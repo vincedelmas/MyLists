@@ -14,7 +14,7 @@ export const GamesOverTitle = ({ mediaType, media }: GamesDetailsProps<typeof Me
     return (
         <>
             {developers.slice(0, 3).map((dev) =>
-                <Badge key={dev.id} variant="black">
+                <Badge key={dev.id} variant="overlay">
                     <Link to="/details/$mediaType/$job/$name" params={{ mediaType, job: "creator", name: dev.name }}>
                         {dev.name}
                     </Link>

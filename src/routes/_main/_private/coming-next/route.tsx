@@ -5,10 +5,10 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {ComingNextItem} from "@/lib/types/query.options.types";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {upcomingOptions} from "@/lib/client/react-query/query-options";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {ComingNextSection} from "@/lib/client/components/coming-next/ComingNextSection";
 import {compareCalendarDates, formatCalendarRelativeDate} from "@/lib/utils/date-formatting";
 
@@ -24,6 +24,8 @@ export const Route = createFileRoute("/_main/_private/coming-next")({
 function ComingNextPage() {
     const apiData = useSuspenseQuery(upcomingOptions).data;
     const mediaTypes = apiData.map((next) => next.mediaType);
+    const mediaTabs = createMediaTabItems(mediaTypes, { leading: "all" });
+    
     const [activeTab, setActiveTab] = useState<"all" | MediaType>("all");
     const allItems = apiData.flatMap(g => g.items.map(item => ({ ...item, mediaType: g.mediaType })));
     const filteredByTab = activeTab === "all" ? allItems : allItems.filter((item) => item.mediaType === activeTab);
@@ -62,19 +64,6 @@ function ComingNextPage() {
         }
     });
 
-    const mediaTabs: TabItem<"all" | MediaType>[] = [
-        {
-            id: "all",
-            label: "All",
-            isAccent: true,
-            icon: <MainThemeIcon size={15} type="all"/>,
-        },
-        ...mediaTypes.map((mediaType) => ({
-            id: mediaType,
-            label: mediaType,
-            icon: <MainThemeIcon size={15} type={mediaType}/>,
-        })),
-    ];
 
     return (
         <PageTitle title="Coming Next" subtitle="Your personalized schedule for upcoming episodes, premieres, and releases.">

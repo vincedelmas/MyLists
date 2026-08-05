@@ -1,21 +1,15 @@
 import React from "react";
-import {cn} from "@/lib/utils/classnames";
 import {Status} from "@/lib/utils/enums";
+import {cn} from "@/lib/utils/classnames";
+import {Filter, Grid2X2, List} from "lucide-react";
 import {MediaListArgs, SearchType} from "@/lib/schemas";
 import {Button} from "@/lib/client/components/ui/button";
 import {ListPagination} from "@/lib/types/query.options.types";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
-import {ArrowUpDown, ChevronDown, Filter, Grid2X2, List, ListFilter} from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuTrigger
-} from "@/lib/client/components/ui/dropdown-menu";
+import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
 interface HeaderProps {
@@ -60,33 +54,13 @@ export const Header = (props: HeaderProps) => {
                 </div>
 
                 <div className="flex items-center justify-start gap-3">
-                    <Button
-                        variant="outline"
-                        onClick={onFilterClick}
-                        title="Advanced Filters"
-                    >
-                        <Filter className="size-4"/> Filters
+                    <Button variant="outline" onClick={onFilterClick} title="Advanced Filters">
+                        <Filter/> Filters
                     </Button>
-                    <div className="flex h-9 items-center justify-center rounded-md border bg-input/30 px-1">
-                        <button
-                            onClick={onGridClick}
-                            className={cn("p-1.5 rounded-sm transition-all", isGrid
-                                ? "bg-background shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground",
-                            )}
-                        >
-                            <Grid2X2 className="size-4"/>
-                        </button>
-                        <button
-                            onClick={onGridClick}
-                            className={cn("p-1.5 rounded-sm transition-all", isGrid
-                                ? "text-muted-foreground hover:text-foreground"
-                                : "bg-background shadow-sm text-foreground",
-                            )}
-                        >
-                            <List className="size-4"/>
-                        </button>
-                    </div>
+                    <ViewModeToggle
+                        isGrid={isGrid}
+                        onGridClick={onGridClick}
+                    />
                 </div>
             </div>
         );
@@ -107,45 +81,61 @@ export const Header = (props: HeaderProps) => {
                     placeholder={`Search in ${filters.status ?? "All Media"}...`}
                 />
             </div>
-            <Button
-                variant="outline"
-                onClick={onFilterClick}
-                title="Advanced Filters"
-                className="w-full md:w-auto"
-            >
-                <Filter className="size-4"/> Filters
-            </Button>
             <SortComponent
                 className="w-45"
                 applySorting={onSortChange}
                 sorting={pagination.sorting}
                 allSorting={pagination.availableSorting}
             />
-            <div className="h-9 flex items-center rounded-md border bg-input/30 px-1">
-                <button
-                    onClick={onGridClick}
-                    className={cn(
-                        "p-1.5 rounded-sm transition-all",
-                        isGrid
-                            ? "bg-background shadow-sm text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                    )}
-                >
-                    <Grid2X2 className="size-4"/>
-                </button>
-                <button
-                    onClick={onGridClick}
-                    className={cn(
-                        "p-1.5 rounded-sm transition-all",
-                        isGrid
-                            ? "text-muted-foreground hover:text-foreground"
-                            : "bg-background shadow-sm text-foreground",
-                    )}
-                >
-                    <List className="size-4"/>
-                </button>
-            </div>
+            <Button
+                variant="outline"
+                onClick={onFilterClick}
+                title="Advanced Filters"
+                className="w-full md:w-auto"
+            >
+                <Filter/> Filters
+            </Button>
+            <ViewModeToggle
+                isGrid={isGrid}
+                onGridClick={onGridClick}
+            />
         </div>
+    );
+};
+
+
+interface ViewModeToggleProps {
+    isGrid: boolean;
+    onGridClick: () => void;
+}
+
+
+const ViewModeToggle = ({ isGrid, onGridClick }: ViewModeToggleProps) => {
+    const handleValueChange = (value: string[]) => {
+        const nextMode = value[0];
+        if (!nextMode) return;
+
+        const nextIsGrid = nextMode === "grid";
+        if (nextIsGrid !== isGrid) {
+            onGridClick();
+        }
+    };
+
+    return (
+        <ToggleGroup
+            spacing={0}
+            variant="brand"
+            onValueChange={handleValueChange}
+            value={[isGrid ? "grid" : "table"]}
+            aria-label="Media list display mode"
+        >
+            <ToggleGroupItem value="grid" aria-label="Grid view" title="Grid view">
+                <Grid2X2/>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="Table view" title="Table view">
+                <List/>
+            </ToggleGroupItem>
+        </ToggleGroup>
     );
 };
 
@@ -159,44 +149,30 @@ interface StatusComponentProps {
 
 
 const StatusComponent = ({ filters, allStatuses, onStatusChange, className }: StatusComponentProps) => {
-    const activeStatus = filters.status?.[0] ?? "All Media";
-    const allStatusesWithAll = ["All Media", ...allStatuses];
+    const selectItems = ["All Media", ...allStatuses].map(status => ({ label: status, value: status }));
+    const selectedStatus = filters.status?.find(status => allStatuses.includes(status)) ?? "All Media";
 
-    const handleStatusChange = (status: string) => {
-        if (status === "All Media") {
-            return onStatusChange({ status: [] });
-        }
+    const handleStatusChange = (status: string | null) => {
+        if (status === null) return;
+        if (status === "All Media") return onStatusChange({ status: [] });
         onStatusChange({ status: [...(filters.status || []), status as Status] });
     };
 
-    const checkIfChecked = (status: string) => {
-        if (status === "All Media" && activeStatus === "All Media") return true;
-        return filters.status ? filters.status.includes(status as Status) : false;
-    }
-
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" className={cn("justify-between focus:outline-none focus:ring-none", className)}>
-                    <span className="flex items-center gap-2 truncate">
-                        <ListFilter className="size-4 text-muted-foreground"/>
-                        <span>{activeStatus}</span>
-                    </span>
-                    <ChevronDown className="size-4 opacity-50"/>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-40 max-w-45">
-                {allStatusesWithAll.map((s) =>
-                    <DropdownMenuCheckboxItem
-                        key={s}
-                        checked={checkIfChecked(s)}
-                        onSelect={() => handleStatusChange(s)}
-                    >
-                        {s}
-                    </DropdownMenuCheckboxItem>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <Select items={selectItems} value={selectedStatus} onValueChange={(val) => handleStatusChange(val)}>
+            <SelectTrigger className={cn("w-full max-w-48", className)}>
+                <SelectValue/>
+            </SelectTrigger>
+            <SelectContent>
+                <SelectGroup>
+                    {selectItems.map((item) =>
+                        <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                        </SelectItem>
+                    )}
+                </SelectGroup>
+            </SelectContent>
+        </Select>
     );
 };
 
@@ -210,30 +186,28 @@ interface SortComponentProps {
 
 
 const SortComponent = ({ sorting, allSorting, applySorting, className }: SortComponentProps) => {
-    const handleSortChange = (sort: string) => {
+    const sortItems = allSorting.map(sort => ({ label: sort, value: sort }));
+    const selectedSorting = allSorting.includes(sorting) ? sorting : (allSorting[0] ?? null);
+
+    const handleSortChange = (sort: string | null) => {
+        if (sort === null) return;
         applySorting({ sorting: sort });
     };
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" className={cn("justify-between focus-visible:ring-none", className)}>
-                    <span className="flex items-center gap-2 truncate">
-                        <ArrowUpDown className="size-4 text-muted-foreground"/>
-                        <span>{sorting}</span>
-                    </span>
-                    <ChevronDown className="size-4 opacity-50"/>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-40 max-w-45">
-                <DropdownMenuRadioGroup value={sorting} onValueChange={handleSortChange}>
-                    {allSorting.map((sort) =>
-                        <DropdownMenuRadioItem key={sort} value={sort}>
-                            {sort}
-                        </DropdownMenuRadioItem>
+        <Select items={sortItems} value={selectedSorting} onValueChange={(val) => handleSortChange(val)}>
+            <SelectTrigger className={cn("w-full max-w-48", className)}>
+                <SelectValue/>
+            </SelectTrigger>
+            <SelectContent>
+                <SelectGroup>
+                    {sortItems.map((item) =>
+                        <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                        </SelectItem>
                     )}
-                </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
+                </SelectGroup>
+            </SelectContent>
+        </Select>
     );
 };

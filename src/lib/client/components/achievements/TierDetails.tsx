@@ -18,13 +18,13 @@ interface TierDetailsProps {
 export const TiersDetails = ({ achievement }: TierDetailsProps) => {
     return (
         <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full">
-                    View Tiers
-                </Button>
+            <PopoverTrigger render={<Button variant="outline" className="w-full"/>}>
+                View Tiers
             </PopoverTrigger>
-            <PopoverContent className="w-full" align="center">
-                <h3 className="font-semibold mb-2">{achievement.name} Tiers</h3>
+            <PopoverContent className="w-(--anchor-width)" align="center" positionMethod="fixed">
+                <h3 className="font-semibold">
+                    {achievement.name} Tiers
+                </h3>
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -48,9 +48,9 @@ export const TiersDetails = ({ achievement }: TierDetailsProps) => {
                                     <TableCell>
                                         <div className="flex items-center space-x-2">
                                             <Progress
-                                                className="w-24 h-2"
+                                                className="w-24"
                                                 value={tier.progress}
-                                                color={"rgba(216,216,216,0.89)"}
+                                                color="var(--primary)"
                                             />
                                             <span className="text-xs">
                                                 {tier.count}/{tier.criteria.count}

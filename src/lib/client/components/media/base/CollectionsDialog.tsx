@@ -1,17 +1,21 @@
-import {useState} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
+import React, {useId, useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
-import {cn} from "@/lib/utils/classnames";
-import {displayContainerError} from "@/lib/utils/error-display";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {DialogRootChangeEventDetails} from "@base-ui/react";
+import {Checkbox} from "@/lib/client/components/ui/checkbox";
+import {ChevronRight, Folder, PlusCircle} from "lucide-react";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {displayContainerError} from "@/lib/utils/error-display";
+import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {Check, ChevronRight, Folder, LoaderCircle, PlusCircle} from "lucide-react";
-import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {userCollectionMembershipsOptions} from "@/lib/client/react-query/query-options";
-import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle, CredenzaTrigger} from "@/lib/client/components/ui/credenza";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "@/lib/client/components/ui/dialog";
 import {useAddMediaToCollectionMutation, useCreateCollectionMutation, useRemoveMediaFromCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 
@@ -22,6 +26,7 @@ interface CollectionsDialogProps {
 
 
 export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps) => {
+    const fieldId = useId();
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
@@ -68,29 +73,30 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
         }
     };
 
+    const onOpenChange = (open: boolean, ev: DialogRootChangeEventDetails) => {
+        if (!open && ev.reason === "escape-key" && searchQuery.length > 0) {
+            ev.cancel();
+            setSearchQuery("");
+            return;
+        }
+        setIsOpen(open);
+    };
+
     return (
-        <Credenza open={isOpen} onOpenChange={setIsOpen}>
-            <CredenzaTrigger className="text-muted-foreground text-sm -mb-1">
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogTrigger className="-mb-1 text-sm font-medium text-muted-foreground hover:text-brand">
                 Manage
-            </CredenzaTrigger>
-            <CredenzaContent
-                className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full"
-                onEscapeKeyDown={(ev) => {
-                    if (searchQuery.length > 0) {
-                        ev.preventDefault();
-                        setSearchQuery("");
-                    }
-                }}
-            >
+            </DialogTrigger>
+            <DialogContent className="w-100 p-0 overflow-hidden bg-popover shadow-2xl max-sm:w-full">
                 <div className="p-6 pb-4">
-                    <CredenzaHeader className="p-0 mb-6 mt-2">
-                        <CredenzaTitle>
+                    <DialogHeader className="p-0 mb-6 mt-2">
+                        <DialogTitle>
                             Manage Collections
-                        </CredenzaTitle>
-                        <CredenzaDescription>
+                        </DialogTitle>
+                        <DialogDescription>
                             Add this {mediaType} to your own collections.
-                        </CredenzaDescription>
-                    </CredenzaHeader>
+                        </DialogDescription>
+                    </DialogHeader>
 
                     <div className="relative group">
                         <Input
@@ -98,7 +104,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                             value={searchQuery}
                             disabled={isLoading}
                             onKeyDown={onSearchKeyDown}
-                            className="h-11 bg-popover/50"
+                            className="h-9 bg-popover/50"
                             placeholder="Find or create a collection..."
                             onChange={(ev) => setSearchQuery(ev.target.value)}
                         />
@@ -108,8 +114,7 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                                     size="sm"
                                     disabled={isPending}
                                     onClick={handleCreate}
-                                    className="h-7 bg-app-accent/50 hover:bg-app-accent/70 text-[10px]
-                                    font-bold px-2.5 rounded shadow-sm transition-all text-primary/90"
+                                    className="text-[10px]"
                                 >
                                     {createMutation.isPending ? "..." : "CREATE"}
                                 </Button>
@@ -126,16 +131,16 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                     <div className="h-70 overflow-y-auto p-2 scrollbar-thin">
                         {isLoading ?
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-                                <LoaderCircle className="size-6 animate-spin"/>
+                                <Spinner className="size-6" aria-hidden="true"/>
                                 <span className="text-xs font-medium">Syncing...</span>
                             </div>
                             : filteredCollections.length === 0 ?
                                 <div className="flex flex-col items-center justify-center h-full text-center p-6">
                                     <PlusCircle className="size-8 text-muted-foreground mb-3 opacity-50"/>
-                                    <p className="text-sm text-zinc-400 font-medium">
+                                    <p className="text-sm text-muted-foreground font-medium">
                                         No collection found
                                     </p>
-                                    <p className="text-xs text-zinc-600 mt-1">
+                                    <p className="text-xs text-muted-foreground/70 mt-1">
                                         {searchQuery.trim().length > 0 && searchQuery.trim().length < 3
                                             ? "Use at least 3 characters to create a collection."
                                             : searchQuery
@@ -146,53 +151,35 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                                 </div>
                                 :
                                 <div className="grid gap-0.5">
-                                    {filteredCollections.map((collection) => {
+                                    {filteredCollections.map((collection, idx) => {
+                                        const checkboxId = `${fieldId}-${idx}`;
                                         const isActive = activeIds.has(collection.id);
 
                                         return (
-                                            <button
+                                            <Field
                                                 key={collection.id}
-                                                disabled={isPending}
-                                                onClick={() => handleToggle(collection)}
-                                                className={cn("flex items-center justify-between w-full px-3 py-3 " +
-                                                    "rounded-lg text-sm transition-all group", isActive ?
-                                                    "bg-app-accent/4 text-app-accent" : "text-primary/90 hover:bg-popover"
-                                                )}
+                                                orientation="horizontal"
+                                                data-disabled={isPending}
+                                                className={cn("rounded-lg p-3", isActive ? "bg-brand/4 text-brand" : "hover:bg-popover")}
                                             >
-                                                <div className="flex min-w-0 flex-1 items-start gap-3">
-                                                    <div className={cn("size-4.5 rounded border flex items-center " +
-                                                        "justify-center transition-all shrink-0 mt-0.5", isActive
-                                                        ? "bg-app-accent border-app-accent scale-110"
-                                                        : "bg-popover group-hover:border-zinc-500",
-                                                    )}>
-                                                        {isActive &&
-                                                            <Check className="size-3 text-popover stroke-4"/>
-                                                        }
-                                                    </div>
-                                                    <div className="min-w-0 space-y-1 text-left">
-                                                        <span className="font-medium line-clamp-2 leading-snug" title={collection.title}>
+                                                <Checkbox
+                                                    id={checkboxId}
+                                                    checked={isActive}
+                                                    disabled={isPending}
+                                                    onCheckedChange={() => handleToggle(collection)}
+                                                />
+                                                <FieldLabel htmlFor={checkboxId} className="min-w-0 cursor-pointer">
+                                                    <div className="min-w-0 space-y-1">
+                                                        <span className="font-medium line-clamp-2" title={collection.title}>
                                                             {collection.title}
                                                         </span>
-                                                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-                                                            <span className="inline-flex items-center gap-1 capitalize">
-                                                                <PrivacyIcon type={collection.privacy}/>
-                                                            </span>
-                                                            <span>
-                                                                {collection.itemsCount} item{collection.itemsCount > 1 ? "s" : ""}
-                                                            </span>
+                                                        <div className="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
+                                                            <PrivacyIcon type={collection.privacy}/>
+                                                            {collection.itemsCount} item{collection.itemsCount > 1 ? "s" : ""}
                                                         </div>
                                                     </div>
-                                                </div>
-
-                                                {isActive &&
-                                                    <div className="ml-3 flex shrink-0 items-center gap-1.5 animate-in fade-in zoom-in-95">
-                                                        <div className="size-1.5 rounded-full bg-app-accent"/>
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest">
-                                                            active
-                                                        </span>
-                                                    </div>
-                                                }
-                                            </button>
+                                                </FieldLabel>
+                                            </Field>
                                         );
                                     })}
                                 </div>
@@ -211,18 +198,18 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
                         <Link
                             to="/collections/user/$username"
                             params={{ username: currentUser!.name }}
-                            className="flex items-center gap-1.5 text-xs text-primary/90 hover:text-app-accent transition-colors"
+                            className="flex items-center gap-1.5 text-xs text-foreground/90 hover:text-brand transition-colors"
                         >
                             <Folder className="size-3"/>
                             Open Collections
                             <ChevronRight className="size-3 mt-0.5"/>
                         </Link>
-                        <Button size="sm" variant="secondary" className="text-primary/90" onClick={() => setIsOpen(false)}>
+                        <Button size="sm" variant="secondary" onClick={() => setIsOpen(false)}>
                             Done
                         </Button>
                     </div>
                 </div>
-            </CredenzaContent>
-        </Credenza>
+            </DialogContent>
+        </Dialog>
     );
 };

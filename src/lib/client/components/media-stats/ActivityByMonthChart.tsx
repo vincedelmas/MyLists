@@ -50,13 +50,13 @@ export function ActivityByMonthChart({ title, data, mediaTypes, mediaType, range
                         axisLine={false}
                         dataKey={"month"}
                         interval="preserveStartEnd"
-                        tick={{ fontSize: 11, fill: "var(--primary)" }}
+                        tick={{ fontSize: 11, fill: "var(--primary-foreground)" }}
                         tickFormatter={(val) => formatMonthYear(String(val))}
                     />
                     <YAxis
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fontSize: 11, fill: "var(--primary)" }}
+                        tick={{ fontSize: 11, fill: "var(--primary-foreground)" }}
                         tickFormatter={(val) => formatNumber(val, { notation: "compact" })}
                     />
                     <Tooltip

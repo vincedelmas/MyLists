@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {useForm} from "react-hook-form";
+import {useId, useState} from "react";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import {FeatureStatus} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -13,15 +13,16 @@ import {Textarea} from "@/lib/client/components/ui/textarea";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {CalendarClock, ChevronUp, ExternalLink} from "lucide-react";
+import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
-import {CalendarClock, ChevronUp, ExternalLink, Search} from "lucide-react";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 
@@ -43,15 +44,16 @@ const ACTIVE_STATUSES: FeatureStatus[] = [
 
 
 const STATUS_STYLES: Record<FeatureStatus, string> = {
-    [FeatureStatus.PLANNED]: "border-sky-500/40 text-sky-200 bg-sky-500/10",
-    [FeatureStatus.REJECTED]: "border-rose-500/40 text-rose-200 bg-rose-500/10",
-    [FeatureStatus.COMPLETED]: "border-violet-500/40 text-violet-200 bg-violet-500/10",
-    [FeatureStatus.IN_PROGRESS]: "border-emerald-500/40 text-emerald-200 bg-emerald-500/10",
-    [FeatureStatus.UNDER_CONSIDERATION]: "border-amber-500/40 text-amber-200 bg-amber-500/10",
+    [FeatureStatus.PLANNED]: "border-info/40 bg-info/10 text-info",
+    [FeatureStatus.REJECTED]: "border-destructive/40 bg-destructive/10 text-destructive",
+    [FeatureStatus.COMPLETED]: "border-success/40 bg-success/10 text-success",
+    [FeatureStatus.IN_PROGRESS]: "border-brand/40 bg-brand/10 text-brand",
+    [FeatureStatus.UNDER_CONSIDERATION]: "border-warning/40 bg-warning/10 text-warning",
 };
 
 
 function FeatureVotesPage() {
+    const fieldId = useId();
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
     const { currentUser, isAnonymous } = useAuth();
@@ -113,14 +115,14 @@ function FeatureVotesPage() {
         <PageTitle title="Feature Voting Hub" subtitle="Submit ideas, search, and vote on what MyLists should have next.">
             <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1">
-                    <Card className="border-gray-500">
+                    <Card className="ring-border">
                         <CardHeader>
                             <CardTitle>Quick Q&A</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <dl className="space-y-4 text-sm text-muted-foreground">
                                 <div>
-                                    <dt className="font-semibold text-primary">
+                                    <dt className="font-semibold text-foreground">
                                         How do votes work?
                                     </dt>
                                     <dd>
@@ -128,7 +130,7 @@ function FeatureVotesPage() {
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="font-semibold text-primary">
+                                    <dt className="font-semibold text-foreground">
                                         Can I vote more than once?
                                     </dt>
                                     <dd>
@@ -136,7 +138,7 @@ function FeatureVotesPage() {
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="font-semibold text-primary">
+                                    <dt className="font-semibold text-foreground">
                                         Will I be notified about feature updates?
                                     </dt>
                                     <dd>
@@ -147,7 +149,7 @@ function FeatureVotesPage() {
                             </dl>
                         </CardContent>
                     </Card>
-                    <Card className="relative overflow-hidden border-app-accent/40">
+                    <Card className="relative overflow-hidden ring-brand/40">
                         <LockedContent
                             showAuthButtons={true}
                             isAnonymous={isAnonymous}
@@ -161,43 +163,55 @@ function FeatureVotesPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmitAddNewFeature)} className="space-y-4">
-                                    <fieldset disabled={createFeatureMutation.isPending || isAnonymous} className="space-y-4">
-                                        <FormField
-                                            name="title"
-                                            control={form.control}
-                                            render={({ field }) =>
-                                                <FormItem>
-                                                    <FormLabel>Title</FormLabel>
-                                                    <FormControl>
+                            <FormProvider {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmitAddNewFeature)} className="flex flex-col gap-4">
+                                    <FieldSet disabled={createFeatureMutation.isPending || isAnonymous}>
+                                        <FieldGroup>
+                                            <Controller
+                                                name="title"
+                                                control={form.control}
+                                                render={({ field, fieldState }) =>
+                                                    <Field
+                                                        data-invalid={fieldState.invalid}
+                                                        data-disabled={createFeatureMutation.isPending || isAnonymous}
+                                                    >
+                                                        <FieldLabel htmlFor={`${fieldId}-title`}>
+                                                            Title
+                                                        </FieldLabel>
                                                         <Input
                                                             {...field}
+                                                            id={`${fieldId}-title`}
                                                             placeholder="Feature title"
+                                                            aria-invalid={fieldState.invalid}
                                                         />
-                                                    </FormControl>
-                                                    <FormMessage/>
-                                                </FormItem>
-                                            }
-                                        />
-                                        <FormField
-                                            name="description"
-                                            control={form.control}
-                                            render={({ field }) =>
-                                                <FormItem>
-                                                    <FormLabel>Description</FormLabel>
-                                                    <FormControl>
+                                                        <FieldError errors={[fieldState.error]}/>
+                                                    </Field>
+                                                }
+                                            />
+                                            <Controller
+                                                name="description"
+                                                control={form.control}
+                                                render={({ field, fieldState }) =>
+                                                    <Field
+                                                        data-invalid={fieldState.invalid}
+                                                        data-disabled={createFeatureMutation.isPending || isAnonymous}
+                                                    >
+                                                        <FieldLabel htmlFor={`${fieldId}-desc`}>
+                                                            Description
+                                                        </FieldLabel>
                                                         <Textarea
                                                             {...field}
                                                             rows={3}
+                                                            id={`${fieldId}-desc`}
                                                             placeholder="Optional: add a short context or use-case."
+                                                            aria-invalid={fieldState.invalid}
                                                         />
-                                                    </FormControl>
-                                                    <FormMessage/>
-                                                </FormItem>
-                                            }
-                                        />
-                                    </fieldset>
+                                                        <FieldError errors={[fieldState.error]}/>
+                                                    </Field>
+                                                }
+                                            />
+                                        </FieldGroup>
+                                    </FieldSet>
                                     <FormError/>
                                     <div className="flex items-center justify-center">
                                         <FormSubmitButton disabled={isAnonymous} isLoading={createFeatureMutation.isPending}>
@@ -205,11 +219,11 @@ function FeatureVotesPage() {
                                         </FormSubmitButton>
                                     </div>
                                 </form>
-                            </Form>
+                            </FormProvider>
                         </CardContent>
                     </Card>
                 </div>
-                <Card className="border-app-rating h-fit">
+                <Card className="h-fit ring-brand/40">
                     <CardHeader>
                         <CardTitle>Discussions</CardTitle>
                     </CardHeader>
@@ -220,7 +234,7 @@ function FeatureVotesPage() {
                         </div>
                         <div className="text-center">
                             <a href="https://github.com/Crossoufire/MyLists/discussions" target="_blank" rel="noreferrer">
-                                <Button variant="emeraldy">
+                                <Button>
                                     Github Discussions <ExternalLink/>
                                 </Button>
                             </a>
@@ -228,16 +242,12 @@ function FeatureVotesPage() {
                     </CardContent>
                 </Card>
 
-                <div className="relative max-w-sm max-sm:w-full mb-1">
-                    <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground"/>
-                    <Input
-                        type="search"
-                        className="pl-8"
-                        value={searchQuery}
-                        placeholder="Search by title or description..."
-                        onChange={(ev) => setSearchQuery(ev.target.value)}
-                    />
-                </div>
+                <SearchInput
+                    value={searchQuery}
+                    className="max-w-sm max-sm:w-full mb-2"
+                    placeholder="Search by title or description..."
+                    onChange={(ev) => setSearchQuery(ev.target.value)}
+                />
 
                 <TabHeader
                     tabs={statusTabs}
@@ -259,7 +269,7 @@ function FeatureVotesPage() {
                                             <Link
                                                 to="/profile/$username"
                                                 params={{ username: req.author.name }}
-                                                className="inline-flex items-center gap-1.5 text-primary hover:text-app-accent"
+                                                className="inline-flex items-center gap-1.5 text-foreground hover:text-brand"
                                             >
                                                 <ProfileIcon
                                                     className="size-5 border"
@@ -294,7 +304,7 @@ function FeatureVotesPage() {
 
                                     {req.adminComment &&
                                         <div className="rounded-lg border border-dashed px-3 py-2 text-sm">
-                                            <div className="text-sm font-semibold text-app-accent">
+                                            <div className="text-sm font-semibold text-brand">
                                                 Admin note:
                                             </div>
                                             {req.adminComment}
@@ -304,9 +314,8 @@ function FeatureVotesPage() {
                                     <div className="flex flex-wrap gap-2 items-center justify-between">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Button
-                                                size="sm"
                                                 onClick={() => handleVote(req.id)}
-                                                variant={req.hasUserVote ? "emeraldy" : "outline"}
+                                                variant={req.hasUserVote ? "selected" : "outline"}
                                                 disabled={toggleVoteMutation.isPending || isLocked || isAnonymous}
                                             >
                                                 {voteLabel}

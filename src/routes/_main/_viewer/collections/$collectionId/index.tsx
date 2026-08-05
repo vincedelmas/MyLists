@@ -1,21 +1,30 @@
 import {collectionIdSchema} from "@/lib/schemas";
-import {Copy, Heart, Pencil} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {formatDate} from "@/lib/utils/date-formatting";
 import {Button} from "@/lib/client/components/ui/button";
+import {Copy, Heart, List, ListOrdered, Pencil} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {MediaCard} from "@/lib/client/components/media/base/MediaCard";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
-import {MediaCornerCommon} from "@/lib/client/components/media/base/MediaCornerCommon";
+import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
+import {
+    MediaCard,
+    MediaCardDetails,
+    MediaCardFooter,
+    MediaCardLeftCorner,
+    MediaCardMeta,
+    MediaCardRightCorner,
+    MediaCardSignals,
+    MediaCardTitle
+} from "@/lib/client/components/media/base/MediaCard";
 import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
+import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/")({
@@ -63,33 +72,41 @@ function CollectionViewer() {
             subtitle={`${collection.ownerName} • ${capitalize(collection.mediaType)} • ${collection.itemsCount} media`}
         >
             <div className="flex flex-wrap items-center justify-between pb-5">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {capabilities.like &&
                         <>
                             <Button
-                                size="sm"
                                 variant="outline"
                                 onClick={handleLikeCollection}
                                 disabled={toggleLikeMutation.isPending}
                             >
-                                <Heart className={isLiked ? "text-red-500" : ""}/>
+                                <Heart className={isLiked ? "text-favorite" : ""}/>
                                 {collection.likeCount}
                             </Button>
                         </>
                     }
                     {capabilities.copy &&
-                        <Button size="sm" variant="outline" onClick={handleCopyCollection} disabled={copyMutation.isPending}>
+                        <Button variant="outline" onClick={handleCopyCollection} disabled={copyMutation.isPending}>
                             <Copy className="size-4"/> Copy
                         </Button>
                     }
                     <Badge variant="outline">
-                        {collection.ordered ? "Ranked" : "Unranked"}
+                        {collection.ordered
+                            ? <><ListOrdered className="size-3"/> Ranked</>
+                            : <><List className="size-3"/> Unranked</>
+                        }
                     </Badge>
-                    <PrivacyIcon type={collection.privacy} className="size-4"/>
+                    <Badge variant="outline">
+                        <PrivacyIcon
+                            className="size-4"
+                            type={collection.privacy}
+                        />
+                        {collection.privacy}
+                    </Badge>
                 </div>
                 <div>
                     {capabilities.edit &&
-                        <Button size="sm" variant="outline" onClick={handleEditCollection}>
+                        <Button variant="outline" onClick={handleEditCollection}>
                             <Pencil/> Edit Collection
                         </Button>
                     }
@@ -110,34 +127,32 @@ function CollectionViewer() {
                 :
                 <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {items.map((item) =>
-                        <MediaCard key={item.mediaId} item={item} mediaType={collection.mediaType}>
-                            {collection.ordered &&
-                                <div className="absolute top-2 left-2 self-start rounded-md bg-black/70 px-3 py-0.5 text-sm font-semibold">
-                                    #{item.orderIndex}
-                                </div>
+                        <MediaCard item={item} mediaType={collection.mediaType}>
+                            <MediaCardLeftCorner>
+                                # {item.orderIndex}
+                            </MediaCardLeftCorner>
+
+                            {(!isAnonymous && isMediaTypeActive && item.inUserList) &&
+                                <MediaCardRightCorner>
+                                    <DisplayInUserListCheck/>
+                                </MediaCardRightCorner>
                             }
-                            {!isAnonymous && isMediaTypeActive && item.inUserList &&
-                                <MediaCornerCommon
-                                    isCommon={item.inUserList}
-                                />
-                            }
-                            <div className="absolute bottom-0 w-full space-y-1 rounded-b-sm p-3">
-                                <div className="flex w-full items-center justify-between space-x-2 text-sm">
-                                    <h3 className="grow truncate font-medium text-primary" title={item.mediaName}>
-                                        {item.mediaName}
-                                    </h3>
-                                </div>
-                                <div className="flex w-full flex-wrap items-center justify-between">
-                                    <div className="shrink-0 text-xs font-medium text-muted-foreground">
-                                        {formatDate(item.releaseDate)}
-                                    </div>
+
+                            <MediaCardFooter>
+                                <MediaCardTitle title={item.mediaName}>
+                                    {item.mediaName}
+                                </MediaCardTitle>
+                                <MediaCardMeta>
+                                    <MediaCardDetails>
+                                        <MediaReleaseDate date={item.releaseDate}/>
+                                    </MediaCardDetails>
                                     {item.annotation &&
-                                        <DisplayComment
-                                            content={item.annotation}
-                                        />
+                                        <MediaCardSignals>
+                                            <DisplayComment content={item.annotation}/>
+                                        </MediaCardSignals>
                                     }
-                                </div>
-                            </div>
+                                </MediaCardMeta>
+                            </MediaCardFooter>
                         </MediaCard>
                     )}
                 </div>

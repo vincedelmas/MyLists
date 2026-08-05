@@ -1,8 +1,9 @@
 import dedent from "dedent";
-import {Card} from "@/lib/client/components/ui/card";
-import {Button} from "@/lib/client/components/ui/button";
+import {cn} from "@/lib/utils/classnames";
+import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {ExternalLink, Heart, List, MessageCircle, Plus, RotateCcw, Star, Tags} from "lucide-react";
@@ -45,24 +46,29 @@ function RouteComponent() {
                 <OnboardingDemoBox>
                     <div className="flex flex-col items-center w-full max-w-md shadow-sm">
                         <div className="space-y-6 max-lg:mb-0">
-                            <Button variant="outline" className="w-full gap-2" asChild>
-                                <a href={media.providerData.url} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="size-4"/>
-                                    View on {media.providerData.name}
-                                </a>
-                            </Button>
+                            <a
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={media.providerData.url}
+                                className={cn(buttonVariants({ variant: "tame", className: "w-full gap-2" }))}
+                            >
+                                <ExternalLink className="size-4"/>
+                                View on {media.providerData.name}
+                            </a>
                             <Card>
-                                <div className="text-center space-y-2">
-                                    <h3 className="text-lg font-semibold text-slate-200">
-                                        Are you interested in this?
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Add this {MediaType.MOVIES} to your list to track your progress.
-                                    </p>
-                                </div>
-                                <Button className="w-full mt-2">
-                                    <Plus className="size-4"/> Add to List
-                                </Button>
+                                <CardContent className="text-center space-y-4">
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold text-foreground">
+                                            Are you interested in this?
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Add this {MediaType.MOVIES} to your list to track your progress.
+                                        </p>
+                                    </div>
+                                    <Button className="w-full">
+                                        <Plus/> Add to List
+                                    </Button>
+                                </CardContent>
                             </Card>
                         </div>
                     </div>
@@ -75,7 +81,7 @@ function RouteComponent() {
             >
                 <OnboardingDemoBox>
                     {!!userMedia &&
-                        <div className="max-w-100">
+                        <div className="max-w-90">
                             <UserMediaDetails
                                 preview
                                 userMedia={userMedia}
@@ -102,7 +108,7 @@ function RouteComponent() {
                             <div>
                                 Give either a score (0-10) or a feeling (6 emoticons system).
                                 Default to score, can be changed on the {" "}
-                                <Link to="/settings" className="text-app-accent flex items-center gap-1 font-bold">
+                                <Link to="/settings" className="text-brand flex items-center gap-1 font-bold">
                                     settings <ExternalLink className="size-3"/>.
                                 </Link>
                             </div>

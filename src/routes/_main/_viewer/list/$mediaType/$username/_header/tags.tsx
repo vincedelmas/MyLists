@@ -6,7 +6,6 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {MediaType, TagAction} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
-import {DropdownMenu} from "@radix-ui/react-dropdown-menu";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {SimpleSearch, simpleSearchSchema} from "@/lib/schemas";
 import {Layers, MoreVertical, Pen, Tags, Trash2} from "lucide-react";
@@ -15,7 +14,7 @@ import {Pagination} from "@/lib/client/components/general/Pagination";
 import {tagsViewOptions} from "@/lib/client/react-query/query-options";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {useEditTagMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
-import {DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/tags")({
@@ -97,8 +96,7 @@ function TagsView() {
                                 size="sm"
                                 onClick={handleCreateTag}
                                 disabled={editMutation.isPending}
-                                className="h-7 bg-app-accent/80 hover:bg-app-accent text-[10px] font-bold px-2.5
-                                    rounded shadow-sm transition-all text-primary/90"
+                                className="text-[10px]"
                             >
                                 CREATE
                             </Button>
@@ -186,7 +184,7 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
                 className={isEditing ? "pointer-events-none" : ""}
                 search={{ tags: [tag.tagName] }}
             >
-                <div className="aspect-video rounded-lg border overflow-hidden duration-200 hover:border-app-accent/50">
+                <div className="aspect-video rounded-lg border overflow-hidden duration-200 hover:border-brand/50">
                     <div className="relative flex h-full items-center justify-center p-6">
                         {tag.medias.map((item, idx, arr) => {
                             const offset = idx - (arr.length - 1) / 2;
@@ -235,10 +233,8 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
                         </div>
                         {(isOwner && !isEditing) &&
                             <DropdownMenu>
-                                <DropdownMenuTrigger className="pt-1" asChild>
-                                    <button>
-                                        <MoreVertical className="size-4 opacity-60 hover:opacity-100"/>
-                                    </button>
+                                <DropdownMenuTrigger className="pt-1" render={<button/>}>
+                                    <MoreVertical className="size-4 opacity-60 hover:opacity-100"/>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => {
@@ -247,9 +243,9 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
                                     }}>
                                         <Pen className="size-4"/> Rename
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="focus:bg-red-500/10" onClick={handleDelete}>
-                                        <Trash2 className="text-red-500"/>
-                                        <span className="text-red-500">Delete</span>
+                                    <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+                                        <Trash2/>
+                                        <span>Delete</span>
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>

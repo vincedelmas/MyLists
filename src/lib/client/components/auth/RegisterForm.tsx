@@ -1,5 +1,6 @@
-import {toast} from "sonner";
-import {useForm} from "react-hook-form";
+import {toast} from "@/lib/client/components/ui/toast";
+import {useId} from "react";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
 import {FaGithub, FaGoogle} from "react-icons/fa";
 import {useLocation} from "@tanstack/react-router";
@@ -12,7 +13,7 @@ import {Separator} from "@/lib/client/components/ui/separator";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {authMethodsOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
@@ -24,6 +25,7 @@ interface RegisterFormProps {
 
 
 export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) => {
+    const fieldId = useId();
     const location = useLocation();
     const authMethods = useSuspenseQuery(authMethodsOptions).data;
     const hasSocialProvider = authMethods.google || authMethods.github;
@@ -55,7 +57,10 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
             onSuccess: () => {
                 form.reset();
                 onOpenChange?.(false);
-                toast.success("Your account has been created. Check your email to activate your account.");
+                toast.add({
+                    title: "Your account has been created. Check your email to activate your account.",
+                    type: "success",
+                });
             },
         });
     };
@@ -63,7 +68,7 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
     const withProvider = async (provider: "google" | "github") => {
         await authClient.signIn.social({ provider, callbackURL: getRedirectTarget() }, {
             onError: (ctx) => {
-                toast.error(ctx.error.message);
+                toast.add({title: ctx.error.message, type: "error", priority: "high"});
             },
         });
     };
@@ -71,83 +76,85 @@ export const RegisterForm = ({ redirectTo, onOpenChange }: RegisterFormProps) =>
     return (
         <>
             {authMethods.email ?
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
-                        <fieldset disabled={form.formState.isSubmitting} className="space-y-4">
-                            <FormField
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="mt-2 flex flex-col gap-4">
+                        <FieldSet disabled={form.formState.isSubmitting}>
+                            <FieldGroup>
+                            <Controller
                                 name="username"
                                 control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Username</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="Username"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
+                                        <FieldLabel htmlFor={`${fieldId}-username`}>Username</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-username`}
+                                            placeholder="Username"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 }
                             />
-                            <FormField
+                            <Controller
                                 name="email"
                                 control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="email"
-                                                placeholder="john.doe@example.com"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
+                                        <FieldLabel htmlFor={`${fieldId}-email`}>Email</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-email`}
+                                            type="email"
+                                            placeholder="john.doe@example.com"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 }
                             />
-                            <FormField
+                            <Controller
                                 name="password"
                                 control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Password</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="password"
-                                                placeholder="********"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
+                                        <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-password`}
+                                            type="password"
+                                            placeholder="********"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 }
                             />
-                            <FormField
+                            <Controller
                                 name="confirmPassword"
                                 control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Confirm Password</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="password"
-                                                placeholder="********"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
+                                        <FieldLabel htmlFor={`${fieldId}-confirm-password`}>Confirm Password</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-confirm-password`}
+                                            type="password"
+                                            placeholder="********"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 }
                             />
-                        </fieldset>
+                            </FieldGroup>
+                        </FieldSet>
                         <FormError/>
                         <FormSubmitButton className="flex text-center w-full mb-4" isLoading={form.formState.isSubmitting}>
                             Create an Account
                         </FormSubmitButton>
                     </form>
-                </Form>
+                </FormProvider>
                 :
                 <InlineErrorContainer>
                     Email registration is disabled on this instance.{" "}

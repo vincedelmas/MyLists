@@ -1,13 +1,12 @@
-import {toast} from "sonner";
-import {useRef} from "react";
+import {useId, useRef} from "react";
 import {CreateCollection} from "@/lib/schemas";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {DraftItem} from "@/lib/types/collections.types";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
-import {useFieldArray, UseFormReturn} from "react-hook-form";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {GripVertical, List, ListOrdered, Trash2} from "lucide-react";
@@ -17,7 +16,8 @@ import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {CollectionSearch} from "@/lib/client/components/collections/CollectionSearch";
-import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/lib/client/components/ui/form";
+import {Controller, FormProvider, useFieldArray, UseFormReturn, useWatch} from "react-hook-form";
+import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet, FieldTitle} from "@/lib/client/components/ui/field";
 
 
 interface CollectionEditorProps {
@@ -30,8 +30,9 @@ interface CollectionEditorProps {
 
 
 export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSubmitting }: CollectionEditorProps) => {
+    const fieldId = useId();
     const { isDirty } = form.formState;
-    const ordered = form.watch("ordered");
+    const ordered = useWatch({ control: form.control, name: "ordered" });
     const orderedLabel = ordered ? "Ranked" : "Unranked";
     const dragIndex = useRef<number | null>(null);
     const { fields, append, remove, move } = useFieldArray({ control: form.control, name: "items" });
@@ -53,7 +54,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
 
     const handleAddItem = (item: DraftItem) => {
         if (fields.some((field) => field.mediaId === item.mediaId)) {
-            toast.warning("That media is already in your collection.");
+            toast.add({ title: "That media is already in your collection.", type: "warning" });
             return;
         }
 
@@ -66,20 +67,23 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
     };
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <fieldset disabled={isSubmitting} className="space-y-6">
+        <FormProvider {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+                <FieldSet disabled={isSubmitting}>
                     <div className="flex flex-wrap items-center justify-between gap-4">
-                        <div className="space-y-2">
+                        <div className="flex flex-col gap-2">
                             <h2 className="font-semibold tracking-tight">
                                 2. Collection details
                             </h2>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Badge variant="outline" className="gap-1 text-xs capitalize">
-                                    <MainThemeIcon type={mediaType} size={14}/> {mediaType}
+                            <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="capitalize">
+                                    <MainThemeIcon type={mediaType}/> {mediaType}
                                 </Badge>
-                                <Badge variant="outline" className="gap-1 text-xs">
-                                    {ordered ? <ListOrdered className="size-3"/> : <List className="size-3"/>}
+                                <Badge variant="outline">
+                                    {ordered
+                                        ? <ListOrdered className="size-3"/>
+                                        : <List className="size-3"/>
+                                    }
                                     {orderedLabel}
                                 </Badge>
                             </div>
@@ -87,58 +91,58 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                     </div>
 
                     <div className="grid grid-cols-12 gap-6">
-                        <div className="col-span-8 space-y-6 max-lg:col-span-12">
-                            <FormField
+                        <FieldGroup className="col-span-8 gap-6 max-lg:col-span-12">
+                            <Controller
                                 name="title"
                                 control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Title</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="Ex: Top 50 Animated Films"
-                                            />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
+                                render={({ field, fieldState }) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
+                                        <FieldLabel htmlFor={`${fieldId}-title`}>Title</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-title`}
+                                            aria-invalid={fieldState.invalid}
+                                            placeholder="Ex: Top 50 Animated Films"
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
                                 }
                             />
-                            <FormField
+                            <Controller
                                 name="description"
                                 control={form.control}
-                                render={({ field }) =>
-                                    <FormItem>
-                                        <FormLabel>Description</FormLabel>
-                                        <FormControl>
-                                            <Textarea
-                                                {...field}
-                                                value={field.value ?? ""}
-                                                placeholder="What is this collection about?"
-                                            />
-                                        </FormControl>
+                                render={({ field, fieldState }) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
+                                        <FieldLabel htmlFor={`${fieldId}-description`}>Description</FieldLabel>
+                                        <Textarea
+                                            {...field}
+                                            id={`${fieldId}-description`}
+                                            value={field.value ?? ""}
+                                            placeholder="What is this collection about?"
+                                            aria-invalid={fieldState.invalid}
+                                        />
                                         <div className="flex justify-between items-center">
-                                            <FormMessage/>
+                                            <FieldError errors={[fieldState.error]}/>
                                             <span className="text-[10px] text-muted-foreground">
                                             {field.value?.length || 0} / 400
                                         </span>
                                         </div>
-                                    </FormItem>
+                                    </Field>
                                 }
                             />
 
-                            <FormField
+                            <Controller
                                 name="items"
                                 control={form.control}
-                                render={() => (
-                                    <FormItem>
-                                        <FormLabel>Items ({fields.length})</FormLabel>
+                                render={({ fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
+                                        <FieldTitle id={`${fieldId}-items`}>Items ({fields.length})</FieldTitle>
                                         <CollectionSearch
                                             onAdd={handleAddItem}
                                             mediaType={mediaType}
                                             disabled={isSubmitting}
                                         />
-                                        <FormMessage/>
+                                        <FieldError errors={[fieldState.error]}/>
 
                                         {fields.length === 0 ?
                                             <EmptyState
@@ -147,7 +151,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                 message="No items added to the collection yet."
                                             />
                                             :
-                                            <div className="space-y-3 pt-3">
+                                            <div className="flex flex-col gap-3 pt-3">
                                                 {fields.map((field, idx) =>
                                                     <div
                                                         key={field.id}
@@ -175,7 +179,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                                 className="h-full w-full object-cover"
                                                             />
                                                         </div>
-                                                        <div className="flex-1 space-y-2">
+                                                        <div className="flex flex-1 flex-col gap-2">
                                                             <div className="line-clamp-1 font-semibold">
                                                                 {field.mediaName}
                                                             </div>
@@ -191,35 +195,41 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                 )}
                                             </div>
                                         }
-                                    </FormItem>
+                                    </Field>
                                 )}
                             />
-                        </div>
+                        </FieldGroup>
 
-                        <div className="col-span-4 space-y-6 max-lg:col-span-12">
-                            <div className="space-y-5 rounded-lg border p-4">
-                                <FormField
+                        <div className="col-span-4 flex flex-col gap-6 max-lg:col-span-12">
+                            <FieldGroup className="gap-5 rounded-lg border p-4">
+                                <Controller
                                     name="privacy"
                                     control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem className="space-y-4">
-                                            <FormLabel className="text-base">Privacy Settings</FormLabel>
-                                            <FormControl>
-                                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="space-y-3">
+                                    render={({ field, fieldState }) =>
+                                        <Field data-invalid={fieldState.invalid} data-disabled={isSubmitting}>
+                                            <FieldSet>
+                                                <FieldLegend id={`${fieldId}-privacy`} className="text-base">Privacy Settings</FieldLegend>
+                                                <RadioGroup
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                    aria-invalid={fieldState.invalid}
+                                                    aria-labelledby={`${fieldId}-privacy`}
+                                                >
                                                     {[PrivacyType.PRIVATE, PrivacyType.RESTRICTED, PrivacyType.PUBLIC].map((pt) =>
-                                                        <FormItem key={pt} className="flex items-start space-x-3 space-y-0">
-                                                            <FormControl>
-                                                                <RadioGroupItem value={pt} className="mt-1"/>
-                                                            </FormControl>
-                                                            <div className="grid gap-1.5 leading-none">
-                                                                <FormLabel className="font-normal flex items-center gap-1">
+                                                        <Field key={pt} orientation="horizontal">
+                                                            <RadioGroupItem id={`${fieldId}-privacy-${pt}`} value={pt}/>
+                                                            <FieldContent>
+                                                                <FieldLabel
+                                                                    htmlFor={`${fieldId}-privacy-${pt}`}
+                                                                    className="flex items-center gap-1 font-normal"
+                                                                >
                                                                     <PrivacyIcon type={pt}/>
                                                                     {pt === PrivacyType.RESTRICTED
                                                                         ? "Profile Only" : pt === PrivacyType.PRIVATE
                                                                             ? "Only Me" : "Public"
                                                                     }
-                                                                </FormLabel>
-                                                                <FormDescription className="text-xs">
+                                                                </FieldLabel>
+                                                                <FieldDescription className="text-xs">
                                                                     {pt === PrivacyType.PRIVATE &&
                                                                         <span>
                                                                         Visible only to you. Hidden from profiles,
@@ -240,42 +250,49 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                                         discovery, even if your account is private.
                                                                     </span>
                                                                     }
-                                                                </FormDescription>
-                                                            </div>
-                                                        </FormItem>
+                                                                </FieldDescription>
+                                                            </FieldContent>
+                                                        </Field>
                                                     )}
                                                 </RadioGroup>
-                                            </FormControl>
-                                        </FormItem>
+                                            </FieldSet>
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
                                     }
                                 />
 
-                                <FormField
+                                <Controller
                                     name="ordered"
                                     control={form.control}
-                                    render={({ field }) =>
-                                        <FormItem className="flex items-center justify-between rounded-md border px-3 py-2 space-y-0">
-                                            <div className="space-y-0.5">
-                                                <FormLabel className="text-sm font-semibold">
+                                    render={({ field, fieldState }) =>
+                                        <Field
+                                            orientation="horizontal"
+                                            data-disabled={isSubmitting}
+                                            data-invalid={fieldState.invalid}
+                                            className="justify-between rounded-md border px-3 py-2"
+                                        >
+                                            <FieldContent>
+                                                <FieldLabel htmlFor={`${fieldId}-ordered`} className="text-sm font-semibold">
                                                     Ranked list
-                                                </FormLabel>
-                                                <FormDescription className="text-xs">
+                                                </FieldLabel>
+                                                <FieldDescription className="text-xs">
                                                     Enable drag & drop ranking.
-                                                </FormDescription>
-                                            </div>
-                                            <FormControl>
-                                                <Switch
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
+                                                </FieldDescription>
+                                                <FieldError errors={[fieldState.error]}/>
+                                            </FieldContent>
+                                            <Switch
+                                                checked={field.value}
+                                                id={`${fieldId}-ordered`}
+                                                onCheckedChange={field.onChange}
+                                                aria-invalid={fieldState.invalid}
+                                            />
+                                        </Field>
                                     }
                                 />
-                            </div>
+                            </FieldGroup>
                         </div>
                     </div>
-                </fieldset>
+                </FieldSet>
                 <FormError/>
                 <div className="flex justify-end">
                     <FormSubmitButton disabled={!isDirty} isLoading={isSubmitting}>
@@ -283,6 +300,6 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                     </FormSubmitButton>
                 </div>
             </form>
-        </Form>
+        </FormProvider>
     );
 };

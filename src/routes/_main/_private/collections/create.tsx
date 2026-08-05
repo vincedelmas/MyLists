@@ -2,14 +2,15 @@ import {useState} from "react";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {createFileRoute} from "@tanstack/react-router";
-import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {Button} from "@/lib/client/components/ui/button";
+import {MediaType, PrivacyType} from "@/lib/utils/enums";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {CreateCollection, createCollectionSchema} from "@/lib/schemas";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 import {useCreateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/collections/create")({
@@ -19,7 +20,6 @@ export const Route = createFileRoute("/_main/_private/collections/create")({
 
 function CollectionCreatePage() {
     const navigate = Route.useNavigate();
-    const mediaTypes = Object.values(MediaType);
     const createMutation = useCreateCollectionMutation({ noErrorToast: true });
     const [mediaType, setMediaType] = useState<MediaType | null>(null);
     const [step, setStep] = useState<"mediaType" | "editor">("mediaType");
@@ -70,7 +70,7 @@ function CollectionCreatePage() {
                         </span>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                        {mediaTypes.map((mt) =>
+                        {ALL_MEDIA_TYPES.map((mt) =>
                             <Button key={mt} variant="outline" className="capitalize" onClick={() => selectMediaType(mt)}>
                                 <MainThemeIcon type={mt}/> {mt}
                             </Button>

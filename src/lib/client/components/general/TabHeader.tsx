@@ -1,5 +1,5 @@
-import {cn} from "@/lib/utils/classnames";
 import React, {ReactNode} from "react";
+import {cn} from "@/lib/utils/classnames";
 
 
 export interface TabItem<T> {
@@ -32,7 +32,7 @@ export const TabHeader = <T extends string>({ tabs, activeTab, setActiveTab, chi
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
                                 "relative flex shrink-0 items-center gap-2 rounded-t-lg px-5 py-3 text-sm font-medium transition-all",
-                                isActive ? tab.isAccent ? "text-app-accent" : "text-primary" : "text-muted-foreground hover:text-primary",
+                                isActive ? tab.isAccent ? "text-brand" : "text-foreground" : "text-muted-foreground hover:text-foreground",
                                 className,
                             )}
                         >
@@ -45,7 +45,7 @@ export const TabHeader = <T extends string>({ tabs, activeTab, setActiveTab, chi
                                 {tab.label}
                             </span>
                             {isActive &&
-                                <div className="bg-app-accent absolute bottom-0 left-0 right-0 h-0.5"/>
+                                <div className="bg-brand absolute bottom-0 left-0 right-0 h-0.5"/>
                             }
                         </button>
                     );

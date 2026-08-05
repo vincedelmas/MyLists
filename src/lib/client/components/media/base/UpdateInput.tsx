@@ -64,7 +64,7 @@ export const UpdateInput = ({ total, initValue, updateInput, payloadName, update
                 onKeyDown={handleOnKeyDown}
                 disabled={updateInput.isPending}
                 onChange={(ev) => setCurrentValue(ev.target.value)}
-                className="w-18 h-8 border-none cursor-pointer inline-block dark:bg-transparent"
+                className="inline-block h-8 w-18 cursor-pointer border-none bg-transparent"
             />
             <span>{" "}/{" "}{total ?? "?"}</span>
         </div>

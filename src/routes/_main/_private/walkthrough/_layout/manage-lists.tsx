@@ -47,11 +47,11 @@ function ListsOnboarding() {
                     <Header
                         filters={{}}
                         isGrid={true}
-                        pagination={onboardingListPagination}
                         onGridClick={() => undefined}
                         onSortChange={() => undefined}
                         onFilterClick={() => undefined}
                         onStatusChange={() => undefined}
+                        pagination={onboardingListPagination}
                         allStatuses={statusUtils.byMediaType(MediaType.MOVIES)}
                     />
                 </OnboardingDemoBox>
@@ -90,21 +90,23 @@ function ListsOnboarding() {
                 description="Every item in your grid displays its most important info at a glance. Here is how to read your cards:"
             >
                 <OnboardingDemoBox>
-                    <BaseMediaListItem
-                        rating={7.5}
-                        isCurrent={true}
-                        allStatuses={[]}
-                        isConnected={true}
-                        isMediaTypeActive={true}
-                        mediaType={MediaType.MOVIES}
-                        userMedia={onboardingMovieFixture}
-                        queryOption={onboardingQueryOption}
-                        redoDisplay={!!onboardingMovieFixture.redo &&
-                            <DisplayRedoValue
-                                redoValue={onboardingMovieFixture.redo}
-                            />
-                        }
-                    />
+                    <div className="w-48 sm:w-56">
+                        <BaseMediaListItem
+                            rating={7.5}
+                            isCurrent={true}
+                            allStatuses={[]}
+                            isConnected={true}
+                            isMediaTypeActive={true}
+                            mediaType={MediaType.MOVIES}
+                            userMedia={onboardingMovieFixture}
+                            queryOption={onboardingQueryOption}
+                            redoDisplay={!!onboardingMovieFixture.redo &&
+                                <DisplayRedoValue
+                                    redoValue={onboardingMovieFixture.redo}
+                                />
+                            }
+                        />
+                    </div>
                 </OnboardingDemoBox>
                 <OnboardingGrid>
                     <OnboardingFeatureCard
@@ -143,7 +145,7 @@ function ListsOnboarding() {
                         title="On Others' Lists (Fast Add)"
                         description={
                             <span>
-                                See something you like on a follows's list? Click the <PlusCircle className="inline size-4 text-primary"/>
+                                See something you like on a follows's list? Click the <PlusCircle className="inline size-4 text-foreground"/>
                                 {" "} button to instantly add it to your list.
                             </span>
                         }

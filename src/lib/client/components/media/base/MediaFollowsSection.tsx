@@ -16,8 +16,8 @@ export function MediaFollowsSection({ followsData, mediaType, isAnonymous }: Med
     return (
         <Card className="bg-popover p-0 h-fit min-w-0">
             <div className="p-4 border-b">
-                <h3 className="flex items-center gap-2 text-primary font-semibold">
-                    <Activity className="size-5 text-app-accent"/>
+                <h3 className="flex items-center gap-2 text-foreground font-semibold">
+                    <Activity className="size-5 text-brand"/>
                     Follows Activity ({followsData.length})
                 </h3>
             </div>

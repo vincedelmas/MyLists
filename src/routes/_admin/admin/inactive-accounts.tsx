@@ -4,18 +4,19 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatPercent} from "@/lib/utils/number-formatting";
-import {UserStats} from "@/lib/client/components/admin/UserStats";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {DataTable} from "@/lib/client/components/general/DataTable";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
+import {ColumnDef, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {Activity, CheckCircle2, MailWarning, Trash2, UsersRound} from "lucide-react";
 import {inactiveAccountDeletionsAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/inactive-accounts")({
@@ -33,18 +34,18 @@ const DEFAULT = { search: "", page: 1 } satisfies SearchType;
 
 function StatusBadge({ status, retryCount }: { status: string, retryCount: number }) {
     if (status === "mail_failed" && retryCount < 3) {
-        return <Badge variant="outline" className="text-amber-600">Retrying</Badge>;
+        return <Badge variant="warning">Retrying</Badge>;
     }
 
     switch (status) {
         case "warned":
-            return <Badge variant="outline" className="text-cyan-500">Warned</Badge>;
+            return <Badge variant="info">Warned</Badge>;
         case "resurrected":
-            return <Badge variant="outline" className="text-green-600">Resurrected</Badge>;
+            return <Badge variant="success">Resurrected</Badge>;
         case "deleted":
-            return <Badge variant="outline" className="text-red-600">Deleted</Badge>;
+            return <Badge variant="destructive">Deleted</Badge>;
         case "mail_failed":
-            return <Badge variant="outline" className="text-orange-600">Mail failed</Badge>;
+            return <Badge variant="warning">Mail failed</Badge>;
         default:
             return <Badge variant="outline">{status}</Badge>;
     }
@@ -56,12 +57,11 @@ function InactiveAccountsPage() {
     const { search = DEFAULT.search } = filters;
     const apiData = useSuspenseQuery(inactiveAccountDeletionsAdminOptions(filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search });
-    const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: filters.perPage ?? 25 };
-
-    const onPaginationChange: OnChangeFn<PaginationState> = async (updaterOrValue) => {
-        const newPagination = typeof updaterOrValue === "function" ? updaterOrValue(paginationState) : updaterOrValue;
-        updateFilters({ page: newPagination.pageIndex + 1 });
-    };
+    const { pagination, onPaginationChange } = useTablePagination({
+        page: filters.page,
+        pageSize: filters.perPage ?? 25,
+        onPageChange: (page) => updateFilters({ page }),
+    });
 
     const columns: ColumnDef<typeof apiData.items[0]>[] = useMemo(() => [
         {
@@ -142,12 +142,12 @@ function InactiveAccountsPage() {
 
     const table = useReactTable({
         columns,
+        onPaginationChange,
         manualPagination: true,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
         getCoreRowModel: getCoreRowModel(),
-        onPaginationChange: onPaginationChange,
-        state: { pagination: paginationState },
+        state: { pagination },
     });
 
     return (
@@ -158,40 +158,40 @@ function InactiveAccountsPage() {
             />
 
             <div className="grid grid-cols-6 gap-4 max-lg:grid-cols-3 max-sm:grid-cols-2">
-                <UserStats
+                <StatCard
                     title="Warned"
                     icon={UsersRound}
+                    subtitle="Pending deletion"
                     value={apiData.stats.warned}
-                    description="Pending deletion"
                 />
-                <UserStats
+                <StatCard
                     title="Retrying"
                     icon={MailWarning}
+                    subtitle="Retrying warning"
                     value={apiData.stats.retrying}
-                    description="Retrying warning"
                 />
-                <UserStats
+                <StatCard
                     icon={MailWarning}
                     title="Mail Failed"
+                    subtitle="Max retries reached"
                     value={apiData.stats.mailFailed}
-                    description="Max retries reached"
                 />
-                <UserStats
+                <StatCard
                     icon={CheckCircle2}
                     title="Resurrected"
-                    description="Account refreshed"
+                    subtitle="Account refreshed"
                     value={apiData.stats.resurrected}
                 />
-                <UserStats
+                <StatCard
                     icon={Trash2}
                     title="Deleted"
                     value={apiData.stats.deleted}
-                    description="Deleted by inactivity"
+                    subtitle="Deleted by inactivity"
                 />
-                <UserStats
+                <StatCard
                     icon={Activity}
                     title="Resurrection"
-                    description="Among warned"
+                    subtitle="Among warned"
                     value={formatPercent(apiData.stats.resurrectionRate * 100)}
                 />
             </div>
@@ -205,40 +205,11 @@ function InactiveAccountsPage() {
                 />
             </div>
 
-            <div className="mt-3 rounded-md border p-3 pt-0 overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) =>
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map(header =>
-                                    <TableHead key={header.id}>
-                                        {!header.isPlaceholder && flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                )}
-                            </TableRow>
-                        )}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ?
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id}>
-                                    {row.getVisibleCells().map((cell) =>
-                                        <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
-                                    )}
-                                </TableRow>
-                            ))
-                            :
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No inactive account lifecycle rows yet.
-                                </TableCell>
-                            </TableRow>
-                        }
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable
+                table={table}
+                className="mt-3"
+                emptyMessage="No inactive account lifecycle rows yet."
+            />
             <div className="mt-3">
                 <TablePagination
                     table={table}

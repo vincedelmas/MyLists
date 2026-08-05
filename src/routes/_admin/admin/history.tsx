@@ -3,16 +3,17 @@ import {SearchType} from "@/lib/schemas";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Payload} from "@/lib/client/components/general/Payload";
+import {DataTable} from "@/lib/client/components/general/DataTable";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
+import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {TablePagination} from "@/lib/client/components/general/TablePagination";
 import {adminAllUpdatesOptions} from "@/lib/client/react-query/query-options";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, useReactTable} from "@tanstack/react-table";
+import {TablePagination} from "@/lib/client/components/general/TablePagination";
+import {ColumnDef, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 
 
 export const Route = createFileRoute("/_admin/admin/history")({
@@ -30,16 +31,15 @@ const DEFAULT = { search: "", page: 1 } satisfies SearchType;
 
 function AdminGlobalHistory() {
     const filters = Route.useSearch();
-    const apiData = useSuspenseQuery(adminAllUpdatesOptions(filters)).data;
-    const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: 25 };
-
     const { search = DEFAULT.search } = filters;
+    const apiData = useSuspenseQuery(adminAllUpdatesOptions(filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search, options: { resetScroll: false } });
 
-    const onPaginationChange: OnChangeFn<PaginationState> = async (updaterOrValue) => {
-        const newPagination = typeof updaterOrValue === "function" ? updaterOrValue(paginationState) : updaterOrValue;
-        updateFilters({ page: newPagination.pageIndex + 1 });
-    };
+    const { pagination, onPaginationChange } = useTablePagination({
+        pageSize: 25,
+        page: filters.page,
+        onPageChange: (page) => updateFilters({ page }),
+    });
 
     const historyColumns: ColumnDef<typeof apiData.items[number]>[] = useMemo(() => [
         {
@@ -97,8 +97,8 @@ function AdminGlobalHistory() {
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
         getCoreRowModel: getCoreRowModel(),
-        onPaginationChange: onPaginationChange,
-        state: { pagination: paginationState },
+        onPaginationChange,
+        state: { pagination },
     });
 
     return (
@@ -118,43 +118,13 @@ function AdminGlobalHistory() {
                     />
                 </div>
 
-                <div className="rounded-md border p-3 pt-0 overflow-x-auto bg-card">
-                    <Table>
-                        <TableHeader>
-                            {table.getHeaderGroups().map((headerGroup) =>
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) =>
-                                        <TableHead key={header.id}>
-                                            {!header.isPlaceholder && flexRender(header.column.columnDef.header, header.getContext())}
-                                        </TableHead>
-                                    )}
-                                </TableRow>
-                            )}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows?.length ?
-                                table.getRowModel().rows.map((row) => {
-                                    return (
-                                        <TableRow key={row.id}>
-                                            {row.getVisibleCells().map((cell) =>
-                                                <TableCell key={cell.id}>
-                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                </TableCell>
-                                            )}
-                                        </TableRow>
-                                    );
-                                })
-                                :
-                                <TableRow>
-                                    <TableCell colSpan={historyColumns.length} className="h-24 text-center">
-                                        No results.
-                                    </TableCell>
-                                </TableRow>
-                            }
-                        </TableBody>
-                    </Table>
-                </div>
-                <TablePagination table={table}/>
+                <DataTable
+                    table={table}
+                    className="bg-card"
+                />
+                <TablePagination
+                    table={table}
+                />
             </div>
         </DashboardShell>
     );

@@ -1,8 +1,8 @@
 import {MediaType} from "@/lib/utils/enums";
 import {UserMediaItem} from "@/lib/types/query.options.types";
-import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
-import {Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle} from "@/lib/client/components/ui/credenza";
+import {UserMediaDetails} from "@/lib/client/components/media/base/UserMediaDetails";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
 interface UserMediaEditDialogProps {
@@ -18,16 +18,16 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
     if (!userMedia) return null;
 
     return (
-        <Credenza open={dialogOpen} onOpenChange={onOpenChange}>
-            <CredenzaContent className="w-108 max-sm:w-full">
-                <CredenzaHeader>
-                    <CredenzaTitle>
+        <Dialog open={dialogOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="w-108 max-sm:w-full">
+                <DialogHeader>
+                    <DialogTitle>
                         {userMedia.mediaName}
-                    </CredenzaTitle>
-                    <CredenzaDescription>
+                    </DialogTitle>
+                    <DialogDescription>
                         Here you can edit your media details
-                    </CredenzaDescription>
-                </CredenzaHeader>
+                    </DialogDescription>
+                </DialogHeader>
                 <div className="w-full flex items-center justify-center max-sm:mb-8 max-sm:px-2">
                     <UserMediaDetails
                         userMedia={userMedia}
@@ -35,7 +35,7 @@ export const UserMediaEditDialog = ({ dialogOpen, userMedia, mediaType, queryOpt
                         queryOption={queryOption}
                     />
                 </div>
-            </CredenzaContent>
-        </Credenza>
+            </DialogContent>
+        </Dialog>
     );
 };

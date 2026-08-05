@@ -15,15 +15,29 @@ export type AddedMediaDetails = {
     networks?: IdNamePair[];
     platforms?: IdNamePair[];
     epsPerSeason?: EpsPerSeasonType[];
-    providerData: { name: string, url: string };
-    collection?: { mediaId: number, mediaName: string, mediaCover: string }[];
-    companies?: { id: number, name: string, developer: boolean, publisher: boolean }[];
+    providerData: {
+        url: string,
+        name: string,
+    };
+    collection?: {
+        mediaId: number,
+        mediaName: string,
+        mediaCover: string,
+        releaseDate: string | null,
+    }[];
+    companies?: {
+        id: number,
+        name: string,
+        developer: boolean,
+        publisher: boolean,
+    }[];
 };
 
 export type SimpleMedia = {
     mediaId: number,
     mediaName: string,
     mediaCover: string,
+    releaseDate: string | null,
 }
 
 export type Tag = { oldName?: string, name: string };

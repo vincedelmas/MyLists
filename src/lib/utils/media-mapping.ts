@@ -1,6 +1,16 @@
 import {MediaType, Status} from "@/lib/utils/enums";
 
 
+export const ALL_MEDIA_TYPES = [
+    MediaType.SERIES,
+    MediaType.ANIME,
+    MediaType.MOVIES,
+    MediaType.BOOKS,
+    MediaType.GAMES,
+    MediaType.MANGA,
+] as const satisfies readonly MediaType[];
+
+
 export const statusUtils = {
     getNoPlanTo: (): Status[] => [Status.PLAN_TO_WATCH, Status.PLAN_TO_PLAY, Status.PLAN_TO_READ],
     byMediaType: (mediaType: MediaType) => {

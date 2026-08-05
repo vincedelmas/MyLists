@@ -1,6 +1,6 @@
 import React from "react";
-import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/features-walkthrough")({
@@ -21,11 +21,9 @@ function FeaturesWalkthroughPage() {
                 </p>
             </div>
 
-            <Button variant="default" className="w-fit mx-auto" asChild>
-                <Link to="/walkthrough/search-media">
-                    Start Tutorial
-                </Link>
-            </Button>
+            <Link to="/walkthrough/search-media" className={buttonVariants({ className: "w-fit mx-auto" })}>
+                Start Tutorial
+            </Link>
         </div>
     );
 }

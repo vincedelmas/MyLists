@@ -1,5 +1,5 @@
 import React from "react";
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {formatDate} from "@/lib/utils/date-formatting";
@@ -10,22 +10,24 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {postImpersonateUser} from "@/lib/server/functions/admin";
 import {useMutation, useSuspenseQuery} from "@tanstack/react-query";
+import {DataTable} from "@/lib/client/components/general/DataTable";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
 import {userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {useAdminUpdateUserMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
+import {ColumnDef, getCoreRowModel, OnChangeFn, SortingState, useReactTable} from "@tanstack/react-table";
 import {CheckCircle, ChevronsUpDown, MoreHorizontal, Trash2, UserCheck, UserPen, UserX} from "lucide-react";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {ColumnDef, flexRender, getCoreRowModel, OnChangeFn, PaginationState, SortingState, useReactTable} from "@tanstack/react-table";
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -57,12 +59,11 @@ function UserManagementPage() {
     const impersonateMutation = useMutation({ mutationFn: postImpersonateUser });
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search });
     const sortingState = [{ id: filters?.sorting ?? DEFAULT.sorting, desc: filters?.sortDesc === true }];
-    const paginationState = { pageIndex: filters?.page ? (filters.page - 1) : 0, pageSize: filters.perPage ?? 25 };
-
-    const onPaginationChange: OnChangeFn<PaginationState> = async (updaterOrValue) => {
-        const newPagination = typeof updaterOrValue === "function" ? updaterOrValue(paginationState) : updaterOrValue;
-        updateFilters({ page: newPagination.pageIndex + 1 });
-    };
+    const { pagination, onPaginationChange } = useTablePagination({
+        page: filters.page,
+        pageSize: filters.perPage ?? 25,
+        onPageChange: (page) => updateFilters({ page }),
+    });
 
     const onSortingChange: OnChangeFn<SortingState> = async (updaterOrValue) => {
         const newSorting = typeof updaterOrValue === "function" ? updaterOrValue(sortingState) : updaterOrValue;
@@ -83,7 +84,7 @@ function UserManagementPage() {
 
     const impersonateUser = (userId: number, username: string) => {
         impersonateMutation.mutate({ data: { userId } }, {
-            onError: (error) => toast.error(error.message),
+            onError: (error) => toast.add({ title: error.message, type: "error", priority: "high" }),
             onSuccess: async () => {
                 await setCurrentUser();
                 await navigate({ to: "/profile/$username", params: { username } });
@@ -96,7 +97,7 @@ function UserManagementPage() {
             accessorKey: "id",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Id <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 );
@@ -107,7 +108,7 @@ function UserManagementPage() {
             accessorKey: "privacy",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Privacy <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -118,7 +119,7 @@ function UserManagementPage() {
             accessorKey: "name",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Username <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -141,7 +142,7 @@ function UserManagementPage() {
                                     {original.name}
                                 </Link>
                             </div>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                                 {original.email}
                             </p>
                         </div>
@@ -153,7 +154,7 @@ function UserManagementPage() {
             accessorKey: "createdAt",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Registered <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -164,7 +165,7 @@ function UserManagementPage() {
             accessorKey: "updatedAt",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Last Seen <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -175,7 +176,7 @@ function UserManagementPage() {
             accessorKey: "showUpdateModal",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Flags <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -188,11 +189,11 @@ function UserManagementPage() {
                                 News:
                             </span>
                             {original.showUpdateModal ?
-                                <Badge variant="outline" className="text-green-600 py-0 h-4 text-[10px]">
+                                <Badge variant="success" className="h-4 py-0 text-[10px]">
                                     Enabled
                                 </Badge>
                                 :
-                                <Badge variant="outline" className="text-red-500 py-0 h-4 text-[10px]">
+                                <Badge variant="destructive" className="h-4 py-0 text-[10px]">
                                     Disabled
                                 </Badge>
                             }
@@ -202,11 +203,11 @@ function UserManagementPage() {
                                 Tuto:
                             </span>
                             {original.showOnboarding ?
-                                <Badge variant="outline" className="text-green-600 py-0 h-4 text-[10px]">
+                                <Badge variant="success" className="h-4 py-0 text-[10px]">
                                     Enabled
                                 </Badge>
                                 :
-                                <Badge variant="outline" className="text-red-500 py-0 h-4 text-[10px]">
+                                <Badge variant="destructive" className="h-4 py-0 text-[10px]">
                                     Disabled
                                 </Badge>
                             }
@@ -219,7 +220,7 @@ function UserManagementPage() {
             accessorKey: "role",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Role <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
@@ -227,12 +228,12 @@ function UserManagementPage() {
             cell: ({ row: { original } }) => {
                 switch (original.role) {
                     case RoleType.ADMIN:
-                        return <Badge variant="outline" className="text-cyan-600">Admin</Badge>
+                        return <Badge variant="info">Admin</Badge>
                     case RoleType.MANAGER:
-                        return <Badge variant="outline" className="text-yellow-600">Manager</Badge>
+                        return <Badge variant="achievement">Manager</Badge>
                     case RoleType.USER:
                     default:
-                        return <Badge variant="outline" className="text-green-600">User</Badge>
+                        return <Badge variant="success">User</Badge>
                 }
             },
         },
@@ -240,16 +241,16 @@ function UserManagementPage() {
             accessorKey: "emailVerified",
             header: ({ column }) => {
                 return (
-                    <Button variant="invisible" size="xs" onClick={() => column.toggleSorting()}>
+                    <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
                         Active <ChevronsUpDown className="size-3 text-muted-foreground"/>
                     </Button>
                 )
             },
             cell: ({ row: { original } }) => {
                 return original.emailVerified ?
-                    <Badge variant="outline" className="text-green-600">Yes</Badge>
+                    <Badge variant="success">Yes</Badge>
                     :
-                    <Badge variant="outline" className="text-red-600">No</Badge>
+                    <Badge variant="destructive">No</Badge>
             },
         },
         {
@@ -258,89 +259,96 @@ function UserManagementPage() {
             enableSorting: false,
             cell: ({ row: { original } }) => (
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="size-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="size-4"/>
-                        </Button>
+                    <DropdownMenuTrigger render={<Button variant="ghost"/>}>
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal/>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>
-                            Actions for {" "}
-                            <span className="text-yellow-500">{original.name}</span>
-                        </DropdownMenuLabel>
+                    <DropdownMenuContent align="end" className="w-fit">
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>
+                                Actions for {" "}
+                                <span className="text-brand">{original.name}</span>
+                            </DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => impersonateUser(original.id, original.name)}>
+                                <UserPen className="size-4"/>
+                                <span>Impersonate </span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateUser(original.id, { emailVerified: !original.emailVerified })}>
+                                {original.emailVerified ?
+                                    <>
+                                        <UserX className="size-4"/>
+                                        <span>Disable account</span>
+                                    </>
+                                    :
+                                    <>
+                                        <UserCheck className="size-4"/>
+                                        <span>Enable account</span>
+                                    </>
+                                }
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
                         <DropdownMenuSeparator/>
-                        <DropdownMenuItem onClick={() => impersonateUser(original.id, original.name)}>
-                            <UserPen className="size-4"/>
-                            <span>Impersonate </span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateUser(original.id, { emailVerified: !original.emailVerified })}>
-                            {original.emailVerified ?
-                                <>
-                                    <UserX className="size-4"/>
-                                    <span>Disable account</span>
-                                </>
-                                :
-                                <>
-                                    <UserCheck className="size-4"/>
-                                    <span>Enable account</span>
-                                </>
-                            }
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuLabel>Features Settings</DropdownMenuLabel>
-                        <DropdownMenuCheckboxItem
-                            checked={original.showUpdateModal}
-                            onCheckedChange={() => updateUser(original.id, { showUpdateModal: !original.showUpdateModal })}
-                        >
-                            Update Modal
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                            checked={original.showOnboarding}
-                            onCheckedChange={() => updateUser(original.id, { showOnboarding: !original.showOnboarding })}
-                        >
-                            Onboarding
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuLabel>Privacy Settings</DropdownMenuLabel>
-                        <DropdownMenuCheckboxItem
-                            checked={original.privacy === PrivacyType.PUBLIC}
-                            onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.PUBLIC })}
-                        >
-                            Public
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                            checked={original.privacy === PrivacyType.RESTRICTED}
-                            onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.RESTRICTED })}
-                        >
-                            Restricted
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem
-                            checked={original.privacy === PrivacyType.PRIVATE}
-                            onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.PRIVATE })}
-                        >
-                            Private
-                        </DropdownMenuCheckboxItem>
-                        <DropdownMenuSeparator/>
-                        <DropdownMenuLabel>Role Settings</DropdownMenuLabel>
-                        {Object.values(RoleType).map((role) =>
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>Features Settings</DropdownMenuLabel>
                             <DropdownMenuCheckboxItem
-                                key={role}
-                                className="capitalize"
-                                checked={original.role === role}
-                                onCheckedChange={() => updateUser(original.id, { role })}
+                                checked={original.showUpdateModal}
+                                onCheckedChange={() => updateUser(original.id, { showUpdateModal: !original.showUpdateModal })}
                             >
-                                {role}
+                                Update Modal
                             </DropdownMenuCheckboxItem>
-                        )}
+                            <DropdownMenuCheckboxItem
+                                checked={original.showOnboarding}
+                                onCheckedChange={() => updateUser(original.id, { showOnboarding: !original.showOnboarding })}
+                            >
+                                Onboarding
+                            </DropdownMenuCheckboxItem>
+                        </DropdownMenuGroup>
                         <DropdownMenuSeparator/>
-                        <DropdownMenuItem
-                            className="text-red-500"
-                            onSelect={() => updateUser(original.id, { deleteUser: true })}
-                        >
-                            <Trash2 className="mr-2 size-4"/>
-                            <span>Delete user</span>
-                        </DropdownMenuItem>
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>Privacy Settings</DropdownMenuLabel>
+                            <DropdownMenuCheckboxItem
+                                checked={original.privacy === PrivacyType.PUBLIC}
+                                onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.PUBLIC })}
+                            >
+                                Public
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem
+                                checked={original.privacy === PrivacyType.RESTRICTED}
+                                onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.RESTRICTED })}
+                            >
+                                Restricted
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem
+                                checked={original.privacy === PrivacyType.PRIVATE}
+                                onCheckedChange={() => updateUser(original.id, { privacy: PrivacyType.PRIVATE })}
+                            >
+                                Private
+                            </DropdownMenuCheckboxItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>Role Settings</DropdownMenuLabel>
+                            {Object.values(RoleType).map((role) =>
+                                <DropdownMenuCheckboxItem
+                                    key={role}
+                                    className="capitalize"
+                                    checked={original.role === role}
+                                    onCheckedChange={() => updateUser(original.id, { role })}
+                                >
+                                    {role}
+                                </DropdownMenuCheckboxItem>
+                            )}
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onClick={() => updateUser(original.id, { deleteUser: true })}
+                            >
+                                <Trash2 className="mr-2 size-4"/>
+                                <span>Delete user</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),
@@ -348,6 +356,8 @@ function UserManagementPage() {
     ];
 
     const table = useReactTable({
+        onSortingChange,
+        onPaginationChange,
         enableSorting: true,
         manualSorting: true,
         columns: usersColumns,
@@ -355,10 +365,8 @@ function UserManagementPage() {
         manualPagination: true,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
-        onSortingChange: onSortingChange,
         getCoreRowModel: getCoreRowModel(),
-        onPaginationChange: onPaginationChange,
-        state: { pagination: paginationState, sorting: sortingState },
+        state: { pagination, sorting: sortingState },
     });
 
     return (
@@ -383,42 +391,11 @@ function UserManagementPage() {
                     </Button>
                 </div>
             </div>
-            <div className="rounded-md border p-3 pt-0 overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) =>
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map(header =>
-                                    <TableHead key={header.id}>
-                                        {!header.isPlaceholder && flexRender(header.column.columnDef.header, header.getContext())}
-                                    </TableHead>
-                                )}
-                            </TableRow>
-                        )}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ?
-                            table.getRowModel().rows.map((row) => {
-                                return (
-                                    <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                                        {row.getVisibleCells().map((cell) =>
-                                            <TableCell key={cell.id}>
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </TableCell>
-                                        )}
-                                    </TableRow>
-                                );
-                            })
-                            :
-                            <TableRow>
-                                <TableCell colSpan={usersColumns.length} className="h-24 text-center">
-                                    No results.
-                                </TableCell>
-                            </TableRow>
-                        }
-                    </TableBody>
-                </Table>
-            </div>
+
+            <DataTable
+                table={table}
+            />
+
             <div className="mt-3">
                 <TablePagination
                     table={table}

@@ -10,7 +10,8 @@ import {Award, Calendar, ChartNoAxesColumn, ChevronDown, ListOrdered, Zap} from 
 import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 
 
-const defaultTriggerClassName = "inline-flex items-center justify-center px-4 text-sm font-medium hover:text-app-accent";
+const defaultTriggerClassName = "inline-flex items-center justify-center px-4 text-sm font-medium hover:text-brand";
+
 
 const previewItemClassName = "[&_svg:not([class*='text-'])]:text-muted-foreground relative flex items-center gap-2 " +
     "rounded-sm px-2 py-1.5 text-sm select-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
@@ -46,7 +47,7 @@ export const MyMediaMenu = ({ username, settings, preview = false, triggerClassN
                 <div className={cn(defaultTriggerClassName, triggerClassName)}>
                     MyMedia <ChevronDown className="ml-2 size-3 opacity-70"/>
                 </div>
-                <div className="w-92 max-w-full overflow-hidden rounded-md border bg-background text-primary shadow-md">
+                <div className="w-92 max-w-full overflow-hidden rounded-md border bg-background text-foreground shadow-md">
                     {content}
                 </div>
             </div>
@@ -77,20 +78,17 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
     return (
         <div className="grid grid-cols-2">
             <div className="bg-muted/30 px-3 pt-1 pb-2">
-                <MenuLabel preview={preview}>
-                    Tracking Lists
-                </MenuLabel>
                 <MenuGroup preview={preview}>
+                    <MenuLabel preview={preview}>
+                        Tracking Lists
+                    </MenuLabel>
                     {getActiveMediaSettings(settings)
                         .map((setting) =>
                             <MenuEntry
                                 preview={preview}
                                 key={setting.mediaType}
                                 renderLink={(children) =>
-                                    <Link
-                                        to="/list/$mediaType/$username"
-                                        params={{ mediaType: setting.mediaType, username }}
-                                    >
+                                    <Link to="/list/$mediaType/$username" params={{ mediaType: setting.mediaType, username }}>
                                         {children}
                                     </Link>
                                 }
@@ -102,10 +100,10 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                 </MenuGroup>
             </div>
             <div className="border-l px-3 pt-1 pb-2">
-                <MenuLabel preview={preview}>
-                    Personal
-                </MenuLabel>
                 <MenuGroup preview={preview}>
+                    <MenuLabel preview={preview}>
+                        Personal
+                    </MenuLabel>
                     <MenuEntry
                         preview={preview}
                         renderLink={(children) =>
@@ -135,7 +133,7 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                     <MenuEntry
                         preview={preview}
                         className={highlightComingNext
-                            ? "bg-app-accent/20 font-bold text-app-accent ring-1 ring-app-accent/30"
+                            ? "bg-brand/20 font-bold text-brand ring-1 ring-brand/30"
                             : undefined}
                         renderLink={(children) => <Link to="/coming-next">{children}</Link>}
                     >
@@ -178,7 +176,7 @@ const MenuLabel = ({ preview, children }: { preview: boolean; children: ReactNod
     }
 
     return (
-        <DropdownMenuLabel className="mb-2 px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {children}
         </DropdownMenuLabel>
     );
@@ -186,7 +184,10 @@ const MenuLabel = ({ preview, children }: { preview: boolean; children: ReactNod
 
 
 const MenuGroup = ({ preview, children }: { preview: boolean; children: ReactNode }) => {
-    if (preview) return <div>{children}</div>;
+    if (preview) {
+        return <div>{children}</div>;
+    }
+
     return <DropdownMenuGroup>{children}</DropdownMenuGroup>;
 };
 
@@ -209,8 +210,9 @@ const MenuEntry = ({ preview, children, className, renderLink }: MenuEntryProps)
     }
 
     return (
-        <DropdownMenuItem className={className} asChild>
-            {renderLink(children)}
-        </DropdownMenuItem>
+        <DropdownMenuItem
+            className={className}
+            render={renderLink(children)}
+        />
     );
 };

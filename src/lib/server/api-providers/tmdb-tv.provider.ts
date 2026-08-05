@@ -1,4 +1,5 @@
 import {logger} from "@/lib/server/core/logger";
+import {ApiProviderType} from "@/lib/utils/enums";
 import {TvRepository} from "@/lib/server/domain/media/tv";
 import {MalApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
@@ -71,9 +72,20 @@ const createTmdbTvProvider = (tmdb: TmdbApi, definition: TvDefinition): External
         source: "tmdb",
 
         search: {
-            async search(query, page = 1) {
-                const raw = await tmdb.search(query, page);
-                return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
+            async search(query, page = 1, advancedFilters) {
+                const tmdbFilters = advancedFilters?.provider === ApiProviderType.TMDB
+                    ? advancedFilters
+                    : undefined;
+
+                const raw = await tmdb.search(query, page, tmdbFilters);
+                const transformed = tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
+
+                if (!tmdbFilters) return transformed;
+
+                return {
+                    ...transformed,
+                    data: transformed.data.filter((item) => item.itemType === tmdbFilters.mediaType),
+                };
             },
         },
 

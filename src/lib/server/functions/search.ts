@@ -9,12 +9,16 @@ import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
 export const getSearchResults = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
     .validator(navbarSearchSchema)
-    .handler(async ({ data: { query, page, apiProvider }, context: { currentUser } }) => {
+    .handler(async ({ data: { query, page, apiProvider, advancedFilters }, context: { currentUser } }) => {
         const container = await getContainer();
         const userService = container.services.user;
         const providers = container.registries.externalProviders;
 
-        if (query === "") {
+        if (advancedFilters && advancedFilters.provider !== apiProvider) {
+            throw new FormattedError("The advanced filters do not match the selected search provider.");
+        }
+
+        if (query === "" && !advancedFilters) {
             return { hasNextPage: false, data: [] };
         }
 
@@ -27,11 +31,11 @@ export const getSearchResults = createServerFn({ method: "GET" })
         }
 
         if (apiProvider === ApiProviderType.TMDB) {
-            return providers.get(MediaType.SERIES).search.search(query, page);
+            return providers.get(MediaType.SERIES).search.search(query, page, advancedFilters);
         }
 
         if (apiProvider === ApiProviderType.IGDB) {
-            return providers.get(MediaType.GAMES).search.search(query, page);
+            return providers.get(MediaType.GAMES).search.search(query, page, advancedFilters);
         }
 
         if (apiProvider === ApiProviderType.MANGA) {
@@ -39,7 +43,8 @@ export const getSearchResults = createServerFn({ method: "GET" })
         }
 
         if (apiProvider === ApiProviderType.BOOKS) {
-            const apiResults = await providers.get(MediaType.BOOKS).search.search(query, page);
+            const apiResults = await providers.get(MediaType.BOOKS).search.search(query, page, advancedFilters);
+            if (advancedFilters) return apiResults;
 
             if (page === 1) {
                 const booksService = container.registries.mediaService.get(MediaType.BOOKS);

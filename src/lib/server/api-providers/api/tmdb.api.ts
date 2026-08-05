@@ -1,4 +1,6 @@
 import {serverEnv} from "@/env/server";
+import {MediaType} from "@/lib/utils/enums";
+import {TmdbAdvancedSearchFilters} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
@@ -49,15 +51,51 @@ export const createTmdbApi = async () => {
     const resultsPerPage = config.resultsPerPage ?? 20;
 
     return {
-        async search(query: string, page = 1): Promise<SearchData<TmdbMultiSearchResponse>> {
+        async search(query: string, page = 1, advancedFilters?: TmdbAdvancedSearchFilters): Promise<SearchData<TmdbMultiSearchResponse>> {
             const apiKey = getApiKey();
-            const params = new URLSearchParams({ query: query, api_key: apiKey, page: page.toString() });
+            const trimmedQuery = advancedFilters?.title?.trim() ?? query.trim();
+            const hasTitleQuery = trimmedQuery.length >= 2;
 
-            const response = await http.call(`${config.baseUrl}/search/multi?${params.toString()}`);
+            const params = new URLSearchParams({ api_key: apiKey, page: page.toString() });
+
+            if (!advancedFilters) {
+                params.set("query", query);
+                const response = await http.call(`${config.baseUrl}/search/multi?${params.toString()}`);
+                return {
+                    page,
+                    resultsPerPage,
+                    rawData: await response.json(),
+                };
+            }
+
+            const isMovie = advancedFilters.mediaType === MediaType.MOVIES;
+            const endpoint = hasTitleQuery
+                ? `/search/${isMovie ? "movie" : "tv"}`
+                : `/discover/${isMovie ? "movie" : "tv"}`;
+
+            if (hasTitleQuery) params.set("query", trimmedQuery);
+
+            if (advancedFilters.year) {
+                params.set(isMovie ? "primary_release_year" : "first_air_date_year", advancedFilters.year.toString());
+            }
+
+            if (!hasTitleQuery && advancedFilters.mediaType === MediaType.ANIME) {
+                params.set("with_genres", "16");
+                params.set("with_original_language", "ja");
+            }
+
+            const response = await http.call(`${config.baseUrl}${endpoint}?${params.toString()}`);
+            const rawData = await response.json();
             return {
                 page,
                 resultsPerPage,
-                rawData: await response.json(),
+                rawData: {
+                    ...rawData,
+                    results: (rawData.results ?? []).map((item: object) => ({
+                        ...item,
+                        media_type: isMovie ? "movie" : "tv",
+                    })),
+                },
             };
         },
 

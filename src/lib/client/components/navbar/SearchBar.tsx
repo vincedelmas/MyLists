@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {AdvancedSearchFilters} from "@/lib/schemas";
 import {Button} from "@/lib/client/components/ui/button";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
@@ -13,6 +14,7 @@ import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {Link, LinkProps, useRouter, useRouterState} from "@tanstack/react-router";
 import {MediaSearchResult} from "@/lib/client/components/media/base/MediaSearchResult";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
+import {AdvancedSearchDialog, getAdvancedSearchLabel,} from "@/lib/client/components/search/AdvancedSearchDialog";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
 
@@ -25,9 +27,21 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     const { currentUser } = useAuth();
     const [page, setPage] = useState(1);
     const [prevSelector, setPrevSelector] = useState(currentUser?.searchSelector);
+    const [advancedFilters, setAdvancedFilters] = useState<AdvancedSearchFilters>();
+    const [isAdvancedDialogOpen, setIsAdvancedDialogOpen] = useState(false);
     const [selectDrop, setSelectDrop] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.USERS);
-    const { search, setSearch, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer({ onReset: () => setPage(1) });
-    const { data: searchResults, isFetching, error } = useQuery(navSearchOptions(debouncedSearch, page, selectDrop));
+
+    const { search, setSearch, setIsOpen, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer({
+        outsideClickEnabled: !isAdvancedDialogOpen,
+        onReset: () => {
+            setPage(1);
+            setAdvancedFilters(undefined);
+        },
+    });
+
+    const submittedQuery = advancedFilters ? search : debouncedSearch;
+    const advancedSearchLabel = advancedFilters ? getAdvancedSearchLabel(advancedFilters) : debouncedSearch;
+    const { data: searchResults, isFetching, error } = useQuery(navSearchOptions(submittedQuery, page, selectDrop, advancedFilters));
 
     if (prevSelector !== currentUser?.searchSelector) {
         setPrevSelector(currentUser?.searchSelector);
@@ -48,8 +62,9 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
         { label: "Users", value: ApiProviderType.USERS },
     ];
 
-    const handleInputChange = (ev: any) => {
+    const handleInputChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
         setPage(1);
+        setAdvancedFilters(undefined);
         setSearch(ev.target.value);
     };
 
@@ -59,6 +74,19 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
         setSelectDrop(value);
     };
 
+    const handleAdvancedApply = (nextQuery: string, filters: AdvancedSearchFilters) => {
+        setPage(1);
+        setAdvancedFilters(filters);
+        setSearch(nextQuery);
+        setIsOpen(true);
+    };
+
+    const handleAdvancedClear = () => {
+        setPage(1);
+        setAdvancedFilters(undefined);
+        setIsOpen(search.trim().length > 0);
+    };
+
     return (
         <div ref={containerRef}>
             <InputGroup>
@@ -66,6 +94,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     type="search"
                     value={search}
                     onChange={handleInputChange}
+                    className="placeholder:text-sm"
                     aria-label="Search for media or users"
                     placeholder="Search for media / users..."
                 />
@@ -73,6 +102,15 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     <Search aria-hidden="true"/>
                 </InputGroupAddon>
                 <InputGroupAddon align="inline-end" className="h-full p-0 has-[>button]:mr-0">
+                    <AdvancedSearchDialog
+                        query={search}
+                        provider={selectDrop}
+                        triggerVariant="compact"
+                        onApply={handleAdvancedApply}
+                        onClear={handleAdvancedClear}
+                        advancedFilters={advancedFilters}
+                        onDialogOpenChange={setIsAdvancedDialogOpen}
+                    />
                     <Select value={selectDrop} items={searchProviderItems} onValueChange={handleValueChange}>
                         <SelectTrigger variant="inputGroup" aria-label="Search provider" className="min-w-25">
                             <SelectValue/>
@@ -92,12 +130,13 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
 
             <SearchContainer
                 error={error}
-                search={search}
                 isOpen={isOpen}
                 isPending={isFetching}
                 className="max-w-md -mt-2"
-                debouncedSearch={debouncedSearch}
+                debouncedSearch={advancedSearchLabel}
                 hasResults={!!searchResults?.data.length}
+                search={advancedFilters ? "advanced" : search}
+                emptyMessage={advancedFilters ? `No results found for ${advancedSearchLabel}.` : undefined}
             >
                 <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-90">
                     {searchResults?.data.map((item) =>

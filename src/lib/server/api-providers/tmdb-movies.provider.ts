@@ -1,3 +1,4 @@
+import {ApiProviderType} from "@/lib/utils/enums";
 import {TmdbApi} from "@/lib/server/api-providers/api";
 import {MoviesRepository} from "@/lib/server/domain/media/movies";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
@@ -30,9 +31,20 @@ export const createTmdbMoviesProvider = (tmdb: TmdbApi): ExternalMediaProvider<U
         mediaType: identity.mediaType,
 
         search: {
-            async search(query, page = 1) {
-                const raw = await tmdb.search(query, page);
-                return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
+            async search(query, page = 1, advancedFilters) {
+                const tmdbFilters = advancedFilters?.provider === ApiProviderType.TMDB
+                    ? advancedFilters
+                    : undefined;
+
+                const raw = await tmdb.search(query, page, tmdbFilters);
+                const transformed = tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
+
+                if (!tmdbFilters) return transformed;
+
+                return {
+                    ...transformed,
+                    data: transformed.data.filter((item) => item.itemType === tmdbFilters.mediaType),
+                };
             },
         },
         details: {

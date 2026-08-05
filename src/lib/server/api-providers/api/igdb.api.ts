@@ -3,6 +3,7 @@ import {serverEnv} from "@/env/server";
 import {notFound} from "@tanstack/react-router";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {apiTokens} from "@/lib/server/database/schema";
+import {GameAdvancedSearchFilters} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -64,7 +65,7 @@ export const createIgdbApi = async () => {
 
     const fetchNewIgdbToken = async (): Promise<IgdbTokenResponse> => {
         const { clientId, clientSecret } = getCredentials();
-        
+
         const url = `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`;
         const response = await http.call(url, "post");
 
@@ -142,11 +143,12 @@ export const createIgdbApi = async () => {
     };
 
     return {
-        async search(query: string, page: number = 1): Promise<SearchData<IgdbSearchResponse>> {
+        async search(query: string, page: number = 1, advancedFilters?: GameAdvancedSearchFilters): Promise<SearchData<IgdbSearchResponse>> {
             const offset = (page - 1) * resultsPerPage;
-            const sanitizedQuery = sanitizeSearchQuery(query);
+            const whereClauses = buildAdvancedWhereClauses(advancedFilters);
+            const sanitizedQuery = sanitizeSearchQuery(advancedFilters?.title ?? query);
 
-            if (sanitizedQuery.length < 2) {
+            if (sanitizedQuery.length < 2 && whereClauses.length === 1) {
                 return {
                     page,
                     resultsPerPage,
@@ -163,8 +165,8 @@ export const createIgdbApi = async () => {
                 headers,
                 body: `
                     fields id, name, cover.image_id, first_release_date;
-                    search "${escapedQuery}";
-                    where version_parent = null;
+                    ${escapedQuery ? `search "${escapedQuery}";` : ""}
+                    where ${whereClauses.join(" & ")};
                     limit ${resultsPerPage + 1};
                     offset ${offset};
                 `,
@@ -255,6 +257,24 @@ export const createIgdbApi = async () => {
 
         fetchNewIgdbToken,
     };
+};
+
+
+const buildAdvancedWhereClauses = (filters?: GameAdvancedSearchFilters) => {
+    const startOfYearTimestamp = (year: number) => {
+        return Math.floor(Date.UTC(year, 0, 1) / 1000);
+    }
+
+    const clauses = ["version_parent = null"];
+    if (!filters) return clauses;
+
+    if (filters.genreId) clauses.push(`genres = ${filters.genreId}`);
+    if (filters.platformId) clauses.push(`platforms = ${filters.platformId}`);
+    if (filters.minimumRating !== undefined) clauses.push(`total_rating >= ${filters.minimumRating}`);
+    if (filters.releaseYearTo) clauses.push(`first_release_date < ${startOfYearTimestamp(filters.releaseYearTo + 1)}`);
+    if (filters.releaseYearFrom) clauses.push(`first_release_date >= ${startOfYearTimestamp(filters.releaseYearFrom)}`);
+
+    return clauses;
 };
 
 

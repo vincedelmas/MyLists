@@ -6,10 +6,11 @@ import {useOnClickOutside} from "@/lib/client/hooks/use-clicked-outside";
 interface UseSearchLogicOptions {
     debounceMs?: number;
     onReset?: () => void;
+    outsideClickEnabled?: boolean;
 }
 
 
-export function useSearchContainer({ onReset, debounceMs = 400 }: UseSearchLogicOptions = {}) {
+export function useSearchContainer({ onReset, debounceMs = 400, outsideClickEnabled = true }: UseSearchLogicOptions = {}) {
     const [search, setSearch] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const debouncedSearch = useDebounce(search, debounceMs);
@@ -33,7 +34,9 @@ export function useSearchContainer({ onReset, debounceMs = 400 }: UseSearchLogic
         setIsOpen(false);
     };
 
-    useOnClickOutside(containerRef, reset);
+    useOnClickOutside(containerRef, () => {
+        if (outsideClickEnabled) reset();
+    });
 
     return {
         reset,

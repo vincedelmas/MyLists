@@ -1,3 +1,4 @@
+import {ApiProviderType} from "@/lib/utils/enums";
 import {GBooksApi} from "@/lib/server/api-providers/api";
 import {BooksRepository} from "@/lib/server/domain/media/books";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
@@ -18,8 +19,12 @@ export const createGBooksBooksProvider = (gBooks: GBooksApi): ExternalMediaProvi
         mediaType: booksServerDefinition.identity.mediaType,
 
         search: {
-            async search(query: string, page = 1) {
-                const raw = await gBooks.search(query, page);
+            async search(query: string, page = 1, advancedFilters) {
+                const bookFilters = advancedFilters?.provider === ApiProviderType.BOOKS
+                    ? advancedFilters
+                    : undefined;
+
+                const raw = await gBooks.search(query, page, bookFilters);
                 return gBooksTransformer.transformSearchResults(raw, transformOptions);
             },
         },

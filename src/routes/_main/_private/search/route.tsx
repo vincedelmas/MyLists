@@ -1,17 +1,18 @@
 import React, {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {AdvancedSearchFilters, GlobalSearch, globalSearchSchema} from "@/lib/schemas";
 import {Card} from "@/lib/client/components/ui/card";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
-import {GlobalSearch, globalSearchSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
+import {AdvancedSearchDialog} from "@/lib/client/components/search/AdvancedSearchDialog";
 import {BookImage, Cat, Gamepad2, Library, Monitor, Popcorn, Search, User, X} from "lucide-react";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
@@ -24,13 +25,14 @@ export const Route = createFileRoute("/_main/_private/search")({
 
 function SearchPage() {
     const { currentUser } = useAuth();
-    const filters = Route.useSearch();
     const navigate = Route.useNavigate();
-    const { query = "", apiProvider = ApiProviderType.TMDB } = filters;
+    const searchParams = Route.useSearch();
+    const { query = "", apiProvider = ApiProviderType.TMDB, advancedFilters } = searchParams;
 
     const [selectDrop, setSelectDrop] = useState(apiProvider);
     const [currentSearch, setCurrentSearch] = useState(query);
-    const { data: apiData, isLoading, error } = useQuery(navSearchOptions(query, 1, apiProvider));
+    const { data: apiData, isLoading, error } = useQuery(navSearchOptions(query, 1, apiProvider, advancedFilters));
+
     const searchProviderItems = [
         { label: "Media", value: ApiProviderType.TMDB },
         ...(resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS)
@@ -57,7 +59,7 @@ function SearchPage() {
         }
 
         setCurrentSearch(currentSearch);
-        await fetchData({ query: currentSearch, apiProvider: selectDrop });
+        await fetchData({ query: currentSearch, apiProvider: selectDrop, advancedFilters: undefined });
     }
 
     const onTypeChanged = async (value: ApiProviderType | null) => {
@@ -65,9 +67,18 @@ function SearchPage() {
         setSelectDrop(value);
     };
 
+    const handleAdvancedApply = async (nextQuery: string, filters: AdvancedSearchFilters) => {
+        setCurrentSearch(nextQuery);
+        await fetchData({ query: nextQuery, apiProvider: selectDrop, advancedFilters: filters });
+    };
+
+    const handleAdvancedClear = async () => {
+        await fetchData({ query: currentSearch, apiProvider: selectDrop, advancedFilters: undefined });
+    };
+
     return (
         <PageTitle title="Search" subtitle="Search for movies, TV shows, users, and more.">
-            <div className="flex justify-center items-center gap-3 mt-3 mb-6">
+            <div className="flex flex-wrap justify-center items-center gap-3 mt-3 mb-6">
                 <SearchInput
                     value={currentSearch}
                     placeholder="Search for media/users..."
@@ -93,6 +104,13 @@ function SearchPage() {
                         </SelectGroup>
                     </SelectContent>
                 </Select>
+                <AdvancedSearchDialog
+                    query={currentSearch}
+                    provider={selectDrop}
+                    onApply={handleAdvancedApply}
+                    onClear={handleAdvancedClear}
+                    advancedFilters={advancedFilters}
+                />
             </div>
 
             {isLoading &&
@@ -156,7 +174,7 @@ function SearchPage() {
                 </div>
             }
 
-            {!query && !apiData &&
+            {!query && !advancedFilters && !apiData &&
                 <div className="text-center py-10">
                     <div className="text-muted-foreground mb-8">
                         <div className="flex justify-center gap-4 mb-6">

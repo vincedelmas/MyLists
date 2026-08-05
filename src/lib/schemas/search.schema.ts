@@ -9,7 +9,6 @@ export type ProfileActiveTab = z.infer<typeof profileActiveTabSchema>;
 export type AdvancedSearchFilters = z.infer<typeof advancedSearchFiltersSchema>;
 export type BookAdvancedSearchFilters = z.infer<typeof bookAdvancedSearchFiltersSchema>;
 export type GameAdvancedSearchFilters = z.infer<typeof gameAdvancedSearchFiltersSchema>;
-export type TmdbAdvancedSearchFilters = z.infer<typeof tmdbAdvancedSearchFiltersSchema>;
 
 
 export const TREND_MEDIA_TYPES = [
@@ -59,18 +58,9 @@ export const gameAdvancedSearchFiltersSchema = z.object({
 });
 
 
-export const tmdbAdvancedSearchFiltersSchema = z.object({
-    year: optionalAdvancedYearSchema,
-    title: optionalAdvancedTextSchema,
-    provider: z.literal(ApiProviderType.TMDB),
-    mediaType: z.enum([MediaType.MOVIES, MediaType.SERIES, MediaType.ANIME]),
-});
-
-
 export const advancedSearchFiltersSchema = z.discriminatedUnion("provider", [
     bookAdvancedSearchFiltersSchema,
     gameAdvancedSearchFiltersSchema,
-    tmdbAdvancedSearchFiltersSchema,
 ]);
 
 

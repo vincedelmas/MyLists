@@ -10,7 +10,7 @@ export const animeDefinition = defineMediaDefinition({
         mediaType: MediaType.ANIME,
     },
     externalSearch: {
-        advancedFilters: true,
+        advancedFilters: false,
         provider: ApiProviderType.TMDB,
     },
     terminology: {

@@ -10,7 +10,7 @@ export const moviesDefinition = defineMediaDefinition({
         mediaType: MediaType.MOVIES,
     },
     externalSearch: {
-        advancedFilters: true,
+        advancedFilters: false,
         provider: ApiProviderType.TMDB,
     },
     terminology: {

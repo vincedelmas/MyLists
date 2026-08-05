@@ -50,7 +50,7 @@ export const getSearchResults = createServerFn({ method: "GET" })
         }
 
         if (apiProvider === ApiProviderType.TMDB) {
-            return providers.get(MediaType.SERIES).search.search(query, page, advancedFilters);
+            return providers.get(MediaType.SERIES).search.search(query, page);
         }
 
         if (apiProvider === ApiProviderType.IGDB) {

@@ -313,8 +313,8 @@ const buildAdvancedWhereClauses = (filters?: GameAdvancedSearchFilters) => {
     const clauses = ["version_parent = null"];
     if (!filters) return clauses;
 
-    if (filters.genreId) clauses.push(`genres = ${filters.genreId}`);
-    if (filters.platformId) clauses.push(`platforms = ${filters.platformId}`);
+    if (filters.genreId) clauses.push(`genres = (${filters.genreId})`);
+    if (filters.platformId) clauses.push(`platforms = (${filters.platformId})`);
     if (filters.minimumRating !== undefined) clauses.push(`total_rating >= ${filters.minimumRating}`);
     if (filters.releaseYearTo) clauses.push(`first_release_date < ${startOfYearTimestamp(filters.releaseYearTo + 1)}`);
     if (filters.releaseYearFrom) clauses.push(`first_release_date >= ${startOfYearTimestamp(filters.releaseYearFrom)}`);

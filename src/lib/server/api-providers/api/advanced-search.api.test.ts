@@ -1,11 +1,10 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {ApiProviderType} from "@/lib/utils/enums";
 
 
 const envMocks = vi.hoisted(() => ({
     serverEnv: {
         GOOGLE_BOOKS_API_KEY: "books-key",
-        THEMOVIEDB_API_KEY: "tmdb-key",
         IGDB_CLIENT_ID: "igdb-client",
         IGDB_CLIENT_SECRET: "igdb-secret",
     },
@@ -35,7 +34,6 @@ vi.mock("@/lib/server/core/container", () => ({
 
 import {createGBooksApi} from "@/lib/server/api-providers/api/gbooks.api";
 import {createIgdbApi} from "@/lib/server/api-providers/api/igdb.api";
-import {createTmdbApi} from "@/lib/server/api-providers/api/tmdb.api";
 
 
 describe("advanced provider searches", () => {
@@ -79,7 +77,7 @@ describe("advanced provider searches", () => {
         expect(url.searchParams.get("orderBy")).toBe("newest");
     });
 
-    it("combines IGDB title search with native platform, genre, year, and rating filters", async () => {
+    it("uses IGDB array-membership filters for platform and genre", async () => {
         httpMocks.call.mockResolvedValue({ json: vi.fn().mockResolvedValue([]) });
         const api = await createIgdbApi();
         await api.search("", 1, {
@@ -97,8 +95,8 @@ describe("advanced provider searches", () => {
         expect(method).toBe("post");
         expect(options.body).toContain('search "Final Fantasy";');
         expect(options.body).toContain("version_parent = null");
-        expect(options.body).toContain("platforms = 167");
-        expect(options.body).toContain("genres = 12");
+        expect(options.body).toContain("platforms = (167)");
+        expect(options.body).toContain("genres = (12)");
         expect(options.body).toContain("first_release_date >= 1577836800");
         expect(options.body).toContain("first_release_date < 1767225600");
         expect(options.body).toContain("total_rating >= 75");
@@ -132,29 +130,4 @@ describe("advanced provider searches", () => {
         ]);
     });
 
-    it("uses TMDB title search for movies and filter-only discovery for anime", async () => {
-        const api = await createTmdbApi();
-
-        await api.search("", 1, {
-            provider: ApiProviderType.TMDB,
-            mediaType: MediaType.MOVIES,
-            title: "Arrival",
-            year: 2016,
-        });
-        const movieUrl = new URL(httpMocks.call.mock.calls[0][0]);
-        expect(movieUrl.pathname).toBe("/3/search/movie");
-        expect(movieUrl.searchParams.get("query")).toBe("Arrival");
-        expect(movieUrl.searchParams.get("primary_release_year")).toBe("2016");
-
-        await api.search("", 2, {
-            provider: ApiProviderType.TMDB,
-            mediaType: MediaType.ANIME,
-            year: 2024,
-        });
-        const animeUrl = new URL(httpMocks.call.mock.calls[1][0]);
-        expect(animeUrl.pathname).toBe("/3/discover/tv");
-        expect(animeUrl.searchParams.get("first_air_date_year")).toBe("2024");
-        expect(animeUrl.searchParams.get("with_genres")).toBe("16");
-        expect(animeUrl.searchParams.get("with_original_language")).toBe("ja");
-    });
 });

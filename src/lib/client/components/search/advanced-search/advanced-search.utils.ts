@@ -1,4 +1,3 @@
-import {ApiProviderType} from "@/lib/utils/enums";
 import type {AdvancedSearchFilters} from "@/lib/schemas";
 
 
@@ -17,7 +16,6 @@ export const countAdvancedSearchFilters = (filters?: AdvancedSearchFilters) => {
 
     return Object.entries(filters).filter(([key, value]) => {
         if (key === "provider") return false;
-        if (filters.provider === ApiProviderType.TMDB && key === "mediaType") return true;
         return value !== undefined && value !== null && value !== "";
     }).length;
 };

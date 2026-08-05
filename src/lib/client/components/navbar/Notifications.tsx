@@ -5,15 +5,15 @@ import {SocialNotifType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {NotifTab} from "@/lib/types/notifications.types";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
-import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Bell, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
+import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {formatCalendarRelativeDate, formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
 import {notificationsCountOptions, notificationsOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteSocialNotif, useMarkAllNotifAsRead, useRespondFollowRequest} from "@/lib/client/react-query/query-mutations/user.mutations";
@@ -66,7 +66,8 @@ export const Notifications = () => {
             ),
             isAccent: true,
             icon: <Play className="size-4"/>
-        }, {
+        },
+        {
             id: "social",
             isAccent: true,
             label: (
@@ -80,21 +81,16 @@ export const Notifications = () => {
                 </div>
             ),
             icon: <Users className="size-4"/>
-        }
+        },
     ]
 
     return (
         <Popover modal={isBelowLg} open={open} onOpenChange={handleOpenChange}>
-            <PopoverTrigger render={<Button variant="hover" size="icon" className="relative mr-3"/>}>
+            <PopoverTrigger render={<Button variant="hover" className="gap-0.5 px-1 mr-3"/>}>
                 <Bell className="size-5"/>
-                {!!counts?.total &&
-                    <Badge
-                        variant="destructive"
-                        className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
-                    >
-                        {counts.total > 99 ? "99+" : counts.total}
-                    </Badge>
-                }
+                <Badge variant={`${!!counts?.total ? "default" : "secondary"}`} className="h-5 min-w-5 px-1 tabular-nums">
+                    {(counts?.total ?? 0) > 99 ? "99+" : counts?.total}
+                </Badge>
             </PopoverTrigger>
             <PopoverContent className="p-0 w-82 max-h-76 overflow-y-auto scrollbar-thin max-sm:max-h-88" align="end">
                 <TabHeader

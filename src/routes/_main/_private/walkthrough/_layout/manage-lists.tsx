@@ -90,21 +90,23 @@ function ListsOnboarding() {
                 description="Every item in your grid displays its most important info at a glance. Here is how to read your cards:"
             >
                 <OnboardingDemoBox>
-                    <BaseMediaListItem
-                        rating={7.5}
-                        isCurrent={true}
-                        allStatuses={[]}
-                        isConnected={true}
-                        isMediaTypeActive={true}
-                        mediaType={MediaType.MOVIES}
-                        userMedia={onboardingMovieFixture}
-                        queryOption={onboardingQueryOption}
-                        redoDisplay={!!onboardingMovieFixture.redo &&
-                            <DisplayRedoValue
-                                redoValue={onboardingMovieFixture.redo}
-                            />
-                        }
-                    />
+                    <div className="w-48 sm:w-56">
+                        <BaseMediaListItem
+                            rating={7.5}
+                            isCurrent={true}
+                            allStatuses={[]}
+                            isConnected={true}
+                            isMediaTypeActive={true}
+                            mediaType={MediaType.MOVIES}
+                            userMedia={onboardingMovieFixture}
+                            queryOption={onboardingQueryOption}
+                            redoDisplay={!!onboardingMovieFixture.redo &&
+                                <DisplayRedoValue
+                                    redoValue={onboardingMovieFixture.redo}
+                                />
+                            }
+                        />
+                    </div>
                 </OnboardingDemoBox>
                 <OnboardingGrid>
                     <OnboardingFeatureCard

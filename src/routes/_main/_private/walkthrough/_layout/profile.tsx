@@ -92,8 +92,8 @@ function ProfileOnboarding() {
                     "like status breakdown, favorites, avg. rating etc... "
                 }
             >
-                <OnboardingDemoBox className="grid gap-6 pt-2 max-lg:grid-cols-5 max-sm:grid-cols-1">
-                    <div className="space-y-6 max-lg:col-span-3 max-sm:col-span-2 max-sm:space-y-4 max-sm:mt-4">
+                <OnboardingDemoBox className="pt-2">
+                    <div className="w-[95%] min-w-0 space-y-6 max-lg:w-3/5 max-sm:mt-4 max-sm:w-full max-sm:space-y-4">
                         <TabHeader
                             tabs={mediaTabs}
                             setActiveTab={setActiveTab}

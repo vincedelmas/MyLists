@@ -27,7 +27,11 @@ export const createGBooksApi = async () => {
 
     return {
         async search(query: string, page: number = 1): Promise<SearchData<GBooksSearchResults>> {
-            const params = new URLSearchParams({ q: query, startIndex: ((page - 1) * resultsPerPage).toString() });
+            const params = new URLSearchParams({
+                q: query,
+                maxResults: resultsPerPage.toString(),
+                startIndex: ((page - 1) * resultsPerPage).toString(),
+            });
 
             const apiKey = serverEnv.GOOGLE_BOOKS_API_KEY;
             if (apiKey) params.set("key", apiKey);

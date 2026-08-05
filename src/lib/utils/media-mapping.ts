@@ -37,11 +37,6 @@ export const mediaTypeUtils = {
 };
 
 
-export const getRedoList = () => {
-    return [...Array(11).keys()];
-};
-
-
 export const toItemKey = (item: { mediaId: number; mediaType: string }) => {
     return `${item.mediaType}-${item.mediaId}`;
 };

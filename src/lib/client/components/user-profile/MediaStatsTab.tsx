@@ -5,7 +5,7 @@ import {formatNumber} from "@/lib/utils/number-formatting";
 import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
 import {PerMediaSummaryType} from "@/lib/types/query.options.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {BarChart3, ChartNoAxesColumn, MoveRight, Star} from "lucide-react";
+import {BarChart3, ChartNoAxesColumn, Star} from "lucide-react";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
 import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
@@ -92,14 +92,6 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
             <HighlightedMedia
                 config={highlightedMedia}
             />
-
-            <div className="flex justify-end items-center gap-2 -mt-4 font-semibold text-muted-foreground">
-                <Link to="/stats/$username" params={{ username }} search={{ activeTab: mediaSummary.mediaType }}>
-                    <div className="flex justify-end items-center gap-2">
-                        Advanced Stats <MoveRight className="size-4"/>
-                    </div>
-                </Link>
-            </div>
         </div>
     );
 };

@@ -1,8 +1,7 @@
-import {Link} from "@tanstack/react-router";
 import {RatingSystemType} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
-import {Clock, ClockAlert, MoveRight, Star} from "lucide-react";
+import {Clock, ClockAlert, Star} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
@@ -95,14 +94,6 @@ export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, hig
                 showMediaType={true}
                 config={highlightedMedia}
             />
-
-            <div className="flex justify-end items-center gap-2 -mt-4 font-medium text-muted-foreground">
-                <Link to="/stats/$username" params={{ username }}>
-                    <div className="flex justify-end items-center gap-2">
-                        Advanced Stats <MoveRight className="size-4"/>
-                    </div>
-                </Link>
-            </div>
         </div>
     );
 };

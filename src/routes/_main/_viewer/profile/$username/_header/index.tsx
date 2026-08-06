@@ -12,6 +12,7 @@ import {ProfileFollows} from "@/lib/client/components/user-profile/ProfileFollow
 import {OnboardingModal} from "@/lib/client/components/user-profile/OnboardingModal";
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
+import {ProfilePortalGrid} from "@/lib/client/components/user-profile/ProfilePortalGrid";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
 
 
@@ -49,6 +50,9 @@ function ProfileMain() {
                 <MediaLevels
                     username={username}
                     settings={apiData.userData.userMediaSettings}
+                />
+                <ProfilePortalGrid
+                    username={username}
                 />
                 <UserUpdates
                     username={username}

@@ -15,25 +15,18 @@ export const createGBooksBooksProvider = (gBooks: GBooksApi): ExternalMediaProvi
     };
 
     return {
-        source: "google-books" as const,
-        mediaType: booksServerDefinition.identity.mediaType,
+        async search(query: string, page = 1, advancedFilters) {
+            const bookFilters = advancedFilters?.provider === ApiProviderType.BOOKS
+                ? advancedFilters
+                : undefined;
 
-        search: {
-            async search(query: string, page = 1, advancedFilters) {
-                const bookFilters = advancedFilters?.provider === ApiProviderType.BOOKS
-                    ? advancedFilters
-                    : undefined;
-
-                const raw = await gBooks.search(query, page, bookFilters);
-                return gBooksTransformer.transformSearchResults(raw, transformOptions);
-            },
+            const raw = await gBooks.search(query, page, bookFilters);
+            return gBooksTransformer.transformSearchResults(raw, transformOptions);
         },
 
-        details: {
-            async getDetails(apiId: string) {
-                const raw = await gBooks.getBooksDetails(apiId);
-                return gBooksTransformer.transformDetailsResults(raw, transformOptions);
-            },
+        async getDetails(apiId: string) {
+            const raw = await gBooks.getBooksDetails(apiId);
+            return gBooksTransformer.transformDetailsResults(raw, transformOptions);
         },
     };
 };

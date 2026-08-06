@@ -1,28 +1,5 @@
-import {MediaType} from "@/lib/utils/enums";
 import {AdvancedSearchFilters} from "@/lib/schemas";
 import {GameAdvancedSearchOptions, ProviderSearchResults, TrendsMedia} from "@/lib/types/provider.types";
-
-
-type SearchCapability = {
-    getAdvancedOptions?(): Promise<GameAdvancedSearchOptions>;
-    search(query: string, page?: number, advancedFilters?: AdvancedSearchFilters): Promise<ProviderSearchResults>;
-};
-
-
-type DetailsCapability<TDetails> = {
-    getDetails(apiId: number | string): Promise<TDetails>;
-    getDetailsBatch?: (apiIds: (number | string)[]) => Promise<Map<string, TDetails>>;
-};
-
-
-type TrendsCapability = {
-    getTrends(): Promise<TrendsMedia[]>;
-};
-
-
-type ChangedIdsCapability = {
-    getChangedIds(): Promise<(number | string)[]>;
-};
 
 
 type BulkRefreshResult = {
@@ -59,14 +36,17 @@ export type MediaDetailsEnricher<UpsertWithDetails> = {
 
 
 export interface ExternalMediaProvider<TDetails> {
-    source: "tmdb" | "igdb" | "google-books" | "mal";
-    mediaType: MediaType;
+    search(query: string, page?: number, advancedFilters?: AdvancedSearchFilters): Promise<ProviderSearchResults>;
 
-    search: SearchCapability;
-    details: DetailsCapability<TDetails>;
+    getDetails(apiId: number | string): Promise<TDetails>;
 
-    trends?: TrendsCapability;
-    changedIds?: ChangedIdsCapability;
+    getTrends?(): Promise<TrendsMedia[]>;
+
+    getChangedIds?(): Promise<(number | string)[]>;
+
+    getAdvancedOptions?(): Promise<GameAdvancedSearchOptions>;
+
+    getDetailsBatch?(apiIds: (number | string)[]): Promise<Map<string, TDetails>>;
 }
 
 

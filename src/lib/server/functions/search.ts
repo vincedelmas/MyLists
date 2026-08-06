@@ -13,13 +13,13 @@ export const getGameAdvancedSearchOptions = createServerFn({ method: "GET" })
         const container = await getContainer();
         const gameProvider = container.registries.externalProviders.get(MediaType.GAMES);
 
-        if (!gameProvider.search.getAdvancedOptions) {
+        if (!gameProvider.getAdvancedOptions) {
             throw new FormattedError("Advanced game search options are unavailable.");
         }
 
         return container.cacheManager.wrap(
             IGDB_ADVANCED_SEARCH_OPTIONS_CACHE_KEY,
-            () => gameProvider.search.getAdvancedOptions!(),
+            () => gameProvider.getAdvancedOptions!(),
             { ttl: ONE_DAY_CACHE_TTL_MS },
         );
     });
@@ -50,19 +50,19 @@ export const getSearchResults = createServerFn({ method: "GET" })
         }
 
         if (apiProvider === ApiProviderType.TMDB) {
-            return providers.get(MediaType.SERIES).search.search(query, page);
+            return providers.get(MediaType.SERIES).search(query, page);
         }
 
         if (apiProvider === ApiProviderType.IGDB) {
-            return providers.get(MediaType.GAMES).search.search(query, page, advancedFilters);
+            return providers.get(MediaType.GAMES).search(query, page, advancedFilters);
         }
 
         if (apiProvider === ApiProviderType.MANGA) {
-            return providers.get(MediaType.MANGA).search.search(query, page);
+            return providers.get(MediaType.MANGA).search(query, page);
         }
 
         if (apiProvider === ApiProviderType.BOOKS) {
-            const apiResults = await providers.get(MediaType.BOOKS).search.search(query, page, advancedFilters);
+            const apiResults = await providers.get(MediaType.BOOKS).search(query, page, advancedFilters);
             if (advancedFilters) return apiResults;
 
             if (page === 1) {

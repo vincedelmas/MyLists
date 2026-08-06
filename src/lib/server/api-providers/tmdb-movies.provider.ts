@@ -26,26 +26,19 @@ export const createTmdbMoviesProvider = (tmdb: TmdbApi): ExternalMediaProvider<U
     };
 
     return ({
-        source: "tmdb",
-        mediaType: identity.mediaType,
+        async search(query, page = 1) {
+            const raw = await tmdb.search(query, page);
+            return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
+        },
 
-        search: {
-            async search(query, page = 1) {
-                const raw = await tmdb.search(query, page);
-                return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
-            },
+        async getDetails(apiId) {
+            const raw = await tmdb.getMovieDetails(Number(apiId));
+            return tmdbTransformer.transformMoviesDetailsResults(raw, transformOptions);
         },
-        details: {
-            async getDetails(apiId) {
-                const raw = await tmdb.getMovieDetails(Number(apiId));
-                return tmdbTransformer.transformMoviesDetailsResults(raw, transformOptions);
-            },
-        },
-        trends: {
-            async getTrends() {
-                const raw = await tmdb.getMoviesTrending();
-                return tmdbTransformer.transformMoviesTrends(raw, identity);
-            },
+        
+        async getTrends() {
+            const raw = await tmdb.getMoviesTrending();
+            return tmdbTransformer.transformMoviesTrends(raw, identity);
         },
     });
 }

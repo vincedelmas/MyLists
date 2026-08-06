@@ -11,7 +11,7 @@ describe("ExternalTMDBTvMatcher", () => {
             externalApiSource: ApiProviderType.TMDB,
         });
         const tvProvider = {
-            search: { search: vi.fn() },
+            search: vi.fn(),
         };
         const tvIngestion = {
             storeFromExternal: vi.fn().mockResolvedValue(100),
@@ -37,15 +37,13 @@ describe("ExternalTMDBTvMatcher", () => {
             releaseDate: "2023",
         });
         const tvProvider = {
-            search: {
-                search: vi.fn().mockResolvedValue({
-                    hasNextPage: false,
-                    data: [
-                        { id: 1, name: "Frieren", date: "2023-09-29", itemType: MediaType.SERIES, image: "" },
-                        { id: 2, name: "Frieren", date: "2023-09-29", itemType: MediaType.ANIME, image: "" },
-                    ],
-                }),
-            },
+            search: vi.fn().mockResolvedValue({
+                hasNextPage: false,
+                data: [
+                    { id: 1, name: "Frieren", date: "2023-09-29", itemType: MediaType.SERIES, image: "" },
+                    { id: 2, name: "Frieren", date: "2023-09-29", itemType: MediaType.ANIME, image: "" },
+                ],
+            }),
         };
         const tvIngestion = {
             storeFromExternal: vi.fn().mockResolvedValue(200),

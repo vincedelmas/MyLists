@@ -15,21 +15,14 @@ export const createMalMangaProvider = (mal: MalApi): ExternalMediaProvider<Upser
     };
 
     return {
-        source: "mal",
-        mediaType: mangaServerDefinition.identity.mediaType,
-
-        search: {
-            async search(query, page = 1) {
-                const raw = await mal.searchManga(query, page);
-                return malTransformer.transformSearchResults(raw, transformOptions);
-            },
+        async search(query, page = 1) {
+            const raw = await mal.searchManga(query, page);
+            return malTransformer.transformSearchResults(raw, transformOptions);
         },
-
-        details: {
-            async getDetails(apiId) {
-                const raw = await mal.getMangaDetails(Number(apiId));
-                return malTransformer.transformDetailsResults(raw, transformOptions);
-            },
+        
+        async getDetails(apiId) {
+            const raw = await mal.getMangaDetails(Number(apiId));
+            return malTransformer.transformDetailsResults(raw, transformOptions);
         },
     };
 };

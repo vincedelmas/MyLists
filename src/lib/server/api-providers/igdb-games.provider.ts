@@ -29,40 +29,33 @@ export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<Up
     };
 
     return {
-        source: "igdb" as const,
-        mediaType: gamesServerDefinition.identity.mediaType,
+        async search(query: string, page = 1, advancedFilters) {
+            const gameFilters = advancedFilters?.provider === ApiProviderType.IGDB
+                ? advancedFilters
+                : undefined;
 
-        search: {
-            async search(query: string, page = 1, advancedFilters) {
-                const gameFilters = advancedFilters?.provider === ApiProviderType.IGDB
-                    ? advancedFilters
-                    : undefined;
-
-                const raw = await igdb.search(query, page, gameFilters);
-                return igdbTransformer.transformSearchResults(raw, transformOptions);
-            },
-            async getAdvancedOptions() {
-                return igdb.getAdvancedSearchOptions();
-            },
+            const raw = await igdb.search(query, page, gameFilters);
+            return igdbTransformer.transformSearchResults(raw, transformOptions);
         },
 
-        details: {
-            async getDetails(apiId: number) {
-                const raw = await igdb.getGameDetails(apiId);
-                return igdbTransformer.transformDetailsResults(raw, transformOptions);
-            },
-            async getDetailsBatch(apiIds) {
-                const rawItems = await igdb.getGamesDetails(apiIds.map(Number));
-                const entries = await Promise.all(rawItems.map(async raw => [String(raw.id), await igdbTransformer.transformDetailsResults(raw, transformOptions)] as const));
-                return new Map(entries);
-            },
+        async getAdvancedOptions() {
+            return igdb.getAdvancedSearchOptions();
         },
 
-        trends: {
-            async getTrends() {
-                const raw = await igdb.getTrendingGames();
-                return igdbTransformer.transformGamesTrends(raw, transformOptions);
-            },
+        async getDetails(apiId: number) {
+            const raw = await igdb.getGameDetails(apiId);
+            return igdbTransformer.transformDetailsResults(raw, transformOptions);
+        },
+
+        async getDetailsBatch(apiIds) {
+            const rawItems = await igdb.getGamesDetails(apiIds.map(Number));
+            const entries = await Promise.all(rawItems.map(async raw => [String(raw.id), await igdbTransformer.transformDetailsResults(raw, transformOptions)] as const));
+            return new Map(entries);
+        },
+
+        async getTrends() {
+            const raw = await igdb.getTrendingGames();
+            return igdbTransformer.transformGamesTrends(raw, transformOptions);
         },
     };
 };

@@ -44,7 +44,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const searchResults = await this.moviesProvider.search.search(item.name);
+                const searchResults = await this.moviesProvider.search(item.name);
                 const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
 
                 if (candidates.length === 0) {

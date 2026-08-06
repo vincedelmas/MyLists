@@ -41,7 +41,7 @@ const createAnimeGenresEnricher = (mal: MalApi, maxGenres: number): MediaDetails
 const createTvRefreshCandidates = (repository: TvRepository, provider: ExternalMediaProvider<UpsertTvWithDetails>) => {
     return {
         async getCandidateApiIds() {
-            const changedIds = await provider.changedIds?.getChangedIds() ?? [];
+            const changedIds = await provider.getChangedIds?.() ?? [];
             return repository.getMediaIdsToBeRefreshed(changedIds.map(Number));
         },
     };
@@ -67,34 +67,23 @@ const createTmdbTvProvider = (tmdb: TmdbApi, definition: TvDefinition): External
     };
 
     return {
-        mediaType: identity.mediaType,
-        source: "tmdb",
-
-        search: {
-            async search(query, page = 1) {
-                const raw = await tmdb.search(query, page);
-                return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
-            },
+        async search(query, page = 1) {
+            const raw = await tmdb.search(query, page);
+            return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
         },
 
-        details: {
-            async getDetails(apiId) {
-                const raw = await tmdb.getTvDetails(Number(apiId));
-                return tmdbTransformer.transformTvDetailsResults(raw, transformOptions);
-            },
+        async getDetails(apiId) {
+            const raw = await tmdb.getTvDetails(Number(apiId));
+            return tmdbTransformer.transformTvDetailsResults(raw, transformOptions);
         },
 
-        trends: {
-            async getTrends() {
-                const raw = await tmdb.getTvTrending();
-                return tmdbTransformer.transformTvTrends(raw, tmdbIdentities);
-            },
+        async getTrends() {
+            const raw = await tmdb.getTvTrending();
+            return tmdbTransformer.transformTvTrends(raw, tmdbIdentities);
         },
-
-        changedIds: {
-            getChangedIds() {
-                return tmdb.getTvChangedIds();
-            },
+        
+        getChangedIds() {
+            return tmdb.getTvChangedIds();
         },
     };
 };

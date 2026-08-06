@@ -44,7 +44,7 @@ export class ExternalMalMangaMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const searchResults = await this.mangaProvider.search.search(item.name);
+                const searchResults = await this.mangaProvider.search(item.name);
                 const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
 
                 if (candidates.length === 0) {

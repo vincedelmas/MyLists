@@ -69,7 +69,7 @@ describe("movies import processing", () => {
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
             moviesService,
-            { search: { search: vi.fn() } } as any,
+            { search: vi.fn() } as any,
             { storeFromExternal: vi.fn() } as any,
         ));
         const processor = new ImportJobProcessor(importService, matcherRegistry);
@@ -131,11 +131,9 @@ describe("movies import processing", () => {
         const importService = new ImportService(ImportRepository);
         const moviesService = new MoviesService(new MoviesRepository());
         const moviesProvider = {
-            search: {
-                search: vi.fn()
-                    .mockResolvedValueOnce({ hasNextPage: false, data: [] })
-                    .mockRejectedValueOnce(new Error("TMDB unavailable")),
-            },
+            search: vi.fn()
+                .mockResolvedValueOnce({ hasNextPage: false, data: [] })
+                .mockRejectedValueOnce(new Error("TMDB unavailable")),
         };
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
@@ -186,7 +184,7 @@ describe("movies import processing", () => {
         const [storedJob] = await db.select().from(importJobs).where(eq(importJobs.id, job.id));
         const [skippedItem, failedItem] = storedImportItems.sort((a, b) => a.rowNumber - b.rowNumber);
 
-        expect(moviesProvider.search.search).toHaveBeenCalledTimes(2);
+        expect(moviesProvider.search).toHaveBeenCalledTimes(2);
         expect(storedListItems).toEqual([]);
         expect(skippedItem).toMatchObject({
             rowNumber: 2,

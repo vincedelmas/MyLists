@@ -30,7 +30,7 @@ export function createMediaIngestionService<TDetails>(params: {
     }
 
     async function fetchAndPrepareDetails(apiId: number | string, context: IngestionContext) {
-        const details = await provider.details.getDetails(apiId);
+        const details = await provider.getDetails(apiId);
         return applyEnrichers(details, context);
     }
 
@@ -50,7 +50,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
     async function* refreshBatch(apiIds: (number | string)[]) {
         try {
-            const detailsByApiId = await provider.details.getDetailsBatch!(apiIds);
+            const detailsByApiId = await provider.getDetailsBatch!(apiIds);
 
             for (const apiId of apiIds) {
                 const details = detailsByApiId.get(String(apiId));
@@ -127,8 +127,8 @@ export function createMediaIngestionService<TDetails>(params: {
             const missingApiIds = uniqueApiIds.filter((apiId) => !mediaIdByApiId.has(String(apiId)));
             if (missingApiIds.length === 0) return mediaIdByApiId;
 
-            if (provider.details.getDetailsBatch) {
-                const detailsByApiId = await provider.details.getDetailsBatch(missingApiIds);
+            if (provider.getDetailsBatch) {
+                const detailsByApiId = await provider.getDetailsBatch(missingApiIds);
                 for (const apiId of missingApiIds) {
                     const details = detailsByApiId.get(String(apiId));
                     if (!details) continue;
@@ -157,12 +157,12 @@ export function createMediaIngestionService<TDetails>(params: {
         async* bulkRefresh(limit?: number) {
             const apiIds = await refreshCandidates?.getCandidateApiIds() ?? [];
 
-            const chunkSize = provider.details.getDetailsBatch
+            const chunkSize = provider.getDetailsBatch
                 ? refreshPolicy?.chunkSize ?? 100
                 : apiIds.length || 1;
 
             for (const chunk of chunks(apiIds, chunkSize, limit)) {
-                if (provider.details.getDetailsBatch) {
+                if (provider.getDetailsBatch) {
                     yield* refreshBatch(chunk);
                 }
                 else {

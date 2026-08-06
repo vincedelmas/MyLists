@@ -19,9 +19,9 @@ export const getTrendsMedia = createServerFn({ method: "GET" })
                 const seriesProvider = registry.get(MediaType.SERIES);
                 const moviesProvider = registry.get(MediaType.MOVIES);
 
-                // const gamesTrends = await gamesProvider.trends?.getTrends() ?? [];
-                const seriesTrends = await seriesProvider.trends?.getTrends() ?? [];
-                const moviesTrends = await moviesProvider.trends?.getTrends() ?? [];
+                // const gamesTrends = await gamesProvider.getTrends?.() ?? [];
+                const seriesTrends = await seriesProvider.getTrends?.() ?? [];
+                const moviesTrends = await moviesProvider.getTrends?.() ?? [];
 
                 return { seriesTrends, moviesTrends };
             },

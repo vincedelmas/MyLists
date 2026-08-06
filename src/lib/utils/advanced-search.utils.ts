@@ -19,3 +19,8 @@ export const countAdvancedSearchFilters = (filters?: AdvancedSearchFilters) => {
         return value !== undefined && value !== null && value !== "";
     }).length;
 };
+
+
+export const hasSearchCriteria = (query: string, filters?: AdvancedSearchFilters) => {
+    return query.trim().length >= 2 || countAdvancedSearchFilters(filters) > 0;
+};

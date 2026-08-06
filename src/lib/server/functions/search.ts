@@ -80,4 +80,6 @@ export const getSearchResults = createServerFn({ method: "GET" })
 
             return apiResults;
         }
+
+        throw new FormattedError("Unsupported search provider.");
     });

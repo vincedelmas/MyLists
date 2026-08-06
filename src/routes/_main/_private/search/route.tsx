@@ -1,10 +1,9 @@
 import {useEffect} from "react";
-import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {formatDate} from "@/lib/utils/date-formatting";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
@@ -17,17 +16,23 @@ import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {AdvancedSearchFilters, globalSearchSchema} from "@/lib/schemas";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
-import {countAdvancedSearchFilters} from "@/lib/utils/advanced-search.utils";
-import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal, X} from "lucide-react";
-import {getSearchFilterDefinition} from "@/lib/client/components/search/advanced-search/search-filter.registry";
-import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal} from "lucide-react";
+import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/advanced-search.utils";
+import {getSearchFilterDefinition} from "@/lib/client/components/search/advanced-search/search-filter.registry";
+import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 export const Route = createFileRoute("/_main/_private/search")({
     validateSearch: globalSearchSchema,
+    loaderDeps: ({ search }) => ({ search }),
+    loader: ({ context: { queryClient }, deps: { search } }) => {
+        const { query = "", page = 1, apiProvider = ApiProviderType.TMDB, advancedFilters } = search;
+        if (!hasSearchCriteria(query, advancedFilters)) return;
+        return queryClient.ensureQueryData(navSearchOptions(query, page, apiProvider, advancedFilters));
+    },
     component: SearchPage,
 });
 
@@ -53,15 +58,12 @@ function SearchPage() {
     const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
     const { query = "", page = 1, apiProvider = ApiProviderType.TMDB, advancedFilters } = filters;
-    const form = useForm<SearchFormValues>({
-        defaultValues: createFormValues(query, apiProvider, advancedFilters),
-    });
+    const form = useForm<SearchFormValues>({ defaultValues: createFormValues(query, apiProvider, advancedFilters) });
 
     const draftFilters = useWatch({ control: form.control, name: "advancedFilters" });
     const selectedProvider = useWatch({ control: form.control, name: "apiProvider" });
 
     const definition = getSearchFilterDefinition(selectedProvider);
-    const { data: apiData, isLoading, error } = useQuery(navSearchOptions(query, page, apiProvider, advancedFilters));
 
     useEffect(() => {
         form.reset(createFormValues(query, apiProvider, advancedFilters));
@@ -293,15 +295,21 @@ function SearchPage() {
                         </div>
                     }
 
-                    <SearchResults
-                        page={page}
-                        error={error}
-                        data={apiData?.data}
-                        isLoading={isLoading}
-                        onPageChange={handlePageChange}
-                        hasSubmittedSearch={hasSubmittedSearch}
-                        hasNextPage={apiData?.hasNextPage ?? false}
-                    />
+                    {hasSubmittedSearch ?
+                        <SearchResultsQuery
+                            page={page}
+                            query={query}
+                            apiProvider={apiProvider}
+                            onPageChange={handlePageChange}
+                            advancedFilters={advancedFilters}
+                        />
+                        :
+                        <EmptyState
+                            icon={Search}
+                            className="min-h-48 rounded-xl border px-4 py-10 text-center"
+                            message="Choose a media type, add a title or filters, then search."
+                        />
+                    }
                 </div>
             </FormProvider>
         </PageTitle>
@@ -309,47 +317,40 @@ function SearchPage() {
 }
 
 
-interface SearchResultsProps {
+interface SearchResultsQueryProps {
     page: number;
-    isLoading: boolean;
-    error: Error | null;
-    hasNextPage: boolean;
-    hasSubmittedSearch: boolean;
-    data?: ProviderSearchResult[];
+    query: string;
+    apiProvider: ApiProviderType;
+    advancedFilters?: AdvancedSearchFilters;
     onPageChange: (page: number) => Promise<void>;
 }
 
 
-const SearchResults = ({ data, error, isLoading, page, hasNextPage, hasSubmittedSearch, onPageChange }: SearchResultsProps) => {
-    if (isLoading) {
-        return (
-            <div className="flex min-h-48 items-center justify-center" aria-label="Loading search results">
-                <Spinner className="size-7"/>
-            </div>
-        );
-    }
+const SearchResultsQuery = (props: SearchResultsQueryProps) => {
+    const { query, page, apiProvider, advancedFilters, onPageChange } = props;
+    const { data } = useSuspenseQuery(navSearchOptions(query, page, apiProvider, advancedFilters));
 
-    if (error) {
-        return (
-            <EmptyState
-                icon={X}
-                message={`Search unavailable: ${error.message}`}
-                className="min-h-48 rounded-xl border px-4 py-10 text-center"
-            />
-        );
-    }
+    return (
+        <SearchResults
+            page={page}
+            data={data.data}
+            onPageChange={onPageChange}
+            hasNextPage={data.hasNextPage}
+        />
+    );
+};
 
-    if (!hasSubmittedSearch) {
-        return (
-            <EmptyState
-                icon={Search}
-                className="min-h-48 rounded-xl border px-4 py-10 text-center"
-                message="Choose a media type, add a title or filters, then search."
-            />
-        );
-    }
 
-    if (data?.length === 0) {
+interface SearchResultsProps {
+    page: number;
+    hasNextPage: boolean;
+    data: ProviderSearchResult[];
+    onPageChange: (page: number) => Promise<void>;
+}
+
+
+const SearchResults = ({ data, page, hasNextPage, onPageChange }: SearchResultsProps) => {
+    if (data.length === 0) {
         return (
             <EmptyState
                 icon={SearchX}
@@ -358,8 +359,6 @@ const SearchResults = ({ data, error, isLoading, page, hasNextPage, hasSubmitted
             />
         );
     }
-
-    if (!data?.length) return null;
 
     return (
         <section aria-labelledby="search-results-heading" className="flex flex-col gap-4">

@@ -4,19 +4,7 @@ import {cleanAdvancedSearchText} from "@/lib/utils/advanced-search.utils";
 import {AdvancedSearchFilters, BookAdvancedSearchFilters} from "@/lib/schemas";
 import {Field, FieldDescription, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {AppliedSearchFilterChip} from "@/lib/client/components/search/advanced-search/AppliedSearchFilterChip";
-import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {AdvancedSearchFilterDefinition, AppliedSearchFilterChipsProps, ProviderSearchFilterProps} from "@/lib/types/advanced-search.types";
-
-
-const languageOptions = [
-    { label: "Any language", value: null },
-    { label: "English", value: "en" },
-    { label: "French", value: "fr" },
-    { label: "German", value: "de" },
-    { label: "Spanish", value: "es" },
-    { label: "Italian", value: "it" },
-    { label: "Japanese", value: "ja" },
-] as const;
 
 
 const createBookFilters = (applied?: AdvancedSearchFilters): BookAdvancedSearchFilters => {
@@ -34,6 +22,7 @@ const cleanBookFilters = (filters: AdvancedSearchFilters): BookAdvancedSearchFil
         author: cleanAdvancedSearchText(bookFilters.author),
         subject: cleanAdvancedSearchText(bookFilters.subject),
         publisher: cleanAdvancedSearchText(bookFilters.publisher),
+        language: cleanAdvancedSearchText(bookFilters.language)?.toLowerCase(),
     };
 };
 
@@ -48,6 +37,10 @@ const validateBookFilters = (query: string, filters: AdvancedSearchFilters) => {
 
     if (checkedISBN && !/^(?:\d{9}[\dX]|\d{13})$/i.test(checkedISBN)) {
         return "Enter a valid ISBN-10 or ISBN-13.";
+    }
+
+    if (bookFilters.language && !/^[a-z]{2}$/i.test(bookFilters.language)) {
+        return "Enter a two-letter language code.";
     }
 
     if (![query.trim(), bookFilters.author, bookFilters.isbn, bookFilters.publisher, bookFilters.subject].some(Boolean)) {
@@ -102,50 +95,20 @@ const BookFilterPanel = ({ filters, onChange }: ProviderSearchFilterProps) => {
                 />
             </Field>
 
-            <BookFilterSelect
-                label="Language"
-                items={languageOptions}
-                id="search-book-language"
-                value={bookFilters.language ?? null}
-                onChange={(value) => onChange({ ...bookFilters, language: value as BookAdvancedSearchFilters["language"] })}
-            />
+            <Field>
+                <FieldLabel htmlFor="search-book-language">Language</FieldLabel>
+                <Input
+                    maxLength={2}
+                    placeholder="en"
+                    autoCapitalize="none"
+                    id="search-book-language"
+                    value={bookFilters.language ?? ""}
+                    onChange={(ev) => onChange({ ...bookFilters, language: ev.target.value })}
+                />
+                <FieldDescription>Two-letter language code.</FieldDescription>
+            </Field>
         </FieldGroup>
     );
-};
-
-
-interface BookFilterSelectProps {
-    id: string;
-    label: string;
-    value: string | null;
-    onChange: (value: string | null) => void;
-    items: ReadonlyArray<{ label: string; value: string | null }>;
-}
-
-
-const BookFilterSelect = ({ id, label, value, items, onChange }: BookFilterSelectProps) => (
-    <Field>
-        <FieldLabel htmlFor={id}>{label}</FieldLabel>
-        <Select items={items} value={value} onValueChange={onChange}>
-            <SelectTrigger id={id} className="w-full">
-                <SelectValue/>
-            </SelectTrigger>
-            <SelectContent>
-                <SelectGroup>
-                    {items.map((option) =>
-                        <SelectItem key={option.value ?? "any"} value={option.value}>
-                            {option.label}
-                        </SelectItem>
-                    )}
-                </SelectGroup>
-            </SelectContent>
-        </Select>
-    </Field>
-);
-
-
-const bookChipLabels = {
-    language: Object.fromEntries(languageOptions.map(({ value, label }) => [value, label])),
 };
 
 
@@ -157,7 +120,7 @@ const BookAppliedFilters = ({ filters, onChange }: AppliedSearchFilterChipsProps
     if (bookFilters.author) chips.push({ key: "author", label: `Author: ${bookFilters.author}` });
     if (bookFilters.subject) chips.push({ key: "subject", label: `Subject: ${bookFilters.subject}` });
     if (bookFilters.publisher) chips.push({ key: "publisher", label: `Publisher: ${bookFilters.publisher}` });
-    if (bookFilters.language) chips.push({ key: "language", label: `Language: ${bookChipLabels.language[bookFilters.language]}` });
+    if (bookFilters.language) chips.push({ key: "language", label: `Language: ${bookFilters.language.toUpperCase()}` });
 
     return chips.map((chip) =>
         <AppliedSearchFilterChip
@@ -173,7 +136,7 @@ export const bookSearchFilterDefinition: AdvancedSearchFilterDefinition = {
     label: "Book filters",
     FilterPanel: BookFilterPanel,
     validate: validateBookFilters,
+    cleanFilters: cleanBookFilters,
     createFilters: createBookFilters,
     AppliedFilters: BookAppliedFilters,
-    cleanFilters: cleanBookFilters,
 };

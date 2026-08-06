@@ -10,18 +10,11 @@ interface AppliedSearchFilterChipProps {
 
 
 export const AppliedSearchFilterChip = ({ label, onRemove }: AppliedSearchFilterChipProps) => (
-    <Badge variant="secondary" className="h-7 gap-1.5 pl-2.5 pr-1 text-xs">
+    <Badge variant="outline">
         <span className="max-w-52 truncate">
             {label}
         </span>
-        <Button
-            type="button"
-            size="icon-xs"
-            variant="ghost"
-            onClick={onRemove}
-            aria-label={`Remove ${label} filter`}
-            className="size-5 rounded-full text-muted-foreground hover:text-foreground"
-        >
+        <Button size="bare" type="button" variant="ghost" onClick={onRemove} aria-label={`Remove ${label} filter`}>
             <X/>
         </Button>
     </Badge>

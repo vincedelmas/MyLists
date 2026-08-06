@@ -40,8 +40,8 @@ const bookAdvancedSearchFiltersSchema = z.object({
     orderBy: z.enum(["relevance", "newest"]).optional().catch(undefined),
     printType: z.enum(["books", "magazines"]).optional().catch(undefined),
     isbn: z.string().trim().max(32).optional().catch(undefined),
-    language: z.enum(["en", "fr", "de", "es", "it", "ja"]).optional().catch(undefined),
     availability: z.enum(["partial", "full", "free-ebooks", "paid-ebooks", "ebooks"]).optional().catch(undefined),
+    language: z.string().trim().regex(/^[a-z]{2}$/i).transform(v => v.toLowerCase()).optional().catch(undefined),
 });
 
 

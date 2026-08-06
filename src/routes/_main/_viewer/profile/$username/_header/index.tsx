@@ -74,7 +74,6 @@ function ProfileMain() {
                 <div className="animate-in fade-in duration-300">
                     {effectiveActiveTab === "overview" ?
                         <OverviewTab
-                            username={username}
                             perMedia={apiData.perMediaSummary}
                             globalStats={apiData.mediaGlobalSummary}
                             ratingSystem={apiData.userData.ratingSystem}

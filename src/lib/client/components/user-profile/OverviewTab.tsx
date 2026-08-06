@@ -13,7 +13,6 @@ import {SegmentedDistributionBar} from "@/lib/client/components/general/Segmente
 
 
 interface OverviewTabProps {
-    username: string,
     perMedia: PerMediaSummaryType,
     ratingSystem: RatingSystemType,
     globalStats: MediaGlobalSummaryType,
@@ -21,7 +20,7 @@ interface OverviewTabProps {
 }
 
 
-export const OverviewTab = ({ username, globalStats, perMedia, ratingSystem, highlightedMedia }: OverviewTabProps) => {
+export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMedia }: OverviewTabProps) => {
     const rating = globalStats.avgRated;
     const distributionTotalDays = perMedia.reduce((total, media) => total + media.timeSpentDays, 0);
 

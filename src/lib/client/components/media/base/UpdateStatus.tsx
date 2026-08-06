@@ -7,12 +7,11 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 interface StatusDropProps {
     status: Status;
     mediaType: MediaType;
-    completable?: boolean;
     updateStatus: ReturnType<typeof useUpdateUserMediaMutation>;
 }
 
 
-export const UpdateStatus = ({ status, mediaType, updateStatus, completable = true }: StatusDropProps) => {
+export const UpdateStatus = ({ status, mediaType, updateStatus }: StatusDropProps) => {
     const allStatuses = statusUtils.byMediaType(mediaType);
     const statusItems = allStatuses?.map((status) => ({ label: status, value: status })) ?? [];
 
@@ -31,11 +30,7 @@ export const UpdateStatus = ({ status, mediaType, updateStatus, completable = tr
                 <SelectContent>
                     <SelectGroup>
                         {statusItems.map((item) =>
-                            <SelectItem
-                                key={item.value}
-                                value={item.value}
-                                disabled={item.value === Status.COMPLETED && !completable}
-                            >
+                            <SelectItem key={item.value} value={item.value}>
                                 {item.label}
                             </SelectItem>
                         )}

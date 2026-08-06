@@ -48,4 +48,49 @@ describe("MangaImportListWriter", () => {
             currentChapter: 375,
         }]);
     });
+
+    it("preserves imported progress for a completed publishing manga without a chapter total", async () => {
+        const mangaService = {
+            bulkInsertUserMedia: vi.fn().mockResolvedValue([]),
+            findById: vi.fn().mockResolvedValue({
+                id: 100,
+                apiId: 2,
+                name: "Look Back",
+                chapters: null,
+                prodStatus: "Publishing",
+            }),
+        };
+        const writer = new MangaImportListWriter(mangaService as any);
+
+        const matches: MatchedImportItem[] = [{
+            mediaId: 100,
+            item: {
+                id: 1,
+                jobId: 10,
+                rowNumber: 2,
+                name: "Look Back",
+                releaseDate: "2021",
+                statusReason: null,
+                externalApiId: "138673",
+                matchedMediaId: null,
+                externalApiSource: ApiProviderType.MANGA,
+                mediaType: MediaType.MANGA,
+                createdAt: "2024-01-01 00:00:00",
+                updatedAt: "2024-01-01 00:00:00",
+                status: ImportItemStatus.PROCESSING,
+                payload: { status: Status.COMPLETED, currentChapter: 1 },
+            },
+        }];
+
+        await writer.addMatchedItems(42, matches);
+
+        expect(mangaService.bulkInsertUserMedia).toHaveBeenCalledWith([{
+            userId: 42,
+            mediaId: 100,
+            status: Status.COMPLETED,
+            redo: 0,
+            total: 1,
+            currentChapter: 1,
+        }]);
+    });
 });

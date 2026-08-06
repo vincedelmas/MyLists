@@ -47,8 +47,7 @@ export class MangaImportListWriter implements ImportListWriter {
 
     private _defaultCurrentChapter(status: Status, media: Manga) {
         if (status === Status.COMPLETED) {
-            if (!media.chapters) throw new Error("Cannot complete a manga without chapters");
-            return media.chapters;
+            return media.chapters ?? 0;
         }
 
         if (status === Status.PLAN_TO_READ) return 0;
@@ -58,8 +57,8 @@ export class MangaImportListWriter implements ImportListWriter {
 
     private _calculateTotal(status: Status, currentChapter: number, redo: number, media: Manga) {
         if (status === Status.COMPLETED) {
-            if (!media.chapters) throw new Error("Cannot complete a manga without chapters");
-            return media.chapters + (redo * media.chapters);
+            const chaptersPerRead = media.chapters ?? currentChapter;
+            return chaptersPerRead + (redo * chaptersPerRead);
         }
 
         if (status === Status.PLAN_TO_READ) return 0;

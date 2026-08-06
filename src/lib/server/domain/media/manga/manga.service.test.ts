@@ -192,6 +192,26 @@ describe("MangaService", () => {
             expect(log?.newValue).toBe(Status.COMPLETED);
         });
 
+        it("updateStatusHandler: preserves entered chapters when a publishing manga has no chapter total", () => {
+            const current = makeState({ status: Status.READING, currentChapter: 1, total: 1 });
+            const media = { ...baseManga, chapters: null, prodStatus: "Publishing" };
+            const [next] = mangaService.updateStatusHandler(current, { status: Status.COMPLETED }, media);
+
+            expect(next.currentChapter).toBe(1);
+            expect(next.total).toBe(1);
+            expect(next.status).toBe(Status.COMPLETED);
+        });
+
+        it("updateStatusHandler: keeps zero progress when a manga has no chapter total", () => {
+            const current = makeState({ status: Status.READING, currentChapter: 0, total: 0 });
+            const media = { ...baseManga, chapters: null };
+            const [next] = mangaService.updateStatusHandler(current, { status: Status.COMPLETED }, media);
+
+            expect(next.currentChapter).toBe(0);
+            expect(next.total).toBe(0);
+            expect(next.status).toBe(Status.COMPLETED);
+        });
+
         it("updateStatusHandler: COMPLETED -> PTR set total, redo and currentChapter = 0", () => {
             const current = makeState({ status: Status.COMPLETED, redo: 4, total: 500, currentChapter: 100 });
             const [next, log] = mangaService.updateStatusHandler(current, { status: Status.PLAN_TO_READ }, baseManga);

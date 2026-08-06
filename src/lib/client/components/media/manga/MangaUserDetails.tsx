@@ -35,7 +35,6 @@ export const MangaUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
             <UpdateStatus
                 mediaType={mediaType}
                 status={userMedia.status}
-                completable={!!mediaData.chapters}
                 updateStatus={updateUserMediaMutation}
             />
             {userMedia.status !== Status.PLAN_TO_READ &&

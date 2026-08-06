@@ -98,12 +98,10 @@ export class MangaService extends BaseService<MangaServerDefinition, MangaReposi
         const logPayload = { oldValue: currentState.status, newValue: payload.status };
 
         if (payload.status === Status.COMPLETED) {
-            if (!media.chapters) {
-                throw new FormattedError("Cannot complete a manga without chapters");
+            if (media.chapters) {
+                newState.total = media.chapters;
+                newState.currentChapter = media.chapters;
             }
-
-            newState.total = media.chapters;
-            newState.currentChapter = media.chapters;
         }
         else if (payload.status === Status.PLAN_TO_READ) {
             newState.redo = 0;

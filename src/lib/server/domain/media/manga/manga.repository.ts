@@ -36,7 +36,7 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
     // --- Implemented Methods ------------------------------------------------
 
     async addMediaToUserList(userId: number, media: Manga, newStatus: Status) {
-        const newTotal = (newStatus === Status.COMPLETED) ? media.chapters! : 0;
+        const newTotal = (newStatus === Status.COMPLETED) ? (media.chapters ?? 0) : 0;
 
         const [newMedia] = await getDbClient()
             .insert(mangaList)

@@ -1,12 +1,12 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {DisplayChapters} from "@/lib/client/components/media/base/DisplayChapters";
+import {MediaListCardProps} from "@/lib/client/components/media/media-config.types";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 
 
-type MangaListItemProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaListCard"]>[number];
+type MangaListItemProps<T extends MediaType> = MediaListCardProps<T>;
 
 
 export const MangaListItem = (props: MangaListItemProps<typeof MediaType.MANGA>) => {

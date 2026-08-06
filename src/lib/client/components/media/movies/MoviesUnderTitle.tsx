@@ -1,13 +1,13 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {Calendar, Clock} from "lucide-react";
-import {formatMinutes} from "@/lib/utils/number-formatting";
 import {extractYear} from "@/lib/utils/date-formatting";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {formatMinutes} from "@/lib/utils/number-formatting";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaUnderItem, MediaUnderRating} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type MoviesDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["underTitle"]>[number];
+type MoviesDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const MoviesUnderTitle = ({ media }: MoviesDetailsProps<typeof MediaType.MOVIES>) => {

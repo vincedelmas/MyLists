@@ -5,11 +5,11 @@ import {extractYear} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaUnderItem, MediaUnderRating} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type TvDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["underTitle"]>[number];
+type TvDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const TvUnderTitle = ({ media }: TvDetailsProps<TvMediaType>) => {

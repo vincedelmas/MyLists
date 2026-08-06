@@ -1,5 +1,6 @@
-import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
+import {ApiProviderType} from "@/lib/utils/enums";
 import {GamesRepository} from "@/lib/server/domain/media/games";
+import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
 import {gamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
@@ -32,9 +33,16 @@ export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<Up
         mediaType: gamesServerDefinition.identity.mediaType,
 
         search: {
-            async search(query: string, page = 1) {
-                const raw = await igdb.search(query, page);
+            async search(query: string, page = 1, advancedFilters) {
+                const gameFilters = advancedFilters?.provider === ApiProviderType.IGDB
+                    ? advancedFilters
+                    : undefined;
+
+                const raw = await igdb.search(query, page, gameFilters);
                 return igdbTransformer.transformSearchResults(raw, transformOptions);
+            },
+            async getAdvancedOptions() {
+                return igdb.getAdvancedSearchOptions();
             },
         },
 

@@ -3,12 +3,12 @@ import {MediaType} from "@/lib/utils/enums";
 import {ChevronDown, ChevronUp} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {SimilarMediaCard} from "@/lib/client/components/media/base/SimilarMedia";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaExtraGrid, MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type GamesDetailsProps<T extends MediaType> = Parameters<NonNullable<MediaConfig[T]["extraSections"]>>[number];
+type GamesDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const GamesExtraSections = ({ media }: GamesDetailsProps<typeof MediaType.GAMES>) => {

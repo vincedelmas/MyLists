@@ -1,9 +1,11 @@
 import {MediaType} from "@/lib/utils/enums";
-import {ProviderSearchResults, TrendsMedia} from "@/lib/types/provider.types";
+import {AdvancedSearchFilters} from "@/lib/schemas";
+import {GameAdvancedSearchOptions, ProviderSearchResults, TrendsMedia} from "@/lib/types/provider.types";
 
 
 type SearchCapability = {
-    search(query: string, page?: number): Promise<ProviderSearchResults>;
+    getAdvancedOptions?(): Promise<GameAdvancedSearchOptions>;
+    search(query: string, page?: number, advancedFilters?: AdvancedSearchFilters): Promise<ProviderSearchResults>;
 };
 
 

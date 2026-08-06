@@ -5,23 +5,30 @@ import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
 
 
-interface MediaCardProps {
-    external?: boolean;
+interface MediaCardItem {
+    mediaName: string;
+    imageCover?: string;
+    mediaCover?: string;
+    mediaId: number | string;
+}
+
+
+interface MediaCardBaseProps {
     className?: string;
     mediaType: MediaType;
     children: React.ReactNode;
-    item: {
-        mediaId: number;
-        mediaName: string;
-        imageCover?: string;
-        mediaCover?: string;
-    };
 }
 
 
 interface MediaCardTitleProps extends React.ComponentProps<"h3"> {
     lines?: 1 | 2;
 }
+
+
+type MediaCardProps = MediaCardBaseProps & (
+    | { external: true; item: MediaCardItem }
+    | { external?: false; item: MediaCardItem & { mediaId: number } }
+    );
 
 
 const MediaCardContext = React.createContext(false);
@@ -36,7 +43,9 @@ const useRequiredMediaCardContext = (context: React.Context<boolean>, component:
 };
 
 
-export const MediaCard = ({ children, item, mediaType, className, external = false }: MediaCardProps) => {
+export const MediaCard = (props: MediaCardProps) => {
+    const { children, mediaType, className } = props;
+
     return (
         <MediaCardContext.Provider value={true}>
             <article
@@ -48,23 +57,25 @@ export const MediaCard = ({ children, item, mediaType, className, external = fal
                     className,
                 )}
             >
-                {external ?
+                {props.external ?
                     <Link
-                        aria-label={`View ${item.mediaName}`}
                         to="/details/$mediaType/external/$apiId"
                         className="absolute inset-0 outline-none"
-                        params={{ mediaType, apiId: item.mediaId.toString() }}
+                        aria-label={`View ${props.item.mediaName}`}
+                        params={{ mediaType, apiId: props.item.mediaId.toString() }}
                     >
-                        <MediaCardImage item={item}/>
+                        <MediaCardImage
+                            item={props.item}
+                        />
                     </Link>
                     :
                     <Link
                         to="/details/$mediaType/$mediaId"
-                        aria-label={`View ${item.mediaName}`}
                         className="absolute inset-0 outline-none"
-                        params={{ mediaType, mediaId: item.mediaId }}
+                        aria-label={`View ${props.item.mediaName}`}
+                        params={{ mediaType, mediaId: props.item.mediaId }}
                     >
-                        <MediaCardImage item={item}/>
+                        <MediaCardImage item={props.item}/>
                     </Link>
                 }
                 {children}
@@ -74,7 +85,7 @@ export const MediaCard = ({ children, item, mediaType, className, external = fal
 };
 
 
-const MediaCardImage = ({ item }: Pick<MediaCardProps, "item">) => {
+const MediaCardImage = ({ item }: { item: MediaCardItem }) => {
     return (
         <img
             loading="lazy"

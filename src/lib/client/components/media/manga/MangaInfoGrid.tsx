@@ -5,12 +5,12 @@ import {formatDate} from "@/lib/utils/date-formatting";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type MangaDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]>[number];
+type MangaDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const MangaInfoGrid = ({ mediaType, media }: MangaDetailsProps<typeof MediaType.MANGA>) => {

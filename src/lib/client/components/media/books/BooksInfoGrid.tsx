@@ -4,13 +4,13 @@ import {MediaType} from "@/lib/utils/enums";
 import {extractYear} from "@/lib/utils/date-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {formatMinutes} from "@/lib/utils/number-formatting";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {capitalize, formatLocaleName} from "@/lib/utils/text-formatting";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
+import type {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 
 
-type BooksDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]>[number];
+type BooksDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps<typeof MediaType.BOOKS>) => {

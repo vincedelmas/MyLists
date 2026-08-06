@@ -2,11 +2,11 @@ import React from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {zeroPad} from "@/lib/utils/number-formatting";
 import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {UpComingAlert} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type TvDetailsProps<T extends MediaType> = Parameters<NonNullable<MediaConfig[T]["upComingAlert"]>>[number];
+type TvDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const TvUpComingAlert = ({ media }: TvDetailsProps<TvMediaType>) => {

@@ -2,10 +2,10 @@ import React from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {Link} from "@tanstack/react-router";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 
 
-type BooksDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["overTitle"]>[number];
+type BooksDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const BooksOverTitle = ({ mediaType, media }: BooksDetailsProps<typeof MediaType.BOOKS>) => {

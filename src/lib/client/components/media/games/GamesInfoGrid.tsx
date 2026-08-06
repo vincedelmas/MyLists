@@ -4,12 +4,14 @@ import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type GamesDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]>[number];
+type GamesDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
+
+
 const gamesProgressTiming = gamesDefinition.progress.timing;
 
 

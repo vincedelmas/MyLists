@@ -1,12 +1,12 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {DisplayPages} from "@/lib/client/components/media/base/DisplayPages";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
+import {MediaFollowCardProps} from "@/lib/client/components/media/media-config.types";
 import {BaseMediaFollowCard} from "@/lib/client/components/media/base/BaseMediaFollowCard";
 
 
-type BookFollowCardProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaFollowCard"]>[number];
+type BookFollowCardProps<T extends MediaType> = MediaFollowCardProps<T>;
 
 
 export const BookFollowCard = ({ followData, rating, showComment }: BookFollowCardProps<typeof MediaType.BOOKS>) => {

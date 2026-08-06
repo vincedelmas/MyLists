@@ -1,15 +1,15 @@
 import {MediaType, Status} from "@/lib/utils/enums";
 import {useQueryClient} from "@tanstack/react-query";
 import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {UpdateTvRedo} from "@/lib/client/components/media/tv/UpdateTvRedo";
 import {UpdateRating} from "@/lib/client/components/media/base/UpdateRating";
 import {UpdateStatus} from "@/lib/client/components/media/base/UpdateStatus";
 import {UpdateSeasonsEps} from "@/lib/client/components/media/tv/UpdateSeasonsEps";
+import {MediaUserDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
 
 
-type TvUserDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaUserDetails"]>[number];
+type TvUserDetailsProps<T extends MediaType> = MediaUserDetailsProps<T>;
 
 
 export const TvUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: TvUserDetailsProps<TvMediaType>) => {

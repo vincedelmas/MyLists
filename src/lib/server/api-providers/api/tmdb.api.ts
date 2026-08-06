@@ -51,9 +51,9 @@ export const createTmdbApi = async () => {
     return {
         async search(query: string, page = 1): Promise<SearchData<TmdbMultiSearchResponse>> {
             const apiKey = getApiKey();
-            const params = new URLSearchParams({ query: query, api_key: apiKey, page: page.toString() });
-
+            const params = new URLSearchParams({ query, api_key: apiKey, page: page.toString() });
             const response = await http.call(`${config.baseUrl}/search/multi?${params.toString()}`);
+
             return {
                 page,
                 resultsPerPage,

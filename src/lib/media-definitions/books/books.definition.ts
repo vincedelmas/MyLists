@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
 
@@ -8,6 +8,9 @@ export const BOOKS_FIXED_DURATION_MIN = 1.7;
 export const booksDefinition = defineMediaDefinition({
     identity: {
         mediaType: MediaType.BOOKS,
+    },
+    externalSearch: {
+        provider: ApiProviderType.BOOKS,
     },
     terminology: {
         entry: {

@@ -1,10 +1,10 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {UpComingAlert} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type GamesDetailsProps<T extends MediaType> = Parameters<NonNullable<MediaConfig[T]["upComingAlert"]>>[number];
+type GamesDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const GamesUpComingAlert = ({ media }: GamesDetailsProps<typeof MediaType.GAMES>) => {

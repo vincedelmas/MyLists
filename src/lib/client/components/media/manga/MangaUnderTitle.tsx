@@ -3,12 +3,12 @@ import {MediaType} from "@/lib/utils/enums";
 import {extractYear} from "@/lib/utils/date-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Bookmark, Calendar, SquareLibrary} from "lucide-react";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaUnderItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 
 
-type MangaDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["underTitle"]>[number];
+type MangaDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const MangaUnderTitle = ({ media }: MangaDetailsProps<typeof MediaType.MANGA>) => {

@@ -3,16 +3,29 @@ import {serverEnv} from "@/env/server";
 import {notFound} from "@tanstack/react-router";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {apiTokens} from "@/lib/server/database/schema";
+import {GameAdvancedSearchFilters} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
-import {IgdbGameCollectionIds, IgdbGameDetails, IgdbSearchResponse, IgdbSearchResultItem, IgdbTokenResponse, IgdbTrendGamesResponse, SearchData} from "@/lib/types/provider.types";
+import {
+    GameAdvancedSearchOptions,
+    IdNamePair,
+    IgdbGameCollectionIds,
+    IgdbGameDetails,
+    IgdbSearchResponse,
+    IgdbSearchResultItem,
+    IgdbTokenResponse,
+    IgdbTrendGamesResponse,
+    SearchData
+} from "@/lib/types/provider.types";
 
 
 type IgdbApiConfig = ApiClientConfig & {
     baseUrl: string;
+    genresUrl: string;
     trendingUrl: string;
+    platformsUrl: string;
     tokenCacheKey: string;
     externalGamesUrl: string;
     tokenCacheExpiryMs: number;
@@ -28,6 +41,8 @@ const createConfig = (): IgdbApiConfig => ({
     tokenCacheKey: "igdb:accessToken",
     tokenCacheExpiryMs: 24 * 60 * 60 * 1000,
     baseUrl: "https://api.igdb.com/v4/games",
+    genresUrl: "https://api.igdb.com/v4/genres",
+    platformsUrl: "https://api.igdb.com/v4/platforms",
     externalGamesUrl: "https://api.igdb.com/v4/external_games",
     trendingUrl: "https://trendingnow.games/api/public/feeds/trending",
     throttleOptions: [{
@@ -64,7 +79,7 @@ export const createIgdbApi = async () => {
 
     const fetchNewIgdbToken = async (): Promise<IgdbTokenResponse> => {
         const { clientId, clientSecret } = getCredentials();
-        
+
         const url = `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`;
         const response = await http.call(url, "post");
 
@@ -142,11 +157,12 @@ export const createIgdbApi = async () => {
     };
 
     return {
-        async search(query: string, page: number = 1): Promise<SearchData<IgdbSearchResponse>> {
+        async search(query: string, page: number = 1, advancedFilters?: GameAdvancedSearchFilters): Promise<SearchData<IgdbSearchResponse>> {
             const offset = (page - 1) * resultsPerPage;
             const sanitizedQuery = sanitizeSearchQuery(query);
+            const whereClauses = buildAdvancedWhereClauses(advancedFilters);
 
-            if (sanitizedQuery.length < 2) {
+            if (sanitizedQuery.length < 2 && whereClauses.length === 1) {
                 return {
                     page,
                     resultsPerPage,
@@ -163,8 +179,8 @@ export const createIgdbApi = async () => {
                 headers,
                 body: `
                     fields id, name, cover.image_id, first_release_date;
-                    search "${escapedQuery}";
-                    where version_parent = null;
+                    ${escapedQuery ? `search "${escapedQuery}";` : ""}
+                    where ${whereClauses.join(" & ")};
                     limit ${resultsPerPage + 1};
                     offset ${offset};
                 `,
@@ -180,6 +196,37 @@ export const createIgdbApi = async () => {
                 resultsPerPage,
                 rawData: { count, result },
             }
+        },
+
+        async getAdvancedSearchOptions(): Promise<GameAdvancedSearchOptions> {
+            const headers = await getHeaders();
+
+            const fetchAllOptions = async (url: string) => {
+                const pageSize = 500;
+                const options: IdNamePair[] = [];
+
+                while (true) {
+                    const response = await http.call(url, "post", {
+                        headers,
+                        body: `fields id, name; sort name asc; limit ${pageSize}; offset ${options.length};`,
+                    });
+
+                    const page = await response.json() as IdNamePair[];
+                    options.push(...page);
+
+                    if (page.length < pageSize) return options;
+                }
+            };
+
+            const [genres, platforms] = await Promise.all([
+                fetchAllOptions(config.genresUrl),
+                fetchAllOptions(config.platformsUrl),
+            ]);
+
+            return {
+                genres: genres.filter((option) => option.name?.trim()),
+                platforms: platforms.filter((option) => option.name?.trim()),
+            };
         },
 
         async getGameDetails(apiId: number): Promise<IgdbGameDetails> {
@@ -255,6 +302,24 @@ export const createIgdbApi = async () => {
 
         fetchNewIgdbToken,
     };
+};
+
+
+const buildAdvancedWhereClauses = (filters?: GameAdvancedSearchFilters) => {
+    const startOfYearTimestamp = (year: number) => {
+        return Math.floor(Date.UTC(year, 0, 1) / 1000);
+    }
+
+    const clauses = ["version_parent = null"];
+    if (!filters) return clauses;
+
+    if (filters.genreId) clauses.push(`genres = (${filters.genreId})`);
+    if (filters.platformId) clauses.push(`platforms = (${filters.platformId})`);
+    if (filters.minimumRating !== undefined) clauses.push(`total_rating >= ${filters.minimumRating}`);
+    if (filters.releaseYearTo) clauses.push(`first_release_date < ${startOfYearTimestamp(filters.releaseYearTo + 1)}`);
+    if (filters.releaseYearFrom) clauses.push(`first_release_date >= ${startOfYearTimestamp(filters.releaseYearFrom)}`);
+
+    return clauses;
 };
 
 

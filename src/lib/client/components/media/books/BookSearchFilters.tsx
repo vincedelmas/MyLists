@@ -1,51 +1,14 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import {Input} from "@/lib/client/components/ui/input";
-import {cleanAdvancedSearchText} from "@/lib/utils/advanced-search.utils";
-import {AdvancedSearchFilters, BookAdvancedSearchFilters} from "@/lib/schemas";
 import {AppliedSearchFilterChip} from "@/lib/client/components/search/AppliedSearchFilterChip";
 import {Field, FieldDescription, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {AdvancedSearchFilterDefinition, AppliedSearchFilterChipsProps, ProviderSearchFilterProps} from "@/lib/types/advanced-search.types";
+import {AdvancedSearchFilters, BookAdvancedSearchFilters, cleanBookAdvancedSearchFilters, validateBookAdvancedSearch} from "@/lib/schemas";
 
 
 const createBookFilters = (applied?: AdvancedSearchFilters): BookAdvancedSearchFilters => {
     if (applied?.provider === ApiProviderType.BOOKS) return { ...applied };
     return { provider: ApiProviderType.BOOKS };
-};
-
-
-const cleanBookFilters = (filters: AdvancedSearchFilters): BookAdvancedSearchFilters => {
-    const bookFilters = createBookFilters(filters);
-
-    return {
-        ...bookFilters,
-        isbn: cleanAdvancedSearchText(bookFilters.isbn),
-        author: cleanAdvancedSearchText(bookFilters.author),
-        subject: cleanAdvancedSearchText(bookFilters.subject),
-        publisher: cleanAdvancedSearchText(bookFilters.publisher),
-        language: cleanAdvancedSearchText(bookFilters.language)?.toLowerCase(),
-    };
-};
-
-
-const validateBookFilters = (query: string, filters: AdvancedSearchFilters) => {
-    const bookFilters = cleanBookFilters(filters);
-    const checkedISBN = bookFilters.isbn?.replace(/[\s-]/g, "");
-
-    if (query.trim() && query.trim().length < 2) {
-        return "Book titles must contain at least two characters.";
-    }
-
-    if (checkedISBN && !/^(?:\d{9}[\dX]|\d{13})$/i.test(checkedISBN)) {
-        return "Enter a valid ISBN-10 or ISBN-13.";
-    }
-
-    if (bookFilters.language && !/^[a-z]{2}$/i.test(bookFilters.language)) {
-        return "Enter a two-letter language code.";
-    }
-
-    if (![query.trim(), bookFilters.author, bookFilters.isbn, bookFilters.publisher, bookFilters.subject].some(Boolean)) {
-        return "Add a title, author, ISBN, publisher, or subject to search books.";
-    }
 };
 
 
@@ -135,8 +98,8 @@ const BookAppliedFilters = ({ filters, onChange }: AppliedSearchFilterChipsProps
 export const bookSearchFilterDefinition: AdvancedSearchFilterDefinition = {
     label: "Book filters",
     FilterPanel: BookFilterPanel,
-    validate: validateBookFilters,
-    cleanFilters: cleanBookFilters,
     createFilters: createBookFilters,
     AppliedFilters: BookAppliedFilters,
+    validate: validateBookAdvancedSearch,
+    cleanFilters: cleanBookAdvancedSearchFilters,
 };

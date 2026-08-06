@@ -1,11 +1,6 @@
 import type {AdvancedSearchFilters} from "@/lib/schemas";
 
 
-export const cleanAdvancedSearchText = (value?: string) => {
-    return value?.trim() || undefined;
-}
-
-
 export const toOptionalNumber = (value: string) => {
     return value === "" ? undefined : Number(value);
 }

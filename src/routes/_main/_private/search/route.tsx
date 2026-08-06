@@ -97,19 +97,20 @@ function SearchPage() {
         let filtersToApply: AdvancedSearchFilters | undefined;
         const selectedDefinition = getAdvancedSearchConfig(submitted.apiProvider);
 
-        if (trimmedQuery.length === 1) {
+        if (!selectedDefinition && trimmedQuery.length === 1) {
             form.setError("query", { type: "validate", message: "Enter at least two characters." });
             return;
         }
 
         if (selectedDefinition) {
-            const cleanedFilters = selectedDefinition.cleanFilters(submitted.advancedFilters ?? selectedDefinition.createFilters());
-            const validationError = selectedDefinition.validate(trimmedQuery, cleanedFilters);
+            const submittedFilters = submitted.advancedFilters ?? selectedDefinition.createFilters();
+            const validationError = selectedDefinition.validate(trimmedQuery, submittedFilters);
             if (validationError) {
                 form.setError("root", { type: "validate", message: validationError });
                 return;
             }
 
+            const cleanedFilters = selectedDefinition.cleanFilters(submittedFilters);
             filtersToApply = countAdvancedSearchFilters(cleanedFilters) > 0 ? cleanedFilters : undefined;
             form.setValue("advancedFilters", cleanedFilters);
         }

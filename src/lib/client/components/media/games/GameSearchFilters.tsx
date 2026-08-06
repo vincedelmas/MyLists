@@ -1,41 +1,18 @@
 import {useQuery} from "@tanstack/react-query";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {Input} from "@/lib/client/components/ui/input";
-import {AdvancedSearchFilters, GameAdvancedSearchFilters} from "@/lib/schemas";
+import {toOptionalNumber} from "@/lib/utils/advanced-search.utils";
 import {AppliedSearchFilterChip} from "@/lib/client/components/search/AppliedSearchFilterChip";
-import {countAdvancedSearchFilters, toOptionalNumber} from "@/lib/utils/advanced-search.utils";
 import {gameAdvancedSearchOptions} from "@/lib/client/react-query/query-options/search.options";
 import {Field, FieldDescription, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {AdvancedSearchFilterDefinition, AppliedSearchFilterChipsProps, ProviderSearchFilterProps} from "@/lib/types/advanced-search.types";
+import {AdvancedSearchFilters, cleanGameAdvancedSearchFilters, GameAdvancedSearchFilters, validateGameAdvancedSearch} from "@/lib/schemas";
 
 
 const createGameFilters = (applied?: AdvancedSearchFilters): GameAdvancedSearchFilters => {
     if (applied?.provider === ApiProviderType.IGDB) return { ...applied };
     return { provider: ApiProviderType.IGDB };
-};
-
-
-const cleanGameFilters = (filters: AdvancedSearchFilters): GameAdvancedSearchFilters => {
-    return createGameFilters(filters);
-}
-
-
-const validateGameFilters = (query: string, filters: AdvancedSearchFilters) => {
-    const gameFilters = createGameFilters(filters);
-    const trimmedQuery = query.trim();
-
-    if (trimmedQuery && trimmedQuery.length < 2) {
-        return "Game titles must contain at least two characters.";
-    }
-
-    if (gameFilters.releaseYearFrom && gameFilters.releaseYearTo && gameFilters.releaseYearFrom > gameFilters.releaseYearTo) {
-        return "The first release year must be before the last release year.";
-    }
-
-    if (!trimmedQuery && countAdvancedSearchFilters(gameFilters) === 0) {
-        return "Add a title or at least one game filter.";
-    }
 };
 
 
@@ -174,8 +151,8 @@ const GameAppliedFilters = ({ filters, onChange }: AppliedSearchFilterChipsProps
 export const gameSearchFilterDefinition: AdvancedSearchFilterDefinition = {
     label: "Game filters",
     FilterPanel: GameFilterPanel,
-    validate: validateGameFilters,
-    cleanFilters: cleanGameFilters,
     createFilters: createGameFilters,
     AppliedFilters: GameAppliedFilters,
+    validate: validateGameAdvancedSearch,
+    cleanFilters: cleanGameAdvancedSearchFilters,
 };

@@ -7,7 +7,7 @@ let redisInstance: Redis | null = null;
 let connectionPromise: Promise<Redis> | null = null;
 
 
-export const connectRedis = () => {
+const connectRedis = () => {
     if (redisInstance?.status === "ready" || redisInstance?.status === "connecting" || redisInstance?.status === "connect") {
         return connectionPromise || Promise.resolve(redisInstance);
     }

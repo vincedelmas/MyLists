@@ -21,11 +21,10 @@
     "ignoreDependencies": [
         "pino-pretty"
     ],
+    "ignoreFiles": [
+        "src/lib/client/components/user-profile/**"
+    ],
     "ignoreIssues": {
-        "src/lib/client/components/emails/**": [
-            "duplicates",
-            "exports"
-        ],
         "src/lib/client/components/ui/**": [
             "exports"
         ]

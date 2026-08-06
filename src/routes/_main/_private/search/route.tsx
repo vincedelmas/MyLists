@@ -16,10 +16,10 @@ import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {AdvancedSearchFilters, globalSearchSchema} from "@/lib/schemas";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
+import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal} from "lucide-react";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/advanced-search.utils";
-import {getSearchFilterDefinition} from "@/lib/client/components/search/search-filter.registry";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
@@ -48,7 +48,7 @@ const createFormValues = (query: string, apiProvider: ApiProviderType, advancedF
     return {
         query,
         apiProvider,
-        advancedFilters: getSearchFilterDefinition(apiProvider)?.createFilters(advancedFilters),
+        advancedFilters: getAdvancedSearchConfig(apiProvider)?.createFilters(advancedFilters),
     };
 }
 
@@ -63,7 +63,7 @@ function SearchPage() {
     const draftFilters = useWatch({ control: form.control, name: "advancedFilters" });
     const selectedProvider = useWatch({ control: form.control, name: "apiProvider" });
 
-    const definition = getSearchFilterDefinition(selectedProvider);
+    const definition = getAdvancedSearchConfig(selectedProvider);
 
     useEffect(() => {
         form.reset(createFormValues(query, apiProvider, advancedFilters));
@@ -95,7 +95,7 @@ function SearchPage() {
     const commitSearch = async (submitted: SearchFormValues) => {
         const trimmedQuery = submitted.query.trim();
         let filtersToApply: AdvancedSearchFilters | undefined;
-        const selectedDefinition = getSearchFilterDefinition(submitted.apiProvider);
+        const selectedDefinition = getAdvancedSearchConfig(submitted.apiProvider);
 
         if (trimmedQuery.length === 1) {
             form.setError("query", { type: "validate", message: "Enter at least two characters." });
@@ -127,7 +127,7 @@ function SearchPage() {
 
         form.clearErrors();
         form.setValue("apiProvider", provider, { shouldDirty: true });
-        form.setValue("advancedFilters", getSearchFilterDefinition(provider)?.createFilters(), { shouldDirty: true });
+        form.setValue("advancedFilters", getAdvancedSearchConfig(provider)?.createFilters(), { shouldDirty: true });
     };
 
     const handleAppliedFiltersChange = (filters: AdvancedSearchFilters) => {
@@ -136,7 +136,7 @@ function SearchPage() {
     };
 
     const commitAppliedFilters = async (filters: AdvancedSearchFilters) => {
-        const filterDefinition = getSearchFilterDefinition(apiProvider);
+        const filterDefinition = getAdvancedSearchConfig(apiProvider);
         if (!filterDefinition) return;
 
         const cleanedFilters = filterDefinition.cleanFilters(filters);

@@ -7,7 +7,6 @@ export const gamesDefinition = defineMediaDefinition({
         mediaType: MediaType.GAMES,
     },
     externalSearch: {
-        advancedFilters: true,
         provider: ApiProviderType.IGDB,
     },
     terminology: {

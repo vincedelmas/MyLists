@@ -10,7 +10,6 @@ export const mangaDefinition = defineMediaDefinition({
         mediaType: MediaType.MANGA,
     },
     externalSearch: {
-        advancedFilters: false,
         provider: ApiProviderType.MANGA,
     },
     terminology: {

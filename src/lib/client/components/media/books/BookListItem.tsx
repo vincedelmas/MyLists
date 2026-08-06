@@ -1,12 +1,12 @@
 import React from "react";
 import {MediaType} from "@/lib/utils/enums";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {DisplayPages} from "@/lib/client/components/media/base/DisplayPages";
+import {MediaListCardProps} from "@/lib/client/components/media/media-config.types";
 import {DisplayRedoValue} from "@/lib/client/components/media/base/DisplayRedoValue";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 
 
-type BookListItemProps<T extends MediaType> = Parameters<MediaConfig[T]["mediaListCard"]>[number];
+type BookListItemProps<T extends MediaType> = MediaListCardProps<T>;
 
 
 export const BookListItem = (props: BookListItemProps<typeof MediaType.BOOKS>) => {

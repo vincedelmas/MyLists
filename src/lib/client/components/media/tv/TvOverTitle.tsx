@@ -3,10 +3,10 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 
 
-type TvDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["overTitle"]>[number];
+type TvDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const TvOverTitle = ({ mediaType, media }: TvDetailsProps<TvMediaType>) => {

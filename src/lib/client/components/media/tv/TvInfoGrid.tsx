@@ -6,14 +6,14 @@ import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
-import {MediaConfig} from "@/lib/client/components/media/media-config";
 import {capitalize, formatLocaleName} from "@/lib/utils/text-formatting";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 
 
-type TvDetailsProps<T extends MediaType> = Parameters<MediaConfig[T]["infoGrid"]>[number];
+type TvDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const TvInfoGrid = ({ mediaType, media }: TvDetailsProps<TvMediaType>) => {

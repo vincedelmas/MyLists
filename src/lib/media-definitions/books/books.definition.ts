@@ -10,7 +10,6 @@ export const booksDefinition = defineMediaDefinition({
         mediaType: MediaType.BOOKS,
     },
     externalSearch: {
-        advancedFilters: true,
         provider: ApiProviderType.BOOKS,
     },
     terminology: {

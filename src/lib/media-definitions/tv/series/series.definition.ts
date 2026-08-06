@@ -10,7 +10,6 @@ export const seriesDefinition = defineMediaDefinition({
         mediaType: MediaType.SERIES,
     },
     externalSearch: {
-        advancedFilters: false,
         provider: ApiProviderType.TMDB,
     },
     terminology: {

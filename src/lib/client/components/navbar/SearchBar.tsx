@@ -10,7 +10,7 @@ import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {ChevronLeft, ChevronRight, Search, SlidersHorizontal} from "lucide-react";
-import {supportsAdvancedSearch} from "@/lib/media-definitions/definition.registry";
+import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
 import {MediaSearchResult} from "@/lib/client/components/media/base/MediaSearchResult";
 import {Link, LinkProps, useNavigate, useRouter, useRouterState} from "@tanstack/react-router";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
@@ -102,7 +102,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     <Search aria-hidden="true"/>
                 </InputGroupAddon>
                 <InputGroupAddon align="inline-end" className="h-full p-0 has-[>button]:mr-0">
-                    {supportsAdvancedSearch(selectDrop) &&
+                    {getAdvancedSearchConfig(selectDrop) &&
                         <Button
                             size="icon-sm"
                             variant="ghost"

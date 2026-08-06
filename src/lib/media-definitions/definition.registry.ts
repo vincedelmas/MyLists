@@ -1,4 +1,4 @@
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {MediaType} from "@/lib/utils/enums";
 import {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
@@ -18,20 +18,6 @@ const mediaDefinitions = {
 } as const satisfies Record<MediaType, MediaDefinition>;
 
 
-const mediaDefinitionValues: readonly MediaDefinition[] = Object.values(mediaDefinitions);
-
-
 export const getMediaDefinition = (mediaType: MediaType): MediaDefinition => {
     return mediaDefinitions[mediaType];
-};
-
-
-const getExternalSearchDefinition = (provider: ApiProviderType) => {
-    const selected = mediaDefinitionValues.find((definition) => definition.externalSearch?.provider === provider);
-    return selected?.externalSearch;
-};
-
-
-export const supportsAdvancedSearch = (provider: ApiProviderType) => {
-    return getExternalSearchDefinition(provider)?.advancedFilters ?? false;
 };

@@ -19,7 +19,7 @@ import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal} from "lucide-react";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/advanced-search.utils";
-import {getSearchFilterDefinition} from "@/lib/client/components/search/advanced-search/search-filter.registry";
+import {getSearchFilterDefinition} from "@/lib/client/components/search/search-filter.registry";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";

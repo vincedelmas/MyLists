@@ -3,7 +3,7 @@ import {Input} from "@/lib/client/components/ui/input";
 import {cleanAdvancedSearchText} from "@/lib/utils/advanced-search.utils";
 import {AdvancedSearchFilters, BookAdvancedSearchFilters} from "@/lib/schemas";
 import {Field, FieldDescription, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
-import {AppliedSearchFilterChip} from "@/lib/client/components/search/advanced-search/AppliedSearchFilterChip";
+import {AppliedSearchFilterChip} from "@/lib/client/components/search/AppliedSearchFilterChip";
 import {AdvancedSearchFilterDefinition, AppliedSearchFilterChipsProps, ProviderSearchFilterProps} from "@/lib/types/advanced-search.types";
 
 

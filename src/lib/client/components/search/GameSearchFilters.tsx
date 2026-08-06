@@ -5,7 +5,7 @@ import {AdvancedSearchFilters, GameAdvancedSearchFilters} from "@/lib/schemas";
 import {countAdvancedSearchFilters, toOptionalNumber} from "@/lib/utils/advanced-search.utils";
 import {gameAdvancedSearchOptions} from "@/lib/client/react-query/query-options/search.options";
 import {Field, FieldDescription, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
-import {AppliedSearchFilterChip} from "@/lib/client/components/search/advanced-search/AppliedSearchFilterChip";
+import {AppliedSearchFilterChip} from "@/lib/client/components/search/AppliedSearchFilterChip";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {AdvancedSearchFilterDefinition, AppliedSearchFilterChipsProps, ProviderSearchFilterProps} from "@/lib/types/advanced-search.types";
 

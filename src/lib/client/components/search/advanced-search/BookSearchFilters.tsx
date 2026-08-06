@@ -53,7 +53,7 @@ const BookFilterPanel = ({ filters, onChange }: ProviderSearchFilterProps) => {
     const bookFilters = createBookFilters(filters);
 
     return (
-        <FieldGroup className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <FieldGroup className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
             <Field className="col-span-2 lg:col-span-1">
                 <FieldLabel htmlFor="search-book-author">Author</FieldLabel>
                 <Input

@@ -20,9 +20,10 @@ import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {countAdvancedSearchFilters} from "@/lib/utils/advanced-search.utils";
 import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal, X} from "lucide-react";
 import {getSearchFilterDefinition} from "@/lib/client/components/search/advanced-search/search-filter.registry";
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 
 
 export const Route = createFileRoute("/_main/_private/search")({
@@ -158,80 +159,79 @@ function SearchPage() {
     return (
         <PageTitle title="Search" subtitle="A focused place to search your active catalogs.">
             <FormProvider {...form}>
-                <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
-                    <form onSubmit={form.handleSubmit(commitSearch)} className="flex flex-col gap-5">
-                        <Card className="gap-0 py-0">
-                            <CardContent className="p-4 sm:p-5">
-                                <div className="flex flex-col items-start gap-3 sm:flex-row">
-                                    <Controller
-                                        name="apiProvider"
-                                        control={form.control}
-                                        render={({ field }) =>
-                                            <Select value={field.value} items={searchProviderItems} onValueChange={handleProviderChange}>
-                                                <SelectTrigger aria-label="Search provider" className="h-9 w-full sm:w-36">
-                                                    <SelectValue/>
-                                                </SelectTrigger>
-                                                <SelectContent align="start">
-                                                    <SelectGroup>
-                                                        {searchProviderItems.map((item) =>
-                                                            <SelectItem key={item.value} value={item.value}>
-                                                                {item.label}
-                                                            </SelectItem>
-                                                        )}
-                                                    </SelectGroup>
-                                                </SelectContent>
-                                            </Select>
-                                        }
-                                    />
+                <div className="mt-2 space-y-6">
+                    <form onSubmit={form.handleSubmit(commitSearch)} className="space-y-6">
+                        <div className="flex items-start gap-3 max-sm:flex-col">
+                            <Controller
+                                name="apiProvider"
+                                control={form.control}
+                                render={({ field }) =>
+                                    <Select value={field.value} items={searchProviderItems} onValueChange={handleProviderChange}>
+                                        <SelectTrigger aria-label="Search provider" className="w-full sm:w-36">
+                                            <SelectValue/>
+                                        </SelectTrigger>
+                                        <SelectContent align="start">
+                                            <SelectGroup>
+                                                {searchProviderItems.map((item) =>
+                                                    <SelectItem key={item.value} value={item.value}>
+                                                        {item.label}
+                                                    </SelectItem>
+                                                )}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                }
+                            />
 
-                                    <Controller
-                                        name="query"
-                                        control={form.control}
-                                        render={({ field, fieldState }) =>
-                                            <Field className="flex-1" data-invalid={fieldState.invalid}>
-                                                <SearchInput
-                                                    {...field}
-                                                    autoFocus
-                                                    className="h-9"
-                                                    aria-invalid={fieldState.invalid}
-                                                    aria-label="Search title or name"
-                                                    inputClassName="placeholder:text-xs sm:placeholder:text-sm"
-                                                    placeholder={definition ? "Title (optional when filters are selected)" : "Title or name"}
-                                                    onChange={(ev) => {
-                                                        field.onChange(ev);
-                                                        form.clearErrors();
-                                                    }}
-                                                />
-                                                <FieldError errors={[fieldState.error]}/>
-                                            </Field>
-                                        }
-                                    />
-                                    <Button type="submit" size="lg" className="h-9 px-4">
-                                        <Search data-icon="inline-start"/>
-                                        Search
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
+                            <Controller
+                                name="query"
+                                control={form.control}
+                                render={({ field, fieldState }) =>
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <SearchInput
+                                            {...field}
+                                            autoFocus={true}
+                                            aria-invalid={fieldState.invalid}
+                                            aria-label={"Search title or name"}
+                                            inputClassName="placeholder:text-xs sm:placeholder:text-sm"
+                                            placeholder={definition ? "Title (optional when filters are selected)" : "Title or Name"}
+                                            onChange={(ev) => {
+                                                field.onChange(ev);
+                                                form.clearErrors();
+                                            }}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                }
+                            />
+                            <Button type="submit">
+                                <Search data-icon="inline-start"/>
+                                Search
+                            </Button>
+                        </div>
 
                         {definition && SearchFilterPanel && draftFilters &&
-                            <Card className="gap-0 py-0">
-                                <CardHeader className="border-b py-4">
-                                    <div className="flex items-center gap-2">
-                                        <SlidersHorizontal className="size-4 text-muted-foreground"/>
-                                        <CardTitle>{definition.label}</CardTitle>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>
+                                        <div className="flex items-center gap-2">
+                                            <SlidersHorizontal className="size-4"/>
+                                            {definition.label}
+                                        </div>
+                                    </CardTitle>
+                                    <CardAction>
                                         {draftFilterCount > 0 &&
                                             <Badge variant="secondary">
                                                 {draftFilterCount} selected
                                             </Badge>
                                         }
-                                    </div>
+                                    </CardAction>
                                     <CardDescription>
-                                        Adjust as many fields as you need. Nothing runs until you apply the search.
+                                        Select and adjust the advanced fields as you need.
                                     </CardDescription>
                                 </CardHeader>
 
-                                <CardContent className="py-4">
+                                <CardContent>
                                     <Controller
                                         name="advancedFilters"
                                         control={form.control}
@@ -252,12 +252,15 @@ function SearchPage() {
                                 </CardContent>
 
                                 <CardFooter className="flex-col items-stretch gap-3 py-3 sm:flex-row sm:items-center">
-                                    <FieldError className="sm:mr-auto" errors={[form.formState.errors.root]}/>
+                                    <FieldError
+                                        className="sm:mr-auto"
+                                        errors={[form.formState.errors.root]}
+                                    />
                                     <div className="flex justify-end gap-2 sm:ml-auto">
                                         <Button
                                             size="sm"
                                             type="button"
-                                            variant="ghost"
+                                            variant="hover"
                                             onClick={() => void handleClearFilters()}
                                             disabled={draftFilterCount === 0 && (!isViewingAppliedProvider || appliedFilterCount === 0)}
                                         >
@@ -275,7 +278,7 @@ function SearchPage() {
 
                     {isViewingAppliedProvider && AppliedFilterChips && advancedFilters && appliedFilterCount > 0 &&
                         <div className="flex flex-wrap items-center gap-2" aria-label="Applied filters">
-                            <span className="mr-1 text-xs font-medium text-muted-foreground">
+                            <span className="text-xs font-medium text-muted-foreground">
                                 Applied
                             </span>
 
@@ -284,7 +287,7 @@ function SearchPage() {
                                 onChange={handleAppliedFiltersChange}
                             />
 
-                            <Button type="button" size="xs" variant="ghost" onClick={() => void handleClearFilters()}>
+                            <Button type="button" size="xs" variant="hover" onClick={() => void handleClearFilters()}>
                                 Clear all
                             </Button>
                         </div>
@@ -341,7 +344,7 @@ const SearchResults = ({ data, error, isLoading, page, hasNextPage, hasSubmitted
             <EmptyState
                 icon={Search}
                 className="min-h-48 rounded-xl border px-4 py-10 text-center"
-                message="Choose a catalog, add a title or filters, then search."
+                message="Choose a media type, add a title or filters, then search."
             />
         );
     }
@@ -379,7 +382,7 @@ const SearchResults = ({ data, error, isLoading, page, hasNextPage, hasSubmitted
             </div>
 
             {(page > 1 || hasNextPage) &&
-                <div className="flex justify-center pt-2">
+                <div className="flex justify-end pt-2">
                     <ButtonGroup aria-label="Search result pages">
                         <Button variant="outline" disabled={page === 1} onClick={() => onPageChange(page - 1)}>
                             <ChevronLeft data-icon="inline-start"/> Prev.
@@ -410,6 +413,7 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
                     {item.date &&
                         <MediaCardMeta>
                             <MediaCardDetails>
+                                <MediaTypeIcon mediaType={item.itemType}/>
                                 {formatDate(item.date)}
                             </MediaCardDetails>
                         </MediaCardMeta>

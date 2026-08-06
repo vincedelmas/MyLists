@@ -18,13 +18,20 @@ const mediaDefinitions = {
 } as const satisfies Record<MediaType, MediaDefinition>;
 
 
+const mediaDefinitionValues: readonly MediaDefinition[] = Object.values(mediaDefinitions);
+
+
 export const getMediaDefinition = (mediaType: MediaType): MediaDefinition => {
     return mediaDefinitions[mediaType];
 };
 
 
+const getExternalSearchDefinition = (provider: ApiProviderType) => {
+    const selected = mediaDefinitionValues.find((definition) => definition.externalSearch?.provider === provider);
+    return selected?.externalSearch;
+};
+
+
 export const supportsAdvancedSearch = (provider: ApiProviderType) => {
-    return Object.values(mediaDefinitions).some((definition) => {
-        return definition.externalSearch.provider === provider && definition.externalSearch.advancedFilters;
-    });
+    return getExternalSearchDefinition(provider)?.advancedFilters ?? false;
 };

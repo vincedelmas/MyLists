@@ -47,7 +47,7 @@ export type MediaDefinition<TMediaType extends MediaType = MediaType> = Readonly
     identity: Readonly<{
         mediaType: TMediaType;
     }>;
-    externalSearch: Readonly<{
+    externalSearch?: Readonly<{
         advancedFilters: boolean;
         provider: ApiProviderType;
     }>;

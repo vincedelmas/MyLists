@@ -30,7 +30,7 @@ export const createGBooksApi = async () => {
         async search(query: string, page: number = 1, advancedFilters?: BookAdvancedSearchFilters): Promise<SearchData<GBooksSearchResults>> {
             const advancedQueryParts = advancedFilters
                 ? [
-                    toFieldQuery("intitle", advancedFilters.title),
+                    toFieldQuery("intitle", query),
                     toFieldQuery("inauthor", advancedFilters.author),
                     toFieldQuery("subject", advancedFilters.subject),
                     toFieldQuery("inpublisher", advancedFilters.publisher),

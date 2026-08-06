@@ -1,19 +1,18 @@
 import React, {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {AdvancedSearchFilters} from "@/lib/schemas";
 import {Button} from "@/lib/client/components/ui/button";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {ChevronLeft, ChevronRight, Search} from "lucide-react";
 import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
-import {Link, LinkProps, useRouter, useRouterState} from "@tanstack/react-router";
+import {ChevronLeft, ChevronRight, Search, SlidersHorizontal} from "lucide-react";
+import {supportsAdvancedSearch} from "@/lib/media-definitions/definition.registry";
 import {MediaSearchResult} from "@/lib/client/components/media/base/MediaSearchResult";
-import {AdvancedSearchDialog} from "@/lib/client/components/search/AdvancedSearchDialog";
+import {Link, LinkProps, useNavigate, useRouter, useRouterState} from "@tanstack/react-router";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
@@ -24,25 +23,18 @@ interface SearchBarProps {
 
 
 export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
+    const navigate = useNavigate();
     const { currentUser } = useAuth();
     const [page, setPage] = useState(1);
     const [prevSelector, setPrevSelector] = useState(currentUser?.searchSelector);
-    const [advancedFilters, setAdvancedFilters] = useState<AdvancedSearchFilters>();
-    const [isAdvancedDialogOpen, setIsAdvancedDialogOpen] = useState(false);
     const [selectDrop, setSelectDrop] = useState<ApiProviderType>(currentUser?.searchSelector ?? ApiProviderType.USERS);
 
     const { search, setSearch, setIsOpen, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer({
         resetOnOutsideClick: false,
-        outsideClickEnabled: !isAdvancedDialogOpen,
-        onReset: () => {
-            setPage(1);
-            setAdvancedFilters(undefined);
-        },
+        onReset: () => setPage(1),
     });
 
-    const submittedQuery = advancedFilters ? search : debouncedSearch;
-    const advancedSearchLabel = advancedFilters ? "Advance Search" : debouncedSearch;
-    const { data: searchResults, isFetching, error } = useQuery(navSearchOptions(submittedQuery, page, selectDrop, advancedFilters));
+    const { data: searchResults, isFetching, error } = useQuery(navSearchOptions(debouncedSearch, page, selectDrop));
 
     if (prevSelector !== currentUser?.searchSelector) {
         setPrevSelector(currentUser?.searchSelector);
@@ -65,7 +57,6 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
 
     const handleInputChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
         setPage(1);
-        setAdvancedFilters(undefined);
         setSearch(ev.target.value);
     };
 
@@ -75,17 +66,21 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
         setSelectDrop(value);
     };
 
-    const handleAdvancedApply = (nextQuery: string, filters: AdvancedSearchFilters) => {
-        setPage(1);
-        setAdvancedFilters(filters);
-        setSearch(nextQuery);
-        setIsOpen(true);
-    };
+    const handleSearchSubmit = (ev: React.KeyboardEvent<HTMLInputElement>) => {
+        if (ev.key !== "Enter" || ev.nativeEvent.isComposing) return;
 
-    const handleAdvancedClear = () => {
+        const query = search.trim();
+        if (query.length < 2) return;
+
+        ev.preventDefault();
+        ev.currentTarget.blur();
+
         setPage(1);
-        setAdvancedFilters(undefined);
-        setIsOpen(search.trim().length > 0);
+        setIsOpen(false);
+        setMobileMenu?.(false);
+
+        void navigate({ to: "/search", search: { query, page: 1, apiProvider: selectDrop, advancedFilters: undefined } });
+        reset();
     };
 
     return (
@@ -95,26 +90,40 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                     type="search"
                     value={search}
                     onChange={handleInputChange}
-                    className="placeholder:text-sm"
+                    onKeyDown={handleSearchSubmit}
                     aria-label="Search for media or users"
-                    placeholder="Search for media / users..."
+                    placeholder="Search for media or users..."
+                    className="placeholder:text-xs sm:placeholder:text-sm"
                     onFocus={() => {
-                        if (search.trim() || advancedFilters) setIsOpen(true);
+                        if (search.trim()) setIsOpen(true);
                     }}
                 />
                 <InputGroupAddon align="inline-start">
                     <Search aria-hidden="true"/>
                 </InputGroupAddon>
                 <InputGroupAddon align="inline-end" className="h-full p-0 has-[>button]:mr-0">
-                    <AdvancedSearchDialog
-                        query={search}
-                        provider={selectDrop}
-                        triggerVariant="compact"
-                        onApply={handleAdvancedApply}
-                        onClear={handleAdvancedClear}
-                        advancedFilters={advancedFilters}
-                        onDialogOpenChange={setIsAdvancedDialogOpen}
-                    />
+                    {supportsAdvancedSearch(selectDrop) &&
+                        <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            nativeButton={false}
+                            title="Open Advanced Search"
+                            aria-label="Open Advanced Search"
+                            render={
+                                <Link
+                                    to="/search"
+                                    search={{ page: 1, query: search.trim(), apiProvider: selectDrop, advancedFilters: undefined }}
+                                    onClick={(ev) => {
+                                        ev.stopPropagation();
+                                        setIsOpen(false);
+                                        setMobileMenu?.(false);
+                                    }}
+                                />
+                            }
+                        >
+                            <SlidersHorizontal/>
+                        </Button>
+                    }
                     <Select value={selectDrop} items={searchProviderItems} onValueChange={handleValueChange}>
                         <SelectTrigger variant="inputGroup" aria-label="Search provider" className="min-w-25">
                             <SelectValue/>
@@ -135,12 +144,11 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
             <SearchContainer
                 error={error}
                 isOpen={isOpen}
+                search={search}
                 isPending={isFetching}
                 className="max-w-md -mt-2"
-                debouncedSearch={advancedSearchLabel}
+                debouncedSearch={debouncedSearch}
                 hasResults={!!searchResults?.data.length}
-                search={advancedFilters ? "advanced" : search}
-                emptyMessage={advancedFilters ? `No results found for ${advancedSearchLabel}.` : undefined}
             >
                 <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-90">
                     {searchResults?.data.map((item) =>

@@ -3,7 +3,6 @@ import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, optionalTrimmedSearchFieldSchema} from "@/lib/schemas/common.schema";
 
 
-export type GlobalSearch = z.infer<typeof globalSearchSchema>;
 export type TrendsActiveTab = z.infer<typeof trendsActiveTabSchema>;
 export type ProfileActiveTab = z.infer<typeof profileActiveTabSchema>;
 export type AdvancedSearchFilters = z.infer<typeof advancedSearchFiltersSchema>;
@@ -33,8 +32,7 @@ const optionalAdvancedTextSchema = z.string().trim().max(120).optional().catch(u
 const optionalAdvancedYearSchema = z.number().int().min(1870).max(2200).optional().catch(undefined);
 
 
-export const bookAdvancedSearchFiltersSchema = z.object({
-    title: optionalAdvancedTextSchema,
+const bookAdvancedSearchFiltersSchema = z.object({
     author: optionalAdvancedTextSchema,
     subject: optionalAdvancedTextSchema,
     publisher: optionalAdvancedTextSchema,
@@ -47,8 +45,7 @@ export const bookAdvancedSearchFiltersSchema = z.object({
 });
 
 
-export const gameAdvancedSearchFiltersSchema = z.object({
-    title: optionalAdvancedTextSchema,
+const gameAdvancedSearchFiltersSchema = z.object({
     provider: z.literal(ApiProviderType.IGDB),
     releaseYearTo: optionalAdvancedYearSchema,
     releaseYearFrom: optionalAdvancedYearSchema,
@@ -58,7 +55,7 @@ export const gameAdvancedSearchFiltersSchema = z.object({
 });
 
 
-export const advancedSearchFiltersSchema = z.discriminatedUnion("provider", [
+const advancedSearchFiltersSchema = z.discriminatedUnion("provider", [
     bookAdvancedSearchFiltersSchema,
     gameAdvancedSearchFiltersSchema,
 ]);
@@ -76,8 +73,9 @@ export const trendsSearchSchema = z.object({
 
 export const globalSearchSchema = z.object({
     query: optionalTrimmedSearchFieldSchema,
-    apiProvider: z.enum(ApiProviderType).optional().default(ApiProviderType.TMDB).catch(ApiProviderType.TMDB),
+    page: coercedPositiveIntFieldSchema.optional().default(1).catch(1),
     advancedFilters: advancedSearchFiltersSchema.optional().catch(undefined),
+    apiProvider: z.enum(ApiProviderType).optional().default(ApiProviderType.TMDB).catch(ApiProviderType.TMDB),
 });
 
 

@@ -54,9 +54,8 @@ describe("advanced provider searches", () => {
 
     it("builds one fielded Google Books request from the submitted form", async () => {
         const api = await createGBooksApi();
-        await api.search("", 2, {
+        await api.search("The Dispossessed", 2, {
             provider: ApiProviderType.BOOKS,
-            title: "The Dispossessed",
             author: "Ursula K. Le Guin",
             isbn: "978-0-06-105488-4",
             language: "en",
@@ -80,9 +79,8 @@ describe("advanced provider searches", () => {
     it("uses IGDB array-membership filters for platform and genre", async () => {
         httpMocks.call.mockResolvedValue({ json: vi.fn().mockResolvedValue([]) });
         const api = await createIgdbApi();
-        await api.search("", 1, {
+        await api.search("Final Fantasy", 1, {
             provider: ApiProviderType.IGDB,
-            title: "Final Fantasy",
             platformId: 167,
             genreId: 12,
             releaseYearFrom: 2020,

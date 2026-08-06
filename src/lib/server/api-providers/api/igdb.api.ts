@@ -159,8 +159,8 @@ export const createIgdbApi = async () => {
     return {
         async search(query: string, page: number = 1, advancedFilters?: GameAdvancedSearchFilters): Promise<SearchData<IgdbSearchResponse>> {
             const offset = (page - 1) * resultsPerPage;
+            const sanitizedQuery = sanitizeSearchQuery(query);
             const whereClauses = buildAdvancedWhereClauses(advancedFilters);
-            const sanitizedQuery = sanitizeSearchQuery(advancedFilters?.title ?? query);
 
             if (sanitizedQuery.length < 2 && whereClauses.length === 1) {
                 return {

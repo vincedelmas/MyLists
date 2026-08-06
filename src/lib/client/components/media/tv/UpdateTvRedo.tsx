@@ -10,20 +10,23 @@ import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, Di
 
 
 interface UpdateTvRedoProps {
+    seasonCount: number;
     redoValues: number[];
     onUpdateMutation: ReturnType<typeof useUpdateUserMediaMutation>;
 }
 
 
-export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps) => {
+export const UpdateTvRedo = ({ onUpdateMutation, redoValues, seasonCount }: UpdateTvRedoProps) => {
     const [open, setOpen] = useState(false);
     const [draftRedo, setDraftRedo] = useState<number[]>([]);
-    const totalRedo = redoValues.reduce((a, b) => a + b, 0);
+
+    const checkedRedoValues = Array.from({ length: seasonCount }, (_, index) => redoValues[index] ?? 0);
+    const totalRedo = checkedRedoValues.reduce((a, b) => a + b, 0);
 
     const onOpenChange = (open: boolean) => {
         setOpen(open);
         if (open) {
-            setDraftRedo([...redoValues]);
+            setDraftRedo(checkedRedoValues);
         }
     };
 
@@ -46,8 +49,8 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues }: UpdateTvRedoProps
                 size="sm"
                 type="button"
                 variant="outline"
-                className="w-34 justify-between bg-input/30 hover:bg-input/50"
                 onClick={() => onOpenChange(true)}
+                className="w-34 justify-between bg-input/30 hover:bg-input/50"
             >
                 <div className="text-sm">
                     {totalRedo} Seasons

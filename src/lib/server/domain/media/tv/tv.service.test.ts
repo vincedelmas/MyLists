@@ -161,6 +161,16 @@ describe("TvService", () => {
                     expect(log?.newValue).toBe(1);
                 });
 
+                it("updateRedoHandler: should repair stale rewatch data after the season count shrinks", async () => {
+                    const current = makeState({ status: Status.COMPLETED, total: totalEpisodesMock, redo2: [0, 0, 0, 0] });
+                    const [next, log] = await tvService.updateRedoHandler(current, { redo2: [1, 0, 0] }, baseTv);
+
+                    expect(next.redo2).toEqual([1, 0, 0]);
+                    expect(next.total).toBe(totalEpisodesMock + epsPerSeasonMock[0].episodes);
+                    expect(log?.oldValue).toBe(0);
+                    expect(log?.newValue).toBe(1);
+                });
+
                 it("updateEpsSeasonsHandler: should update total on episode change", async () => {
                     const current = makeState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 5, total: 5, redo2: [0, 0, 0] });
                     const [next, log] = await tvService.updateEpsSeasonsHandler(current, { currentEpisode: 10 }, baseTv);

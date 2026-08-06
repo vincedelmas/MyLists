@@ -76,20 +76,17 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
 
     async updateRedoHandler(currentState: TvList, payload: RedoTvPayload, media: TvType): Promise<[TvList, LogPayload]> {
         const epsPerSeason = await this.repository.getMediaEpsPerSeason(media.id);
+        const currentRedo = Array.from({ length: epsPerSeason.length }, (_, index) => currentState.redo2[index] ?? 0);
+        const nextRedo = Array.from({ length: epsPerSeason.length }, (_, index) => payload.redo2[index] ?? 0);
 
-        // Safety check - Should not happen
-        if (currentState.redo2?.length !== epsPerSeason.length || payload.redo2?.length !== epsPerSeason.length) {
-            throw new FormattedError("Sorry, an error occurred. This will be fixed shortly.");
-        }
-
-        const newState = { ...currentState, redo2: payload.redo2 };
+        const newState = { ...currentState, redo2: nextRedo };
 
         const logPayload = {
-            oldValue: currentState.redo2.reduce((a, b) => a + b, 0),
-            newValue: payload.redo2.reduce((a, b) => a + b, 0),
+            oldValue: currentRedo.reduce((a, b) => a + b, 0),
+            newValue: nextRedo.reduce((a, b) => a + b, 0),
         };
 
-        const redoDiff = newState.redo2.map((val, i) => val - currentState.redo2[i]);
+        const redoDiff = nextRedo.map((val, i) => val - currentRedo[i]);
         const valuesToApply = redoDiff.reduce((sum, diff, i) => sum + diff * epsPerSeason[i].episodes, 0);
         newState.total = (currentState?.total ?? 0) + (valuesToApply ?? 0);
 

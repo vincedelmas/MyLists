@@ -59,6 +59,7 @@ export const TvUserDetails = ({ userMedia, mediaType, queryOption, mutationOptio
                     <UpdateTvRedo
                         redoValues={userMedia.redo2}
                         onUpdateMutation={updateUserMediaMutation}
+                        seasonCount={mediaData.epsPerSeason?.length ?? 0}
                     />
                 </div>
             }

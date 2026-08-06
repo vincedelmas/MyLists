@@ -283,11 +283,8 @@ export class TvRepository extends BaseRepository<TvDefinition> {
                 // Calculate Absolute Progress
                 const absoluteProgress = Math.max(0, userMedia.total - oldRedoTotal);
 
-                // Adjust Redo2 Array length
-                const newRedo2 = [...userMedia.redo2];
-                if (seasonsData.length > newRedo2.length) {
-                    newRedo2.push(...Array(seasonsData.length - newRedo2.length).fill(0));
-                }
+                // Keep per-season re-watches aligned when seasons are added or removed.
+                const newRedo2 = Array.from({ length: seasonsData.length }, (_, index) => userMedia.redo2[index] ?? 0);
 
                 // Calculate new Redo Total (seasonsData)
                 const newRedoTotal = newRedo2.reduce((acc, count, index) => {

@@ -49,7 +49,7 @@ export const getMediaCommunityActivity = createServerFn({ method: "GET" })
 
 
 export const resolveExternalMedia = createServerFn({ method: "POST" })
-    .middleware([publicAuthMiddleware, transactionMiddleware])
+    .middleware([publicAuthMiddleware])
     .validator(externalMediaResolveSchema)
     .handler(async ({ data: { mediaType, apiId } }) => {
         const container = await getContainer();
@@ -70,7 +70,7 @@ export const getJobDetails = createServerFn({ method: "GET" })
 
 
 export const refreshMediaDetails = createServerFn({ method: "POST" })
-    .middleware([requiredAuthMiddleware, transactionMiddleware])
+    .middleware([requiredAuthMiddleware])
     .validator(refreshMediaDetailsSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();

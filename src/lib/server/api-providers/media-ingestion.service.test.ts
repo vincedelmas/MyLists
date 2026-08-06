@@ -98,4 +98,99 @@ describe("createMediaIngestionService", () => {
         expect(transactionMocks.withTransaction).toHaveBeenCalledTimes(2);
         expect(repository.updateMediaWithDetails).toHaveBeenCalledTimes(2);
     });
+
+    it("opens a transaction only after external store details are prepared", async () => {
+        let transactionActive = false;
+        transactionMocks.withTransaction.mockImplementation(async (action) => {
+            transactionActive = true;
+            try {
+                return await action({});
+            }
+            finally {
+                transactionActive = false;
+            }
+        });
+
+        const provider = {
+            source: "tmdb",
+            mediaType: MediaType.MOVIES,
+            search: {
+                search: vi.fn(),
+            },
+            details: {
+                getDetails: vi.fn().mockImplementation(async (apiId) => {
+                    expect(transactionActive).toBe(false);
+                    return { apiId };
+                }),
+            },
+        } as const;
+
+        const enricher = vi.fn().mockImplementation(async (details) => {
+            expect(transactionActive).toBe(false);
+            return details;
+        });
+        const repository = {
+            findByApiId: vi.fn().mockResolvedValue(undefined),
+            storeMediaWithDetails: vi.fn().mockImplementation(async () => {
+                expect(transactionActive).toBe(true);
+                return 42;
+            }),
+        };
+        const service = createMediaIngestionService({
+            provider,
+            repository: repository as any,
+            enrichers: [enricher],
+        });
+
+        await expect(service.storeFromExternal(123)).resolves.toBe(42);
+        expect(transactionMocks.withTransaction).toHaveBeenCalledOnce();
+        expect(repository.storeMediaWithDetails).toHaveBeenCalledOnce();
+    });
+
+    it("opens a transaction only after external refresh details are prepared", async () => {
+        let transactionActive = false;
+        transactionMocks.withTransaction.mockImplementation(async (action) => {
+            transactionActive = true;
+            try {
+                return await action({});
+            }
+            finally {
+                transactionActive = false;
+            }
+        });
+
+        const provider = {
+            source: "tmdb",
+            mediaType: MediaType.SERIES,
+            search: {
+                search: vi.fn(),
+            },
+            details: {
+                getDetails: vi.fn().mockImplementation(async (apiId) => {
+                    expect(transactionActive).toBe(false);
+                    return { apiId };
+                }),
+            },
+        } as const;
+
+        const enricher = vi.fn().mockImplementation(async (details) => {
+            expect(transactionActive).toBe(false);
+            return details;
+        });
+        const repository = {
+            updateMediaWithDetails: vi.fn().mockImplementation(async () => {
+                expect(transactionActive).toBe(true);
+                return true;
+            }),
+        };
+        const service = createMediaIngestionService({
+            provider,
+            repository: repository as any,
+            enrichers: [enricher],
+        });
+
+        await expect(service.refreshFromExternal(123)).resolves.toBe(true);
+        expect(transactionMocks.withTransaction).toHaveBeenCalledOnce();
+        expect(repository.updateMediaWithDetails).toHaveBeenCalledOnce();
+    });
 });

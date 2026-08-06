@@ -34,13 +34,17 @@ export function createMediaIngestionService<TDetails>(params: {
         return applyEnrichers(details, context);
     }
 
-    async function updatePreparedDetails(details: TDetails) {
+    async function storeDetails(details: TDetails) {
+        return withTransaction(() => repository.storeMediaWithDetails(details));
+    }
+
+    async function updateDetails(details: TDetails) {
         return withTransaction(() => repository.updateMediaWithDetails(details));
     }
 
     async function storePreparedDetails(apiId: number | string, details: TDetails, context: IngestionContext) {
         const enriched = await applyEnrichers(details, context);
-        const mediaId = await repository.storeMediaWithDetails(enriched);
+        const mediaId = await storeDetails(enriched);
         return [String(apiId), mediaId] as const;
     }
 
@@ -58,7 +62,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
                 try {
                     const enriched = await applyEnrichers(details, { mode: "refresh", isBulk: true });
-                    await updatePreparedDetails(enriched);
+                    await updateDetails(enriched);
                     yield { apiId, state: "fulfilled" as const, reason: undefined };
                 }
                 catch (reason) {
@@ -77,7 +81,7 @@ export function createMediaIngestionService<TDetails>(params: {
         for (const apiId of apiIds) {
             try {
                 const details = await fetchAndPrepareDetails(apiId, { mode: "refresh", isBulk: true });
-                await updatePreparedDetails(details);
+                await updateDetails(details);
                 yield { apiId, state: "fulfilled" as const, reason: undefined };
             }
             catch (reason) {
@@ -105,7 +109,7 @@ export function createMediaIngestionService<TDetails>(params: {
             }
 
             const details = await fetchAndPrepareDetails(apiId, { mode: "store", isBulk: false });
-            return repository.storeMediaWithDetails(details);
+            return storeDetails(details);
         },
 
         async storeBatchFromExternal(apiIds: (number | string)[], checkInternalFirst: boolean = true) {
@@ -138,7 +142,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
             for (const apiId of missingApiIds) {
                 const details = await fetchAndPrepareDetails(apiId, { mode: "store", isBulk: true });
-                const mediaId = await repository.storeMediaWithDetails(details);
+                const mediaId = await storeDetails(details);
                 mediaIdByApiId.set(String(apiId), mediaId);
             }
 
@@ -147,7 +151,7 @@ export function createMediaIngestionService<TDetails>(params: {
 
         async refreshFromExternal(apiId: number | string, isBulk = false) {
             const details = await fetchAndPrepareDetails(apiId, { mode: "refresh", isBulk });
-            return updatePreparedDetails(details);
+            return updateDetails(details);
         },
 
         async* bulkRefresh(limit?: number) {

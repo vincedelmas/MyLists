@@ -13,6 +13,8 @@ export const ALL_MEDIA_TYPES = [
 
 export const statusUtils = {
     getNoPlanTo: (): Status[] => [Status.PLAN_TO_WATCH, Status.PLAN_TO_PLAY, Status.PLAN_TO_READ],
+    canShowProgress: (status: Status) => ![Status.PLAN_TO_WATCH, Status.PLAN_TO_PLAY, Status.PLAN_TO_READ, Status.RANDOM]
+        .some((progresslessStatus) => progresslessStatus === status),
     byMediaType: (mediaType: MediaType) => {
         switch (mediaType) {
             case MediaType.SERIES:

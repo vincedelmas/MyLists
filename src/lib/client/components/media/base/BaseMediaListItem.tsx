@@ -1,8 +1,9 @@
 import React, {useState} from "react";
 import {MediaType, Status} from "@/lib/utils/enums";
+import {statusUtils} from "@/lib/utils/media-mapping";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {UserMediaItem} from "@/lib/types/query.options.types";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import type {UserMediaItem} from "@/lib/types/query.options.types";
+import type {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
@@ -41,10 +42,12 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     const { isCurrent, queryOption, isConnected, isMediaTypeActive, mediaType, allStatuses, rating, userMedia, redoDisplay, mediaDetailsDisplay } = props;
 
     const isCommon = isMediaTypeActive && userMedia.common;
+    const showMediaDetails = mediaDetailsDisplay && statusUtils.canShowProgress(userMedia.status);
+
     return (
         <>
             <MediaCard item={userMedia} mediaType={mediaType}>
-                {mediaDetailsDisplay &&
+                {showMediaDetails &&
                     <MediaCardLeftCorner>
                         {mediaDetailsDisplay}
                     </MediaCardLeftCorner>

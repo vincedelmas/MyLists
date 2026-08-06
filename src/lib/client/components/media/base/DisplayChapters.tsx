@@ -1,5 +1,6 @@
 import {Status} from "@/lib/utils/enums";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {statusUtils} from "@/lib/utils/media-mapping";
 
 
 interface DisplayChaptersProps {
@@ -10,7 +11,7 @@ interface DisplayChaptersProps {
 
 
 export const DisplayChapters = ({ currentChapter, total, status }: DisplayChaptersProps) => {
-    if (status === Status.PLAN_TO_READ) {
+    if (!statusUtils.canShowProgress(status)) {
         return null;
     }
 

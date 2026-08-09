@@ -47,6 +47,11 @@ export const BacklogModeSystem = ({ date, onDateChange, onEnabledChange, disable
         setCalendarOpen(false);
     };
 
+    const handleCalendarMonthChange = (month: Date) => {
+        const firstDayOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+        handleCustomDate(toDateInputValue(firstDayOfMonth));
+    };
+
     return (
         <div className="-mt-1 mb-5 space-y-1">
             <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -96,6 +101,7 @@ export const BacklogModeSystem = ({ date, onDateChange, onEnabledChange, disable
                             startMonth={calendarStartDate}
                             disabled={{ after: todayDate }}
                             onSelect={handleCalendarSelect}
+                            onMonthChange={handleCalendarMonthChange}
                         />
                     </PopoverContent>
                 </Popover>

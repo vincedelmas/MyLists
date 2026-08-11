@@ -45,6 +45,12 @@ export const collectionIdSchema = z.object({
     collectionId: coercedPositiveIntFieldSchema,
 });
 
+export const collectionItemsSearchSchema = paginationSchema.pick({ page: true });
+
+export const collectionDetailsReadSchema = collectionItemsSearchSchema.extend({
+    collectionId: coercedPositiveIntFieldSchema,
+});
+
 export const userCollectionsFiltersSchema = paginationSchema.extend({
     search: optionalSearchFieldSchema,
     mediaType: mediaTypeFieldSchema.optional().catch(undefined),

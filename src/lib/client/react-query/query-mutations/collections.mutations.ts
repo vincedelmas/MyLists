@@ -1,8 +1,9 @@
 import {MediaType} from "@/lib/utils/enums";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {
+    CollectionDetailsReadData,
     collectionDetailsEditOptions,
-    collectionDetailsReadOptions,
+    collectionDetailsReadQueryKey,
     mediaCommunityCollectionsOptions,
     userCollectionMembershipsOptions
 } from "@/lib/client/react-query/query-options";
@@ -45,7 +46,7 @@ export const useUpdateCollectionMutation = (collectionId: number, meta?: Mutatio
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
-            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadOptions(collectionId).queryKey });
+            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) });
             await queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey });
         },
     });
@@ -64,7 +65,7 @@ export const useDeleteCollectionMutation = (collectionId: number, meta?: Mutatio
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
             await queryClient.invalidateQueries({ queryKey: ["collections", "community"] });
-            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadOptions(collectionId).queryKey });
+            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) });
         },
     });
 };
@@ -76,7 +77,7 @@ export const useToggleCollectionLikeMutation = (collectionId: number) => {
     return useMutation({
         mutationFn: postToggleCollectionLike,
         onSuccess: async () => {
-            queryClient.setQueryData(collectionDetailsReadOptions(collectionId).queryKey, (oldData) => {
+            queryClient.setQueriesData<CollectionDetailsReadData>({ queryKey: collectionDetailsReadQueryKey(collectionId) }, (oldData) => {
                 if (!oldData) return;
                 return {
                     ...oldData,
@@ -104,7 +105,7 @@ export const useCopyCollectionMutation = (collectionId: number) => {
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ["collections", "community"] });
-            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadOptions(collectionId).queryKey });
+            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) });
         },
     });
 };
@@ -119,7 +120,7 @@ export const useAddMediaToCollectionMutation = (mediaType: MediaType, mediaId: n
         onSuccess: async (_data, variables) => {
             const collectionId = Number(variables.data.collectionId);
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
-            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadOptions(collectionId).queryKey });
+            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) });
             await queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey });
             await queryClient.invalidateQueries({ queryKey: mediaCommunityCollectionsOptions(mediaId, mediaType).queryKey });
             await queryClient.invalidateQueries({ queryKey: userCollectionMembershipsOptions(mediaId, mediaType, true).queryKey });
@@ -137,7 +138,7 @@ export const useRemoveMediaFromCollectionMutation = (mediaType: MediaType, media
         onSuccess: async (_data, variables) => {
             const collectionId = Number(variables.data.collectionId);
             await queryClient.invalidateQueries({ queryKey: ["collections", "user"] });
-            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadOptions(collectionId).queryKey });
+            await queryClient.invalidateQueries({ queryKey: collectionDetailsReadQueryKey(collectionId) });
             await queryClient.invalidateQueries({ queryKey: collectionDetailsEditOptions(collectionId).queryKey });
             await queryClient.invalidateQueries({ queryKey: mediaCommunityCollectionsOptions(mediaId, mediaType).queryKey });
             await queryClient.invalidateQueries({ queryKey: userCollectionMembershipsOptions(mediaId, mediaType, true).queryKey });

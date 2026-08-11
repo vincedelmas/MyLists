@@ -17,7 +17,7 @@ export class CollectionsService {
     ) {
     }
 
-    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor) {
+    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor, page?: number) {
         const collection = await this.repository.getCollectionById(collectionId);
         if (!collection) throw notFound();
 
@@ -26,12 +26,21 @@ export class CollectionsService {
             throw new UnauthorizedError(decision.reason === DenialReason.PROFILE_RESTRICTED ? "restricted" : "private");
         }
 
-        const [items, isLiked] = await Promise.all([
-            this.repository.getCollectionItems(collectionId),
+        const [itemResults, isLiked] = await Promise.all([
+            mode === "read"
+                ? this.repository.getPaginatedCollectionItems(collectionId, page)
+                : this.repository.getCollectionItems(collectionId).then((items) => ({
+                    items,
+                    page: 1,
+                    total: items.length,
+                    pages: items.length > 0 ? 1 : 0,
+                    perPage: Math.max(items.length, 1),
+                })),
             actor.kind === "user" ? this.repository.findLikedCollection(actor.id, collectionId) : Promise.resolve(null),
             this.repository.incrementViewCount(collectionId),
         ]);
 
+        const { items } = itemResults;
         const mediaService = this.mediaRegistry.get(collection.mediaType);
         const mediaRows = await mediaService.getMediaDetailsByIds(items.map(i => i.mediaId), actor.kind === "user" ? actor.id : undefined);
         const mediaMap = new Map(mediaRows.map((m) => [m.id, m]));
@@ -51,6 +60,7 @@ export class CollectionsService {
         });
 
         return {
+            ...itemResults,
             collection,
             capabilities,
             isLiked: !!isLiked,

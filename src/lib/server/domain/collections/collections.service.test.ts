@@ -23,6 +23,13 @@ const createService = () => {
     const repository = {
         getCollectionById: vi.fn().mockResolvedValue(collection),
         getCollectionItems: vi.fn().mockResolvedValue([]),
+        getPaginatedCollectionItems: vi.fn().mockResolvedValue({
+            page: 1,
+            pages: 0,
+            total: 0,
+            items: [],
+            perPage: 24,
+        }),
         findLikedCollection: vi.fn().mockResolvedValue(null),
         incrementViewCount: vi.fn().mockResolvedValue(undefined),
         getMaxCollectionItemOrder: vi.fn().mockResolvedValue(0),
@@ -121,6 +128,7 @@ describe("CollectionsService authorization", () => {
             });
 
         expect(repository.getCollectionItems).not.toHaveBeenCalled();
+        expect(repository.getPaginatedCollectionItems).not.toHaveBeenCalled();
         expect(repository.incrementViewCount).not.toHaveBeenCalled();
         expect(authorizationService.getCollectionCapabilities).not.toHaveBeenCalled();
     });
@@ -135,6 +143,35 @@ describe("CollectionsService authorization", () => {
         expect(authorizationService.getCollectionCapabilities).toHaveBeenCalledWith(actor, collection);
         expect(repository.findLikedCollection).toHaveBeenCalledWith(20, 7);
         expect(result.capabilities).toEqual(capabilities);
+    });
+
+    it("loads read-mode collection items in pages of 24", async () => {
+        const { repository, service } = createService();
+        const actor = toActor();
+
+        vi.mocked(repository.getPaginatedCollectionItems).mockResolvedValue({
+            page: 2,
+            pages: 3,
+            total: 50,
+            items: [],
+            perPage: 24,
+        });
+
+        const result = await service.getCollectionDetails(7, "read", actor, 2);
+
+        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, 2);
+        expect(repository.getCollectionItems).not.toHaveBeenCalled();
+        expect(result).toMatchObject({ page: 2, pages: 3, total: 50, perPage: 24 });
+    });
+
+    it("keeps all items available in edit mode", async () => {
+        const { repository, service } = createService();
+        const actor = toActor({ id: 10, role: RoleType.USER });
+
+        await service.getCollectionDetails(7, "edit", actor);
+
+        expect(repository.getCollectionItems).toHaveBeenCalledWith(7);
+        expect(repository.getPaginatedCollectionItems).not.toHaveBeenCalled();
     });
 
     it("rejects collection updates before any write for unauthorized viewers", async () => {

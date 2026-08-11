@@ -6,6 +6,7 @@ import {contentAuthorizationMiddleware} from "@/lib/server/middlewares/authoriza
 import {publicAuthMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     collectionIdSchema,
+    collectionDetailsReadSchema,
     collectionMediaItemActionSchema,
     collectionMediaMembershipsSchema,
     communityCollectionsSchema,
@@ -38,11 +39,11 @@ export const getMediaCommunityCollections = createServerFn({ method: "GET" })
 
 export const getReadCollectionDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
-    .validator(collectionIdSchema)
-    .handler(async ({ data: { collectionId }, context: { currentUser } }) => {
+    .validator(collectionDetailsReadSchema)
+    .handler(async ({ data: { collectionId, page }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser));
+        return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser), page);
     });
 
 

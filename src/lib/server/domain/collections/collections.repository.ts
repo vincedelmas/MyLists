@@ -72,6 +72,30 @@ export class CollectionsRepository {
             .orderBy(asc(collectionItems.orderIndex));
     }
 
+    static async getPaginatedCollectionItems(collectionId: number, page?: number) {
+        return paginate({
+            page,
+            perPage: 24,
+            maxPerPage: 24,
+            getTotal: () => {
+                return getDbClient()
+                    .select({ count: count() })
+                    .from(collectionItems)
+                    .where(eq(collectionItems.collectionId, collectionId))
+                    .get()?.count ?? 0;
+            },
+            getItems: ({ limit, offset }) => {
+                return getDbClient()
+                    .select()
+                    .from(collectionItems)
+                    .where(eq(collectionItems.collectionId, collectionId))
+                    .orderBy(asc(collectionItems.orderIndex))
+                    .limit(limit)
+                    .offset(offset);
+            },
+        });
+    }
+
     static async getUserCollectionMemberships(ownerId: number, mediaId: number, mediaType: MediaType) {
         const matchingItem = alias(collectionItems, "matchingItem");
 

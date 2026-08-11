@@ -1,4 +1,4 @@
-import {collectionIdSchema} from "@/lib/schemas";
+import {collectionIdSchema, collectionItemsSearchSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -9,6 +9,7 @@ import {Copy, Heart, List, ListOrdered, Pencil} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {Pagination} from "@/lib/client/components/general/Pagination";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
@@ -28,6 +29,8 @@ import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseD
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/")({
+    validateSearch: collectionItemsSearchSchema,
+    loaderDeps: ({ search: { page } }) => ({ page: page ?? 1 }),
     params: {
         parse: (params) => {
             const result = collectionIdSchema.safeParse(params);
@@ -35,8 +38,8 @@ export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/"
             return result.data;
         }
     },
-    loader: ({ context: { queryClient }, params: { collectionId } }) => {
-        return queryClient.ensureQueryData(collectionDetailsReadOptions(collectionId));
+    loader: ({ context: { queryClient }, params: { collectionId }, deps: { page } }) => {
+        return queryClient.ensureQueryData(collectionDetailsReadOptions(collectionId, page));
     },
     component: CollectionViewer,
 });
@@ -44,11 +47,12 @@ export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/"
 
 function CollectionViewer() {
     const navigate = Route.useNavigate();
+    const { page = 1 } = Route.useSearch();
     const { collectionId } = Route.useParams();
     const { currentUser, isAnonymous } = useAuth();
     const copyMutation = useCopyCollectionMutation(collectionId);
     const toggleLikeMutation = useToggleCollectionLikeMutation(collectionId);
-    const apiData = useSuspenseQuery(collectionDetailsReadOptions(collectionId)).data;
+    const apiData = useSuspenseQuery(collectionDetailsReadOptions(collectionId, page)).data;
 
     const { collection, items, isLiked, capabilities } = apiData;
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, collection.mediaType);
@@ -127,7 +131,7 @@ function CollectionViewer() {
                 :
                 <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {items.map((item) =>
-                        <MediaCard item={item} mediaType={collection.mediaType}>
+                        <MediaCard key={item.mediaId} item={item} mediaType={collection.mediaType}>
                             <MediaCardLeftCorner>
                                 # {item.orderIndex}
                             </MediaCardLeftCorner>
@@ -157,6 +161,13 @@ function CollectionViewer() {
                     )}
                 </div>
             }
+            <Pagination
+                currentPage={apiData.page}
+                totalPages={apiData.pages}
+                onChangePage={(nextPage) => {
+                    void navigate({ search: (previous) => ({ ...previous, page: nextPage }) });
+                }}
+            />
         </PageTitle>
     );
 }

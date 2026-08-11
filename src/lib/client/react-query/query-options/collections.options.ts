@@ -11,15 +11,21 @@ import {
 } from "@/lib/server/functions/collections";
 
 
+export type CollectionDetailsReadData = Awaited<ReturnType<typeof getReadCollectionDetails>>;
+
+
 export const paginatedUserCollectionsOptions = (search: UserCollectionsSearch) => queryOptions({
     queryKey: ["collections", "user", "paginated", search] as const,
     queryFn: () => getPaginatedUserCollections({ data: search }),
 });
 
 
-export const collectionDetailsReadOptions = (collectionId: number) => queryOptions({
-    queryKey: ["collections", "details", "read", collectionId] as const,
-    queryFn: () => getReadCollectionDetails({ data: { collectionId } }),
+export const collectionDetailsReadQueryKey = (collectionId: number) => ["collections", "details", "read", collectionId] as const;
+
+
+export const collectionDetailsReadOptions = (collectionId: number, page = 1) => queryOptions({
+    queryKey: [...collectionDetailsReadQueryKey(collectionId), page] as const,
+    queryFn: () => getReadCollectionDetails({ data: { collectionId, page } }),
 });
 
 

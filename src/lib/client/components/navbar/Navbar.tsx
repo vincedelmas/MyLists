@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {cva} from "class-variance-authority";
 import authClient from "@/lib/utils/auth-client";
 import {useAuth} from "@/lib/client/hooks/use-auth";
@@ -9,7 +9,7 @@ import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
 import {authOptions} from "@/lib/client/react-query/query-options";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {Link, useLocation, useNavigate} from "@tanstack/react-router";
+import {Link, useLocation, useNavigate, useRouter} from "@tanstack/react-router";
 import {MyMediaMenu} from "@/lib/client/components/navbar/MyMediaMenu";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
@@ -25,6 +25,7 @@ import {
 } from "@/lib/client/components/ui/dropdown-menu";
 import {
     Activity,
+    ArrowLeft,
     BarChart2,
     ChevronDown,
     Clapperboard,
@@ -53,6 +54,7 @@ const mobileNavStyle = "flex flex-col items-center gap-1 rounded-md p-1 text-mut
 
 
 export const Navbar = () => {
+    const router = useRouter();
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
@@ -60,6 +62,16 @@ export const Navbar = () => {
     const { openLogin, openRegister } = useAuthModal();
     const featureFlagMutation = useFeatureFlagMutation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isIosStandalone, setIsIosStandalone] = useState(false);
+
+    useEffect(() => {
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+            || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+            || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+        setIsIosStandalone(isIos && isStandalone);
+    }, []);
 
     const logoutUser = async () => {
         await authClient.signOut();
@@ -77,25 +89,42 @@ export const Navbar = () => {
         <nav className="sticky top-0 z-50 w-full bg-background border-b">
             <div className="max-w-7xl mx-auto px-4 md:px-8">
                 <div className="flex items-center justify-between h-16 gap-4">
-                    {isAnonymous ?
-                        <Link to="/">
-                            <div className="flex shrink-0 items-center gap-2">
-                                <img alt="MyLists logo" className="size-5" src="/logo192.png"/>
-                                <span className="text-xl font-bold text-foreground block tracking-tight max-sm:hidden">
-                                    MyLists
-                                </span>
-                            </div>
-                        </Link>
-                        :
-                        <Link to="/profile/$username" params={{ username: currentUser.name }}>
-                            <div className="flex shrink-0 items-center gap-2">
-                                <img alt="MyLists logo" className="size-5" src="/logo192.png"/>
-                                <span className="text-xl font-bold text-foreground block tracking-tight max-sm:hidden">
-                                    MyLists
-                                </span>
-                            </div>
-                        </Link>
-                    }
+                    <div className="flex shrink-0 items-center gap-1">
+                        {isIosStandalone && router.history.canGoBack() &&
+                            <Button
+                                size="icon-lg"
+                                variant="ghost"
+                                aria-label="Go back"
+                                className="text-muted-foreground"
+                                onClick={() => {
+                                    setIsMobileMenuOpen(false);
+                                    router.history.back();
+                                }}
+                            >
+                                <ArrowLeft className="size-5"/>
+                            </Button>
+                        }
+
+                        {isAnonymous ?
+                            <Link to="/">
+                                <div className="flex shrink-0 items-center gap-2">
+                                    <img alt="MyLists logo" className="size-5" src="/logo192.png"/>
+                                    <span className="text-xl font-bold text-foreground block tracking-tight max-sm:hidden">
+                                        MyLists
+                                    </span>
+                                </div>
+                            </Link>
+                            :
+                            <Link to="/profile/$username" params={{ username: currentUser.name }}>
+                                <div className="flex shrink-0 items-center gap-2">
+                                    <img alt="MyLists logo" className="size-5" src="/logo192.png"/>
+                                    <span className="text-xl font-bold text-foreground block tracking-tight max-sm:hidden">
+                                        MyLists
+                                    </span>
+                                </div>
+                            </Link>
+                        }
+                    </div>
 
                     <div className="flex-1 max-w-md z-50 block max-lg:hidden">
                         <SearchBar/>

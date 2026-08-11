@@ -47,7 +47,7 @@ export abstract class BaseRepository<
         return {
             search: {
                 isActive: (args: MediaListArgs) => !!args.search,
-                getCondition: (args: MediaListArgs) => like(mediaTable.name, `%${args.search}%`),
+                getCondition: (args: MediaListArgs) => this.mediaNameSearchCondition(args.search!),
             },
             favorite: {
                 isActive: (args: MediaListArgs) => args.favorite === true,
@@ -86,6 +86,16 @@ export abstract class BaseRepository<
                 filterColumn: genreTable.name,
             }),
         };
+    }
+
+    private mediaNameSearchCondition(query: string) {
+        const { mediaTable } = this.repoDefinition.tables;
+        const pattern = `%${query}%`;
+        const nameCondition = like(mediaTable.name, pattern);
+
+        return mediaTable.originalName
+            ? or(nameCondition, like(mediaTable.originalName, pattern))
+            : nameCondition;
     }
 
     async bulkInsertUserMedia(rows: TRepoDef["tables"]["listTable"]["$inferInsert"][]) {
@@ -372,7 +382,7 @@ export abstract class BaseRepository<
             })
             .from(listTable)
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(eq(listTable.userId, userId), like(mediaTable.name, `%${query}%`)))
+            .where(and(eq(listTable.userId, userId), this.mediaNameSearchCondition(query)))
             .orderBy(asc(mediaTable.name))
             .limit(limit);
     }

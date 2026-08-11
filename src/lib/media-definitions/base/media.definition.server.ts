@@ -13,6 +13,7 @@ type NullableColumn<T> = AnySQLiteColumn<{ data: T; notNull: false }>;
 type MediaTableColumns = {
     id: NotNullColumn<number>;
     name: NotNullColumn<string>;
+    originalName?: NullableColumn<string>;
     imageCover: NotNullColumn<string>;
     apiId: NotNullColumn<string | number>;
     addedAt: NullableColumn<string>;

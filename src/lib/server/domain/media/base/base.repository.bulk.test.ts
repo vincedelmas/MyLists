@@ -42,8 +42,8 @@ describe("BaseRepository", () => {
             updatedAt: "2024-01-01 00:00:00",
         });
         await db.insert(movies).values([
-            { id: 100, apiId: 1000, duration: 120, name: "Movie 1", imageCover: "1.jpg" },
-            { id: 101, apiId: 1001, duration: 90, name: "Movie 2", imageCover: "2.jpg" },
+            { id: 100, apiId: 1000, duration: 120, name: "Movie 1", originalName: "Original One", imageCover: "1.jpg" },
+            { id: 101, apiId: 1001, duration: 90, name: "Movie 2", originalName: "Original Two", imageCover: "2.jpg" },
         ]);
     });
 
@@ -81,6 +81,30 @@ describe("BaseRepository", () => {
 
     it("does not execute an insert for an empty batch", async () => {
         await expect(repository.bulkInsertUserMedia([])).resolves.toEqual([]);
+    });
+
+    it("searches a user list by both localized and original media names", async () => {
+        await db.insert(moviesList).values([
+            { userId: 42, mediaId: 100, status: Status.COMPLETED },
+            { userId: 42, mediaId: 101, status: Status.COMPLETED },
+        ]);
+
+        const localizedNameResult = await repository.getMediaList(undefined, 42, { search: "Movie 1" });
+        const originalNameResult = await repository.getMediaList(undefined, 42, { search: "Original Two" });
+
+        expect(localizedNameResult.items.map(item => item.mediaId)).toEqual([100]);
+        expect(originalNameResult.items.map(item => item.mediaId)).toEqual([101]);
+    });
+
+    it("searches user-list suggestions by original media name", async () => {
+        await db.insert(moviesList).values([
+            { userId: 42, mediaId: 100, status: Status.COMPLETED },
+            { userId: 42, mediaId: 101, status: Status.COMPLETED },
+        ]);
+
+        const result = await repository.searchUserListByName(42, "Original One");
+
+        expect(result.map(item => item.mediaId)).toEqual([100]);
     });
 
     it("finds media absent from both user lists and collections", async () => {

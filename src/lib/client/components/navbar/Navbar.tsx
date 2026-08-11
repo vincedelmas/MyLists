@@ -3,6 +3,7 @@ import {cva} from "class-variance-authority";
 import authClient from "@/lib/utils/auth-client";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useQueryClient} from "@tanstack/react-query";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {Button} from "@/lib/client/components/ui/button";
 import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
@@ -40,11 +41,11 @@ import {
     UsersRound,
     X,
 } from "lucide-react";
-import {Badge} from "@/lib/client/components/ui/badge";
 
 
-const navStyle = cva("inline-flex items-center justify-center rounded-md px-4 text-sm font-medium hover:text-brand " +
-    "outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+const navStyle = cva("inline-flex items-center justify-center rounded-md px-4 text-sm " +
+    "font-medium hover:text-brand outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none " +
+    "disabled:opacity-50"
 )
 
 

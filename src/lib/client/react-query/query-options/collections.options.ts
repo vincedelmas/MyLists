@@ -14,41 +14,43 @@ import {
 export type CollectionDetailsReadData = Awaited<ReturnType<typeof getReadCollectionDetails>>;
 
 
+export const collectionDetailsReadQueryKey = (collectionId: number) => {
+    return ["collections", "details", "read", collectionId] as const;
+}
+
+
 export const paginatedUserCollectionsOptions = (search: UserCollectionsSearch) => queryOptions({
     queryKey: ["collections", "user", "paginated", search] as const,
-    queryFn: () => getPaginatedUserCollections({ data: search }),
+    queryFn: () => getPaginatedUserCollections({data: search}),
 });
-
-
-export const collectionDetailsReadQueryKey = (collectionId: number) => ["collections", "details", "read", collectionId] as const;
 
 
 export const collectionDetailsReadOptions = (collectionId: number, page = 1) => queryOptions({
     queryKey: [...collectionDetailsReadQueryKey(collectionId), page] as const,
-    queryFn: () => getReadCollectionDetails({ data: { collectionId, page } }),
+    queryFn: () => getReadCollectionDetails({data: {collectionId, page}}),
 });
 
 
 export const collectionDetailsEditOptions = (collectionId: number) => queryOptions({
     queryKey: ["collections", "details", "edit", collectionId] as const,
-    queryFn: () => getEditCollectionDetails({ data: { collectionId } }),
+    queryFn: () => getEditCollectionDetails({data: {collectionId}}),
 });
 
 
 export const communityCollectionsOptions = (search: CommunitySearch) => queryOptions({
     queryKey: ["collections", "community", search] as const,
-    queryFn: () => getCommunityCollections({ data: search }),
+    queryFn: () => getCommunityCollections({data: search}),
 });
 
 
 export const mediaCommunityCollectionsOptions = (mediaId: number, mediaType: MediaType) => queryOptions({
     queryKey: ["details", "collections", "community", mediaType, mediaId],
-    queryFn: () => getMediaCommunityCollections({ data: { mediaId, mediaType } }),
+    queryFn: () => getMediaCommunityCollections({data: {mediaId, mediaType}}),
 });
 
 
 export const userCollectionMembershipsOptions = (mediaId: number, mediaType: MediaType, isOpen: boolean) => queryOptions({
     queryKey: ["collections", "memberships", mediaType, mediaId] as const,
-    queryFn: () => getUserCollectionMemberships({ data: { mediaId, mediaType } }),
+    queryFn: () => getUserCollectionMemberships({data: {mediaId, mediaType}}),
     enabled: isOpen,
 });

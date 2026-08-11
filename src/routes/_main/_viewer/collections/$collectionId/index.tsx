@@ -13,7 +13,9 @@ import {Pagination} from "@/lib/client/components/general/Pagination";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
+import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
+import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 import {
     MediaCard,
     MediaCardDetails,
@@ -24,8 +26,6 @@ import {
     MediaCardSignals,
     MediaCardTitle
 } from "@/lib/client/components/media/base/MediaCard";
-import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
-import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/")({
@@ -69,6 +69,10 @@ function CollectionViewer() {
     const handleEditCollection = async () => {
         await navigate({ to: "/collections/$collectionId/edit", params: { collectionId: collectionId } });
     };
+
+    const onChangePage = (nextPage: number) => {
+        void navigate({ search: prev => ({ ...prev, page: nextPage }) });
+    }
 
     return (
         <PageTitle
@@ -129,7 +133,8 @@ function CollectionViewer() {
                     message="This collection does not have any media yet."
                 />
                 :
-                <div className="pt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                <div
+                    className="pt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                     {items.map((item) =>
                         <MediaCard key={item.mediaId} item={item} mediaType={collection.mediaType}>
                             <MediaCardLeftCorner>
@@ -164,9 +169,7 @@ function CollectionViewer() {
             <Pagination
                 currentPage={apiData.page}
                 totalPages={apiData.pages}
-                onChangePage={(nextPage) => {
-                    void navigate({ search: (previous) => ({ ...previous, page: nextPage }) });
-                }}
+                onChangePage={onChangePage}
             />
         </PageTitle>
     );

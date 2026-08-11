@@ -139,6 +139,29 @@ describe("ImportService.createImportJob", () => {
         expect(repository.markJobFailed).not.toHaveBeenCalled();
     });
 
+    it("notifies the worker only after the job is committed as queued", async () => {
+        const parsed = createParsedImport();
+        const queuedJob = {
+            id: 10,
+            totalCount: 1,
+            status: ImportJobStatus.QUEUED,
+        };
+        const onJobQueued = vi.fn().mockResolvedValue(false);
+        const notifyingService = new ImportService(repository as any, {
+            [ImportSource.MYLISTS]: parser,
+        }, onJobQueued);
+
+        parser.mockReturnValue(parsed);
+        repository.markJobQueued.mockResolvedValue(queuedJob);
+
+        await expect(notifyingService.createImportJob(42, ImportSource.MYLISTS, "csv"))
+            .resolves.toBe(queuedJob);
+
+        expect(onJobQueued).toHaveBeenCalledWith(queuedJob);
+        expect(repository.markJobQueued.mock.invocationCallOrder[0])
+            .toBeLessThan(onJobQueued.mock.invocationCallOrder[0]);
+    });
+
     it("rejects creating a new import when the user already has an active one", async () => {
         repository.findActiveJobForUser.mockResolvedValue({ id: 9, status: ImportJobStatus.QUEUED });
         await expect(service.createImportJob(42, ImportSource.MYLISTS, "csv")).rejects.toThrow(FormattedError);

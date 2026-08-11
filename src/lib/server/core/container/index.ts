@@ -5,6 +5,7 @@ import {MediaModule, setupMediaModule} from "@/lib/server/core/container/media.m
 import {ImportModule, setupImportModule} from "@/lib/server/core/container/import.module";
 import {ProviderModule, setupProviderModule} from "@/lib/server/core/container/provider.module";
 import {ApiClientModule, setupApiClientsModule} from "@/lib/server/core/container/api-client.module";
+import {notifyImportWorker} from "@/lib/server/core/import-worker-notifier";
 
 
 interface AppContainer {
@@ -28,7 +29,9 @@ async function initContainer(): Promise<AppContainer> {
     const userModule = setupUserModule(mediaModule);
     const providerModule = setupProviderModule(mediaModule, clientsModule);
 
-    const importModule = setupImportModule(mediaModule, providerModule);
+    const importModule = setupImportModule(mediaModule, providerModule, {
+        onJobQueued: (job) => notifyImportWorker(job.id),
+    });
 
     return {
         cacheManager,

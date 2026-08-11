@@ -11,23 +11,19 @@ import {createGamesAchievementCatalog} from "@/lib/server/domain/media/games/gam
 import {createMangaAchievementCatalog} from "@/lib/server/domain/media/manga/manga.achievements";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
-import {createTvMonthlyActivity, createTvStatistics, TvRepository, TvService} from "@/lib/server/domain/media/tv";
-import {BooksRepository, BooksService, createBooksMonthlyActivity, createBooksStatistics} from "@/lib/server/domain/media/books";
-import {createGamesMonthlyActivity, createGamesStatistics, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
-import {createMangaMonthlyActivity, createMangaStatistics, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
-import {createMoviesMonthlyActivity, createMoviesStatistics, MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
+import {createTvMonthlyActivity} from "@/lib/server/domain/media/tv/tv.monthly-activity";
+import {createBooksMonthlyActivity} from "@/lib/server/domain/media/books/books.monthly-activity";
+import {createGamesMonthlyActivity} from "@/lib/server/domain/media/games/games.monthly-activity";
+import {createMangaMonthlyActivity} from "@/lib/server/domain/media/manga/manga.monthly-activity";
+import {createMoviesMonthlyActivity} from "@/lib/server/domain/media/movies/movies.monthly-activity";
+import {setupMediaServicesModule} from "@/lib/server/core/container/media-services.module";
+import {setupMediaStatisticsModule} from "@/lib/server/core/container/media-statistics.module";
 
 
 export function setupMediaModule() {
-    const repositories = {
-        series: new TvRepository(seriesServerDefinition),
-        anime: new TvRepository(animeServerDefinition),
-        movies: new MoviesRepository(moviesServerDefinition),
-        games: new GamesRepository(gamesServerDefinition),
-        books: new BooksRepository(booksServerDefinition),
-        manga: new MangaRepository(mangaServerDefinition),
-    };
-    const mediaRepositoryRegistry = createMediaRegistry(repositories);
+    const mediaServicesModule = setupMediaServicesModule();
+    const mediaStatisticsModule = setupMediaStatisticsModule();
+    const {repositories, services} = mediaServicesModule;
 
     const mediaMonthlyActivityRegistry = createMediaRegistry({
         [MediaType.SERIES]: createTvMonthlyActivity(seriesServerDefinition, repositories.series),
@@ -47,46 +43,12 @@ export function setupMediaModule() {
         [MediaType.MANGA]: createMangaAchievementCatalog(mangaServerDefinition),
     });
 
-    const services = {
-        series: new TvService(repositories.series, seriesServerDefinition),
-        anime: new TvService(repositories.anime, animeServerDefinition),
-        movies: new MoviesService(repositories.movies, moviesServerDefinition),
-        games: new GamesService(repositories.games, gamesServerDefinition),
-        books: new BooksService(repositories.books, booksServerDefinition),
-        manga: new MangaService(repositories.manga, mangaServerDefinition),
-    };
-    const mediaServiceRegistry = createMediaRegistry(services);
-
-    const mediaStatRegistry = createMediaRegistry({
-        [MediaType.SERIES]: createTvStatistics(seriesServerDefinition),
-        [MediaType.ANIME]: createTvStatistics(animeServerDefinition),
-        [MediaType.MOVIES]: createMoviesStatistics(moviesServerDefinition),
-        [MediaType.GAMES]: createGamesStatistics(gamesServerDefinition),
-        [MediaType.BOOKS]: createBooksStatistics(booksServerDefinition),
-        [MediaType.MANGA]: createMangaStatistics(mangaServerDefinition),
-    });
-
     return {
-        repositories: {
-            series: repositories.series,
-            anime: repositories.anime,
-            movies: repositories.movies,
-            games: repositories.games,
-            books: repositories.books,
-            manga: repositories.manga,
-        },
-        services: {
-            series: services.series,
-            anime: services.anime,
-            movies: services.movies,
-            games: services.games,
-            books: services.books,
-            manga: services.manga,
-        },
+        repositories,
+        services,
         registries: {
-            mediaService: mediaServiceRegistry,
-            mediaStatistics: mediaStatRegistry,
-            mediaRepository: mediaRepositoryRegistry,
+            ...mediaServicesModule.registries,
+            ...mediaStatisticsModule.registries,
             mediaAchievements: mediaAchievementsRegistry,
             mediaMonthlyActivity: mediaMonthlyActivityRegistry,
         }

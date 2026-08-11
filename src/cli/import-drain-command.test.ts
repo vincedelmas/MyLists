@@ -5,12 +5,12 @@ const { drainImportJobs } = vi.hoisted(() => ({
     drainImportJobs: vi.fn(),
 }));
 
-const { runTask } = vi.hoisted(() => ({
-    runTask: vi.fn(),
+const { computeAllUsersStats } = vi.hoisted(() => ({
+    computeAllUsersStats: vi.fn(),
 }));
 
-const { getContainer } = vi.hoisted(() => ({
-    getContainer: vi.fn(),
+const { setupImportWorkerModule } = vi.hoisted(() => ({
+    setupImportWorkerModule: vi.fn(),
 }));
 
 const { logger } = vi.hoisted(() => ({
@@ -21,9 +21,9 @@ const { logger } = vi.hoisted(() => ({
 
 
 vi.mock("@/lib/server/core/logger", () => ({ logger }));
-vi.mock("@/lib/server/tasks/task-runner", () => ({ runTask }));
-vi.mock("@/lib/server/core/container", () => ({ getContainer }));
 vi.mock("@/lib/server/domain/imports/import-drain", () => ({ drainImportJobs }));
+vi.mock("@/lib/server/domain/user/compute-all-users-stats", () => ({ computeAllUsersStats }));
+vi.mock("@/lib/server/core/container/import-worker.module", () => ({ setupImportWorkerModule }));
 
 
 const { runImportDrainCommand } = await import("@/cli/import-drain-command");
@@ -34,46 +34,47 @@ describe("runImportDrainCommand", () => {
         vi.resetAllMocks();
     });
 
-    it("drains imports with the container import processor", async () => {
+    it("drains imports with the isolated worker import processor", async () => {
         const importProcessor = {};
+        const mediaStatistics = {};
 
-        getContainer.mockResolvedValue({ services: { importProcessor } });
         drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 2 });
 
-        await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
+        await expect(runImportDrainCommand({
+            services: {importProcessor},
+            registries: {mediaStatistics},
+        } as any)).resolves.toEqual({failedJobs: 0, processedJobs: 2});
 
         expect(drainImportJobs).toHaveBeenCalledWith(importProcessor);
         expect(logger.info).toHaveBeenCalledWith({ processedJobs: 2, failedJobs: 0 }, "Import drain finished");
-        expect(runTask).toHaveBeenCalledWith({
-            input: {},
-            triggeredBy: "cron/cli",
-            taskName: "compute-all-users-stats",
-        });
+        expect(computeAllUsersStats).toHaveBeenCalledWith(mediaStatistics);
     });
 
     it("does not recompute stats when no import job was processed", async () => {
         const importProcessor = {};
+        const mediaStatistics = {};
 
-        getContainer.mockResolvedValue({ services: { importProcessor } });
         drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 0 });
 
-        await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 0, processedJobs: 0 });
+        await expect(runImportDrainCommand({
+            services: {importProcessor},
+            registries: {mediaStatistics},
+        } as any)).resolves.toEqual({failedJobs: 0, processedJobs: 0});
 
-        expect(runTask).not.toHaveBeenCalled();
+        expect(computeAllUsersStats).not.toHaveBeenCalled();
     });
 
     it("recomputes stats when a job failed during processing", async () => {
         const importProcessor = {};
+        const mediaStatistics = {};
 
-        getContainer.mockResolvedValue({ services: { importProcessor } });
         drainImportJobs.mockResolvedValue({ failedJobs: 1, processedJobs: 0 });
 
-        await expect(runImportDrainCommand()).resolves.toEqual({ failedJobs: 1, processedJobs: 0 });
+        await expect(runImportDrainCommand({
+            services: {importProcessor},
+            registries: {mediaStatistics},
+        } as any)).resolves.toEqual({failedJobs: 1, processedJobs: 0});
 
-        expect(runTask).toHaveBeenCalledWith({
-            input: {},
-            triggeredBy: "cron/cli",
-            taskName: "compute-all-users-stats",
-        });
+        expect(computeAllUsersStats).toHaveBeenCalledWith(mediaStatistics);
     });
 });

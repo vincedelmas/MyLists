@@ -62,7 +62,12 @@ describe("ImportJobProcessor", () => {
 
         const processor = new ImportJobProcessor(importService as any, matcherRegistry as any);
 
-        await expect(processor.processNextJob()).rejects.toBe(error);
+        await expect(processor.processNextJob()).rejects.toMatchObject({
+            cause: error,
+            jobId: 10,
+            message: "Matcher missing",
+            name: "ImportJobProcessingError",
+        });
         expect(importService.markProcessingJobFailed).toHaveBeenCalledWith(10, "Matcher missing");
     });
 
@@ -82,6 +87,21 @@ describe("ImportJobProcessor", () => {
             10,
             "Import job 10 could not be finalized because it still has unfinished items",
         );
+    });
+
+    it("does not classify a failure to mark the job failed as a handled job error", async () => {
+        const processingError = new Error("Matcher missing");
+        const persistenceError = new Error("database unavailable");
+        const importService = createImportServiceStub();
+        const matcherRegistry = createMatcherRegistryStub();
+
+        importService.claimNextQueuedJob.mockResolvedValue({id: 10, userId: 42});
+        importService.getQueuedItemsByMediaType.mockRejectedValue(processingError);
+        importService.markProcessingJobFailed.mockRejectedValue(persistenceError);
+
+        const processor = new ImportJobProcessor(importService as any, matcherRegistry as any);
+
+        await expect(processor.processNextJob()).rejects.toBe(persistenceError);
     });
 });
 

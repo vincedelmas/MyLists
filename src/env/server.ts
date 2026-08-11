@@ -31,6 +31,12 @@ export const serverEnv = createEnv({
         REDIS_URL: z.url().default("redis://localhost:6379"),
         REDIS_ENABLED: z.string().transform((s) => s !== "false" && s !== "0").default(false),
 
+        // Import worker
+        IMPORT_WORKER_HOST: z.string().trim().min(1).default("127.0.0.1"),
+        IMPORT_WORKER_PORT: z.coerce.number().int().min(1).max(65_535).default(3001),
+        IMPORT_WORKER_URL: z.url().default("http://127.0.0.1:3001"),
+        IMPORT_WORKER_FALLBACK_INTERVAL_MS: z.coerce.number().int().min(1_000).default(5 * 60 * 1_000),
+
         // Better-Auth
         BETTER_AUTH_SECRET: z.string().min(20),
 

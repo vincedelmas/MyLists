@@ -1,5 +1,5 @@
-import {MediaModule} from "@/lib/server/core/container/media.module";
 import {ApiClientModule} from "@/lib/server/core/container/api-client.module";
+import {MediaServicesModule} from "@/lib/server/core/container/media-services.module";
 import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {createGamesIngestionService, createIgdbGamesProvider} from "@/lib/server/api-providers/igdb-games.provider";
 import {createMalMangaProvider, createMangaIngestionService} from "@/lib/server/api-providers/mal-manga.provider";
@@ -8,7 +8,10 @@ import {createBooksIngestionService, createGBooksBooksProvider} from "@/lib/serv
 import {createAnimeIngestionService, createSeriesIngestionService, createTmdbAnimeProvider, createTmdbSeriesProvider} from "@/lib/server/api-providers/tmdb-tv.provider";
 
 
-export function setupProviderModule(mediaModule: MediaModule, apiClientModule: ApiClientModule) {
+type ProviderApiClients = Pick<ApiClientModule, "tmdb" | "igdb" | "mal" | "gBook" | "hltb">;
+
+
+export function setupProviderModule(mediaModule: MediaServicesModule, apiClientModule: ProviderApiClients) {
     const apiClients = apiClientModule;
 
     const externalProviders = {

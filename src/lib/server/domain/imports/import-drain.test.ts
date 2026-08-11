@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
 import {ImportJobStatus} from "@/lib/utils/enums";
 import {drainImportJobs} from "@/lib/server/domain/imports/import-drain";
+import {ImportJobProcessingError} from "@/lib/server/domain/imports/import-job.processor";
 
 
 describe("drainImportJobs", () => {
@@ -20,13 +21,23 @@ describe("drainImportJobs", () => {
     it("continues draining after a processor error and counts failed jobs", async () => {
         const processor = createProcessor({
             processNextJob: vi.fn()
-                .mockRejectedValueOnce(new Error("matcher crashed"))
+                .mockRejectedValueOnce(new ImportJobProcessingError(1, new Error("matcher crashed")))
                 .mockResolvedValueOnce({ id: 2, status: ImportJobStatus.COMPLETED })
                 .mockResolvedValueOnce(null),
         });
 
         await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 1, processedJobs: 1 });
         expect(processor.processNextJob).toHaveBeenCalledTimes(3);
+    });
+
+    it("propagates infrastructure errors so the worker can back off before retrying", async () => {
+        const error = new Error("database unavailable");
+        const processor = createProcessor({
+            processNextJob: vi.fn().mockRejectedValue(error),
+        });
+
+        await expect(drainImportJobs(processor as any)).rejects.toBe(error);
+        expect(processor.processNextJob).toHaveBeenCalledTimes(1);
     });
 
     it("returns zero when there is no queued job", async () => {

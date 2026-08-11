@@ -3,9 +3,11 @@ services:
     image: mylists-app
     container_name: mylists
     build:
-      context: ./src
+      context: .
     env_file:
       - .env.docker
+    environment:
+      IMPORT_WORKER_URL: ${IMPORT_WORKER_URL:-http://import-worker:3001}
     depends_on:
       redis:
         condition: service_healthy
@@ -17,9 +19,42 @@ services:
       ofelia.job-exec.mylists-maintenance.schedule: "0 0 3 * * *"
       ofelia.job-exec.mylists-maintenance.command: "bun /app/dist/cli/index.js maintenance"
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "bun", "-e", "const response = await fetch('http://127.0.0.1:3000/'); process.exit(response.ok ? 0 : 1)" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     networks:
       - default
       - web_net
+
+  import-worker:
+    image: mylists-app
+    container_name: mylists-import-worker
+    env_file:
+      - .env.docker
+    environment:
+      IMPORT_WORKER_HOST: ${IMPORT_WORKER_HOST:-0.0.0.0}
+      IMPORT_WORKER_PORT: ${IMPORT_WORKER_PORT:-3001}
+      IMPORT_WORKER_FALLBACK_INTERVAL_MS: ${IMPORT_WORKER_FALLBACK_INTERVAL_MS:-300000}
+    depends_on:
+      mylists:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./data/db:/app/instance
+      - ./data/images:/app/storage/images
+    entrypoint: []
+    command: [ "bun", "--smol", "/app/dist/import-worker.js" ]
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "bun -e \"const response = await fetch('http://127.0.0.1:' + process.env.IMPORT_WORKER_PORT + '/health'); process.exit(response.ok ? 0 : 1)\"" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
 
   redis:
     image: redis:7-alpine

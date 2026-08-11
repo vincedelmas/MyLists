@@ -2,6 +2,15 @@ import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
 
 
+export class ImportJobProcessingError extends Error {
+    constructor(public readonly jobId: number, cause: unknown) {
+        const message = cause instanceof Error ? cause.message : String(cause);
+        super(message, {cause});
+        this.name = "ImportJobProcessingError";
+    }
+}
+
+
 export class ImportJobProcessor {
     constructor(
         private importService: ImportService,
@@ -43,7 +52,7 @@ export class ImportJobProcessor {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             await this.importService.markProcessingJobFailed(job.id, errorMessage);
-            throw error;
+            throw new ImportJobProcessingError(job.id, error);
         }
     }
 }

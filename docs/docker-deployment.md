@@ -1,7 +1,7 @@
 # Docker Deployment
 
-MyLists ships a Docker Compose setup with the app and Redis. The app image runs the Bun web server by default and also contains the built CLI for one-off commands and scheduled
-maintenance.
+MyLists ships a Docker Compose setup with the app, a persistent import worker, and Redis. The app image runs the Bun web server by default and also contains the built worker and CLI
+for background processing, one-off commands, and scheduled maintenance.
 
 The Compose setup does not include a scheduler or reverse proxy. In production, provide those from your platform when you need them.
 
@@ -81,23 +81,37 @@ When Redis is disabled, the app uses in-memory cache and in-memory rate limiting
 API monitoring in the admin dashboard is Redis-backed. Without Redis, outbound API calls are not recorded into the monitoring rollups and the live Redis counters show zero/null
 data.
 
-## Import Drain
+## Import Worker
 
-Imports are processed by the built CLI. The web app only creates queued import jobs; it does not start a worker process. Run the import drain on a schedule with the same image,
-env, and persistent mounts as the app:
+Imports are processed by the separate `import-worker` service. After the web app commits a queued job to SQLite, it sends an internal HTTP wake notification to the worker. The
+worker remains alive, processes jobs sequentially, retries transient drain and stats-refresh failures, and stops gracefully after its current job on `SIGTERM` or `SIGINT`.
 
-```bash
-flock -n /tmp/mylists-import-drain.lock bun dist/cli/index.js import-drain
+The worker runs the compiled `dist/import-worker.js` bundle with Bun's lower-memory mode:
+
+```text
+bun --smol /app/dist/import-worker.js
 ```
 
-For Docker Compose:
+The wake endpoint is available only on the internal Compose network. It is not published to the host. A five-minute fallback drain recovers jobs if the app commits one while the
+worker is restarting or its wake request cannot be delivered:
 
-```bash
-flock -n /tmp/mylists-import-drain.lock docker compose --env-file .env.docker run --rm app bun dist/cli/index.js import-drain
+```env
+IMPORT_WORKER_HOST=0.0.0.0
+IMPORT_WORKER_PORT=3001
+IMPORT_WORKER_URL=http://import-worker:3001
+IMPORT_WORKER_FALLBACK_INTERVAL_MS=300000
 ```
 
-A typical schedule is every 2 minutes for example. The `flock` lock skips a new run when the previous drain is still active. The database also only allows one import job to be in
-`PROCESSING` at a time.
+The worker also drains once at startup. It does not touch SQLite while waiting between wake notifications and fallback drains. The app and worker share the SQLite and image mounts,
+and the worker starts only after the app health check succeeds, so database migrations finish before its startup drain. No import cron or `flock` is required. Run one worker per
+database; the database constraint still prevents more than one import job from being `PROCESSING` at a time.
+
+For troubleshooting or a one-off drain, the CLI command remains available:
+
+```bash
+docker compose --env-file .env.docker run --rm --no-deps import-worker \
+  bun /app/dist/cli/index.js import-drain
+```
 
 ## Maintenance
 
@@ -105,7 +119,7 @@ The image does not run cron. Use Dokploy cron, host cron, Kubernetes CronJob, or
 app:
 
 ```bash
-docker compose --env-file .env.docker run --rm app \
+docker compose --env-file .env.docker run --rm mylists \
   bun dist/cli/index.js maintenance --json
 ```
 
@@ -116,18 +130,18 @@ A typical schedule is once per day, for example, 03:00 AM UTC.
 Use the built CLI in the image:
 
 ```bash
-docker compose --env-file .env.docker run --rm app bun dist/cli/index.js --help
+docker compose --env-file .env.docker run --rm mylists bun dist/cli/index.js --help
 ```
 
 Examples run with the same database/uploads volumes as the app:
 
 ```bash
-docker compose --env-file .env.docker run --rm app \
+docker compose --env-file .env.docker run --rm mylists \
   bun dist/cli/index.js seed-achievements
 ```
 
 ```bash
-docker compose --env-file .env.docker run --rm app \
+docker compose --env-file .env.docker run --rm mylists \
   bun dist/cli/index.js calculate-achievements
 ```
 
@@ -136,7 +150,7 @@ docker compose --env-file .env.docker run --rm app \
 For localhost deployments, email verification and OAuth sign-up may be unavailable or unnecessary. Use the CLI to create a verified user directly:
 
 ```bash
-docker compose --env-file .env.docker run --rm app \
+docker compose --env-file .env.docker run --rm mylists \
   bun dist/cli/index.js create-user \
     --email admin@example.com \
     --password "change-me-strong-password" \
@@ -151,7 +165,7 @@ The available roles are `user`, `manager`, and `admin`.
 For a new SQLite volume, initialize the database from the app service after it has the correct env and volumes attached:
 
 ```bash
-docker compose --env-file .env.docker run --rm app bun run new:db:docker
+docker compose --env-file .env.docker run --rm mylists bun run new:db:docker
 ```
 
 This runs Drizzle schema push, seeds achievements, and calculates achievements against the mounted `/app/instance` SQLite volume.
@@ -200,11 +214,11 @@ Copy existing SQLite files into the database volume and existing image folders i
 ```bash
 docker compose --env-file .env.docker run --rm --no-deps \
   -v "$PWD/backups/mylists-db:/backup:ro" \
-  app sh -c "cp -a /backup/. /app/instance/"
+  mylists sh -c "cp -a /backup/. /app/instance/"
 
 docker compose --env-file .env.docker run --rm --no-deps \
   -v "$PWD/backups/mylists-uploads:/backup:ro" \
-  app sh -c "cp -a /backup/. /app/storage/images/"
+  mylists sh -c "cp -a /backup/. /app/storage/images/"
 ```
 
 ## Operations
@@ -212,7 +226,7 @@ docker compose --env-file .env.docker run --rm --no-deps \
 View logs:
 
 ```bash
-docker compose logs -f app
+docker compose logs -f mylists import-worker
 ```
 
 The app writes structured JSON logs to stdout in prod. Dev logs are pretty-printed in the terminal. In Docker, read them with `docker compose logs`.
@@ -230,7 +244,7 @@ admin dashboard should read.
 Restart the app:
 
 ```bash
-docker compose restart app
+docker compose restart mylists
 ```
 
 Stop without deleting database or images:

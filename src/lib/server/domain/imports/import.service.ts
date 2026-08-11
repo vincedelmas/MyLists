@@ -19,6 +19,7 @@ export class ImportService {
     constructor(
         private repository: typeof ImportRepository,
         private parsers: ImportParserRegistry = importParserRegistry,
+        private onJobQueued?: (job: {id: number}) => Promise<unknown>,
     ) {
     }
 
@@ -127,6 +128,8 @@ export class ImportService {
         }
 
         let job: Awaited<ReturnType<typeof ImportRepository.createJob>>;
+        let queuedJob: NonNullable<Awaited<ReturnType<typeof ImportRepository.markJobQueued>>>;
+
         try {
             job = await this.repository.createJob(userId, source);
         }
@@ -144,16 +147,16 @@ export class ImportService {
             if (!parser) throw new Error(`Import source "${source}" is not supported yet`);
 
             const parsed = parser(contents);
-            const queuedJob = await withTransaction(async () => {
+            const result = await withTransaction(async () => {
                 await this.repository.insertParsedItems(job.id, parsed.items);
                 return this.repository.markJobQueued(job.id, parsed.totalCount, parsed.failedCount);
             });
 
-            if (!queuedJob) {
+            if (!result) {
                 throw new Error(`Import job ${job.id} is no longer in parsing state`);
             }
 
-            return queuedJob;
+            queuedJob = result;
         }
         catch (error) {
             const errorMessage = error instanceof Error
@@ -165,6 +168,9 @@ export class ImportService {
 
             throw error;
         }
+
+        await this.onJobQueued?.(queuedJob);
+        return queuedJob;
     }
 
     async getImportIssues(userId: number, jobId: number, page?: number, perPage?: number) {

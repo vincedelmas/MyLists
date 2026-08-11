@@ -1,5 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
-import {MediaModule} from "@/lib/server/core/container/media.module";
+import {MediaServicesModule} from "@/lib/server/core/container/media-services.module";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {ProviderModule} from "@/lib/server/core/container/provider.module";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
@@ -12,12 +12,16 @@ import {createMoviesMatcher} from "@/lib/server/domain/imports/matchers/movies.m
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
 
 
-export function setupImportModule(mediaModule: MediaModule, providerModule: ProviderModule) {
+export function setupImportModule(
+    mediaModule: MediaServicesModule,
+    providerModule: ProviderModule,
+    options: {onJobQueued?: (job: {id: number}) => Promise<unknown>} = {},
+) {
     const externalProviderRegistry = providerModule.registries.externalProviders;
     const ingestionServiceRegistry = providerModule.registries.ingestionServices;
 
     const importRepository = ImportRepository;
-    const importService = new ImportService(importRepository);
+    const importService = new ImportService(importRepository, undefined, options.onJobQueued);
 
     const matchersService = {
         series: createTvMatcher(

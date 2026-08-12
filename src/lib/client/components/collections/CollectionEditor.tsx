@@ -151,7 +151,7 @@ export const CollectionEditor = ({ form, onSubmit, mediaType, submitLabel, isSub
                                                 message="No items added to the collection yet."
                                             />
                                             :
-                                            <div className="flex flex-col gap-3 pt-3">
+                                            <div className="flex max-h-128 flex-col gap-3 overflow-y-auto pr-2 pt-3 scrollbar-thin">
                                                 {fields.map((field, idx) =>
                                                     <div
                                                         key={field.id}

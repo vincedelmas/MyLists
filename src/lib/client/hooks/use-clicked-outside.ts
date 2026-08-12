@@ -1,94 +1,71 @@
-import {RefObject, useEffect, useRef} from "react";
+import {RefObject, useEffect, useEffectEvent} from "react";
 
 
-type Handler = (event: MouseEvent | TouchEvent) => void;
+type Handler = (event: PointerEvent) => void;
 
 
-const TOUCH_TAP_TOLERANCE_PX = 10;
-const SYNTHETIC_MOUSE_EVENT_DELAY_MS = 700;
+const TAP_TOLERANCE_PX = 10;
 
 
 export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(ref: RefObject<T | null>, handler: Handler): void => {
-    const handlerRef = useRef(handler);
+    const onClickOutside = useEffectEvent(handler);
 
     useEffect(() => {
-        handlerRef.current = handler;
-    }, [handler]);
+        let pointerStart: { id: number; x: number; y: number; moved: boolean } | null = null;
 
-    useEffect(() => {
-        let touchStart: { identifier: number; x: number; y: number; moved: boolean } | null = null;
-        let lastTouchEndAt = 0;
-
-        const isOutside = (event: MouseEvent | TouchEvent) => (
+        const isOutside = (event: PointerEvent) => (
             !!ref.current && !ref.current.contains(event.target as Node)
         );
 
-        const mouseListener = (event: MouseEvent) => {
-            // Touch taps can emit a compatibility mouse event after touchend.
-            if (Date.now() - lastTouchEndAt < SYNTHETIC_MOUSE_EVENT_DELAY_MS || !isOutside(event)) return;
-            handlerRef.current(event);
-        };
-
-        const touchStartListener = (event: TouchEvent) => {
-            const touch = event.changedTouches[0];
-            if (!touch || !isOutside(event)) {
-                touchStart = null;
+        const pointerDownListener = (event: PointerEvent) => {
+            if (!event.isPrimary || event.button !== 0 || !isOutside(event)) {
+                pointerStart = null;
                 return;
             }
 
-            touchStart = {
-                identifier: touch.identifier,
-                x: touch.clientX,
-                y: touch.clientY,
+            pointerStart = {
+                id: event.pointerId,
+                x: event.clientX,
+                y: event.clientY,
                 moved: false,
             };
         };
 
-        const touchMoveListener = (event: TouchEvent) => {
-            if (!touchStart || touchStart.moved) return;
+        const pointerMoveListener = (event: PointerEvent) => {
+            if (!pointerStart || pointerStart.id !== event.pointerId || pointerStart.moved) return;
 
-            const touch = Array.from(event.changedTouches)
-                .find((changedTouch) => changedTouch.identifier === touchStart?.identifier);
-            if (!touch) return;
-
-            const distance = Math.hypot(touch.clientX - touchStart.x, touch.clientY - touchStart.y);
-            touchStart.moved = distance > TOUCH_TAP_TOLERANCE_PX;
+            const distance = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
+            pointerStart.moved = distance > TAP_TOLERANCE_PX;
         };
 
-        const touchEndListener = (event: TouchEvent) => {
-            if (!touchStart) return;
+        const pointerUpListener = (event: PointerEvent) => {
+            if (!pointerStart || pointerStart.id !== event.pointerId) return;
 
-            const start = touchStart;
-            touchStart = null;
-            lastTouchEndAt = Date.now();
+            const start = pointerStart;
+            pointerStart = null;
 
-            const touch = Array.from(event.changedTouches)
-                .find((changedTouch) => changedTouch.identifier === start.identifier);
-            if (!touch || !isOutside(event)) return;
+            if (start.moved || !isOutside(event)) return;
 
-            const distance = Math.hypot(touch.clientX - start.x, touch.clientY - start.y);
-            if (!start.moved && distance <= TOUCH_TAP_TOLERANCE_PX) {
-                handlerRef.current(event);
+            const distance = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+            if (distance <= TAP_TOLERANCE_PX) {
+                onClickOutside(event);
             }
         };
 
-        const touchCancelListener = () => {
-            touchStart = null;
-            lastTouchEndAt = Date.now();
+        const pointerCancelListener = (event: PointerEvent) => {
+            if (pointerStart?.id === event.pointerId) pointerStart = null;
         };
 
-        document.addEventListener("mousedown", mouseListener);
-        document.addEventListener("touchstart", touchStartListener, {passive: true});
-        document.addEventListener("touchmove", touchMoveListener, {passive: true});
-        document.addEventListener("touchend", touchEndListener, {passive: true});
-        document.addEventListener("touchcancel", touchCancelListener, {passive: true});
+        document.addEventListener("pointerdown", pointerDownListener);
+        document.addEventListener("pointermove", pointerMoveListener, {passive: true});
+        document.addEventListener("pointerup", pointerUpListener);
+        document.addEventListener("pointercancel", pointerCancelListener);
 
         return () => {
-            document.removeEventListener("mousedown", mouseListener);
-            document.removeEventListener("touchstart", touchStartListener);
-            document.removeEventListener("touchmove", touchMoveListener);
-            document.removeEventListener("touchend", touchEndListener);
-            document.removeEventListener("touchcancel", touchCancelListener);
+            document.removeEventListener("pointerdown", pointerDownListener);
+            document.removeEventListener("pointermove", pointerMoveListener);
+            document.removeEventListener("pointerup", pointerUpListener);
+            document.removeEventListener("pointercancel", pointerCancelListener);
         };
     }, [ref]);
 };

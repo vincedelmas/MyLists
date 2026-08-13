@@ -84,6 +84,7 @@ export const mediaListSettingsSchema = z.object({
     gridListView: z.boolean(),
     ratingSystem: z.enum(RatingSystemType),
     searchSelector: z.enum(ApiProviderType),
+    autoMoveCompletedTvToOnHold: z.boolean(),
 });
 
 export const highlightedMediaSearchSchema = z.object({

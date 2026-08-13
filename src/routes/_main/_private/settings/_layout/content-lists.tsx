@@ -63,6 +63,7 @@ function MediaListFormPage() {
         resolver: zodResolver(mediaListSettingsSchema),
         values: {
             gridListView: currentUser?.gridListView ?? true,
+            autoMoveCompletedTvToOnHold: currentUser?.autoMoveCompletedTvToOnHold ?? true,
             ratingSystem: currentUser?.ratingSystem ?? RatingSystemType.SCORE,
             searchSelector: currentUser?.searchSelector ?? ApiProviderType.TMDB,
             [MediaType.ANIME]: resolveMediaTypeActive(currentUser?.settings, MediaType.ANIME),
@@ -184,6 +185,37 @@ function MediaListFormPage() {
                                         />
                                     ))}
                                 </FieldGroup>
+                            </FieldSet>
+                            <FieldSet>
+                                <FieldLegend variant="label">Automatic List Updates</FieldLegend>
+                                <Controller
+                                    name="autoMoveCompletedTvToOnHold"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field
+                                            orientation="horizontal"
+                                            data-invalid={fieldState.invalid}
+                                            data-disabled={listSettingsMutation.isPending}
+                                            className="justify-between rounded-lg border p-2"
+                                        >
+                                            <div className="space-y-1">
+                                                <FieldLabel htmlFor={`${fieldId}-auto-tv-on-hold`} className="font-normal">
+                                                    Move completed shows to On Hold
+                                                </FieldLabel>
+                                                <FieldDescription>
+                                                    When a new season is detected for a completed series or anime,
+                                                    automatically change its status to On Hold.
+                                                </FieldDescription>
+                                            </div>
+                                            <Switch
+                                                id={`${fieldId}-auto-tv-on-hold`}
+                                                checked={field.value}
+                                                aria-invalid={fieldState.invalid}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </Field>
+                                    )}
+                                />
                             </FieldSet>
                             <Controller
                                 name="searchSelector"

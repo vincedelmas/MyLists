@@ -108,6 +108,12 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
                 returned: true,
                 input: false,
             },
+            autoMoveCompletedTvToOnHold: {
+                type: "boolean",
+                defaultValue: true,
+                returned: true,
+                input: false,
+            },
             privacy: {
                 type: "string",
                 defaultValue: PrivacyType.RESTRICTED,

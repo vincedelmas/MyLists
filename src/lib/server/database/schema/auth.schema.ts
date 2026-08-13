@@ -17,9 +17,10 @@ export const user = sqliteTable("user", {
     gridListView: integer("grid_list_view", { mode: "boolean" }).default(true).notNull(),
     showOnboarding: integer("show_onboarding", { mode: "boolean" }).default(true).notNull(),
     showUpdateModal: integer("show_update_modal", { mode: "boolean" }).default(true).notNull(),
+    backgroundImage: imageUrl("background_image", "profile-back-covers").default("default.jpg").notNull(),
     ratingSystem: text("rating_system").$type<RatingSystemType>().default(RatingSystemType.SCORE).notNull(),
     searchSelector: text("search_selector").$type<ApiProviderType>().default(ApiProviderType.TMDB).notNull(),
-    backgroundImage: imageUrl("background_image", "profile-back-covers").default("default.jpg").notNull(),
+    autoMoveCompletedTvToOnHold: integer("auto_move_completed_tv_to_on_hold", { mode: "boolean" }).default(true).notNull(),
 }, (table) => [
     uniqueIndex("user_name_unique").on(table.name),
 ]);

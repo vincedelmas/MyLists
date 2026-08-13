@@ -1,4 +1,5 @@
 import {Status} from "@/lib/utils/enums";
+import {user} from "@/lib/server/database/schema";
 import {EpsPerSeasonType} from "@/lib/types/media-list.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
@@ -262,6 +263,10 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         }
 
         const newEpsList = seasonsData.map((s) => s.episodes);
+        const oldTotalEpisodes = oldSeasonsData.reduce((total, season) => total + season.episodes, 0);
+        const oldMaxSeason = Math.max(...oldSeasonsData.map((season) => season.season), 0);
+        const newMaxSeason = Math.max(...seasonsData.map((season) => season.season), 0);
+        const hasNewSeason = newMaxSeason > oldMaxSeason;
         const usersWithMediaInTheirList = await this._getAllUsersWithMediaInTheirList(mediaId);
 
         // Process in batches to avoid overwhelming db
@@ -282,6 +287,10 @@ export class TvRepository extends BaseRepository<TvDefinition> {
 
                 // Calculate Absolute Progress
                 const absoluteProgress = Math.max(0, userMedia.total - oldRedoTotal);
+                const shouldMoveToOnHold = hasNewSeason
+                    && userMedia.autoMoveCompletedTvToOnHold
+                    && userMedia.status === Status.COMPLETED
+                    && absoluteProgress >= oldTotalEpisodes;
 
                 // Keep per-season re-watches aligned when seasons are added or removed.
                 const newRedo2 = Array.from({ length: seasonsData.length }, (_, index) => userMedia.redo2[index] ?? 0);
@@ -298,6 +307,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
                 // Map Absolute Progress to new Season/Episode structure
                 const newPosition = this._reorderSeasEps(absoluteProgress, newEpsList);
 
+                // Precomputed user stats are rebuilt after bulk refresh by the maintenance task.
                 return getDbClient()
                     .update(listTable)
                     .set({
@@ -305,6 +315,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
                         redo2: newRedo2,
                         currentSeason: newPosition.season,
                         currentEpisode: newPosition.episode,
+                        status: shouldMoveToOnHold ? Status.ON_HOLD : userMedia.status,
                     })
                     .where(and(eq(listTable.userId, userMedia.userId), eq(listTable.mediaId, mediaId)));
             });
@@ -318,8 +329,12 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         const { listTable } = this.repoDefinition.tables;
 
         return getDbClient()
-            .select()
+            .select({
+                ...getTableColumns(listTable),
+                autoMoveCompletedTvToOnHold: user.autoMoveCompletedTvToOnHold,
+            })
             .from(listTable)
+            .innerJoin(user, eq(listTable.userId, user.id))
             .where(eq(listTable.mediaId, mediaId));
     }
 

@@ -5,9 +5,9 @@ import {user} from "@/lib/server/database/schema/index";
 import {getContainer} from "@/lib/server/core/container";
 import {ValidationError} from "@/lib/utils/error-classes";
 import {saveUploadedImage} from "@/lib/utils/image-saver";
+import {getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
-import {getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
 import {
     downloadListAsCsvSchema,
     generalSettingsSchema,
@@ -72,6 +72,7 @@ export const postMediaListSettings = createServerFn({ method: "POST" })
             ratingSystem: data.ratingSystem,
             gridListView: data.gridListView,
             searchSelector: data.searchSelector,
+            autoMoveCompletedTvToOnHold: data.autoMoveCompletedTvToOnHold,
         }
 
         await userService.updateUserSettings(currentUser.id, toUpdateInUser);

@@ -13,10 +13,11 @@ import {
     IdNamePair,
     IgdbGameCollectionIds,
     IgdbGameDetails,
+    IgdbPopularityPrimitive,
     IgdbSearchResponse,
     IgdbSearchResultItem,
     IgdbTokenResponse,
-    IgdbTrendGamesResponse,
+    IgdbTrendingGame,
     SearchData
 } from "@/lib/types/provider.types";
 
@@ -24,15 +25,19 @@ import {
 type IgdbApiConfig = ApiClientConfig & {
     baseUrl: string;
     genresUrl: string;
-    trendingUrl: string;
     platformsUrl: string;
     tokenCacheKey: string;
-    externalGamesUrl: string;
+    multiQueryUrl: string;
     tokenCacheExpiryMs: number;
 };
 
 
 const MAX_SEARCH_QUERY_LENGTH = 100;
+const IGDB_QUERY_LIMIT = 500;
+const TRENDING_GAMES_LIMIT = 15;
+const TRENDING_GAME_TYPE_IDS = [0, 8] as const; // Main Game and Remake
+const TRENDING_RELEASE_WINDOW_SECONDS = 90 * 24 * 60 * 60; // 90 days
+const TRENDING_POPULARITY_TYPE_IDS = [1, 2, 3, 4] as const; // Visits and IGDB list additions
 
 
 const createConfig = (): IgdbApiConfig => ({
@@ -43,8 +48,7 @@ const createConfig = (): IgdbApiConfig => ({
     baseUrl: "https://api.igdb.com/v4/games",
     genresUrl: "https://api.igdb.com/v4/genres",
     platformsUrl: "https://api.igdb.com/v4/platforms",
-    externalGamesUrl: "https://api.igdb.com/v4/external_games",
-    trendingUrl: "https://trendingnow.games/api/public/feeds/trending",
+    multiQueryUrl: "https://api.igdb.com/v4/multiquery",
     throttleOptions: [{
         points: 3,
         duration: 1,
@@ -276,26 +280,68 @@ export const createIgdbApi = async () => {
             return await response.json() as Promise<IgdbGameCollectionIds[]>;
         },
 
-        async getTrendingGames(): Promise<IgdbTrendGamesResponse[]> {
-            const trendRes = await http.call(config.trendingUrl);
-            const trendsData = await trendRes.json() as { games: { steam_appid: number }[] };
-            const steamIds = trendsData.games.map((game) => game.steam_appid);
-
-            const body = `
-                fields uid, game.name, game.summary, game.cover.image_id, game.first_release_date;
-                where external_game_source = 1 & uid = (${steamIds.join(",")});
-                limit ${steamIds.length};
-            `;
-
+        async getTrendingGames(): Promise<IgdbTrendingGame[]> {
             const headers = await getHeaders();
-            const response = await http.call(config.externalGamesUrl, "post", { headers, body });
-            const igdbResults = await response.json() as IgdbTrendGamesResponse[];
+            const popularityQuery = TRENDING_POPULARITY_TYPE_IDS.map((popularityType) => `
+                query popularity_primitives "type-${popularityType}" {
+                    fields game_id, value, popularity_type;
+                    where popularity_type = ${popularityType};
+                    sort value desc;
+                    limit ${IGDB_QUERY_LIMIT};
+                };
+            `).join("\n");
 
-            const resultsMap = new Map(igdbResults.map((item) => [Number(item.uid), item]));
+            const popularityResponse = await http.call(config.multiQueryUrl, "post", {
+                headers,
+                body: popularityQuery,
+            });
 
-            return steamIds
-                .map((id) => resultsMap.get(id))
-                .filter((game): game is IgdbTrendGamesResponse => !!game);
+            const candidateScores = new Map<number, number>();
+            const popularityGroups = await popularityResponse.json() as { result: IgdbPopularityPrimitive[] }[];
+
+            for (const group of popularityGroups) {
+                for (const prim of group.result) {
+                    if (!prim.game_id) continue;
+                    candidateScores.set(prim.game_id, (candidateScores.get(prim.game_id) ?? 0) + prim.value);
+                }
+            }
+
+            const candidateIds = [...candidateScores.entries()]
+                .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+                .map(([gameId]) => gameId);
+
+            if (candidateIds.length === 0) return [];
+
+            const nowTimestamp = Math.floor(Date.now() / 1000);
+            const releasedAfterTimestamp = nowTimestamp - TRENDING_RELEASE_WINDOW_SECONDS;
+            const gamesQuery: string[] = [];
+
+            for (let offset = 0; offset < candidateIds.length; offset += IGDB_QUERY_LIMIT) {
+                const ids = candidateIds.slice(offset, offset + IGDB_QUERY_LIMIT);
+                gamesQuery.push(`
+                    query games "candidates-${offset / IGDB_QUERY_LIMIT}" {
+                        fields name, summary, cover.image_id, first_release_date;
+                        where id = (${ids.join(",")})
+                            & first_release_date >= ${releasedAfterTimestamp}
+                            & first_release_date <= ${nowTimestamp}
+                            & game_type = (${TRENDING_GAME_TYPE_IDS.join(",")})
+                            & cover != null
+                            & videos != null;
+                        limit ${IGDB_QUERY_LIMIT};
+                    };
+                `);
+            }
+
+            const gamesResponse = await http.call(config.multiQueryUrl, "post", {
+                headers,
+                body: gamesQuery.join("\n"),
+            });
+
+            const gameGroups = await gamesResponse.json() as { result: IgdbTrendingGame[] }[];
+            return gameGroups
+                .flatMap((group) => group.result)
+                .sort((gameA, gameB) => candidateScores.get(gameB.id)! - candidateScores.get(gameA.id)!)
+                .slice(0, TRENDING_GAMES_LIMIT);
         },
 
         refreshAccessToken,

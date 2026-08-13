@@ -7,7 +7,7 @@ export const ONE_DAY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export const TWO_DAYS_CACHE_TTL_S = 60 * 60 * 24 * 2;
 
-export const TRENDS_CACHE_KEY = "$trends:v2:null";
+export const TRENDS_CACHE_KEY = "$trends:v3:null";
 
 export const IGDB_ADVANCED_SEARCH_OPTIONS_CACHE_KEY = "igdb:advanced-search-options:v1";
 

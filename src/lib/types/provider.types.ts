@@ -71,19 +71,22 @@ export type IgdbSearchResponse = {
 }
 
 
-export type IgdbTrendGamesResponse = {
-    id: number,
-    uid: string,
-    game: {
-        id: number,
-        name: string,
-        summary: string,
-        first_release_date: number,
-        cover: {
-            id: number,
-            image_id: string,
-        },
-    },
+export type IgdbPopularityPrimitive = {
+    value: number;
+    game_id?: number;
+    popularity_type: number;
+}
+
+
+export type IgdbTrendingGame = {
+    id: number;
+    name: string;
+    summary?: string;
+    first_release_date?: number;
+    cover?: {
+        id: number;
+        image_id: string;
+    };
 }
 
 

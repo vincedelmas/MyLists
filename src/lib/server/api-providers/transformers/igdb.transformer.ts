@@ -5,7 +5,7 @@ import {CoverType} from "@/lib/types/media-common.types";
 import {saveImageFromUrl} from "@/lib/utils/image-saver";
 import {formatDateForDb} from "@/lib/utils/date-formatting";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
-import {HltbGameEntry, IgdbGameDetails, IgdbSearchResponse, IgdbTrendGamesResponse, ProviderSearchResult, SearchData, TrendsMedia} from "@/lib/types/provider.types";
+import {HltbGameEntry, IgdbGameDetails, IgdbSearchResponse, IgdbTrendingGame, ProviderSearchResult, SearchData, TrendsMedia} from "@/lib/types/provider.types";
 
 
 type IgdbTransformOptions = {
@@ -113,14 +113,14 @@ const addHLTBDataToMainDetails = (hltbData: HltbGameEntry, mediaData: UpsertGame
 };
 
 
-const transformGamesTrends = (rawData: IgdbTrendGamesResponse[], options: IgdbTransformOptions): TrendsMedia[] => {
+const transformGamesTrends = (rawData: IgdbTrendingGame[], options: IgdbTransformOptions): TrendsMedia[] => {
     return rawData.map((item) => ({
-        apiId: item.game.id,
-        displayName: item.game.name,
+        apiId: item.id,
+        displayName: item.name,
         mediaType: options.mediaType,
-        overview: item.game.summary ?? "",
-        releaseDate: item.game.first_release_date,
-        posterPath: item.game.cover?.image_id ? `${imageBaseUrl}${item.game.cover.image_id}.jpg` : "",
+        overview: item.summary ?? "",
+        releaseDate: item.first_release_date,
+        posterPath: item.cover?.image_id ? `${imageBaseUrl}${item.cover.image_id}.jpg` : "",
     }));
 };
 

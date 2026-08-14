@@ -1,20 +1,20 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {AdminApiMonitoringParams} from "@/lib/types/admin.types";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {formatDate, formatDateTime} from "@/lib/utils/date-formatting";
+import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {formatMs, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {Activity, AlertTriangle, BarChart3, Clock, Gauge, Radio} from "lucide-react";
 import {adminApiMonitoringOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/api-monitoring")({
@@ -199,7 +199,9 @@ function ApiMonitoringPage() {
                                                     <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                                                         Providers
                                                     </p>
-                                                    <p className="mt-0.5 text-lg font-bold tabular-nums">{providerRows.length}</p>
+                                                    <p className="mt-0.5 text-lg font-bold tabular-nums">
+                                                        {providerRows.length}
+                                                    </p>
                                                 </div>
                                             </div>
                                             <div
@@ -315,35 +317,19 @@ function ApiMonitoringPage() {
                             </CardAction>
                         </CardHeader>
                         <CardContent className="mt-2">
-                            <ResponsiveContainer width="100%" height={340} className="-ml-4">
-                                <BarChart data={apiData.daily}>
-                                    <XAxis
-                                        fontSize={12}
-                                        dataKey="date"
-                                        stroke="#e2e2e2"
-                                        tickLine={false}
-                                        axisLine={false}
-                                    />
-                                    <YAxis stroke="#e2e2e2" fontSize={12} tickLine={false} axisLine={false}/>
-                                    <Tooltip
-                                        labelFormatter={(label) => `Day: ${label}`}
-                                        formatter={(value) => formatNumber(Number(value))}
-                                        contentStyle={{
-                                            borderRadius: "8px",
-                                            backgroundColor: "var(--popover)",
-                                            border: "1px solid var(--border)",
-                                        }}
-                                    />
-                                    {apiData.providers.map((provider) =>
-                                        <Bar
-                                            key={provider}
-                                            dataKey={provider}
-                                            stackId="api-calls"
-                                            fill={providerColorMap.get(provider)}
-                                        />
-                                    )}
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <DataBarChart
+                                x="date"
+                                y="count"
+                                z="provider"
+                                height={340}
+                                mode="stacked"
+                                data={apiData.daily}
+                                seriesOrder={apiData.providers}
+                                ariaLabel="Daily provider calls"
+                                tooltipValueFormatter={(value) => formatNumber(value)}
+                                tooltipTitleFormatter={(value) => `Day: ${value}`}
+                                fill={({ provider }) => providerColorMap.get(provider) ?? "var(--muted-foreground)"}
+                            />
                         </CardContent>
                     </Card>
                 </div>

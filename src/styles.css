@@ -79,6 +79,17 @@ input[type="search"]::-webkit-search-cancel-button:hover {
     opacity: 0.8;
 }
 
+/* --- TANSTACK CHARTS ------------------------------------------------------------------- */
+
+.mylists-chart {
+    --ts-chart-tooltip-font: inherit;
+    --ts-chart-tooltip-border-radius: 0.5rem;
+    --ts-chart-tooltip-padding: 0.5rem 0.75rem;
+    --ts-chart-tooltip-shadow: var(--shadow-md);
+    --ts-chart-tooltip-background: var(--popover);
+    --ts-chart-tooltip-border: 1px solid var(--border);
+    --ts-chart-tooltip-color: var(--popover-foreground);
+}
 
 /* --- TAILWIND --------------------------------------------------------------------------- */
 

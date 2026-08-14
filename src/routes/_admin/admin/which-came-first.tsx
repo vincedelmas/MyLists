@@ -1,11 +1,14 @@
+import {fold} from "@tanstack/charts";
 import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {WCF_MAX_ROUNDS} from "@/lib/schemas/wcf.schema";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 import {formatDate, formatDateTime} from "@/lib/utils/date-formatting";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
@@ -13,25 +16,22 @@ import {Activity, CircleGauge, GitCompareArrows, Target, Users} from "lucide-rea
 import {adminWhichCameFirstOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
-import {Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
+
+
+type WcfRunStatus = "active" | "won" | "lost" | "exhausted" | "abandoned";
+type AdminWcfStats = Awaited<ReturnType<NonNullable<typeof adminWhichCameFirstOptions.queryFn>>>;
 
 
 export const Route = createFileRoute("/_admin/admin/which-came-first")({
-    loader: async ({ context: { queryClient } }) => queryClient.ensureQueryData(adminWhichCameFirstOptions),
+    loader: async ({ context: { queryClient } }) => {
+        return queryClient.ensureQueryData(adminWhichCameFirstOptions);
+    },
     component: AdminWhichCameFirstPage,
 });
 
 
-type WcfRunStatus = "active" | "won" | "lost" | "exhausted" | "abandoned";
-const statusChartKeys: WcfRunStatus[] = ["won", "lost", "abandoned", "exhausted", "active"];
-type AdminWcfStats = Awaited<ReturnType<NonNullable<typeof adminWhichCameFirstOptions.queryFn>>>;
+const statusChartKeys = ["won", "lost", "abandoned", "exhausted", "active"] as const satisfies readonly WcfRunStatus[];
 
-const tooltipStyle = {
-    borderRadius: "8px",
-    border: "1px solid var(--border)",
-    backgroundColor: "var(--popover)",
-};
 
 const statusChartColors: Record<WcfRunStatus, string> = {
     won: "#45b29d",
@@ -40,6 +40,7 @@ const statusChartColors: Record<WcfRunStatus, string> = {
     abandoned: "#71717a",
     active: "var(--brand)",
 };
+
 
 const mediaChartColors: Record<MediaType, string> = {
     series: "var(--color-series)",
@@ -53,7 +54,10 @@ const mediaChartColors: Record<MediaType, string> = {
 
 function AdminWhichCameFirstPage() {
     const apiData = useSuspenseQuery(adminWhichCameFirstOptions).data;
-    const roundChartData = apiData.roundAccuracy.filter((round) => round.totalAnswers > 0);
+    const dailyRuns = fold(apiData.dailyRuns, {
+        fields: statusChartKeys,
+        as: { key: "status", value: "count" },
+    });
 
     return (
         <DashboardShell>
@@ -154,97 +158,25 @@ function AdminWhichCameFirstPage() {
                             <CardDescription>Last 30 days, requiring at least one answered round.</CardDescription>
                         </CardHeader>
                         <CardContent className="mt-2">
-                            <ResponsiveContainer width="100%" height={330} className="-ml-4">
-                                <BarChart data={apiData.dailyRuns}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)"/>
-                                    <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                    <Tooltip
-                                        contentStyle={tooltipStyle}
-                                        labelFormatter={(label) => `Day: ${label}`}
-                                        formatter={(value, name) => [formatNumber(Number(value), { locale: "en" }), getStatusLabel(String(name) as WcfRunStatus)]}
-                                    />
-                                    {statusChartKeys.map((status) =>
-                                        <Bar
-                                            key={status}
-                                            stackId="runs"
-                                            dataKey={status}
-                                            fill={statusChartColors[status]}
-                                        />
-                                    )}
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <DataBarChart
+                                x="date"
+                                y="count"
+                                z="status"
+                                height={330}
+                                mode="stacked"
+                                showGrid={true}
+                                data={dailyRuns}
+                                seriesOrder={statusChartKeys}
+                                ariaLabel="Played sessions over the last 30 days"
+                                tooltipTitleFormatter={(value) => `Day: ${value}`}
+                                tooltipValueFormatter={(value) => formatNumber(value, { locale: "en" })}
+                                fill={({ status }) => statusChartColors[status]}
+                                tooltipSeriesFormatter={(series) => getStatusLabel(series as WcfRunStatus)}
+                            />
                         </CardContent>
                     </Card>
 
                     <StatusBreakdownCard rows={apiData.runsByStatus}/>
-                </div>
-
-                <div className="grid gap-4 grid-cols-7 max-lg:grid-cols-1">
-                    <Card className="col-span-4">
-                        <CardHeader>
-                            <CardTitle>Round Accuracy Curve</CardTitle>
-                            <CardDescription>Accuracy by round number, excluding unanswered rounds.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="mt-2">
-                            {roundChartData.length > 0 ?
-                                <ResponsiveContainer width="100%" height={310} className="-ml-4">
-                                    <LineChart data={roundChartData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)"/>
-                                        <XAxis dataKey="roundNumber" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                        <YAxis
-                                            fontSize={12}
-                                            stroke="#888888"
-                                            tickLine={false}
-                                            axisLine={false}
-                                            domain={[0, 100]}
-                                            tickFormatter={(value) => `${value}%`}
-                                        />
-                                        <Tooltip
-                                            contentStyle={tooltipStyle}
-                                            labelFormatter={(label) => `Round ${label}`}
-                                            formatter={(value, name) => [
-                                                name === "accuracy"
-                                                    ? formatPercent(Number(value), { fractionDigits: 1 })
-                                                    : formatNumber(Number(value), { locale: "en" }),
-                                                name === "accuracy" ? "Accuracy" : "Answers",
-                                            ]}
-                                        />
-                                        <Line
-                                            dot={false}
-                                            strokeWidth={3}
-                                            dataKey="accuracy"
-                                            stroke="var(--brand)"
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                                :
-                                <EmptyChart label="No answered rounds yet."/>
-                            }
-                        </CardContent>
-                    </Card>
-
-                    <Card className="col-span-3">
-                        <CardHeader>
-                            <CardTitle>Score Distribution</CardTitle>
-                            <CardDescription>Final streak buckets for ended sessions with at least one answer.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="mt-2">
-                            <ResponsiveContainer width="100%" height={310} className="-ml-4">
-                                <BarChart data={apiData.scoreDistribution}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)"/>
-                                    <XAxis dataKey="label" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                    <Tooltip
-                                        contentStyle={tooltipStyle}
-                                        labelFormatter={(label) => `Score: ${label}`}
-                                        formatter={(value) => formatNumber(Number(value), { locale: "en" })}
-                                    />
-                                    <Bar dataKey="count" fill="var(--brand)" radius={[5, 5, 0, 0]}/>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
                 </div>
 
                 <div className="grid gap-4 grid-cols-7 max-lg:grid-cols-1">
@@ -515,15 +447,6 @@ function StatusBadge({ status }: { status: WcfRunStatus }) {
         <Badge variant="outline" className={getStatusBadgeClass(status)}>
             {getStatusLabel(status)}
         </Badge>
-    );
-}
-
-
-function EmptyChart({ label }: { label: string }) {
-    return (
-        <div className="flex h-77.5 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
-            {label}
-        </div>
     );
 }
 

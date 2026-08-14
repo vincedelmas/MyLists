@@ -127,7 +127,7 @@ export class UserRepository {
             `);
 
         return results.map((row) => ({
-            count: row.count,
+            count: Number(row.count),
             month: formatMonthYear(row.month),
         }));
     }

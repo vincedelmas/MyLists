@@ -1,12 +1,10 @@
 import {NamedValue} from "@/lib/types/stats.types";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 import {formatNumber} from "@/lib/utils/number-formatting";
-import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
 import {MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {transformRatingToFeeling} from "@/lib/utils/stats-utils";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
-import {ChartTooltip} from "@/lib/client/components/media-stats/ChartTooltip";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 
 
 interface RatingsChartProps {
@@ -29,6 +27,7 @@ export function RatingsChart({ height, ratings, mediaType, ratingSystem }: Ratin
         : "Rating Distribution";
 
     const hasData = chartData.some(({ value }) => value > 0);
+    const color = getThemeColor(mediaType);
     const summary = chartData.map(({ name, value }) => ({
         value: formatNumber(value),
         label: `${ratingSystem === RatingSystemType.FEELING ? "Feeling" : "Rating"} ${name}`,
@@ -36,54 +35,22 @@ export function RatingsChart({ height, ratings, mediaType, ratingSystem }: Ratin
 
     return (
         <ChartCard title={title} summary={summary} hasData={hasData} height={chartHeight}>
-            <ResponsiveContainer width="100%" height={chartHeight}>
-                <BarChart data={chartData} accessibilityLayer margin={{ top: 8, right: 4, bottom: 0, left: -30 }}>
-                    <XAxis
-                        dataKey="name"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={ratingSystem === RatingSystemType.FEELING
-                            ? <FeelingTickXAxis/>
-                            : { fill: "var(--primary-foreground)", fontSize: 11 }
-                        }
-                    />
-                    <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        allowDecimals={false}
-                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
-                    />
-                    <Tooltip
-                        cursor={{ fill: "var(--popover)" }}
-                        content={<ChartTooltip valueFormatter={(val) => formatNumber(val)}/>}
-                    />
-                    <Bar
-                        dataKey="value"
-                        radius={[4, 4, 0, 0]}
-                        fill={getThemeColor(mediaType)}
-                    />
-                </BarChart>
-            </ResponsiveContainer>
+            <DataBarChart
+                x="name"
+                y="value"
+                fill={color}
+                data={chartData}
+                ariaLabel={title}
+                height={chartHeight}
+                integerYTicks={true}
+                xTickFontSize={ratingSystem === RatingSystemType.FEELING ? 18 : undefined}
+                tooltipTitleFormatter={String}
+                tooltipValueFormatter={(value) => formatNumber(value)}
+                xFormatter={(value) => ratingSystem === RatingSystemType.FEELING
+                    ? ({ 0: "💩", 2: "😠", 4: "🙁", 6: "🙂", 8: "😄", 10: "🤩" }[Number(value)] ?? String(value))
+                    : String(value)
+                }
+            />
         </ChartCard>
     );
 }
-
-
-interface FeelingTickProps {
-    x?: number;
-    y?: number;
-    payload?: {
-        value?: number;
-    };
-}
-
-
-const FeelingTickXAxis = ({ x = 0, y = 0, payload }: FeelingTickProps) => {
-    return (
-        <g transform={`translate(${x},${y})`}>
-            <foreignObject x="-9" y="2" width="20" height="20">
-                {getFeelingIcon(Number(payload?.value), { size: 18 })}
-            </foreignObject>
-        </g>
-    );
-};

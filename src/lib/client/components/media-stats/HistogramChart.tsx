@@ -3,8 +3,7 @@ import {getThemeColor} from "@/lib/utils/theme-utils";
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {HistogramBin, HistogramTailDir} from "@/lib/types/stats.types";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
-import {ChartTooltip} from "@/lib/client/components/media-stats/ChartTooltip";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 import {compactHistogramBins, formatHistogramBin, formatHistogramOverflowBin} from "@/lib/utils/stats-utils";
 
 
@@ -50,38 +49,18 @@ export function HistogramChart(props: HistogramChartProps) {
 
     return (
         <ChartCard title={title} height={height} hasData={hasData} description={chartDescription} summary={summary}>
-            <ResponsiveContainer width="100%" height={height}>
-                <BarChart accessibilityLayer data={chartData} margin={{ top: 8, right: 4, bottom: 0, left: -30 }}>
-                    <XAxis
-                        dataKey="label"
-                        minTickGap={14}
-                        tickLine={false}
-                        axisLine={false}
-                        interval="preserveStartEnd"
-                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
-                    />
-                    <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        allowDecimals={false}
-                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
-                        tickFormatter={(val) => formatNumber(val, { notation: "compact", locale: "en" })}
-                    />
-                    <Tooltip
-                        cursor={{ fill: "var(--popover)" }}
-                        content={
-                            <ChartTooltip
-                                valueFormatter={valueFormatter}
-                            />
-                        }
-                    />
-                    <Bar
-                        dataKey="value"
-                        radius={[4, 4, 0, 0]}
-                        fill={getThemeColor(mediaType)}
-                    />
-                </BarChart>
-            </ResponsiveContainer>
+            <DataBarChart
+                x="label"
+                y="value"
+                xTickGap={14}
+                height={height}
+                data={chartData}
+                ariaLabel={title}
+                integerYTicks={true}
+                fill={getThemeColor(mediaType)}
+                tooltipValueFormatter={valueFormatter}
+                yFormatter={(value) => formatNumber(value, { notation: "compact", locale: "en" })}
+            />
         </ChartCard>
     );
 }

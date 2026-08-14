@@ -1,7 +1,6 @@
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
-import {ChartTooltip} from "@/lib/client/components/media-stats/ChartTooltip";
-import {Bar, BarChart, BarShapeProps, Rectangle, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 
 
 type CategoricalChartDatum = {
@@ -39,46 +38,18 @@ export function CategoricalBarChart(props: CategoricalBarChartProps) {
 
     return (
         <ChartCard title={title} height={height} summary={summary} hasData={hasData} description={description}>
-            <ResponsiveContainer width="100%" height={height}>
-                <BarChart accessibilityLayer data={data} margin={{ top: 8, right: 4, bottom: 0, left: -20 }}>
-                    <XAxis
-                        dataKey="name"
-                        minTickGap={16}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={labelFormatter}
-                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
-                    />
-                    <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fill: "var(--primary-foreground)", fontSize: 11 }}
-                        tickFormatter={(value) => formatNumber(value, { notation: "compact" })}
-                    />
-                    <Tooltip
-                        cursor={{ fill: "var(--popover)" }}
-                        content={
-                            <ChartTooltip
-                                labelFormatter={labelFormatter}
-                                valueFormatter={valueFormatter}
-                            />
-                        }
-                    />
-                    <Bar
-                        dataKey="value"
-                        shape={({ height, payload, width, x, y }: BarShapeProps) => (
-                            <Rectangle
-                                x={x}
-                                y={y}
-                                width={width}
-                                height={height}
-                                fill={payload.color}
-                                radius={[4, 4, 0, 0]}
-                            />
-                        )}
-                    />
-                </BarChart>
-            </ResponsiveContainer>
+            <DataBarChart
+                x="name"
+                y="value"
+                data={data}
+                height={height}
+                ariaLabel={title}
+                tooltipValueFormatter={valueFormatter}
+                fill={({ color }) => color}
+                xFormatter={(value) => labelFormatter(String(value))}
+                yFormatter={(value) => formatNumber(value, { notation: "compact" })}
+                tooltipTitleFormatter={(value) => labelFormatter(String(value))}
+            />
         </ChartCard>
     );
 }

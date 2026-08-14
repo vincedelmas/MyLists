@@ -2,14 +2,14 @@ import {capitalize} from "@/lib/utils/text-formatting";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Smile, Star, UserCheck, UserPlus, Users} from "lucide-react";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 import {RecentUsers} from "@/lib/client/components/admin/RecentUsers";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
+import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {adminOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/overview")({
@@ -77,14 +77,15 @@ function OverviewPage() {
                             <CardDescription>Cumulative number of users per month</CardDescription>
                         </CardHeader>
                         <CardContent className="mt-3">
-                            <ResponsiveContainer width="100%" height={350} className="-ml-4">
-                                <BarChart data={apiData.cumulativeUsersPerMonth}>
-                                    <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`}/>
-                                    <Tooltip contentStyle={{ backgroundColor: "#111827", color: "#fff", border: "none", borderRadius: "8px" }}/>
-                                    <Bar dataKey="count" fill="currentColor" radius={[4, 4, 0, 0]} className="fill-brand"/>
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <DataBarChart
+                                x="month"
+                                y="count"
+                                height={350}
+                                fill="var(--brand)"
+                                data={apiData.cumulativeUsersPerMonth}
+                                ariaLabel="Cumulative users per month"
+                                tooltipValueFormatter={(value) => String(value)}
+                            />
                         </CardContent>
                     </Card>
                     <Card className="col-span-3 max-sm:col-span-5 pr-3">

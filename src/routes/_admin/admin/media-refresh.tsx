@@ -4,19 +4,19 @@ import {formatDate} from "@/lib/utils/date-formatting";
 import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {BarChart3, ExternalLink, Flame, RefreshCw, Users} from "lucide-react";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {adminMediaRefreshOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/media-refresh")({
@@ -128,35 +128,19 @@ function MediaRefreshPage() {
                             </CardAction>
                         </CardHeader>
                         <CardContent className="mt-2">
-                            <ResponsiveContainer width="100%" height={340} className="-ml-4">
-                                <BarChart data={apiData.daily}>
-                                    <XAxis
-                                        fontSize={12}
-                                        dataKey="date"
-                                        stroke="#e2e2e2"
-                                        tickLine={false}
-                                        axisLine={false}
-                                    />
-                                    <YAxis stroke="#e2e2e2" fontSize={12} tickLine={false} axisLine={false}/>
-                                    <Tooltip
-                                        labelFormatter={(label) => `Day: ${label}`}
-                                        formatter={(value) => formatNumber(Number(value))}
-                                        contentStyle={{
-                                            borderRadius: "8px",
-                                            backgroundColor: "var(--popover)",
-                                            border: "1px solid var(--border)",
-                                        }}
-                                    />
-                                    {ALL_MEDIA_TYPES.map((mt) =>
-                                        <Bar
-                                            key={mt}
-                                            dataKey={mt}
-                                            stackId="refreshes"
-                                            fill={chartColors[mt]}
-                                        />
-                                    )}
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <DataBarChart
+                                x="date"
+                                y="count"
+                                height={340}
+                                z="mediaType"
+                                mode="stacked"
+                                data={apiData.daily}
+                                seriesOrder={ALL_MEDIA_TYPES}
+                                ariaLabel="Daily refreshes by media type"
+                                fill={({ mediaType }) => chartColors[mediaType]}
+                                tooltipTitleFormatter={(value) => `Day: ${value}`}
+                                tooltipValueFormatter={(value) => formatNumber(value)}
+                            />
                         </CardContent>
                     </Card>
 

@@ -100,7 +100,15 @@ export class AdminService {
             ? (summary.firstRefreshDate ? new Date(`${summary.firstRefreshDate}T00:00:00.000Z`) : null)
             : new Date(today.getTime() - ((dailyDays ?? 1) - 1) * 24 * 60 * 60 * 1000);
 
-        const daily = dailyStartDate ? this._buildDailySeriesByKey(dailyStartDate, today, mediaTypes, countsByKey) : [];
+        const dailySeries = dailyStartDate
+            ? this._buildDailySeriesByKey(
+                dailyStartDate,
+                today,
+                mediaTypes,
+                countsByKey,
+                (date, mediaType, count) => ({ date, mediaType, count }),
+            )
+            : { data: [], dayCount: 0 };
 
         const normalizedTotalsByType = mediaTypes
             .map((mediaType) => ({
@@ -114,13 +122,13 @@ export class AdminService {
             : 0;
 
         return {
-            daily,
+            daily: dailySeries.data,
             topRange,
             topUsers,
             dailyRange,
             totalsByRole,
             recentRefreshes,
-            dailyWindowDays: daily.length,
+            dailyWindowDays: dailySeries.dayCount,
             totalsByType: normalizedTotalsByType,
             summary: {
                 total: summary.total,
@@ -164,9 +172,15 @@ export class AdminService {
             ? (firstCallDate ? new Date(firstCallDate.setUTCHours(0, 0, 0, 0)) : null)
             : new Date(today.getTime() - ((dailyDays ?? 1) - 1) * 24 * 60 * 60 * 1000);
 
-        const daily = dailyStartDate
-            ? this._buildDailySeriesByKey(dailyStartDate, today, providerKeys, countsByKey)
-            : [];
+        const dailySeries = dailyStartDate
+            ? this._buildDailySeriesByKey(
+                dailyStartDate,
+                today,
+                providerKeys,
+                countsByKey,
+                (date, provider, count) => ({ date, provider, count }),
+            )
+            : { data: [], dayCount: 0 };
 
         const firstCallAtMs = summary.firstCallAt ? new Date(summary.firstCallAt).getTime() : null;
         const firstCallDayMs = summary.firstCallAt ? new Date(summary.firstCallAt).setUTCHours(0, 0, 0, 0) : null;
@@ -177,19 +191,19 @@ export class AdminService {
             : 0;
 
         return {
-            daily,
             range,
             liveRedis,
             dailyRange,
             recentCalls,
             statusTotals,
             totalsByProvider,
+            daily: dailySeries.data,
             providers: providerKeys,
-            dailyWindowDays: daily.length,
+            dailyWindowDays: dailySeries.dayCount,
             summary: {
                 ...summary,
-                avgPerDay: summary.total && activeDays ? Math.round((summary.total / activeDays) * 10) / 10 : 0,
                 avgPerSecond: summary.total && activeSeconds ? summary.total / activeSeconds : 0,
+                avgPerDay: summary.total && activeDays ? Math.round((summary.total / activeDays) * 10) / 10 : 0,
             },
         };
     }
@@ -308,22 +322,23 @@ export class AdminService {
         };
     };
 
-    private _buildDailySeriesByKey = <TKey extends string>(startDate: Date, endDate: Date, keys: TKey[], countsMap: Map<string, number>) => {
-        const days = Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1);
+    private _buildDailySeriesByKey = <TKey extends string, TDatum>(
+        startDate: Date,
+        endDate: Date,
+        keys: readonly TKey[],
+        countsMap: Map<string, number>,
+        createDatum: (date: string, key: TKey, count: number) => TDatum,
+    ) => {
+        const dayCount = Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1);
 
-        return Array.from({ length: days }, (_value, idx) => {
+        const data = Array.from({ length: dayCount }, (_value, idx) => {
             const date = new Date(startDate);
             date.setUTCDate(startDate.getUTCDate() + idx);
             const dateKey = date.toISOString().slice(0, 10);
-            const entry: Record<string, number | string> = { date: dateKey, total: 0 };
 
-            for (const key of keys) {
-                const value = countsMap.get(`${dateKey}|${key}`) ?? 0;
-                entry[key] = value;
-                entry.total = Number(entry.total) + value;
-            }
+            return keys.map((key) => createDatum(dateKey, key, countsMap.get(`${dateKey}|${key}`) ?? 0));
+        }).flat();
 
-            return entry as { date: string; total: number } & Record<TKey, number>;
-        });
+        return { data, dayCount };
     };
 }

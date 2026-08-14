@@ -1,11 +1,13 @@
+import {fold} from "@tanstack/charts";
 import {MediaType} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/utils/theme-utils";
-import {formatMonthYear} from "@/lib/utils/date-formatting";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {formatNumber} from "@/lib/utils/number-formatting";
+import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {MonthlyActivityChartDatum} from "@/lib/types/activity.types";
 import {ChartCard} from "@/lib/client/components/media-stats/ChartCard";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, TooltipContentProps, XAxis, YAxis} from "recharts";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 
 
 interface ActivityByMonthChartProps {
@@ -31,6 +33,11 @@ export function ActivityByMonthChart({ title, data, mediaTypes, mediaType, range
     const displayMediaTypes = populatedMediaTypes.length > 0 ? populatedMediaTypes : requestedMediaTypes;
     const height = displayMediaTypes.length > 1 ? 350 : 300;
 
+    const chartData = fold(data, {
+        fields: ALL_MEDIA_TYPES,
+        as: { key: "mediaType", value: "hours" },
+    }).filter(({ mediaType }) => displayMediaTypes.includes(mediaType));
+
     return (
         <ChartCard
             title={title}
@@ -42,82 +49,25 @@ export function ActivityByMonthChart({ title, data, mediaTypes, mediaType, range
                 value: `${formatNumber(total)} hours`,
             }))}
         >
-            <ResponsiveContainer width="100%" height={height}>
-                <BarChart accessibilityLayer data={data} margin={{ top: 8, right: 4, bottom: 0, left: -30 }}>
-                    <XAxis
-                        minTickGap={28}
-                        tickLine={false}
-                        axisLine={false}
-                        dataKey={"month"}
-                        interval="preserveStartEnd"
-                        tick={{ fontSize: 11, fill: "var(--primary-foreground)" }}
-                        tickFormatter={(val) => formatMonthYear(String(val))}
-                    />
-                    <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fontSize: 11, fill: "var(--primary-foreground)" }}
-                        tickFormatter={(val) => formatNumber(val, { notation: "compact" })}
-                    />
-                    <Tooltip
-                        cursor={{ fill: "var(--popover)" }}
-                        content={<ActivityTooltip mediaTypes={displayMediaTypes}/>}
-                    />
-                    {displayMediaTypes.map((type) =>
-                        <Bar
-                            key={type}
-                            dataKey={type}
-                            fill={getThemeColor(type)}
-                            stackId={stacked ? "activity" : undefined}
-                            radius={stacked || displayMediaTypes.length > 1 ? 0 : [4, 4, 0, 0]}
-                        />
-                    )}
-                </BarChart>
-            </ResponsiveContainer>
+            <DataBarChart
+                x="month"
+                z="mediaType"
+                xTickGap={28}
+                height={height}
+                data={chartData}
+                ariaLabel={title}
+                hideZeroTooltipValues={true}
+                seriesOrder={displayMediaTypes}
+                y={({ hours }) => hours ?? 0}
+                xFormatter={(value) => formatMonthYear(String(value))}
+                yFormatter={(value) => formatNumber(value, { notation: "compact" })}
+                mode={stacked ? "stacked" : displayMediaTypes.length > 1 ? "grouped" : "single"}
+                fill={({ mediaType }) => getThemeColor(mediaType)}
+                tooltipSeriesIcon={(series) => <MainThemeIcon type={series as MediaType} size={14}/>}
+                tooltipValueFormatter={(value) => `${formatNumber(value, { fractionDigits: 0 })} hours`}
+                tooltipTotalFormatter={(value) => `${formatNumber(value, { fractionDigits: 0 })} hours`}
+                tooltipTitleFormatter={(value) => formatMonthYear(String(value), { month: "long" })}
+            />
         </ChartCard>
-    );
-}
-
-
-interface ActivityTooltipProps extends Partial<TooltipContentProps<number, string>> {
-    mediaTypes: MediaType[];
-}
-
-
-function ActivityTooltip({ active, payload, label, mediaTypes }: ActivityTooltipProps) {
-    if (!active || !payload?.length) return null;
-
-    const rows = payload
-        .filter((entry) => Number(entry.value) > 0)
-        .sort((a, b) => Number(b.value) - Number(a.value));
-
-    return (
-        <div className="rounded-md border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
-            <p className="mb-2 font-medium">
-                {formatMonthYear(String(label ?? ""), { month: "long" })}
-            </p>
-
-            {rows.length === 0 ?
-                <p className="text-muted-foreground">
-                    No activity.
-                </p>
-                :
-                rows.map((entry) =>
-                    <div key={String(entry.dataKey)} className="grid grid-cols-2 gap-6 space-y-1.5">
-                        <span className="flex gap-1.5 items-center capitalize">
-                            <MainThemeIcon type={String(entry.dataKey) as MediaType} size={14}/> {String(entry.dataKey)}:
-                        </span>
-                        <span className="text-right text-muted-foreground">
-                            {formatNumber(Number(entry.value), { fractionDigits: 0 })} hours
-                        </span>
-                    </div>
-                )}
-
-            {mediaTypes.length > 1 && rows.length > 0 &&
-                <p className="mt-1 border-t pt-1">
-                    Total: {formatNumber(rows.reduce((s, e) => s + Number(e.value), 0), { fractionDigits: 0 })} hours
-                </p>
-            }
-        </div>
     );
 }

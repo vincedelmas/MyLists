@@ -41,7 +41,7 @@ export default defineConfig({
                         return "tanstack-query";
                     }
 
-                    if (id.includes("/node_modules/recharts")) {
+                    if (id.includes("/node_modules/@tanstack/charts")) {
                         return "charts";
                     }
 

@@ -6,20 +6,20 @@ import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {DataTable} from "@/lib/client/components/general/DataTable";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
+import {DataBarChart} from "@/lib/client/components/charts/DataBarChart";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ChevronsUpDown, Copy, Eye, FolderKanban, Heart, UserPlus, Users} from "lucide-react";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {ColumnDef, getCoreRowModel, OnChangeFn, SortingState, useReactTable} from "@tanstack/react-table";
 import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/collections-overview")({
@@ -222,39 +222,15 @@ function AdminCollectionsOverviewPage() {
                             <CardDescription>Collections Created Per Month</CardDescription>
                         </CardHeader>
                         <CardContent className="mt-3">
-                            <ResponsiveContainer width="100%" height={350} className="-ml-4">
-                                <BarChart data={stats.createdPerMonth}>
-                                    <XAxis
-                                        fontSize={12}
-                                        dataKey="month"
-                                        stroke="#e2e2e2"
-                                        tickLine={false}
-                                        axisLine={false}
-                                    />
-                                    <YAxis
-                                        fontSize={12}
-                                        stroke="#e2e2e2"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickFormatter={(value) => `${value}`}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: "#374151", opacity: 0.4 }}
-                                        contentStyle={{
-                                            border: "none",
-                                            color: "#e2e2e2",
-                                            borderRadius: "6px",
-                                            backgroundColor: "#111827"
-                                        }}
-                                    />
-                                    <Bar
-                                        dataKey="count"
-                                        fill="currentColor"
-                                        radius={[4, 4, 0, 0]}
-                                        className="fill-muted-foreground"
-                                    />
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <DataBarChart
+                                x="month"
+                                y="count"
+                                height={350}
+                                data={stats.createdPerMonth}
+                                fill="var(--muted-foreground)"
+                                ariaLabel="Collections created per month"
+                                tooltipValueFormatter={(value) => formatNumber(value)}
+                            />
                         </CardContent>
                     </Card>
                     <Card className="col-span-3 max-sm:col-span-5">

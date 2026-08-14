@@ -30,7 +30,7 @@ export const getTvColumns = (props: ColumnConfigProps): ColumnDef<ExtractListByT
                 <CommonInfoTableCell
                     userMedia={original}
                 />
-                {original.redo2.reduce((a, c) => a + c, 0) > 0 && <DisplayTvRedo redoValues={original.redo2}/>}
+                {original.redo.reduce((a, c) => a + c, 0) > 0 && <DisplayTvRedo redoValues={original.redo}/>}
             </div>
         ),
     });

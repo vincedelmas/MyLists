@@ -118,7 +118,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
                 status: newStatus,
                 currentSeason: newSeason,
                 currentEpisode: newEpisode,
-                redo2: Array(epsPerSeason.length).fill(0),
+                redo: Array(epsPerSeason.length).fill(0),
             })
             .returning();
 
@@ -280,7 +280,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         for (const batch of batches) {
             const updatePromises = batch.map(async (userMedia) => {
                 // Calculate how many eps watched in re-watches (oldSeasonsData)
-                const oldRedoTotal = userMedia.redo2.reduce((acc, count, idx) => {
+                const oldRedoTotal = userMedia.redo.reduce((acc, count, idx) => {
                     const epsInSeason = oldSeasonsData[idx]?.episodes || 0;
                     return acc + (count * epsInSeason);
                 }, 0);
@@ -293,10 +293,10 @@ export class TvRepository extends BaseRepository<TvDefinition> {
                     && absoluteProgress >= oldTotalEpisodes;
 
                 // Keep per-season re-watches aligned when seasons are added or removed.
-                const newRedo2 = Array.from({ length: seasonsData.length }, (_, index) => userMedia.redo2[index] ?? 0);
+                const newRedo = Array.from({ length: seasonsData.length }, (_, index) => userMedia.redo[index] ?? 0);
 
                 // Calculate new Redo Total (seasonsData)
-                const newRedoTotal = newRedo2.reduce((acc, count, index) => {
+                const newRedoTotal = newRedo.reduce((acc, count, index) => {
                     const epsInSeason = seasonsData[index]?.episodes || 0;
                     return acc + (count * epsInSeason);
                 }, 0);
@@ -312,7 +312,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
                     .update(listTable)
                     .set({
                         total: newTotal,
-                        redo2: newRedo2,
+                        redo: newRedo,
                         currentSeason: newPosition.season,
                         currentEpisode: newPosition.episode,
                         status: shouldMoveToOnHold ? Status.ON_HOLD : userMedia.status,

@@ -66,8 +66,7 @@ describe("TvService", () => {
                 lastUpdated: new Date().toISOString(),
                 currentSeason: 3,
                 currentEpisode: 24,
-                redo: 0, // Legacy
-                redo2: [0, 0, 0],
+                redo: [0, 0, 0],
                 customCover: null,
                 total: totalEpisodesMock,
                 ...overrides,
@@ -100,8 +99,8 @@ describe("TvService", () => {
                 });
 
                 it("should calculate delta for episode progress", () => {
-                    const old = makeUserState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 5, total: 5, redo2: [0, 0, 0] });
-                    const newer = makeState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 10, total: 10, redo2: [0, 0, 0] });
+                    const old = makeUserState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 5, total: 5, redo: [0, 0, 0] });
+                    const newer = makeState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 10, total: 10, redo: [0, 0, 0] });
                     const delta = tvService.calculateDeltaStats(old, newer, baseTv);
 
                     expect(delta.totalSpecific).toBe(5);
@@ -109,8 +108,8 @@ describe("TvService", () => {
                 });
 
                 it("should calculate delta for season progress", () => {
-                    const old = makeUserState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 12, total: 12, redo2: [0, 0, 0] });
-                    const newer = makeState({ status: Status.WATCHING, currentSeason: 2, currentEpisode: 1, total: 13, redo2: [0, 0, 0] });
+                    const old = makeUserState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 12, total: 12, redo: [0, 0, 0] });
+                    const newer = makeState({ status: Status.WATCHING, currentSeason: 2, currentEpisode: 1, total: 13, redo: [0, 0, 0] });
                     const delta = tvService.calculateDeltaStats(old, newer, baseTv);
 
                     expect(delta.totalSpecific).toBe(1);
@@ -118,8 +117,8 @@ describe("TvService", () => {
                 });
 
                 it("should calculate delta for redoing a season", () => {
-                    const old = makeUserState({ status: Status.COMPLETED, total: totalEpisodesMock, redo2: [0, 0, 0] });
-                    const newer = makeState({ status: Status.COMPLETED, total: totalEpisodesMock + epsPerSeasonMock[0].episodes, redo2: [1, 0, 0] });
+                    const old = makeUserState({ status: Status.COMPLETED, total: totalEpisodesMock, redo: [0, 0, 0] });
+                    const newer = makeState({ status: Status.COMPLETED, total: totalEpisodesMock + epsPerSeasonMock[0].episodes, redo: [1, 0, 0] });
                     const delta = tvService.calculateDeltaStats(old, newer, baseTv);
 
                     expect(delta.totalRedo).toBe(1);
@@ -130,7 +129,7 @@ describe("TvService", () => {
 
             describe("updateHandlers", () => {
                 it("updateStatusHandler: PTW -> COMPLETED", async () => {
-                    const current = makeState({ status: Status.PLAN_TO_WATCH, currentSeason: 1, currentEpisode: 0, total: 0, redo2: [0, 0, 0] });
+                    const current = makeState({ status: Status.PLAN_TO_WATCH, currentSeason: 1, currentEpisode: 0, total: 0, redo: [0, 0, 0] });
                     const [next, log] = await tvService.updateStatusHandler(current, { status: Status.COMPLETED }, baseTv);
 
                     expect(next.total).toBe(totalEpisodesMock);
@@ -141,11 +140,11 @@ describe("TvService", () => {
                 });
 
                 it("updateStatusHandler: COMPLETED -> PTW", async () => {
-                    const current = makeState({ status: Status.COMPLETED, total: totalEpisodesMock, redo2: [1, 1, 1] });
+                    const current = makeState({ status: Status.COMPLETED, total: totalEpisodesMock, redo: [1, 1, 1] });
                     const [next, log] = await tvService.updateStatusHandler(current, { status: Status.PLAN_TO_WATCH }, baseTv);
 
                     expect(next.total).toBe(0);
-                    expect(next.redo2).toEqual([0, 0, 0]);
+                    expect(next.redo).toEqual([0, 0, 0]);
                     expect(next.currentSeason).toBe(1);
                     expect(next.currentEpisode).toBe(0);
                     expect(next.status).toBe(Status.PLAN_TO_WATCH);
@@ -153,26 +152,26 @@ describe("TvService", () => {
                 });
 
                 it("updateRedoHandler: should update total when a season is rewatched", async () => {
-                    const current = makeState({ status: Status.COMPLETED, total: totalEpisodesMock, redo2: [0, 0, 0] });
-                    const [next, log] = await tvService.updateRedoHandler(current, { redo2: [1, 0, 0] }, baseTv);
+                    const current = makeState({ status: Status.COMPLETED, total: totalEpisodesMock, redo: [0, 0, 0] });
+                    const [next, log] = await tvService.updateRedoHandler(current, { redo: [1, 0, 0] }, baseTv);
 
-                    expect(next.redo2).toEqual([1, 0, 0]);
+                    expect(next.redo).toEqual([1, 0, 0]);
                     expect(next.total).toBe(totalEpisodesMock + epsPerSeasonMock[0].episodes);
                     expect(log?.newValue).toBe(1);
                 });
 
                 it("updateRedoHandler: should repair stale rewatch data after the season count shrinks", async () => {
-                    const current = makeState({ status: Status.COMPLETED, total: totalEpisodesMock, redo2: [0, 0, 0, 0] });
-                    const [next, log] = await tvService.updateRedoHandler(current, { redo2: [1, 0, 0] }, baseTv);
+                    const current = makeState({ status: Status.COMPLETED, total: totalEpisodesMock, redo: [0, 0, 0, 0] });
+                    const [next, log] = await tvService.updateRedoHandler(current, { redo: [1, 0, 0] }, baseTv);
 
-                    expect(next.redo2).toEqual([1, 0, 0]);
+                    expect(next.redo).toEqual([1, 0, 0]);
                     expect(next.total).toBe(totalEpisodesMock + epsPerSeasonMock[0].episodes);
                     expect(log?.oldValue).toBe(0);
                     expect(log?.newValue).toBe(1);
                 });
 
                 it("updateEpsSeasonsHandler: should update total on episode change", async () => {
-                    const current = makeState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 5, total: 5, redo2: [0, 0, 0] });
+                    const current = makeState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 5, total: 5, redo: [0, 0, 0] });
                     const [next, log] = await tvService.updateEpsSeasonsHandler(current, { currentEpisode: 10 }, baseTv);
 
                     expect(next.total).toBe(10);
@@ -181,7 +180,7 @@ describe("TvService", () => {
                 });
 
                 it("updateEpsSeasonsHandler: should update total on season change", async () => {
-                    const current = makeState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 12, total: 12, redo2: [0, 0, 0] });
+                    const current = makeState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 12, total: 12, redo: [0, 0, 0] });
                     const [next, log] = await tvService.updateEpsSeasonsHandler(current, { currentSeason: 2 }, baseTv);
 
                     expect(next.total).toBe(13);

@@ -41,25 +41,23 @@ export class TvImportListWriter implements ImportListWriter {
     private async _materializeTvListPayload(mediaId: number, payload: TvImportPayload) {
         const seasons = await this.tvService.getMediaEpsPerSeason(mediaId);
 
-        const redo2 = this._checkRedo2(payload.redo2, seasons.length);
+        const redo = this._checkRedo(payload.redo, seasons.length);
         const currentSeason = payload.currentSeason ?? this._defaultCurrentSeason(payload.status, seasons);
         const currentEpisode = payload.currentEpisode ?? this._defaultCurrentEpisode(payload.status, currentSeason, seasons);
-        const redo = payload.redo ?? redo2.reduce((sum, count) => sum + count, 0);
-        const total = payload.total ?? this._calculateTotal(payload.status, currentSeason, currentEpisode, redo2, seasons);
+        const total = payload.total ?? this._calculateTotal(payload.status, currentSeason, currentEpisode, redo, seasons);
 
         return {
             ...payload,
             redo,
-            redo2,
             total,
             currentSeason,
             currentEpisode,
         };
     }
 
-    private _checkRedo2(redo2: number[] | undefined, seasonCount: number): number[] {
-        if (!redo2) return Array(seasonCount).fill(0);
-        return Array.from({ length: seasonCount }, (_, idx) => redo2[idx] ?? 0);
+    private _checkRedo(redo: number[] | undefined, seasonCount: number): number[] {
+        if (!redo) return Array(seasonCount).fill(0);
+        return Array.from({ length: seasonCount }, (_, idx) => redo[idx] ?? 0);
     }
 
     private _defaultCurrentSeason(status: Status, seasons: SeasonEpisodes[]) {
@@ -77,8 +75,8 @@ export class TvImportListWriter implements ImportListWriter {
         return 1;
     }
 
-    private _calculateTotal(status: Status, currentSeason: number, currentEpisode: number, redo2: number[], seasons: SeasonEpisodes[]) {
-        const redoTotal = redo2.reduce((sum, redoCount, idx) => sum + redoCount * (seasons[idx]?.episodes ?? 0), 0);
+    private _calculateTotal(status: Status, currentSeason: number, currentEpisode: number, redo: number[], seasons: SeasonEpisodes[]) {
+        const redoTotal = redo.reduce((sum, redoCount, idx) => sum + redoCount * (seasons[idx]?.episodes ?? 0), 0);
 
         if (status === Status.COMPLETED) {
             return seasons.reduce((sum, season) => sum + season.episodes, 0) + redoTotal;

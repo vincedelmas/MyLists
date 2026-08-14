@@ -17,7 +17,7 @@ export const TvFollowCard = ({ followData, rating, showComment }: TvFollowCardPr
             showComment={showComment}
             redoDisplay={
                 <DisplayTvRedo
-                    redoValues={followData.userMedia.redo2}
+                    redoValues={followData.userMedia.redo}
                 />
             }
             mediaDetailsDisplay={

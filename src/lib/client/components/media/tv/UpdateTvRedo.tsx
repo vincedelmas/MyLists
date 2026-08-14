@@ -40,7 +40,7 @@ export const UpdateTvRedo = ({ onUpdateMutation, redoValues, seasonCount }: Upda
 
     const onUpdateRedoValues = () => {
         setOpen(false);
-        onUpdateMutation.mutate({ payload: { redo2: draftRedo, type: UpdateType.REDO } });
+        onUpdateMutation.mutate({ payload: { redo: draftRedo, type: UpdateType.REDO } });
     };
 
     return (

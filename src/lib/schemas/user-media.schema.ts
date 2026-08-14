@@ -32,7 +32,7 @@ const allowedPayloadFieldsByUpdateType = {
     [UpdateType.PLAYTIME]: ["playtime"],
     [UpdateType.FAVORITE]: ["favorite"],
     [UpdateType.PLATFORM]: ["platform"],
-    [UpdateType.REDO]: ["redo", "redo2"],
+    [UpdateType.REDO]: ["redo"],
     [UpdateType.CHAPTER]: ["currentChapter"],
     [UpdateType.TV]: ["currentSeason", "currentEpisode"],
 } satisfies Record<UpdateType, string[]>;
@@ -91,7 +91,10 @@ export const updateUserMediaSchema = z.object({
         favorite: z.boolean().optional(),
         status: z.enum(Status).optional(),
         platform: z.enum(GamesPlatformsEnum).optional().nullable(),
-        redo: z.number().int().min(0).max(REDO_MAX).optional(),
+        redo: z.union([
+            z.number().int().min(0).max(REDO_MAX),
+            z.array(z.number().int().min(0).max(REDO_MAX, `A season cannot be re-watched more than ${REDO_MAX} times.`)),
+        ]).optional(),
         rating: z.number().min(0).max(10).optional().nullable(),
         comment: z.string().max(COMMENT_MAX_LENGTH, `Comment cannot exceed ${COMMENT_MAX_LENGTH} characters`).nullish(),
         actualPage: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
@@ -99,7 +102,6 @@ export const updateUserMediaSchema = z.object({
         currentChapter: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentEpisode: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         playtime: z.number().min(0).max(PLAYTIME_MAX_MINUTES, `Playtime cannot exceed ${PLAYTIME_MAX_MINUTES}!`).optional(),
-        redo2: z.array(z.number().int().min(0).max(REDO_MAX, `A season cannot be re-watched more than ${REDO_MAX} times.`)).optional(),
     }).superRefine((data, ctx) => {
         const definedFields = Object.entries(data)
             .filter(([key, value]) => key !== "type" && key !== "loggedAt" && value !== undefined)
@@ -126,6 +128,17 @@ export const updateUserMediaSchema = z.object({
         message: "Only progress changes can be backdated.", path: ["loggedAt"],
     })
 }).superRefine((data, ctx) => {
+    if (data.payload.type === UpdateType.REDO && data.payload.redo !== undefined) {
+        const isTvMedia = data.mediaType === MediaType.SERIES || data.mediaType === MediaType.ANIME;
+        if (isTvMedia !== Array.isArray(data.payload.redo)) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["payload", "redo"],
+                message: isTvMedia ? "TV re-watch progress must be an array." : "Re-experience progress must be a number.",
+            });
+        }
+    }
+
     if (!data.payload.status) return;
     validateStatusForMediaType(data.mediaType, data.payload.status, ctx, ["payload", "status"]);
 });

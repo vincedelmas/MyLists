@@ -56,6 +56,22 @@ describe("user media schemas", () => {
         ]));
     });
 
+    it("requires array re-watch progress for TV and scalar progress for other media", () => {
+        const parseRedo = (mediaType: MediaType, redo: number | number[]) => updateUserMediaSchema.safeParse({
+            mediaId: 1,
+            mediaType,
+            payload: {
+                redo,
+                type: UpdateType.REDO,
+            },
+        });
+
+        expect(parseRedo(MediaType.SERIES, [1, 0]).success).toBe(true);
+        expect(parseRedo(MediaType.MOVIES, 1).success).toBe(true);
+        expect(parseRedo(MediaType.ANIME, 1).success).toBe(false);
+        expect(parseRedo(MediaType.BOOKS, [1]).success).toBe(false);
+    });
+
     it("applies shared update limits", () => {
         const result = updateUserMediaSchema.safeParse({
             mediaId: 1,

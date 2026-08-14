@@ -50,7 +50,7 @@ export type RedoPayload = {
 }
 
 export type RedoTvPayload = {
-    redo2: number[],
+    redo: number[],
 }
 
 export type EpsSeasonPayload = {

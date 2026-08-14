@@ -57,7 +57,7 @@ export const TvUserDetails = ({ userMedia, mediaType, queryOption, mutationOptio
                 <div className="flex justify-between items-center">
                     <div>Re-watched</div>
                     <UpdateTvRedo
-                        redoValues={userMedia.redo2}
+                        redoValues={userMedia.redo}
                         onUpdateMutation={updateUserMediaMutation}
                         seasonCount={mediaData.epsPerSeason?.length ?? 0}
                     />

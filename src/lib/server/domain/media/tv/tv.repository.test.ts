@@ -110,7 +110,7 @@ describe("TvRepository season refresh", () => {
                 status: Status.COMPLETED,
                 currentSeason: 2,
                 currentEpisode: 8,
-                redo2: [1, 0],
+                redo: [1, 0],
                 total: 24,
                 rating: 8,
                 lastUpdated: "2026-02-01 00:00:00",
@@ -121,7 +121,7 @@ describe("TvRepository season refresh", () => {
                 status: Status.COMPLETED,
                 currentSeason: 2,
                 currentEpisode: 8,
-                redo2: [0, 0],
+                redo: [0, 0],
                 total: 16,
                 lastUpdated: "2026-02-01 00:00:00",
             },
@@ -131,7 +131,7 @@ describe("TvRepository season refresh", () => {
                 status: Status.COMPLETED,
                 currentSeason: 2,
                 currentEpisode: 7,
-                redo2: [0, 0],
+                redo: [0, 0],
                 total: 15,
                 lastUpdated: "2026-02-01 00:00:00",
             },
@@ -159,7 +159,7 @@ describe("TvRepository season refresh", () => {
             status: Status.ON_HOLD,
             currentSeason: 2,
             currentEpisode: 8,
-            redo2: [1, 0, 0],
+            redo: [1, 0, 0],
             total: 24,
             rating: 8,
             lastUpdated: "2026-02-01 00:00:00",
@@ -200,7 +200,7 @@ describe("TvRepository season refresh", () => {
             status: Status.COMPLETED,
             currentSeason: 2,
             currentEpisode: 8,
-            redo2: [0, 0],
+            redo: [0, 0],
             total: 16,
         });
 
@@ -221,5 +221,54 @@ describe("TvRepository season refresh", () => {
 
         const listRow = await db.select().from(seriesList).where(eq(seriesList.userId, 42)).get();
         expect(listRow?.status).toBe(Status.COMPLETED);
+    });
+
+    it("sorts re-watched series by the sum of their seasonal counts", async () => {
+        await db.insert(user).values({
+            id: 42,
+            emailVerified: true,
+            name: "sort-user",
+            email: "sort@example.com",
+            createdAt: "2026-01-01 00:00:00",
+            updatedAt: "2026-01-01 00:00:00",
+        });
+        await db.insert(series).values({
+            id: 101,
+            apiId: 1001,
+            name: "More Rewatched Series",
+            duration: 45,
+            totalSeasons: 3,
+            totalEpisodes: 24,
+            imageCover: "series-2.jpg",
+        });
+        await db.insert(seriesEpisodesPerSeason).values([
+            { mediaId: 101, season: 1, episodes: 8 },
+            { mediaId: 101, season: 2, episodes: 8 },
+            { mediaId: 101, season: 3, episodes: 8 },
+        ]);
+        await db.insert(seriesList).values([
+            {
+                userId: 42,
+                mediaId: 100,
+                status: Status.COMPLETED,
+                currentSeason: 2,
+                currentEpisode: 8,
+                redo: [2, 0],
+                total: 32,
+            },
+            {
+                userId: 42,
+                mediaId: 101,
+                status: Status.COMPLETED,
+                currentSeason: 3,
+                currentEpisode: 8,
+                redo: [1, 1, 1],
+                total: 48,
+            },
+        ]);
+
+        const result = await repository.getMediaList(undefined, 42, { sorting: "Re-watched" });
+
+        expect(result.items.map((item) => item.mediaId)).toEqual([101, 100]);
     });
 });

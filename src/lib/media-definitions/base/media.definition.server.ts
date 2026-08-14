@@ -34,7 +34,7 @@ type ListTableColumns = {
     favorite: NullableColumn<boolean>;
     lastUpdated: NullableColumn<string>;
     customCover: NullableColumn<string | null>;
-    redo?: NotNullColumn<number>;
+    redo?: NotNullColumn<number | number[]>;
 };
 
 
@@ -87,7 +87,7 @@ type AffinityDefinitions = Record<string, TopAffinityDefinition>;
 type BaseSelection = Omit<ListTableColumns, "redo"> & SelectedFieldsFlat & {
     mediaName: NotNullColumn<string>;
     imageCover: NotNullColumn<string>;
-    redo?: NotNullColumn<number>;
+    redo?: NotNullColumn<number | number[]>;
 };
 
 

@@ -10,7 +10,6 @@ import {
     importPositiveProgressSchema,
     importProgressSchema,
     importRatingSchema,
-    importRedoSchema,
     importStatusSchema,
     importTotalSchema
 } from "@/lib/server/domain/imports/import-list-validation";
@@ -37,7 +36,7 @@ export type UpsertTvWithDetails = {
 };
 
 
-const parseRedo2 = (value: unknown) => {
+const parseTvRedo = (value: unknown) => {
     if (value === "") return undefined;
     if (Array.isArray(value)) return value;
     if (typeof value !== "string") return value;
@@ -61,7 +60,7 @@ const parseRedo2 = (value: unknown) => {
 };
 
 const tvListSchemaOverrides = (mediaType: TvMediaType) => ({
-    redo: importRedoSchema,
+    redo: z.preprocess(parseTvRedo, z.array(z.coerce.number().int().min(0).max(REDO_MAX)).optional()),
     total: importTotalSchema,
     rating: importRatingSchema,
     comment: importCommentSchema,
@@ -69,7 +68,6 @@ const tvListSchemaOverrides = (mediaType: TvMediaType) => ({
     currentEpisode: importProgressSchema,
     status: importStatusSchema(mediaType),
     currentSeason: importPositiveProgressSchema,
-    redo2: z.preprocess(parseRedo2, z.array(z.coerce.number().int().min(0).max(REDO_MAX)).optional()),
 });
 
 
@@ -80,13 +78,13 @@ const animeCSVListSchema = createInsertSchema(animeList, tvListSchemaOverrides(M
 const seriesFinalListInsertSchema = createInsertSchema(seriesList, {
     status: importStatusSchema(MediaType.SERIES),
     customCover: z.string().nullable().optional(),
-    redo2: z.array(z.number().int().min(0).max(REDO_MAX)),
+    redo: z.array(z.number().int().min(0).max(REDO_MAX)),
 });
 
 const animeFinalListInsertSchema = createInsertSchema(animeList, {
     status: importStatusSchema(MediaType.ANIME),
     customCover: z.string().nullable().optional(),
-    redo2: z.array(z.number().int().min(0).max(REDO_MAX)),
+    redo: z.array(z.number().int().min(0).max(REDO_MAX)),
 });
 
 const seriesImportPayloadSchema = seriesCSVListSchema.omit({

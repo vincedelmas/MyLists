@@ -6,6 +6,9 @@ import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domai
 import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, animeNetwork, animeTags} from "@/lib/server/database/schema/media/anime.schema";
 
 
+const animeRedoCount = sql<number>`COALESCE((SELECT SUM(value) FROM json_each(${animeList.redo})), 0)`;
+
+
 export const animeServerDefinition = defineServerMediaDefinition({
     identity: {
         mediaType: MediaType.ANIME,
@@ -83,13 +86,13 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 "Recently Modified": [desc(animeList.lastUpdated), asc(anime.name)],
                 "Rating +": [desc(animeList.rating), asc(anime.name)],
                 "Rating -": [asc(animeList.rating), asc(anime.name)],
-                "Re-watched": [desc(animeList.redo), asc(anime.name)],
+                "Re-watched": [desc(animeRedoCount), asc(anime.name)],
             },
         },
         communityActivity: {
             aggregates: {
                 totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
-                totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${animeList.redo2}))), 0)`,
+                totalRedo: sql<number>`COALESCE(SUM(${animeRedoCount}), 0)`,
             },
         },
         jobs: {
@@ -123,7 +126,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
         allUsers: {
             totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
             timeSpent: sql<number>`COALESCE(SUM(${animeList.total} * ${anime.duration}), 0)`,
-            totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${animeList.redo2}))), 0)`,
+            totalRedo: sql<number>`COALESCE(SUM(${animeRedoCount}), 0)`,
         },
         affinity: {
             networksStats: {
@@ -160,7 +163,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
         progressTotals: (state, media) => ({
             totalSpecific: state?.total ?? 0,
             timeSpent: (state?.total ?? 0) * media.duration,
-            totalRedo: state?.redo2.reduce((sum, value) => sum + value, 0) ?? 0,
+            totalRedo: state?.redo.reduce((sum, value) => sum + value, 0) ?? 0,
         }),
     },
     ingestion: {

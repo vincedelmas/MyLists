@@ -41,13 +41,12 @@ export const anime = sqliteTable("anime", {
 export const animeList = sqliteTable("anime_list", {
     currentSeason: integer().notNull(),
     currentEpisode: integer().notNull(),
-    redo: integer().default(0).notNull(),
     total: integer("total").default(0).notNull(),
-    redo2: customJson<number[]>("redo2").default(sql`'[]'`).notNull(),
+    redo: customJson<number[]>("redo").default(sql`'[]'`).notNull(),
     ...commonMediaListCols(anime.id, MediaType.ANIME),
 }, (table) => [
     ...commonMediaListIndexes(table, MediaType.ANIME),
-    check("anime_list_redo2_json_check", sql`json_valid(${table.redo2})`),
+    check("anime_list_redo_json_check", sql`json_valid(${table.redo})`),
 ]);
 
 

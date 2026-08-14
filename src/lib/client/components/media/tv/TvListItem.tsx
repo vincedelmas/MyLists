@@ -14,9 +14,9 @@ export const TvListItem = (props: TvListItemProps<TvMediaType>) => {
         <BaseMediaListItem
             {...props}
             redoDisplay={
-                props.userMedia.redo2.reduce((a, c) => a + c, 0) > 0 &&
+                props.userMedia.redo.reduce((a, c) => a + c, 0) > 0 &&
                 <DisplayTvRedo
-                    redoValues={props.userMedia.redo2}
+                    redoValues={props.userMedia.redo}
                 />
             }
             mediaDetailsDisplay={

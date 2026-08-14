@@ -6,6 +6,9 @@ import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domai
 import {series, seriesActors, seriesEpisodesPerSeason, seriesGenre, seriesList, seriesNetwork, seriesTags} from "@/lib/server/database/schema/media/series.schema";
 
 
+const seriesRedoCount = sql<number>`COALESCE((SELECT SUM(value) FROM json_each(${seriesList.redo})), 0)`;
+
+
 export const seriesServerDefinition = defineServerMediaDefinition({
     identity: {
         mediaType: MediaType.SERIES,
@@ -83,12 +86,12 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                 "Recently Modified": [desc(seriesList.lastUpdated), asc(series.name)],
                 "Rating +": [desc(seriesList.rating), asc(series.name)],
                 "Rating -": [asc(seriesList.rating), asc(series.name)],
-                "Re-watched": [desc(seriesList.redo), asc(series.name)],
+                "Re-watched": [desc(seriesRedoCount), asc(series.name)],
             },
         },
         communityActivity: {
             aggregates: {
-                totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${seriesList.redo2}))), 0)`,
+                totalRedo: sql<number>`COALESCE(SUM(${seriesRedoCount}), 0)`,
                 totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
             },
         },
@@ -123,7 +126,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
         allUsers: {
             timeSpent: sql<number>`COALESCE(SUM(${seriesList.total} * ${series.duration}), 0)`,
             totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
-            totalRedo: sql<number>`COALESCE(SUM((SELECT COALESCE(SUM(value), 0) FROM json_each(${seriesList.redo2}))), 0)`,
+            totalRedo: sql<number>`COALESCE(SUM(${seriesRedoCount}), 0)`,
         },
         affinity: {
             networksStats: {
@@ -160,7 +163,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
         progressTotals: (state, media) => ({
             totalSpecific: state?.total ?? 0,
             timeSpent: (state?.total ?? 0) * media.duration,
-            totalRedo: state?.redo2.reduce((sum, value) => sum + value, 0) ?? 0,
+            totalRedo: state?.redo.reduce((sum, value) => sum + value, 0) ?? 0,
         }),
     },
     ingestion: {

@@ -111,7 +111,7 @@ describe("TV import processing", () => {
             currentSeason: 2,
             currentEpisode: 10,
             total: 18,
-            redo2: [0, 0],
+            redo: [0, 0],
         });
         expect(storedImportItem).toMatchObject({
             matchedMediaId: 100,

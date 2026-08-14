@@ -76,10 +76,10 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
 
     async updateRedoHandler(currentState: TvList, payload: RedoTvPayload, media: TvType): Promise<[TvList, LogPayload]> {
         const epsPerSeason = await this.repository.getMediaEpsPerSeason(media.id);
-        const currentRedo = Array.from({ length: epsPerSeason.length }, (_, index) => currentState.redo2[index] ?? 0);
-        const nextRedo = Array.from({ length: epsPerSeason.length }, (_, index) => payload.redo2[index] ?? 0);
+        const currentRedo = Array.from({ length: epsPerSeason.length }, (_, index) => currentState.redo[index] ?? 0);
+        const nextRedo = Array.from({ length: epsPerSeason.length }, (_, index) => payload.redo[index] ?? 0);
 
-        const newState = { ...currentState, redo2: nextRedo };
+        const newState = { ...currentState, redo: nextRedo };
 
         const logPayload = {
             oldValue: currentRedo.reduce((a, b) => a + b, 0),
@@ -105,7 +105,7 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
 
         if (payload.status === Status.COMPLETED) {
             const sumEpisodesTv = epsPerSeason.reduce((a, b) => a + b.episodes, 0);
-            const sumOldRedoEps = currentState.redo2.reduce((a, b, i) => a + b * (epsPerSeason[i]?.episodes ?? 0), 0);
+            const sumOldRedoEps = currentState.redo.reduce((a, b, i) => a + b * (epsPerSeason[i]?.episodes ?? 0), 0);
 
             newState.total = sumEpisodesTv + sumOldRedoEps;
             newState.currentSeason = epsPerSeason.at(-1)!.season;
@@ -115,7 +115,7 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
             newState.total = 0;
             newState.currentSeason = 1;
             newState.currentEpisode = 0;
-            newState.redo2 = Array(epsPerSeason.length).fill(0);
+            newState.redo = Array(epsPerSeason.length).fill(0);
         }
 
         return [newState, logPayload];
@@ -137,7 +137,7 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
             }
 
             const newWatched = epsPerSeasList.slice(0, payload.currentSeason - 1).reduce((a, b) => a + b, 0) + 1;
-            const newTotal = newWatched + currentState.redo2.reduce((a, b, i) => a + b * (epsPerSeasList[i] ?? 0), 0);
+            const newTotal = newWatched + currentState.redo.reduce((a, b, i) => a + b * (epsPerSeasList[i] ?? 0), 0);
 
             newState.total = newTotal
             newState.currentEpisode = 1;
@@ -160,7 +160,7 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
                 .slice(0, currentState.currentSeason - 1)
                 .reduce((a, b) => a + b, 0) + payload.currentEpisode;
 
-            newState.total = newWatched + currentState.redo2.reduce((a, b, i) => a + b * (epsPerSeasList[i] ?? 0), 0);
+            newState.total = newWatched + currentState.redo.reduce((a, b, i) => a + b * (epsPerSeasList[i] ?? 0), 0);
 
             return [newState, logPayload] as [TvList, LogPayload];
         }

@@ -9,6 +9,7 @@ import {getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
+    biographySettingsSchema,
     downloadListAsCsvSchema,
     generalSettingsSchema,
     highlightedMediaSearchSchema,
@@ -88,12 +89,13 @@ export const getProfileCustomSettings = createServerFn({ method: "GET" })
     .handler(async ({ context: { currentUser } }) => {
         const userProfileService = await getContainer().then((c) => c.services.userProfile);
 
-        const [previews, settings] = await Promise.all([
+        const [previews, settings, biography] = await Promise.all([
             userProfileService.resolveHighlightedMedia(currentUser.id),
             userProfileService.getHighlightedMediaSettings(currentUser.id),
+            userProfileService.getBiography(currentUser.id),
         ]);
 
-        return { previews, settings };
+        return { biography, previews, settings };
     });
 
 
@@ -112,6 +114,15 @@ export const postProfileCustomSettings = createServerFn({ method: "POST" })
     .handler(async ({ data, context: { currentUser } }) => {
         const userProfileService = await getContainer().then((c) => c.services.userProfile);
         return userProfileService.saveHighlightedMediaSettings(currentUser.id, data);
+    });
+
+
+export const postBiographySettings = createServerFn({ method: "POST" })
+    .middleware([requiredAuthMiddleware, transactionMiddleware])
+    .validator(biographySettingsSchema)
+    .handler(async ({ data, context: { currentUser } }) => {
+        const userProfileService = await getContainer().then((c) => c.services.userProfile);
+        return userProfileService.saveBiography(currentUser.id, data.biography);
     });
 
 

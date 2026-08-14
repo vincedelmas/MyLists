@@ -8,6 +8,7 @@ import {
     HighlightedMediaRef,
     HighlightedMediaSettings,
     HighlightedMediaTabConfig,
+    PROFILE_BIOGRAPHY_MAX_LENGTH,
     PROFILE_MAX_HIGHLIGHTED_MEDIA
 } from "@/lib/types/profile-custom.types";
 
@@ -15,6 +16,7 @@ import {
 export type ListSettings = z.infer<typeof mediaListSettingsSchema>;
 export type GeneralSettings = z.infer<typeof generalSettingsSchema>;
 export type PasswordSettingsForm = z.infer<typeof passwordSettingsFormSchema>;
+export type BiographySettings = z.infer<typeof biographySettingsSchema>;
 
 
 const highlightedMediaRefSchema: z.ZodType<HighlightedMediaRef> = mediaTypeMediaIdSchema;
@@ -64,6 +66,13 @@ export const highlightedMediaSettingsSchema = z.object(highlightedMediaSettingsS
             }
         }
     }) as z.ZodType<HighlightedMediaSettings, HighlightedMediaSettings>;
+
+export const biographySettingsSchema = z.object({
+    biography: z.string().trim().max(
+        PROFILE_BIOGRAPHY_MAX_LENGTH,
+        `Biography must be ${PROFILE_BIOGRAPHY_MAX_LENGTH} characters or fewer.`,
+    ),
+});
 
 export const generalSettingsSchema = z.object({
     privacy: z.enum(PrivacyType),

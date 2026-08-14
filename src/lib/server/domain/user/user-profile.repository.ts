@@ -35,4 +35,33 @@ export class UserProfileRepository {
                 },
             });
     }
+
+    static async getBiography(userId: number) {
+        const biography = getDbClient()
+            .select({ value: profileCustom.value })
+            .from(profileCustom)
+            .where(and(eq(profileCustom.userId, userId), eq(profileCustom.key, "biography")))
+            .get();
+
+        return biography?.value as string | undefined;
+    }
+
+    static async upsertBiography(userId: number, value: string) {
+        await getDbClient()
+            .insert(profileCustom)
+            .values({ userId, key: "biography", value })
+            .onConflictDoUpdate({
+                target: [profileCustom.userId, profileCustom.key],
+                set: {
+                    value,
+                    updatedAt: sql`datetime('now')`,
+                },
+            });
+    }
+
+    static async deleteBiography(userId: number) {
+        await getDbClient()
+            .delete(profileCustom)
+            .where(and(eq(profileCustom.userId, userId), eq(profileCustom.key, "biography")));
+    }
 }

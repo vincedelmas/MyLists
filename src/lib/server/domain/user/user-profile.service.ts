@@ -33,6 +33,23 @@ export class UserProfileService {
         return normalizedSettings;
     }
 
+    async getBiography(userId: number) {
+        return this.repository.getBiography(userId);
+    }
+
+    async saveBiography(userId: number, biography: string) {
+        const normalizedBiography = biography.trim();
+
+        if (normalizedBiography) {
+            await this.repository.upsertBiography(userId, normalizedBiography);
+        }
+        else {
+            await this.repository.deleteBiography(userId);
+        }
+
+        return normalizedBiography || undefined;
+    }
+
     async resolveHighlightedMedia(userId: number) {
         const settings = await this.getHighlightedMediaSettings(userId);
 

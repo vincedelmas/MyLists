@@ -69,6 +69,7 @@ export const getUserProfile = createServerFn({ method: "GET" })
         const mediaGlobalSummary = await userStatsService.userPreComputedStatsSummary(targetUserId);
         const perMediaSummary = await userStatsService.userPerMediaSummaryStats(targetUserId);
         const highlightedMedia = await userProfileService.resolveHighlightedMedia(targetUserId);
+        const biography = await userProfileService.getBiography(targetUserId);
         const achievements = await achievementsService.getAchievementsDetails(targetUserId);
 
         return {
@@ -78,6 +79,7 @@ export const getUserProfile = createServerFn({ method: "GET" })
             followsCount,
             followsUpdates,
             perMediaSummary,
+            biography,
             highlightedMedia,
             mediaGlobalSummary,
             userData: {

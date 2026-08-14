@@ -14,6 +14,7 @@ import {
 } from "@/lib/client/react-query/query-options";
 import {
     getDownloadListAsCSV,
+    postBiographySettings,
     postDeleteUserAccount,
     postGeneralSettings,
     postMediaListSettings,
@@ -133,6 +134,23 @@ export const useProfileCustomMutation = (meta?: MutationMeta) => {
             if (currentUser) {
                 await queryClient.invalidateQueries({ queryKey: profileOptions(currentUser.name).queryKey });
                 await queryClient.invalidateQueries({ queryKey: profileHeaderOptions(currentUser.name).queryKey });
+            }
+        },
+    });
+};
+
+
+export const useBiographyMutation = (meta?: MutationMeta) => {
+    const { currentUser } = useAuth();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: postBiographySettings,
+        meta: { ...meta },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: profileCustomOptions.queryKey });
+            if (currentUser) {
+                await queryClient.invalidateQueries({ queryKey: profileOptions(currentUser.name).queryKey });
             }
         },
     });

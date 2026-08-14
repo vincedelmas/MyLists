@@ -2,10 +2,11 @@ import {MediaType} from "@/lib/utils/enums";
 import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 
 
-export type ProfileCustomKey = "highlightedMedia";
+export type ProfileCustomKey = "highlightedMedia" | "biography";
 export type HighlightedMediaTab = "overview" | MediaType;
 type HighlightedMediaMode = "random" | "curated" | "disabled";
 
+export const PROFILE_BIOGRAPHY_MAX_LENGTH = 2000;
 export const PROFILE_MAX_HIGHLIGHTED_MEDIA = 7;
 
 export const HIGHLIGHTED_MEDIA_DEFAULT_TITLE = "Highlighted Media";

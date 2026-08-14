@@ -14,6 +14,7 @@ import {AchievementsCard} from "@/lib/client/components/user-profile/Achievement
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {ProfilePortalGrid} from "@/lib/client/components/user-profile/ProfilePortalGrid";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
+import {ProfileBiography} from "@/lib/client/components/user-profile/ProfileBiography";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/")({
@@ -41,67 +42,71 @@ function ProfileMain() {
     };
 
     return (
-        <div className="grid grid-cols-[0.26fr_0.74fr] gap-6 pt-2 max-lg:grid-cols-5 max-sm:grid-cols-1">
+        <>
             {currentUser && currentUser.showOnboarding &&
                 <OnboardingModal/>
             }
 
-            <div className="space-y-4 max-lg:col-span-2 max-sm:space-y-6">
-                <MediaLevels
-                    username={username}
-                    settings={apiData.userData.userMediaSettings}
-                />
-                <ProfilePortalGrid
-                    username={username}
-                />
-                <UserUpdates
-                    username={username}
-                    updates={apiData.userUpdates}
-                />
-                <ProfileFollows
-                    username={username}
-                    follows={apiData.userFollows}
-                    followsCount={apiData.followsCount}
-                />
-            </div>
+            <ProfileBiography biography={apiData.biography}/>
 
-            <div className="space-y-6 max-lg:col-span-3 max-sm:col-span-2 max-sm:space-y-4 max-sm:mt-4">
-                <TabHeader
-                    tabs={mediaTabs}
-                    setActiveTab={setActiveTab}
-                    activeTab={effectiveActiveTab}
-                />
-                <div className="animate-in fade-in duration-300">
-                    {effectiveActiveTab === "overview" ?
-                        <OverviewTab
-                            perMedia={apiData.perMediaSummary}
-                            globalStats={apiData.mediaGlobalSummary}
-                            ratingSystem={apiData.userData.ratingSystem}
-                            highlightedMedia={apiData.highlightedMedia.overview}
-                        />
-                        :
-                        <MediaStatsTab
-                            username={username}
-                            ratingSystem={apiData.userData.ratingSystem}
-                            highlightedMedia={apiData.highlightedMedia[effectiveActiveTab]}
-                            mediaSummary={apiData.perMediaSummary.find((p) => p.mediaType === effectiveActiveTab)!}
-                        />
-                    }
-                </div>
-                <div className="grid grid-cols-[0.42fr_0.58fr] gap-6 pt-6 border-t-2 max-lg:grid-cols-1 max-sm:grid-cols-1">
-                    <div className="max-lg:order-2">
-                        <AchievementsCard
-                            key={username}
-                            username={username}
-                            achievements={apiData.achievements}
-                        />
-                    </div>
-                    <FollowsUpdates
+            <div className="grid grid-cols-[0.26fr_0.74fr] gap-6 pt-2 max-lg:grid-cols-5 max-sm:grid-cols-1">
+                <div className="space-y-4 max-lg:col-span-2 max-sm:space-y-6">
+                    <MediaLevels
                         username={username}
-                        updates={apiData.followsUpdates}
+                        settings={apiData.userData.userMediaSettings}
+                    />
+                    <ProfilePortalGrid
+                        username={username}
+                    />
+                    <UserUpdates
+                        username={username}
+                        updates={apiData.userUpdates}
+                    />
+                    <ProfileFollows
+                        username={username}
+                        follows={apiData.userFollows}
+                        followsCount={apiData.followsCount}
                     />
                 </div>
+
+                <div className="space-y-6 max-lg:col-span-3 max-sm:col-span-2 max-sm:space-y-4 max-sm:mt-4">
+                    <TabHeader
+                        tabs={mediaTabs}
+                        setActiveTab={setActiveTab}
+                        activeTab={effectiveActiveTab}
+                    />
+                    <div className="animate-in fade-in duration-300">
+                        {effectiveActiveTab === "overview" ?
+                            <OverviewTab
+                                perMedia={apiData.perMediaSummary}
+                                globalStats={apiData.mediaGlobalSummary}
+                                ratingSystem={apiData.userData.ratingSystem}
+                                highlightedMedia={apiData.highlightedMedia.overview}
+                            />
+                            :
+                            <MediaStatsTab
+                                username={username}
+                                ratingSystem={apiData.userData.ratingSystem}
+                                highlightedMedia={apiData.highlightedMedia[effectiveActiveTab]}
+                                mediaSummary={apiData.perMediaSummary.find((p) => p.mediaType === effectiveActiveTab)!}
+                            />
+                        }
+                    </div>
+                    <div className="grid grid-cols-[0.42fr_0.58fr] gap-6 pt-6 border-t-2 max-lg:grid-cols-1 max-sm:grid-cols-1">
+                        <div className="max-lg:order-2">
+                            <AchievementsCard
+                                key={username}
+                                username={username}
+                                achievements={apiData.achievements}
+                            />
+                        </div>
+                        <FollowsUpdates
+                            username={username}
+                            updates={apiData.followsUpdates}
+                        />
+                    </div>
+                </div>
             </div>
-        </div>
+        </>
     );
 }

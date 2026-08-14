@@ -176,10 +176,9 @@ PostHog is fully optional. Leave these blank to disable analytics:
 ```env
 VITE_PUBLIC_POSTHOG_KEY=
 VITE_PUBLIC_POSTHOG_HOST=
-VITE_PUBLIC_POSTHOG_UI_HOST=
 ```
 
-If `VITE_PUBLIC_POSTHOG_KEY` is empty, the app does not mount `PostHogProvider` and does not identify users.
+If `VITE_PUBLIC_POSTHOG_KEY` is empty, the app does not initialize PostHog or identify users.
 
 ## Optional Integrations
 

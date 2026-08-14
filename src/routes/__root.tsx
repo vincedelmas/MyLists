@@ -1,19 +1,17 @@
 /// <reference types="vite/client"/>
 import React from "react";
 import appCSS from "@/styles.css?url";
-import {clientEnv} from "@/env/client";
-import {PostHogProvider} from "posthog-js/react";
 import {QueryClient} from "@tanstack/react-query";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
 import {Toaster} from "@/lib/client/components/ui/toast";
 import {Navbar} from "@/lib/client/components/navbar/Navbar";
-import {useNProgress} from "@/lib/client/hooks/use-nprogress";
 import {Footer} from "@/lib/client/components/general/Footer";
-import {TooltipProvider} from "@/lib/client/components/ui/tooltip";
+import {useNProgress} from "@/lib/client/hooks/use-nprogress";
 import {ReactQueryDevtools} from "@tanstack/react-query-devtools";
-import {PostHogAuthSync} from "@/lib/client/components/general/PostHogAuthSync";
-import {AuthSessionSync} from "@/lib/client/components/general/AuthSessionSync";
+import {TooltipProvider} from "@/lib/client/components/ui/tooltip";
 import {PwaNavControls} from "@/lib/client/components/general/PwaNavControls";
+import {AuthSessionSync} from "@/lib/client/components/general/AuthSessionSync";
+import {PostHogAuthSync} from "@/lib/client/components/general/PostHogAuthSync";
 import {ConfirmDialogHost} from "@/lib/client/components/confirm/ConfirmDialogHost";
 import {AuthModalProvider} from "@/lib/client/components/general/AuthModalProvider";
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
@@ -56,7 +54,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
     useNProgress();
-    const app = <AppShell/>;
 
     return (
         <html lang="en" className="dark" data-theme="dark" style={{ colorScheme: "dark" }}>
@@ -65,28 +62,12 @@ function RootComponent() {
         </head>
         <body>
 
-        {(clientEnv.VITE_PUBLIC_POSTHOG_KEY && import.meta.env.PROD)
-            ? (
-                <PostHogProvider
-                    apiKey={clientEnv.VITE_PUBLIC_POSTHOG_KEY}
-                    options={{
-                        defaults: "2026-01-30",
-                        disable_session_recording: true,
-                        capture_pageview: "history_change",
-                        person_profiles: "identified_only",
-                        api_host: clientEnv.VITE_PUBLIC_POSTHOG_HOST || undefined,
-                        ui_host: clientEnv.VITE_PUBLIC_POSTHOG_UI_HOST || undefined,
-                    }}
-                >
-                    <PostHogAuthSync/>
-                    {app}
-                </PostHogProvider>
-            )
-            : app
-        }
+        <AppShell/>
 
         {import.meta.env.DEV &&
-            <ReactQueryDevtools buttonPosition="bottom-left"/>
+            <ReactQueryDevtools
+                buttonPosition="bottom-left"
+            />
         }
 
         <Scripts/>
@@ -99,6 +80,7 @@ function RootComponent() {
 function AppShell() {
     return (
         <TooltipProvider>
+            <PostHogAuthSync/>
             <AuthSessionSync/>
             <Toaster/>
             <ConfirmDialogHost/>

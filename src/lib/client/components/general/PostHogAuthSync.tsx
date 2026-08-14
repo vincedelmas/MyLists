@@ -1,10 +1,22 @@
 import {useEffect} from "react";
-import {usePostHog} from "posthog-js/react";
+import PostHog from "posthog-js-lite";
+import {clientEnv} from "@/env/client";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 
 
+const posthog = (typeof window !== "undefined" && import.meta.env.PROD && clientEnv.VITE_PUBLIC_POSTHOG_KEY)
+    ? new PostHog(clientEnv.VITE_PUBLIC_POSTHOG_KEY, {
+        captureHistoryEvents: true,
+        personProfiles: "identified_only",
+        host: clientEnv.VITE_PUBLIC_POSTHOG_HOST || undefined,
+    })
+    : null;
+
+
+posthog?.capture("$pageview");
+
+
 export function PostHogAuthSync() {
-    const posthog = usePostHog();
     const { currentUser } = useAuth();
 
     const username = currentUser?.name;
@@ -14,12 +26,12 @@ export function PostHogAuthSync() {
         if (!posthog) return;
 
         if (userId) {
-            posthog.identify(userId, { username });
+            posthog.identify(userId, username ? { username } : undefined);
         }
         else {
             posthog.reset();
         }
-    }, [posthog, userId, username]);
+    }, [userId, username]);
 
     return null;
 }

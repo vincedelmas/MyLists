@@ -45,7 +45,10 @@ export default defineConfig({
                         return "charts";
                     }
 
-                    if (id.includes("/node_modules/posthog-js")) {
+                    if (
+                        id.includes("/node_modules/posthog-js-lite") ||
+                        id.includes("/node_modules/@posthog/core")
+                    ) {
                         return "analytics";
                     }
 

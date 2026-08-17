@@ -40,7 +40,7 @@ describe("profile authorization middleware boundaries", () => {
         decideProfile.mockResolvedValue({ allowed: true });
         mocks.getContainer.mockResolvedValue({
             services: {
-                user: { getUserByUsername },
+                account: { getUserByUsername },
                 authorization: { decideProfile },
             },
         });

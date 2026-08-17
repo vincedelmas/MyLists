@@ -1,12 +1,10 @@
-import {alias} from "drizzle-orm/sqlite-core";
 import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {PrivacyType, RatingSystemType} from "@/lib/utils/enums";
+import {and, asc, count, desc, eq, like, sql} from "drizzle-orm";
+import {user, userMediaSettings} from "@/lib/server/database/schema";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
-import {followers, user, userMediaSettings} from "@/lib/server/database/schema";
-import {and, asc, count, desc, eq, gte, isNotNull, like, sql, sum} from "drizzle-orm";
-import {ProviderSearchResult, ProviderSearchResults} from "@/lib/types/provider.types";
-import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, SocialState} from "@/lib/utils/enums";
 
 
 const orderByMediaType = sql`
@@ -22,7 +20,7 @@ const orderByMediaType = sql`
 `;
 
 
-export class UserRepository {
+export class AccountRepository {
     // --- Tasks & Admin ----------------------------------------------------
 
     static async deleteNonActivatedOldUsers() {
@@ -132,129 +130,6 @@ export class UserRepository {
         }));
     }
 
-    // --- Follows/Followers --------------------------------------------------
-
-    static async follow(followerId: number, followedId: number, status: SocialState) {
-        await getDbClient()
-            .insert(followers)
-            .values({ followerId, followedId, status })
-            .onConflictDoNothing();
-    }
-
-    static async unfollow(followerId: number, followedId: number) {
-        await getDbClient()
-            .delete(followers)
-            .where(and(eq(followers.followerId, followerId), eq(followers.followedId, followedId)));
-    }
-
-    static async acceptFollowRequest(followerId: number, followedId: number) {
-        return getDbClient()
-            .update(followers)
-            .set({ status: SocialState.ACCEPTED })
-            .where(and(
-                eq(followers.followerId, followerId),
-                eq(followers.followedId, followedId),
-                eq(followers.status, SocialState.REQUESTED),
-            )).returning({ id: followers.followerId });
-    }
-
-    static async declineFollowRequest(followerId: number, followedId: number) {
-        return getDbClient()
-            .delete(followers)
-            .where(and(
-                eq(followers.followerId, followerId),
-                eq(followers.followedId, followedId),
-                eq(followers.status, SocialState.REQUESTED),
-            )).returning({ id: followers.followerId });
-    }
-
-    static async getUserFollowers(currentUserId: number | undefined, userId: number, limit: number = 8) {
-        const currentUserFollows = alias(followers, "currentUserFollows");
-
-        const followersUsers = await getDbClient()
-            .select({
-                id: user.id,
-                image: user.image,
-                username: user.name,
-                privacy: user.privacy,
-                myFollowStatus: sql<SocialState | null>`
-                    CASE 
-                        WHEN ${currentUserFollows.followerId} IS NOT NULL THEN ${currentUserFollows.status}
-                        ELSE NULL 
-                    END
-                `,
-            })
-            .from(followers)
-            .innerJoin(user, eq(followers.followerId, user.id))
-            .leftJoin(currentUserFollows, and(
-                eq(currentUserFollows.followedId, user.id),
-                eq(currentUserFollows.followerId, currentUserId ?? -1),
-            ))
-            .where(and(eq(followers.followedId, userId), eq(followers.status, SocialState.ACCEPTED)))
-            .orderBy(asc(user.name))
-            .limit(limit);
-
-        return { followers: followersUsers };
-    }
-
-    static async getUserFollows(currentUserId: number | undefined, userId: number, limit: number = 8) {
-        const currentUserFollows = alias(followers, "currentUserFollows");
-
-        const followedUsers = await getDbClient()
-            .select({
-                id: user.id,
-                image: user.image,
-                username: user.name,
-                privacy: user.privacy,
-                myFollowStatus: sql<SocialState | null>`
-                    CASE 
-                        WHEN ${currentUserFollows.followerId} IS NOT NULL THEN ${currentUserFollows.status}
-                        ELSE NULL 
-                    END
-                `,
-            })
-            .from(followers)
-            .innerJoin(user, eq(followers.followedId, user.id))
-            .leftJoin(currentUserFollows, and(
-                eq(currentUserFollows.followedId, user.id),
-                eq(currentUserFollows.followerId, currentUserId ?? -1),
-            ))
-            .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED),
-            ))
-            .orderBy(asc(user.name))
-            .limit(limit);
-
-        return { follows: followedUsers };
-    }
-
-    static async getFollowCount(userId: number) {
-        const followsCount = getDbClient()
-            .select({ value: sql<number>`count()` })
-            .from(followers)
-            .where(and(eq(followers.followerId, userId), eq(followers.status, SocialState.ACCEPTED)))
-            .get()?.value ?? 0;
-
-        const followersCount = getDbClient()
-            .select({ value: sql<number>`count()` })
-            .from(followers)
-            .where(and(eq(followers.followedId, userId), eq(followers.status, SocialState.ACCEPTED)))
-            .get()?.value ?? 0;
-
-        return { followersCount, followsCount };
-    }
-
-    static async getFollowingStatus(userId: number, followedId: number) {
-        const result = getDbClient()
-            .select()
-            .from(followers)
-            .where(and(eq(followers.followerId, userId), eq(followers.followedId, followedId)))
-            .get();
-
-        return result;
-    }
-
-    // ------------------------------------------------------------------------
-
     static async updateUserLastSeen(userId: number) {
         await getDbClient()
             .update(user)
@@ -268,24 +143,6 @@ export class UserRepository {
             .from(user)
             .where(eq(user.name, name))
             .get();
-    }
-
-    static async getRandomPublicProfile() {
-        const randomPublicProfile = getDbClient()
-            .select({ name: user.name })
-            .from(user)
-            .innerJoin(userMediaSettings, eq(userMediaSettings.userId, user.id))
-            .where(and(
-                eq(user.emailVerified, true),
-                eq(user.privacy, PrivacyType.PUBLIC),
-                eq(userMediaSettings.active, true),
-            ))
-            .groupBy(user.id, user.name)
-            .having(gte(sum(userMediaSettings.timeSpent), 5000))
-            .orderBy(sql`random()`)
-            .get();
-        
-        return randomPublicProfile ?? null;
     }
 
     static async getMinimalUserSettings(userId: number) {
@@ -401,71 +258,5 @@ export class UserRepository {
             where: eq(user.id, userId),
             with: { userMediaSettings: true },
         });
-    }
-
-    static async hasActiveMediaType(userId: number, mediaType: MediaType) {
-        const setting = await getDbClient().query.userMediaSettings.findFirst({
-            where: and(
-                eq(userMediaSettings.userId, userId),
-                eq(userMediaSettings.mediaType, mediaType),
-                eq(userMediaSettings.active, true),
-            ),
-        });
-
-        return !!setting;
-    }
-
-    static async incrementMediaTypeView(userId: number, mediaType: MediaType) {
-        await getDbClient()
-            .update(userMediaSettings)
-            .set({ views: sql`${userMediaSettings.views} + 1` })
-            .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.mediaType, mediaType)));
-    }
-
-    static async incrementProfileView(userId: number) {
-        return getDbClient()
-            .update(user)
-            .set({ profileViews: sql`${user.profileViews} + 1` })
-            .where(eq(user.id, userId));
-    }
-
-    static async searchUsers(query: string, page: number = 1): Promise<ProviderSearchResults> {
-        const usersCount = getDbClient()
-            .select({ count: count() })
-            .from(user)
-            .where(like(user.name, `%${query}%`))
-            .get()?.count ?? 0;
-
-        const dbUsers = await getDbClient()
-            .select({
-                id: user.id,
-                name: user.name,
-                image: user.image,
-                date: user.createdAt,
-                privacy: user.privacy,
-            })
-            .from(user)
-            .where(like(user.name, `%${query}%`))
-            .orderBy(asc(user.name))
-            .limit(20)
-            .offset((page - 1) * 20);
-
-        const users = dbUsers.map((user) => ({ ...user, itemType: ApiProviderType.USERS }) as ProviderSearchResult);
-
-        return { data: users, hasNextPage: usersCount > page * 20 };
-    }
-
-    static async getProfileImageFilenames() {
-        return getDbClient()
-            .select({ image: user.image })
-            .from(user)
-            .where(isNotNull(user.image));
-    }
-
-    static async getBackgroundImageFilenames() {
-        return getDbClient()
-            .select({ backgroundImage: user.backgroundImage })
-            .from(user)
-            .where(isNotNull(user.backgroundImage));
     }
 }

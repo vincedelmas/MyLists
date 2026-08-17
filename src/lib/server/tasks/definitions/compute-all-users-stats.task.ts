@@ -13,7 +13,7 @@ export const computeAllUsersStatsTask = defineTask({
     handler: async (ctx) => {
         const container = await getContainer();
         const mediaTypes = Object.values(MediaType);
-        const userStatsService = container.services.userStats;
+        const statsService = container.services.stats;
         const mediaStatsRegistry = container.registries.mediaStatistics;
 
         for (const mediaType of mediaTypes) {
@@ -27,7 +27,7 @@ export const computeAllUsersStatsTask = defineTask({
                         ctx.warn(`No users found with ${mediaType} data to compute.`);
                     }
 
-                    await userStatsService.updateAllUsersPreComputedStats(mediaType, userMediaStats);
+                    await statsService.updateAllUsersPreComputedStats(mediaType, userMediaStats);
                 });
             });
         }

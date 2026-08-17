@@ -1,17 +1,17 @@
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
-import {UserService} from "@/lib/server/domain/user/user.service";
 import {AccessDecision, Actor} from "@/lib/server/authorization/utils";
+import {SocialService} from "@/lib/server/domain/social/social.service";
 import {profilePolicy, ProfileSubject} from "@/lib/server/authorization/policies/profile.policy";
 import {CollectionAction, collectionPolicy, CollectionSubject} from "@/lib/server/authorization/policies/collection.policy";
 
 
 export class AuthorizationService {
-    constructor(private userService: UserService) {
+    constructor(private socialService: SocialService) {
     }
 
     async decideProfile(actor: Actor, profile: ProfileSubject): Promise<AccessDecision> {
         if (actor.kind === "user" && actor.id !== profile.id && profile.privacy === PrivacyType.PRIVATE) {
-            const followStatus = await this.userService.getFollowingStatus(actor.id, profile.id);
+            const followStatus = await this.socialService.getFollowingStatus(actor.id, profile.id);
             return profilePolicy.decide(actor, profile, { acceptedFollower: followStatus?.status === SocialState.ACCEPTED });
         }
 
@@ -28,7 +28,7 @@ export class AuthorizationService {
         );
 
         if (needsFollowerRelationship) {
-            const followStatus = await this.userService.getFollowingStatus(actor.id, collection.ownerId);
+            const followStatus = await this.socialService.getFollowingStatus(actor.id, collection.ownerId);
             return collectionPolicy.decide(actor, action, collection, { acceptedFollower: followStatus?.status === SocialState.ACCEPTED });
         }
 
@@ -47,7 +47,7 @@ export class AuthorizationService {
             return collectionPolicy.capabilities(actor, collection);
         }
 
-        const followStatus = await this.userService.getFollowingStatus(actor.id, collection.ownerId);
+        const followStatus = await this.socialService.getFollowingStatus(actor.id, collection.ownerId);
 
         return collectionPolicy.capabilities(actor, collection, { acceptedFollower: followStatus?.status === SocialState.ACCEPTED });
     }

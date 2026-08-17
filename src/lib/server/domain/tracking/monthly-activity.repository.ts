@@ -33,7 +33,7 @@ const getYearActivityConditions = (userId: number, year: number): SQL[] => [
 ];
 
 
-export class UserMonthlyActivityRepository {
+export class MonthlyActivityRepository {
     static async addContribution(activity: LogMonthlyActivity) {
         const date = activity.activityDate ? dateFromUTCInput(activity.activityDate) : new Date();
 

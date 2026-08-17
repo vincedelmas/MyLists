@@ -5,8 +5,11 @@ import type {GamesStatistics} from "@/lib/server/domain/media/games";
 import type {BooksStatistics} from "@/lib/server/domain/media/books";
 import type {MoviesStatistics} from "@/lib/server/domain/media/movies";
 import type {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
+import type {StatsService} from "@/lib/server/domain/stats/stats.service";
 import type {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
-import type {UserMonthlyActivityService, UserStatsRepository, UserStatsService, UserUpdatesRepository} from "@/lib/server/domain/user";
+import type {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
+import type {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
+import type {UpdateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
 
 
 export type HistogramTailDir = "lower" | "upper";
@@ -68,7 +71,7 @@ export type CompactedHistogramBin = {
 };
 
 
-type OverviewStats = Awaited<ReturnType<UserStatsService["userAdvancedSummaryStats"]>> & DashboardContext & {
+type OverviewStats = Awaited<ReturnType<StatsService["userAdvancedSummaryStats"]>> & DashboardContext & {
     mediaType: null;
     kind: "overview";
 };
@@ -91,11 +94,9 @@ export type AdvancedMediaStats =
 
 
 type StatsScope = "user" | "platform";
-type BaseMediaStats = Awaited<ReturnType<typeof UserStatsRepository.getAggregatedMediaStats>>;
-type UpdatesStats = {
-    updateFingerprint: Awaited<ReturnType<typeof UserUpdatesRepository.mediaUpdateFingerprint>>;
-};
-type ActivityStats = { activityByMonth: Awaited<ReturnType<UserMonthlyActivityService["getActivityStatsByMonth"]>> };
+type BaseMediaStats = Awaited<ReturnType<typeof StatsRepository.getAggregatedMediaStats>>;
+type ActivityStats = { activityByMonth: Awaited<ReturnType<MonthlyActivityService["getActivityStatsByMonth"]>> };
+type UpdatesStats = { updateFingerprint: Awaited<ReturnType<typeof UpdateHistoryRepository.mediaUpdateFingerprint>>; };
 
 type TvSpecificStats = Awaited<ReturnType<TvStatistics["calculateAdvancedMediaStats"]>>;
 type MoviesSpecificStats = Awaited<ReturnType<MoviesStatistics["calculateAdvancedMediaStats"]>>;

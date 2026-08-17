@@ -1,17 +1,17 @@
 import {describe, expect, it, vi} from "vitest";
 import {toActor} from "@/lib/server/authorization/utils";
-import {UserService} from "@/lib/server/domain/user/user.service";
+import {SocialService} from "@/lib/server/domain/social/social.service";
 import {DenialReason, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
 import {AuthorizationService} from "@/lib/server/authorization/authorization.service";
 
 
 const createService = (status?: SocialState) => {
     const getFollowingStatus = vi.fn().mockResolvedValue(status ? { status } : null);
-    const userService = { getFollowingStatus } as unknown as UserService;
+    const socialService = { getFollowingStatus } as unknown as SocialService;
 
     return {
         getFollowingStatus,
-        service: new AuthorizationService(userService),
+        service: new AuthorizationService(socialService),
     };
 };
 

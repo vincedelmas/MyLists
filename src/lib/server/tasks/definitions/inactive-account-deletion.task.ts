@@ -24,7 +24,7 @@ export const inactiveAccountDeletionTask = defineTask({
         }
 
         const container = await getContainer();
-        const userService = container.services.user;
+        const accountService = container.services.account;
         const inactiveAccountService = container.services.inactiveAccount;
 
         await ctx.step("mark-resurrected-users", async () => {
@@ -88,7 +88,7 @@ export const inactiveAccountDeletionTask = defineTask({
             ctx.metric("accounts.deletion.targets", targets.length);
 
             for (const target of targets) {
-                const deleted = await userService.deleteUserAccount({
+                const deleted = await accountService.deleteUserAccount({
                     type: "inactive",
                     userId: target.userId,
                     username: target.username,

@@ -10,7 +10,7 @@ import {and, count, countDistinct, eq, gt, inArray, SQL, sql, sum} from "drizzle
 import {user, userMediaSettings, userMediaStatsHistory} from "@/lib/server/database/schema";
 
 
-export class UserStatsRepository {
+export class StatsRepository {
     static async userActiveMediaSettings(userId: number) {
         return getDbClient()
             .select()
@@ -93,7 +93,7 @@ export class UserStatsRepository {
         }
     }
 
-    static async userHalloFameData(filters: SearchType, userId?: number) {
+    static async userHallOfFameData(filters: SearchType, userId?: number) {
         const { search = "" } = filters;
         const mediaTypes = Object.values(MediaType);
         const sorting = resolveSorting(filters.sorting, ["normalized", "profile", ...mediaTypes] as const, "normalized");

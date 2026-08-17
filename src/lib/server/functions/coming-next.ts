@@ -8,7 +8,7 @@ export const getComingNextMedia = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const container = await getContainer()
-        const settings = await container.services.user.getMinimalUserSettings(currentUser.id);
+        const settings = await container.services.account.getMinimalUserSettings(currentUser.id);
         const activeMediaTypes = new Set(settings.filter(({ active }) => active).map(({ mediaType }) => mediaType));
         const mediaTypes = mediaTypeUtils.getComingNextTypes().filter((mediaType) => activeMediaTypes.has(mediaType));
 

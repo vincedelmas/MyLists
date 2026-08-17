@@ -2,7 +2,7 @@ import {TasteMatchesSearch} from "@/lib/schemas";
 import {MediaType, SocialState} from "@/lib/utils/enums";
 import {AuthenticatedActor} from "@/lib/server/authorization/utils";
 import {profilePolicy} from "@/lib/server/authorization/policies/profile.policy";
-import {UserSimilarityRepository} from "@/lib/server/domain/user/user-similarity.repository";
+import {TasteSimilarityRepository} from "@/lib/server/domain/social/taste-similarity.repository";
 import {calculateTasteSimilarity, emptyRatingAggregate, mergeRatingAggregates, RatingAggregate} from "@/lib/utils/taste-similarity";
 
 
@@ -11,8 +11,8 @@ const MINIMUM_SHARED_RATINGS = 5;
 const MINIMUM_PER_MEDIA_RATINGS = 3;
 
 
-export class UserSimilarityService {
-    constructor(private repository: typeof UserSimilarityRepository) {
+export class TasteSimilarityService {
+    constructor(private repository: typeof TasteSimilarityRepository) {
     }
 
     async getTasteMatches(actor: AuthenticatedActor, filters: TasteMatchesSearch, activeMediaTypes: MediaType[] = Object.values(MediaType)) {

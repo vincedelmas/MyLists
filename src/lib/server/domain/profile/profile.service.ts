@@ -1,6 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
-import {UserProfileRepository} from "@/lib/server/domain/user/user-profile.repository";
+import {ProfileRepository} from "@/lib/server/domain/profile/profile.repository";
 import {
     createDefaultHighlightedMediaSettings,
     HIGHLIGHTED_MEDIA_DEFAULT_TITLE,
@@ -14,11 +14,37 @@ import {
 } from "@/lib/types/profile-custom.types";
 
 
-export class UserProfileService {
+export class ProfileService {
     constructor(
-        private repository: typeof UserProfileRepository,
+        private repository: typeof ProfileRepository,
         private mediaServiceRegistry: MediaServiceRegistry,
     ) {
+    }
+
+    async getRandomPublicProfile() {
+        return this.repository.getRandomPublicProfile();
+    }
+
+    async incrementProfileView(userId: number) {
+        return this.repository.incrementProfileView(userId);
+    }
+
+    async incrementMediaTypeView(userId: number, mediaType: MediaType) {
+        return this.repository.incrementMediaTypeView(userId, mediaType);
+    }
+
+    async searchUsers(query: string, page = 1) {
+        return this.repository.searchUsers(query, page);
+    }
+
+    async getProfileImageFilenames() {
+        const results = await this.repository.getProfileImageFilenames();
+        return results.map(({ image }) => image?.split("/").pop() as string);
+    }
+
+    async getBackgroundImageFilenames() {
+        const results = await this.repository.getBackgroundImageFilenames();
+        return results.map(({ backgroundImage }) => backgroundImage.split("/").pop() as string);
     }
 
     async getHighlightedMediaSettings(userId: number) {

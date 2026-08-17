@@ -28,9 +28,9 @@ export const publicPreviewMiddleware = createMiddleware({ type: "function" })
     })
     .server(async ({ next, data: { username }, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const accountService = container.services.account;
 
-        const targetUser = await userService.getUserByUsername(username);
+        const targetUser = await accountService.getUserByUsername(username);
         if (!targetUser) throw notFound();
 
         return next({

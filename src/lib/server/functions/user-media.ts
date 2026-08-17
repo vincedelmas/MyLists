@@ -17,8 +17,8 @@ export const getUserMediaHistory = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
-        const userUpdatesService = await getContainer().then(c => c.services.userUpdates);
-        return userUpdatesService.getUserMediaHistory(currentUser.id, mediaType, mediaId);
+        const updateHistoryService = await getContainer().then(c => c.services.updateHistory);
+        return updateHistoryService.getUserMediaHistory(currentUser.id, mediaType, mediaId);
     });
 
 
@@ -26,8 +26,8 @@ export const postAddMediaToList = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(addMediaToListSchema)
     .handler(async ({ data: { mediaType, mediaId, status }, context: { currentUser } }) => {
-        const userMediaService = await getContainer().then(c => c.services.userMedia);
-        return userMediaService.addMediaToList({ mediaType, mediaId, status, userId: currentUser.id });
+        const mediaTrackingService = await getContainer().then(c => c.services.mediaTracking);
+        return mediaTrackingService.addMediaToList({ mediaType, mediaId, status, userId: currentUser.id });
     });
 
 
@@ -35,8 +35,8 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(updateUserMediaSchema)
     .handler(async ({ data: { mediaType, mediaId, payload }, context: { currentUser } }) => {
-        const userMediaService = await getContainer().then(c => c.services.userMedia);
-        return userMediaService.updateUserMedia({ mediaType, mediaId, payload, userId: currentUser.id });
+        const mediaTrackingService = await getContainer().then(c => c.services.mediaTracking);
+        return mediaTrackingService.updateUserMedia({ mediaType, mediaId, payload, userId: currentUser.id });
     });
 
 
@@ -59,8 +59,8 @@ export const postRemoveMediaFromList = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
-        const userMediaService = await getContainer().then(c => c.services.userMedia);
-        await userMediaService.removeMediaFromList({ mediaType, mediaId, userId: currentUser.id });
+        const mediaTrackingService = await getContainer().then(c => c.services.mediaTracking);
+        await mediaTrackingService.removeMediaFromList({ mediaType, mediaId, userId: currentUser.id });
     });
 
 
@@ -68,8 +68,8 @@ export const postDeleteUserUpdates = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(deleteUserUpdatesSchema)
     .handler(async ({ data: { updateIds, returnData }, context: { currentUser } }) => {
-        const userUpdatesService = await getContainer().then(c => c.services.userUpdates);
-        return userUpdatesService.deleteUserUpdates(currentUser.id, updateIds, returnData);
+        const updateHistoryService = await getContainer().then(c => c.services.updateHistory);
+        return updateHistoryService.deleteUserUpdates(currentUser.id, updateIds, returnData);
     });
 
 

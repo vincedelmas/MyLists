@@ -12,18 +12,19 @@ export const postFollow = createServerFn({ method: "POST" })
     .validator(followUserSchema)
     .handler(async ({ data: { targetUserId }, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const accountService = container.services.account;
+        const socialService = container.services.social;
         const notificationService = container.services.notifications;
 
         if (currentUser.id === targetUserId) {
             throw new FormattedError("You cannot follow yourself ;)");
         }
 
-        const targetUser = await userService.getUserById(targetUserId);
+        const targetUser = await accountService.getUserById(targetUserId);
         if (!targetUser) throw notFound();
 
         const isPrivate = targetUser.privacy === PrivacyType.PRIVATE;
-        await userService.follow(currentUser.id, targetUserId, isPrivate);
+        await socialService.follow(currentUser.id, targetUserId, isPrivate);
 
         await notificationService.deleteSocialNotifsBetweenUsers(currentUser.id, targetUserId, [SocialNotifType.FOLLOW_DECLINED]);
         await notificationService.deleteSocialNotifsBetweenUsers(targetUserId, currentUser.id, [
@@ -44,7 +45,7 @@ export const postUnfollow = createServerFn({ method: "POST" })
     .validator(followUserSchema)
     .handler(async ({ data: { targetUserId }, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const socialService = container.services.social;
         const notificationService = container.services.notifications;
 
         if (currentUser.id === targetUserId) {
@@ -52,7 +53,7 @@ export const postUnfollow = createServerFn({ method: "POST" })
         }
 
         // Cancel or Unfollowing
-        await userService.unfollow(currentUser.id, targetUserId);
+        await socialService.unfollow(currentUser.id, targetUserId);
 
         await notificationService.deleteSocialNotifsBetweenUsers(targetUserId, currentUser.id, [
             SocialNotifType.NEW_FOLLOWER,
@@ -71,7 +72,7 @@ export const postRespondToFollowRequest = createServerFn({ method: "POST" })
     .validator(respondToFollowRequestSchema)
     .handler(async ({ data: { followerId, action }, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const socialService = container.services.social;
         const notificationService = container.services.notifications;
 
         if (currentUser.id === followerId) {
@@ -79,10 +80,10 @@ export const postRespondToFollowRequest = createServerFn({ method: "POST" })
         }
 
         if (action === "accept") {
-            await userService.acceptFollowRequest(followerId, currentUser.id);
+            await socialService.acceptFollowRequest(followerId, currentUser.id);
         }
         else {
-            await userService.declineFollowRequest(followerId, currentUser.id);
+            await socialService.declineFollowRequest(followerId, currentUser.id);
         }
 
         await notificationService.deleteSocialNotifsBetweenUsers(currentUser.id, followerId, [SocialNotifType.FOLLOW_REQUESTED]);
@@ -99,14 +100,14 @@ export const postRemoveFollower = createServerFn({ method: "POST" })
     .validator(removeFollowerSchema)
     .handler(async ({ data: { followerId }, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const socialService = container.services.social;
         const notificationService = container.services.notifications;
 
         if (currentUser.id === followerId) {
             throw new FormattedError("You cannot do that ;)");
         }
 
-        await userService.removeFollower(followerId, currentUser.id);
+        await socialService.removeFollower(followerId, currentUser.id);
         await notificationService.deleteSocialNotifsBetweenUsers(followerId, currentUser.id, [SocialNotifType.FOLLOW_ACCEPTED]);
         await notificationService.deleteSocialNotifsBetweenUsers(currentUser.id, followerId, [
             SocialNotifType.NEW_FOLLOWER,

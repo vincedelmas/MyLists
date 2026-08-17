@@ -8,3 +8,9 @@ export const yearRecapInputSchema = z.object({
     year: z.coerce.number().int().min(YEAR_RECAP_FIRST_YEAR).max(2100),
     mediaType: mediaTypeFieldSchema.optional().catch(undefined),
 });
+
+
+export const yearRecapImageInputSchema = z.object({
+    year: z.number().int().min(YEAR_RECAP_FIRST_YEAR).max(2100),
+    mediaType: mediaTypeFieldSchema.optional(),
+});

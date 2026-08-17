@@ -1,5 +1,6 @@
 import {CircleHelp} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
 import {createFileRoute, redirect} from "@tanstack/react-router";
@@ -105,6 +106,7 @@ function AllTimeStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) 
 
 
 function RecapStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) {
+    const { currentUser } = useAuth();
     const { username } = Route.useParams();
     const { activeTab, recap: year } = Route.useSearch();
     const recap = useSuspenseQuery(yearRecapOptions(username, year!, activeTab === "overview" ? undefined : activeTab)).data;
@@ -117,7 +119,10 @@ function RecapStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) {
                 mediaTabs={mediaTabs}
             />
             <div className="mt-6">
-                <YearRecapDashboard recap={recap}/>
+                <YearRecapDashboard
+                    recap={recap}
+                    canGenerateImage={currentUser?.name.toLocaleLowerCase() === username.toLocaleLowerCase()}
+                />
             </div>
         </>
     );

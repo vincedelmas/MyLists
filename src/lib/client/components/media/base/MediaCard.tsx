@@ -20,6 +20,13 @@ interface MediaCardBaseProps {
 }
 
 
+interface MediaCardStaticProps extends React.ComponentProps<"article"> {
+    item: MediaCardItem;
+    children: React.ReactNode;
+    fallback?: React.ReactNode;
+}
+
+
 interface MediaCardTitleProps extends React.ComponentProps<"h3"> {
     lines?: 1 | 2;
 }
@@ -43,20 +50,30 @@ const useRequiredMediaCardContext = (context: React.Context<boolean>, component:
 };
 
 
+const MediaCardFrame = ({ children, className, ...props }: React.ComponentProps<"article">) => {
+    return (
+        <article
+            data-slot="media-card"
+            className={cn(
+                "@container/media-card group relative aspect-2/3 h-full overflow-hidden rounded-lg border bg-muted text-white " +
+                "transition-all duration-300 hover:border-brand/50 focus-within:border-brand/50 focus-within:ring-2 " +
+                "focus-within:ring-brand/30",
+                className,
+            )}
+            {...props}
+        >
+            {children}
+        </article>
+    );
+};
+
+
 export const MediaCard = (props: MediaCardProps) => {
     const { children, mediaType, className } = props;
 
     return (
         <MediaCardContext.Provider value={true}>
-            <article
-                data-slot="media-card"
-                className={cn(
-                    "@container/media-card group relative aspect-2/3 h-full overflow-hidden rounded-lg border bg-muted text-white " +
-                    "transition-all duration-300 hover:border-brand/50 focus-within:border-brand/50 focus-within:ring-2 " +
-                    "focus-within:ring-brand/30",
-                    className,
-                )}
-            >
+            <MediaCardFrame className={className}>
                 {props.external ?
                     <Link
                         to="/details/$mediaType/external/$apiId"
@@ -79,7 +96,22 @@ export const MediaCard = (props: MediaCardProps) => {
                     </Link>
                 }
                 {children}
-            </article>
+            </MediaCardFrame>
+        </MediaCardContext.Provider>
+    );
+};
+
+
+export const MediaCardStatic = ({ children, fallback, item, ...props }: MediaCardStaticProps) => {
+    return (
+        <MediaCardContext.Provider value={true}>
+            <MediaCardFrame {...props}>
+                {item.imageCover || item.mediaCover
+                    ? <MediaCardImage item={item}/>
+                    : fallback
+                }
+                {children}
+            </MediaCardFrame>
         </MediaCardContext.Provider>
     );
 };

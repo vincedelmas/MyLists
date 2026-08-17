@@ -8,6 +8,12 @@ import {reactClickToComponent} from "vite-plugin-react-click-to-component";
 
 
 export default defineConfig({
+    ssr: {
+        external: ["takumi-js", "@takumi-rs/core"],
+    },
+    optimizeDeps: {
+        exclude: ["takumi-js", "@takumi-rs/core"],
+    },
     resolve: {
         tsconfigPaths: true,
         alias: {

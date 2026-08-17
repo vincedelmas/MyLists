@@ -8,6 +8,7 @@ import {
     MediaCardFooter,
     MediaCardMeta,
     MediaCardSignals,
+    MediaCardStatic,
     MediaCardTitle,
 } from "@/lib/client/components/media/base/MediaCard";
 
@@ -60,5 +61,21 @@ describe("MediaCard composition", () => {
 
         expect(output).toContain("data-slot=\"media-card-details\"");
         expect(output).toContain("data-slot=\"media-card-signals\"");
+    });
+
+    it("renders the same composition without an interactive link", () => {
+        const output = renderToStaticMarkup(
+            <MediaCardStatic item={{ mediaId: 1, mediaName: "Example", imageCover: "/cover.jpg" }}>
+                <MediaCardFooter>
+                    <MediaCardTitle>Example</MediaCardTitle>
+                    <MediaCardMeta>
+                        <MediaCardDetails>2026</MediaCardDetails>
+                    </MediaCardMeta>
+                </MediaCardFooter>
+            </MediaCardStatic>
+        );
+
+        expect(output).toContain("data-slot=\"media-card\"");
+        expect(output).not.toContain("href=\"#media-card\"");
     });
 });

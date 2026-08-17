@@ -105,6 +105,10 @@ export abstract class BaseService<TDef extends AnyServerMediaDefinition, R exten
         return this.repository.findByApiIds(apiIds);
     }
 
+    async findUserMediaIds(userId: number, mediaIds: number[]) {
+        return this.repository.findUserMediaIds(userId, mediaIds);
+    }
+
     async findByNames(names: string[]) {
         return this.repository.findByNames(names);
     }

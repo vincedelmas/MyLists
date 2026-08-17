@@ -1,4 +1,6 @@
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {ApiProviderType, SocialState} from "@/lib/utils/enums";
+import {ProviderSearchResults} from "@/lib/types/provider.types";
 import {postUpdateShowOnboarding} from "@/lib/server/functions/user-profile";
 import {MutationMeta, QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
 import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/notifications";
@@ -33,12 +35,31 @@ const invalidateSocialQueries = async (queryClient: QueryClient, username: strin
 };
 
 
+const updateNavbarFollowStatus = (queryClient: QueryClient, targetUserId: number, followStatus: SocialState | null) => {
+    queryClient.setQueriesData<ProviderSearchResults>({ queryKey: ["navSearch"] }, (oldData) => {
+        if (!oldData) return oldData;
+
+        return {
+            ...oldData,
+            data: oldData.data.map((item) =>
+                item.itemType === ApiProviderType.USERS && Number(item.id) === targetUserId
+                    ? { ...item, followStatus }
+                    : item
+            ),
+        };
+    });
+};
+
+
 export const useFollowMutation = (profileUsername: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postFollow,
-        onSuccess: () => invalidateSocialQueries(queryClient, profileUsername),
+        onSuccess: ({ status }, variables) => {
+            updateNavbarFollowStatus(queryClient, Number(variables.data.targetUserId), status);
+            return invalidateSocialQueries(queryClient, profileUsername);
+        },
     });
 };
 
@@ -48,7 +69,10 @@ export const useUnfollowMutation = (profileUsername: string) => {
 
     return useMutation({
         mutationFn: postUnfollow,
-        onSuccess: () => invalidateSocialQueries(queryClient, profileUsername),
+        onSuccess: (_data, variables) => {
+            updateNavbarFollowStatus(queryClient, Number(variables.data.targetUserId), null);
+            return invalidateSocialQueries(queryClient, profileUsername);
+        },
     });
 };
 

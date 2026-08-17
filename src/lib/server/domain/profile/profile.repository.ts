@@ -1,9 +1,10 @@
+import {alias} from "drizzle-orm/sqlite-core";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ApiProviderType, MediaType, PrivacyType} from "@/lib/utils/enums";
 import {HighlightedMediaSettings} from "@/lib/types/profile-custom.types";
 import {and, asc, count, eq, gte, isNotNull, like, sql, sum} from "drizzle-orm";
-import {profileCustom, user, userMediaSettings} from "@/lib/server/database/schema";
 import {ProviderSearchResult, ProviderSearchResults} from "@/lib/types/provider.types";
+import {followers, profileCustom, user, userMediaSettings} from "@/lib/server/database/schema";
 
 
 export class ProfileRepository {
@@ -39,12 +40,15 @@ export class ProfileRepository {
             .where(eq(user.id, userId));
     }
 
-    static async searchUsers(query: string, page = 1): Promise<ProviderSearchResults> {
+    static async searchUsers(query: string, page = 1, currentUserId?: number): Promise<ProviderSearchResults> {
+        const currentUserFollows = alias(followers, "search_current_user_follows");
+
         const usersCount = getDbClient()
             .select({ count: count() })
             .from(user)
             .where(like(user.name, `%${query}%`))
             .get()?.count ?? 0;
+
         const dbUsers = await getDbClient()
             .select({
                 id: user.id,
@@ -52,12 +56,18 @@ export class ProfileRepository {
                 image: user.image,
                 date: user.createdAt,
                 privacy: user.privacy,
+                followStatus: currentUserFollows.status,
             })
             .from(user)
+            .leftJoin(currentUserFollows, and(
+                eq(currentUserFollows.followedId, user.id),
+                eq(currentUserFollows.followerId, currentUserId ?? -1),
+            ))
             .where(like(user.name, `%${query}%`))
             .orderBy(asc(user.name))
             .limit(20)
             .offset((page - 1) * 20);
+
         const users = dbUsers.map((profile) => ({
             ...profile,
             itemType: ApiProviderType.USERS,

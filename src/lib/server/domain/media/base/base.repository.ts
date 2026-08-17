@@ -479,6 +479,18 @@ export abstract class BaseRepository<
         return matches;
     }
 
+    async findUserMediaIds(userId: number, mediaIds: number[]) {
+        const { listTable } = this.repoDefinition.tables;
+
+        if (mediaIds.length === 0) return [];
+
+        return getDbClient()
+            .select({ mediaId: listTable.mediaId })
+            .from(listTable)
+            .where(and(eq(listTable.userId, userId), inArray(listTable.mediaId, mediaIds)))
+            .then((rows) => rows.map(({ mediaId }) => mediaId));
+    }
+
     async findByNames(names: string[]) {
         const { mediaTable } = this.repoDefinition.tables;
 

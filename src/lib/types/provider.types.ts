@@ -1,4 +1,4 @@
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, MediaType, PrivacyType, SocialState} from "@/lib/utils/enums";
 
 
 export interface ProviderSearchResults {
@@ -10,7 +10,11 @@ export interface ProviderSearchResults {
 export interface ProviderSearchResult {
     name: string;
     image: string;
+    mediaId?: number;
     id: number | string;
+    privacy?: PrivacyType;
+    inCurrentUserList?: boolean;
+    followStatus?: SocialState | null;
     date: string | number | undefined | null;
     itemType: MediaType | typeof ApiProviderType.USERS;
 }

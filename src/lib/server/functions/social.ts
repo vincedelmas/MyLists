@@ -24,7 +24,7 @@ export const postFollow = createServerFn({ method: "POST" })
         if (!targetUser) throw notFound();
 
         const isPrivate = targetUser.privacy === PrivacyType.PRIVATE;
-        await socialService.follow(currentUser.id, targetUserId, isPrivate);
+        const status = await socialService.follow(currentUser.id, targetUserId, isPrivate);
 
         await notificationService.deleteSocialNotifsBetweenUsers(currentUser.id, targetUserId, [SocialNotifType.FOLLOW_DECLINED]);
         await notificationService.deleteSocialNotifsBetweenUsers(targetUserId, currentUser.id, [
@@ -37,6 +37,8 @@ export const postFollow = createServerFn({ method: "POST" })
             actorId: currentUser.id,
             type: isPrivate ? SocialNotifType.FOLLOW_REQUESTED : SocialNotifType.NEW_FOLLOWER,
         });
+
+        return { status };
     });
 
 

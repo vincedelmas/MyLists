@@ -12,17 +12,18 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
-import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {AdvancedSearchFilters, globalSearchSchema} from "@/lib/schemas";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
-import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
-import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal} from "lucide-react";
+import {navSearchOptions} from "@/lib/client/react-query/query-options";
+import {SearchMediaListIndicator} from "@/lib/client/components/media/base/SearchMediaListIndicator";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/advanced-search.utils";
+import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal} from "lucide-react";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 export const Route = createFileRoute("/_main/_private/search")({
@@ -30,7 +31,9 @@ export const Route = createFileRoute("/_main/_private/search")({
     loaderDeps: ({ search }) => ({ search }),
     loader: ({ context: { queryClient }, deps: { search } }) => {
         const { query = "", page = 1, apiProvider = ApiProviderType.TMDB, advancedFilters } = search;
+
         if (!hasSearchCriteria(query, advancedFilters)) return;
+
         return queryClient.ensureQueryData(navSearchOptions(query, page, apiProvider, advancedFilters));
     },
     component: SearchPage,
@@ -400,12 +403,19 @@ const SearchResults = ({ data, page, hasNextPage, onPageChange }: SearchResultsP
 
 const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
     if (item.itemType !== ApiProviderType.USERS) {
+        const mediaType = item.itemType as MediaType;
+
         return (
             <MediaCard
-                external
-                mediaType={item.itemType as MediaType}
+                external={true}
+                mediaType={mediaType}
                 item={{ mediaId: item.id, mediaName: item.name, imageCover: item.image }}
             >
+                {item.inCurrentUserList &&
+                    <MediaCardRightCorner>
+                        <SearchMediaListIndicator mediaName={item.name} presentation="corner"/>
+                    </MediaCardRightCorner>
+                }
                 <MediaCardFooter>
                     <MediaCardTitle title={item.name}>
                         {item.name}
@@ -413,7 +423,9 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
                     {item.date &&
                         <MediaCardMeta>
                             <MediaCardDetails>
-                                <MediaTypeIcon mediaType={item.itemType}/>
+                                <MediaTypeIcon mediaType={mediaType}/>
+                                <MediaTypeText mediaType={mediaType}/>
+                                <span aria-hidden="true">•</span>
                                 {formatDate(item.date)}
                             </MediaCardDetails>
                         </MediaCardMeta>

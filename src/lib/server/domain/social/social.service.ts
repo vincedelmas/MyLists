@@ -10,6 +10,7 @@ export class SocialService {
     async follow(followerId: number, followedId: number, isPrivate: boolean) {
         const status = isPrivate ? SocialState.REQUESTED : SocialState.ACCEPTED;
         await this.repository.follow(followerId, followedId, status);
+        return status;
     }
 
     async unfollow(followerId: number, followedId: number) {

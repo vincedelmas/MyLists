@@ -33,8 +33,8 @@ export class ProfileService {
         return this.repository.incrementMediaTypeView(userId, mediaType);
     }
 
-    async searchUsers(query: string, page = 1) {
-        return this.repository.searchUsers(query, page);
+    async searchUsers(query: string, page = 1, currentUserId?: number) {
+        return this.repository.searchUsers(query, page, currentUserId);
     }
 
     async getProfileImageFilenames() {

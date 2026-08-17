@@ -13,6 +13,26 @@ const BULK_IMPORT_GRACE_MONTHS = 2;
 const BULK_IMPORT_ACTIVITY_THRESHOLD = 200;
 
 
+const activeMediaSettingsJoin = and(
+    eq(userMediaSettings.userId, userMediaMonthlyActivity.userId),
+    eq(userMediaSettings.mediaType, userMediaMonthlyActivity.mediaType),
+    eq(userMediaSettings.active, true),
+);
+
+
+const getCanonicalYearActivityConditions = (userId: number, year: number): SQL[] => [
+    eq(userMediaMonthlyActivity.userId, userId),
+    eq(userMediaMonthlyActivity.hidden, false),
+    gte(userMediaMonthlyActivity.monthBucket, `${year}-01`),
+    lte(userMediaMonthlyActivity.monthBucket, `${year}-12`),
+    or(
+        gt(userMediaMonthlyActivity.redoGained, 0),
+        gt(userMediaMonthlyActivity.progressGained, 0),
+        eq(userMediaMonthlyActivity.hadCompletion, true),
+    )!,
+];
+
+
 export class UserMonthlyActivityRepository {
     static async addContribution(activity: LogMonthlyActivity) {
         const date = activity.activityDate ? dateFromUTCInput(activity.activityDate) : new Date();
@@ -47,27 +67,25 @@ export class UserMonthlyActivityRepository {
             });
     }
 
-    static async getMonthlyStatsContributions(userId: number, mediaTypes: MediaType[], timeBucket: string) {
+    static async getMonthlyStatsContributions(userId: number, mediaTypes: MediaType[], startMonth: string, endMonth: string) {
         return getDbClient()
             .select({
                 mediaId: userMediaMonthlyActivity.mediaId,
                 mediaType: userMediaMonthlyActivity.mediaType,
-                progressGained: userMediaMonthlyActivity.progressGained,
+                progressGained: sum(userMediaMonthlyActivity.progressGained).mapWith(Number),
             })
             .from(userMediaMonthlyActivity)
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userMediaMonthlyActivity.userId),
-                eq(userMediaSettings.mediaType, userMediaMonthlyActivity.mediaType),
-                eq(userMediaSettings.active, true),
-            ))
+            .innerJoin(userMediaSettings, activeMediaSettingsJoin)
             .where(and(
                 eq(userMediaMonthlyActivity.userId, userId),
                 gt(userMediaMonthlyActivity.progressGained, 0),
-                eq(userMediaMonthlyActivity.monthBucket, timeBucket),
+                gte(userMediaMonthlyActivity.monthBucket, startMonth),
+                lte(userMediaMonthlyActivity.monthBucket, endMonth),
                 inArray(userMediaMonthlyActivity.mediaType, mediaTypes),
                 eq(userMediaMonthlyActivity.hidden, false),
             ))
-            .orderBy(asc(userMediaMonthlyActivity.lastActivityAt));
+            .groupBy(userMediaMonthlyActivity.mediaType, userMediaMonthlyActivity.mediaId)
+            .orderBy(asc(userMediaMonthlyActivity.mediaType), asc(userMediaMonthlyActivity.mediaId));
     }
 
     static async getProgressStatsByMonth(filters: { userId?: number; mediaType?: MediaType; startMonth: string; endMonth: string; excludeBulkImports?: boolean }) {
@@ -90,11 +108,7 @@ export class UserMonthlyActivityRepository {
                 progressGained: sum(userMediaMonthlyActivity.progressGained).mapWith(Number),
             })
             .from(userMediaMonthlyActivity)
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userMediaMonthlyActivity.userId),
-                eq(userMediaSettings.mediaType, userMediaMonthlyActivity.mediaType),
-                eq(userMediaSettings.active, true),
-            ))
+            .innerJoin(userMediaSettings, activeMediaSettingsJoin)
             .$dynamic();
 
         if (filters.excludeBulkImports) {
@@ -112,18 +126,46 @@ export class UserMonthlyActivityRepository {
             .orderBy(asc(userMediaMonthlyActivity.monthBucket), asc(userMediaMonthlyActivity.mediaType));
     }
 
-    static async getMonthlyMediaTypes(userId: number, timeBucket: string, hiddenOnly = false) {
+    static async getYearRecapActivities(userId: number, year: number, mediaType?: MediaType) {
+        const conditions = getCanonicalYearActivityConditions(userId, year);
+
+        if (mediaType) conditions.push(eq(userMediaMonthlyActivity.mediaType, mediaType));
+
+        return getDbClient()
+            .select({
+                mediaId: userMediaMonthlyActivity.mediaId,
+                mediaType: userMediaMonthlyActivity.mediaType,
+                redoGained: userMediaMonthlyActivity.redoGained,
+                monthBucket: userMediaMonthlyActivity.monthBucket,
+                hadCompletion: userMediaMonthlyActivity.hadCompletion,
+                progressGained: userMediaMonthlyActivity.progressGained,
+            })
+            .from(userMediaMonthlyActivity)
+            .innerJoin(userMediaSettings, activeMediaSettingsJoin)
+            .where(and(...conditions))
+            .orderBy(asc(userMediaMonthlyActivity.monthBucket), asc(userMediaMonthlyActivity.mediaType));
+    }
+
+    static async getYearRecapMediaTypes(userId: number, year: number) {
         const rows = await getDbClient()
             .selectDistinct({ mediaType: userMediaMonthlyActivity.mediaType })
             .from(userMediaMonthlyActivity)
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userMediaMonthlyActivity.userId),
-                eq(userMediaSettings.mediaType, userMediaMonthlyActivity.mediaType),
-                eq(userMediaSettings.active, true),
-            ))
+            .innerJoin(userMediaSettings, activeMediaSettingsJoin)
+            .where(and(...getCanonicalYearActivityConditions(userId, year)))
+            .orderBy(asc(userMediaMonthlyActivity.mediaType));
+
+        return rows.map((row) => row.mediaType);
+    }
+
+    static async getMonthlyMediaTypes(userId: number, startMonth: string, endMonth: string, hiddenOnly = false) {
+        const rows = await getDbClient()
+            .selectDistinct({ mediaType: userMediaMonthlyActivity.mediaType })
+            .from(userMediaMonthlyActivity)
+            .innerJoin(userMediaSettings, activeMediaSettingsJoin)
             .where(and(
                 eq(userMediaMonthlyActivity.userId, userId),
-                eq(userMediaMonthlyActivity.monthBucket, timeBucket),
+                gte(userMediaMonthlyActivity.monthBucket, startMonth),
+                lte(userMediaMonthlyActivity.monthBucket, endMonth),
                 eq(userMediaMonthlyActivity.hidden, hiddenOnly),
             ))
             .orderBy(asc(userMediaMonthlyActivity.mediaType));
@@ -136,7 +178,8 @@ export class UserMonthlyActivityRepository {
 
         const conditions: SQL[] = [
             eq(userMediaMonthlyActivity.userId, userId),
-            eq(userMediaMonthlyActivity.monthBucket, filters.timeBucket),
+            gte(userMediaMonthlyActivity.monthBucket, filters.startMonth),
+            lte(userMediaMonthlyActivity.monthBucket, filters.endMonth),
             eq(userMediaMonthlyActivity.hidden, filters.hiddenOnly === true),
         ];
 
@@ -175,22 +218,14 @@ export class UserMonthlyActivityRepository {
         const total = getDbClient()
             .select({ count: count() })
             .from(userMediaMonthlyActivity)
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userMediaMonthlyActivity.userId),
-                eq(userMediaSettings.mediaType, userMediaMonthlyActivity.mediaType),
-                eq(userMediaSettings.active, true),
-            ))
+            .innerJoin(userMediaSettings, activeMediaSettingsJoin)
             .where(and(...conditions))
             .get()?.count ?? 0;
 
         const items = await getDbClient()
             .select({ ...getTableColumns(userMediaMonthlyActivity) })
             .from(userMediaMonthlyActivity)
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userMediaMonthlyActivity.userId),
-                eq(userMediaSettings.mediaType, userMediaMonthlyActivity.mediaType),
-                eq(userMediaSettings.active, true),
-            ))
+            .innerJoin(userMediaSettings, activeMediaSettingsJoin)
             .where(and(...conditions))
             .orderBy(desc(userMediaMonthlyActivity.lastActivityAt))
             .limit(pagination.limit)

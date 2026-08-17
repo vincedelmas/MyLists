@@ -26,9 +26,9 @@ export const getMonthlyActivityStats = createServerFn({ method: "GET" })
 export const getMonthlyActivity = createServerFn({ method: "GET" })
     .middleware([contentAuthorizationMiddleware])
     .validator(monthlyActivitySchema)
-    .handler(async ({ data, context: { user } }) => {
+    .handler(async ({ data, context: { user, currentUser } }) => {
         const userActivityService = await getContainer().then(c => c.services.userActivity);
-        return userActivityService.getMonthlyActivity(user.id, data);
+        return userActivityService.getMonthlyActivity(user.id, data, currentUser?.id === user.id);
     });
 
 

@@ -1,12 +1,14 @@
 import React, {useState} from "react";
+import {LayoutGrid, Plus} from "lucide-react";
 import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Label} from "@/lib/client/components/ui/label";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {LayoutGrid, Plus} from "lucide-react";
+import {formatDate} from "@/lib/utils/date-formatting";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
+import {formatMinutes} from "@/lib/utils/number-formatting";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {MonthlyActivityEditor} from "@/lib/types/activity.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -16,16 +18,15 @@ import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
+import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
+import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
-import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
-import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
-import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
-import {formatMinutes} from "@/lib/utils/number-formatting";
 
 
 interface MonthlyActivityContentProps {
@@ -52,7 +53,16 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
 
     const apiData = useSuspenseQuery(monthlyActivityOptions(username, activeFilters)).data;
     const mediaTypeFilters = createMediaSelectItems(apiData.mediaTypes, { leading: "all", leadingLabel: "All Types" });
-    const { activeTab = "all", activityKind = ActivityKind.ALL, hiddenOnly = false, search = "", page = 1, ...dateFilters } = activeFilters;
+
+    const {
+        page = 1,
+        search = "",
+        view = "month",
+        activeTab = "all",
+        hiddenOnly = false,
+        activityKind = ActivityKind.ALL,
+        ...dateFilters
+    } = activeFilters;
 
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<MonthlyActivitySearch>({
         search, options: { resetScroll: false },
@@ -71,12 +81,14 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
     return (
         <div className="space-y-5">
             <CalendarNav
+                view={view}
                 activeYear={Number(dateFilters.year)}
                 activeMonth={Number(dateFilters.month)}
-                onDateChange={(year, month) => handleFilterChange({ year, month, activeTab: fixedMediaType ?? "all" })}
+                onDateChange={(year, month, nextView) => handleFilterChange({ year, month, view: nextView, activeTab: fixedMediaType ?? "all" })}
             />
 
             <MonthlyActivityStats
+                view={view}
                 username={username}
                 year={dateFilters.year}
                 month={dateFilters.month}
@@ -90,13 +102,16 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                             className="w-full"
                             value={localSearch}
                             onChange={handleInputChange}
-                            placeholder="Search monthly activity by title..."
+                            placeholder={view === "year"
+                                ? `Search ${dateFilters.year} activity by title...`
+                                : "Search monthly activity by title..."
+                            }
                         />
                     </div>
                     <div className="col-span-1 sm:order-1 sm:shrink-0">
                         <Select
-                            items={activityKindFilters}
                             value={activityKind}
+                            items={activityKindFilters}
                             onValueChange={(value) => {
                                 if (value !== null) handleFilterChange({ activityKind: value as ActivityKind });
                             }}
@@ -118,8 +133,8 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                     {!fixedMediaType &&
                         <div className="col-span-1 sm:order-3 sm:shrink-0">
                             <Select
-                                items={mediaTypeFilters}
                                 value={activeTab}
+                                items={mediaTypeFilters}
                                 onValueChange={(value) => {
                                     if (value !== null) handleFilterChange({ activeTab: value as MediaType | "all" });
                                 }}
@@ -162,7 +177,10 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                     iconSize={50}
                     className="py-20"
                     icon={LayoutGrid}
-                    message={hiddenOnly ? "No hidden monthly activity." : "No activity recorded this month."}
+                    message={hiddenOnly
+                        ? `No hidden ${view === "year" ? "yearly" : "monthly"} activity.`
+                        : `No activity recorded ${view === "year" ? "this year" : "this month"}.`
+                    }
                 />
             }
 
@@ -189,6 +207,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                             <MediaTypeIcon mediaType={row.mediaType}/>
                                         }
                                         {formatMinutes(row.timeGained)}
+                                        {view === "year" && <span>{formatDate(row.lastActivityAt)}</span>}
                                     </MediaCardDetails>
                                     <MediaCardSignals>
                                         <MonthlyActivityStatusIcons row={row}/>
@@ -209,10 +228,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
             <Pagination
                 currentPage={page}
                 totalPages={apiData.pages}
-                onChangePage={(nextPage) => updateFilters({
-                    page: nextPage,
-                    ...(fixedMediaType ? { activeTab: fixedMediaType } : {}),
-                })}
+                onChangePage={(nextPage) => updateFilters({ page: nextPage, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) })}
             />
 
             {editActivity &&
@@ -223,13 +239,15 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                 />
             }
 
-            <MonthlyActivityAddDialog
-                open={addActivity}
-                onOpenChange={setAddActivity}
-                mediaTypes={activeMediaTypes}
-                year={Number(dateFilters.year)}
-                month={Number(dateFilters.month)}
-            />
+            {addActivity &&
+                <MonthlyActivityAddDialog
+                    open
+                    onOpenChange={setAddActivity}
+                    mediaTypes={activeMediaTypes}
+                    year={Number(dateFilters.year)}
+                    month={view === "year" ? undefined : Number(dateFilters.month)}
+                />
+            }
         </div>
     );
 }

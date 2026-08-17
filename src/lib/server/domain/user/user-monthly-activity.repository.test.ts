@@ -108,7 +108,8 @@ describe("UserMonthlyActivityRepository", () => {
         const result = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(1, {
             page: 1,
             perPage: 10,
-            timeBucket: "2026-06",
+            startMonth: "2026-06",
+            endMonth: "2026-06",
             activityKind,
         });
 
@@ -137,6 +138,45 @@ describe("UserMonthlyActivityRepository", () => {
 
         const rows = await db.select().from(userMediaMonthlyActivity);
         expect(rows).toHaveLength(2);
+    });
+
+    it("returns every monthly summary inside a full-year range", async () => {
+        await db.insert(userMediaMonthlyActivity).values([
+            {
+                userId: 1,
+                mediaId: 10,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2026-01",
+                lastActivityAt: "2026-01-10T12:00:00.000Z",
+                progressGained: 40,
+            },
+            {
+                userId: 1,
+                mediaId: 10,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2026-08",
+                lastActivityAt: "2026-08-10T12:00:00.000Z",
+                progressGained: 60,
+            },
+            {
+                userId: 1,
+                mediaId: 11,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2025-12",
+                lastActivityAt: "2025-12-10T12:00:00.000Z",
+                progressGained: 20,
+            },
+        ]);
+
+        const result = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(1, {
+            page: 1,
+            perPage: 10,
+            startMonth: "2026-01",
+            endMonth: "2026-12",
+        });
+
+        expect(result.items).toHaveLength(2);
+        expect(result.items.map((row) => row.monthBucket)).toEqual(["2026-08", "2026-01"]);
     });
 
     it("merges every contribution when moving activity to another month", async () => {
@@ -171,5 +211,55 @@ describe("UserMonthlyActivityRepository", () => {
             hadCompletion: true,
             redoGained: 3,
         });
+    });
+
+    it("excludes inactive media lists from recap activity and media types", async () => {
+        await db.insert(userMediaMonthlyActivity).values([
+            {
+                userId: 1,
+                mediaId: 10,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2026-02",
+                progressGained: 120,
+            },
+            {
+                userId: 1,
+                mediaId: 11,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2026-03",
+                progressGained: 80,
+                hidden: true,
+            },
+            {
+                userId: 1,
+                mediaId: 12,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2025-12",
+                progressGained: 0,
+                hadCompletion: true,
+            },
+            {
+                userId: 1,
+                mediaId: 13,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2027-01",
+                progressGained: 50,
+            },
+        ]);
+
+        const activeActivities = await UserMonthlyActivityRepository.getYearRecapActivities(1, 2026);
+        const activeMediaTypes = await UserMonthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
+
+        expect(activeActivities).toHaveLength(1);
+        expect(activeActivities[0]).toMatchObject({ mediaId: 10, progressGained: 120 });
+        expect(activeMediaTypes).toEqual([MediaType.BOOKS]);
+
+        await db.update(userMediaSettings).set({ active: false });
+
+        const activities = await UserMonthlyActivityRepository.getYearRecapActivities(1, 2026);
+        const mediaTypes = await UserMonthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
+
+        expect(activities).toHaveLength(0);
+        expect(mediaTypes).toEqual([]);
     });
 });

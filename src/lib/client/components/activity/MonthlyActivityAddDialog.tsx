@@ -26,7 +26,7 @@ import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, Di
 interface MonthlyActivityAddDialogProps {
     year: number;
     open: boolean;
-    month: number;
+    month?: number;
     mediaTypes: MediaType[];
     onOpenChange: (open: boolean) => void;
 }
@@ -40,7 +40,7 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
     const { search, setSearch, debouncedSearch, isOpen, reset: resetSearch, containerRef } = useSearchContainer({
         onReset: () => undefined,
     });
-    
+
     const form = useForm<AddMonthlyActivityInput, unknown, AddMonthlyActivity>({
         resolver: zodResolver(addMonthlyActivitySchema),
         defaultValues: {
@@ -50,7 +50,7 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
             progressGained: 1,
             hadCompletion: false,
             mediaType: mediaTypes[0] ?? MediaType.SERIES,
-            lastActivityAt: getDefaultActivityDate(year, month),
+            lastActivityAt: month ? getDefaultActivityDate(year, month) : "",
         },
     });
 
@@ -100,7 +100,10 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                 <DialogHeader>
                     <DialogTitle>Add monthly activity</DialogTitle>
                     <DialogDescription>
-                        Add or correct this media's summary for the selected month.
+                        {month
+                            ? "Add or correct this media's summary for the selected month."
+                            : `Choose an activity date in ${year} to select the month.`
+                        }
                     </DialogDescription>
                 </DialogHeader>
 
@@ -230,6 +233,7 @@ export const MonthlyActivityAddDialog = ({ open, year, month, mediaTypes, onOpen
                                 />
 
                                 <MonthlyActivityFormFields
+                                    restrictToYear={year}
                                     mediaType={selectedType}
                                 />
                             </FieldGroup>

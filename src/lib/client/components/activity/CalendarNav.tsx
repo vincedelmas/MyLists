@@ -1,10 +1,12 @@
 import {cn} from "@/lib/utils/classnames";
+import {ActivityPeriod} from "@/lib/schemas";
 
 
 interface CalendarNavProps {
     activeYear: number;
     activeMonth: number;
-    onDateChange: (year: string, month: string) => void;
+    view: ActivityPeriod;
+    onDateChange: (year: string, month: string, view: ActivityPeriod) => void;
 }
 
 
@@ -12,19 +14,19 @@ const START_YEAR = 2026;
 const shortMonthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 
-export function CalendarNav({ onDateChange, activeMonth, activeYear }: CalendarNavProps) {
+export function CalendarNav({ onDateChange, activeMonth, activeYear, view }: CalendarNavProps) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
     const yearsList = Array.from({ length: currentYear - START_YEAR + 1 }, (_, i) => START_YEAR + i);
 
     const handleSelect = (year: number, month: number) => {
-        onDateChange(String(year), String(month));
+        onDateChange(String(year), String(month), "month");
     };
 
     const onYearChange = (year: number) => {
         const newMonth = isFuture(year, activeMonth - 1) ? currentMonth : activeMonth;
-        onDateChange(String(year), String(newMonth));
+        onDateChange(String(year), String(newMonth), "year");
     }
 
     const isFuture = (year: number, monthIdx: number) => {
@@ -54,8 +56,8 @@ export function CalendarNav({ onDateChange, activeMonth, activeYear }: CalendarN
             <div className="grid grid-cols-12 gap-1 max-sm:grid-cols-6">
                 {shortMonthNames.map((month, idx) => {
                     const monthIdx = idx + 1;
-                    const active = (activeMonth === monthIdx);
                     const disabled = isFuture(activeYear, idx);
+                    const active = view === "month" && activeMonth === monthIdx;
 
                     return (
                         <button

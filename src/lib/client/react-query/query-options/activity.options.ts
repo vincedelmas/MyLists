@@ -4,7 +4,10 @@ import {MonthlyActivitySearch} from "@/lib/schemas";
 import {getMonthlyActivity, getMonthlyActivityMediaSearch, getMonthlyActivityStats} from "@/lib/server/functions/user-monthly-activity";
 
 
-export const monthlyActivityStatsOptions = (username: string, search: Pick<MonthlyActivitySearch, "year" | "month"> & { mediaType?: MediaType }) => {
+type MonthlyActivityStatsSearchOpts = Pick<MonthlyActivitySearch, "year" | "month" | "view"> & { mediaType?: MediaType };
+
+
+export const monthlyActivityStatsOptions = (username: string, search: MonthlyActivityStatsSearchOpts) => {
     return queryOptions({
         queryKey: ["monthly-activity", username, "stats", search],
         queryFn: () => getMonthlyActivityStats({ data: { username, ...search } }),

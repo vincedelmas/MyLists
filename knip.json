@@ -19,6 +19,9 @@
         ]
     },
     "ignoreDependencies": [
+        "@fontsource/open-sans",
+        "@fontsource-variable/noto-emoji",
+        "@fontsource-variable/noto-sans-jp",
         "pino-pretty"
     ],
     "ignoreFiles": [

@@ -1,7 +1,8 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {MediaType} from "@/lib/utils/enums";
-import {yearRecapInputSchema} from "@/lib/schemas";
+import {MediaType, RatingSystemType} from "@/lib/utils/enums";
+import {yearRecapImageInputSchema, yearRecapInputSchema} from "@/lib/schemas";
+import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {contentAuthorizationMiddleware} from "@/lib/server/middlewares/authorization";
 
 
@@ -33,4 +34,21 @@ export const getYearRecapReleases = createServerFn({ method: "GET" })
     .handler(async () => {
         const adminService = await getContainer().then((container) => container.services.admin);
         return adminService.getYearRecapReleases();
+    });
+
+
+export const postGenerateYearRecapImage = createServerFn({ method: "POST" })
+    .middleware([requiredAuthMiddleware])
+    .validator(yearRecapImageInputSchema)
+    .handler(async ({ data: { year, mediaType }, context: { currentUser } }) => {
+        const { renderYearRecapImage } = await import("@/lib/server/domain/user/year-recap-image");
+        const recap = await getReleasedYearRecap(currentUser.id, year, mediaType);
+
+        return renderYearRecapImage({
+            ...recap,
+            user: {
+                name: currentUser.name,
+                ratingSystem: currentUser.ratingSystem as RatingSystemType,
+            },
+        });
     });

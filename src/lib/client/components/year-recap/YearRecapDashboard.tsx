@@ -14,6 +14,7 @@ import {StatsMetricGrid} from "@/lib/client/components/media-stats/StatsMetricGr
 import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {YearRecapTimeline} from "@/lib/client/components/year-recap/YearRecapTimeline";
 import {formatHours, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
+import {YearRecapShareCard} from "@/lib/client/components/year-recap/YearRecapShareCard";
 import {StatsSectionHeader} from "@/lib/client/components/media-stats/StatsSectionHeader";
 import {ArrowRight, CalendarCheck2, CalendarRange, CheckCircle2, Clock3, Flame, LibraryBig, RefreshCcw, Trophy,} from "lucide-react";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardLeftCorner, MediaCardMeta, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
@@ -21,10 +22,11 @@ import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardLeftCorner, Media
 
 interface YearRecapDashboardProps {
     recap: YearRecap;
+    canGenerateImage?: boolean;
 }
 
 
-export function YearRecapDashboard({ recap }: YearRecapDashboardProps) {
+export function YearRecapDashboard({ recap, canGenerateImage = false }: YearRecapDashboardProps) {
     const color = recap.scope === "all" ? "var(--brand)" : getThemeColor(recap.scope);
     const activeMedia = recap.media[0];
     const averageActiveMonth = recap.totals.activeMonths > 0
@@ -298,6 +300,11 @@ export function YearRecapDashboard({ recap }: YearRecapDashboardProps) {
                 </div>
             </section>
 
+            {canGenerateImage &&
+                <section className="mt-12 border-y py-9 sm:mt-16">
+                    <YearRecapShareCard recap={recap} color={color}/>
+                </section>
+            }
         </div>
     );
 }

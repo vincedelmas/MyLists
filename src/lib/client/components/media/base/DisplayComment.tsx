@@ -25,7 +25,7 @@ export const DisplayComment = ({ content, size = 15 }: DisplayCommentProps) => {
     return (
         <>
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                <PopoverTrigger>
+                <PopoverTrigger aria-label="View comment">
                     <MessageCircle
                         size={size}
                         className="text-info"
@@ -34,7 +34,7 @@ export const DisplayComment = ({ content, size = 15 }: DisplayCommentProps) => {
                 <PopoverContent align="center" side="top" className="max-h-[60vh] min-w-80 overflow-y-auto scrollbar-thin">
                     {shouldShowExpandedReader &&
                         <div className="flex justify-end -mt-2.5 -mr-2.5">
-                            <Button variant="ghost" size="xs" onClick={handleOpenExpandedReader}>
+                            <Button aria-label="Open full comment" variant="ghost" size="xs" onClick={handleOpenExpandedReader}>
                                 <Maximize2 className="size-3.5"/>
                             </Button>
                         </div>
@@ -47,7 +47,7 @@ export const DisplayComment = ({ content, size = 15 }: DisplayCommentProps) => {
                     }
                     {shouldShowExpandedReader &&
                         <div className="flex justify-end -mr-2.5">
-                            <Button variant="ghost" size="xs" onClick={handleOpenExpandedReader}>
+                            <Button aria-label="Open full comment" variant="ghost" size="xs" onClick={handleOpenExpandedReader}>
                                 <Maximize2 className="size-3.5"/>
                             </Button>
                         </div>

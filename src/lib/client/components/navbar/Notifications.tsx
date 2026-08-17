@@ -86,7 +86,7 @@ export const Notifications = () => {
 
     return (
         <Popover modal={isBelowLg} open={open} onOpenChange={handleOpenChange}>
-            <PopoverTrigger render={<Button variant="hover" className="gap-0.5 px-1 mr-3"/>}>
+            <PopoverTrigger render={<Button aria-label="Notifications" variant="hover" className="gap-0.5 px-1 mr-3"/>}>
                 <Bell className="size-5"/>
                 <Badge variant={`${!!counts?.total ? "default" : "secondary"}`} className="h-5 min-w-5 px-1 tabular-nums">
                     {(counts?.total ?? 0) > 99 ? "99+" : counts?.total}

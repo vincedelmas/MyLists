@@ -1,16 +1,14 @@
 import React from "react";
-import {CircleHelp} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, TvMediaType} from "@/lib/utils/enums";
 import {Link} from "@tanstack/react-router";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {TvMediaType} from "@/lib/utils/enums";
+import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {capitalize, formatLocaleName} from "@/lib/utils/text-formatting";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
-import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 
 
 type TvDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
@@ -66,19 +64,14 @@ const EpsDurationLabel = () => {
     return (
         <span className="inline-flex items-center gap-1">
             Eps. Duration
-            <Popover>
-                <PopoverTrigger className="opacity-80 hover:opacity-100 cursor-help mb-0.5">
-                    <CircleHelp className="size-3.5"/>
-                </PopoverTrigger>
-                <PopoverContent className="p-4 w-60">
-                    <div className="mb-2 text-sm font-medium text-muted-foreground">
-                        Episode duration
-                    </div>
-                    <div className="text-sm">
-                        Approximate duration per episode. TV Shows with varying runtimes use an episode-weighted average.
-                    </div>
-                </PopoverContent>
-            </Popover>
+            <InfoPopover label="Episode duration information" iconClassName="size-3.5">
+                <div className="text-sm font-medium text-muted-foreground">
+                    Episode duration
+                </div>
+                <div className="text-sm">
+                    Approximate duration per episode. TV Shows with varying runtimes use an episode-weighted average.
+                </div>
+            </InfoPopover>
         </span>
     );
 }

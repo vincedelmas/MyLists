@@ -1,5 +1,4 @@
 import {useId, useState} from "react";
-import {CircleHelp} from "lucide-react";
 import {PrivacyType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -9,9 +8,9 @@ import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
 import {GeneralSettings, generalSettingsSchema} from "@/lib/schemas";
+import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {ImageCropper} from "@/lib/client/components/user-settings/ImageCropper";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {useGeneralSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
@@ -91,7 +90,7 @@ function GeneralSettingsPage() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5">
                                         <FieldLabel htmlFor={`${fieldId}-privacy`}>
                                             Privacy
                                         </FieldLabel>
@@ -179,29 +178,24 @@ function GeneralSettingsPage() {
 
 const PrivacyPopover = () => {
     return (
-        <Popover>
-            <PopoverTrigger className="opacity-50 hover:opacity-100 cursor-help">
-                <CircleHelp className="size-4"/>
-            </PopoverTrigger>
-            <PopoverContent className="p-5 w-80">
-                <div className="mb-3 text-sm font-medium text-muted-foreground">
-                    Determine who can see your profile, lists, stats, media updates, etc...
-                </div>
-                <ul className="text-sm list-disc space-y-3 pl-4">
-                    <li>
-                        <span className="font-semibold text-success">Public:</span>
-                        {" "}Anyone can see your profile, lists, stats, and media updates.
-                    </li>
-                    <li>
-                        <span className="font-semibold text-warning">Restricted (default):</span>
-                        {" "}Only logged-in users can see your profile, lists, stats, and media updates.
-                    </li>
-                    <li>
-                        <span className="font-semibold text-destructive">Private:</span>
-                        {" "}Only approved followers can see your profile, lists, stats, and media updates.
-                    </li>
-                </ul>
-            </PopoverContent>
-        </Popover>
+        <InfoPopover
+            label="Privacy settings information"
+            description="Determine who can see your profile, lists, stats, media updates, etc..."
+        >
+            <ul className="text-sm list-disc space-y-3 pl-4">
+                <li>
+                    <span className="font-semibold text-success">Public:</span>
+                    {" "}Anyone can see your profile, lists, stats, and media updates.
+                </li>
+                <li>
+                    <span className="font-semibold text-warning">Restricted (default):</span>
+                    {" "}Only logged-in users can see your profile, lists, stats, and media updates.
+                </li>
+                <li>
+                    <span className="font-semibold text-destructive">Private:</span>
+                    {" "}Only approved followers can see your profile, lists, stats, and media updates.
+                </li>
+            </ul>
+        </InfoPopover>
     );
 };

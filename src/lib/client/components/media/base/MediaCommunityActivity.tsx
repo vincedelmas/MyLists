@@ -3,16 +3,16 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
+import {Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ExtractFollowByType} from "@/lib/types/query.options.types";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
+import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
 import {formatMinutes, formatNumber} from "@/lib/utils/number-formatting";
 import {MediaFollowCard} from "@/lib/client/components/media/base/MediaFollowCard";
 import {mediaCommunityActivityOptions} from "@/lib/client/react-query/query-options";
 import {MediaSectionTitle} from "@/lib/client/components/media/base/MediaDetailsComps";
-import {CircleHelp, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
-import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 
 
 type CommunityActivityItem = MediaCommunityActivityQuery["items"][number];
@@ -37,17 +37,11 @@ export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivity
 
     return (
         <section className="space-y-4">
-            <MediaSectionTitle title="Community Activity" className="justify-start gap-3">
-                <Popover>
-                    <PopoverTrigger render={<button type="button" className="cursor-help"/>}>
-                        <CircleHelp className="size-4"/>
-                        <span className="sr-only">Community activity visibility note</span>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-60 px-3 py-2 text-xs" side="top">
-                        These data include only community profiles.
-                        Private accounts are excluded, so counts and stats may vary.
-                    </PopoverContent>
-                </Popover>
+            <MediaSectionTitle title="Community Activity" className="justify-start gap-2">
+                <InfoPopover side="top" label="Community activity visibility note">
+                    These data include only community profiles.
+                    Private accounts are excluded, so counts and stats may vary.
+                </InfoPopover>
             </MediaSectionTitle>
 
             <CommunityActivityStats

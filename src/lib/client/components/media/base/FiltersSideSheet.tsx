@@ -2,11 +2,12 @@ import {MediaListArgs} from "@/lib/schemas";
 import {useQuery} from "@tanstack/react-query";
 import React, {useId, useRef, useState} from "react";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {ChevronDown, ChevronUp, X} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
-import {ChevronDown, ChevronUp, CircleHelp, X} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
+import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
@@ -14,7 +15,6 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {GamesPlatformsEnum, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {filterSearchOptions, listFiltersOptions} from "@/lib/client/react-query/query-options";
 import {Field, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
 import {Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle} from "@/lib/client/components/ui/sheet";
@@ -266,35 +266,30 @@ const CheckboxGroup = ({ title, items, onChange, defaultChecked, render }: Check
 
 
 const FilterInfoPopover = () => (
-    <Popover>
-        <PopoverTrigger>
-            <CircleHelp className="size-4 cursor-help opacity-70 hover:opacity-100"/>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 p-4" align="end">
-            <div className="space-y-3 text-sm">
-                <div className="flex gap-3">
-                    <div className="size-2 rounded-full bg-muted-foreground mt-1.5 shrink-0"/>
-                    <div>
-                        <span className="font-medium text-info">
-                            Same category filters:{" "}
-                        </span>
-                        Results include media matching <i>any</i> selected filter.
-                        <div>(Filter A <strong>OR</strong> Filter B)</div>
-                    </div>
-                </div>
-                <div className="flex gap-3">
-                    <div className="size-2 rounded-full bg-muted-foreground mt-1.5 shrink-0"/>
-                    <div>
-                        <span className="font-medium text-warning">
-                            Different category filters:{" "}
-                        </span>
-                        Results include media matching <i>all</i> selected filters.
-                        <div>(Filter A <strong>AND</strong> Filter B)</div>
-                    </div>
+    <InfoPopover label="Filter behavior information" align="end">
+        <div className="space-y-3 text-sm">
+            <div className="flex gap-3">
+                <div className="size-2 rounded-full bg-muted-foreground mt-1.5 shrink-0"/>
+                <div>
+                    <span className="font-medium text-info">
+                        Same category filters:{" "}
+                    </span>
+                    Results include media matching <i>any</i> selected filter.
+                    <div>(Filter A <strong>OR</strong> Filter B)</div>
                 </div>
             </div>
-        </PopoverContent>
-    </Popover>
+            <div className="flex gap-3">
+                <div className="size-2 rounded-full bg-muted-foreground mt-1.5 shrink-0"/>
+                <div>
+                    <span className="font-medium text-warning">
+                        Different category filters:{" "}
+                    </span>
+                    Results include media matching <i>all</i> selected filters.
+                    <div>(Filter A <strong>AND</strong> Filter B)</div>
+                </div>
+            </div>
+        </div>
+    </InfoPopover>
 );
 
 

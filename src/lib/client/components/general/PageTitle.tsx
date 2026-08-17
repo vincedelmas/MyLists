@@ -2,10 +2,10 @@ import React from "react";
 
 
 interface PageTitleProps {
-    title: string;
-    subtitle?: string;
     onlyHelmet?: boolean;
     children?: React.ReactNode;
+    title: string | React.ReactNode;
+    subtitle?: string | React.ReactNode;
 }
 
 

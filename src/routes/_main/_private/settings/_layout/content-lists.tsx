@@ -1,6 +1,7 @@
 import React, {useId, useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
+import {Download, TriangleAlert} from "lucide-react";
 import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {Switch} from "@/lib/client/components/ui/switch";
@@ -8,10 +9,10 @@ import {Button} from "@/lib/client/components/ui/button";
 import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
-import {CircleHelp, Download, TriangleAlert} from "lucide-react";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {convertToCsv, saveAsFile} from "@/lib/utils/file-download";
 import {ListSettings, mediaListSettingsSchema} from "@/lib/schemas";
+import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
@@ -19,7 +20,6 @@ import {ApiProviderType, MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
-import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {useDownloadListAsCSVMutation, useListSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
@@ -222,8 +222,10 @@ function MediaListFormPage() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
-                                        <div className="flex items-center gap-2">
-                                            <FieldLabel htmlFor={`${fieldId}-search-selector`}>Navbar Search Selector</FieldLabel>
+                                        <div className="flex items-center gap-1.5">
+                                            <FieldLabel htmlFor={`${fieldId}-search-selector`}>
+                                                Navbar Search Selector
+                                            </FieldLabel>
                                             <SearchPopover/>
                                         </div>
                                         <Select
@@ -263,8 +265,10 @@ function MediaListFormPage() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid} data-disabled={listSettingsMutation.isPending}>
-                                        <div className="flex items-center gap-2">
-                                            <FieldLabel htmlFor={`${fieldId}-rating-system`}>Rating System</FieldLabel>
+                                        <div className="flex items-center gap-1.5">
+                                            <FieldLabel htmlFor={`${fieldId}-rating-system`}>
+                                                Rating System
+                                            </FieldLabel>
                                             <RatingSystemPopover/>
                                         </div>
                                         <Select
@@ -274,7 +278,10 @@ function MediaListFormPage() {
                                                 if (value !== null) field.onChange(value);
                                             }}
                                         >
-                                            <SelectTrigger id={`${fieldId}-rating-system`} className="w-full" aria-invalid={fieldState.invalid}>
+                                            <SelectTrigger
+                                                id={`${fieldId}-rating-system`}
+                                                className="w-full" aria-invalid={fieldState.invalid}
+                                            >
                                                 <SelectValue placeholder="Select a rating system"/>
                                             </SelectTrigger>
                                             <SelectContent>
@@ -378,52 +385,42 @@ function MediaListFormPage() {
 
 const SearchPopover = () => {
     return (
-        <Popover>
-            <PopoverTrigger className="opacity-50 hover:opacity-80">
-                <CircleHelp className="w-4 h-4"/>
-            </PopoverTrigger>
-            <PopoverContent className="p-5 w-80">
-                <div className="mb-3 text-sm font-medium text-muted-foreground">
-                    Select your preferred navbar search selector.
-                </div>
-                <ul className="text-sm list-disc space-y-3 pl-4">
-                    <li>
-                        <span className="font-semibold">Media (default):</span>
-                        {" "}Corresponds to Series, Anime and Movies.
-                    </li>
-                    <li>
-                        <span className="font-semibold">Games/Books/Manga:</span>
-                        {" "}Corresponds to their respective type. Requires the corresponding list
-                        to be activated.
-                    </li>
-                </ul>
-            </PopoverContent>
-        </Popover>
+        <InfoPopover
+            label="Navbar search selector information"
+            description="Select your preferred navbar search selector."
+        >
+            <ul className="text-sm list-disc space-y-3 pl-4">
+                <li>
+                    <span className="font-semibold">Media (default):</span>
+                    {" "}Corresponds to Series, Anime and Movies.
+                </li>
+                <li>
+                    <span className="font-semibold">Games/Books/Manga:</span>
+                    {" "}Corresponds to their respective type. Requires the corresponding list
+                    to be activated.
+                </li>
+            </ul>
+        </InfoPopover>
     );
 }
 
 
 const RatingSystemPopover = () => {
     return (
-        <Popover>
-            <PopoverTrigger className="opacity-50 hover:opacity-80">
-                <CircleHelp className="w-4 h-4"/>
-            </PopoverTrigger>
-            <PopoverContent className="p-5 w-80">
-                <div className="mb-3 text-sm font-medium text-muted-foreground">
-                    Switch between two rating systems to rate your media.
-                </div>
-                <ul className="text-sm list-disc space-y-3 pl-4">
-                    <li>
-                        <span className="font-semibold">Score (default):</span>
-                        {" "}Numerical rating from 0 to 10 in 0.5 increments (21 levels).
-                    </li>
-                    <li>
-                        <span className="font-semibold">Feeling:</span>
-                        {" "}Emoticon-based rating with 6 different levels.
-                    </li>
-                </ul>
-            </PopoverContent>
-        </Popover>
+        <InfoPopover
+            label="Rating system information"
+            description="Switch between two rating systems to rate your media."
+        >
+            <ul className="text-sm list-disc space-y-3 pl-4">
+                <li>
+                    <span className="font-semibold">Score (default):</span>
+                    {" "}Numerical rating from 0 to 10 in 0.5 increments (21 levels).
+                </li>
+                <li>
+                    <span className="font-semibold">Feeling:</span>
+                    {" "}Emoticon-based rating with 6 different levels.
+                </li>
+            </ul>
+        </InfoPopover>
     );
 };

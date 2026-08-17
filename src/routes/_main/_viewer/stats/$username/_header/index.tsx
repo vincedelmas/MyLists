@@ -1,4 +1,3 @@
-import {CircleHelp} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -11,7 +10,6 @@ import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {YearRecapDashboard} from "@/lib/client/components/year-recap/YearRecapDashboard";
-import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {userStatsOptions, yearRecapOptions, yearRecapReleasesOptions} from "@/lib/client/react-query/query-options";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 
@@ -89,7 +87,6 @@ function AllTimeStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) 
         <>
             <StatsNavigation
                 releases={releases}
-                showCacheInfo={true}
                 mediaTabs={mediaTabs}
             />
 
@@ -130,13 +127,12 @@ function RecapStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) {
 
 
 interface StatsNavigationProps {
-    showCacheInfo?: boolean;
     releases: YearRecapReleaseStatus[];
     mediaTabs: TabItem<StatsActiveTab>[];
 }
 
 
-function StatsNavigation({ mediaTabs, releases, showCacheInfo = false }: StatsNavigationProps) {
+function StatsNavigation({ mediaTabs, releases }: StatsNavigationProps) {
     const navigate = Route.useNavigate();
     const { username } = Route.useParams();
     const { activeTab, recap } = Route.useSearch();
@@ -157,7 +153,7 @@ function StatsNavigation({ mediaTabs, releases, showCacheInfo = false }: StatsNa
     return (
         <>
             <TabHeader tabs={mediaTabs} activeTab={activeTab} setActiveTab={handleTabChange}>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <Select
                         items={periodItems}
                         value={recap?.toString() ?? "all-time"}
@@ -181,20 +177,6 @@ function StatsNavigation({ mediaTabs, releases, showCacheInfo = false }: StatsNa
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    {showCacheInfo &&
-                        <Popover>
-                            <PopoverTrigger
-                                render={<button type="button" className="grid size-8 place-items-center rounded-md text-muted-foreground
-                                hover:bg-muted hover:text-foreground"/>}
-                            >
-                                <CircleHelp className="size-4"/>
-                                <span className="sr-only">Statistics cache information</span>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-72 px-3 py-2 text-xs" align="end">
-                                Statistics are cached for up to one hour, so recent changes may take time to appear.
-                            </PopoverContent>
-                        </Popover>
-                    }
                     <QuickActions
                         username={username}
                         mediaType={activeTab === "overview" ? undefined : activeTab as MediaType}

@@ -14,7 +14,7 @@ export const removeAllOrphansMediaTask = defineTask({
         const container = await getContainer();
         const mediaTypes = Object.values(MediaType);
         const mediaRegistry = container.registries.mediaService;
-        const userUpdatesService = container.services.userUpdates;
+        const updateHistoryService = container.services.updateHistory;
         const notificationsService = container.services.notifications;
 
         for (const mediaType of mediaTypes) {
@@ -26,7 +26,7 @@ export const removeAllOrphansMediaTask = defineTask({
                     ctx.metric(`${mediaType}.removed`, mediaIdsToRemove.length);
 
                     // Remove in other services
-                    await userUpdatesService.deleteMediaUpdates(mediaType, mediaIdsToRemove);
+                    await updateHistoryService.deleteMediaUpdates(mediaType, mediaIdsToRemove);
                     await notificationsService.deleteMediaNotifications(mediaType, mediaIdsToRemove);
                     await container.services.whichCameFirst.deletePoolMedia(mediaType, mediaIdsToRemove);
 

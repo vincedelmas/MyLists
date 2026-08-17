@@ -3,19 +3,19 @@ import {DeltaStats} from "@/lib/types/stats.types";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {UserMediaStats} from "@/lib/types/user-media.types";
+import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import {MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
-import {UserStatsRepository} from "@/lib/server/domain/user/user-stats.repository";
-import {UserUpdatesRepository} from "@/lib/server/domain/user/user-updates.repository";
+import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
+import {UpdateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
 import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
-import {UserMonthlyActivityService} from "@/lib/server/domain/user/user-monthly-activity.service";
 
 
-export class UserStatsService {
+export class StatsService {
     constructor(
-        private repository: typeof UserStatsRepository,
-        private userActivityService: UserMonthlyActivityService,
+        private repository: typeof StatsRepository,
+        private activityService: MonthlyActivityService,
         private achievementsRepository: typeof AchievementsRepository,
-        private userUpdatesRepository: typeof UserUpdatesRepository,
+        private updateHistoryRepository: typeof UpdateHistoryRepository,
         private mediaStatsRegistry: MediaStatsRegistry,
     ) {
     }
@@ -32,7 +32,7 @@ export class UserStatsService {
         await this.repository.updateAllUsersPreComputedStats(mediaType, userStats);
     }
 
-    async userHalloFameData(filters: HallOfFameSearch, userId?: number) {
+    async userHallOfFameData(filters: HallOfFameSearch, userId?: number) {
         const {
             mediaTypes,
             currentUserRankData,
@@ -42,7 +42,7 @@ export class UserStatsService {
             userSettingsMap,
             rankSelectionColName,
             page, pages, total,
-        } = await this.repository.userHalloFameData(filters, userId);
+        } = await this.repository.userHallOfFameData(filters, userId);
 
         // Calculate Current User's Percentile Ranks
         const userRanks = [];
@@ -139,8 +139,8 @@ export class UserStatsService {
         const [userPreComputedStats, platinumAchievements, updateFingerprint, activityByMonth] = await Promise.all([
             this._getComputedStatsSummary({ userId }),
             this.achievementsRepository.countPlatinumAchievements(userId),
-            this.userUpdatesRepository.mediaUpdateFingerprint({ userId }),
-            this.userActivityService.getActivityStatsByMonth({ userId }),
+            this.updateHistoryRepository.mediaUpdateFingerprint({ userId }),
+            this.activityService.getActivityStatsByMonth({ userId }),
         ]);
 
         const tagCountPromises = userPreComputedStats.mediaTypes.map((mediaType) => {
@@ -165,9 +165,9 @@ export class UserStatsService {
         const preComputedMediaStats = await this.repository.getAggregatedMediaStats({ userId, mediaType });
 
         const [activityByMonth, specificMediaStats, updateFingerprint] = await Promise.all([
-            this.userActivityService.getActivityStatsByMonth({ userId, mediaType }),
+            this.activityService.getActivityStatsByMonth({ userId, mediaType }),
             mediaStatistics.calculateAdvancedMediaStats(preComputedMediaStats.avgRated, userId),
-            this.userUpdatesRepository.mediaUpdateFingerprint({ mediaType, userId }),
+            this.updateHistoryRepository.mediaUpdateFingerprint({ mediaType, userId }),
         ]);
 
         return {
@@ -184,8 +184,8 @@ export class UserStatsService {
         const [platformPreComputedStats, platinumAchievements, activityByMonth, updateFingerprint] = await Promise.all([
             this._getComputedStatsSummary({}),
             this.achievementsRepository.countPlatinumAchievements(),
-            this.userActivityService.getActivityStatsByMonth({ excludeBulkImports: true }),
-            this.userUpdatesRepository.mediaUpdateFingerprint({ excludeBulkImports: true }),
+            this.activityService.getActivityStatsByMonth({ excludeBulkImports: true }),
+            this.updateHistoryRepository.mediaUpdateFingerprint({ excludeBulkImports: true }),
         ]);
 
         const tagCountPromises = platformPreComputedStats.mediaTypes.map((mediaType) => {
@@ -210,8 +210,8 @@ export class UserStatsService {
 
         const [specificMediaStats, activityByMonth, updateFingerprint] = await Promise.all([
             mediaStatistics.calculateAdvancedMediaStats(platformPreComputedStats.avgRated),
-            this.userActivityService.getActivityStatsByMonth({ mediaType, excludeBulkImports: true }),
-            this.userUpdatesRepository.mediaUpdateFingerprint({ mediaType, excludeBulkImports: true }),
+            this.activityService.getActivityStatsByMonth({ mediaType, excludeBulkImports: true }),
+            this.updateHistoryRepository.mediaUpdateFingerprint({ mediaType, excludeBulkImports: true }),
         ]);
 
         return {

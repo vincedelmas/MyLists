@@ -1,6 +1,6 @@
 import {SearchType} from "@/lib/schemas";
 import {WarningFailedPayload, WarningSentPayload} from "@/lib/types/inactive.types";
-import {InactiveAccountRepository} from "@/lib/server/domain/user/inactive-account.repository";
+import {InactiveAccountRepository} from "@/lib/server/domain/account/inactive-account.repository";
 
 
 export class InactiveAccountService {

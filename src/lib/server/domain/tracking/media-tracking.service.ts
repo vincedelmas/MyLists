@@ -1,10 +1,10 @@
 import {UpdateUserMedia} from "@/lib/schemas";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
-import {UserStatsService} from "@/lib/server/domain/user/user-stats.service";
+import {StatsService} from "@/lib/server/domain/stats/stats.service";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
-import {UserUpdatesService} from "@/lib/server/domain/user/user-updates.service";
+import {UpdateHistoryService} from "@/lib/server/domain/tracking/update-history.service";
 import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
-import {UserMonthlyActivityService} from "@/lib/server/domain/user/user-monthly-activity.service";
+import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
 
 
 type MediaAction = {
@@ -14,11 +14,11 @@ type MediaAction = {
 };
 
 
-export class UserMediaService {
+export class MediaTrackingService {
     constructor(
-        private userStatsService: UserStatsService,
-        private userActivityService: UserMonthlyActivityService,
-        private userUpdatesService: UserUpdatesService,
+        private statsService: StatsService,
+        private activityService: MonthlyActivityService,
+        private updateHistoryService: UpdateHistoryService,
         private notificationsService: NotificationsService,
         private mediaServiceRegistry: MediaServiceRegistry,
     ) {
@@ -28,10 +28,10 @@ export class UserMediaService {
         const mediaService = this.mediaServiceRegistry.get(mediaType);
 
         const { newState, media, delta, logPayload } = await mediaService.addMediaToUserList(userId, mediaId, status);
-        await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
+        await this.statsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
 
-        await this.userActivityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, updateType: UpdateType.STATUS });
-        await this.userUpdatesService.logUpdate({
+        await this.activityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, updateType: UpdateType.STATUS });
+        await this.updateHistoryService.logUpdate({
             media,
             userId,
             mediaType,
@@ -47,14 +47,14 @@ export class UserMediaService {
 
         const timestamp = loggedAt ? `${loggedAt} 12:00:00` : undefined;
         if (timestamp) {
-            await this.userUpdatesService.deleteRecentInitialAdd(userId, mediaType, mediaId);
+            await this.updateHistoryService.deleteRecentInitialAdd(userId, mediaType, mediaId);
         }
 
         const mediaService = this.mediaServiceRegistry.get(mediaType);
         const { newState, media, delta, logPayload } = await mediaService.updateUserMediaDetails(userId, mediaId, mediaPayload);
 
-        await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
-        await this.userActivityService.logActivityFromDelta({
+        await this.statsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
+        await this.activityService.logActivityFromDelta({
             delta,
             userId,
             mediaId,
@@ -64,7 +64,7 @@ export class UserMediaService {
         });
 
         if (logPayload) {
-            await this.userUpdatesService.logUpdate({
+            await this.updateHistoryService.logUpdate({
                 media,
                 userId,
                 mediaType,
@@ -81,9 +81,9 @@ export class UserMediaService {
         const mediaService = this.mediaServiceRegistry.get(mediaType);
 
         const delta = await mediaService.removeMediaFromUserList(userId, mediaId);
-        await this.userUpdatesService.deleteMediaUpdatesForUser(userId, mediaType, mediaId);
+        await this.updateHistoryService.deleteMediaUpdatesForUser(userId, mediaType, mediaId);
         await this.notificationsService.deleteUserMediaNotifications(userId, mediaType, mediaId);
-        await this.userStatsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
-        await this.userActivityService.deleteAssociatedActivities(userId, mediaType, mediaId);
+        await this.statsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
+        await this.activityService.deleteAssociatedActivities(userId, mediaType, mediaId);
     }
 }

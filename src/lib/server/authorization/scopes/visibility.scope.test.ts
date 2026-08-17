@@ -18,7 +18,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { profileCollectionVisibilityCondition } = await import("@/lib/server/authorization/scopes/collection.scope");
 const { communityProfileVisibilityCondition, followFeedProfileVisibilityCondition } = await import("@/lib/server/authorization/scopes/profile.scope");
-const { UserUpdatesRepository } = await import("@/lib/server/domain/user/user-updates.repository");
+const { UpdateHistoryRepository } = await import("@/lib/server/domain/tracking/update-history.repository");
 
 
 describe("authorization visibility scopes", () => {
@@ -161,15 +161,15 @@ describe("authorization visibility scopes", () => {
             timestamp: `2026-01-0${userId} 00:00:00`,
         })));
 
-        const ownerRows = await UserUpdatesRepository.getFollowsUpdates(
+        const ownerRows = await UpdateHistoryRepository.getFollowsUpdates(
             1,
             toActor({ id: 1, role: RoleType.USER }),
         );
-        const unrelatedViewerRows = await UserUpdatesRepository.getFollowsUpdates(
+        const unrelatedViewerRows = await UpdateHistoryRepository.getFollowsUpdates(
             1,
             toActor({ id: 2, role: RoleType.USER }),
         );
-        const adminRows = await UserUpdatesRepository.getFollowsUpdates(
+        const adminRows = await UpdateHistoryRepository.getFollowsUpdates(
             1,
             toActor({ id: 99, role: RoleType.ADMIN }),
         );

@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
 import {MediaType} from "@/lib/utils/enums";
 import {YEAR_RECAP_FIRST_YEAR} from "@/lib/types/year-recap.types";
-import {YearRecapService} from "@/lib/server/domain/user/year-recap.service";
+import {YearRecapService} from "@/lib/server/domain/year-recap/year-recap.service";
 
 
 describe("YearRecapService", () => {

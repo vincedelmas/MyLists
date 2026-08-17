@@ -25,10 +25,6 @@ export class AchievementsService {
 
     // -----------------------------------------------------------------------------------
 
-    async getDifficultySummary(userId: number) {
-        return this.repository.getDifficultySummary(userId);
-    }
-
     async getAchievementsDetails(userId: number, limit = 3) {
         return this.repository.getAchievementsDetails(userId, limit);
     }

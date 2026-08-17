@@ -14,7 +14,7 @@ const BULK_IMPORT_GRACE_MONTHS = 2;
 const BULK_IMPORT_UPDATE_THRESHOLD = 200;
 
 
-export class UserUpdatesRepository {
+export class UpdateHistoryRepository {
     static readonly updateThresholdSec = 300;
 
     static async getUserUpdates(userId: number, limit = 8) {

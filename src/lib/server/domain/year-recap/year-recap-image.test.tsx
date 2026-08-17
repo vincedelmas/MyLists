@@ -2,7 +2,7 @@ import {describe, expect, it, vi} from "vitest";
 import {renderSvg} from "takumi-js";
 import {MediaType} from "@/lib/utils/enums";
 import type {YearRecap} from "@/lib/types/year-recap.types";
-import {renderYearRecapImage, yearRecapImageRenderer} from "@/lib/server/domain/user/year-recap-image";
+import {renderYearRecapImage, yearRecapImageRenderer} from "@/lib/server/domain/year-recap/year-recap-image";
 
 
 const createRecap = (): YearRecap => {

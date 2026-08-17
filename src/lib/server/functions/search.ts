@@ -30,7 +30,7 @@ export const getSearchResults = createServerFn({ method: "GET" })
     .validator(navbarSearchSchema)
     .handler(async ({ data: { query, page, apiProvider, advancedFilters }, context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const profileService = container.services.profile;
         const providers = container.registries.externalProviders;
 
         if (advancedFilters && advancedFilters.provider !== apiProvider) {
@@ -42,7 +42,7 @@ export const getSearchResults = createServerFn({ method: "GET" })
         }
 
         if (apiProvider === ApiProviderType.USERS) {
-            return userService.searchUsers(query, page);
+            return profileService.searchUsers(query, page);
         }
 
         if (!currentUser) {

@@ -24,11 +24,11 @@ export const getCurrentUser = createServerFn({ method: "GET" })
             return null;
         }
 
-        const userService = await getContainer().then((c) => c.services.user);
+        const accountService = await getContainer().then((c) => c.services.account);
 
         const userId = Number(session.user.id);
         const actor = toActor({ id: userId, role: session.user.role });
-        const settings = await userService.getMinimalUserSettings(userId);
+        const settings = await accountService.getMinimalUserSettings(userId);
 
         return {
             ...session.user,

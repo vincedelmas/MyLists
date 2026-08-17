@@ -10,10 +10,10 @@ export const deleteNonActivatedUsersTask = defineTask({
     inputSchema: z.object({}),
     handler: async (ctx) => {
         const container = await getContainer();
-        const userRepository = container.repositories.user;
+        const accountRepository = container.repositories.account;
 
         await ctx.step("delete-non-activated", async () => {
-            const deletedCount = await userRepository.deleteNonActivatedOldUsers();
+            const deletedCount = await accountRepository.deleteNonActivatedOldUsers();
             ctx.metric("users.deleted", deletedCount);
             ctx.info(`Cleaned up ${deletedCount} inactive accounts.`);
         });

@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
 import {MediaType, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
-import {UserSimilarityService} from "@/lib/server/domain/user/user-similarity.service";
-import {UserSimilarityRepository} from "@/lib/server/domain/user/user-similarity.repository";
+import {TasteSimilarityService} from "@/lib/server/domain/social/taste-similarity.service";
+import {TasteSimilarityRepository} from "@/lib/server/domain/social/taste-similarity.repository";
 
 
 const aggregate = {
@@ -48,13 +48,13 @@ const createService = () => {
                 privacy: PrivacyType.PUBLIC,
             },
         ]),
-    } as unknown as typeof UserSimilarityRepository;
+    } as unknown as typeof TasteSimilarityRepository;
 
-    return new UserSimilarityService(repository);
+    return new TasteSimilarityService(repository);
 };
 
 
-describe("UserSimilarityService.getTasteMatches", () => {
+describe("TasteSimilarityService.getTasteMatches", () => {
     it("keeps search results in the regular grid instead of featuring the first result", async () => {
         const result = await createService().getTasteMatches(actor(), {
             activeTab: "all",
@@ -104,9 +104,9 @@ describe("UserSimilarityService.getTasteMatches", () => {
                 },
             ]),
             getSharedFavMedia: vi.fn().mockResolvedValue([]),
-        } as unknown as typeof UserSimilarityRepository;
+        } as unknown as typeof TasteSimilarityRepository;
 
-        const result = await new UserSimilarityService(repository).getTasteMatches(actor(), {
+        const result = await new TasteSimilarityService(repository).getTasteMatches(actor(), {
             activeTab: "all",
             hideFollowed: false,
             sorting: "match",
@@ -132,16 +132,16 @@ describe("UserSimilarityService.getTasteMatches", () => {
                 },
             ]),
             getSharedFavMedia: vi.fn().mockResolvedValue([]),
-        }) as unknown as typeof UserSimilarityRepository;
+        }) as unknown as typeof TasteSimilarityRepository;
         const filters = {
             activeTab: "all" as const,
             hideFollowed: false,
             sorting: "match" as const,
         };
 
-        const requestedResult = await new UserSimilarityService(getRepository(SocialState.REQUESTED))
+        const requestedResult = await new TasteSimilarityService(getRepository(SocialState.REQUESTED))
             .getTasteMatches(actor(), filters);
-        const acceptedResult = await new UserSimilarityService(getRepository(SocialState.ACCEPTED))
+        const acceptedResult = await new TasteSimilarityService(getRepository(SocialState.ACCEPTED))
             .getTasteMatches(actor(), filters);
 
         expect(requestedResult.total).toBe(0);
@@ -165,16 +165,16 @@ describe("UserSimilarityService.getTasteMatches", () => {
                 },
             ]),
             getSharedFavMedia: vi.fn().mockResolvedValue([]),
-        }) as unknown as typeof UserSimilarityRepository;
+        }) as unknown as typeof TasteSimilarityRepository;
         const filters = {
             activeTab: "all" as const,
             hideFollowed: false,
             sorting: "match" as const,
         };
 
-        const managerResult = await new UserSimilarityService(createRepository())
+        const managerResult = await new TasteSimilarityService(createRepository())
             .getTasteMatches(actor(RoleType.MANAGER), filters);
-        const adminResult = await new UserSimilarityService(createRepository())
+        const adminResult = await new TasteSimilarityService(createRepository())
             .getTasteMatches(actor(RoleType.ADMIN), filters);
 
         expect(managerResult.total).toBe(0);
@@ -187,9 +187,9 @@ describe("UserSimilarityService.getTasteMatches", () => {
             findCandidateAggregates: vi.fn().mockResolvedValue([]),
             getCandidateProfiles: vi.fn().mockResolvedValue([]),
             getSharedFavMedia: vi.fn().mockResolvedValue([]),
-        } as unknown as typeof UserSimilarityRepository;
+        } as unknown as typeof TasteSimilarityRepository;
 
-        await new UserSimilarityService(repository).getTasteMatches(actor(), {
+        await new TasteSimilarityService(repository).getTasteMatches(actor(), {
             activeTab: MediaType.MANGA,
             hideFollowed: false,
             sorting: "match",

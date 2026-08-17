@@ -47,8 +47,8 @@ export const adminAuth = createServerFn({ method: "POST" })
 export const getAdminOverview = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
-        const container = await getContainer();
-        return container.services.user.getUserOverviewForAdmin();
+        const accountService = await getContainer().then((c) => c.services.account);
+        return accountService.getUserOverviewForAdmin();
     });
 
 
@@ -100,8 +100,8 @@ export const getAdminAllUsers = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(searchTypeSchema)
     .handler(async ({ data }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.getPaginatedUsersForAdmin(data);
+        const accountService = await getContainer().then((c) => c.services.account);
+        return accountService.getPaginatedUsersForAdmin(data);
     });
 
 
@@ -143,8 +143,8 @@ export const postAdminUpdateUser = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(adminPostUpdateUserSchema)
     .handler(async ({ data: { userId, payload } }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.updateUserForAdmin(userId, payload);
+        const accountService = await getContainer().then((c) => c.services.account);
+        return accountService.updateUserForAdmin(userId, payload);
     });
 
 
@@ -227,8 +227,8 @@ export const getAdminAllUpdatesHistory = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .validator(searchTypeSchema)
     .handler(async ({ data }) => {
-        const userUpdatesService = await getContainer().then((c) => c.services.userUpdates);
-        return userUpdatesService.getUserUpdatesPaginated(data);
+        const updateHistoryService = await getContainer().then((c) => c.services.updateHistory);
+        return updateHistoryService.getUserUpdatesPaginated(data);
     });
 
 

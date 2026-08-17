@@ -38,7 +38,7 @@ export const postGenerateYearRecapImage = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(yearRecapImageInputSchema)
     .handler(async ({ data: { year, mediaType }, context: { currentUser } }) => {
-        const { renderYearRecapImage } = await import("@/lib/server/domain/user/year-recap-image");
+        const { renderYearRecapImage } = await import("@/lib/server/domain/year-recap/year-recap-image");
         
         const container = await getContainer();
         const adminService = container.services.admin;

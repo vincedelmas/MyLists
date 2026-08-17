@@ -5,14 +5,14 @@ import {fillMonthlyActivityTimeline} from "@/lib/utils/stats-utils";
 import {MediaMonthlyActivityRegistry} from "@/lib/server/domain/media/media.registries";
 import {calendarDateRangeToISOString, compareDateInputs} from "@/lib/utils/date-formatting";
 import {resolveMonthlyActivityMedia} from "@/lib/server/domain/media/base/base.monthly-activity";
-import {UserMonthlyActivityRepository} from "@/lib/server/domain/user/user-monthly-activity.repository";
+import {MonthlyActivityRepository} from "@/lib/server/domain/tracking/monthly-activity.repository";
 import {AddMonthlyActivity, MonthlyActivityFilters, MonthlyActivityStatsFilters, UpdateMonthlyActivity} from "@/lib/schemas";
 import {LogMonthlyActivityFromDelta, MonthlyActivityChartDatum, MonthlyActivityEditor, WrappedMonthlyActivityResult} from "@/lib/types/activity.types";
 
 
-export class UserMonthlyActivityService {
+export class MonthlyActivityService {
     constructor(
-        private repository: typeof UserMonthlyActivityRepository,
+        private repository: typeof MonthlyActivityRepository,
         private mediaMonthlyActivityRegistry: MediaMonthlyActivityRegistry,
     ) {
     }

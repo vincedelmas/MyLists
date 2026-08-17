@@ -5,10 +5,10 @@ import {MediaType, RatingSystemType} from "@/lib/utils/enums";
 
 
 export const getPlatformStatsData = async (activeTab: StatsActiveTab) => {
-    const userStatsService = await getContainer().then(c => c.services.userStats);
+    const statsService = await getContainer().then(c => c.services.stats);
 
     if (activeTab === "overview") {
-        const platformStats = await userStatsService.platformAdvancedStatsSummary();
+        const platformStats = await statsService.platformAdvancedStatsSummary();
         return {
             ...platformStats,
             mediaType: null,
@@ -19,7 +19,7 @@ export const getPlatformStatsData = async (activeTab: StatsActiveTab) => {
         };
     }
 
-    const mediaStats = await userStatsService.platformMediaAdvancedStats(activeTab);
+    const mediaStats = await statsService.platformMediaAdvancedStats(activeTab);
     return {
         ...mediaStats,
         mediaType: activeTab,

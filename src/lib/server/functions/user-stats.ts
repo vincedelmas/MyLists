@@ -12,7 +12,7 @@ export const getUserStats = createServerFn({ method: "GET" })
     .validator(userStatsInputSchema)
     .handler(async ({ data: { activeTab }, context: { user } }) => {
         const container = await getContainer();
-        const userStatsService = container.services.userStats;
+        const statsService = container.services.stats;
         const activatedMediaTypes = user.userMediaSettings.filter(s => s.active).map(s => s.mediaType);
 
         if (activeTab !== "overview" && !activatedMediaTypes.includes(activeTab)) {
@@ -22,7 +22,7 @@ export const getUserStats = createServerFn({ method: "GET" })
         if (activeTab === "overview") {
             const stats = await container.cacheManager.wrap(
                 getUserStatsCacheKey(user.id, activeTab),
-                () => userStatsService.userAdvancedSummaryStats(user.id),
+                () => statsService.userAdvancedSummaryStats(user.id),
                 { ttl: ONE_HOUR_CACHE_TTL_MS },
             );
 
@@ -38,7 +38,7 @@ export const getUserStats = createServerFn({ method: "GET" })
 
         const stats = await container.cacheManager.wrap(
             getUserStatsCacheKey(user.id, activeTab),
-            () => userStatsService.userAdvancedMediaStats(user.id, activeTab),
+            () => statsService.userAdvancedMediaStats(user.id, activeTab),
             { ttl: ONE_HOUR_CACHE_TTL_MS },
         );
 

@@ -90,39 +90,6 @@ export class AchievementsRepository {
         });
     }
 
-    static async getDifficultySummary(userId: number) {
-        const tierOrder = this._getSQLTierOrdering();
-
-        const subq = getDbClient()
-            .select({
-                achievementId: userAchievement.achievementId,
-                maxTierOrder: max(tierOrder).as("maxTierOrder"),
-            })
-            .from(userAchievement)
-            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userAchievement.userId),
-                eq(userMediaSettings.mediaType, achievement.mediaType),
-                eq(userMediaSettings.active, true),
-            ))
-            .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
-            .groupBy(userAchievement.achievementId)
-            .as("subq");
-
-        const results = await getDbClient()
-            .select({
-                count: count(),
-                difficulty: achievementTier.difficulty,
-            })
-            .from(achievementTier)
-            .innerJoin(subq, and(eq(achievementTier.achievementId, subq.achievementId), eq(tierOrder, subq.maxTierOrder)))
-            .groupBy(achievementTier.difficulty)
-            .orderBy(tierOrder);
-
-        return results;
-    }
-
     static async getAchievementsDetails(userId: number, limit = 3) {
         const results = await getDbClient()
             .select({

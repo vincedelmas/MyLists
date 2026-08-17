@@ -11,10 +11,10 @@ export const getUserProfileHeader = createServerFn({ method: "GET" })
     .middleware([publicPreviewMiddleware])
     .handler(async ({ context: { currentUser, targetUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const socialService = container.services.social;
 
-        const { followersCount, followsCount } = await userService.getFollowCount(targetUser.id);
-        const followStatus = currentUser && await userService.getFollowingStatus(currentUser.id, targetUser.id);
+        const { followersCount, followsCount } = await socialService.getFollowCount(targetUser.id);
+        const followStatus = currentUser && await socialService.getFollowingStatus(currentUser.id, targetUser.id);
 
         return {
             userData: {
@@ -42,8 +42,8 @@ export const getUserProfileHeader = createServerFn({ method: "GET" })
 
 export const getRandomPublicProfile = createServerFn({ method: "GET" })
     .handler(async () => {
-        const userService = await getContainer().then((container) => container.services.user);
-        return userService.getRandomPublicProfile();
+        const profileService = await getContainer().then((container) => container.services.profile);
+        return profileService.getRandomPublicProfile();
     });
 
 
@@ -52,23 +52,23 @@ export const getUserProfile = createServerFn({ method: "GET" })
     .handler(async ({ context: { currentUser, user } }) => {
         const targetUserId = user.id;
         const container = await getContainer();
-        const userService = container.services.user;
-        const userStatsService = container.services.userStats;
-        const userProfileService = container.services.userProfile;
-        const userUpdatesService = container.services.userUpdates;
+        const socialService = container.services.social;
+        const statsService = container.services.stats;
+        const profileService = container.services.profile;
+        const updateHistoryService = container.services.updateHistory;
         const achievementsService = container.services.achievements;
 
         if (currentUser && currentUser.id !== targetUserId) {
-            await userService.incrementProfileView(targetUserId);
+            await profileService.incrementProfileView(targetUserId);
         }
 
-        const { followsCount } = await userService.getFollowCount(targetUserId);
-        const userFollows = await userService.getUserFollows(undefined, targetUserId);
-        const userUpdates = await userUpdatesService.getUserUpdates(targetUserId);
-        const followsUpdates = await userUpdatesService.getFollowsUpdates(targetUserId, toActor(currentUser));
-        const mediaGlobalSummary = await userStatsService.userPreComputedStatsSummary(targetUserId);
-        const perMediaSummary = await userStatsService.userPerMediaSummaryStats(targetUserId);
-        const highlightedMedia = await userProfileService.resolveHighlightedMedia(targetUserId);
+        const { followsCount } = await socialService.getFollowCount(targetUserId);
+        const userFollows = await socialService.getUserFollows(undefined, targetUserId);
+        const userUpdates = await updateHistoryService.getUserUpdates(targetUserId);
+        const followsUpdates = await updateHistoryService.getFollowsUpdates(targetUserId, toActor(currentUser));
+        const mediaGlobalSummary = await statsService.userPreComputedStatsSummary(targetUserId);
+        const perMediaSummary = await statsService.userPerMediaSummaryStats(targetUserId);
+        const highlightedMedia = await profileService.resolveHighlightedMedia(targetUserId);
         const achievements = await achievementsService.getAchievementsDetails(targetUserId);
 
         return {
@@ -101,16 +101,16 @@ export const getUserProfile = createServerFn({ method: "GET" })
 export const getUsersFollows = createServerFn({ method: "GET" })
     .middleware([contentAuthorizationMiddleware])
     .handler(async ({ context: { user, currentUser } }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.getUserFollows(currentUser?.id, user.id, 999999);
+        const socialService = await getContainer().then((c) => c.services.social);
+        return socialService.getUserFollows(currentUser?.id, user.id, 999999);
     });
 
 
 export const getUsersFollowers = createServerFn({ method: "GET" })
     .middleware([contentAuthorizationMiddleware])
     .handler(async ({ context: { user, currentUser } }) => {
-        const userService = await getContainer().then((c) => c.services.user);
-        return userService.getUserFollowers(currentUser?.id, user.id, 999999);
+        const socialService = await getContainer().then((c) => c.services.social);
+        return socialService.getUserFollowers(currentUser?.id, user.id, 999999);
     });
 
 
@@ -118,8 +118,8 @@ export const getAllUpdatesHistory = createServerFn({ method: "GET" })
     .middleware([contentAuthorizationMiddleware])
     .validator(simpleSearchUsernameSchema)
     .handler(async ({ data, context: { user } }) => {
-        const userUpdatesService = await getContainer().then((c) => c.services.userUpdates);
-        return userUpdatesService.getUserUpdatesPaginated(data, user.id);
+        const updateHistoryService = await getContainer().then((c) => c.services.updateHistory);
+        return updateHistoryService.getUserUpdatesPaginated(data, user.id);
     });
 
 
@@ -127,6 +127,6 @@ export const postUpdateShowOnboarding = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
-        await userService.updateShowOnboarding(currentUser.id);
+        const accountService = container.services.account;
+        await accountService.updateShowOnboarding(currentUser.id);
     });

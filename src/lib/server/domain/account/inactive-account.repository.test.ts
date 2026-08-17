@@ -16,10 +16,10 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { UserService } = await import("@/lib/server/domain/user/user.service");
-const { UserRepository } = await import("@/lib/server/domain/user/user.repository");
-const { InactiveAccountService } = await import("@/lib/server/domain/user/inactive-account.service");
-const { InactiveAccountRepository } = await import("@/lib/server/domain/user/inactive-account.repository");
+const { AccountService } = await import("@/lib/server/domain/account/account.service");
+const { AccountRepository } = await import("@/lib/server/domain/account/account.repository");
+const { InactiveAccountService } = await import("@/lib/server/domain/account/inactive-account.service");
+const { InactiveAccountRepository } = await import("@/lib/server/domain/account/inactive-account.repository");
 
 
 describe("InactiveAccountRepository.markAsDeleted", () => {
@@ -152,8 +152,8 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
     });
 
     it("deletes users through the service only when the inactive lifecycle guard passes", async () => {
-        const service = new UserService(
-            UserRepository,
+        const service = new AccountService(
+            AccountRepository,
             new InactiveAccountService(InactiveAccountRepository),
         );
 

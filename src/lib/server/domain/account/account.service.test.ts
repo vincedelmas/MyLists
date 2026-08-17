@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
-import {UserService} from "@/lib/server/domain/user/user.service";
-import {UserRepository} from "@/lib/server/domain/user/user.repository";
-import {InactiveAccountService} from "@/lib/server/domain/user/inactive-account.service";
+import {AccountService} from "@/lib/server/domain/account/account.service";
+import {AccountRepository} from "@/lib/server/domain/account/account.repository";
+import {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
 
 
 vi.mock("@/lib/server/database/async-storage", () => ({
@@ -10,9 +10,9 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 
 const createService = () => {
-    const userRepository = {
+    const accountRepository = {
         deleteUserAccount: vi.fn().mockResolvedValue(undefined),
-    } as unknown as typeof UserRepository;
+    } as unknown as typeof AccountRepository;
 
     const inactiveAccountService = {
         markAsDeleted: vi.fn().mockResolvedValue(true),
@@ -20,28 +20,28 @@ const createService = () => {
     } as unknown as InactiveAccountService;
 
     return {
-        userRepository,
+        accountRepository,
         inactiveAccountService,
-        service: new UserService(userRepository, inactiveAccountService),
+        service: new AccountService(accountRepository, inactiveAccountService),
     };
 };
 
 
-describe("UserService.deleteUserAccount", () => {
+describe("AccountService.deleteUserAccount", () => {
     it("deletes manual accounts after removing inactive account lifecycle rows", async () => {
-        const { service, userRepository, inactiveAccountService } = createService();
+        const { service, accountRepository, inactiveAccountService } = createService();
 
         await expect(service.deleteUserAccount({ type: "manual", userId: 42 })).resolves.toBe(true);
 
-        expect(userRepository.deleteUserAccount).toHaveBeenCalledOnce();
-        expect(userRepository.deleteUserAccount).toHaveBeenCalledWith(42);
+        expect(accountRepository.deleteUserAccount).toHaveBeenCalledOnce();
+        expect(accountRepository.deleteUserAccount).toHaveBeenCalledWith(42);
         expect(inactiveAccountService.markAsDeleted).not.toHaveBeenCalled();
         expect(inactiveAccountService.deleteRowsForUser).toHaveBeenCalledOnce();
         expect(inactiveAccountService.deleteRowsForUser).toHaveBeenCalledWith(42);
     });
 
     it("deletes inactive accounts only after the lifecycle row is marked as deleted", async () => {
-        const { service, userRepository, inactiveAccountService } = createService();
+        const { service, accountRepository, inactiveAccountService } = createService();
 
         await expect(service.deleteUserAccount({
             userId: 42,
@@ -50,15 +50,15 @@ describe("UserService.deleteUserAccount", () => {
             username: "inactive-user",
         })).resolves.toBe(true);
 
-        expect(userRepository.deleteUserAccount).toHaveBeenCalledOnce();
-        expect(userRepository.deleteUserAccount).toHaveBeenCalledWith(42);
+        expect(accountRepository.deleteUserAccount).toHaveBeenCalledOnce();
+        expect(accountRepository.deleteUserAccount).toHaveBeenCalledWith(42);
         expect(inactiveAccountService.markAsDeleted).toHaveBeenCalledOnce();
         expect(inactiveAccountService.deleteRowsForUser).not.toHaveBeenCalled();
         expect(inactiveAccountService.markAsDeleted).toHaveBeenCalledWith(7, 42, "inactive-user");
     });
 
     it("does not delete inactive accounts when the lifecycle row cannot be marked as deleted", async () => {
-        const { service, userRepository, inactiveAccountService } = createService();
+        const { service, accountRepository, inactiveAccountService } = createService();
         vi.mocked(inactiveAccountService.markAsDeleted).mockResolvedValue(false);
 
         await expect(service.deleteUserAccount({
@@ -68,7 +68,7 @@ describe("UserService.deleteUserAccount", () => {
             username: "active-again-user",
         })).resolves.toBe(false);
 
-        expect(userRepository.deleteUserAccount).not.toHaveBeenCalled();
+        expect(accountRepository.deleteUserAccount).not.toHaveBeenCalled();
         expect(inactiveAccountService.markAsDeleted).toHaveBeenCalledOnce();
         expect(inactiveAccountService.markAsDeleted).toHaveBeenCalledWith(7, 42, "active-again-user");
     });

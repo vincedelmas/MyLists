@@ -25,7 +25,7 @@ type CandidateAggregateRow = {
 };
 
 
-export class UserSimilarityRepository {
+export class TasteSimilarityRepository {
     static async findCandidateAggregates(currentUserId: number, mediaTypes: MediaType[]) {
         const sharedRatings = mediaTypes.map((mediaType) => this._sharedRatingsBranch(mediaType, currentUserId));
 

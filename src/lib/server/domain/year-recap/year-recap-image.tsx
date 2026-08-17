@@ -14,13 +14,16 @@ import {MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardStatic, Media
 
 const WIDTH = 1080;
 const HEIGHT = 1350;
+const fontWeights = [400, 700] as const;
 
 const resolveDependency = createRequire(import.meta.url).resolve;
 const feelingLabels = ["Awful", "Disliked", "Not for me", "Liked", "Loved", "Favorite"];
 const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-const fontWeights = [400, 700] as const;
-const fontSubsets = ["latin", "latin-ext", "cyrillic", "cyrillic-ext", "greek", "greek-ext", "hebrew", "vietnamese", "symbols", "math"] as const;
+const fontSubsets = [
+    "latin", "latin-ext", "cyrillic", "cyrillic-ext", "greek",
+    "greek-ext", "hebrew", "vietnamese", "symbols", "math",
+] as const;
 
 
 const fontSources: (Omit<FontDetails, "data"> & { file: string })[] = [

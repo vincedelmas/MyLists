@@ -2,11 +2,11 @@ import {SimpleSearch} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
 import {Actor} from "@/lib/server/authorization";
 import {LogUpdateParams} from "@/lib/types/user-updates.types";
-import {UserUpdatesRepository} from "@/lib/server/domain/user/user-updates.repository";
+import {UpdateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
 
 
-export class UserUpdatesService {
-    constructor(private repository: typeof UserUpdatesRepository) {
+export class UpdateHistoryService {
+    constructor(private repository: typeof UpdateHistoryRepository) {
     }
 
     async getUserUpdates(userId: number, limit = 6) {

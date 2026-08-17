@@ -18,10 +18,10 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 
 const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
-const { UserStatsRepository } = await import("@/lib/server/domain/user/user-stats.repository");
-const { UserUpdatesRepository } = await import("@/lib/server/domain/user/user-updates.repository");
-const { UserSimilarityRepository } = await import("@/lib/server/domain/user/user-similarity.repository");
-const { UserMonthlyActivityRepository } = await import("@/lib/server/domain/user/user-monthly-activity.repository");
+const { StatsRepository } = await import("@/lib/server/domain/stats/stats.repository");
+const { UpdateHistoryRepository } = await import("@/lib/server/domain/tracking/update-history.repository");
+const { TasteSimilarityRepository } = await import("@/lib/server/domain/social/taste-similarity.repository");
+const { MonthlyActivityRepository } = await import("@/lib/server/domain/tracking/monthly-activity.repository");
 const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime/anime.definition.server");
 const { AchievementsRepository } = await import("@/lib/server/domain/achievements/achievements.repository");
 
@@ -49,10 +49,10 @@ describe("disabled media visibility", () => {
     it("hides disabled media everywhere without deleting it", async () => {
         const animeRepository = new TvRepository(animeServerDefinition);
 
-        const disabledStats = await UserStatsRepository.getPreComputedStatsSummary({ userId: 42 });
-        const disabledUpdates = await UserUpdatesRepository.getUserUpdates(42, 10);
-        const disabledHistory = await UserUpdatesRepository.getUserUpdatesPaginated({}, 42);
-        const disabledActivity = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
+        const disabledStats = await StatsRepository.getPreComputedStatsSummary({ userId: 42 });
+        const disabledUpdates = await UpdateHistoryRepository.getUserUpdates(42, 10);
+        const disabledHistory = await UpdateHistoryRepository.getUserUpdatesPaginated({}, 42);
+        const disabledActivity = await MonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
             page: 1,
             perPage: 48,
             startMonth: "2026-04",
@@ -61,9 +61,9 @@ describe("disabled media visibility", () => {
         const disabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
         const disabledAchievementPage = await AchievementsRepository.getUserAchievements(42);
         const disabledCommunity = await animeRepository.getMediaCommunityActivity(toActor(), 100, {});
-        const disabledTasteAggregates = await UserSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
-        const disabledSharedFavorites = await UserSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
-        const [disabledCandidate] = await UserSimilarityRepository.getCandidateProfiles([42], 43);
+        const disabledTasteAggregates = await TasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
+        const disabledSharedFavorites = await TasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
+        const [disabledCandidate] = await TasteSimilarityRepository.getCandidateProfiles([42], 43);
 
         expect(disabledStats.preComputedStats.totalHours).toBe(8);
         expect(disabledStats.mediaTimeDistribution.map((item) => item.name)).toEqual([MediaType.MOVIES]);
@@ -85,9 +85,9 @@ describe("disabled media visibility", () => {
                 eq(userMediaSettings.mediaType, MediaType.ANIME),
             ));
 
-        const enabledStats = await UserStatsRepository.getPreComputedStatsSummary({ userId: 42 });
-        const enabledUpdates = await UserUpdatesRepository.getUserUpdates(42, 10);
-        const enabledActivity = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
+        const enabledStats = await StatsRepository.getPreComputedStatsSummary({ userId: 42 });
+        const enabledUpdates = await UpdateHistoryRepository.getUserUpdates(42, 10);
+        const enabledActivity = await MonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
             page: 1,
             perPage: 48,
             startMonth: "2026-04",
@@ -95,9 +95,9 @@ describe("disabled media visibility", () => {
         });
         const enabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
         const enabledCommunity = await animeRepository.getMediaCommunityActivity(toActor(), 100, {});
-        const enabledTasteAggregates = await UserSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
-        const enabledSharedFavorites = await UserSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
-        const [enabledCandidate] = await UserSimilarityRepository.getCandidateProfiles([42], 43);
+        const enabledTasteAggregates = await TasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
+        const enabledSharedFavorites = await TasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
+        const [enabledCandidate] = await TasteSimilarityRepository.getCandidateProfiles([42], 43);
 
         expect(enabledStats.preComputedStats.totalHours).toBeCloseTo(1706 / 60);
         expect(enabledStats.mediaTimeDistribution.map((item) => item.name).sort()).toEqual([MediaType.ANIME, MediaType.MOVIES]);
@@ -125,7 +125,7 @@ describe("disabled media visibility", () => {
             .set({ privacy: "private" })
             .where(eq(user.id, 42));
 
-        const hallOfFame = await UserStatsRepository.userHalloFameData({});
+        const hallOfFame = await StatsRepository.userHallOfFameData({});
         const privateUser = hallOfFame.rankedUsers.find(({ id }) => id === 42);
         const settings = hallOfFame.userSettingsMap.get(42);
 

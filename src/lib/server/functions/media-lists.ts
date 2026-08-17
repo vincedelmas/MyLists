@@ -10,10 +10,10 @@ export const getUserListHeaderSF = createServerFn({ method: "GET" })
     .validator(mediaTypeUsernameSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser, targetUser } }) => {
         const container = await getContainer();
-        const userService = container.services.user;
+        const profileService = container.services.profile;
 
         if (currentUser && currentUser.id !== targetUser.id) {
-            await userService.incrementMediaTypeView(targetUser.id, mediaType);
+            await profileService.incrementMediaTypeView(targetUser.id, mediaType);
         }
 
         return { timeSpent: targetUser.userMediaSettings.find((s) => s.mediaType === mediaType)?.timeSpent ?? 0 };
@@ -28,11 +28,11 @@ export const getMediaListSF = createServerFn({ method: "GET" })
         const container = await getContainer();
 
         const targetUserId = user.id;
-        const userService = container.services.user;
+        const profileService = container.services.profile;
         const currentUserId = currentUser?.id ? currentUser.id : undefined;
 
         if (currentUser && currentUser.id !== targetUserId) {
-            await userService.incrementMediaTypeView(targetUserId, mediaType);
+            await profileService.incrementMediaTypeView(targetUserId, mediaType);
         }
 
         const mediaService = container.registries.mediaService.get(mediaType);

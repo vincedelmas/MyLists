@@ -15,12 +15,12 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const {UserMonthlyActivityRepository} = await import(
-    "@/lib/server/domain/user/user-monthly-activity.repository"
+const {MonthlyActivityRepository} = await import(
+    "@/lib/server/domain/tracking/monthly-activity.repository"
 );
 
 
-describe("UserMonthlyActivityRepository", () => {
+describe("MonthlyActivityRepository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -60,19 +60,19 @@ describe("UserMonthlyActivityRepository", () => {
             activityDate: "2026-06-10T12:00:00.000Z",
         };
 
-        await UserMonthlyActivityRepository.addContribution({
+        await MonthlyActivityRepository.addContribution({
             ...base,
             progressGained: 50,
             hadCompletion: true,
             redoGained: 0,
         });
-        await UserMonthlyActivityRepository.addContribution({
+        await MonthlyActivityRepository.addContribution({
             ...base,
             progressGained: 0,
             hadCompletion: false,
             redoGained: 2,
         });
-        await UserMonthlyActivityRepository.addContribution({
+        await MonthlyActivityRepository.addContribution({
             ...base,
             activityDate: "2026-06-05T12:00:00.000Z",
             progressGained: 25,
@@ -105,7 +105,7 @@ describe("UserMonthlyActivityRepository", () => {
             redoGained: 2,
         });
 
-        const result = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(1, {
+        const result = await MonthlyActivityRepository.getPaginatedMonthlyActivities(1, {
             page: 1,
             perPage: 10,
             startMonth: "2026-06",
@@ -117,7 +117,7 @@ describe("UserMonthlyActivityRepository", () => {
     });
 
     it("creates completion-only and redo-only summaries", async () => {
-        await UserMonthlyActivityRepository.addContribution({
+        await MonthlyActivityRepository.addContribution({
             userId: 1,
             mediaId: 10,
             mediaType: MediaType.BOOKS,
@@ -126,7 +126,7 @@ describe("UserMonthlyActivityRepository", () => {
             hadCompletion: true,
             redoGained: 0,
         });
-        await UserMonthlyActivityRepository.addContribution({
+        await MonthlyActivityRepository.addContribution({
             userId: 1,
             mediaId: 11,
             mediaType: MediaType.BOOKS,
@@ -168,7 +168,7 @@ describe("UserMonthlyActivityRepository", () => {
             },
         ]);
 
-        const result = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(1, {
+        const result = await MonthlyActivityRepository.getPaginatedMonthlyActivities(1, {
             page: 1,
             perPage: 10,
             startMonth: "2026-01",
@@ -199,7 +199,7 @@ describe("UserMonthlyActivityRepository", () => {
             redoGained: 2,
         });
 
-        await UserMonthlyActivityRepository.updateMonthlyActivity(1, june.id, {
+        await MonthlyActivityRepository.updateMonthlyActivity(1, june.id, {
             lastActivityAt: "2026-07-20T12:00:00.000Z",
         });
 
@@ -247,8 +247,8 @@ describe("UserMonthlyActivityRepository", () => {
             },
         ]);
 
-        const activeActivities = await UserMonthlyActivityRepository.getYearRecapActivities(1, 2026);
-        const activeMediaTypes = await UserMonthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
+        const activeActivities = await MonthlyActivityRepository.getYearRecapActivities(1, 2026);
+        const activeMediaTypes = await MonthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
 
         expect(activeActivities).toHaveLength(1);
         expect(activeActivities[0]).toMatchObject({ mediaId: 10, progressGained: 120 });
@@ -256,8 +256,8 @@ describe("UserMonthlyActivityRepository", () => {
 
         await db.update(userMediaSettings).set({ active: false });
 
-        const activities = await UserMonthlyActivityRepository.getYearRecapActivities(1, 2026);
-        const mediaTypes = await UserMonthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
+        const activities = await MonthlyActivityRepository.getYearRecapActivities(1, 2026);
+        const mediaTypes = await MonthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
 
         expect(activities).toHaveLength(0);
         expect(mediaTypes).toEqual([]);

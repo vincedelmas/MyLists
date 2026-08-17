@@ -11,7 +11,7 @@ export const getTasteMatches = createServerFn({ method: "GET" })
     .validator(tasteMatchesSearchSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
-        const settings = await container.services.user.getMinimalUserSettings(currentUser.id);
+        const settings = await container.services.account.getMinimalUserSettings(currentUser.id);
 
         const actor = toActor(currentUser);
         const activeMediaTypes = getActiveMediaTypes(settings);
@@ -20,5 +20,5 @@ export const getTasteMatches = createServerFn({ method: "GET" })
             throw new Error("Authenticated taste-match request resolved without an actor.");
         }
 
-        return container.services.userSimilarity.getTasteMatches(actor, data, activeMediaTypes);
+        return container.services.tasteSimilarity.getTasteMatches(actor, data, activeMediaTypes);
     });

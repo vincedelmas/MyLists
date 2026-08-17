@@ -32,6 +32,16 @@ export const animeDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        repeat: {
+            label: "Rewatches",
+            rateLabel: "Rewatch rate",
+        },
+        timeComparison: {
+            referenceHours: 37.5,
+            secondaryHours: 1.5 / 60,
+            secondaryLabel: "90-second anime opening sequences",
+            referenceLabel: "complete watches of Attack on Titan",
+        },
         progress: {
             redoLabel: "seasons re-watched",
             totalSpecificLabel: "Total Episodes Watched",

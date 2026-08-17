@@ -40,6 +40,8 @@ function UserStatsPage() {
             <div className="mt-6">
                 <DashboardContent
                     data={apiData}
+                    subjectName={username}
+                    onSelectMediaType={handleTabChange}
                 />
             </div>
         </>

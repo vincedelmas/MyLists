@@ -1,3 +1,4 @@
+import type {MediaType} from "@/lib/utils/enums";
 import {createSerializationAdapter} from "@tanstack/react-router";
 
 
@@ -27,6 +28,27 @@ export const formattedErrorAdapter = createSerializationAdapter({
     test: (v) => v instanceof FormattedError,
     toSerializable: ({ message }) => ({ message }),
     fromSerializable: ({ message }) => new FormattedError(message),
+});
+
+
+export class InactiveMediaTypeError extends Error {
+    constructor(public readonly mediaType: MediaType) {
+        super(`The ${mediaType} list is not activated`);
+
+        this.name = "InactiveMediaTypeError";
+
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, InactiveMediaTypeError);
+        }
+    }
+}
+
+
+export const inactiveMediaTypeErrorAdapter = createSerializationAdapter({
+    key: "inactive-media-type-error",
+    test: (value) => value instanceof InactiveMediaTypeError,
+    toSerializable: ({ mediaType }) => ({ mediaType }),
+    fromSerializable: ({ mediaType }) => new InactiveMediaTypeError(mediaType),
 });
 
 

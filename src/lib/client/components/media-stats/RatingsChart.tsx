@@ -27,25 +27,24 @@ export function RatingsChart({ height, ratings, mediaType, ratingSystem }: Ratin
         : "Rating Distribution";
 
     const hasData = chartData.some(({ value }) => value > 0);
-    const color = getThemeColor(mediaType);
     const summary = chartData.map(({ name, value }) => ({
         value: formatNumber(value),
         label: `${ratingSystem === RatingSystemType.FEELING ? "Feeling" : "Rating"} ${name}`,
-    }))
+    }));
 
     return (
         <ChartCard title={title} summary={summary} hasData={hasData} height={chartHeight}>
             <DataBarChart
                 x="name"
                 y="value"
-                fill={color}
                 data={chartData}
                 ariaLabel={title}
                 height={chartHeight}
                 integerYTicks={true}
-                xTickFontSize={ratingSystem === RatingSystemType.FEELING ? 18 : undefined}
                 tooltipTitleFormatter={String}
+                fill={getThemeColor(mediaType)}
                 tooltipValueFormatter={(value) => formatNumber(value)}
+                xTickFontSize={ratingSystem === RatingSystemType.FEELING ? 18 : undefined}
                 xFormatter={(value) => ratingSystem === RatingSystemType.FEELING
                     ? ({ 0: "💩", 2: "😠", 4: "🙁", 6: "🙂", 8: "😄", 10: "🤩" }[Number(value)] ?? String(value))
                     : String(value)

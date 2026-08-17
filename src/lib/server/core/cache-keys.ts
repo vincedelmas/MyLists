@@ -15,11 +15,11 @@ export const PENDING_ROLLUPS_KEY = "api-monitor:rollups:pending";
 
 
 export const getPlatformStatsCacheKey = (data: StatsActiveTab) => {
-    return `platformStats:v4:${JSON.stringify(data)}`;
+    return `platformStats:v5:${JSON.stringify(data)}`;
 };
 
 export const getUserStatsCacheKey = (userId: number, data: StatsActiveTab) => {
-    return `userStats:v3:${userId}:${JSON.stringify(data)}`;
+    return `userStats:v4:${userId}:${JSON.stringify(data)}`;
 };
 
 export const getRollupKey = (bucketStartMs: number, provider: string, opts: { statuses?: boolean, seconds?: boolean } = {}) => {

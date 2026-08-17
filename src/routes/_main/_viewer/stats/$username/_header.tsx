@@ -11,7 +11,7 @@ function StatsHeader() {
     const { username } = Route.useParams();
 
     return (
-        <PageTitle title={`${username} Statistics`} subtitle="Comprehensive media tracking insights">
+        <PageTitle title={`${username} Statistics`} subtitle={`Detailed media statistics for ${username}`}>
             <Outlet/>
         </PageTitle>
     );

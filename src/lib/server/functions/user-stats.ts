@@ -1,10 +1,10 @@
 import {userStatsInputSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {FormattedError} from "@/lib/utils/error-classes";
 import {AdvancedMediaStats} from "@/lib/types/stats.types";
-import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
+import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
 import {contentAuthorizationMiddleware} from "@/lib/server/middlewares/authorization";
+import {getUserStatsCacheKey, ONE_HOUR_CACHE_TTL_MS} from "@/lib/server/core/cache-keys";
 
 
 export const getUserStats = createServerFn({ method: "GET" })
@@ -13,12 +13,10 @@ export const getUserStats = createServerFn({ method: "GET" })
     .handler(async ({ data: { activeTab }, context: { user } }) => {
         const container = await getContainer();
         const userStatsService = container.services.userStats;
-        const activatedMediaTypes = user.userMediaSettings
-            .filter(s => s.active)
-            .map(s => s.mediaType);
+        const activatedMediaTypes = user.userMediaSettings.filter(s => s.active).map(s => s.mediaType);
 
         if (activeTab !== "overview" && !activatedMediaTypes.includes(activeTab)) {
-            throw new FormattedError("MediaType not activated");
+            throw new InactiveMediaTypeError(activeTab);
         }
 
         if (activeTab === "overview") {

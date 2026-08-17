@@ -32,6 +32,16 @@ export const booksDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        repeat: {
+            label: "Rereads",
+            rateLabel: "Reread rate",
+        },
+        timeComparison: {
+            secondaryHours: 2,
+            referenceHours: 5.5,
+            referenceLabel: "reads of Harry Potter and the Philosopher’s Stone",
+            secondaryLabel: "cups of tea gone cold, at one every two reading hours",
+        },
         progress: {
             redoLabel: "books re-read",
             totalSpecificLabel: "Total Pages Read",

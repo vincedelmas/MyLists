@@ -20,10 +20,7 @@ interface HistogramChartProps {
 
 
 export function HistogramChart(props: HistogramChartProps) {
-    const {
-        title, data, mediaType, unit, description,
-        height = 300, rangeMode = "integer", tailDirection = "upper",
-    } = props;
+    const { title, data, mediaType, unit, description, height = 300, rangeMode = "integer", tailDirection = "upper" } = props;
 
     const compactedBins = compactHistogramBins(data, { tailDirection });
     const overflow = compactedBins.find(item => item.overflow)?.overflow;
@@ -37,12 +34,12 @@ export function HistogramChart(props: HistogramChartProps) {
 
     const hasData = chartData.some(({ value }) => value > 0);
 
-    const valueFormatter = (val: number) => formatNumber(val, { fractionDigits: 0, locale: "fr" });
-    const summary = chartData.map(({ label, value }) => ({ label, value: valueFormatter(value) }))
+    const valueFormatter = (value: number) => formatNumber(value, { fractionDigits: 0, locale: "fr" });
 
+    const summary = chartData.map(({ label, value }) => ({ label, value: valueFormatter(value) }));
     const compactionDescription = [
         overflow === "lower" ? "Earlier data are aggregated in the first bar." : null,
-        overflow === "upper" ? "The upper tail is aggregated in the final bar." : null,
+        overflow === "upper" ? "The upper range is aggregated in the final bar." : null,
     ].filter(Boolean).join(" ");
 
     const chartDescription = [description, compactionDescription].filter(Boolean).join(" ") || undefined;

@@ -85,6 +85,25 @@ export const formatHours = (hours: number) => {
 };
 
 
+export const formatContinuousTime = (hours: number) => {
+    if (!Number.isFinite(hours) || hours < 0) return DEFAULT_DASH_FALLBACK;
+
+    if (hours >= 365 * 24) {
+        const years = hours / (365 * 24);
+        const roundedYears = Math.round(years * 10) / 10;
+        return `${formatNumber(years, { fractionDigits: 1, locale: "en" })} ${roundedYears === 1 ? "year" : "years"}`;
+    }
+
+    if (hours >= 24) {
+        const days = hours / 24;
+        const roundedDays = Math.round(days * 10) / 10;
+        return `${formatNumber(days, { fractionDigits: 1, locale: "en" })} ${roundedDays === 1 ? "day" : "days"}`;
+    }
+
+    return formatHours(hours);
+};
+
+
 export const formatMinutes = (minutes: number | string | null | undefined, options: { onlyHours?: boolean; compact?: boolean } = {}) => {
     const totalMinutes = Number(minutes ?? 0);
     if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return DEFAULT_DASH_FALLBACK;

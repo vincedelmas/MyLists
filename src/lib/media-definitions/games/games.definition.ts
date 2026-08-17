@@ -29,6 +29,16 @@ export const gamesDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        repeat: {
+            label: "Replays",
+            rateLabel: "Replay rate",
+        },
+        timeComparison: {
+            referenceHours: 32,
+            secondaryHours: 8,
+            secondaryLabel: "full eight-hour gaming sessions",
+            referenceLabel: "playthroughs of GTA V’s main story",
+        },
         durationDistribution: {
             unit: "h",
             rangeMode: "integer",

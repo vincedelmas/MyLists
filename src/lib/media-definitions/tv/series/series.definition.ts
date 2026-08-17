@@ -32,6 +32,16 @@ export const seriesDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        repeat: {
+            label: "Rewatches",
+            rateLabel: "Rewatch rate",
+        },
+        timeComparison: {
+            referenceHours: 49,
+            secondaryHours: 0.75,
+            referenceLabel: "complete watches of Breaking Bad",
+            secondaryLabel: "45-minute ‘just one more’ episodes",
+        },
         progress: {
             redoLabel: "seasons re-watched",
             totalSpecificLabel: "Total Episodes Watched",

@@ -71,7 +71,7 @@ export const createMoviesStatistics = (definition: MovieServerDefinition = movie
                 queries.computeAffinityStats(mediaAvgRating, userId),
             ]);
 
-            return { ...budgetRevenue, avgDuration, durationDistrib, ...affinities };
+            return { ...budgetRevenue, avgDuration, durationDistrib, affinityStats: affinities };
         },
     });
 };

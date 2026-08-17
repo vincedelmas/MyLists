@@ -1,9 +1,9 @@
 import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {BOOKS_FIXED_DURATION_MIN} from "@/lib/media-definitions/books/books.definition";
-import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
 import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 
 
 export const booksServerDefinition = defineServerMediaDefinition({
@@ -80,7 +80,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
             totalSpecific: sql<number>`COALESCE(SUM(${booksList.total}), 0)`,
             timeSpent: sql<number>`COALESCE(SUM(${booksList.total} * ${BOOKS_FIXED_DURATION_MIN}), 0)`,
         },
-        affinity: {
+        affinity: defineAffinityDefinitions(booksDefinition, {
             langsStats: {
                 metricTable: books,
                 metricIdCol: books.id,
@@ -102,7 +102,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
                 metricIdCol: booksAuthors.mediaId,
                 filters: [ne(booksList.status, Status.PLAN_TO_READ)],
             },
-        },
+        }),
     },
     service: {
         defaultStatus: Status.PLAN_TO_READ,

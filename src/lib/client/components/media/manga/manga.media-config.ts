@@ -1,4 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
+import {XLineTop} from "lucide-react";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {MangaListItem} from "@/lib/client/components/media/manga/MangaListItem";
 import {MangaInfoGrid} from "@/lib/client/components/media/manga/MangaInfoGrid";
 import {MangaOverTitle} from "@/lib/client/components/media/manga/MangaOverTitle";
@@ -24,5 +27,16 @@ export const mangaMediaConfig = defineMediaConfig({
         countLabel: "Read",
         extraLabel: "Rereads",
         extraMetric: "totalRedo",
+    },
+    statistics: {
+        getStatCards: (stats) => [
+            {
+                icon: XLineTop,
+                title: "Avg. Manga Length",
+                value: stats.specificMediaStats.avgDuration === null
+                    ? DEFAULT_DASH_FALLBACK
+                    : `${formatNumber(stats.specificMediaStats.avgDuration, { fractionDigits: 0 })} chapters`,
+            },
+        ],
     },
 });

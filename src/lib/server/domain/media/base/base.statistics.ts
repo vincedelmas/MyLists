@@ -15,7 +15,10 @@ type AffinityResults<TDefinition extends AnyServerMediaDefinition> = {
 };
 
 
-type DefineMediaStatsOptions<TDefinition extends AnyServerMediaDefinition, TSpecificStats extends Record<string, unknown>> = {
+type DefineMediaStatsOptions<
+    TDefinition extends AnyServerMediaDefinition,
+    TSpecificStats extends Record<string, unknown> & { affinityStats: Record<string, TopAffinity> },
+> = {
     definition: TDefinition;
     calculateSpecific: (context: {
         userId?: number;
@@ -222,7 +225,12 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
             computeTopGenresStats(mediaAvgRating, userId),
         ]);
 
-        return { ratings, genresStats, totalTags, releaseDates };
+        return {
+            ratings,
+            totalTags,
+            releaseDates,
+            affinityStats: { genresStats },
+        };
     };
 
     const computeTopAffinityStats = async (affinityDefinition: TopAffinityDefinition, mediaAvgRating: number | null, userId?: number): Promise<TopAffinity> => {
@@ -289,7 +297,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
 
 export const defineMediaStatistics = <
     const TDefinition extends AnyServerMediaDefinition,
-    TSpecificStats extends Record<string, unknown>,
+    TSpecificStats extends Record<string, unknown> & { affinityStats: Record<string, TopAffinity> },
 >({ definition, calculateSpecific }: DefineMediaStatsOptions<TDefinition, TSpecificStats>) => {
     const queries = createMediaStatsQueries(definition);
 
@@ -299,7 +307,14 @@ export const defineMediaStatistics = <
             calculateSpecific({ definition, queries, mediaAvgRating, userId }),
         ]);
 
-        return { ...common, ...specific };
+        const { affinityStats: commonAffinityStats, ...commonStats } = common;
+        const { affinityStats: specificAffinityStats, ...specificStats } = specific;
+        const affinityStats: Record<string, TopAffinity> = {
+            ...commonAffinityStats,
+            ...specificAffinityStats,
+        };
+
+        return { ...commonStats, ...specificStats, affinityStats };
     }
 
     return {

@@ -7,7 +7,6 @@ export type YearRecapReleaseMode = typeof yearRecapReleaseModes[number];
 
 export const YEAR_RECAP_FIRST_YEAR = 2026;
 
-
 export const yearRecapReleaseModes = ["automatic", "enabled", "disabled"] as const;
 
 
@@ -23,8 +22,8 @@ export type YearRecapMonth = {
     month: string;
     hours: number;
     repeats: number;
-    completions: number;
     titleCount: number;
+    completions: number;
 };
 
 
@@ -33,35 +32,40 @@ export type YearRecapMediaSummary = {
     hours: number;
     share: number;
     repeats: number;
-    completions: number;
-    titleCount: number;
-    activeMonths: number;
     progress: number;
+    titleCount: number;
+    completions: number;
+    activeMonths: number;
     progressUnit: string;
 };
 
 
 export type YearRecapTitle = {
-    mediaId: number;
-    mediaType: MediaType;
     name: string;
-    imageCover: string;
-    releaseDate: string | null;
-    rating: number | null;
-    favorite: boolean;
     hours: number;
     repeats: number;
+    mediaId: number;
+    progress: number;
+    favorite: boolean;
+    imageCover: string;
     completions: number;
     activeMonths: number;
-    progress: number;
     progressUnit: string;
+    mediaType: MediaType;
+    rating: number | null;
+    releaseDate: string | null;
 };
 
 
 export type YearRecapData = {
     year: number;
     scope: YearRecapScope;
+    months: YearRecapMonth[];
+    topTitles: YearRecapTitle[];
+    media: YearRecapMediaSummary[];
     availableMediaTypes: MediaType[];
+    busiestMonth: YearRecapMonth | null;
+    mostRepeatedTitle: YearRecapTitle | null;
     totals: {
         hours: number;
         repeats: number;
@@ -70,11 +74,6 @@ export type YearRecapData = {
         activeMonths: number;
         longestActiveStreak: number;
     };
-    months: YearRecapMonth[];
-    media: YearRecapMediaSummary[];
-    topTitles: YearRecapTitle[];
-    mostRepeatedTitle: YearRecapTitle | null;
-    busiestMonth: YearRecapMonth | null;
     comparison: {
         referenceCount: number;
         referenceLabel: string;

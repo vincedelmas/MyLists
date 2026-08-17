@@ -70,7 +70,7 @@ export const createTvStatistics = (definition: TvDefinition) => {
                 queries.computeAffinityStats(mediaAvgRating, userId),
             ]);
 
-            return { totalSeasons, avgDuration, durationDistrib, ...affinities };
+            return { totalSeasons, avgDuration, durationDistrib, affinityStats: affinities };
         },
     });
 };

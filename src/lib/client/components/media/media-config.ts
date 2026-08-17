@@ -4,7 +4,7 @@ import {gamesMediaConfig} from "@/lib/client/components/media/games/games.media-
 import {mangaMediaConfig} from "@/lib/client/components/media/manga/manga.media-config";
 import {moviesMediaConfig} from "@/lib/client/components/media/movies/movies.media-config";
 import {animeMediaConfig, seriesMediaConfig} from "@/lib/client/components/media/tv/tv.media-config";
-import {AdvancedSearchConfig, MediaConfigRegistry} from "@/lib/client/components/media/media-config.types";
+import {AdvancedSearchConfig, MediaClientConfig, MediaConfigRegistry} from "@/lib/client/components/media/media-config.types";
 
 
 export const mediaConfig: MediaConfigRegistry = {
@@ -18,6 +18,11 @@ export const mediaConfig: MediaConfigRegistry = {
 
 
 const mediaConfigValues = Object.values(mediaConfig);
+
+
+export const getMediaConfig = <T extends MediaType>(mediaType: T): MediaClientConfig<T> => {
+    return mediaConfig[mediaType];
+};
 
 
 export const getAdvancedSearchConfig = (provider: ApiProviderType): AdvancedSearchConfig | undefined => {

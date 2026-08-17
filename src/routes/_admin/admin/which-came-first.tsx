@@ -1,6 +1,6 @@
 import {fold} from "@tanstack/charts";
-import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {getThemeColor} from "@/lib/utils/theme-utils";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {WCF_MAX_ROUNDS} from "@/lib/schemas/wcf.schema";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -39,16 +39,6 @@ const statusChartColors: Record<WcfRunStatus, string> = {
     exhausted: "#efc94c",
     abandoned: "#71717a",
     active: "var(--brand)",
-};
-
-
-const mediaChartColors: Record<MediaType, string> = {
-    series: "var(--color-series)",
-    anime: "var(--color-anime)",
-    movies: "var(--color-movies)",
-    games: "var(--color-games)",
-    books: "var(--color-books)",
-    manga: "var(--color-manga)",
 };
 
 
@@ -263,7 +253,7 @@ function MediaTypeMixCard({ rows }: { rows: AdminWcfStats["mediaTypeUsage"] }) {
                             <div className="h-2 rounded-full bg-muted">
                                 <div
                                     className="h-2 rounded-full"
-                                    style={{ width: `${pct}%`, backgroundColor: mediaChartColors[row.mediaType] }}
+                                    style={{ width: `${pct}%`, backgroundColor: getThemeColor(row.mediaType) }}
                                 />
                             </div>
                         </div>

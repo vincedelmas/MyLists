@@ -2,7 +2,7 @@ import React from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
+import {TvMediaType} from "@/lib/utils/enums";
 import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 
 

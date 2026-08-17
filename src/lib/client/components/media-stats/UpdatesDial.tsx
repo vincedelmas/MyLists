@@ -1,4 +1,5 @@
 import {UpdateType} from "@/lib/utils/enums";
+import {getUpdateTypeColor} from "@/lib/utils/theme-utils";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {UserStatsResult} from "@/lib/types/stats.types";
 import {CalendarCheck2, History, ListRestart} from "lucide-react";
@@ -8,20 +9,6 @@ import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 interface UpdatesDialProps {
     fingerprint: UserStatsResult["updateFingerprint"];
 }
-
-
-const updatesColors: Record<UpdateType, string> = {
-    [UpdateType.STATUS]: "var(--brand)",
-    [UpdateType.TV]: "var(--color-series)",
-    [UpdateType.PLAYTIME]: "var(--color-games)",
-    [UpdateType.PAGE]: "var(--color-books)",
-    [UpdateType.CHAPTER]: "var(--color-manga)",
-    [UpdateType.REDO]: "var(--color-favorite)",
-    [UpdateType.RATING]: "var(--color-rating)",
-    [UpdateType.COMMENT]: "var(--color-info)",
-    [UpdateType.FAVORITE]: "var(--color-favorite)",
-    [UpdateType.PLATFORM]: "var(--color-info)",
-};
 
 
 const updatesLabels: Record<UpdateType, string> = {
@@ -47,7 +34,7 @@ export function UpdatesDial({ fingerprint }: UpdatesDialProps) {
         const start = total > 0 ? (cursor / total) * 100 : 0;
         cursor += item.value;
         const end = total > 0 ? (cursor / total) * 100 : 0;
-        return `${updatesColors[item.updateType]} ${start}% ${end}%`;
+        return `${getUpdateTypeColor(item.updateType)} ${start}% ${end}%`;
     }).join(", ");
 
     return (
@@ -86,7 +73,7 @@ export function UpdatesDial({ fingerprint }: UpdatesDialProps) {
                         <div key={item.updateType} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <span
                                 className="size-2 rounded-full"
-                                style={{ backgroundColor: updatesColors[item.updateType] }}
+                                style={{ backgroundColor: getUpdateTypeColor(item.updateType) }}
                             />
                             {updatesLabels[item.updateType]} · {formatNumber(item.value)}
                         </div>

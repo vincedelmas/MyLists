@@ -49,7 +49,7 @@ export const createBooksStatistics = (definition: BookServerDefinition = booksSe
                 queries.computeAffinityStats(mediaAvgRating, userId),
             ]);
 
-            return { avgDuration, durationDistrib, ...affinities };
+            return { avgDuration, durationDistrib, affinityStats: affinities };
         },
     });
 };

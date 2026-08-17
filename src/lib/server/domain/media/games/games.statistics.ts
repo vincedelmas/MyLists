@@ -84,7 +84,7 @@ export const createGamesStatistics = (definition: GamesServerDefinition = gamesS
                 queries.computeAffinityStats(mediaAvgRating, userId),
             ]);
 
-            return { avgDuration, durationDistrib, ...affinities };
+            return { avgDuration, durationDistrib, affinityStats: affinities };
         },
     });
 };

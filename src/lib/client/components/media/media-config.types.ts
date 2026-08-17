@@ -1,6 +1,8 @@
 import type {ComponentType, ReactNode} from "react";
+import type {LucideIcon} from "lucide-react";
 import type {ColumnDef} from "@tanstack/react-table";
 import type {SheetFilterObject} from "@/lib/types/media-list.types";
+import type {MediaStatsFor} from "@/lib/types/stats.types";
 import type {ApiProviderType, MediaType, Status} from "@/lib/utils/enums";
 import type {mediaListOptions} from "@/lib/client/react-query/query-options";
 import type {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
@@ -48,6 +50,14 @@ export interface AdvancedSearchConfig extends AdvancedSearchFilterDefinition {
 }
 
 
+export interface MediaStatCardDefinition {
+    title: string;
+    icon?: LucideIcon;
+    subtitle?: string;
+    value: ReactNode;
+}
+
+
 export interface MediaClientConfig<T extends MediaType> {
     mediaType: T;
     advancedSearch?: AdvancedSearchConfig;
@@ -65,6 +75,9 @@ export interface MediaClientConfig<T extends MediaType> {
         countLabel: string;
         extraLabel: string;
         extraMetric: keyof Pick<MediaCommunityActivityStats, "totalRedo" | "totalPlaytime" | "totalSpecific">;
+    };
+    statistics: {
+        getStatCards: (stats: MediaStatsFor<T>) => MediaStatCardDefinition[];
     };
 }
 

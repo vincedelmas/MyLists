@@ -1,4 +1,4 @@
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, JobType, MediaType} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
 
@@ -32,6 +32,11 @@ export const mangaDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        affinities: [
+            { key: "authorsStats", label: "Authors", job: JobType.CREATOR },
+            { key: "genresStats", label: "Genres" },
+            { key: "publishersStats", label: "Publishers", job: JobType.PUBLISHER },
+        ],
         repeat: {
             label: "Rereads",
             rateLabel: "Reread rate",

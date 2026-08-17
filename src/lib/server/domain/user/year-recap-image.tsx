@@ -3,10 +3,11 @@ import {serverEnv} from "@/env/server";
 import {Renderer} from "takumi-js/node";
 import {createRequire} from "node:module";
 import {FontDetails, render} from "takumi-js";
+import {RatingSystemType} from "@/lib/utils/enums";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {getImageFilename} from "@/lib/utils/image-url";
-import {MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {YearRecap, YearRecapTitle} from "@/lib/types/year-recap.types";
+import {getStaticMediaColor, STATIC_BRAND_COLOR} from "@/lib/utils/theme-utils";
 import {formatContinuousTime, formatHours, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardStatic, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
@@ -20,6 +21,7 @@ const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP
 
 const fontWeights = [400, 700] as const;
 const fontSubsets = ["latin", "latin-ext", "cyrillic", "cyrillic-ext", "greek", "greek-ext", "hebrew", "vietnamese", "symbols", "math"] as const;
+
 
 const fontSources: (Omit<FontDetails, "data"> & { file: string })[] = [
     ...fontSubsets.flatMap((subset, subsetRank) => fontWeights.map((weight) => ({
@@ -44,16 +46,6 @@ const fontSources: (Omit<FontDetails, "data"> & { file: string })[] = [
         file: `@fontsource-variable/noto-emoji/files/noto-emoji-${subsetRank}-wght-normal.woff2`,
     })),
 ];
-
-
-const mediaColors: Record<MediaType, string> = {
-    [MediaType.SERIES]: "#51c7d5",
-    [MediaType.ANIME]: "#ef7d62",
-    [MediaType.MOVIES]: "#e6b744",
-    [MediaType.GAMES]: "#50bd67",
-    [MediaType.BOOKS]: "#ba83d4",
-    [MediaType.MANGA]: "#ea6ea8",
-};
 
 
 export const yearRecapImageRenderer = Promise.all(fontSources.map(async ({ file, ...font }) => {
@@ -97,7 +89,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
         };
     }));
 
-    const accent = recap.scope === "all" ? "#20d69b" : mediaColors[recap.scope];
+    const accent = recap.scope === "all" ? STATIC_BRAND_COLOR : getStaticMediaColor(recap.scope);
     const maximumMonth = Math.max(...recap.months.map((month) => month.hours), 1);
     const scopeLabel = recap.scope === "all" ? "ALL MEDIA" : recap.scope.toUpperCase();
 
@@ -164,7 +156,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                                 className="absolute left-2 top-2 z-20 rounded-full border px-2 py-1 text-[10px]
                                 font-bold leading-none text-white"
                                 style={{
-                                    borderColor: mediaColors[title.mediaType],
+                                    borderColor: getStaticMediaColor(title.mediaType),
                                     backgroundColor: "#05070dcc",
                                 }}
                             >
@@ -187,7 +179,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                             font-bold text-[#aeb8ca]">
                                 <MediaCardDetails
                                     className="flex items-center gap-1 tracking-[0.7px]"
-                                    style={{ color: mediaColors[title.mediaType] }}
+                                    style={{ color: getStaticMediaColor(title.mediaType) }}
                                 >
                                     {recap.scope === "all" &&
                                         <span>{title.mediaType.toUpperCase()}</span>
@@ -233,7 +225,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                     {recap.months.map((month, idx) => {
                         const barHeight = Math.max(month.hours > 0 ? 10 : 3, (month.hours / maximumMonth) * 128);
                         const barColor = recap.scope === "all"
-                            ? ["#20d69b", "#29c7e8", "#8c7cf4", "#f47d9f", "#f2b84b"][idx % 5]
+                            ? [STATIC_BRAND_COLOR, "#29c7e8", "#8c7cf4", "#f47d9f", "#f2b84b"][idx % 5]
                             : accent;
 
                         return (
@@ -262,11 +254,11 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                                 key={media.mediaType}
                                 className="flex min-w-0 flex-1 flex-col rounded-2xl px-4 py-4.5"
                                 style={{
-                                    backgroundColor: `${mediaColors[media.mediaType]}18`,
-                                    border: `1px solid ${mediaColors[media.mediaType]}55`,
+                                    backgroundColor: `${getStaticMediaColor(media.mediaType)}18`,
+                                    border: `1px solid ${getStaticMediaColor(media.mediaType)}55`,
                                 }}
                             >
-                                <span className="text-[17px] font-bold" style={{ color: mediaColors[media.mediaType] }}>
+                                <span className="text-[17px] font-bold" style={{ color: getStaticMediaColor(media.mediaType) }}>
                                     {capitalize(media.mediaType)}
                                 </span>
                                 <span className="mt-2 text-[25px] font-bold">

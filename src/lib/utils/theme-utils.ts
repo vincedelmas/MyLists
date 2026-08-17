@@ -1,4 +1,4 @@
-import {AchievementDifficulty, MediaType, Status} from "@/lib/utils/enums";
+import {AchievementDifficulty, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {BookImage, Cat, Gamepad2, LayoutGrid, Library, Monitor, Popcorn} from "lucide-react";
 
 
@@ -37,6 +37,30 @@ const THEME_COLOR_MAP: Record<string, string> = {
 };
 
 
+const STATIC_MEDIA_COLOR_MAP: Record<MediaType, string> = {
+    [MediaType.SERIES]: "#51c7d5",
+    [MediaType.ANIME]: "#ef7d62",
+    [MediaType.MOVIES]: "#e6b744",
+    [MediaType.GAMES]: "#50bd67",
+    [MediaType.BOOKS]: "#ba83d4",
+    [MediaType.MANGA]: "#ea6ea8",
+};
+
+
+const UPDATE_TYPE_COLOR_MAP: Record<UpdateType, string> = {
+    [UpdateType.STATUS]: "var(--brand)",
+    [UpdateType.TV]: "var(--color-series)",
+    [UpdateType.PLAYTIME]: "var(--color-games)",
+    [UpdateType.PAGE]: "var(--color-books)",
+    [UpdateType.CHAPTER]: "var(--color-manga)",
+    [UpdateType.REDO]: "var(--color-favorite)",
+    [UpdateType.RATING]: "var(--color-rating)",
+    [UpdateType.COMMENT]: "var(--color-info)",
+    [UpdateType.FAVORITE]: "var(--color-favorite)",
+    [UpdateType.PLATFORM]: "var(--color-info)",
+};
+
+
 const DIFFICULTY_COLORS: Record<string, string> = {
     "border-bronze": "border-bronze",
     "border-silver": "border-silver",
@@ -57,10 +81,19 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 };
 
 
+export const STATIC_BRAND_COLOR = "#20d69b";
+
+
 export const getThemeColor = (type: MediaType | Status | string | undefined) => {
     if (!type) return "var(--color-muted-foreground)";
     return THEME_COLOR_MAP[type] ?? "var(--color-muted-foreground)";
 };
+
+
+export const getStaticMediaColor = (mediaType: MediaType) => STATIC_MEDIA_COLOR_MAP[mediaType];
+
+
+export const getUpdateTypeColor = (updateType: UpdateType) => UPDATE_TYPE_COLOR_MAP[updateType];
 
 
 export const getDifficultyColors = (difficulty: AchievementDifficulty | "total" | undefined, variant: "text" | "border" | "ring" | "bg" = "text") => {

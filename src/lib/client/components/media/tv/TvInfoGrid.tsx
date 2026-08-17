@@ -5,7 +5,7 @@ import {Link} from "@tanstack/react-router";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
+import {TvMediaType} from "@/lib/utils/enums";
 import {capitalize, formatLocaleName} from "@/lib/utils/text-formatting";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";

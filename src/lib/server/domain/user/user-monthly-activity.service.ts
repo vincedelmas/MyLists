@@ -18,10 +18,7 @@ export class UserMonthlyActivityService {
     }
 
     async logActivityFromDelta({ userId, mediaType, mediaId, delta, updateType, activityDate }: LogMonthlyActivityFromDelta) {
-        const contribution = this.mediaMonthlyActivityRegistry
-            .get(mediaType)
-            .createContribution(delta, updateType);
-
+        const contribution = this.mediaMonthlyActivityRegistry.get(mediaType).createContribution(delta, updateType);
         await this.repository.addContribution({ ...contribution, userId, mediaId, mediaType, activityDate });
     }
 

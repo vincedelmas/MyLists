@@ -1,4 +1,7 @@
+import {XLineTop} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
+import {formatNumber} from "@/lib/utils/number-formatting";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {BookListItem} from "@/lib/client/components/media/books/BookListItem";
 import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {BooksInfoGrid} from "@/lib/client/components/media/books/BooksInfoGrid";
@@ -26,6 +29,17 @@ export const booksMediaConfig = defineMediaConfig({
         countLabel: "Read",
         extraLabel: "Rereads",
         extraMetric: "totalRedo",
+    },
+    statistics: {
+        getStatCards: (stats) => [
+            {
+                icon: XLineTop,
+                title: "Avg. Book Length",
+                value: stats.specificMediaStats.avgDuration === null
+                    ? DEFAULT_DASH_FALLBACK
+                    : `${formatNumber(stats.specificMediaStats.avgDuration)} pages`,
+            },
+        ],
     },
     advancedSearch: {
         provider: booksDefinition.externalSearch.provider,

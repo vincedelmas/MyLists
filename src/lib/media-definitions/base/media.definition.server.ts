@@ -1,6 +1,7 @@
 import type {SQL} from "drizzle-orm";
 import type {CoverType} from "@/lib/types/media-common.types";
 import type {TopAffinityDefinition} from "@/lib/types/stats.types";
+import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import type {AnySQLiteColumn, AnySQLiteTable, SelectedFieldsFlat} from "drizzle-orm/sqlite-core";
 import type {FilterDefinitions, FilterOptionLoaders} from "@/lib/server/domain/media/base/media-list.query";
@@ -82,6 +83,12 @@ export type BaseMediaTables<
 
 type SortDefinitions = Record<string, SQL | [SQL, ...SQL[]]>;
 type AffinityDefinitions = Record<string, TopAffinityDefinition>;
+
+
+type SpecificAffinityKey<TDefinition extends MediaDefinition> = Exclude<
+    TDefinition["statistics"]["affinities"][number]["key"],
+    "genresStats"
+>;
 
 
 type BaseSelection = Omit<ListTableColumns, "redo"> & SelectedFieldsFlat & {
@@ -240,3 +247,9 @@ export const defineServerMediaDefinition = <
 >(definition: ServerMediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion>) => {
     return definition;
 }
+
+
+export const defineAffinityDefinitions = <const TDefinition extends MediaDefinition>(
+    _definition: TDefinition,
+    affinities: Readonly<Record<SpecificAffinityKey<TDefinition>, TopAffinityDefinition>>,
+) => affinities;

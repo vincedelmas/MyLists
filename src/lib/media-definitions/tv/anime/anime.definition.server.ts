@@ -1,8 +1,8 @@
 import {asc, desc, getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {ANIME_FALLBACK_DURATION} from "@/lib/media-definitions/tv/anime/anime.definition";
-import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {ANIME_FALLBACK_DURATION, animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, animeNetwork, animeTags} from "@/lib/server/database/schema/media/anime.schema";
 
 
@@ -124,11 +124,11 @@ export const animeServerDefinition = defineServerMediaDefinition({
     },
     statistics: {
         allUsers: {
+            totalRedo: sql<number>`COALESCE(SUM(${animeRedoCount}), 0)`,
             totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
             timeSpent: sql<number>`COALESCE(SUM(${animeList.total} * ${anime.duration}), 0)`,
-            totalRedo: sql<number>`COALESCE(SUM(${animeRedoCount}), 0)`,
         },
-        affinity: {
+        affinity: defineAffinityDefinitions(animeDefinition, {
             networksStats: {
                 minRatingCount: 3,
                 metricTable: animeNetwork,
@@ -152,7 +152,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 mediaLinkCol: animeList.mediaId,
                 filters: [notInArray(animeList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
             },
-        },
+        }),
     },
     service: {
         defaultStatus: Status.PLAN_TO_WATCH,

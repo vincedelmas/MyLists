@@ -1,13 +1,13 @@
 import {MediaType} from "@/lib/utils/enums";
-import {zeroPad} from "@/lib/utils/number-formatting";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {getActivityMonthRange} from "@/lib/utils/activity-utils";
 import {fillMonthlyActivityTimeline} from "@/lib/utils/stats-utils";
 import {MediaMonthlyActivityRegistry} from "@/lib/server/domain/media/media.registries";
-import {MonthlyActivityMedia} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {calendarDateRangeToISOString, compareDateInputs} from "@/lib/utils/date-formatting";
+import {resolveMonthlyActivityMedia} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {UserMonthlyActivityRepository} from "@/lib/server/domain/user/user-monthly-activity.repository";
 import {AddMonthlyActivity, MonthlyActivityFilters, MonthlyActivityStatsFilters, UpdateMonthlyActivity} from "@/lib/schemas";
-import {LogMonthlyActivityFromDelta, MonthlyActivityChartDatum, MonthlyActivityEditor, MonthlyActivityMediaRef, WrappedMonthlyActivityResult} from "@/lib/types/activity.types";
+import {LogMonthlyActivityFromDelta, MonthlyActivityChartDatum, MonthlyActivityEditor, WrappedMonthlyActivityResult} from "@/lib/types/activity.types";
 
 
 export class UserMonthlyActivityService {
@@ -26,11 +26,11 @@ export class UserMonthlyActivityService {
     }
 
     async getMonthlyActivityStats(userId: number, filters: MonthlyActivityStatsFilters) {
-        const timeBucket = `${filters.year}-${zeroPad(filters.month)}`;
+        const range = getActivityMonthRange(filters.year, filters.month, filters.view);
         const mediaTypes = filters.mediaType ? [filters.mediaType] : Object.values(MediaType);
 
-        const activities = await this.repository.getMonthlyStatsContributions(userId, mediaTypes, timeBucket);
-        const mediaDetailsByType = await this._getMediaByType(activities);
+        const activities = await this.repository.getMonthlyStatsContributions(userId, mediaTypes, range.startMonth, range.endMonth);
+        const mediaDetailsByType = await resolveMonthlyActivityMedia(activities, this.mediaMonthlyActivityRegistry);
 
         const activityRecord = Object.fromEntries(mediaTypes.map((mediaType) => {
             const monthlyActivity = this.mediaMonthlyActivityRegistry.get(mediaType);
@@ -57,8 +57,12 @@ export class UserMonthlyActivityService {
         };
     }
 
-    async getMonthlyActivity(userId: number, filters: MonthlyActivityFilters) {
-        const timeBucket = `${filters.year}-${zeroPad(filters.month)}`;
+    async getMonthlyActivity(userId: number, filters: MonthlyActivityFilters, canViewHidden = false) {
+        if (filters.hiddenOnly && !canViewHidden) {
+            throw new FormattedError("Hidden activity is only available to the profile owner");
+        }
+
+        const range = getActivityMonthRange(filters.year, filters.month, filters.view);
         const mediaTypes = filters.activeTab === "all" ? Object.values(MediaType) : [filters.activeTab];
 
         const mediaIdsByType = filters.search?.trim()
@@ -66,9 +70,9 @@ export class UserMonthlyActivityService {
             : undefined;
 
         const [availableMediaTypes, result] = await Promise.all([
-            this.repository.getMonthlyMediaTypes(userId, timeBucket, filters.hiddenOnly),
+            this.repository.getMonthlyMediaTypes(userId, range.startMonth, range.endMonth, filters.hiddenOnly),
             this.repository.getPaginatedMonthlyActivities(userId, {
-                timeBucket,
+                ...range,
                 perPage: 48,
                 mediaIdsByType,
                 page: filters.page,
@@ -78,7 +82,7 @@ export class UserMonthlyActivityService {
             }),
         ]);
 
-        const mediaDetailsByType = await this._getMediaByType(result.items);
+        const mediaDetailsByType = await resolveMonthlyActivityMedia(result.items, this.mediaMonthlyActivityRegistry);
 
         const rows: MonthlyActivityEditor[] = [];
         for (const activity of result.items) {
@@ -160,7 +164,7 @@ export class UserMonthlyActivityService {
         });
 
         const chartMap = new Map<string, MonthlyActivityChartDatum>();
-        const mediaDetailsByType = await this._getMediaByType(activities);
+        const mediaDetailsByType = await resolveMonthlyActivityMedia(activities, this.mediaMonthlyActivityRegistry);
 
         for (const activity of activities) {
             const monthData = chartMap.get(activity.monthBucket) ?? {
@@ -189,23 +193,6 @@ export class UserMonthlyActivityService {
             data: result,
             range: { startMonth, endMonth },
         };
-    }
-
-    private async _getMediaByType(activities: MonthlyActivityMediaRef[]) {
-        const mediaTypes = [...new Set(activities.map((activity) => activity.mediaType))];
-        const mediaDetailsByType = new Map<MediaType, Map<number, MonthlyActivityMedia>>();
-
-        await Promise.all(mediaTypes.map(async (mediaType) => {
-            const mediaIds = activities
-                .filter((activity) => activity.mediaType === mediaType)
-                .map((activity) => activity.mediaId);
-
-            const monthlyActivity = this.mediaMonthlyActivityRegistry.get(mediaType);
-            const mediaDetails = await monthlyActivity.getMediaByIds(mediaIds);
-            mediaDetailsByType.set(mediaType, new Map(mediaDetails.map((media) => [media.id, media])));
-        }));
-
-        return mediaDetailsByType;
     }
 
     private async _searchActivityMediaIds(userId: number, mediaTypes: MediaType[], search: string) {

@@ -1,5 +1,6 @@
 import {Clock} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
+import {ActivityPeriod} from "@/lib/schemas";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -11,12 +12,13 @@ interface MonthlyActivityStatsProps {
     year: string;
     month: string;
     username: string;
+    view: ActivityPeriod;
     mediaType?: MediaType;
 }
 
 
-export function MonthlyActivityStats({ username, year, month, mediaType }: MonthlyActivityStatsProps) {
-    const stats = useSuspenseQuery(monthlyActivityStatsOptions(username, { year, month, mediaType })).data;
+export function MonthlyActivityStats({ username, year, month, view, mediaType }: MonthlyActivityStatsProps) {
+    const stats = useSuspenseQuery(monthlyActivityStatsOptions(username, { year, month, view, mediaType })).data;
 
     return (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
@@ -25,7 +27,7 @@ export function MonthlyActivityStats({ username, year, month, mediaType }: Month
                     <div className="flex min-w-0 items-center gap-2">
                         <Clock className="text-brand" size={15}/>
                         <span className="truncate text-sm font-medium capitalize">
-                        Monthly Time
+                        {view === "year" ? "Yearly Time" : "Monthly Time"}
                     </span>
                     </div>
                 </div>

@@ -31,7 +31,8 @@ export type MonthlyActivityEditor = {
 export type PaginatedMonthlyActivityFilter = {
     page?: number;
     perPage?: number;
-    timeBucket: string;
+    endMonth: string;
+    startMonth: string;
     hiddenOnly?: boolean;
     mediaType?: MediaType;
     activityKind?: ActivityKind;

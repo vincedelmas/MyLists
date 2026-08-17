@@ -36,6 +36,16 @@ export const getDefaultActivityDate = (year: number, month: number) => {
 };
 
 
+export const getActivityMonthRange = (year: string | number, month: string | number, view: "month" | "year") => {
+    const selectedYear = String(year);
+    const selectedMonth = `${selectedYear}-${zeroPad(Number(month))}`;
+
+    return view === "year"
+        ? { startMonth: `${selectedYear}-01`, endMonth: `${selectedYear}-12` }
+        : { startMonth: selectedMonth, endMonth: selectedMonth };
+};
+
+
 export const getMonthlyActivityStatSummary = (mediaType: MediaType, progressTotal: number, count: number) => {
     const definition = getMediaDefinition(mediaType);
 

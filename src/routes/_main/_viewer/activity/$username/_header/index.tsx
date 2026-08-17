@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_main/_viewer/activity/$username/_header/
     loader: async ({ context: { queryClient }, params: { username }, deps: { search } }) => {
         await Promise.all([
             queryClient.ensureQueryData(monthlyActivityOptions(username, search)),
-            queryClient.ensureQueryData(monthlyActivityStatsOptions(username, { year: search.year, month: search.month })),
+            queryClient.ensureQueryData(monthlyActivityStatsOptions(username, { year: search.year, month: search.month, view: search.view })),
         ]);
     },
     component: MonthlyActivityPage,

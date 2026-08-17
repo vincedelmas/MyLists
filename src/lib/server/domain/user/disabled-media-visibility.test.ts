@@ -55,7 +55,8 @@ describe("disabled media visibility", () => {
         const disabledActivity = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
             page: 1,
             perPage: 48,
-            timeBucket: "2026-04",
+            startMonth: "2026-04",
+            endMonth: "2026-04",
         });
         const disabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
         const disabledAchievementPage = await AchievementsRepository.getUserAchievements(42);
@@ -89,7 +90,8 @@ describe("disabled media visibility", () => {
         const enabledActivity = await UserMonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
             page: 1,
             perPage: 48,
-            timeBucket: "2026-04",
+            startMonth: "2026-04",
+            endMonth: "2026-04",
         });
         const enabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
         const enabledCommunity = await animeRepository.getMediaCommunityActivity(toActor(), 100, {});

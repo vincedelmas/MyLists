@@ -90,7 +90,8 @@ export class UserStatsService {
     // --- User Profile Summary Stats --------------------------------------------
 
     async userPreComputedStatsSummary(userId: number) {
-        return this._getComputedStatsSummary({ userId });
+        const { mediaBreakdown: _mediaBreakdown, ...summary } = await this._getComputedStatsSummary({ userId });
+        return summary;
     }
 
     async userPerMediaSummaryStats(userId: number) {
@@ -135,10 +136,12 @@ export class UserStatsService {
     // --- User Advanced Stats  --------------------------------------------------
 
     async userAdvancedSummaryStats(userId: number) {
-        const userPreComputedStats = await this._getComputedStatsSummary({ userId });
-        const platinumAchievements = await this.achievementsRepository.countPlatinumAchievements(userId);
-        const mediaUpdatesPerMonth = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ userId });
-        const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ userId });
+        const [userPreComputedStats, platinumAchievements, updateFingerprint, activityByMonth] = await Promise.all([
+            this._getComputedStatsSummary({ userId }),
+            this.achievementsRepository.countPlatinumAchievements(userId),
+            this.userUpdatesRepository.mediaUpdateFingerprint({ userId }),
+            this.userActivityService.getActivityStatsByMonth({ userId }),
+        ]);
 
         const tagCountPromises = userPreComputedStats.mediaTypes.map((mediaType) => {
             const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
@@ -151,8 +154,8 @@ export class UserStatsService {
             ...userPreComputedStats,
             totalTags,
             activityByMonth,
+            updateFingerprint,
             platinumAchievements,
-            updatesPerMonth: mediaUpdatesPerMonth,
         };
     }
 
@@ -160,14 +163,17 @@ export class UserStatsService {
         const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
 
         const preComputedMediaStats = await this.repository.getAggregatedMediaStats({ userId, mediaType });
-        const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ userId, mediaType });
-        const specificMediaStats = await mediaStatistics.calculateAdvancedMediaStats(preComputedMediaStats.avgRated, userId);
-        const mediaUpdatesPerMonthStats = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ mediaType, userId });
+
+        const [activityByMonth, specificMediaStats, updateFingerprint] = await Promise.all([
+            this.userActivityService.getActivityStatsByMonth({ userId, mediaType }),
+            mediaStatistics.calculateAdvancedMediaStats(preComputedMediaStats.avgRated, userId),
+            this.userUpdatesRepository.mediaUpdateFingerprint({ mediaType, userId }),
+        ]);
 
         return {
             ...preComputedMediaStats,
-            ...mediaUpdatesPerMonthStats,
             activityByMonth,
+            updateFingerprint,
             specificMediaStats,
         };
     }
@@ -175,10 +181,12 @@ export class UserStatsService {
     // --- Platform Advanced Stats -----------------------------------------------
 
     async platformAdvancedStatsSummary() {
-        const platformPreComputedStats = await this._getComputedStatsSummary({});
-        const platinumAchievements = await this.achievementsRepository.countPlatinumAchievements();
-        const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ excludeBulkImports: true });
-        const mediaUpdatesPerMonth = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ excludeBulkImports: true });
+        const [platformPreComputedStats, platinumAchievements, activityByMonth, updateFingerprint] = await Promise.all([
+            this._getComputedStatsSummary({}),
+            this.achievementsRepository.countPlatinumAchievements(),
+            this.userActivityService.getActivityStatsByMonth({ excludeBulkImports: true }),
+            this.userUpdatesRepository.mediaUpdateFingerprint({ excludeBulkImports: true }),
+        ]);
 
         const tagCountPromises = platformPreComputedStats.mediaTypes.map((mediaType) => {
             const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
@@ -191,23 +199,25 @@ export class UserStatsService {
             ...platformPreComputedStats,
             totalTags,
             activityByMonth,
+            updateFingerprint,
             platinumAchievements,
-            updatesPerMonth: mediaUpdatesPerMonth,
         };
     }
 
     async platformMediaAdvancedStats(mediaType: MediaType) {
         const mediaStatistics = this.mediaStatsRegistry.get(mediaType);
-
         const platformPreComputedStats = await this.repository.getAggregatedMediaStats({ mediaType });
-        const specificMediaStats = await mediaStatistics.calculateAdvancedMediaStats(platformPreComputedStats.avgRated);
-        const activityByMonth = await this.userActivityService.getActivityStatsByMonth({ mediaType, excludeBulkImports: true });
-        const mediaUpdatesPerMonthStats = await this.userUpdatesRepository.mediaUpdatesStatsPerMonth({ mediaType, excludeBulkImports: true });
+
+        const [specificMediaStats, activityByMonth, updateFingerprint] = await Promise.all([
+            mediaStatistics.calculateAdvancedMediaStats(platformPreComputedStats.avgRated),
+            this.userActivityService.getActivityStatsByMonth({ mediaType, excludeBulkImports: true }),
+            this.userUpdatesRepository.mediaUpdateFingerprint({ mediaType, excludeBulkImports: true }),
+        ]);
 
         return {
             ...platformPreComputedStats,
-            ...mediaUpdatesPerMonthStats,
             activityByMonth,
+            updateFingerprint,
             specificMediaStats,
         };
     }
@@ -217,16 +227,17 @@ export class UserStatsService {
             preComputedStats,
             statusCountsList,
             mediaTimeDistribution,
+            mediaBreakdown,
             totalUsers,
         } = await this.repository.getPreComputedStatsSummary({ userId });
 
         const {
-            totalHours,
-            totalEntries,
-            totalFavorites,
-            totalComments,
             totalRedo,
             totalRated,
+            totalHours,
+            totalEntries,
+            totalComments,
+            totalFavorites,
             sumOfAllRatings,
             distinctMediaTypes,
         } = preComputedStats;
@@ -250,6 +261,34 @@ export class UserStatsService {
         const avgComments = (avgDivisor === 0) ? null : (totalComments / avgDivisor);
         const avgFavorites = (avgDivisor === 0) ? null : (totalFavorites / avgDivisor);
 
+        const noPlanByMediaType = new Map<MediaType, number>();
+        for (const setting of statusCountsList) {
+            const total = Object.entries(setting.statusCounts).reduce((sum, [status, count]) => {
+                return excludedStatuses.includes(status as Status) ? sum : sum + count;
+            }, 0);
+            noPlanByMediaType.set(setting.mediaType, (noPlanByMediaType.get(setting.mediaType) ?? 0) + total);
+        }
+
+        const mediaBreakdownWithRatios = mediaBreakdown.map((media) => {
+            const totalEntriesForMedia = media.totalEntries ?? 0;
+            const totalEntriesNoPlanForMedia = noPlanByMediaType.get(media.mediaType) ?? 0;
+            const totalRatedForMedia = media.totalRated ?? 0;
+
+            return {
+                mediaType: media.mediaType,
+                activeUsers: media.activeUsers,
+                totalRated: totalRatedForMedia,
+                totalRedo: media.totalRedo ?? 0,
+                totalEntries: totalEntriesForMedia,
+                totalComments: media.totalComments ?? 0,
+                totalFavorites: media.totalFavorites ?? 0,
+                timeSpentHours: media.timeSpentHours ?? 0,
+                totalEntriesNoPlan: totalEntriesNoPlanForMedia,
+                avgRating: totalRatedForMedia === 0 ? null : (media.sumOfRatings ?? 0) / totalRatedForMedia,
+                ratingCoverage: totalEntriesNoPlanForMedia === 0 ? null : (totalRatedForMedia / totalEntriesNoPlanForMedia) * 100,
+            };
+        });
+
         return {
             avgRated,
             totalRedo,
@@ -264,6 +303,7 @@ export class UserStatsService {
             mediaTimeDistribution,
             totalHours: totalHours,
             totalDays: totalHours / 24,
+            mediaBreakdown: mediaBreakdownWithRatios,
             mediaTypes: mediaTimeDistribution.map((d) => d.name),
             ...(userId ? {} : { totalUsers }),
         };

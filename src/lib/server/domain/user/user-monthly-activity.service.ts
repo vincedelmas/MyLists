@@ -144,14 +144,12 @@ export class UserMonthlyActivityService {
     async getActivityStatsByMonth(filters: { userId?: number, mediaType?: MediaType, startYear?: number, excludeBulkImports?: boolean } = {}) {
         const now = new Date();
         const currentYear = now.getUTCFullYear();
-        const startYear = filters.startYear ?? currentYear;
 
-        const startMonth = `${startYear}-01`;
+        const selectedYear = filters.startYear ?? currentYear;
         const mediaTypes = filters.mediaType ? [filters.mediaType] : Object.values(MediaType);
 
-        const endMonth = startYear === currentYear
-            ? `${currentYear}-${zeroPad(now.getUTCMonth() + 1)}`
-            : `${startYear}-12`;
+        const endMonth = `${selectedYear}-12`;
+        const startMonth = `${selectedYear}-01`;
 
         const activities = await this.repository.getProgressStatsByMonth({
             endMonth,

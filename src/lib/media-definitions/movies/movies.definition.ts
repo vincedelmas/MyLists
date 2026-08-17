@@ -32,6 +32,16 @@ export const moviesDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        repeat: {
+            label: "Rewatches",
+            rateLabel: "Rewatch rate",
+        },
+        timeComparison: {
+            secondaryHours: 2,
+            referenceHours: 169 / 60,
+            referenceLabel: "full watches of Interstellar",
+            secondaryLabel: "cinema-sized popcorns, at one per two-hour film",
+        },
         progress: {
             redoLabel: "movies re-watched",
             totalSpecificLabel: "Total Movies Watched",

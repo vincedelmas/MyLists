@@ -16,7 +16,6 @@ type StatCardDefinition = {
 
 
 type MediaStatsViewConfig = {
-    affinityColumns: 3 | 4;
     getStatCards: (stats: AnyMediaStats) => StatCardDefinition[];
     getAffinityCards: (stats: AnyMediaStats) => AffinityCardDefinition[];
 };
@@ -30,7 +29,6 @@ type AffinityCardDefinition = {
 
 
 type TypedStatsConfig<T extends MediaType> = {
-    affinityColumns: 3 | 4;
     getStatCards: (stats: MediaStatsFor<T>) => StatCardDefinition[];
     getAffinityCards: (stats: MediaStatsFor<T>) => AffinityCardDefinition[];
 };
@@ -67,17 +65,14 @@ const getTvAffinityCards = (stats: MediaStatsFor<TvMediaType>): AffinityCardDefi
 
 export const mediaStatsViewConfig = {
     [MediaType.SERIES]: defineMediaStatsView(MediaType.SERIES, {
-        affinityColumns: 4,
         getStatCards: getTvStatCards,
         getAffinityCards: getTvAffinityCards,
     }),
     [MediaType.ANIME]: defineMediaStatsView(MediaType.ANIME, {
-        affinityColumns: 4,
         getStatCards: getTvStatCards,
         getAffinityCards: getTvAffinityCards,
     }),
     [MediaType.MOVIES]: defineMediaStatsView(MediaType.MOVIES, {
-        affinityColumns: 4,
         getStatCards: (stats) => [
             {
                 title: "Avg. Movie Duration",
@@ -105,7 +100,6 @@ export const mediaStatsViewConfig = {
         ],
     }),
     [MediaType.GAMES]: defineMediaStatsView(MediaType.GAMES, {
-        affinityColumns: 3,
         getStatCards: (stats) => [
             {
                 title: "Avg. Game Playtime",
@@ -126,7 +120,6 @@ export const mediaStatsViewConfig = {
         ],
     }),
     [MediaType.BOOKS]: defineMediaStatsView(MediaType.BOOKS, {
-        affinityColumns: 4,
         getStatCards: (stats) => [
             {
                 title: "Avg. Book Length",
@@ -144,7 +137,6 @@ export const mediaStatsViewConfig = {
         ],
     }),
     [MediaType.MANGA]: defineMediaStatsView(MediaType.MANGA, {
-        affinityColumns: 3,
         getStatCards: (stats) => [
             {
                 title: "Avg. Manga Length",

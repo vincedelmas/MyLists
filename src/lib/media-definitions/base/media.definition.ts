@@ -17,6 +17,16 @@ type MediaProgressTiming =
 
 
 type MediaStatsDefinition = Readonly<{
+    repeat: Readonly<{
+        label: string;
+        rateLabel: string;
+    }>;
+    timeComparison: Readonly<{
+        referenceHours: number;
+        referenceLabel: string;
+        secondaryHours: number;
+        secondaryLabel: string;
+    }>;
     progress?: Readonly<{
         redoLabel: string;
         totalSpecificLabel: string;

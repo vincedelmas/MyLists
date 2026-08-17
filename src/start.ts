@@ -1,7 +1,7 @@
 import {createStart} from "@tanstack/react-start";
 import {csrfMiddleware} from "@/lib/server/middlewares/csrf";
 import {funcErrorMiddleware, reqErrorMiddleware} from "@/lib/server/middlewares/global-error";
-import {formattedErrorAdapter, unauthorizedErrorAdapter, validationErrorAdapter} from "@/lib/utils/error-classes";
+import {formattedErrorAdapter, inactiveMediaTypeErrorAdapter, unauthorizedErrorAdapter, validationErrorAdapter} from "@/lib/utils/error-classes";
 
 
 export const startInstance = createStart(() => {
@@ -13,6 +13,7 @@ export const startInstance = createStart(() => {
             formattedErrorAdapter,
             validationErrorAdapter,
             unauthorizedErrorAdapter,
+            inactiveMediaTypeErrorAdapter,
         ],
     }
 });

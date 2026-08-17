@@ -32,6 +32,16 @@ export const mangaDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        repeat: {
+            label: "Rereads",
+            rateLabel: "Reread rate",
+        },
+        timeComparison: {
+            referenceHours: 20,
+            secondaryHours: 10 / 60,
+            referenceLabel: "reads of the complete Death Note manga",
+            secondaryLabel: "manga chapters, at ten minutes per chapter",
+        },
         progress: {
             redoLabel: "manga re-read",
             totalSpecificLabel: "Total Chapters Read",

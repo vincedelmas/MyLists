@@ -7,7 +7,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType, SocialState, UpdateType} from "@/lib/utils/enums";
 import {Actor, followFeedProfileVisibilityCondition} from "@/lib/server/authorization";
 import {followers, user, userMediaSettings, userMediaUpdate} from "@/lib/server/database/schema";
-import {and, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, like, SQL, sql} from "drizzle-orm";
+import {and, count, countDistinct, desc, eq, getTableColumns, gt, gte, inArray, isNull, like, SQL, sql} from "drizzle-orm";
 
 
 const BULK_IMPORT_GRACE_MONTHS = 2;
@@ -124,15 +124,19 @@ export class UserUpdatesRepository {
             .limit(limit);
     }
 
-    static async mediaUpdatesStatsPerMonth({ mediaType, userId, excludeBulkImports }: { userId?: number, mediaType?: MediaType, excludeBulkImports?: boolean }) {
+    static async mediaUpdateFingerprint({ mediaType, userId, excludeBulkImports }: { userId?: number, mediaType?: MediaType, excludeBulkImports?: boolean }) {
         const conditions: SQL[] = [];
         if (userId) conditions.push(eq(userMediaUpdate.userId, userId));
         if (mediaType) conditions.push(eq(userMediaUpdate.mediaType, mediaType));
 
-        const query = getDbClient()
+        const likelyBulkMonths = excludeBulkImports ? this._likelyBulkImportUserMonths() : null;
+        if (likelyBulkMonths) conditions.push(isNull(likelyBulkMonths.userId));
+
+        const summaryQuery = getDbClient()
             .select({
-                value: count(userMediaUpdate.mediaId),
-                name: sql<string>`strftime('%Y-%m', ${userMediaUpdate.timestamp})`,
+                lastUpdateAt: sql<string | null>`max(${userMediaUpdate.timestamp})`,
+                firstUpdateAt: sql<string | null>`min(${userMediaUpdate.timestamp})`,
+                activeDays: countDistinct(sql`date(${userMediaUpdate.timestamp})`).mapWith(Number),
             })
             .from(userMediaUpdate)
             .innerJoin(userMediaSettings, and(
@@ -142,26 +146,61 @@ export class UserUpdatesRepository {
             ))
             .$dynamic();
 
-        if (excludeBulkImports) {
-            const likelyBulkMonths = this._likelyBulkImportUserMonths();
-            query.leftJoin(likelyBulkMonths, and(
+        const updateTypesQuery = getDbClient()
+            .select({
+                value: count(),
+                updateType: userMediaUpdate.updateType,
+            })
+            .from(userMediaUpdate)
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.active, true),
+                eq(userMediaSettings.userId, userMediaUpdate.userId),
+                eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
+            ))
+            .$dynamic();
+
+        const mostTouchedQuery = getDbClient()
+            .select({
+                updates: count(),
+                mediaId: userMediaUpdate.mediaId,
+                mediaName: userMediaUpdate.mediaName,
+                mediaType: userMediaUpdate.mediaType,
+            })
+            .from(userMediaUpdate)
+            .innerJoin(userMediaSettings, and(
+                eq(userMediaSettings.active, true),
+                eq(userMediaSettings.userId, userMediaUpdate.userId),
+                eq(userMediaSettings.mediaType, userMediaUpdate.mediaType),
+            ))
+            .$dynamic();
+
+        if (likelyBulkMonths) {
+            const bulkJoin = and(
                 eq(userMediaUpdate.userId, likelyBulkMonths.userId),
                 eq(sql<string>`strftime('%Y-%m', ${userMediaUpdate.timestamp})`, likelyBulkMonths.monthBucket),
-            ));
-            conditions.push(isNull(likelyBulkMonths.userId));
+            );
+            summaryQuery.leftJoin(likelyBulkMonths, bulkJoin);
+            updateTypesQuery.leftJoin(likelyBulkMonths, bulkJoin);
+            mostTouchedQuery.leftJoin(likelyBulkMonths, bulkJoin);
         }
 
-        const monthlyCounts = await query
-            .where(conditions.length > 0 ? and(...conditions) : undefined)
-            .groupBy(sql`strftime('%Y-%m', ${userMediaUpdate.timestamp})`)
-            .orderBy(sql`strftime('%Y-%m', ${userMediaUpdate.timestamp})`);
-
-        const totalUpdates = monthlyCounts.reduce((a, c) => a + c.value, 0);
+        const where = conditions.length > 0 ? and(...conditions) : undefined;
+        const [summary, updateTypes, mostTouched] = await Promise.all([
+            summaryQuery.where(where).get(),
+            updateTypesQuery.where(where).groupBy(userMediaUpdate.updateType).orderBy(desc(count())),
+            mostTouchedQuery
+                .where(where)
+                .groupBy(userMediaUpdate.mediaType, userMediaUpdate.mediaId, userMediaUpdate.mediaName)
+                .orderBy(desc(count()))
+                .get(),
+        ]);
 
         return {
-            totalUpdates: totalUpdates,
-            updatesDistribution: monthlyCounts,
-            avgUpdates: monthlyCounts.length ? (totalUpdates / monthlyCounts.length) : null,
+            updateTypes,
+            mostTouched: mostTouched ?? null,
+            activeDays: summary?.activeDays ?? 0,
+            lastUpdateAt: summary?.lastUpdateAt ?? null,
+            firstUpdateAt: summary?.firstUpdateAt ?? null,
         };
     }
 

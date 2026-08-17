@@ -376,18 +376,33 @@ export class UserStatsRepository {
         if (!preComputedStats) throw new Error("No stats found");
 
         const statusCountsList = await getDbClient()
-            .select({ statusCounts: userMediaSettings.statusCounts })
+            .select({
+                mediaType: userMediaSettings.mediaType,
+                statusCounts: userMediaSettings.statusCounts,
+            })
             .from(userMediaSettings)
             .where(activeSettings);
 
-        const mediaTimeDistribution = await getDbClient()
+        const mediaBreakdown = await getDbClient()
             .select({
-                name: userMediaSettings.mediaType,
-                value: sql`sum(${userMediaSettings.timeSpent}) / 60.0`.mapWith(Number),
+                mediaType: userMediaSettings.mediaType,
+                activeUsers: countDistinct(userMediaSettings.userId),
+                totalRedo: sum(userMediaSettings.totalRedo).mapWith(Number),
+                totalRated: sum(userMediaSettings.entriesRated).mapWith(Number),
+                totalEntries: sum(userMediaSettings.totalEntries).mapWith(Number),
+                sumOfRatings: sum(userMediaSettings.sumEntriesRated).mapWith(Number),
+                totalComments: sum(userMediaSettings.entriesCommented).mapWith(Number),
+                totalFavorites: sum(userMediaSettings.entriesFavorites).mapWith(Number),
+                timeSpentHours: sql`sum(${userMediaSettings.timeSpent}) / 60.0`.mapWith(Number),
             })
             .from(userMediaSettings)
             .where(activeSettings)
             .groupBy(userMediaSettings.mediaType);
+
+        const mediaTimeDistribution = mediaBreakdown.map(({ mediaType, timeSpentHours }) => ({
+            name: mediaType,
+            value: timeSpentHours ?? 0,
+        }));
 
         let totalUsers = 0;
         if (!userId) {
@@ -398,6 +413,10 @@ export class UserStatsRepository {
         }
 
         return {
+            totalUsers,
+            mediaBreakdown,
+            statusCountsList,
+            mediaTimeDistribution,
             preComputedStats: {
                 totalRedo: preComputedStats?.totalRedo ?? 0,
                 totalRated: preComputedStats?.totalRated ?? 0,
@@ -408,9 +427,6 @@ export class UserStatsRepository {
                 sumOfAllRatings: preComputedStats?.sumOfAllRatings ?? 0,
                 distinctMediaTypes: preComputedStats?.distinctMediaTypes ?? 0,
             },
-            totalUsers,
-            statusCountsList,
-            mediaTimeDistribution,
         };
     }
 }

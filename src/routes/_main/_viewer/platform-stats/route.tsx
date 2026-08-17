@@ -1,3 +1,4 @@
+import {Clock3} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
@@ -30,16 +31,26 @@ function PlatformStatsPage() {
     };
 
     return (
-        <PageTitle title="MyLists Statistics" subtitle="Comprehensive media tracking insights">
-            <TabHeader
-                tabs={mediaTabs}
-                activeTab={activeTab}
-                setActiveTab={handleTabChange}
-            />
+        <PageTitle title="MyLists Statistics" subtitle="Statistics across the MyLists community">
+            <TabHeader tabs={mediaTabs} activeTab={activeTab} setActiveTab={handleTabChange}>
+                <div
+                    title="Platform statistics are cached for up to 24 hours"
+                    className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground"
+                >
+                    <Clock3 className="size-3.5"/>
+                    <span className="max-sm:hidden">
+                        Updated daily
+                    </span>
+                    <span className="sm:hidden">
+                        Daily
+                    </span>
+                </div>
+            </TabHeader>
 
             <div className="mt-6">
                 <DashboardContent
                     data={apiData}
+                    onSelectMediaType={handleTabChange}
                 />
             </div>
         </PageTitle>

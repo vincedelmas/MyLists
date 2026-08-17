@@ -1,10 +1,10 @@
 import {sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
-import {relations} from "drizzle-orm/relations";
 import {TaskResult} from "@/lib/types/tasks.types";
 import {user} from "@/lib/server/database/schema/auth.schema";
-import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 import {customJson, dateAsString} from "@/lib/server/database/custom-types";
+import {check, index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
 export const taskHistory = sqliteTable("task_history", {
@@ -23,6 +23,15 @@ export const taskHistory = sqliteTable("task_history", {
     index("ix_task_history_status").on(table.status),
     index("ix_task_history_user_id").on(table.userId),
     check("task_history_logs_json_check", sql`json_valid(${table.logs})`),
+]);
+
+
+export const yearRecapRelease = sqliteTable("year_recap_release", {
+    year: integer("year").primaryKey().notNull(),
+    mode: text("mode").$type<YearRecapReleaseMode>().default("automatic").notNull(),
+    updatedAt: dateAsString("updated_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [
+    check("year_recap_release_mode_check", sql`${table.mode} IN ('automatic', 'enabled', 'disabled')`),
 ]);
 
 
@@ -51,14 +60,6 @@ export const inactiveAccountDeletion = sqliteTable("inactive_account_deletion", 
 ]);
 
 
-export const taskHistoryRelations = relations(taskHistory, ({ one }) => ({
-    user: one(user, {
-        fields: [taskHistory.userId],
-        references: [user.id]
-    }),
-}));
-
-
 export const mediaRefreshLog = sqliteTable("media_refresh_log", {
     id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     userId: integer("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -70,14 +71,6 @@ export const mediaRefreshLog = sqliteTable("media_refresh_log", {
     index("ix_media_refresh_log_refreshed_at").on(table.refreshedAt),
     index("ix_media_refresh_log_media_type").on(table.mediaType),
 ]);
-
-
-export const mediaRefreshLogRelations = relations(mediaRefreshLog, ({ one }) => ({
-    user: one(user, {
-        references: [user.id],
-        fields: [mediaRefreshLog.userId],
-    }),
-}));
 
 
 export const apiCallRollup = sqliteTable("api_call_rollup", {

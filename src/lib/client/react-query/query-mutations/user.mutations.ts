@@ -111,11 +111,19 @@ export const useGeneralSettingsMutation = (meta?: MutationMeta) => {
 
 
 export const useListSettingsMutation = (meta?: MutationMeta) => {
+    const queryClient = useQueryClient();
+
     return useMutation({
         mutationFn: postMediaListSettings,
         meta: {
             successToastMessage: "Your list settings have been updated.",
             ...meta,
+        },
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+            ]);
         },
     });
 };

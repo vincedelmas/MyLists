@@ -17,6 +17,7 @@ import {
     getAdminReadLogFile,
     getAdminTasks,
     getAdminWhichCameFirstStats,
+    getAdminYearRecapReleases,
 } from "@/lib/server/functions/admin";
 
 
@@ -35,6 +36,12 @@ export const inactiveAccountDeletionsAdminOptions = (search: SearchType) => quer
 export const adminOverviewOptions = queryOptions({
     queryKey: ["admin", "overview"],
     queryFn: () => getAdminOverview(),
+});
+
+
+export const adminYearRecapReleasesOptions = queryOptions({
+    queryKey: ["admin", "year-recap-releases"],
+    queryFn: () => getAdminYearRecapReleases(),
 });
 
 

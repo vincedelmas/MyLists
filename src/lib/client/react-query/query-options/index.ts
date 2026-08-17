@@ -11,3 +11,4 @@ export * from "./search.options";
 export * from "./taste-matches.options";
 export * from "./user-media.options";
 export * from "./user.options";
+export * from "./year-recap.options";

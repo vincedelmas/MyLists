@@ -17,6 +17,7 @@ import {AuthModalProvider} from "@/lib/client/components/general/AuthModalProvid
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
 import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
 import {createRootRouteWithContext, HeadContent, Outlet, Scripts} from "@tanstack/react-router";
+import {YearRecapReleaseRibbon} from "@/lib/client/components/year-recap/YearRecapReleaseRibbon";
 
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -85,6 +86,7 @@ function AppShell() {
             <Toaster/>
             <ConfirmDialogHost/>
             <AuthModalProvider/>
+            <YearRecapReleaseRibbon/>
             <Navbar/>
             <Outlet/>
             <Footer/>

@@ -110,7 +110,12 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
         meta: {
             successToastMessage: "Media removed from your list!",
         },
-        onSuccess: (_data, variables) => {
+        onSuccess: async (_data, variables) => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+            ]);
+
             if (queryOption.queryKey[0] === "details") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                     if (!oldData) return;
@@ -160,10 +165,15 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
         onSuccess: async (data, variables) => {
             const activityUpdate = loggedActivityUpdateTypes.has(variables.payload.type);
 
-            await queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey });
+            const invalidations = [
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+                queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey }),
+            ];
+
             if (activityUpdate) {
-                await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
+                invalidations.push(queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }));
             }
+            await Promise.all(invalidations);
 
             if (queryOption.queryKey[0] === "details") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
@@ -200,7 +210,10 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, 
             ...meta,
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: queryOption.queryKey });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+                queryClient.invalidateQueries({ queryKey: queryOption.queryKey }),
+            ]);
         },
     });
 };

@@ -17,7 +17,10 @@ export const useAddMonthlyActivityMutation = (meta?: MutationMeta) => {
             ...meta,
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+            ]);
         },
     });
 };
@@ -33,7 +36,10 @@ export const useUpdateMonthlyActivityMutation = (meta?: MutationMeta) => {
             ...meta,
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+            ]);
         },
     });
 };
@@ -49,7 +55,10 @@ export const useRemoveMonthlyActivityMutation = (meta?: MutationMeta) => {
             ...meta,
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+            ]);
         },
     });
 };
@@ -62,7 +71,10 @@ export const useBulkHideActivityMutation = (meta?: MutationMeta) => {
         mutationFn: postBulkHideActivity,
         meta: { ...meta },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["monthly-activity"] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+            ]);
         },
     });
 };

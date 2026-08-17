@@ -3,10 +3,13 @@ import {SearchType} from "@/lib/schemas";
 import {MediaType} from "@/lib/utils/enums";
 import {logger} from "@/lib/server/core/logger";
 import {SaveTaskToDb} from "@/lib/types/tasks.types";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
+import {getYearRecapReleaseStatus} from "@/lib/utils/year-recap-release";
 import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
 import {getRollupKey, PENDING_ROLLUPS_KEY} from "@/lib/server/core/cache-keys";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
+import {YEAR_RECAP_FIRST_YEAR, YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 import {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 
 
@@ -16,6 +19,34 @@ export class AdminService {
 
     async saveTaskToDb(data: SaveTaskToDb) {
         return this.repository.saveTaskToDb(data);
+    }
+
+    async getYearRecapReleaseStatus(year: number, now = new Date()) {
+        const mode = await this.repository.getYearRecapReleaseMode(year);
+        return getYearRecapReleaseStatus(year, mode, now);
+    }
+
+    async getYearRecapReleases(now = new Date()) {
+        const currentYear = now.getUTCFullYear();
+        if (currentYear < YEAR_RECAP_FIRST_YEAR) return [];
+
+        const overrides = await this.repository.getYearRecapReleaseModes(YEAR_RECAP_FIRST_YEAR, currentYear);
+        const modes = new Map(overrides.map(({ year, mode }) => [year, mode]));
+
+        return Array.from({ length: currentYear - YEAR_RECAP_FIRST_YEAR + 1 }, (_, index) => {
+            const year = currentYear - index;
+            return getYearRecapReleaseStatus(year, modes.get(year) ?? "automatic", now);
+        });
+    }
+
+    async updateYearRecapReleaseMode(year: number, mode: YearRecapReleaseMode) {
+        const currentYear = new Date().getUTCFullYear();
+        if (year < YEAR_RECAP_FIRST_YEAR || year > currentYear) {
+            throw new FormattedError("This recap year cannot be configured");
+        }
+
+        await this.repository.updateYearRecapReleaseMode(year, mode);
+        return this.getYearRecapReleaseStatus(year);
     }
 
     async getArchivedTasksForAdmin() {

@@ -1,14 +1,32 @@
-import {toast} from "@/lib/client/components/ui/toast";
 import {SearchType} from "@/lib/schemas";
+import {toast} from "@/lib/client/components/ui/toast";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
-import {adminAchievementsOptions, adminArchivedTasksOptions, userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
+import {adminAchievementsOptions, adminArchivedTasksOptions, adminYearRecapReleasesOptions, userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {
     postAdminDeleteArchivedTask,
     postAdminTriggerTask,
     postAdminUpdateAchievement,
     postAdminUpdateTiers,
-    postAdminUpdateUser
+    postAdminUpdateUser,
+    postAdminUpdateYearRecapRelease,
 } from "@/lib/server/functions/admin";
+
+
+export const useAdminUpdateYearRecapReleaseMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: postAdminUpdateYearRecapRelease,
+        meta: { successToastMessage: "Year recap release updated." },
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap-releases"] }),
+                queryClient.invalidateQueries({ queryKey: adminYearRecapReleasesOptions.queryKey }),
+            ]);
+        },
+    });
+};
 
 
 export const useAdminUpdateUserMutation = (filters: SearchType) => {
@@ -19,13 +37,14 @@ export const useAdminUpdateUserMutation = (filters: SearchType) => {
         onSuccess: async (_data, variables) => {
             if (variables.data.userId) {
                 if (variables.data.payload.deleteUser) {
-                    toast.add({title: "User deleted successfully", type: "success"});
-                } else {
-                    toast.add({title: "User updated successfully", type: "success"});
+                    toast.add({ title: "User deleted successfully", type: "success" });
+                }
+                else {
+                    toast.add({ title: "User updated successfully", type: "success" });
                 }
             }
             else {
-                toast.add({title: "Global flag updated successfully", type: "success"});
+                toast.add({ title: "Global flag updated successfully", type: "success" });
             }
 
             return queryClient.invalidateQueries({ queryKey: userAdminOptions(filters).queryKey })

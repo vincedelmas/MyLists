@@ -1,5 +1,6 @@
 import * as z from "zod";
 import {AchievementDifficulty, PrivacyType, RoleType} from "@/lib/utils/enums";
+import {YEAR_RECAP_FIRST_YEAR, yearRecapReleaseModes} from "@/lib/types/year-recap.types";
 import {coercedPositiveIntFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 
 
@@ -30,6 +31,11 @@ const tierAchievementSchema = z.object({
 export const adminPostUpdateUserSchema = z.object({
     userId: positiveIntFieldSchema.optional(),
     payload: adminUpdatePayloadSchema,
+});
+
+export const adminUpdateYearRecapReleaseSchema = z.object({
+    mode: z.enum(yearRecapReleaseModes),
+    year: z.number().int().min(YEAR_RECAP_FIRST_YEAR),
 });
 
 export const adminUpdateAchievementSchema = z.object({

@@ -1,6 +1,5 @@
 import {Link} from "@tanstack/react-router";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Archive, Award, CircleX, Film, FolderKanban, GitCompareArrows, History, Home, ListCheck, Play, Radio, RefreshCw, Settings, UserRoundX, Users} from "lucide-react";
 import {
     Sidebar,
     SidebarContent,
@@ -12,6 +11,24 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/lib/client/components/ui/sidebar";
+import {
+    Archive,
+    Award,
+    CalendarRange,
+    CircleX,
+    Film,
+    FolderKanban,
+    GitCompareArrows,
+    History,
+    Home,
+    ListCheck,
+    Play,
+    Radio,
+    RefreshCw,
+    Settings,
+    UserRoundX,
+    Users
+} from "lucide-react";
 
 
 export function AdminSidebar() {
@@ -71,6 +88,16 @@ export function AdminSidebar() {
                                         <Link to="/admin/users">
                                             <Users className="size-4"/>
                                             <span>Users Management</span>
+                                        </Link>
+                                    }
+                                />
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/year-recaps">
+                                            <CalendarRange className="size-4"/>
+                                            <span>Year Recaps</span>
                                         </Link>
                                     }
                                 />

@@ -27,7 +27,8 @@ import {
     UserStatsRepository,
     UserStatsService,
     UserUpdatesRepository,
-    UserUpdatesService
+    UserUpdatesService,
+    YearRecapService,
 } from "@/lib/server/domain/user";
 
 
@@ -60,6 +61,7 @@ export function setupUserModule(mediaModule: MediaModule) {
     const achievementsService = new AchievementsService(achievementsRepository);
     const notificationsService = new NotificationsService(notificationsRepository);
     const userSimilarityService = new UserSimilarityService(userSimilarityRepository);
+    const yearRecapService = new YearRecapService(userActivityRepository, mediaActivityRegistry);
     const whichCameFirstService = new WcfService(whichCameFirstRepository, mediaServiceRegistry);
     const userProfileService = new UserProfileService(userProfileRepository, mediaServiceRegistry);
     const featureVotesService = new FeatureVotesService(featureVotesRepository, notificationsService);
@@ -94,6 +96,7 @@ export function setupUserModule(mediaModule: MediaModule) {
             userUpdates: userUpdatesService,
             collections: collectionsService,
             userActivity: userActivityService,
+            yearRecap: yearRecapService,
             achievements: achievementsService,
             featureVotes: featureVotesService,
             notifications: notificationsService,

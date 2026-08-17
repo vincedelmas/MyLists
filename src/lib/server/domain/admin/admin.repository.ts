@@ -4,12 +4,50 @@ import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {ProviderApiRollup} from "@/lib/types/admin.types";
 import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {getDbClient} from "@/lib/server/database/async-storage";
+import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
-import {asc, count, countDistinct, desc, eq, gte, like, or, sql} from "drizzle-orm";
-import {apiCallRollup, collections, mediaRefreshLog, taskHistory, user} from "@/lib/server/database/schema";
+import {and, asc, count, countDistinct, desc, eq, gte, like, lte, or, sql} from "drizzle-orm";
+import {apiCallRollup, collections, mediaRefreshLog, taskHistory, user, yearRecapRelease} from "@/lib/server/database/schema";
 
 
 export class AdminRepository {
+    static async getYearRecapReleaseMode(year: number): Promise<YearRecapReleaseMode> {
+        return getDbClient()
+            .select({ mode: yearRecapRelease.mode })
+            .from(yearRecapRelease)
+            .where(eq(yearRecapRelease.year, year))
+            .get()?.mode ?? "automatic";
+    }
+
+    static async getYearRecapReleaseModes(startYear: number, endYear: number) {
+        return getDbClient()
+            .select({
+                year: yearRecapRelease.year,
+                mode: yearRecapRelease.mode,
+            }).from(yearRecapRelease)
+            .where(and(
+                lte(yearRecapRelease.year, endYear),
+                gte(yearRecapRelease.year, startYear),
+            ));
+    }
+
+    static async updateYearRecapReleaseMode(year: number, mode: YearRecapReleaseMode) {
+        await getDbClient()
+            .insert(yearRecapRelease)
+            .values({
+                year,
+                mode,
+                updatedAt: new Date().toISOString(),
+            })
+            .onConflictDoUpdate({
+                target: yearRecapRelease.year,
+                set: {
+                    mode,
+                    updatedAt: new Date().toISOString(),
+                },
+            });
+    }
+
     static async getCollectionsOverview() {
         const now = new Date();
         const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -68,8 +106,7 @@ export class AdminRepository {
     static async getCollectionsCreatedPerMonth() {
         const results = getDbClient()
             .all<{ month: string; count: number }>(sql`
-                SELECT 
-                    COUNT(*) as count,
+                SELECT COUNT(*) as count,
                     strftime('%Y-%m', ${collections.createdAt}) as month
                 FROM ${collections}
                 GROUP BY strftime('%Y-%m', ${collections.createdAt})

@@ -15,3 +15,4 @@ export * from "./stats.schema";
 export * from "./taste-matches.schema";
 export * from "./user-media.schema";
 export * from "./user-settings.schema";
+export * from "./year-recap.schema";

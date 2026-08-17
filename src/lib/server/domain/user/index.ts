@@ -10,6 +10,7 @@ export * from "./inactive-account.service";
 export * from "./user-media.service";
 export * from "./user-profile.service";
 export * from "./user-monthly-activity.service";
+export * from "./year-recap.service";
 export * from "./user-stats.service";
 export * from "./user-similarity.service";
 export * from "./user-updates.service";

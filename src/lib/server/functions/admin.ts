@@ -19,6 +19,7 @@ import {
     adminRefreshSchema,
     adminTriggerTaskSchema,
     adminUpdateAchievementSchema,
+    adminUpdateYearRecapReleaseSchema,
     searchTypeSchema
 } from "@/lib/schemas";
 
@@ -47,8 +48,24 @@ export const getAdminOverview = createServerFn({ method: "GET" })
     .middleware([requiredAuthAndAdminTokenMiddleware])
     .handler(async () => {
         const container = await getContainer();
-        const userService = container.services.user;
-        return userService.getUserOverviewForAdmin();
+        return container.services.user.getUserOverviewForAdmin();
+    });
+
+
+export const postAdminUpdateYearRecapRelease = createServerFn({ method: "POST" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(adminUpdateYearRecapReleaseSchema)
+    .handler(async ({ data: { year, mode } }) => {
+        const adminService = await getContainer().then((container) => container.services.admin);
+        return adminService.updateYearRecapReleaseMode(year, mode);
+    });
+
+
+export const getAdminYearRecapReleases = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .handler(async () => {
+        const adminService = await getContainer().then((container) => container.services.admin);
+        return adminService.getYearRecapReleases();
     });
 
 
@@ -239,7 +256,7 @@ export const postImpersonateUser = createServerFn({ method: "POST" })
             path: "/",
             secure: process.env.NODE_ENV === "production",
         });
-        
+
         deleteCookie(sessionData.name, {
             path: sessionData.attributes.path,
             secure: sessionData.attributes.secure,

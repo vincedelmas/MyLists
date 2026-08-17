@@ -302,6 +302,13 @@
       "when": 1786626016250,
       "tag": "0042_tv_redo_array",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1786810785293,
+      "tag": "0043_year_recap_release",
+      "breakpoints": true
     }
   ]
 }

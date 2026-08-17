@@ -1,4 +1,5 @@
 import * as z from "zod";
+import {YEAR_RECAP_FIRST_YEAR} from "@/lib/types/year-recap.types";
 import {mediaTypeFieldSchema, usernameFieldSchema} from "@/lib/schemas/common.schema";
 
 
@@ -10,6 +11,7 @@ const statsActiveTabField = z.union([mediaTypeFieldSchema, z.literal("overview")
 
 export const statsActiveTabSchema = z.object({
     activeTab: statsActiveTabField,
+    recap: z.coerce.number().int().min(YEAR_RECAP_FIRST_YEAR).optional().catch(undefined),
 });
 
 

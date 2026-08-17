@@ -103,7 +103,6 @@ type GamesSpecificStats = Awaited<ReturnType<GamesStatistics["calculateAdvancedM
 type BooksSpecificStats = Awaited<ReturnType<BooksStatistics["calculateAdvancedMediaStats"]>>;
 type MangaSpecificStats = Awaited<ReturnType<MangaStatistics["calculateAdvancedMediaStats"]>>;
 
-export type AnyMediaStats = ExtractStatsByType<MediaType>;
 export type UserStatsResult = OverviewStats | AdvancedMediaStats;
 export type MediaStatsFor<T extends MediaType> = ExtractStatsByType<T>;
 export type ExtractStatsByType<T extends MediaType | null> = Extract<UserStatsResult, { mediaType: T }>;

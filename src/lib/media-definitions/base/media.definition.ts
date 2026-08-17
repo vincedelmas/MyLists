@@ -1,4 +1,4 @@
-import type {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import type {ApiProviderType, JobType, MediaType} from "@/lib/utils/enums";
 
 
 type MediaProgressTiming =
@@ -17,6 +17,11 @@ type MediaProgressTiming =
 
 
 type MediaStatsDefinition = Readonly<{
+    affinities: ReadonlyArray<Readonly<{
+        key: `${string}Stats`;
+        label: string;
+        job?: JobType;
+    }>>;
     repeat: Readonly<{
         label: string;
         rateLabel: string;

@@ -25,10 +25,7 @@ export class AdminRepository {
                 year: yearRecapRelease.year,
                 mode: yearRecapRelease.mode,
             }).from(yearRecapRelease)
-            .where(and(
-                lte(yearRecapRelease.year, endYear),
-                gte(yearRecapRelease.year, startYear),
-            ));
+            .where(and(lte(yearRecapRelease.year, endYear), gte(yearRecapRelease.year, startYear)));
     }
 
     static async updateYearRecapReleaseMode(year: number, mode: YearRecapReleaseMode) {

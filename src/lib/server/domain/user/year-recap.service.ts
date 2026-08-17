@@ -131,8 +131,7 @@ export class YearRecapService {
                 titleCount: titleIds.size,
                 activeMonths: monthIds.size,
                 share: totalHours > 0 ? (summary.hours / totalHours) * 100 : 0,
-            }))
-            .sort((left, right) => right.hours - left.hours);
+            })).sort((left, right) => right.hours - left.hours);
 
         const rankedTitles = [...titleRecords.values()]
             .map(({ monthIds, ...title }) => ({ ...title, activeMonths: monthIds.size }))
@@ -172,8 +171,8 @@ export class YearRecapService {
 
         return {
             year,
-            months,
             media,
+            months,
             busiestMonth,
             mostRepeatedTitle,
             availableMediaTypes,

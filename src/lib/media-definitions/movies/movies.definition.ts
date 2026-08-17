@@ -1,4 +1,4 @@
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, JobType, MediaType} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
 
@@ -32,6 +32,12 @@ export const moviesDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        affinities: [
+            { key: "directorsStats", label: "Directors", job: JobType.CREATOR },
+            { key: "actorsStats", label: "Actors", job: JobType.ACTOR },
+            { key: "genresStats", label: "Genres" },
+            { key: "langsStats", label: "Languages" },
+        ],
         repeat: {
             label: "Rewatches",
             rateLabel: "Rewatch rate",

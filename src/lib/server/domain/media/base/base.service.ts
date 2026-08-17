@@ -61,10 +61,6 @@ export abstract class BaseService<TDef extends AnyServerMediaDefinition, R exten
         return this.repository.searchUserListByName(userId, query, limit);
     }
 
-    async hasUserMedia(userId: number, mediaId: number) {
-        return !!await this.repository.findUserMedia(userId, mediaId);
-    }
-
     async getOrphanedMediaIds() {
         return this.repository.getOrphanedMediaIds();
     }
@@ -97,20 +93,12 @@ export abstract class BaseService<TDef extends AnyServerMediaDefinition, R exten
         return this.repository.getMediaDetailsByIds(mediaIds, userId);
     }
 
-    async getMediaDurationsByIds(mediaIds: number[]) {
-        return this.repository.getMediaDurationsByIds(mediaIds);
-    }
-
     async bulkInsertUserMedia(rows: TDef["repository"]["tables"]["listTable"]["$inferInsert"][]) {
         return this.repository.bulkInsertUserMedia(rows);
     }
 
     async findById(mediaId: number) {
         return this.repository.findById(mediaId);
-    }
-
-    async findByApiId(apiId: number | string) {
-        return this.repository.findByApiId(apiId);
     }
 
     async findByApiIds(apiIds: (number | string)[]) {

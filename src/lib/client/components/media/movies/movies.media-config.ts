@@ -1,4 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
+import {DollarSign, XLineTop} from "lucide-react";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {formatCurrency, formatNumber} from "@/lib/utils/number-formatting";
 import {MovieListItem} from "@/lib/client/components/media/movies/MovieListItem";
 import {MoviesInfoGrid} from "@/lib/client/components/media/movies/MoviesInfoGrid";
 import {defineMediaConfig} from "@/lib/client/components/media/media-config.types";
@@ -28,5 +31,26 @@ export const moviesMediaConfig = defineMediaConfig({
         countLabel: "Watched",
         extraLabel: "Rewatches",
         extraMetric: "totalRedo",
+    },
+    statistics: {
+        getStatCards: (stats) => [
+            {
+                title: "Avg. Movie Duration",
+                icon: XLineTop,
+                value: stats.specificMediaStats.avgDuration === null
+                    ? DEFAULT_DASH_FALLBACK
+                    : `${formatNumber(stats.specificMediaStats.avgDuration, { fractionDigits: 0 })} min`,
+            },
+            {
+                title: "Total Budget",
+                icon: DollarSign,
+                value: formatCurrency(stats.specificMediaStats.totalBudget),
+            },
+            {
+                title: "Total Revenue",
+                icon: DollarSign,
+                value: formatCurrency(stats.specificMediaStats.totalRevenue),
+            },
+        ],
     },
 });

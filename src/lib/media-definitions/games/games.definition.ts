@@ -1,4 +1,4 @@
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, JobType, MediaType} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
 
@@ -29,6 +29,14 @@ export const gamesDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        affinities: [
+            { key: "developersStats", label: "Developers", job: JobType.CREATOR },
+            { key: "platformsStats", label: "Platforms" },
+            { key: "genresStats", label: "Genres" },
+            { key: "publishersStats", label: "Publishers" },
+            { key: "enginesStats", label: "Engines" },
+            { key: "perspectivesStats", label: "Perspectives" },
+        ],
         repeat: {
             label: "Replays",
             rateLabel: "Replay rate",

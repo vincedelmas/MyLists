@@ -77,10 +77,10 @@ describe("MoviesStatistics", () => {
             { start: 120, endExclusive: 150, value: 1 },
             { start: 150, endExclusive: 180, value: 1 },
         ]);
-        expect(stats.genresStats[0]).toMatchObject({ name: "Drama" });
-        expect(stats.actorsStats[0]).toMatchObject({ name: "Shared Actor" });
-        expect(stats.directorsStats[0]).toMatchObject({ name: "Shared Director" });
-        expect(stats.langsStats[0]).toMatchObject({ name: "en" });
+        expect(stats.affinityStats.genresStats[0]).toMatchObject({ name: "Drama" });
+        expect(stats.affinityStats.actorsStats[0]).toMatchObject({ name: "Shared Actor" });
+        expect(stats.affinityStats.directorsStats[0]).toMatchObject({ name: "Shared Director" });
+        expect(stats.affinityStats.langsStats[0]).toMatchObject({ name: "en" });
     });
 
     it("excludes inactive movie lists from platform statistics", async () => {
@@ -100,10 +100,10 @@ describe("MoviesStatistics", () => {
             { start: 120, endExclusive: 150, value: 1 },
             { start: 150, endExclusive: 180, value: 1 },
         ]);
-        expect(stats.genresStats.some(({ name }) => name === "Hidden Genre")).toBe(false);
-        expect(stats.actorsStats.some(({ name }) => name === "Hidden Actor")).toBe(false);
-        expect(stats.directorsStats.some(({ name }) => name === "Hidden Director")).toBe(false);
-        expect(stats.langsStats.some(({ name }) => name === "fr")).toBe(false);
+        expect(stats.affinityStats.genresStats.some(({ name }) => name === "Hidden Genre")).toBe(false);
+        expect(stats.affinityStats.actorsStats.some(({ name }) => name === "Hidden Actor")).toBe(false);
+        expect(stats.affinityStats.directorsStats.some(({ name }) => name === "Hidden Director")).toBe(false);
+        expect(stats.affinityStats.langsStats.some(({ name }) => name === "fr")).toBe(false);
     });
 });
 

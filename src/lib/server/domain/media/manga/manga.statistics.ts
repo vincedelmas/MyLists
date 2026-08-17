@@ -51,7 +51,7 @@ export const createMangaStatistics = (definition: MangaServerDefinition = mangaS
                 queries.computeAffinityStats(mediaAvgRating, userId),
             ]);
 
-            return { avgDuration, durationDistrib, ...affinities };
+            return { avgDuration, durationDistrib, affinityStats: affinities };
         },
     });
 };

@@ -20,7 +20,7 @@ const activeMediaSettingsJoin = and(
 );
 
 
-const getCanonicalYearActivityConditions = (userId: number, year: number): SQL[] => [
+const getYearActivityConditions = (userId: number, year: number): SQL[] => [
     eq(userMediaMonthlyActivity.userId, userId),
     eq(userMediaMonthlyActivity.hidden, false),
     gte(userMediaMonthlyActivity.monthBucket, `${year}-01`),
@@ -127,7 +127,7 @@ export class UserMonthlyActivityRepository {
     }
 
     static async getYearRecapActivities(userId: number, year: number, mediaType?: MediaType) {
-        const conditions = getCanonicalYearActivityConditions(userId, year);
+        const conditions = getYearActivityConditions(userId, year);
 
         if (mediaType) conditions.push(eq(userMediaMonthlyActivity.mediaType, mediaType));
 
@@ -151,7 +151,7 @@ export class UserMonthlyActivityRepository {
             .selectDistinct({ mediaType: userMediaMonthlyActivity.mediaType })
             .from(userMediaMonthlyActivity)
             .innerJoin(userMediaSettings, activeMediaSettingsJoin)
-            .where(and(...getCanonicalYearActivityConditions(userId, year)))
+            .where(and(...getYearActivityConditions(userId, year)))
             .orderBy(asc(userMediaMonthlyActivity.mediaType));
 
         return rows.map((row) => row.mediaType);

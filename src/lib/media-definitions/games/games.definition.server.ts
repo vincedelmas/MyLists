@@ -1,7 +1,8 @@
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {and, asc, desc, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
-import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createArrayFilter, createListColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
 
 
@@ -91,7 +92,7 @@ export const gamesServerDefinition = defineServerMediaDefinition({
             totalSpecific: sql<number>`0`,
             timeSpent: sql<number>`COALESCE(SUM(${gamesList.playtime}), 0)`,
         },
-        affinity: {
+        affinity: defineAffinityDefinitions(gamesDefinition, {
             developersStats: {
                 minRatingCount: 3,
                 metricIdCol: games.id,
@@ -129,7 +130,7 @@ export const gamesServerDefinition = defineServerMediaDefinition({
                 metricNameCol: games.playerPerspective,
                 filters: [ne(gamesList.status, Status.PLAN_TO_PLAY)],
             },
-        },
+        }),
     },
     service: {
         defaultStatus: Status.PLAN_TO_PLAY,

@@ -1,4 +1,4 @@
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {ApiProviderType, JobType, MediaType} from "@/lib/utils/enums";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
 
 
@@ -32,6 +32,12 @@ export const animeDefinition = defineMediaDefinition({
         },
     },
     statistics: {
+        affinities: [
+            { key: "networksStats", label: "Networks", job: JobType.PLATFORM },
+            { key: "genresStats", label: "Genres" },
+            { key: "actorsStats", label: "Actors", job: JobType.ACTOR },
+            { key: "countriesStats", label: "Countries" },
+        ],
         repeat: {
             label: "Rewatches",
             rateLabel: "Rewatch rate",

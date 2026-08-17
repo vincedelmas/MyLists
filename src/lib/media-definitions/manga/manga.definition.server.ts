@@ -1,8 +1,8 @@
 import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {createArrayFilter} from "@/lib/server/domain/media/base/media-list.query";
-import {MANGA_FIXED_DURATION_MIN} from "@/lib/media-definitions/manga/manga.definition";
-import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {mangaDefinition, MANGA_FIXED_DURATION_MIN} from "@/lib/media-definitions/manga/manga.definition";
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
 
 
@@ -82,7 +82,7 @@ export const mangaServerDefinition = defineServerMediaDefinition({
             timeSpent: sql<number>`COALESCE(SUM(${mangaList.total} * ${MANGA_FIXED_DURATION_MIN}), 0)`,
             totalSpecific: sql<number>`COALESCE(SUM(${mangaList.total}), 0)`,
         },
-        affinity: {
+        affinity: defineAffinityDefinitions(mangaDefinition, {
             publishersStats: {
                 metricTable: manga,
                 metricNameCol: manga.publishers,
@@ -97,7 +97,7 @@ export const mangaServerDefinition = defineServerMediaDefinition({
                 mediaLinkCol: mangaList.mediaId,
                 filters: [ne(mangaList.status, Status.PLAN_TO_READ)],
             },
-        },
+        }),
     },
     service: {
         defaultStatus: Status.PLAN_TO_READ,

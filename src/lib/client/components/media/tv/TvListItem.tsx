@@ -1,5 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
-import {TvMediaType} from "@/lib/server/domain/media/tv/tv.types";
+import {TvMediaType} from "@/lib/utils/enums";
 import {DisplayTvRedo} from "@/lib/client/components/media/tv/DisplayTvRedo";
 import {MediaListCardProps} from "@/lib/client/components/media/media-config.types";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";

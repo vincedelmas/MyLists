@@ -1,7 +1,7 @@
 import {asc, desc, getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {SERIES_FALLBACK_DURATION} from "@/lib/media-definitions/tv/series/series.definition";
-import {defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {seriesDefinition, SERIES_FALLBACK_DURATION} from "@/lib/media-definitions/tv/series/series.definition";
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.query";
 import {series, seriesActors, seriesEpisodesPerSeason, seriesGenre, seriesList, seriesNetwork, seriesTags} from "@/lib/server/database/schema/media/series.schema";
 
@@ -128,7 +128,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
             totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
             totalRedo: sql<number>`COALESCE(SUM(${seriesRedoCount}), 0)`,
         },
-        affinity: {
+        affinity: defineAffinityDefinitions(seriesDefinition, {
             networksStats: {
                 minRatingCount: 3,
                 metricTable: seriesNetwork,
@@ -152,7 +152,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                 mediaLinkCol: seriesList.mediaId,
                 filters: [notInArray(seriesList.status, [Status.RANDOM, Status.PLAN_TO_WATCH])],
             },
-        },
+        }),
     },
     service: {
         defaultStatus: Status.PLAN_TO_WATCH,

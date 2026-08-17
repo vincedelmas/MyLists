@@ -7,6 +7,7 @@ import {formatAvgRating} from "@/lib/utils/ratings-formatting";
 import {StatsHero} from "@/lib/client/components/media-stats/StatsHero";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {TasteShelf} from "@/lib/client/components/media-stats/TasteShelf";
+import {getMediaConfig} from "@/lib/client/components/media/media-config";
 import {UpdatesDial} from "@/lib/client/components/media-stats/UpdatesDial";
 import {RatingsChart} from "@/lib/client/components/media-stats/RatingsChart";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
@@ -16,7 +17,6 @@ import {StatsRecordList} from "@/lib/client/components/media-stats/StatsRecordLi
 import {StatsMetricGrid} from "@/lib/client/components/media-stats/StatsMetricGrid";
 import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {StatsSectionHeader} from "@/lib/client/components/media-stats/StatsSectionHeader";
-import {mediaStatsViewConfig} from "@/lib/client/components/media-stats/media-stats.config";
 import {formatContinuousTime, formatHours, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {BarChart3, CalendarDays, Check, Clock3, Heart, List, MessageCircle, Play, RefreshCcw, Star, Tags} from "lucide-react";
 
@@ -30,7 +30,7 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
     const { mediaType, ratingSystem, specificMediaStats } = stats;
 
     const color = getThemeColor(mediaType);
-    const viewConfig = mediaStatsViewConfig[mediaType];
+    const mediaConfig = getMediaConfig(mediaType);
     const mediaDefinition = getMediaDefinition(mediaType);
     const mediaStatsDefinition = mediaDefinition.statistics;
 
@@ -52,8 +52,13 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
     const averageHours = experiencedEntries ? stats.timeSpentHours / experiencedEntries : 0;
     const activeMonths = stats.activityByMonth.data.filter(({ total }) => total > 0).length;
 
-    const extraStats = viewConfig.getStatCards(stats);
-    const affinityCards = viewConfig.getAffinityCards(stats);
+    const extraStats = mediaConfig.statistics.getStatCards(stats);
+    const affinityCards = mediaStatsDefinition.affinities.map(({ key, label, job }) => ({
+        job,
+        title: label,
+        topAffinity: specificMediaStats.affinityStats[key],
+    }));
+
     const referenceCount = stats.timeSpentHours / comparison.referenceHours;
     const secondaryCount = stats.timeSpentHours / comparison.secondaryHours;
 
@@ -94,12 +99,16 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
             value: formatNumber(stats.totalComments),
             icon: <MessageCircle className="size-4"/>,
         },
-        ...extraStats.map((item) => ({
-            label: item.title,
-            value: item.value,
-            note: item.subtitle ?? "All time",
-            icon: item.icon ?? <BarChart3 className="size-4"/>
-        })),
+        ...extraStats.map((item) => {
+            const Icon = item.icon ?? BarChart3;
+
+            return {
+                label: item.title,
+                value: item.value,
+                icon: <Icon className="size-4"/>,
+                note: item.subtitle ?? "All time",
+            };
+        }),
         {
             label: "Tags",
             note: "used on these entries",

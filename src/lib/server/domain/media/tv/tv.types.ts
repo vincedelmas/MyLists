@@ -1,5 +1,5 @@
 import * as z from "zod";
-import {MediaType} from "@/lib/utils/enums";
+import {MediaType, TvMediaType} from "@/lib/utils/enums";
 import {createInsertSchema} from "drizzle-zod";
 import {REDO_MAX} from "@/lib/utils/constants";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
@@ -24,9 +24,6 @@ type AnimeList = typeof animeList.$inferSelect;
 export type TvType = Series | Anime;
 export type TvList = SeriesList | AnimeList;
 export type TvImportPayload = z.infer<typeof tvImportPayloadSchema>;
-export type TvMediaType = typeof MediaType.SERIES | typeof MediaType.ANIME;
-
-
 export type UpsertTvWithDetails = {
     mediaData: typeof series.$inferInsert | typeof anime.$inferInsert,
     actorsData?: { name: string }[],

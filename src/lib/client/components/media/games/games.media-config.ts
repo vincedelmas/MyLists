@@ -1,4 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
+import {XLineTop} from "lucide-react";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {GameListItem} from "@/lib/client/components/media/games/GameListItem";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {GamesInfoGrid} from "@/lib/client/components/media/games/GamesInfoGrid";
@@ -30,6 +33,18 @@ export const gamesMediaConfig = defineMediaConfig({
         countLabel: "Played",
         extraLabel: "Playtime",
         extraMetric: "totalPlaytime",
+    },
+    statistics: {
+        getStatCards: (stats) => [
+            {
+                icon: XLineTop,
+                title: "Avg. Game Playtime",
+                subtitle: "All games included",
+                value: stats.specificMediaStats.avgDuration === null
+                    ? DEFAULT_DASH_FALLBACK
+                    : `${formatNumber(stats.specificMediaStats.avgDuration, { fractionDigits: 1 })} hours`,
+            },
+        ],
     },
     advancedSearch: {
         provider: gamesDefinition.externalSearch.provider,

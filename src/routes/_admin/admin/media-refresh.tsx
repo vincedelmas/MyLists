@@ -1,6 +1,6 @@
-import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatDate} from "@/lib/utils/date-formatting";
+import {getThemeColor} from "@/lib/utils/theme-utils";
 import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
@@ -27,16 +27,6 @@ export const Route = createFileRoute("/_admin/admin/media-refresh")({
     },
     component: MediaRefreshPage,
 });
-
-
-const chartColors: Record<MediaType, string> = {
-    series: "var(--color-series)",
-    anime: "var(--color-anime)",
-    movies: "var(--color-movies)",
-    games: "var(--color-games)",
-    books: "var(--color-books)",
-    manga: "var(--color-manga)",
-};
 
 
 const rangeOptions = [
@@ -137,7 +127,7 @@ function MediaRefreshPage() {
                                 data={apiData.daily}
                                 seriesOrder={ALL_MEDIA_TYPES}
                                 ariaLabel="Daily refreshes by media type"
-                                fill={({ mediaType }) => chartColors[mediaType]}
+                                fill={({ mediaType }) => getThemeColor(mediaType)}
                                 tooltipTitleFormatter={(value) => `Day: ${value}`}
                                 tooltipValueFormatter={(value) => formatNumber(value)}
                             />
@@ -167,7 +157,7 @@ function MediaRefreshPage() {
                                             <div className="h-2 rounded-full bg-muted">
                                                 <div
                                                     className="h-2 rounded-full"
-                                                    style={{ width: `${pct}%`, backgroundColor: chartColors[row.mediaType] }}
+                                                    style={{ width: `${pct}%`, backgroundColor: getThemeColor(row.mediaType) }}
                                                 />
                                             </div>
                                         </div>

@@ -20,6 +20,14 @@ type Contributions = {
 }[];
 
 
+type CreateMonthlyActivityOptions = {
+    repository: BaseRepository<any, any>;
+    definition: AnyServerMediaDefinition;
+    progressFromDelta?: (delta: DeltaStats) => number;
+    durationColumn?: AnySQLiteColumn<{ data: number, notNull: true }>;
+};
+
+
 export type MonthlyActivityMedia = {
     id: number;
     name: string;
@@ -28,14 +36,6 @@ export type MonthlyActivityMedia = {
     duration: number | null;
     favorite: boolean | null;
     releaseDate: string | null;
-};
-
-
-type CreateMonthlyActivityOptions = {
-    repository: BaseRepository<any, any>;
-    definition: AnyServerMediaDefinition;
-    progressFromDelta?: (delta: DeltaStats) => number;
-    durationColumn?: AnySQLiteColumn<{ data: number, notNull: true }>;
 };
 
 

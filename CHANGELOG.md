@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.2.0](https://github.com/vincedelmas/MyLists/compare/v3.1.0...v3.2.0) (2026-08-17)
+
+
+### Features
+
+* **activity:** add full-year activity browsing and editing ([561383a](https://github.com/vincedelmas/MyLists/commit/561383ae11bd4f017aa37495e48eb139bc23f89b))
+* **recap:** add configurable yearly cross-media recaps ([ef70c6f](https://github.com/vincedelmas/MyLists/commit/ef70c6f1599f25b80702ee7f6c8e298d0ab7f126))
+* **recap:** add shareable 4:5 social cards ([91d32f9](https://github.com/vincedelmas/MyLists/commit/91d32f954c5d09adfaa3b723e3b28a3fc88f7609))
+* **search:** redesign results with social and list context ([ae6e9dd](https://github.com/vincedelmas/MyLists/commit/ae6e9dd1cded032272bdd7919ace6a8e76fb3ffc))
+* **stats:** redesign user and platform statistics dashboards ([2eca5e5](https://github.com/vincedelmas/MyLists/commit/2eca5e57ce7c415fae769f1a997488b5ef0d8d4c))
+
+
+### Code Refactoring
+
+* **media:** centralize statistics metadata and theme colors ([2802a6b](https://github.com/vincedelmas/MyLists/commit/2802a6be3cf249f772ccbc509b1aeb26d10662ec))
+* **server:** split user concerns into focused domains ([9003eca](https://github.com/vincedelmas/MyLists/commit/9003eca8e2a0d2ae93bb3e564796ccf3121c0ddb))
+* **ui:** consolidate info popovers ([1fc0d9e](https://github.com/vincedelmas/MyLists/commit/1fc0d9e0ab2ee28265edb0a1f77467370530095d))
+
 ## [3.1.0](https://github.com/vincedelmas/MyLists/compare/v3.0.0...v3.1.0) (2026-08-14)
 
 

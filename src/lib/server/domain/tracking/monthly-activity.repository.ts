@@ -6,7 +6,7 @@ import {resolvePagination} from "@/lib/server/database/pagination";
 import {dateFromUTCInput, monthBucketFromDateInput} from "@/lib/utils/date-formatting";
 import {LogMonthlyActivity, PaginatedMonthlyActivityFilter} from "@/lib/types/activity.types";
 import {user, userMediaMonthlyActivity, userMediaSettings} from "@/lib/server/database/schema";
-import {and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
+import {and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, lte, max, ne, or, SQL, sql, sum} from "drizzle-orm";
 
 
 const BULK_IMPORT_GRACE_MONTHS = 2;
@@ -31,6 +31,47 @@ const getYearActivityConditions = (userId: number, year: number): SQL[] => [
         eq(userMediaMonthlyActivity.hadCompletion, true),
     )!,
 ];
+
+
+const getFilteredActivityConditions = (userId: number, filters: PaginatedMonthlyActivityFilter) => {
+    const conditions: SQL[] = [
+        eq(userMediaMonthlyActivity.userId, userId),
+        gte(userMediaMonthlyActivity.monthBucket, filters.startMonth),
+        lte(userMediaMonthlyActivity.monthBucket, filters.endMonth),
+        eq(userMediaMonthlyActivity.hidden, filters.hiddenOnly === true),
+    ];
+
+    if (filters.mediaType) {
+        conditions.push(eq(userMediaMonthlyActivity.mediaType, filters.mediaType));
+    }
+
+    if (filters.activityKind && filters.activityKind !== ActivityKind.ALL) {
+        if (filters.activityKind === ActivityKind.REDO) {
+            conditions.push(gt(userMediaMonthlyActivity.redoGained, 0));
+        }
+        else if (filters.activityKind === ActivityKind.COMPLETED) {
+            conditions.push(eq(userMediaMonthlyActivity.hadCompletion, true));
+        }
+        else if (filters.activityKind === ActivityKind.PROGRESSED) {
+            conditions.push(gt(userMediaMonthlyActivity.progressGained, 0));
+        }
+    }
+
+    if (filters.mediaIdsByType) {
+        const searchConditions = Object.entries(filters.mediaIdsByType)
+            .filter(([_, ids]) => ids.length > 0)
+            .map(([mediaType, ids]) => and(
+                inArray(userMediaMonthlyActivity.mediaId, ids),
+                eq(userMediaMonthlyActivity.mediaType, mediaType as MediaType),
+            ))
+            .filter((condition): condition is SQL => !!condition);
+
+        if (searchConditions.length === 0) return null;
+        conditions.push(or(...searchConditions)!);
+    }
+
+    return conditions;
+};
 
 
 export class MonthlyActivityRepository {
@@ -175,45 +216,8 @@ export class MonthlyActivityRepository {
 
     static async getPaginatedMonthlyActivities(userId: number, filters: PaginatedMonthlyActivityFilter) {
         const pagination = resolvePagination({ page: filters.page, perPage: filters.perPage, defaultPerPage: 48, maxPerPage: 48 });
-
-        const conditions: SQL[] = [
-            eq(userMediaMonthlyActivity.userId, userId),
-            gte(userMediaMonthlyActivity.monthBucket, filters.startMonth),
-            lte(userMediaMonthlyActivity.monthBucket, filters.endMonth),
-            eq(userMediaMonthlyActivity.hidden, filters.hiddenOnly === true),
-        ];
-
-        if (filters.mediaType) {
-            conditions.push(eq(userMediaMonthlyActivity.mediaType, filters.mediaType));
-        }
-
-        if (filters.activityKind && filters.activityKind !== ActivityKind.ALL) {
-            if (filters.activityKind === ActivityKind.REDO) {
-                conditions.push(gt(userMediaMonthlyActivity.redoGained, 0));
-            }
-            else if (filters.activityKind === ActivityKind.COMPLETED) {
-                conditions.push(eq(userMediaMonthlyActivity.hadCompletion, true));
-            }
-            else if (filters.activityKind === ActivityKind.PROGRESSED) {
-                conditions.push(gt(userMediaMonthlyActivity.progressGained, 0));
-            }
-        }
-
-        if (filters.mediaIdsByType) {
-            const searchConditions = Object.entries(filters.mediaIdsByType)
-                .filter(([_, ids]) => ids.length > 0)
-                .map(([mediaType, ids]) => and(
-                    inArray(userMediaMonthlyActivity.mediaId, ids),
-                    eq(userMediaMonthlyActivity.mediaType, mediaType as MediaType),
-                ))
-                .filter((condition): condition is SQL => !!condition);
-
-            if (searchConditions.length === 0) {
-                return { items: [], total: 0, page: pagination.page, pages: 0, perPage: pagination.perPage };
-            }
-
-            conditions.push(or(...searchConditions)!);
-        }
+        const conditions = getFilteredActivityConditions(userId, filters);
+        if (!conditions) return { items: [], total: 0, page: pagination.page, pages: 0, perPage: pagination.perPage };
 
         const total = getDbClient()
             .select({ count: count() })
@@ -230,6 +234,96 @@ export class MonthlyActivityRepository {
             .orderBy(desc(userMediaMonthlyActivity.lastActivityAt))
             .limit(pagination.limit)
             .offset(pagination.offset);
+
+        return {
+            items,
+            total,
+            page: pagination.page,
+            perPage: pagination.perPage,
+            pages: Math.ceil(total / pagination.perPage),
+        };
+    }
+
+    static async getPaginatedYearlyActivities(userId: number, filters: PaginatedMonthlyActivityFilter) {
+        const pagination = resolvePagination({
+            maxPerPage: 48,
+            page: filters.page,
+            defaultPerPage: 48,
+            perPage: filters.perPage,
+        });
+
+        const conditions = getFilteredActivityConditions(userId, filters);
+        if (!conditions) {
+            return {
+                total: 0,
+                pages: 0,
+                items: [],
+                page: pagination.page,
+                perPage: pagination.perPage,
+            };
+        }
+
+        const groupedActivities = getDbClient()
+            .select({
+                mediaId: userMediaMonthlyActivity.mediaId,
+                mediaType: userMediaMonthlyActivity.mediaType,
+                lastActivityAt: max(userMediaMonthlyActivity.lastActivityAt).as("last_activity_at"),
+            })
+            .from(userMediaMonthlyActivity)
+            .innerJoin(userMediaSettings, activeMediaSettingsJoin)
+            .where(and(...conditions))
+            .groupBy(userMediaMonthlyActivity.mediaType, userMediaMonthlyActivity.mediaId)
+            .as("grouped_yearly_activity");
+
+        const total = getDbClient()
+            .select({ count: count() })
+            .from(groupedActivities)
+            .get()?.count ?? 0;
+
+        const groups = await getDbClient()
+            .select()
+            .from(groupedActivities)
+            .orderBy(desc(groupedActivities.lastActivityAt), asc(groupedActivities.mediaType), asc(groupedActivities.mediaId))
+            .limit(pagination.limit)
+            .offset(pagination.offset);
+
+        if (groups.length === 0) {
+            return {
+                total,
+                items: [],
+                page: pagination.page,
+                perPage: pagination.perPage,
+                pages: Math.ceil(total / pagination.perPage),
+            };
+        }
+
+        const groupConditions = groups.map((group) => and(
+            eq(userMediaMonthlyActivity.mediaId, group.mediaId),
+            eq(userMediaMonthlyActivity.mediaType, group.mediaType),
+        ));
+
+        const occurrences = await getDbClient()
+            .select({ ...getTableColumns(userMediaMonthlyActivity) })
+            .from(userMediaMonthlyActivity)
+            .innerJoin(userMediaSettings, activeMediaSettingsJoin)
+            .where(and(...conditions, or(...groupConditions)))
+            .orderBy(desc(userMediaMonthlyActivity.lastActivityAt));
+
+        const items = groups.flatMap((group) => {
+            const groupedOccurrences = occurrences.filter((occurrence) =>
+                occurrence.mediaId === group.mediaId && occurrence.mediaType === group.mediaType
+            );
+
+            const latestOccurrence = groupedOccurrences[0];
+            if (!latestOccurrence) return [];
+
+            return [{
+                ...latestOccurrence,
+                occurrences: groupedOccurrences,
+                redoGained: groupedOccurrences.reduce((totalRedo, occurrence) => totalRedo + occurrence.redoGained, 0),
+                progressGained: groupedOccurrences.reduce((totalProgress, occurrence) => totalProgress + occurrence.progressGained, 0),
+            }];
+        });
 
         return {
             items,

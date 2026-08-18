@@ -25,6 +25,19 @@ export type MonthlyActivityEditor = {
     hadCompletion: boolean;
     lastActivityAt: string;
     progressGained: number;
+    occurrences?: MonthlyActivityOccurrence[];
+}
+
+
+export type MonthlyActivityOccurrence = {
+    id: number;
+    hidden: boolean;
+    timeGained: number;
+    redoGained: number;
+    monthBucket: string;
+    hadCompletion: boolean;
+    lastActivityAt: string;
+    progressGained: number;
 }
 
 

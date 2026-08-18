@@ -7,7 +7,7 @@ import {calendarDateRangeToISOString, compareDateInputs} from "@/lib/utils/date-
 import {resolveMonthlyActivityMedia} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {MonthlyActivityRepository} from "@/lib/server/domain/tracking/monthly-activity.repository";
 import {AddMonthlyActivity, MonthlyActivityFilters, MonthlyActivityStatsFilters, UpdateMonthlyActivity} from "@/lib/schemas";
-import {LogMonthlyActivityFromDelta, MonthlyActivityChartDatum, MonthlyActivityEditor, WrappedMonthlyActivityResult} from "@/lib/types/activity.types";
+import {LogMonthlyActivityFromDelta, MonthlyActivityChartDatum, MonthlyActivityEditor, MonthlyActivityOccurrence, WrappedMonthlyActivityResult} from "@/lib/types/activity.types";
 
 
 export class MonthlyActivityService {
@@ -68,7 +68,7 @@ export class MonthlyActivityService {
 
         const [availableMediaTypes, result] = await Promise.all([
             this.repository.getMonthlyMediaTypes(userId, range.startMonth, range.endMonth, filters.hiddenOnly),
-            this.repository.getPaginatedMonthlyActivities(userId, {
+            this.repository[filters.view === "year" ? "getPaginatedYearlyActivities" : "getPaginatedMonthlyActivities"](userId, {
                 ...range,
                 perPage: 48,
                 mediaIdsByType,
@@ -87,6 +87,21 @@ export class MonthlyActivityService {
             if (!mediaDetails) continue;
 
             const monthlyActivity = this.mediaMonthlyActivityRegistry.get(activity.mediaType);
+            const storedOccurrences = "occurrences" in activity
+                ? activity.occurrences as Omit<MonthlyActivityOccurrence, "timeGained">[]
+                : undefined;
+            const occurrences = storedOccurrences
+                ? storedOccurrences.map((occurrence) => ({
+                    id: occurrence.id,
+                    hidden: occurrence.hidden,
+                    monthBucket: occurrence.monthBucket,
+                    redoGained: occurrence.redoGained,
+                    hadCompletion: occurrence.hadCompletion,
+                    lastActivityAt: occurrence.lastActivityAt,
+                    progressGained: occurrence.progressGained,
+                    timeGained: monthlyActivity.progressToMinutes(occurrence.progressGained, mediaDetails.duration),
+                }))
+                : undefined;
 
             rows.push({
                 id: activity.id,
@@ -100,6 +115,7 @@ export class MonthlyActivityService {
                 lastActivityAt: activity.lastActivityAt,
                 progressGained: activity.progressGained,
                 timeGained: monthlyActivity.progressToMinutes(activity.progressGained, mediaDetails.duration),
+                occurrences,
             });
         }
 

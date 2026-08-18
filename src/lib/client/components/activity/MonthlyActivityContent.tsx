@@ -1,16 +1,15 @@
 import React, {useState} from "react";
-import {LayoutGrid, Plus} from "lucide-react";
 import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Label} from "@/lib/client/components/ui/label";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatDate} from "@/lib/utils/date-formatting";
+import {History, LayoutGrid, Plus} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {MonthlyActivityEditor} from "@/lib/types/activity.types";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
@@ -22,9 +21,11 @@ import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicat
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
+import {MonthlyActivityEditor, MonthlyActivityOccurrence} from "@/lib/types/activity.types";
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
 import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
+import {YearlyActivityOccurrencesDialog} from "@/lib/client/components/activity/YearlyActivityOccurrencesDialog";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
@@ -50,6 +51,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
     const [addActivity, setAddActivity] = useState(false);
     const activeFilters = fixedMediaType ? { ...filters, activeTab: fixedMediaType } : filters;
     const [editActivity, setEditActivity] = useState<MonthlyActivityEditor | null>(null);
+    const [occurrencesActivity, setOccurrencesActivity] = useState<MonthlyActivityEditor | null>(null);
 
     const apiData = useSuspenseQuery(monthlyActivityOptions(username, activeFilters)).data;
     const mediaTypeFilters = createMediaSelectItems(apiData.mediaTypes, { leading: "all", leadingLabel: "All Types" });
@@ -76,6 +78,12 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
 
     const handleFilterChange = (next: Partial<MonthlyActivitySearch>) => {
         updateFilters({ page: 1, ...next, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) });
+    };
+
+    const handleOccurrenceSelect = (occurrence: MonthlyActivityOccurrence) => {
+        const [year, month] = occurrence.monthBucket.split("-");
+        setOccurrencesActivity(null);
+        handleFilterChange({ year, month, view: "month" });
     };
 
     return (
@@ -172,6 +180,10 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                 }
             </div>
 
+            <div className="text-sm text-muted-foreground">
+                {apiData.total} {apiData.total === 1 ? "item" : "items"}
+            </div>
+
             {apiData.items.length === 0 &&
                 <EmptyState
                     iconSize={50}
@@ -188,12 +200,26 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {apiData.items.map((row) =>
                         <MediaCard key={row.id} mediaType={row.mediaType} item={{ ...row, mediaCover: row.mediaCover }}>
-                            {canEdit &&
+                            {view === "month" && canEdit &&
                                 <MediaCardRightCorner>
                                     <MediaCardEditAction
                                         onClick={() => setEditActivity(row)}
                                         label={`Edit Monthly Activity for ${row.mediaName}`}
                                     />
+                                </MediaCardRightCorner>
+                            }
+                            {view === "year" && row.occurrences && row.occurrences.length > 1 &&
+                                <MediaCardRightCorner>
+                                    <Button
+                                        size="bare"
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setOccurrencesActivity(row)}
+                                        title={`View yearly activity for ${row.mediaName}`}
+                                        aria-label={`View yearly activity for ${row.mediaName}`}
+                                    >
+                                        <History data-icon="inline-start"/>
+                                    </Button>
                                 </MediaCardRightCorner>
                             }
 
@@ -207,7 +233,9 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                             <MediaTypeIcon mediaType={row.mediaType}/>
                                         }
                                         {formatMinutes(row.timeGained)}
-                                        {view === "year" && <span>{formatDate(row.lastActivityAt)}</span>}
+                                        {view === "year" && row.occurrences?.length === 1 &&
+                                            <span>{formatDate(row.lastActivityAt)}</span>
+                                        }
                                     </MediaCardDetails>
                                     <MediaCardSignals>
                                         <MonthlyActivityStatusIcons row={row}/>
@@ -220,10 +248,6 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
             }
 
             <Separator/>
-
-            <div className="text-muted-foreground text-sm flex justify-end -mt-2">
-                {apiData.total} items
-            </div>
 
             <Pagination
                 currentPage={page}
@@ -246,6 +270,15 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                     mediaTypes={activeMediaTypes}
                     year={Number(dateFilters.year)}
                     month={view === "year" ? undefined : Number(dateFilters.month)}
+                />
+            }
+
+            {occurrencesActivity &&
+                <YearlyActivityOccurrencesDialog
+                    open
+                    activity={occurrencesActivity}
+                    onSelect={handleOccurrenceSelect}
+                    onOpenChange={() => setOccurrencesActivity(null)}
                 />
             }
         </div>

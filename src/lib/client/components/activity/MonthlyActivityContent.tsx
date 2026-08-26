@@ -3,7 +3,7 @@ import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Label} from "@/lib/client/components/ui/label";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {formatDate} from "@/lib/utils/date-formatting";
+import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {History, LayoutGrid, Plus} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
@@ -230,11 +230,15 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
                                 <MediaCardMeta>
                                     <MediaCardDetails>
                                         {(!fixedMediaType && activeTab === "all") &&
-                                            <MediaTypeIcon mediaType={row.mediaType}/>
+                                            <MediaTypeIcon
+                                                mediaType={row.mediaType}
+                                            />
                                         }
                                         {formatMinutes(row.timeGained)}
                                         {view === "year" && row.occurrences?.length === 1 &&
-                                            <span>{formatDate(row.lastActivityAt)}</span>
+                                            <span>
+                                                {formatMonthYear(row.lastActivityAt, { month: "short" })}
+                                            </span>
                                         }
                                     </MediaCardDetails>
                                     <MediaCardSignals>

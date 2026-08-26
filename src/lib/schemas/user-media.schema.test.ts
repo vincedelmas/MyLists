@@ -91,6 +91,19 @@ describe("user media schemas", () => {
         ]));
     });
 
+    it.each(["", " \n\t "])("normalizes blank comments to null", (comment) => {
+        const result = updateUserMediaSchema.parse({
+            mediaId: 1,
+            mediaType: MediaType.MOVIES,
+            payload: {
+                comment,
+                type: UpdateType.COMMENT,
+            },
+        });
+
+        expect(result.payload.comment).toBeNull();
+    });
+
     it("rejects implausibly old backlog dates", () => {
         const result = updateUserMediaSchema.safeParse({
             mediaId: 1,

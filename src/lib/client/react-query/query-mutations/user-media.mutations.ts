@@ -2,9 +2,9 @@ import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {UpdatePayload} from "@/lib/types/user-media.types";
-import {MediaType, TagAction} from "@/lib/utils/enums";
-import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
+import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
+import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
 import {allUpdatesOptions, historyOptions, mediaDetailsOptions, mediaListOptions, profileOptions, tagNamesOptions} from "@/lib/client/react-query/query-options";
 import {
     postAddMediaToList,
@@ -160,7 +160,7 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                 throw new FormattedError(result.error.issues[0].message);
             }
 
-            return postUpdateUserMedia({ data: { payload: payloadWithDate, mediaType, mediaId } });
+            return postUpdateUserMedia({ data: result.data });
         },
         onSuccess: async (data, variables) => {
             const activityUpdate = loggedActivityUpdateTypes.has(variables.payload.type);
@@ -173,6 +173,11 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
             if (activityUpdate) {
                 invalidations.push(queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }));
             }
+
+            if (variables.payload.type === UpdateType.COMMENT) {
+                invalidations.push(queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }));
+            }
+
             await Promise.all(invalidations);
 
             if (queryOption.queryKey[0] === "details") {

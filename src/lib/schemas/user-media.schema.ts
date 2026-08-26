@@ -1,7 +1,7 @@
 import * as z from "zod";
 import {isValidActivityDate} from "@/lib/utils/activity-utils";
-import {importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {emptyStringToNull, importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
 import {COMMENT_MAX_LENGTH, MIN_ACTIVITY_DATE, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
 
@@ -96,12 +96,12 @@ export const updateUserMediaSchema = z.object({
             z.array(z.number().int().min(0).max(REDO_MAX, `A season cannot be re-watched more than ${REDO_MAX} times.`)),
         ]).optional(),
         rating: z.number().min(0).max(10).optional().nullable(),
-        comment: z.string().max(COMMENT_MAX_LENGTH, `Comment cannot exceed ${COMMENT_MAX_LENGTH} characters`).nullish(),
         actualPage: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentSeason: z.number().int().min(1).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentChapter: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentEpisode: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         playtime: z.number().min(0).max(PLAYTIME_MAX_MINUTES, `Playtime cannot exceed ${PLAYTIME_MAX_MINUTES}!`).optional(),
+        comment: z.preprocess(emptyStringToNull, z.string().max(COMMENT_MAX_LENGTH, `Comment cannot exceed ${COMMENT_MAX_LENGTH} characters`).nullish()),
     }).superRefine((data, ctx) => {
         const definedFields = Object.entries(data)
             .filter(([key, value]) => key !== "type" && key !== "loggedAt" && value !== undefined)

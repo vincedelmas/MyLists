@@ -179,6 +179,66 @@ describe("MonthlyActivityRepository", () => {
         expect(result.items.map((row) => row.monthBucket)).toEqual(["2026-08", "2026-01"]);
     });
 
+    it("consolidates yearly summaries before pagination and keeps their occurrences", async () => {
+        await db.insert(userMediaMonthlyActivity).values([
+            {
+                userId: 1,
+                mediaId: 10,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2026-01",
+                lastActivityAt: "2026-01-10T12:00:00.000Z",
+                progressGained: 40,
+                redoGained: 1,
+            },
+            {
+                userId: 1,
+                mediaId: 10,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2026-08",
+                lastActivityAt: "2026-08-10T12:00:00.000Z",
+                progressGained: 60,
+                hadCompletion: true,
+                redoGained: 2,
+            },
+            {
+                userId: 1,
+                mediaId: 11,
+                mediaType: MediaType.BOOKS,
+                monthBucket: "2026-06",
+                lastActivityAt: "2026-06-10T12:00:00.000Z",
+                progressGained: 20,
+            },
+        ]);
+
+        const firstPage = await MonthlyActivityRepository.getPaginatedYearlyActivities(1, {
+            page: 1,
+            perPage: 1,
+            startMonth: "2026-01",
+            endMonth: "2026-12",
+        });
+
+        expect(firstPage).toMatchObject({ total: 2, page: 1, pages: 2, perPage: 1 });
+        expect(firstPage.items).toHaveLength(1);
+        expect(firstPage.items[0]).toMatchObject({
+            mediaId: 10,
+            progressGained: 100,
+            redoGained: 3,
+            hadCompletion: true,
+            lastActivityAt: "2026-08-10T12:00:00.000Z",
+        });
+        expect(firstPage.items[0].occurrences.map((row) => row.monthBucket)).toEqual(["2026-08", "2026-01"]);
+
+        const secondPage = await MonthlyActivityRepository.getPaginatedYearlyActivities(1, {
+            page: 2,
+            perPage: 1,
+            startMonth: "2026-01",
+            endMonth: "2026-12",
+        });
+
+        expect(secondPage.items).toHaveLength(1);
+        expect(secondPage.items[0]).toMatchObject({ mediaId: 11, progressGained: 20 });
+    });
+
     it("merges every contribution when moving activity to another month", async () => {
         const [june] = await db.insert(userMediaMonthlyActivity).values({
             userId: 1,

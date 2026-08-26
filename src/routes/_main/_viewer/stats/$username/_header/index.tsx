@@ -4,6 +4,7 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
 import {createFileRoute, redirect} from "@tanstack/react-router";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
+import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {YearRecapReleaseStatus} from "@/lib/types/year-recap.types";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
@@ -69,9 +70,11 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
 function UserStatsPage() {
     const { view, releases } = Route.useLoaderData();
 
-    return view === "recap"
-        ? <RecapStatsPage releases={releases}/>
-        : <AllTimeStatsPage releases={releases}/>;
+    return (
+        view === "recap"
+            ? <RecapStatsPage releases={releases}/>
+            : <AllTimeStatsPage releases={releases}/>
+    );
 }
 
 
@@ -84,7 +87,7 @@ function AllTimeStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) 
     const mediaTabs = createMediaTabItems(apiData.activatedMediaTypes, { leading: "overview" }) as TabItem<StatsActiveTab>[];
 
     return (
-        <>
+        <PageTitle title={`${username} Stats`} onlyHelmet>
             <StatsNavigation
                 releases={releases}
                 mediaTabs={mediaTabs}
@@ -97,7 +100,7 @@ function AllTimeStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) 
                     onSelectMediaType={(val) => void navigate({ search: (prev) => ({ ...prev, activeTab: val }) })}
                 />
             </div>
-        </>
+        </PageTitle>
     );
 }
 
@@ -110,7 +113,7 @@ function RecapStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) {
     const mediaTabs = createMediaTabItems(recap.availableMediaTypes, { leading: "overview" }) as TabItem<StatsActiveTab>[];
 
     return (
-        <>
+        <PageTitle title={`${username} Recap ${year}`} onlyHelmet>
             <StatsNavigation
                 releases={releases}
                 mediaTabs={mediaTabs}
@@ -121,7 +124,7 @@ function RecapStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) {
                     canGenerateImage={currentUser?.name.toLocaleLowerCase() === username.toLocaleLowerCase()}
                 />
             </div>
-        </>
+        </PageTitle>
     );
 }
 

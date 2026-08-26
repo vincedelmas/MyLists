@@ -3,7 +3,9 @@ import {CheckCircle, EyeOff, Hourglass, RotateCw} from "lucide-react";
 
 
 export function MonthlyActivityStatusIcons({ row }: { row: MonthlyActivityEditor }) {
-    if (row.hidden) {
+    const status = row.occurrences?.[0] ?? row;
+
+    if (status.hidden) {
         return (
             <span className="flex items-center gap-1.5">
                 <span title="Hidden activity" className="inline-flex">
@@ -15,6 +17,22 @@ export function MonthlyActivityStatusIcons({ row }: { row: MonthlyActivityEditor
                 </span>
             </span>
         )
+    }
+
+    if (row.occurrences) {
+        if (status.hadCompletion) {
+            return <CheckCircle size={13} aria-label="Latest activity: Completed" className="text-white/70"/>;
+        }
+
+        if (status.redoGained > 0) {
+            return <RotateCw size={13} aria-label="Latest activity: Re-experienced" className="text-white/70"/>;
+        }
+
+        if (status.progressGained > 0) {
+            return <Hourglass size={13} aria-label="Latest activity: Progressed" className="text-white/70"/>;
+        }
+
+        return null;
     }
 
     return (

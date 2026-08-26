@@ -6,8 +6,6 @@ import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/a
 
 type HltbApiConfig = ApiClientConfig & {
     baseUrl: string;
-    tokenUrl: string;
-    searchUrl: string;
     userAgent: string;
 };
 
@@ -23,8 +21,6 @@ const createConfig = (): HltbApiConfig => {
     return {
         baseUrl,
         consumeKey: "hltb-API",
-        searchUrl: baseUrl + "api/bleed",
-        tokenUrl: baseUrl + "api/bleed/init",
         userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         throttleOptions: [{
             points: 4,
@@ -38,8 +34,20 @@ const createConfig = (): HltbApiConfig => {
 export const createHltbApi = async () => {
     const config = createConfig();
     const http = await createApiHttpClient(config);
+    let searchUrl: string | undefined;
 
     async function sendWebRequest(gameName: string) {
+        try {
+            return await search(gameName);
+        }
+        catch (err) {
+            logger.warn({ err, gameName }, "HLTB first request failed, refreshing search URL");
+            searchUrl = undefined;
+            return search(gameName);
+        }
+    }
+
+    async function search(gameName: string) {
         const headers: Record<string, string> = {
             "accept": "*/*",
             "Origin": config.baseUrl,
@@ -48,7 +56,8 @@ export const createHltbApi = async () => {
             "content-type": "application/json",
         };
 
-        const authData = await getAuthToken();
+        const currentSearchUrl = await getSearchUrl();
+        const authData = await getAuthToken(currentSearchUrl);
 
         if (authData) {
             headers["x-hp-key"] = authData.hpKey;
@@ -56,28 +65,52 @@ export const createHltbApi = async () => {
             headers["x-auth-token"] = authData.token;
         }
 
-        try {
-            const payload = createPayload(gameName, authData);
-            const response = await http.call(config.searchUrl, "post", {
-                headers,
-                body: JSON.stringify(payload),
-            });
+        const payload = createPayload(gameName, authData);
+        const response = await http.call(currentSearchUrl, "post", {
+            headers,
+            body: JSON.stringify(payload),
+        });
 
-            return await response.text();
-        }
-        catch (err) {
-            logger.warn({ err, gameName }, "HLTB first request failed, trying alternative");
-        }
+        return response.text();
     }
 
-    async function getAuthToken() {
+    async function getSearchUrl() {
+        if (searchUrl) return searchUrl;
+
+        const headers = {
+            "referer": config.baseUrl,
+            "User-Agent": config.userAgent,
+        };
+        const response = await http.call(config.baseUrl, "get", { headers });
+        const html = await response.text();
+        const scriptUrls = Array.from(html.matchAll(/<script[^>]+src=["']([^"']+)["'][^>]*>/gi))
+            .map((match) => match[1])
+            .filter((url) => url.includes("/_next/static/chunks/"));
+
+        for (const scriptUrl of scriptUrls) {
+            const scriptResponse = await http.call(new URL(scriptUrl, config.baseUrl).toString(), "get", { headers });
+            const script = await scriptResponse.text();
+            const endpoint = script.match(
+                /fetch\s*\(\s*["'](\/api\/[a-zA-Z0-9_/]+)[^"']*["']\s*,\s*\{[^}]*method:\s*["']POST["'][^}]*\}/i,
+            )?.[1];
+
+            if (endpoint) {
+                searchUrl = new URL(endpoint, config.baseUrl).toString();
+                return searchUrl;
+            }
+        }
+
+        throw new Error("Could not discover the HLTB search URL");
+    }
+
+    async function getAuthToken(currentSearchUrl: string) {
         const headers = {
             "referer": config.baseUrl,
             "User-Agent": config.userAgent,
         };
 
         try {
-            const response = await http.call(`${config.tokenUrl}?t=${Date.now()}`, "get", { headers });
+            const response = await http.call(`${currentSearchUrl}/init?t=${Date.now()}`, "get", { headers });
             const data = await response.json();
             const token = data?.token ?? data?.data?.token;
             const hpKey = data?.hpKey ?? data?.data?.hpKey;

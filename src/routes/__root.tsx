@@ -16,8 +16,8 @@ import {ConfirmDialogHost} from "@/lib/client/components/confirm/ConfirmDialogHo
 import {AuthModalProvider} from "@/lib/client/components/general/AuthModalProvider";
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
 import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
-import {createRootRouteWithContext, HeadContent, Outlet, Scripts} from "@tanstack/react-router";
 import {YearRecapReleaseRibbon} from "@/lib/client/components/year-recap/YearRecapReleaseRibbon";
+import {ClientOnly, createRootRouteWithContext, HeadContent, Outlet, Scripts} from "@tanstack/react-router";
 
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -53,28 +53,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         ],
     }),
     component: RootComponent,
-    shellComponent: RootComponent,
+    shellComponent: RootShell,
 });
 
 
-function RootComponent() {
-    useNProgress();
-
+function RootShell({ children }: { children: React.ReactNode }) {
     return (
         <html lang="en" className="dark" data-theme="dark" style={{ colorScheme: "dark" }}>
         <head>
             <HeadContent/>
         </head>
         <body>
-
-        <AppShell/>
-
-        {import.meta.env.DEV &&
-            <ReactQueryDevtools
-                buttonPosition="bottom-left"
-            />
-        }
-
+        {children}
         <Scripts/>
         </body>
         </html>
@@ -82,7 +72,24 @@ function RootComponent() {
 }
 
 
+function RootComponent() {
+    return (
+        <ClientOnly>
+            <AppShell/>
+
+            {import.meta.env.DEV &&
+                <ReactQueryDevtools
+                    buttonPosition="bottom-left"
+                />
+            }
+        </ClientOnly>
+    );
+}
+
+
 function AppShell() {
+    useNProgress();
+
     return (
         <TooltipProvider>
             <PostHogAuthSync/>

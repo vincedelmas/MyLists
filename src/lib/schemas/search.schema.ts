@@ -139,12 +139,12 @@ const getAdvancedSearchValidationError = (result: z.ZodSafeParseResult<unknown>)
 };
 
 
-export const validateBookAdvancedSearch = (query: string, filters: AdvancedSearchFilters) => {
+export const validateBookAdvancedSearch = (query: string, filters?: AdvancedSearchFilters) => {
     return getAdvancedSearchValidationError(bookAdvancedSearchSchema.safeParse({ query, advancedFilters: filters }));
 };
 
 
-export const validateGameAdvancedSearch = (query: string, filters: AdvancedSearchFilters) => {
+export const validateGameAdvancedSearch = (query: string, filters?: AdvancedSearchFilters) => {
     return getAdvancedSearchValidationError(gameAdvancedSearchSchema.safeParse({ query, advancedFilters: filters }));
 };
 

@@ -12,15 +12,15 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
+import {navSearchOptions} from "@/lib/client/react-query/query-options";
 import {AdvancedSearchFilters, globalSearchSchema} from "@/lib/schemas";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
-import {navSearchOptions} from "@/lib/client/react-query/query-options";
-import {SearchMediaListIndicator} from "@/lib/client/components/media/base/SearchMediaListIndicator";
+import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal} from "lucide-react";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/advanced-search.utils";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
-import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal} from "lucide-react";
+import {SearchMediaListIndicator} from "@/lib/client/components/media/base/SearchMediaListIndicator";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
@@ -32,7 +32,9 @@ export const Route = createFileRoute("/_main/_private/search")({
     loader: ({ context: { queryClient }, deps: { search } }) => {
         const { query = "", page = 1, apiProvider = ApiProviderType.TMDB, advancedFilters } = search;
 
-        if (!hasSearchCriteria(query, advancedFilters)) return;
+        if (!hasSearchCriteria(query, apiProvider, advancedFilters)) {
+            return;
+        }
 
         return queryClient.ensureQueryData(navSearchOptions(query, page, apiProvider, advancedFilters));
     },
@@ -79,7 +81,7 @@ function SearchPage() {
     const appliedFilterCount = countAdvancedSearchFilters(advancedFilters);
 
     const isViewingAppliedProvider = selectedProvider === apiProvider;
-    const hasSubmittedSearch = isViewingAppliedProvider && (query.trim().length >= 2 || appliedFilterCount > 0);
+    const hasSubmittedSearch = isViewingAppliedProvider && hasSearchCriteria(query, apiProvider, advancedFilters);
 
     const searchProviderItems = [
         { label: "Media", value: ApiProviderType.TMDB },
@@ -135,7 +137,6 @@ function SearchPage() {
     };
 
     const handleAppliedFiltersChange = (filters: AdvancedSearchFilters) => {
-        form.reset(createFormValues(query, apiProvider, filters));
         void commitAppliedFilters(filters);
     };
 
@@ -144,7 +145,11 @@ function SearchPage() {
         if (!filterDefinition) return;
 
         const cleanedFilters = filterDefinition.cleanFilters(filters);
-        const nextFilters = countAdvancedSearchFilters(cleanedFilters) > 0 ? cleanedFilters : undefined;
+        const nextFilters = countAdvancedSearchFilters(cleanedFilters) > 0 && hasSearchCriteria(query, apiProvider, cleanedFilters)
+            ? cleanedFilters
+            : undefined;
+
+        form.reset(createFormValues(query, apiProvider, nextFilters));
         form.clearErrors();
 
         await navigate({ search: { query, page: 1, apiProvider, advancedFilters: nextFilters } });

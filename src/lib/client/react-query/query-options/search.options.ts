@@ -12,7 +12,7 @@ export const navSearchOptions = (query: string, page: number, apiProvider: ApiPr
         queryKey: ["navSearch", trimmedQuery, page, apiProvider, advancedFilters],
         queryFn: () => getSearchResults({ data: { query: trimmedQuery, page, apiProvider, advancedFilters } }),
         staleTime: 1000 * 60 * 2,
-        enabled: hasSearchCriteria(trimmedQuery, advancedFilters),
+        enabled: hasSearchCriteria(trimmedQuery, apiProvider, advancedFilters),
     });
 };
 

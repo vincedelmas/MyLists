@@ -1,4 +1,6 @@
-import type {AdvancedSearchFilters} from "@/lib/schemas";
+import {ApiProviderType} from "@/lib/utils/enums";
+import type {AdvancedSearchFilters} from "@/lib/schemas/search.schema";
+import {validateBookAdvancedSearch, validateGameAdvancedSearch} from "@/lib/schemas/search.schema";
 
 
 export const toOptionalNumber = (value: string) => {
@@ -16,6 +18,16 @@ export const countAdvancedSearchFilters = (filters?: AdvancedSearchFilters) => {
 };
 
 
-export const hasSearchCriteria = (query: string, filters?: AdvancedSearchFilters) => {
-    return query.trim().length >= 2 || countAdvancedSearchFilters(filters) > 0;
+export const hasSearchCriteria = (query: string, apiProvider: ApiProviderType, filters?: AdvancedSearchFilters) => {
+    if (filters && filters.provider !== apiProvider) return false;
+
+    if (apiProvider === ApiProviderType.BOOKS) {
+        return validateBookAdvancedSearch(query, filters) === undefined;
+    }
+
+    if (apiProvider === ApiProviderType.IGDB) {
+        return validateGameAdvancedSearch(query, filters) === undefined;
+    }
+
+    return query.trim().length >= 2;
 };

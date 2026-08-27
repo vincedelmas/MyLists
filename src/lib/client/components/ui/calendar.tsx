@@ -191,13 +191,16 @@ function CalendarDayButton({
 
     const ref = React.useRef<HTMLButtonElement>(null)
     React.useEffect(() => {
+        // Focusing 'active day' intentionally sync. DayPicker state with DOM.
+        // oxlint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
         if (modifiers.focused) ref.current?.focus()
     }, [modifiers.focused])
 
     return (
         <Button
-            variant="ghost"
+            ref={ref}
             size="icon"
+            variant="ghost"
             data-day={day.date.toLocaleDateString(locale?.code)}
             data-selected-single={
                 modifiers.selected &&

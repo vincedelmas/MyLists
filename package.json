@@ -89,6 +89,7 @@
         "@vitejs/plugin-react": "^6.0.3",
         "babel-plugin-react-compiler": "^1.0.0",
         "drizzle-kit": "^0.31.10",
+        "eslint-plugin-react-you-might-not-need-an-effect": "^1.0.2",
         "knip": "^6.27.0",
         "oxlint": "^1.74.0",
         "oxlint-tsgolint": "^0.25.0",

@@ -12,20 +12,20 @@ interface HistoryPosition {
 
 export const PwaNavControls = () => {
     const router = useRouter();
-    const [isIosStandalone, setIsIosStandalone] = useState(false);
+
+    const [isIosStandalone] = useState(() => {
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+            || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+            || (navigator as Navigator & { standalone?: boolean }).standalone;
+
+        return isIos && isStandalone;
+    });
+
     const [historyPosition, setHistoryPosition] = useState<HistoryPosition>(() => {
         const current = router.history.location.state.__TSR_index;
         return { current, furthest: current };
     });
-
-    useEffect(() => {
-        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
-            || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-        const isStandalone = window.matchMedia("(display-mode: standalone)").matches
-            || (navigator as Navigator & { standalone?: boolean }).standalone === true;
-
-        setIsIosStandalone(isIos && isStandalone);
-    }, []);
 
     useEffect(() => {
         return router.history.subscribe(({ location, action }) => {

@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useMemo, useSyncExternalStore} from "react";
 
 
 const BREAKPOINTS = {
@@ -11,20 +11,12 @@ const BREAKPOINTS = {
 
 export function useBreakpoint(key: keyof typeof BREAKPOINTS) {
     const breakpoint = BREAKPOINTS[key];
-    const [isBelow, setIsBelow] = useState(false);
+    const mediaQuery = useMemo(() => window.matchMedia(`(max-width: ${breakpoint - 1}px)`), [breakpoint]);
 
-    useEffect(() => {
-        const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-        setIsBelow(mql.matches);
+    const subscribe = useCallback((onStoreChange: () => void) => {
+        mediaQuery.addEventListener("change", onStoreChange);
+        return () => mediaQuery.removeEventListener("change", onStoreChange);
+    }, [mediaQuery]);
 
-        const handler = (ev: MediaQueryListEvent) => {
-            setIsBelow(ev.matches);
-        }
-
-        mql.addEventListener("change", handler);
-
-        return () => mql.removeEventListener("change", handler);
-    }, [breakpoint]);
-
-    return isBelow;
+    return useSyncExternalStore(subscribe, () => mediaQuery.matches);
 }

@@ -111,24 +111,14 @@ const levelTextClasses: Record<LogLevel, string> = {
 
 function AdminRuntimeLogsPage() {
     const logFiles = useSuspenseQuery(adminLogFilesOptions).data;
-    const [selectedFileName, setSelectedFileName] = useState<string | undefined>(() => logFiles[0]?.fileName);
+    const [requestedFileName, setRequestedFileName] = useState<string | undefined>(() => logFiles[0]?.fileName);
+    const [enabledLevels, setEnabledLevels] = useState<Set<LogLevel>>(() => new Set(logLevelFilters.map(l => l.value)));
+
+    const selectedFile = logFiles.find((file) => file.fileName === requestedFileName) ?? logFiles[0];
+    const selectedFileName = selectedFile?.fileName;
+
     const logFileQuery = useQuery({ ...adminLogFileOptions(selectedFileName ?? ""), enabled: Boolean(selectedFileName) });
-    const [enabledLevels, setEnabledLevels] = useState<Set<LogLevel>>(() => {
-        return new Set(logLevelFilters.map((level) => level.value));
-    });
 
-    useEffect(() => {
-        if (logFiles.length === 0) {
-            setSelectedFileName(undefined);
-            return;
-        }
-
-        if (!selectedFileName || !logFiles.some((file) => file.fileName === selectedFileName)) {
-            setSelectedFileName(logFiles[0].fileName);
-        }
-    }, [logFiles, selectedFileName]);
-
-    const selectedFile = logFiles.find((file) => file.fileName === selectedFileName);
     const logEntries = useMemo(() => {
         return checkLogLines(logFileQuery.data?.lines ?? []);
     }, [logFileQuery.data?.lines]);
@@ -246,7 +236,7 @@ function AdminRuntimeLogsPage() {
                                 disabled={logFiles.length === 0}
                                 items={logFiles.map((file) => ({ label: file.fileName, value: file.fileName }))}
                                 onValueChange={(value) => {
-                                    if (value !== null) setSelectedFileName(value);
+                                    if (value !== null) setRequestedFileName(value);
                                 }}
                             >
                                 <SelectTrigger className="w-72 max-w-[70vw] max-sm:w-full">

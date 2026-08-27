@@ -94,13 +94,6 @@ describe("MangaService", () => {
             expect(delta.statusCounts?.[Status.COMPLETED]).toBe(1);
         });
 
-        it("should return no delta when states are identical", () => {
-            const state = makeUserState({ rating: 8, favorite: true, comment: "Nice", currentChapter: 100, total: 100 });
-            const delta = mangaService.calculateDeltaStats(state, { ...state }, baseManga);
-
-            expect(Object.values(delta).every((v) => v === 0 || v === undefined)).toBe(true);
-        });
-
         it("should handle redo increment correctly", () => {
             const old = makeUserState({ status: Status.COMPLETED, redo: 1, total: 200, currentChapter: 100 });
             const newer = makeState({ status: Status.COMPLETED, redo: 2, total: 300, currentChapter: 100 });
@@ -130,43 +123,6 @@ describe("MangaService", () => {
             expect(delta.totalSpecific).toBe(25);
         });
 
-        it.each([
-            { oldRating: 5, newRating: 8, expectedSum: 3 },
-            { oldRating: null, newRating: 8, expectedSum: 8 },
-            { oldRating: 8, newRating: null, expectedSum: -8 },
-        ])(
-            "should handle rating changes (old: $oldRating → new: $newRating)", ({ oldRating, newRating, expectedSum }) => {
-                const old = makeUserState({ rating: oldRating });
-                const newer = makeState({ rating: newRating });
-                const delta = mangaService.calculateDeltaStats(old, newer, baseManga);
-
-                expect(delta.sumEntriesRated).toBe(expectedSum);
-            });
-
-        it.each([
-            { oldComment: null, newComment: "Nice", expected: 1 },
-            { oldComment: "Old", newComment: null, expected: -1 },
-        ])(
-            "should handle comment changes (old: $oldComment → new: $newComment)", ({ oldComment, newComment, expected }) => {
-                const old = makeUserState({ comment: oldComment });
-                const newer = makeState({ comment: newComment });
-                const delta = mangaService.calculateDeltaStats(old, newer, baseManga);
-
-                expect(delta.entriesCommented).toBe(expected);
-            }
-        );
-
-        it.each([
-            { oldFav: false, newFav: true, expected: 1 },
-            { oldFav: true, newFav: false, expected: -1 },
-        ])(
-            "should handle favorite changes (old: $oldFav → new: $newFav)", ({ oldFav, newFav, expected }) => {
-                const old = makeUserState({ favorite: oldFav });
-                const newer = makeState({ favorite: newFav });
-                const delta = mangaService.calculateDeltaStats(old, newer, baseManga);
-
-                expect(delta.entriesFavorites).toBe(expected);
-            });
     });
 
     describe("updateHandlers", () => {

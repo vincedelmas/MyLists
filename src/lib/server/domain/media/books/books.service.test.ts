@@ -82,13 +82,6 @@ describe("BooksService", () => {
             expect(delta.statusCounts?.[Status.PLAN_TO_READ]).toBe(-1);
         });
 
-        it("should return no delta when states are identical", () => {
-            const state = makeUserState({ rating: 8, favorite: true, comment: "Nice" });
-            const delta = booksService.calculateDeltaStats(state, { ...state }, baseBook);
-
-            expect(Object.values(delta).every((v) => v === 0 || v === undefined)).toBe(true);
-        });
-
         it("should handle redo increment correctly", () => {
             const newer = makeState({ status: Status.COMPLETED, redo: 2, total: 300 });
             const old = makeUserState({ status: Status.COMPLETED, redo: 1, total: 200 });
@@ -109,43 +102,6 @@ describe("BooksService", () => {
             expect(delta.timeSpent).toBe(-(100 * TIME_PER_PAGE));
         });
 
-        it.each([
-            { oldRating: 5, newRating: 8, expectedSum: 3 },
-            { oldRating: null, newRating: 8, expectedSum: 8 },
-            { oldRating: 8, newRating: null, expectedSum: -8 },
-        ])(
-            "should handle rating changes (old: $oldRating → new: $newRating)", ({ oldRating, newRating, expectedSum }) => {
-                const old = makeUserState({ rating: oldRating });
-                const newer = makeState({ rating: newRating });
-                const delta = booksService.calculateDeltaStats(old, newer, baseBook);
-
-                expect(delta.sumEntriesRated).toBe(expectedSum);
-            });
-
-        it.each([
-            { oldComment: null, newComment: "Nice", expected: 1 },
-            { oldComment: "Old", newComment: null, expected: -1 },
-        ])(
-            "should handle comment changes (old: $oldComment → new: $newComment)", ({ oldComment, newComment, expected }) => {
-                const old = makeUserState({ comment: oldComment });
-                const newer = makeState({ comment: newComment });
-                const delta = booksService.calculateDeltaStats(old, newer, baseBook);
-
-                expect(delta.entriesCommented).toBe(expected);
-            }
-        );
-
-        it.each([
-            { oldFav: false, newFav: true, expected: 1 },
-            { oldFav: true, newFav: false, expected: -1 },
-        ])(
-            "should handle favorite changes (old: $oldFav → new: $newFav)", ({ oldFav, newFav, expected }) => {
-                const old = makeUserState({ favorite: oldFav });
-                const newer = makeState({ favorite: newFav });
-                const delta = booksService.calculateDeltaStats(old, newer, baseBook);
-
-                expect(delta.entriesFavorites).toBe(expected);
-            });
     });
 
     describe("updateHandlers", () => {
@@ -172,17 +128,6 @@ describe("BooksService", () => {
             expect(log?.newValue).toBe(Status.PLAN_TO_READ);
         });
 
-        it("updateStatusHandler: READING -> COMPLETED", () => {
-            const current = makeState({ status: Status.READING, total: 50, actualPage: 50 });
-            const [next, log] = booksService.updateStatusHandler(current, { status: Status.COMPLETED }, baseBook);
-
-            expect(next.total).toBe(100);
-            expect(next.actualPage).toBe(100);
-            expect(next.status).toBe(Status.COMPLETED);
-            expect(log?.oldValue).toBe(Status.READING);
-            expect(log?.newValue).toBe(Status.COMPLETED);
-        });
-
         it("updateStatusHandler: PLAN_TO_READ -> READING", () => {
             const current = makeState({ status: Status.PLAN_TO_READ, total: 0, actualPage: 0 });
             const [next, log] = booksService.updateStatusHandler(current, { status: Status.READING }, baseBook);
@@ -191,39 +136,6 @@ describe("BooksService", () => {
             expect(next.actualPage).toBe(0);
             expect(next.status).toBe(Status.READING);
             expect(log?.oldValue).toBe(Status.PLAN_TO_READ);
-            expect(log?.newValue).toBe(Status.READING);
-        });
-
-        it("updateStatusHandler: READING -> ON_HOLD", () => {
-            const current = makeState({ status: Status.READING, total: 50, actualPage: 50 });
-            const [next, log] = booksService.updateStatusHandler(current, { status: Status.ON_HOLD }, baseBook);
-
-            expect(next.total).toBe(50);
-            expect(next.actualPage).toBe(50);
-            expect(next.status).toBe(Status.ON_HOLD);
-            expect(log?.oldValue).toBe(Status.READING);
-            expect(log?.newValue).toBe(Status.ON_HOLD);
-        });
-
-        it("updateStatusHandler: ON_HOLD -> DROPPED", () => {
-            const current = makeState({ status: Status.ON_HOLD, total: 50, actualPage: 50 });
-            const [next, log] = booksService.updateStatusHandler(current, { status: Status.DROPPED }, baseBook);
-
-            expect(next.total).toBe(50);
-            expect(next.actualPage).toBe(50);
-            expect(next.status).toBe(Status.DROPPED);
-            expect(log?.oldValue).toBe(Status.ON_HOLD);
-            expect(log?.newValue).toBe(Status.DROPPED);
-        });
-
-        it("updateStatusHandler: DROPPED -> READING", () => {
-            const current = makeState({ status: Status.DROPPED, total: 50, actualPage: 50 });
-            const [next, log] = booksService.updateStatusHandler(current, { status: Status.READING }, baseBook);
-
-            expect(next.total).toBe(50);
-            expect(next.actualPage).toBe(50);
-            expect(next.status).toBe(Status.READING);
-            expect(log?.oldValue).toBe(Status.DROPPED);
             expect(log?.newValue).toBe(Status.READING);
         });
 

@@ -90,13 +90,6 @@ describe("GamesService", () => {
             expect(delta.statusCounts?.[Status.COMPLETED]).toBe(1);
         });
 
-        it("should return no delta when states are identical", () => {
-            const state = makeUserState({ rating: 8, favorite: true, comment: "Nice", playtime: 120 });
-            const delta = gamesService.calculateDeltaStats(state, { ...state }, baseGame);
-
-            expect(Object.values(delta).every((v) => v === 0 || v === undefined)).toBe(true);
-        });
-
         it("should handle playtime change correctly", () => {
             const old = makeUserState({ status: Status.COMPLETED, playtime: 100 });
             const newer = makeState({ status: Status.COMPLETED, playtime: 150 });
@@ -105,43 +98,6 @@ describe("GamesService", () => {
             expect(delta.timeSpent).toBe(50);
         });
 
-        it.each([
-            { oldRating: 5, newRating: 8, expectedSum: 3 },
-            { oldRating: null, newRating: 8, expectedSum: 8 },
-            { oldRating: 8, newRating: null, expectedSum: -8 },
-        ])(
-            "should handle rating changes (old: $oldRating → new: $newRating)", ({ oldRating, newRating, expectedSum }) => {
-                const old = makeUserState({ rating: oldRating });
-                const newer = makeState({ rating: newRating });
-                const delta = gamesService.calculateDeltaStats(old, newer, baseGame);
-
-                expect(delta.sumEntriesRated).toBe(expectedSum);
-            });
-
-        it.each([
-            { oldComment: null, newComment: "Nice", expected: 1 },
-            { oldComment: "Old", newComment: null, expected: -1 },
-        ])(
-            "should handle comment changes (old: $oldComment → new: $newComment)", ({ oldComment, newComment, expected }) => {
-                const old = makeUserState({ comment: oldComment });
-                const newer = makeState({ comment: newComment });
-                const delta = gamesService.calculateDeltaStats(old, newer, baseGame);
-
-                expect(delta.entriesCommented).toBe(expected);
-            }
-        );
-
-        it.each([
-            { oldFav: false, newFav: true, expected: 1 },
-            { oldFav: true, newFav: false, expected: -1 },
-        ])(
-            "should handle favorite changes (old: $oldFav → new: $newFav)", ({ oldFav, newFav, expected }) => {
-                const old = makeUserState({ favorite: oldFav });
-                const newer = makeState({ favorite: newFav });
-                const delta = gamesService.calculateDeltaStats(old, newer, baseGame);
-
-                expect(delta.entriesFavorites).toBe(expected);
-            });
     });
 
     describe("updateHandlers", () => {

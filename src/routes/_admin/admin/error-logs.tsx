@@ -128,10 +128,7 @@ function AdminRuntimeLogsPage() {
         }
     }, [logFiles, selectedFileName]);
 
-    const selectedFile = useMemo(() => {
-        return logFiles.find((file) => file.fileName === selectedFileName);
-    }, [logFiles, selectedFileName]);
-
+    const selectedFile = logFiles.find((file) => file.fileName === selectedFileName);
     const logEntries = useMemo(() => {
         return checkLogLines(logFileQuery.data?.lines ?? []);
     }, [logFileQuery.data?.lines]);
@@ -144,16 +141,11 @@ function AdminRuntimeLogsPage() {
         return counts;
     }, [logEntries]);
 
-    const visibleEntries = useMemo(() => {
-        return logEntries.filter((entry) => enabledLevels.has(entry.level));
-    }, [enabledLevels, logEntries]);
-
-    const activeFilterKey = useMemo(() => {
-        return logLevelFilters
-            .filter((level) => enabledLevels.has(level.value))
-            .map((level) => level.value)
-            .join(",");
-    }, [enabledLevels]);
+    const visibleEntries = logEntries.filter((entry) => enabledLevels.has(entry.level));
+    const activeFilterKey = logLevelFilters
+        .filter((level) => enabledLevels.has(level.value))
+        .map((level) => level.value)
+        .join(",");
 
     const selectedFileInfo = logFileQuery.data?.file ?? selectedFile;
     const logContent = (() => {

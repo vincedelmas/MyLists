@@ -2,7 +2,7 @@ import {cn} from "@/lib/utils/classnames";
 import {Label} from "@/lib/client/components/ui/label";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {cva, type VariantProps} from "class-variance-authority";
-import {type ComponentProps, type ReactNode, useMemo} from "react";
+import {type ComponentProps, type ReactNode} from "react";
 
 
 const fieldVariants = cva("group/field flex w-full gap-2 data-[invalid=true]:text-destructive", {
@@ -155,24 +155,24 @@ function FieldSeparator({ children, className, ...props }: ComponentProps<"div">
 
 
 function FieldError({ className, children, errors, ...props }: ComponentProps<"div"> & { errors?: Array<{ message?: string } | undefined> }) {
-    const content = useMemo(() => {
-        if (children) return children;
-        if (!errors?.length) return null;
+    if (!children && !errors?.length) return null;
 
+    let content = children;
+    if (!content && errors) {
         const uniqueErrors = [...new Map(errors.map(error => [error?.message, error])).values()];
-        if (uniqueErrors.length === 1) return uniqueErrors[0]?.message;
-
-        return (
-            <ul className="ml-4 flex list-disc flex-col gap-1">
-                {uniqueErrors.map((error, idx) =>
-                    error?.message &&
-                    <li key={idx}>
-                        {error.message}
-                    </li>
-                )}
-            </ul>
-        );
-    }, [children, errors]);
+        content = uniqueErrors.length === 1
+            ? uniqueErrors[0]?.message
+            : (
+                <ul className="ml-4 flex list-disc flex-col gap-1">
+                    {uniqueErrors.map((error, idx) =>
+                        error?.message &&
+                        <li key={idx}>
+                            {error.message}
+                        </li>
+                    )}
+                </ul>
+            );
+    }
 
     if (!content) return null;
 

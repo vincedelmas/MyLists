@@ -1,4 +1,3 @@
-import React, {useMemo} from "react";
 import {SearchType} from "@/lib/schemas";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatDateTime} from "@/lib/utils/date-formatting";
@@ -12,8 +11,8 @@ import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {ColumnDef, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {adminMediadleOptions} from "@/lib/client/react-query/query-options/admin.options";
+import {ColumnDef, rowPaginationFeature, tableFeatures, useTable} from "@tanstack/react-table";
 
 
 export const Route = createFileRoute("/_admin/admin/mediadle")({
@@ -26,6 +25,7 @@ export const Route = createFileRoute("/_admin/admin/mediadle")({
 })
 
 
+const features = tableFeatures({ rowPaginationFeature });
 const DEFAULT = { search: "", page: 1 } satisfies SearchType;
 
 
@@ -40,7 +40,7 @@ function AdminMediadlePage() {
         onPageChange: (page) => updateFilters({ search, page }),
     });
 
-    const mediadleColumns: ColumnDef<typeof apiData.items[0]>[] = useMemo(() => [
+    const mediadleColumns: ColumnDef<typeof features, typeof apiData.items[0]>[] = [
         {
             accessorKey: "name",
             header: "Username",
@@ -113,17 +113,16 @@ function AdminMediadlePage() {
                 </div>
             ),
         },
-    ], []);
+    ];
 
-    const table = useReactTable({
+    const table = useTable({
         onPaginationChange,
-        manualFiltering: true,
+        state: { pagination },
         manualPagination: true,
         columns: mediadleColumns,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
-        getCoreRowModel: getCoreRowModel(),
-        state: { pagination },
+        features,
     });
 
     return (
@@ -148,7 +147,6 @@ function AdminMediadlePage() {
             <div className="mt-3">
                 <TablePagination
                     table={table}
-                    withSelection={false}
                 />
             </div>
         </DashboardShell>

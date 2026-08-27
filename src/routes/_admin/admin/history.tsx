@@ -1,4 +1,3 @@
-import React, {useMemo} from "react";
 import {SearchType} from "@/lib/schemas";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -13,7 +12,7 @@ import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {adminAllUpdatesOptions} from "@/lib/client/react-query/query-options";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {ColumnDef, getCoreRowModel, useReactTable} from "@tanstack/react-table";
+import {ColumnDef, rowPaginationFeature, tableFeatures, useTable} from "@tanstack/react-table";
 
 
 export const Route = createFileRoute("/_admin/admin/history")({
@@ -26,6 +25,7 @@ export const Route = createFileRoute("/_admin/admin/history")({
 });
 
 
+const features = tableFeatures({ rowPaginationFeature });
 const DEFAULT = { search: "", page: 1 } satisfies SearchType;
 
 
@@ -41,7 +41,7 @@ function AdminGlobalHistory() {
         onPageChange: (page) => updateFilters({ page }),
     });
 
-    const historyColumns: ColumnDef<typeof apiData.items[number]>[] = useMemo(() => [
+    const historyColumns: ColumnDef<typeof features, typeof apiData.items[number]>[] = [
         {
             accessorKey: "username",
             header: "User",
@@ -88,17 +88,16 @@ function AdminGlobalHistory() {
             header: "Date",
             cell: ({ row }) => <RelativeTime date={row.original.timestamp}/>,
         },
-    ], []);
+    ];
 
-    const table = useReactTable({
-        manualFiltering: true,
+    const table = useTable({
+        onPaginationChange,
+        state: { pagination },
         manualPagination: true,
         columns: historyColumns,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
-        getCoreRowModel: getCoreRowModel(),
-        onPaginationChange,
-        state: { pagination },
+        features,
     });
 
     return (

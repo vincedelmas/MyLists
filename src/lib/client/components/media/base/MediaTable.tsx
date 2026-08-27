@@ -1,15 +1,16 @@
 import {useState} from "react";
 import {MediaType} from "@/lib/utils/enums";
 import {MediaListArgs} from "@/lib/schemas";
+import {useTable} from "@tanstack/react-table";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {DataTable} from "@/lib/client/components/general/DataTable";
-import {getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {ListPagination, UserMediaItem} from "@/lib/types/query.options.types";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
+import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 
 
@@ -43,15 +44,15 @@ const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onCha
         setDialogOpen(true);
     };
 
-    const listColumns = mediaConfig[mediaType].mediaListColumns({ isCurrent, isConnected, isMediaTypeActive, mediaType, queryOption, onEdit: handleEdit });
+    const listColumns = mediaConfig[mediaType]
+        .mediaListColumns({ isCurrent, isConnected, isMediaTypeActive, mediaType, queryOption, onEdit: handleEdit });
 
-    const table = useReactTable({
+    const table = useTable({
         onPaginationChange,
-        manualFiltering: true,
         manualPagination: true,
         data: results.items ?? [],
         columns: listColumns as any,
-        getCoreRowModel: getCoreRowModel(),
+        features: mediaTableFeatures,
         rowCount: results.pagination.totalItems ?? 0,
         state: { pagination },
     });
@@ -70,7 +71,6 @@ const MediaTable = ({ filters, isCurrent, mediaType, results, queryOption, onCha
             <div className="mt-3">
                 <TablePagination
                     table={table}
-                    withSelection={false}
                 />
             </div>
             <UserMediaEditDialog

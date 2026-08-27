@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from "react";
+import {useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
@@ -15,8 +15,8 @@ import {allUpdatesOptions} from "@/lib/client/react-query/query-options";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {ColumnDef, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {useDeleteAllUpdatesMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
+import {ColumnDef, rowPaginationFeature, rowSelectionFeature, RowSelectionState, tableFeatures, useTable} from "@tanstack/react-table";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/history")({
@@ -29,12 +29,15 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/h
 });
 
 
+const features = tableFeatures({ rowPaginationFeature, rowSelectionFeature });
+
+
 function AllUpdates() {
     const filters = Route.useSearch();
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
     const isCurrent = (currentUser?.name === username);
-    const [rowSelected, setRowSelected] = useState({});
+    const [rowSelected, setRowSelected] = useState<RowSelectionState>({});
     const deleteUpdateMutation = useDeleteAllUpdatesMutation(username, filters);
     const apiData = useSuspenseQuery(allUpdatesOptions(username, filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SimpleSearch>({
@@ -53,7 +56,7 @@ function AllUpdates() {
         setRowSelected({});
     };
 
-    const columns: ColumnDef<typeof apiData.items[number]>[] = useMemo(() => [
+    const columns: ColumnDef<typeof features, typeof apiData.items[number]>[] = [
         {
             id: "select",
             header: ({ table }) => (
@@ -110,16 +113,15 @@ function AllUpdates() {
             header: "Date",
             cell: ({ row }) => <RelativeTime date={row.original.timestamp}/>,
         },
-    ], [isCurrent]);
+    ];
 
-    const table = useReactTable({
+    const table = useTable({
         columns,
         onPaginationChange,
-        manualFiltering: true,
         manualPagination: true,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
-        getCoreRowModel: getCoreRowModel(),
+        features,
         onRowSelectionChange: setRowSelected,
         state: { rowSelection: rowSelected, pagination },
     });
@@ -147,11 +149,13 @@ function AllUpdates() {
                 </div>
                 <DataTable
                     table={table}
+                    getIsRowSelected={(row) => row.getIsSelected()}
                     getRowClassName={(row) => deleteUpdateMutation.isPending && row.getIsSelected() ? "opacity-50" : undefined}
                 />
                 <div className="mt-3">
                     <TablePagination
                         table={table}
+                        selectedRowCount={table.getSelectedRowModel().rows.length}
                     />
                 </div>
             </div>

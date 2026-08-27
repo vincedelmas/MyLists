@@ -2,11 +2,12 @@ import {MediaType} from "@/lib/utils/enums";
 import {ColumnDef} from "@tanstack/react-table";
 import {ExtractListByType} from "@/lib/types/query.options.types";
 import {DisplayPlaytime} from "@/lib/client/components/media/games/DisplayPlaytime";
+import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
 import {CommonInfoTableCell} from "@/lib/client/components/media/base/CommonInfoTableCell";
 import {ColumnConfigProps, getBaseColumns} from "@/lib/client/components/media/base/BaseListTable";
 
 
-export const getGamesColumns = (props: ColumnConfigProps): ColumnDef<ExtractListByType<typeof MediaType.GAMES>>[] => {
+export const getGamesColumns = (props: ColumnConfigProps): ColumnDef<typeof mediaTableFeatures, ExtractListByType<typeof MediaType.GAMES>>[] => {
     const base = getBaseColumns<ExtractListByType<typeof MediaType.GAMES>>(props);
 
     base.splice(2, 0, {

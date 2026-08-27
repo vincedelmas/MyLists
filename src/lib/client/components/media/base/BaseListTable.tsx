@@ -7,6 +7,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {QuickAddMedia} from "@/lib/client/components/media/base/QuickAddMedia";
+import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
 
 
 export type ColumnConfigProps = {
@@ -19,7 +20,7 @@ export type ColumnConfigProps = {
 }
 
 
-export const getBaseColumns = <T extends UserMediaItem>(props: ColumnConfigProps): ColumnDef<T>[] => {
+export const getBaseColumns = <T extends UserMediaItem>(props: ColumnConfigProps): ColumnDef<typeof mediaTableFeatures, T>[] => {
     const { isCurrent, isConnected, isMediaTypeActive, mediaType, queryOption, onEdit } = props;
 
     return [

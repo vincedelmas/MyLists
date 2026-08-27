@@ -1,7 +1,6 @@
-import React, {useMemo} from "react";
 import {SearchType} from "@/lib/schemas";
-import {useSuspenseQuery} from "@tanstack/react-query";
 import {capitalize} from "@/lib/utils/text-formatting";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/number-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -18,8 +17,11 @@ import {TablePagination} from "@/lib/client/components/general/TablePagination";
 import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {ChevronsUpDown, Copy, Eye, FolderKanban, Heart, UserPlus, Users} from "lucide-react";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {ColumnDef, getCoreRowModel, OnChangeFn, SortingState, useReactTable} from "@tanstack/react-table";
 import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/client/react-query/query-options/admin.options";
+import {ColumnDef, OnChangeFn, rowPaginationFeature, rowSortingFeature, SortingState, tableFeatures, useTable} from "@tanstack/react-table";
+
+
+const features = tableFeatures({ rowPaginationFeature, rowSortingFeature });
 
 
 export const Route = createFileRoute("/_admin/admin/collections-overview")({
@@ -57,7 +59,7 @@ function AdminCollectionsOverviewPage() {
         updateFilters({ page: 1, sortDesc: newSorting[0]?.desc ?? true, sorting: newSorting[0]?.id ?? DEFAULT.sorting });
     };
 
-    const columns: ColumnDef<typeof apiData.items[number]>[] = useMemo(() => [
+    const columns: ColumnDef<typeof features, typeof apiData.items[number]>[] = [
         {
             accessorKey: "mediaType",
             header: ({ column }) => (
@@ -145,19 +147,18 @@ function AdminCollectionsOverviewPage() {
             ),
             cell: ({ row: { original } }) => <RelativeTime date={original.createdAt}/>,
         },
-    ], []);
+    ];
 
-    const table = useReactTable({
+    const table = useTable({
         columns,
         onSortingChange,
         onPaginationChange,
         enableSorting: true,
         manualSorting: true,
-        manualFiltering: true,
         manualPagination: true,
         data: apiData.items ?? [],
         rowCount: apiData.total ?? 0,
-        getCoreRowModel: getCoreRowModel(),
+        features,
         state: { pagination, sorting: sortingState },
     });
 
@@ -273,7 +274,6 @@ function AdminCollectionsOverviewPage() {
                         <DataTable table={table} emptyMessage="No collections found."/>
                         <TablePagination
                             table={table}
-                            withSelection={false}
                         />
                     </CardContent>
                 </Card>

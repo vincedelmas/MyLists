@@ -1,9 +1,9 @@
-import {MediaType, TvMediaType} from "@/lib/utils/enums";
-import {SquareStack, XLineTop} from "lucide-react";
 import {ColumnDef} from "@tanstack/react-table";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {formatNumber} from "@/lib/utils/number-formatting";
+import {SquareStack, XLineTop} from "lucide-react";
 import {MediaStatsFor} from "@/lib/types/stats.types";
+import {MediaType, TvMediaType} from "@/lib/utils/enums";
+import {formatNumber} from "@/lib/utils/number-formatting";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {ExtractListByType} from "@/lib/types/query.options.types";
 import {TvListItem} from "@/lib/client/components/media/tv/TvListItem";
 import {TvInfoGrid} from "@/lib/client/components/media/tv/TvInfoGrid";
@@ -14,8 +14,9 @@ import {getTvColumns} from "@/lib/client/components/media/tv/TvListColumns";
 import {TvUserDetails} from "@/lib/client/components/media/tv/TvUserDetails";
 import {TvExtraSections} from "@/lib/client/components/media/tv/TvExtraSections";
 import {TvUpComingAlert} from "@/lib/client/components/media/tv/TvUpComingAlert";
-import {defineMediaConfig, MediaStatCardDefinition} from "@/lib/client/components/media/media-config.types";
 import {getTvActiveFilters} from "@/lib/client/components/media/tv/TvActiveFilters";
+import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
+import {defineMediaConfig, MediaStatCardDefinition} from "@/lib/client/components/media/media-config.types";
 
 
 const getTvStatCards = (stats: MediaStatsFor<TvMediaType>): MediaStatCardDefinition[] => [
@@ -45,7 +46,7 @@ const createTvMediaConfig = <T extends TvMediaType>(mediaType: T) => defineMedia
     extraSections: TvExtraSections,
     mediaUserDetails: TvUserDetails,
     sheetFilters: getTvActiveFilters,
-    mediaListColumns: (props) => getTvColumns(props) as ColumnDef<ExtractListByType<T>>[],
+    mediaListColumns: (props) => getTvColumns(props) as ColumnDef<typeof mediaTableFeatures, ExtractListByType<T>>[],
     communityActivity: {
         countLabel: "Watched",
         extraMetric: "totalRedo",

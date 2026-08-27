@@ -1,29 +1,37 @@
 import {cn} from "@/lib/utils/classnames";
-import {Table} from "@tanstack/react-table";
 import {Button} from "@/lib/client/components/ui/button";
 import {ArrowLeftToLine, ArrowRightToLine, ChevronLeft, ChevronRight} from "lucide-react";
 
 
-interface TablePaginationProps<TData> {
-    table: Table<TData>;
-    withSelection?: boolean;
+interface PaginatedTable {
+    nextPage: () => void;
+    previousPage: () => void;
+    getPageCount: () => number;
+    getCanNextPage: () => boolean;
+    getCanPreviousPage: () => boolean;
+    getRowModel: () => { rows: unknown[] };
+    setPageIndex: (pageIndex: number) => void;
+    state: { pagination: { pageIndex: number } };
 }
 
 
-export function TablePagination<TData>({ table, withSelection = true }: TablePaginationProps<TData>) {
-    "use no memo";
+interface TablePaginationProps {
+    table: PaginatedTable;
+    selectedRowCount?: number;
+}
 
+
+export function TablePagination({ table, selectedRowCount }: TablePaginationProps) {
     return (
-        <div className={cn("flex items-center justify-between", !withSelection && "justify-end")}>
-            {withSelection &&
+        <div className={cn("flex items-center justify-between", selectedRowCount === undefined && "justify-end")}>
+            {selectedRowCount !== undefined &&
                 <div className="flex-1 text-sm text-muted-foreground">
-                    {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                    {table.getFilteredRowModel().rows.length} row(s) selected.
+                    {selectedRowCount} of {table.getRowModel().rows.length} row(s) selected.
                 </div>
             }
             <div className="flex items-center space-x-6 lg:space-x-8">
                 <div className="flex w-25 items-center justify-center text-sm font-medium">
-                    Page {table.getState().pagination.pageIndex + 1} of{" "}
+                    Page {table.state.pagination.pageIndex + 1} of{" "}
                     {table.getPageCount() === 0 ? 1 : table.getPageCount()}
                 </div>
                 <div className="flex items-center space-x-2">

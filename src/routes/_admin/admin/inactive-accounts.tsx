@@ -1,4 +1,3 @@
-import React, {useMemo} from "react";
 import {SearchType} from "@/lib/schemas";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {createFileRoute} from "@tanstack/react-router";
@@ -6,6 +5,7 @@ import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatPercent} from "@/lib/utils/number-formatting";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {DataTable} from "@/lib/client/components/general/DataTable";
+import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
@@ -13,10 +13,9 @@ import {formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
-import {ColumnDef, getCoreRowModel, useReactTable} from "@tanstack/react-table";
 import {Activity, CheckCircle2, MailWarning, Trash2, UsersRound} from "lucide-react";
+import {ColumnDef, rowPaginationFeature, tableFeatures, useTable} from "@tanstack/react-table";
 import {inactiveAccountDeletionsAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
-import {StatCard} from "@/lib/client/components/media-stats/StatCard";
 
 
 export const Route = createFileRoute("/_admin/admin/inactive-accounts")({
@@ -29,6 +28,7 @@ export const Route = createFileRoute("/_admin/admin/inactive-accounts")({
 });
 
 
+const features = tableFeatures({ rowPaginationFeature });
 const DEFAULT = { search: "", page: 1 } satisfies SearchType;
 
 
@@ -63,7 +63,7 @@ function InactiveAccountsPage() {
         onPageChange: (page) => updateFilters({ page }),
     });
 
-    const columns: ColumnDef<typeof apiData.items[0]>[] = useMemo(() => [
+    const columns: ColumnDef<typeof features, typeof apiData.items[0]>[] = [
         {
             accessorKey: "userId",
             header: () => <span className="text-xs">User ID</span>,
@@ -138,16 +138,16 @@ function InactiveAccountsPage() {
                 </span>
             ),
         },
-    ], []);
+    ];
 
-    const table = useReactTable({
+    const table = useTable({
         columns,
         onPaginationChange,
+        state: { pagination },
         manualPagination: true,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
-        getCoreRowModel: getCoreRowModel(),
-        state: { pagination },
+        features,
     });
 
     return (
@@ -213,7 +213,6 @@ function InactiveAccountsPage() {
             <div className="mt-3">
                 <TablePagination
                     table={table}
-                    withSelection={false}
                 />
             </div>
         </DashboardShell>

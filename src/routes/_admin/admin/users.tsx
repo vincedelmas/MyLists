@@ -1,6 +1,5 @@
-import React from "react";
-import {toast} from "@/lib/client/components/ui/toast";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {PrivacyType, RoleType} from "@/lib/utils/enums";
@@ -19,9 +18,10 @@ import {useTablePagination} from "@/lib/client/hooks/use-table-pagination";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
 import {TablePagination} from "@/lib/client/components/general/TablePagination";
+import type {ColumnDef, OnChangeFn, SortingState} from "@tanstack/react-table";
+import {rowPaginationFeature, rowSortingFeature, tableFeatures, useTable} from "@tanstack/react-table";
 import {userAdminOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {useAdminUpdateUserMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
-import {ColumnDef, getCoreRowModel, OnChangeFn, SortingState, useReactTable} from "@tanstack/react-table";
 import {CheckCircle, ChevronsUpDown, MoreHorizontal, Trash2, UserCheck, UserPen, UserX} from "lucide-react";
 import {
     DropdownMenu,
@@ -45,6 +45,7 @@ export const Route = createFileRoute("/_admin/admin/users")({
 })
 
 
+const features = tableFeatures({ rowPaginationFeature, rowSortingFeature });
 const DEFAULT = { search: "", page: 1, sorting: "updatedAt" } satisfies SearchType;
 
 
@@ -92,7 +93,7 @@ function UserManagementPage() {
         });
     };
 
-    const usersColumns: ColumnDef<typeof apiData.items[0]>[] = [
+    const usersColumns: ColumnDef<typeof features, typeof apiData.items[0]>[] = [
         {
             accessorKey: "id",
             header: ({ column }) => {
@@ -355,17 +356,16 @@ function UserManagementPage() {
         }
     ];
 
-    const table = useReactTable({
+    const table = useTable({
         onSortingChange,
         onPaginationChange,
         enableSorting: true,
         manualSorting: true,
         columns: usersColumns,
-        manualFiltering: true,
         manualPagination: true,
         data: apiData?.items ?? [],
         rowCount: apiData?.total ?? 0,
-        getCoreRowModel: getCoreRowModel(),
+        features,
         state: { pagination, sorting: sortingState },
     });
 
@@ -399,7 +399,6 @@ function UserManagementPage() {
             <div className="mt-3">
                 <TablePagination
                     table={table}
-                    withSelection={false}
                 />
             </div>
         </DashboardShell>

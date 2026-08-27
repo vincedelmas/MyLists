@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.3.0](https://github.com/vincedelmas/MyLists/compare/v3.2.0...v3.3.0) (2026-08-27)
+
+
+### Features
+
+* **auth:** upgrade Better Auth to 1.7.2 ([2ff7b88](https://github.com/vincedelmas/MyLists/commit/2ff7b8827e531131eecffbd89b4ec83963bfe265))
+
+
+### Bug Fixes
+
+* **activity:** correct yearly activity tracking ([c047596](https://github.com/vincedelmas/MyLists/commit/c04759610cd58b07948b23cf29f8b777c25f6b78))
+* **hltb:** discover dynamic search endpoint ([fa3d638](https://github.com/vincedelmas/MyLists/commit/fa3d638b3d9209cd0b7fa20a4ee1c09f46b790c3))
+* **media:** set deleted comments to null ([40d4717](https://github.com/vincedelmas/MyLists/commit/40d4717f498a1697452669057e817a3aeb25ad0c))
+* **search:** prevent invalid book filter requests ([dd0b66a](https://github.com/vincedelmas/MyLists/commit/dd0b66a01f0de8e9de5dacdebcbb0a8db2ce34b1))
+
+
+### Code Refactoring
+
+* better date formatting and add title to stats ([e7bdc47](https://github.com/vincedelmas/MyLists/commit/e7bdc47385e41dfb6b1d80afc1e45e7865cd45e8))
+* centralize query options in route context ([0d523d1](https://github.com/vincedelmas/MyLists/commit/0d523d12957744af20d3af7cf9660e7b6e803dcb))
+* **react:** remove compiler-redundant memo ([d7f83cd](https://github.com/vincedelmas/MyLists/commit/d7f83cdeef600b76d4ea067843aaa479eb45fbf0))
+* **table:** migrate to TanStack Table v9 ([122b63b](https://github.com/vincedelmas/MyLists/commit/122b63b3c96fc68bf5a0777adb5a54629b0b0ecb))
+
 ## [3.2.0](https://github.com/vincedelmas/MyLists/compare/v3.1.0...v3.2.0) (2026-08-17)
 
 

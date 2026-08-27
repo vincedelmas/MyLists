@@ -14,18 +14,18 @@ import {compareCalendarDates, formatCalendarRelativeDate} from "@/lib/utils/date
 
 
 export const Route = createFileRoute("/_main/_private/coming-next")({
-    loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(upcomingOptions);
-    },
+    context: () => ({ upcomingQueryOptions: upcomingOptions }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.upcomingQueryOptions),
     component: ComingNextPage,
 });
 
 
 function ComingNextPage() {
-    const apiData = useSuspenseQuery(upcomingOptions).data;
+    const { upcomingQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(upcomingQueryOptions).data;
     const mediaTypes = apiData.map((next) => next.mediaType);
     const mediaTabs = createMediaTabItems(mediaTypes, { leading: "all" });
-    
+
     const [activeTab, setActiveTab] = useState<"all" | MediaType>("all");
     const allItems = apiData.flatMap(g => g.items.map(item => ({ ...item, mediaType: g.mediaType })));
     const filteredByTab = activeTab === "all" ? allItems : allItems.filter((item) => item.mediaType === activeTab);

@@ -20,8 +20,11 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 export const Route = createFileRoute("/_main/_viewer/hall-of-fame")({
     validateSearch: hallOfFameSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(hallOfFameOptions(search));
+    context: ({ deps: { search } }) => ({
+        hallOfFameQueryOptions: hallOfFameOptions(search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.hallOfFameQueryOptions);
     },
     component: HallOfFamePage,
 });
@@ -30,7 +33,8 @@ export const Route = createFileRoute("/_main/_viewer/hall-of-fame")({
 function HallOfFamePage() {
     const { isAnonymous } = useAuth();
     const filters = Route.useSearch();
-    const apiData = useSuspenseQuery(hallOfFameOptions(filters)).data;
+    const { hallOfFameQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(hallOfFameQueryOptions).data;
     const { page = 1, sorting = "normalized", search = "" } = filters;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<HallOfFameSearch>({ search });
     

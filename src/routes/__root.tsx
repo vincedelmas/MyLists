@@ -22,10 +22,14 @@ import {YearRecapReleaseRibbon} from "@/lib/client/components/year-recap/YearRec
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
     ssr: false,
-    beforeLoad: async ({ context: { queryClient } }) => {
+    context: () => ({
+        authQueryOptions: authOptions,
+        authMethodsQueryOptions: authMethodsOptions,
+    }),
+    beforeLoad: async ({ context }) => {
         await Promise.all([
-            queryClient.ensureQueryData(authOptions),
-            queryClient.ensureQueryData(authMethodsOptions),
+            context.queryClient.ensureQueryData(context.authQueryOptions),
+            context.queryClient.ensureQueryData(context.authMethodsQueryOptions),
         ]);
     },
     head: () => ({

@@ -38,8 +38,11 @@ import {
 export const Route = createFileRoute("/_admin/admin/users")({
     validateSearch: (search) => search as SearchType,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(userAdminOptions(search));
+    context: ({ deps: { search } }) => ({
+        usersQueryOptions: userAdminOptions(search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.usersQueryOptions);
     },
     component: UserManagementPage,
 })
@@ -55,8 +58,9 @@ function UserManagementPage() {
     const { setCurrentUser } = useAuth();
     const navigate = Route.useNavigate();
     const { search = DEFAULT.search } = filters;
+    const { usersQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(usersQueryOptions).data;
     const updateUserMutation = useAdminUpdateUserMutation(filters);
-    const apiData = useSuspenseQuery(userAdminOptions(filters)).data;
     const impersonateMutation = useMutation({ mutationFn: postImpersonateUser });
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search });
     const sortingState = [{ id: filters?.sorting ?? DEFAULT.sorting, desc: filters?.sortDesc === true }];

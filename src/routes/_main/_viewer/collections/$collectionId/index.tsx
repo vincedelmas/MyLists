@@ -1,4 +1,3 @@
-import {collectionIdSchema, collectionItemsSearchSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -11,6 +10,7 @@ import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
+import {collectionIdSchema, collectionItemsSearchSchema} from "@/lib/schemas";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
 import {MediaReleaseDate} from "@/lib/client/components/media/base/MediaReleaseDate";
@@ -38,8 +38,11 @@ export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/"
             return result.data;
         }
     },
-    loader: ({ context: { queryClient }, params: { collectionId }, deps: { page } }) => {
-        return queryClient.ensureQueryData(collectionDetailsReadOptions(collectionId, page));
+    context: ({ params: { collectionId }, deps: { page } }) => ({
+        collectionDetailsQueryOptions: collectionDetailsReadOptions(collectionId, page),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.collectionDetailsQueryOptions);
     },
     component: CollectionViewer,
 });
@@ -47,12 +50,12 @@ export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/"
 
 function CollectionViewer() {
     const navigate = Route.useNavigate();
-    const { page = 1 } = Route.useSearch();
     const { collectionId } = Route.useParams();
     const { currentUser, isAnonymous } = useAuth();
     const copyMutation = useCopyCollectionMutation(collectionId);
+    const { collectionDetailsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(collectionDetailsQueryOptions).data;
     const toggleLikeMutation = useToggleCollectionLikeMutation(collectionId);
-    const apiData = useSuspenseQuery(collectionDetailsReadOptions(collectionId, page)).data;
 
     const { collection, items, isLiked, capabilities } = apiData;
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, collection.mediaType);

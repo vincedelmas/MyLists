@@ -1,21 +1,23 @@
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Outlet} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {ProfileHeader} from "@/lib/client/components/user-profile/ProfileHeader";
 import {profileHeaderOptions} from "@/lib/client/react-query/query-options";
+import {ProfileHeader} from "@/lib/client/components/user-profile/ProfileHeader";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header")({
-    loader: async ({ context: { queryClient }, params: { username } }) => {
-        return queryClient.ensureQueryData(profileHeaderOptions(username));
-    },
+    context: ({ params: { username } }) => ({
+        profileHeaderQueryOptions: profileHeaderOptions(username),
+    }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.profileHeaderQueryOptions),
     component: ProfileTop,
 });
 
 
 function ProfileTop() {
     const { username: profileOwner } = Route.useParams();
-    const apiData = useSuspenseQuery(profileHeaderOptions(profileOwner)).data;
+    const { profileHeaderQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(profileHeaderQueryOptions).data;
 
     return (
         <PageTitle title={`${profileOwner} Profile`} onlyHelmet>

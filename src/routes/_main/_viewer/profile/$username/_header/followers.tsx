@@ -17,8 +17,11 @@ import {useFollowMutation, useRemoveFollowerMutation, useUnfollowMutation} from 
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/followers")({
-    loader: ({ context: { queryClient }, params: { username } }) => {
-        return queryClient.ensureQueryData(followersOptions(username));
+    context: ({ params: { username } }) => ({
+        followersQueryOptions: followersOptions(username),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.followersQueryOptions);
     },
     component: ProfileFollowers,
 });
@@ -27,8 +30,10 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/f
 function ProfileFollowers() {
     const { currentUser } = useAuth();
     const { username: profileOwner } = Route.useParams();
+    const { followersQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(followersQueryOptions).data;
+
     const isViewingOwnProfile = currentUser?.name === profileOwner;
-    const apiData = useSuspenseQuery(followersOptions(profileOwner)).data;
 
     return (
         <PageTitle

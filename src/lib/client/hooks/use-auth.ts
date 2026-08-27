@@ -1,13 +1,15 @@
+import {useRouteContext} from "@tanstack/react-router";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
-import {authOptions} from "@/lib/client/react-query/query-options";
 
 
 export const useAuth = () => {
+    const { authQueryOptions } = useRouteContext({ from: "__root__" });
+
     const queryClient = useQueryClient();
-    const { data: currentUser } = useSuspenseQuery(authOptions);
+    const currentUser = useSuspenseQuery(authQueryOptions).data;
 
     const setCurrentUser = async () => {
-        await queryClient.invalidateQueries({ queryKey: authOptions.queryKey });
+        await queryClient.invalidateQueries({ queryKey: authQueryOptions.queryKey });
     };
 
     if (currentUser) {

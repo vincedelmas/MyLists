@@ -20,8 +20,11 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 export const Route = createFileRoute("/_admin/admin/api-monitoring")({
     validateSearch: (search) => search as AdminApiMonitoringParams,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(adminApiMonitoringOptions(search));
+    context: ({ deps: { search } }) => ({
+        apiMonitoringQueryOptions: adminApiMonitoringOptions(search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.apiMonitoringQueryOptions);
     },
     component: ApiMonitoringPage,
 });
@@ -63,7 +66,8 @@ const formatPerSecond = (value: number) => {
 function ApiMonitoringPage() {
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
-    const apiData = useSuspenseQuery(adminApiMonitoringOptions(filters)).data;
+    const { apiMonitoringQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(apiMonitoringQueryOptions).data;
 
     const totalErrors = apiData.summary.failed;
     const { range = "30d", dailyRange = "30d" } = filters;

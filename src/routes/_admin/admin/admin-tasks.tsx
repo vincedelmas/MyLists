@@ -1,5 +1,5 @@
-import {toast} from "@/lib/client/components/ui/toast";
 import {Play} from "lucide-react";
+import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
@@ -13,16 +13,20 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/c
 
 
 export const Route = createFileRoute("/_admin/admin/admin-tasks")({
-    loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(adminTasksOptions);
+    context: () => ({
+        tasksQueryOptions: adminTasksOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.tasksQueryOptions);
     },
     component: AdminTasksPage,
 });
 
 
 function AdminTasksPage() {
+    const { tasksQueryOptions } = Route.useRouteContext();
     const taskTriggerMutation = useAdminTriggerTaskMutation();
-    const tasksList = useSuspenseQuery(adminTasksOptions).data;
+    const tasksList = useSuspenseQuery(tasksQueryOptions).data;
 
     const executeTask = (taskName: string, input = {}) => {
         taskTriggerMutation.mutate({ data: { taskName, input } }, {

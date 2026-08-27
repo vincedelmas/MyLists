@@ -18,8 +18,17 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")({
     validateSearch: statsActiveTabSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, params: { username }, deps: { search } }) => {
-        const releases = await queryClient.ensureQueryData(yearRecapReleasesOptions);
+    context: ({ params: { username }, deps: { search } }) => ({
+        yearRecapReleasesQueryOptions: yearRecapReleasesOptions,
+        userStatsQueryOptions: search.recap
+            ? undefined
+            : userStatsOptions(username, search.activeTab),
+        yearRecapQueryOptions: search.recap
+            ? yearRecapOptions(username, search.recap, search.activeTab === "overview" ? undefined : search.activeTab)
+            : undefined,
+    }),
+    loader: async ({ context, params: { username }, deps: { search } }) => {
+        const releases = await context.queryClient.ensureQueryData(context.yearRecapReleasesQueryOptions);
 
         if (search.recap) {
             if (!releases.some(({ year, isAvailable }) => year === search.recap && isAvailable)) {
@@ -30,11 +39,7 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
                 });
             }
 
-            const recap = await queryClient.ensureQueryData(yearRecapOptions(
-                username,
-                search.recap,
-                search.activeTab === "overview" ? undefined : search.activeTab,
-            ));
+            const recap = await context.queryClient.ensureQueryData(context.yearRecapQueryOptions!);
 
             if (search.activeTab !== "overview" && !recap.availableMediaTypes.includes(search.activeTab)) {
                 throw redirect({
@@ -48,7 +53,7 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
         }
 
         try {
-            await queryClient.ensureQueryData(userStatsOptions(username, search.activeTab));
+            await context.queryClient.ensureQueryData(context.userStatsQueryOptions!);
         }
         catch (error) {
             if (search.activeTab !== "overview" && error instanceof InactiveMediaTypeError) {
@@ -69,21 +74,24 @@ export const Route = createFileRoute("/_main/_viewer/stats/$username/_header/")(
 
 function UserStatsPage() {
     const { view, releases } = Route.useLoaderData();
+    const { userStatsQueryOptions, yearRecapQueryOptions } = Route.useRouteContext();
 
     return (
         view === "recap"
-            ? <RecapStatsPage releases={releases}/>
-            : <AllTimeStatsPage releases={releases}/>
+            ? <RecapStatsPage releases={releases} queryOptions={yearRecapQueryOptions!}/>
+            : <AllTimeStatsPage releases={releases} queryOptions={userStatsQueryOptions!}/>
     );
 }
 
 
-function AllTimeStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) {
+function AllTimeStatsPage({ releases, queryOptions }: {
+    releases: YearRecapReleaseStatus[],
+    queryOptions: ReturnType<typeof userStatsOptions>,
+}) {
     const navigate = Route.useNavigate();
     const { username } = Route.useParams();
-    const { activeTab } = Route.useSearch();
 
-    const apiData = useSuspenseQuery(userStatsOptions(username, activeTab)).data;
+    const apiData = useSuspenseQuery(queryOptions).data;
     const mediaTabs = createMediaTabItems(apiData.activatedMediaTypes, { leading: "overview" }) as TabItem<StatsActiveTab>[];
 
     return (
@@ -105,11 +113,14 @@ function AllTimeStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) 
 }
 
 
-function RecapStatsPage({ releases }: { releases: YearRecapReleaseStatus[] }) {
+function RecapStatsPage({ releases, queryOptions }: {
+    releases: YearRecapReleaseStatus[],
+    queryOptions: ReturnType<typeof yearRecapOptions>,
+}) {
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
-    const { activeTab, recap: year } = Route.useSearch();
-    const recap = useSuspenseQuery(yearRecapOptions(username, year!, activeTab === "overview" ? undefined : activeTab)).data;
+    const { recap: year } = Route.useSearch();
+    const recap = useSuspenseQuery(queryOptions).data;
     const mediaTabs = createMediaTabItems(recap.availableMediaTypes, { leading: "overview" }) as TabItem<StatsActiveTab>[];
 
     return (

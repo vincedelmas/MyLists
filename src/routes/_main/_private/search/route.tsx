@@ -4,8 +4,8 @@ import {Badge} from "@/lib/client/components/ui/badge";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {createFileRoute, Link} from "@tanstack/react-router";
+import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {Field, FieldError} from "@/lib/client/components/ui/field";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
@@ -29,14 +29,14 @@ import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRi
 export const Route = createFileRoute("/_main/_private/search")({
     validateSearch: globalSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, deps: { search } }) => {
+    context: ({ deps: { search } }) => {
         const { query = "", page = 1, apiProvider = ApiProviderType.TMDB, advancedFilters } = search;
-
-        if (!hasSearchCriteria(query, apiProvider, advancedFilters)) {
-            return;
-        }
-
-        return queryClient.ensureQueryData(navSearchOptions(query, page, apiProvider, advancedFilters));
+        return { searchQueryOptions: navSearchOptions(query, page, apiProvider, advancedFilters) };
+    },
+    loader: ({ context, deps: { search } }) => {
+        const { query = "", apiProvider = ApiProviderType.TMDB, advancedFilters } = search;
+        if (!hasSearchCriteria(query, apiProvider, advancedFilters)) return;
+        return context.queryClient.ensureQueryData(context.searchQueryOptions);
     },
     component: SearchPage,
 });
@@ -307,10 +307,7 @@ function SearchPage() {
                     {hasSubmittedSearch ?
                         <SearchResultsQuery
                             page={page}
-                            query={query}
-                            apiProvider={apiProvider}
                             onPageChange={handlePageChange}
-                            advancedFilters={advancedFilters}
                         />
                         :
                         <EmptyState
@@ -328,23 +325,21 @@ function SearchPage() {
 
 interface SearchResultsQueryProps {
     page: number;
-    query: string;
-    apiProvider: ApiProviderType;
-    advancedFilters?: AdvancedSearchFilters;
     onPageChange: (page: number) => Promise<void>;
 }
 
 
 const SearchResultsQuery = (props: SearchResultsQueryProps) => {
-    const { query, page, apiProvider, advancedFilters, onPageChange } = props;
-    const { data } = useSuspenseQuery(navSearchOptions(query, page, apiProvider, advancedFilters));
+    const { page, onPageChange } = props;
+    const { searchQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(searchQueryOptions).data;
 
     return (
         <SearchResults
             page={page}
-            data={data.data}
+            data={apiData.data}
             onPageChange={onPageChange}
-            hasNextPage={data.hasNextPage}
+            hasNextPage={apiData.hasNextPage}
         />
     );
 };

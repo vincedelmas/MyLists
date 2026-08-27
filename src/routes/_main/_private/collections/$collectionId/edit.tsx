@@ -5,24 +5,26 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
 import {collectionIdSchema, CreateCollection, createCollectionSchema} from "@/lib/schemas";
 import {useDeleteCollectionMutation, useUpdateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/collections/$collectionId/edit")({
     params: {
         parse: (params) => {
             const result = collectionIdSchema.safeParse(params);
-            if (!result.success) return false;
-            return result.data;
+            return result.success ? result.data : false;
         },
     },
-    loader: async ({ context: { queryClient }, params: { collectionId } }) => {
-        return queryClient.ensureQueryData(collectionDetailsEditOptions(collectionId));
+    context: ({ params: { collectionId } }) => ({
+        collectionDetailsQueryOptions: collectionDetailsEditOptions(collectionId),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.collectionDetailsQueryOptions);
     },
     component: CollectionEditPage,
 });
@@ -33,7 +35,8 @@ function CollectionEditPage() {
     const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
     const { collectionId } = Route.useParams();
-    const apiData = useSuspenseQuery(collectionDetailsEditOptions(collectionId)).data;
+    const { collectionDetailsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(collectionDetailsQueryOptions).data;
     const updateMutation = useUpdateCollectionMutation(collectionId, { noErrorToast: true });
     const deleteMutation = useDeleteCollectionMutation(collectionId, { noErrorToast: true });
     const form = useForm<CreateCollection>({

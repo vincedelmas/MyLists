@@ -1,32 +1,32 @@
-import {toast} from "@/lib/client/components/ui/toast";
 import {useState} from "react";
 import {toItemKey} from "@/lib/utils/media-mapping";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {FieldSet} from "@/lib/client/components/ui/field";
+import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {FieldSet} from "@/lib/client/components/ui/field";
 import {highlightedMediaSettingsSchema} from "@/lib/schemas";
-import {type FieldErrors, FormProvider, useForm, useWatch} from "react-hook-form";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {profileCustomOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
+import {type FieldErrors, FormProvider, useForm, useWatch} from "react-hook-form";
 import {TabCustomContent} from "@/lib/client/components/user-settings/TabCustomContent";
 import {ProfileSidebarTabs} from "@/lib/client/components/user-settings/ProfileSidebarTabs";
 import {useProfileCustomMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {HIGHLIGHTED_MEDIA_TABS, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab,} from "@/lib/types/profile-custom.types";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/profile-customization")({
-    loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(profileCustomOptions);
-    },
+    context: () => ({ profileCustomQueryOptions: profileCustomOptions }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.profileCustomQueryOptions),
     component: ProfileCustomForm,
 });
 
 
 function ProfileCustomForm() {
-    const apiData = useSuspenseQuery(profileCustomOptions).data;
+    const { profileCustomQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(profileCustomQueryOptions).data;
     const mutation = useProfileCustomMutation({ noErrorToast: true });
     const [activeTab, setActiveTab] = useState<HighlightedMediaTab>("overview");
     const [localPreviewCache, setLocalPreviewCache] = useState<Record<string, HighlightedMediaSearchItem>>({});

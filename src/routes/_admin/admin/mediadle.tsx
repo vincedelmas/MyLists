@@ -18,8 +18,11 @@ import {ColumnDef, rowPaginationFeature, tableFeatures, useTable} from "@tanstac
 export const Route = createFileRoute("/_admin/admin/mediadle")({
     validateSearch: (search) => search as SearchType,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(adminMediadleOptions(search));
+    context: ({ deps: { search } }) => ({
+        adminMediadleQueryOptions: adminMediadleOptions(search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.adminMediadleQueryOptions);
     },
     component: AdminMediadlePage,
 })
@@ -32,7 +35,8 @@ const DEFAULT = { search: "", page: 1 } satisfies SearchType;
 function AdminMediadlePage() {
     const filters = Route.useSearch();
     const { search = DEFAULT.search } = filters;
-    const apiData = useSuspenseQuery(adminMediadleOptions(filters)).data;
+    const { adminMediadleQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(adminMediadleQueryOptions).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search });
     const { pagination, onPaginationChange } = useTablePagination({
         pageSize: 25,

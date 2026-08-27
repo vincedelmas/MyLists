@@ -13,10 +13,8 @@ import {createMediaTabItems} from "@/lib/client/components/general/media-type-op
 
 export const Route = createFileRoute("/_main/_viewer/trends")({
     validateSearch: trendsSearchSchema,
-    loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(trendsOptions);
-    },
+    context: () => ({ trendsQueryOptions: trendsOptions }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.trendsQueryOptions),
     component: TrendsPage,
 });
 
@@ -24,8 +22,9 @@ export const Route = createFileRoute("/_main/_viewer/trends")({
 function TrendsPage() {
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
+    const { trendsQueryOptions } = Route.useRouteContext();
     const mediaTabs = createMediaTabItems(TREND_MEDIA_TYPES, { leading: "all" });
-    const { gamesTrends, seriesTrends, moviesTrends } = useSuspenseQuery(trendsOptions).data;
+    const { gamesTrends, seriesTrends, moviesTrends } = useSuspenseQuery(trendsQueryOptions).data;
 
     const setActiveTab = (newTab: TrendsActiveTab) => {
         void navigate({ search: (prev) => ({ ...prev, activeTab: newTab === "all" ? undefined : newTab }) });

@@ -5,16 +5,19 @@ import {DashboardContent} from "@/lib/client/components/media-stats/DashboardCon
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/stats")({
-    loader: async ({ context: { queryClient }, params: { mediaType, username } }) => {
-        return queryClient.ensureQueryData(userStatsOptions(username, mediaType));
+    context: ({ params: { mediaType, username } }) => ({
+        userStatsQueryOptions: userStatsOptions(username, mediaType),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.userStatsQueryOptions);
     },
     component: UserStatsPage,
 });
 
 
 function UserStatsPage() {
-    const { mediaType, username } = Route.useParams();
-    const apiData = useSuspenseQuery(userStatsOptions(username, mediaType)).data;
+    const { userStatsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(userStatsQueryOptions).data;
 
     return (
         <>

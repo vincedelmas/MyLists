@@ -23,8 +23,11 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 export const Route = createFileRoute("/_main/_private/taste-matches")({
     validateSearch: tasteMatchesSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(tasteMatchesOptions(search));
+    context: ({ deps: { search } }) => ({
+        tasteMatchesQueryOptions: tasteMatchesOptions(search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.tasteMatchesQueryOptions);
     },
     component: TasteMatchesPage,
 });
@@ -39,11 +42,11 @@ const sortingItems = [
 function TasteMatchesPage() {
     const { currentUser } = useAuth();
     const filters = Route.useSearch();
+    const { tasteMatchesQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(tasteMatchesQueryOptions).data;
     const { page = 1, search = "", activeTab = "all", hideFollowed = false, sorting = "match" } = filters;
 
     const activeMediaTypes = getActiveMediaTypes(currentUser?.settings);
-    const apiData = useSuspenseQuery(tasteMatchesOptions(filters)).data;
-
     const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "all" });
     const currentActiveTab = activeTab !== "all" && activeMediaTypes.includes(activeTab) ? activeTab : "all";
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<TasteMatchesSearch>({ search });

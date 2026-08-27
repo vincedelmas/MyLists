@@ -1,23 +1,26 @@
-import {toast} from "@/lib/client/components/ui/toast";
+import {cn} from "@/lib/utils/classnames";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {createFileRoute, Link} from "@tanstack/react-router";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
+import {createFileRoute, Link} from "@tanstack/react-router";
+import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
-import {Clock, UserCheck, UserPlus, UserX} from "lucide-react";
-import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {followsOptions} from "@/lib/client/react-query/query-options";
+import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {useFollowMutation, useUnfollowMutation,} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {cn} from "@/lib/utils/classnames";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/follows")({
-    loader: ({ context: { queryClient }, params: { username } }) => {
-        return queryClient.ensureQueryData(followsOptions(username));
+    context: ({ params: { username } }) => ({
+        followsQueryOptions: followsOptions(username),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.followsQueryOptions);
     },
     component: ProfileFollows,
 });
@@ -26,8 +29,10 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/f
 function ProfileFollows() {
     const { currentUser } = useAuth();
     const { username: profileOwner } = Route.useParams();
+    const { followsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(followsQueryOptions).data;
+
     const isViewingOwnProfile = currentUser?.name === profileOwner;
-    const apiData = useSuspenseQuery(followsOptions(profileOwner)).data;
 
     return (
         <PageTitle

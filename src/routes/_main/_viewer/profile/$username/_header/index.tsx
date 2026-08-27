@@ -18,8 +18,11 @@ import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/")({
     validateSearch: profileSearchSchema,
-    loader: async ({ context: { queryClient }, params: { username } }) => {
-        return queryClient.ensureQueryData(profileOptions(username));
+    context: ({ params: { username } }) => ({
+        profileQueryOptions: profileOptions(username),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.profileQueryOptions);
     },
     component: ProfileMain,
 });
@@ -30,7 +33,8 @@ function ProfileMain() {
     const navigate = Route.useNavigate();
     const { username } = Route.useParams();
     const { activeTab } = Route.useSearch();
-    const apiData = useSuspenseQuery(profileOptions(username)).data;
+    const { profileQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(profileQueryOptions).data;
     const activeMediaTypes = getActiveMediaTypes(apiData.userData.userMediaSettings);
 
     const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "overview", size: 15 });

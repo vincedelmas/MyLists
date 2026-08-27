@@ -1,16 +1,21 @@
+import {Badge} from "@/lib/client/components/ui/badge";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Badge} from "@/lib/client/components/ui/badge";
-import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
+import {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
+import {RadioGroup, RadioGroupItem} from "@/lib/client/components/ui/radio-group";
 import {adminYearRecapReleasesOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {useAdminUpdateYearRecapReleaseMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
-import type {YearRecapReleaseMode} from "@/lib/types/year-recap.types";
 
 
 export const Route = createFileRoute("/_admin/admin/year-recaps")({
-    loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(adminYearRecapReleasesOptions),
+    context: () => ({
+        yearRecapReleasesQueryOptions: adminYearRecapReleasesOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.yearRecapReleasesQueryOptions);
+    },
     component: YearRecapsAdminPage,
 });
 
@@ -23,8 +28,9 @@ const releaseModes: { value: YearRecapReleaseMode; label: string }[] = [
 
 
 function YearRecapsAdminPage() {
-    const releases = useSuspenseQuery(adminYearRecapReleasesOptions).data;
     const mutation = useAdminUpdateYearRecapReleaseMutation();
+    const { yearRecapReleasesQueryOptions } = Route.useRouteContext();
+    const releases = useSuspenseQuery(yearRecapReleasesQueryOptions).data;
 
     return (
         <DashboardShell>

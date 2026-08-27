@@ -21,8 +21,11 @@ import {inactiveAccountDeletionsAdminOptions} from "@/lib/client/react-query/que
 export const Route = createFileRoute("/_admin/admin/inactive-accounts")({
     validateSearch: (search) => search as SearchType,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(inactiveAccountDeletionsAdminOptions(search));
+    context: ({ deps: { search } }) => ({
+        inactiveAccountsQueryOptions: inactiveAccountDeletionsAdminOptions(search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.inactiveAccountsQueryOptions);
     },
     component: InactiveAccountsPage,
 });
@@ -55,7 +58,8 @@ function StatusBadge({ status, retryCount }: { status: string, retryCount: numbe
 function InactiveAccountsPage() {
     const filters = Route.useSearch();
     const { search = DEFAULT.search } = filters;
-    const apiData = useSuspenseQuery(inactiveAccountDeletionsAdminOptions(filters)).data;
+    const { inactiveAccountsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(inactiveAccountsQueryOptions).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search });
     const { pagination, onPaginationChange } = useTablePagination({
         page: filters.page,

@@ -9,21 +9,20 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {WCF_MAX_ROUNDS, WCF_MEDIA_TYPES} from "@/lib/schemas/wcf.schema";
-import {MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {dateFromUTCInput, extractDate, formatDate} from "@/lib/utils/date-formatting";
 import {whichCameFirstOptions} from "@/lib/client/react-query/query-options/wcf.options";
 import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {ArrowRight, CalendarClock, Check, ChevronRight, Gauge, House, Layers3, RotateCcw, Target, Trash2, Trophy, X} from "lucide-react";
 import {useAbandonWCFRunMutation, useAnswerWCFRoundMutation, useResetWCFStatsMutation, useStartWCFRunMutation} from "@/lib/client/react-query/query-mutations/wcf.mutations";
 
 
 export const Route = createFileRoute("/_main/_viewer/which-came-first")({
-    loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(whichCameFirstOptions);
-    },
+    context: () => ({ whichCameFirstQueryOptions: whichCameFirstOptions }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.whichCameFirstQueryOptions),
     component: WhichCameFirstPage,
 });
 
@@ -37,8 +36,9 @@ function WhichCameFirstPage() {
     const startMutation = useStartWCFRunMutation();
     const answerMutation = useAnswerWCFRoundMutation();
     const abandonMutation = useAbandonWCFRunMutation();
+    const { whichCameFirstQueryOptions } = Route.useRouteContext();
     const [showGameOver, setShowGameOver] = useState(false);
-    const { activeRun, stats } = useSuspenseQuery(whichCameFirstOptions).data;
+    const { activeRun, stats } = useSuspenseQuery(whichCameFirstQueryOptions).data;
     const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
     const [selectedTypes, setSelectedTypes] = useState<MediaType[]>(activeRun?.selectedMediaTypes ?? [...WCF_MEDIA_TYPES]);
 
@@ -63,7 +63,7 @@ function WhichCameFirstPage() {
     };
 
     const continueGame = async () => {
-        await queryClient.invalidateQueries({ queryKey: whichCameFirstOptions.queryKey });
+        await queryClient.invalidateQueries({ queryKey: whichCameFirstQueryOptions.queryKey });
         setAnswerResult(null);
         setShowGameOver(false);
     };
@@ -87,12 +87,12 @@ function WhichCameFirstPage() {
         if (!answerResult?.correct || answerResult.runEnded) return;
 
         const timeout = window.setTimeout(() => {
-            void queryClient.invalidateQueries({ queryKey: whichCameFirstOptions.queryKey })
+            void queryClient.invalidateQueries({ queryKey: whichCameFirstQueryOptions.queryKey })
                 .then(() => setAnswerResult(null));
         }, 1400);
 
         return () => window.clearTimeout(timeout);
-    }, [answerResult, queryClient]);
+    }, [answerResult, queryClient, whichCameFirstQueryOptions]);
 
     useEffect(() => {
         if (!answerResult?.runEnded) return;

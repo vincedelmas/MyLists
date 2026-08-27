@@ -35,8 +35,11 @@ type PrettyLogEntry = {
 
 
 export const Route = createFileRoute("/_admin/admin/error-logs")({
-    loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(adminLogFilesOptions);
+    context: () => ({
+        logFilesQueryOptions: adminLogFilesOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.logFilesQueryOptions);
     },
     component: AdminRuntimeLogsPage,
 });
@@ -110,7 +113,8 @@ const levelTextClasses: Record<LogLevel, string> = {
 
 
 function AdminRuntimeLogsPage() {
-    const logFiles = useSuspenseQuery(adminLogFilesOptions).data;
+    const { logFilesQueryOptions } = Route.useRouteContext();
+    const logFiles = useSuspenseQuery(logFilesQueryOptions).data;
     const [requestedFileName, setRequestedFileName] = useState<string | undefined>(() => logFiles[0]?.fileName);
     const [enabledLevels, setEnabledLevels] = useState<Set<LogLevel>>(() => new Set(logLevelFilters.map(l => l.value)));
 

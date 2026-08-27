@@ -12,9 +12,8 @@ import {ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDollarSign, Code, Do
 
 
 export const Route = createFileRoute("/_main/_public/")({
-    loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(randomPublicProfile);
-    },
+    context: () => ({ randomProfileQueryOptions: randomPublicProfile }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.randomProfileQueryOptions),
     component: HomePage,
     head: () => ({
         links: addSeoLinks({ canonical: "/" }),
@@ -104,9 +103,11 @@ const trustPrinciples = [
     },
 ] as const;
 
+
 function HomePage() {
     const { openRegister } = useAuthModal();
-    const randomProfile = useSuspenseQuery(randomPublicProfile).data;
+    const { randomProfileQueryOptions } = Route.useRouteContext();
+    const randomProfile = useSuspenseQuery(randomProfileQueryOptions).data;
 
     return (
         <>

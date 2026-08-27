@@ -2,8 +2,8 @@ import {useId} from "react";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {splitIntoColumns} from "@/lib/utils/arrays";
 import {toast} from "@/lib/client/components/ui/toast";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {Input} from "@/lib/client/components/ui/input";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
@@ -22,12 +22,14 @@ export const Route = createFileRoute("/_main/_private/details/edit/$mediaType/$m
     params: {
         parse: (params) => {
             const result = mediaTypeMediaIdSchema.safeParse(params);
-            if (!result.success) return false;
-            return result.data;
+            return result.success ? result.data : false;
         },
     },
-    loader: ({ context: { queryClient }, params: { mediaType, mediaId } }) => {
-        return queryClient.ensureQueryData(editMediaDetailsOptions(mediaType, mediaId));
+    context: ({ params: { mediaType, mediaId } }) => ({
+        editMediaDetailsQueryOptions: editMediaDetailsOptions(mediaType, mediaId),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.editMediaDetailsQueryOptions);
     },
     component: MediaEditPage,
 });
@@ -37,8 +39,9 @@ function MediaEditPage() {
     const fieldId = useId();
     const { history } = useRouter();
     const { mediaType, mediaId } = Route.useParams();
+    const { editMediaDetailsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(editMediaDetailsQueryOptions).data;
     const editMediaMutation = useEditMediaMutation({ noErrorToast: true });
-    const apiData = useSuspenseQuery(editMediaDetailsOptions(mediaType, mediaId)).data;
 
     const form = useForm<EditMediaDetailsPayload>({
         resolver: zodResolver(editMediaDetailsPayloadSchema),

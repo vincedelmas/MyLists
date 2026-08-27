@@ -1,12 +1,12 @@
+import {mediaTypeUsernameSchema} from "@/lib/schemas";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {mediaTypeUsernameSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {MediaLevel} from "@/lib/client/components/general/MediaLevel";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
-import {createFileRoute, Outlet, useLocation} from "@tanstack/react-router";
 import {userListHeaderOption} from "@/lib/client/react-query/query-options";
+import {createFileRoute, Outlet, useLocation} from "@tanstack/react-router";
 import {Award, ChartNoAxesColumn, Library, ListOrdered, Tags, User, Zap} from "lucide-react";
 
 
@@ -14,13 +14,13 @@ export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_
     params: {
         parse: (params) => {
             const result = mediaTypeUsernameSchema.safeParse(params);
-            if (!result.success) return false;
-            return result.data;
+            return result.success ? result.data : false;
         },
     },
-    loader: async ({ context: { queryClient }, params: { mediaType, username } }) => {
-        return queryClient.ensureQueryData(userListHeaderOption(mediaType, username));
-    },
+    context: ({ params: { mediaType, username } }) => ({
+        userListHeaderQueryOptions: userListHeaderOption(mediaType, username),
+    }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.userListHeaderQueryOptions),
     component: ListHeader,
 });
 
@@ -29,7 +29,8 @@ function ListHeader() {
     const location = useLocation();
     const navigate = Route.useNavigate();
     const { username, mediaType } = Route.useParams();
-    const { timeSpent } = useSuspenseQuery(userListHeaderOption(mediaType, username)).data;
+    const { userListHeaderQueryOptions } = Route.useRouteContext();
+    const { timeSpent } = useSuspenseQuery(userListHeaderQueryOptions).data;
 
     const activeTab = location.pathname.endsWith("/tags")
         ? "tags" : location.pathname.endsWith("/collections")

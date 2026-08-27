@@ -22,9 +22,10 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 export const Route = createFileRoute("/_main/_viewer/collections/user/$username")({
     validateSearch: userCollectionsFiltersSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, params: { username }, deps: { search } }) => {
-        return queryClient.ensureQueryData(paginatedUserCollectionsOptions({ username, ...search }));
-    },
+    context: ({ params: { username }, deps: { search } }) => ({
+        userCollectionsQueryOptions: paginatedUserCollectionsOptions({ username, ...search }),
+    }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.userCollectionsQueryOptions),
     component: UserCollectionsPage,
 });
 
@@ -35,7 +36,8 @@ function UserCollectionsPage() {
     const { username } = Route.useParams();
     const isOwner = currentUser?.name === username;
     const { page = 1, search = "", mediaType } = filters;
-    const apiData = useSuspenseQuery(paginatedUserCollectionsOptions({ username, ...filters })).data;
+    const { userCollectionsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(userCollectionsQueryOptions).data;
     const mediaTypeItems = createMediaSelectItems(ALL_MEDIA_TYPES, { leading: "all", leadingLabel: "All Types" });
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<UserCollectionsSearch>({ search });
 

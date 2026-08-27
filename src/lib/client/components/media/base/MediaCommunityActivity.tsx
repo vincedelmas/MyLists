@@ -22,12 +22,13 @@ type MediaCommunityActivityQuery = Awaited<ReturnType<NonNullable<ReturnType<typ
 interface CommunityActivityProps {
     mediaId: number;
     mediaType: MediaType;
+    queryOptions: ReturnType<typeof mediaCommunityActivityOptions>;
 }
 
 
-export const MediaCommunityActivity = ({ mediaId, mediaType }: CommunityActivityProps) => {
+export const MediaCommunityActivity = ({ mediaId, mediaType, queryOptions }: CommunityActivityProps) => {
     const isBelowSm = useBreakpoint("sm");
-    const apiData = useSuspenseQuery(mediaCommunityActivityOptions(mediaId, mediaType, { page: 1, perPage: 8 })).data;
+    const apiData = useSuspenseQuery(queryOptions).data;
 
     if (!apiData.total) {
         return null;

@@ -10,16 +10,19 @@ import {Achievement} from "@/lib/types/achievements.types";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {DashboardShell} from "@/lib/client/components/admin/DashboardShell";
 import {DashboardHeader} from "@/lib/client/components/admin/DashboardHeader";
+import {Field, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {adminAchievementsOptions} from "@/lib/client/react-query/query-options/admin.options";
 import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 import {useAdminUpdateAchievementMutation, useAdminUpdateTiersMutation} from "@/lib/client/react-query/query-mutations/admin.mutations";
-import {Field, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 
 
 export const Route = createFileRoute("/_admin/admin/achievements")({
-    loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(adminAchievementsOptions);
+    context: () => ({
+        achievementsQueryOptions: adminAchievementsOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.achievementsQueryOptions);
     },
     component: AchievementPage,
 })
@@ -30,7 +33,8 @@ function AchievementPage() {
     const updateTiersMutation = useAdminUpdateTiersMutation();
     const [editedName, setEditedName] = useState("");
     const [editedDesc, setEditedDesc] = useState("");
-    const apiData = useSuspenseQuery(adminAchievementsOptions).data;
+    const { achievementsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(achievementsQueryOptions).data;
     const updateAchievementMutation = useAdminUpdateAchievementMutation();
     const [editableTiers, setEditableTiers] = useState<AchievementTier[]>([]);
     const [isTierDialogOpen, setIsTierDialogOpen] = useState(false);

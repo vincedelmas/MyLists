@@ -1,8 +1,8 @@
 import React from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {mediaDetailsJobSchema, paginationSchema} from "@/lib/schemas";
@@ -17,14 +17,16 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$job/$na
     params: {
         parse: (params) => {
             const result = mediaDetailsJobSchema.safeParse(params);
-            if (!result.success) return false;
-            return result.data;
+            return result.success ? result.data : false;
         },
     },
     validateSearch: paginationSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, params: { mediaType, job, name }, deps: { search } }) => {
-        return queryClient.ensureQueryData(jobDetailsOptions(mediaType, job, name, search));
+    context: ({ params: { mediaType, job, name }, deps: { search } }) => ({
+        jobDetailsQueryOptions: jobDetailsOptions(mediaType, job, name, search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.jobDetailsQueryOptions);
     },
     component: JobInfoPage,
 });
@@ -34,9 +36,10 @@ function JobInfoPage() {
     const { currentUser } = useAuth();
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
-    const { mediaType, job, name } = Route.useParams();
+    const { mediaType, name } = Route.useParams();
+    const { jobDetailsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(jobDetailsQueryOptions).data;
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
-    const apiData = useSuspenseQuery(jobDetailsOptions(mediaType, job, name, filters)).data;
 
     const onPageChange = async (newPage: number) => {
         await navigate({ search: { page: newPage } });

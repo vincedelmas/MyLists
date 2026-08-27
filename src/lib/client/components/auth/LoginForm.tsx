@@ -1,20 +1,19 @@
-import {toast} from "@/lib/client/components/ui/toast";
 import {useId} from "react";
-import {Controller, FormProvider, useForm} from "react-hook-form";
 import authClient from "@/lib/utils/auth-client";
 import {Login, loginSchema} from "@/lib/schemas";
 import {FaGithub, FaGoogle} from "react-icons/fa";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
 import {Separator} from "@/lib/client/components/ui/separator";
+import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {Link, useLocation, useNavigate, useRouter} from "@tanstack/react-router";
-import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
+import {Link, useLocation, useNavigate, useRouteContext, useRouter} from "@tanstack/react-router";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 
 
 interface LoginFormProps {
@@ -24,13 +23,14 @@ interface LoginFormProps {
 
 
 export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
+    const { authQueryOptions, authMethodsQueryOptions } = useRouteContext({ from: "__root__" });
+
     const fieldId = useId();
     const router = useRouter();
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
-    const authMethods = useSuspenseQuery(authMethodsOptions).data;
-    const hasSocialProvider = authMethods.google || authMethods.github;
+    const authMethods = useSuspenseQuery(authMethodsQueryOptions).data;
     const form = useForm<Login>({
         resolver: zodResolver(loginSchema),
         shouldFocusError: false,
@@ -40,13 +40,15 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
         },
     });
 
+    const hasSocialProvider = authMethods.google || authMethods.github;
+
     const getRedirectTarget = () => {
         return redirectTo || location.href || "/";
     };
 
     const refreshAuthenticatedRouteData = async () => {
         await router.invalidate();
-        await queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== authOptions.queryKey[0] });
+        await queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== authQueryOptions.queryKey[0] });
     };
 
     const onSubmit = async (submitted: Login) => {
@@ -59,7 +61,7 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
                 handleServerFormErrors(form, ctx.error);
             },
             onSuccess: async () => {
-                const currentUser = await queryClient.fetchQuery({ ...authOptions, staleTime: 0 });
+                const currentUser = await queryClient.fetchQuery({ ...authQueryOptions, staleTime: 0 });
                 onOpenChange?.(false);
                 if (currentUser) {
                     await navigate({ href: getRedirectTarget(), replace: true });
@@ -72,7 +74,7 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
     const withProvider = async (provider: "google" | "github") => {
         await authClient.signIn.social({ provider, callbackURL: getRedirectTarget() }, {
             onError: (ctx) => {
-                toast.add({title: ctx.error.message, type: "error", priority: "high"});
+                toast.add({ title: ctx.error.message, type: "error", priority: "high" });
             },
         });
     };
@@ -83,55 +85,55 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <FieldSet disabled={form.formState.isSubmitting}>
                         <FieldGroup>
-                        <Controller
-                            control={form.control}
-                            name="email"
-                            render={({field, fieldState}) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
-                                    <FieldLabel htmlFor={`${fieldId}-email`}>Email</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        id={`${fieldId}-email`}
-                                        type="email"
-                                        placeholder="Email"
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            control={form.control}
-                            name="password"
-                            render={({field, fieldState}) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
-                                    <div className="flex items-center justify-between">
-                                        <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
-                                        {authMethods.email ?
-                                            <Link
-                                                to="/forgot-password"
-                                                className="text-sm underline"
-                                                onClick={() => onOpenChange?.(false)}
-                                            >
-                                                Forgot password?
-                                            </Link>
-                                            :
-                                            <span className="text-xs text-muted-foreground">
+                            <Controller
+                                control={form.control}
+                                name="email"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
+                                        <FieldLabel htmlFor={`${fieldId}-email`}>Email</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-email`}
+                                            type="email"
+                                            placeholder="Email"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                control={form.control}
+                                name="password"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
+                                        <div className="flex items-center justify-between">
+                                            <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
+                                            {authMethods.email ?
+                                                <Link
+                                                    to="/forgot-password"
+                                                    className="text-sm underline"
+                                                    onClick={() => onOpenChange?.(false)}
+                                                >
+                                                    Forgot password?
+                                                </Link>
+                                                :
+                                                <span className="text-xs text-muted-foreground">
                                                 Reset unavailable
                                             </span>
-                                        }
-                                    </div>
-                                    <Input
-                                        {...field}
-                                        id={`${fieldId}-password`}
-                                        type="password"
-                                        placeholder="********"
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
-                        />
+                                            }
+                                        </div>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-password`}
+                                            type="password"
+                                            placeholder="********"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                )}
+                            />
                         </FieldGroup>
                     </FieldSet>
                     <FormError/>

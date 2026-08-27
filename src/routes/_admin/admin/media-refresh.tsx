@@ -1,6 +1,6 @@
+import {getThemeColor} from "@/lib/utils/theme-utils";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatDate} from "@/lib/utils/date-formatting";
-import {getThemeColor} from "@/lib/utils/theme-utils";
 import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
@@ -22,8 +22,11 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 export const Route = createFileRoute("/_admin/admin/media-refresh")({
     validateSearch: (search) => search as AdminMediaRefreshStatsParams,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(adminMediaRefreshOptions(search));
+    context: ({ deps: { search } }) => ({
+        mediaRefreshQueryOptions: adminMediaRefreshOptions(search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.mediaRefreshQueryOptions);
     },
     component: MediaRefreshPage,
 });
@@ -40,7 +43,8 @@ const rangeOptions = [
 function MediaRefreshPage() {
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
-    const apiData = useSuspenseQuery(adminMediaRefreshOptions(filters)).data;
+    const { mediaRefreshQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(mediaRefreshQueryOptions).data;
 
     const { topRange = "all", dailyRange = "30d" } = filters;
     const totalsByRoleMap = new Map(apiData.totalsByRole.map((row) => [row.role, Number(row.count)]));

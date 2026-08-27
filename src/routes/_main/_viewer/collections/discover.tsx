@@ -22,8 +22,11 @@ import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVal
 export const Route = createFileRoute("/_main/_viewer/collections/discover")({
     validateSearch: communityCollectionsSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(communityCollectionsOptions(search));
+    context: ({ deps: { search } }) => ({
+        communityCollectionsQueryOptions: communityCollectionsOptions(search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.communityCollectionsQueryOptions);
     },
     component: CollectionsDiscoverPage,
 });
@@ -33,7 +36,8 @@ function CollectionsDiscoverPage() {
     const { isAnonymous } = useAuth();
     const filters = Route.useSearch();
     const { page = 1, search = "", mediaType } = filters;
-    const apiData = useSuspenseQuery(communityCollectionsOptions(filters)).data;
+    const { communityCollectionsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(communityCollectionsQueryOptions).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<CommunitySearch>({ search });
     const mediaTypeItems = createMediaSelectItems(ALL_MEDIA_TYPES, { leading: "all", leadingLabel: "All Types" });
 

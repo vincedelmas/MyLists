@@ -1,5 +1,4 @@
 import {Clock} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
 import {ActivityPeriod} from "@/lib/schemas";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatMinutes} from "@/lib/utils/number-formatting";
@@ -9,16 +8,13 @@ import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-option
 
 
 interface MonthlyActivityStatsProps {
-    year: string;
-    month: string;
-    username: string;
     view: ActivityPeriod;
-    mediaType?: MediaType;
+    queryOptions: ReturnType<typeof monthlyActivityStatsOptions>;
 }
 
 
-export function MonthlyActivityStats({ username, year, month, view, mediaType }: MonthlyActivityStatsProps) {
-    const stats = useSuspenseQuery(monthlyActivityStatsOptions(username, { year, month, view, mediaType })).data;
+export function MonthlyActivityStats({ queryOptions, view }: MonthlyActivityStatsProps) {
+    const stats = useSuspenseQuery(queryOptions).data;
 
     return (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">

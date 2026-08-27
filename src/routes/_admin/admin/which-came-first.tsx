@@ -1,6 +1,6 @@
 import {fold} from "@tanstack/charts";
-import {Badge} from "@/lib/client/components/ui/badge";
 import {getThemeColor} from "@/lib/utils/theme-utils";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {WCF_MAX_ROUNDS} from "@/lib/schemas/wcf.schema";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -23,8 +23,11 @@ type AdminWcfStats = Awaited<ReturnType<NonNullable<typeof adminWhichCameFirstOp
 
 
 export const Route = createFileRoute("/_admin/admin/which-came-first")({
-    loader: async ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(adminWhichCameFirstOptions);
+    context: () => ({
+        whichCameFirstQueryOptions: adminWhichCameFirstOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.whichCameFirstQueryOptions);
     },
     component: AdminWhichCameFirstPage,
 });
@@ -43,11 +46,9 @@ const statusChartColors: Record<WcfRunStatus, string> = {
 
 
 function AdminWhichCameFirstPage() {
-    const apiData = useSuspenseQuery(adminWhichCameFirstOptions).data;
-    const dailyRuns = fold(apiData.dailyRuns, {
-        fields: statusChartKeys,
-        as: { key: "status", value: "count" },
-    });
+    const { whichCameFirstQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(whichCameFirstQueryOptions).data;
+    const dailyRuns = fold(apiData.dailyRuns, { fields: statusChartKeys, as: { key: "status", value: "count" } });
 
     return (
         <DashboardShell>

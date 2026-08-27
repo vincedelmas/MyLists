@@ -16,9 +16,10 @@ import {paginatedUserCollectionsOptions} from "@/lib/client/react-query/query-op
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/collections")({
     validateSearch: simpleSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, params: { mediaType, username }, deps: { search } }) => {
-        return queryClient.ensureQueryData(paginatedUserCollectionsOptions({ username, mediaType, ...search }));
-    },
+    context: ({ params: { mediaType, username }, deps: { search } }) => ({
+        collectionsQueryOptions: paginatedUserCollectionsOptions({ username, mediaType, ...search }),
+    }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.collectionsQueryOptions),
     component: CollectionsTab,
 });
 
@@ -27,7 +28,8 @@ function CollectionsTab() {
     const filters = Route.useSearch();
     const { currentUser } = useAuth();
     const { mediaType, username } = Route.useParams();
-    const { data } = useSuspenseQuery(paginatedUserCollectionsOptions({ username, mediaType, ...filters }));
+    const { collectionsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(collectionsQueryOptions).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SimpleSearch>({
         search: filters.search ?? "",
         options: { resetScroll: false },
@@ -63,7 +65,7 @@ function CollectionsTab() {
             </div>
 
             <div className="mt-8 grid grid-cols-3 gap-4 gap-y-7 max-sm:grid-cols-1">
-                {data.items.length === 0 ?
+                {apiData.items.length === 0 ?
                     <EmptyState
                         className="col-span-full py-20"
                         icon={ListOrdered}
@@ -75,7 +77,7 @@ function CollectionsTab() {
                         }
                     />
                     :
-                    data.items.map((collection) =>
+                    apiData.items.map((collection) =>
                         <CollectionCard
                             showOwner={false}
                             key={collection.id}
@@ -85,8 +87,8 @@ function CollectionsTab() {
                 }
             </div>
             <Pagination
-                currentPage={data.page}
-                totalPages={data.pages}
+                currentPage={apiData.page}
+                totalPages={apiData.pages}
                 onChangePage={(page) => updateFilters({ page })}
             />
         </>

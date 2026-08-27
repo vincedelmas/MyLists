@@ -1,5 +1,4 @@
 import {useId, useState} from "react";
-import {Controller, FormProvider, useForm} from "react-hook-form";
 import {FeatureStatus} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -12,6 +11,7 @@ import {createFileRoute, Link} from "@tanstack/react-router";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {CalendarClock, ChevronUp, ExternalLink} from "lucide-react";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
@@ -29,9 +29,8 @@ import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/l
 
 export const Route = createFileRoute("/_main/_viewer/features-vote")({
     validateSearch: featureVotesSearchSchema,
-    loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(featureVotesOptions);
-    },
+    context: () => ({ featureVotesQueryOptions: featureVotesOptions }),
+    loader: ({ context }) => context.queryClient.ensureQueryData(context.featureVotesQueryOptions),
     component: FeatureVotesPage,
 });
 
@@ -58,7 +57,8 @@ function FeatureVotesPage() {
     const { activeTab } = Route.useSearch();
     const { currentUser, isAnonymous } = useAuth();
     const toggleVoteMutation = useToggleFeatureVoteMutation();
-    const apiData = useSuspenseQuery(featureVotesOptions).data;
+    const { featureVotesQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(featureVotesQueryOptions).data;
     const [searchQuery, setSearchQuery] = useState("");
     const isAdmin = currentUser?.capabilities.manageFeatureRequests ?? false;
     const createFeatureMutation = useCreateFeatureRequestMutation({ noErrorToast: true });

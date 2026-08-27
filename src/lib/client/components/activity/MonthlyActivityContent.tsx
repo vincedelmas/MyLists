@@ -3,12 +3,12 @@ import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Label} from "@/lib/client/components/ui/label";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {History, LayoutGrid, Plus} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {formatMinutes} from "@/lib/utils/number-formatting";
+import {formatMonthYear} from "@/lib/utils/date-formatting";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
@@ -16,7 +16,6 @@ import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
-import {monthlyActivityOptions} from "@/lib/client/react-query/query-options";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
@@ -25,6 +24,7 @@ import {MonthlyActivityEditor, MonthlyActivityOccurrence} from "@/lib/types/acti
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
 import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
+import {monthlyActivityOptions, monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options";
 import {YearlyActivityOccurrencesDialog} from "@/lib/client/components/activity/YearlyActivityOccurrencesDialog";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
@@ -34,6 +34,8 @@ interface MonthlyActivityContentProps {
     username: string;
     fixedMediaType?: MediaType;
     filters: MonthlyActivitySearch;
+    activityQueryOptions: ReturnType<typeof monthlyActivityOptions>;
+    activityStatsQueryOptions: ReturnType<typeof monthlyActivityStatsOptions>;
 }
 
 
@@ -45,7 +47,9 @@ const activityKindFilters: { label: string, value: ActivityKind }[] = [
 ];
 
 
-export function MonthlyActivityContent({ username, filters, fixedMediaType }: MonthlyActivityContentProps) {
+export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
+    const { username, filters, fixedMediaType, activityQueryOptions, activityStatsQueryOptions } = props;
+
     const { currentUser } = useAuth();
     const canEdit = currentUser?.name === username;
     const [addActivity, setAddActivity] = useState(false);
@@ -53,7 +57,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
     const [editActivity, setEditActivity] = useState<MonthlyActivityEditor | null>(null);
     const [occurrencesActivity, setOccurrencesActivity] = useState<MonthlyActivityEditor | null>(null);
 
-    const apiData = useSuspenseQuery(monthlyActivityOptions(username, activeFilters)).data;
+    const apiData = useSuspenseQuery(activityQueryOptions).data;
     const mediaTypeFilters = createMediaSelectItems(apiData.mediaTypes, { leading: "all", leadingLabel: "All Types" });
 
     const {
@@ -70,11 +74,9 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
         search, options: { resetScroll: false },
     });
 
-    const activeMediaTypes = fixedMediaType
-        ? [fixedMediaType]
-        : currentUser
-            ? getActiveMediaTypes(currentUser.settings)
-            : apiData.mediaTypes;
+    const activeMediaTypes = fixedMediaType ? [fixedMediaType] : currentUser
+        ? getActiveMediaTypes(currentUser.settings)
+        : apiData.mediaTypes;
 
     const handleFilterChange = (next: Partial<MonthlyActivitySearch>) => {
         updateFilters({ page: 1, ...next, ...(fixedMediaType ? { activeTab: fixedMediaType } : {}) });
@@ -97,10 +99,7 @@ export function MonthlyActivityContent({ username, filters, fixedMediaType }: Mo
 
             <MonthlyActivityStats
                 view={view}
-                username={username}
-                year={dateFilters.year}
-                month={dateFilters.month}
-                mediaType={fixedMediaType}
+                queryOptions={activityStatsQueryOptions}
             />
 
             <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

@@ -18,8 +18,11 @@ import {ColumnDef, rowPaginationFeature, tableFeatures, useTable} from "@tanstac
 export const Route = createFileRoute("/_admin/admin/history")({
     validateSearch: (search) => search as SearchType,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(adminAllUpdatesOptions(search));
+    context: ({ deps: { search } }) => ({
+        adminHistoryQueryOptions: adminAllUpdatesOptions(search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.adminHistoryQueryOptions);
     },
     component: AdminGlobalHistory,
 });
@@ -32,7 +35,8 @@ const DEFAULT = { search: "", page: 1 } satisfies SearchType;
 function AdminGlobalHistory() {
     const filters = Route.useSearch();
     const { search = DEFAULT.search } = filters;
-    const apiData = useSuspenseQuery(adminAllUpdatesOptions(filters)).data;
+    const { adminHistoryQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(adminHistoryQueryOptions).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search, options: { resetScroll: false } });
 
     const { pagination, onPaginationChange } = useTablePagination({

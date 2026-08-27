@@ -21,31 +21,35 @@ import {adminCollectionsOptions, adminCollectionsOverviewOptions} from "@/lib/cl
 import {ColumnDef, OnChangeFn, rowPaginationFeature, rowSortingFeature, SortingState, tableFeatures, useTable} from "@tanstack/react-table";
 
 
-const features = tableFeatures({ rowPaginationFeature, rowSortingFeature });
-
-
 export const Route = createFileRoute("/_admin/admin/collections-overview")({
     validateSearch: (search) => search as SearchType,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, deps: { search } }) => {
+    context: ({ deps: { search } }) => ({
+        collectionsQueryOptions: adminCollectionsOptions(search),
+        collectionsOverviewQueryOptions: adminCollectionsOverviewOptions,
+    }),
+    loader: async ({ context }) => {
         await Promise.all([
-            queryClient.ensureQueryData(adminCollectionsOverviewOptions),
-            queryClient.ensureQueryData(adminCollectionsOptions(search)),
+            context.queryClient.ensureQueryData(context.collectionsOverviewQueryOptions),
+            context.queryClient.ensureQueryData(context.collectionsQueryOptions),
         ]);
     },
     component: AdminCollectionsOverviewPage,
 });
 
 
+const features = tableFeatures({ rowPaginationFeature, rowSortingFeature });
 const DEFAULT = { search: "", page: 1, sorting: "createdAt" } satisfies SearchType;
 
 
 function AdminCollectionsOverviewPage() {
     const filters = Route.useSearch();
     const { search = DEFAULT.search } = filters;
-    const stats = useSuspenseQuery(adminCollectionsOverviewOptions).data;
+    const { collectionsOverviewQueryOptions, collectionsQueryOptions } = Route.useRouteContext();
+
+    const apiData = useSuspenseQuery(collectionsQueryOptions).data;
+    const stats = useSuspenseQuery(collectionsOverviewQueryOptions).data;
     const newCollections = stats.createdThisMonth.comparedToLastMonth > 0;
-    const apiData = useSuspenseQuery(adminCollectionsOptions(filters)).data;
     const sortingState = [{ id: filters?.sorting ?? DEFAULT.sorting, desc: filters?.sortDesc === true }];
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SearchType>({ search, options: { resetScroll: false } });
     const { pagination, onPaginationChange } = useTablePagination({

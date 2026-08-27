@@ -7,10 +7,19 @@ import {monthlyActivityOptions, monthlyActivityStatsOptions} from "@/lib/client/
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/activity")({
     validateSearch: monthlyActivitySearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, params: { mediaType, username }, deps: { search } }) => {
+    context: ({ params: { mediaType, username }, deps: { search } }) => ({
+        activityQueryOptions: monthlyActivityOptions(username, { ...search, activeTab: mediaType }),
+        activityStatsQueryOptions: monthlyActivityStatsOptions(username, {
+            mediaType,
+            year: search.year,
+            view: search.view,
+            month: search.month,
+        }),
+    }),
+    loader: async ({ context }) => {
         await Promise.all([
-            queryClient.ensureQueryData(monthlyActivityOptions(username, { ...search, activeTab: mediaType })),
-            queryClient.ensureQueryData(monthlyActivityStatsOptions(username, { mediaType, year: search.year, view: search.view, month: search.month })),
+            context.queryClient.ensureQueryData(context.activityQueryOptions),
+            context.queryClient.ensureQueryData(context.activityStatsQueryOptions),
         ]);
     },
     component: ListActivityPage,
@@ -20,12 +29,15 @@ export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_
 function ListActivityPage() {
     const filters = Route.useSearch();
     const { mediaType, username } = Route.useParams();
+    const { activityQueryOptions, activityStatsQueryOptions } = Route.useRouteContext();
 
     return (
         <MonthlyActivityContent
             filters={filters}
             username={username}
             fixedMediaType={mediaType}
+            activityQueryOptions={activityQueryOptions}
+            activityStatsQueryOptions={activityStatsQueryOptions}
         />
     );
 }

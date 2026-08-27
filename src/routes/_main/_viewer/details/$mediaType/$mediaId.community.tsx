@@ -13,14 +13,16 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
     params: {
         parse: (params) => {
             const result = mediaTypeMediaIdSchema.safeParse(params);
-            if (!result.success) return false;
-            return result.data;
+            return result.success ? result.data : false;
         },
     },
     validateSearch: paginationSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, params: { mediaType, mediaId }, deps: { search } }) => {
-        await queryClient.ensureQueryData(mediaCommunityActivityOptions(mediaId, mediaType, { page: search.page ?? 1, perPage: 24 }));
+    context: ({ params: { mediaType, mediaId }, deps: { search } }) => ({
+        communityActivityQueryOptions: mediaCommunityActivityOptions(mediaId, mediaType, { page: search.page ?? 1, perPage: 24 }),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.communityActivityQueryOptions);
     },
     component: MediaCommunityActivityPage,
 });
@@ -29,8 +31,9 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
 function MediaCommunityActivityPage() {
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
-    const { mediaType, mediaId } = Route.useParams();
-    const apiData = useSuspenseQuery(mediaCommunityActivityOptions(mediaId, mediaType, { ...filters, perPage: 24 })).data;
+    const { mediaType } = Route.useParams();
+    const { communityActivityQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(communityActivityQueryOptions).data;
 
     const onPageChange = async (nextPage: number) => {
         await navigate({ search: { page: nextPage } });

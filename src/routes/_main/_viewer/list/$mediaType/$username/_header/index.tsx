@@ -1,11 +1,11 @@
 import {useState} from "react";
-import {MediaListArgs, mediaListSearchSchema} from "@/lib/schemas";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {useAuth} from "@/lib/client/hooks/use-auth";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Header} from "@/lib/client/components/media/base/Header";
+import {MediaListArgs, mediaListSearchSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MediaGrid} from "@/lib/client/components/media/base/MediaGrid";
@@ -18,8 +18,11 @@ import {FiltersSideSheet} from "@/lib/client/components/media/base/FiltersSideSh
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/")({
     validateSearch: mediaListSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, params: { mediaType, username }, deps: { search } }) => {
-        return queryClient.ensureQueryData(mediaListOptions(mediaType, username, search));
+    context: ({ params: { mediaType, username }, deps: { search } }) => ({
+        mediaListQueryOptions: mediaListOptions(mediaType, username, search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.mediaListQueryOptions);
     },
     component: MediaList,
 });
@@ -31,8 +34,9 @@ function MediaList() {
     const navigate = Route.useNavigate();
     const { username, mediaType } = Route.useParams();
     const allStatuses = statusUtils.byMediaType(mediaType);
+    const { mediaListQueryOptions } = Route.useRouteContext();
     const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
-    const { userData, ...apiData } = useSuspenseQuery(mediaListOptions(mediaType, username, filters)).data;
+    const { userData, ...apiData } = useSuspenseQuery(mediaListQueryOptions).data;
 
     const isCurrent = (currentUser?.id === userData.id);
     const isGrid = filters.view ? filters.view === "grid" : (currentUser?.gridListView ?? true);

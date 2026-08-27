@@ -22,8 +22,11 @@ import {ColumnDef, rowPaginationFeature, rowSelectionFeature, RowSelectionState,
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/history")({
     validateSearch: simpleSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, params: { username }, deps: { search } }) => {
-        return queryClient.ensureQueryData(allUpdatesOptions(username, search));
+    context: ({ params: { username }, deps: { search } }) => ({
+        allUpdatesQueryOptions: allUpdatesOptions(username, search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.allUpdatesQueryOptions);
     },
     component: AllUpdates,
 });
@@ -33,16 +36,18 @@ const features = tableFeatures({ rowPaginationFeature, rowSelectionFeature });
 
 
 function AllUpdates() {
-    const filters = Route.useSearch();
     const { currentUser } = useAuth();
+    const filters = Route.useSearch();
     const { username } = Route.useParams();
-    const isCurrent = (currentUser?.name === username);
+    const { allUpdatesQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(allUpdatesQueryOptions).data;
     const [rowSelected, setRowSelected] = useState<RowSelectionState>({});
     const deleteUpdateMutation = useDeleteAllUpdatesMutation(username, filters);
-    const apiData = useSuspenseQuery(allUpdatesOptions(username, filters)).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<SimpleSearch>({
         search: filters.search ?? "", options: { resetScroll: false }
     });
+
+    const isCurrent = (currentUser?.name === username);
 
     const { pagination, onPaginationChange } = useTablePagination({
         pageSize: 25,

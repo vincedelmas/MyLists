@@ -20,8 +20,11 @@ import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header/tags")({
     validateSearch: simpleSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: async ({ context: { queryClient }, params: { mediaType, username }, deps: { search } }) => {
-        return queryClient.ensureQueryData(tagsViewOptions(mediaType, username, search));
+    context: ({ params: { mediaType, username }, deps: { search } }) => ({
+        tagsQueryOptions: tagsViewOptions(mediaType, username, search),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.tagsQueryOptions);
     },
     component: TagsView,
 });
@@ -32,16 +35,18 @@ function TagsView() {
     const { currentUser } = useAuth();
     const { username, mediaType } = Route.useParams();
     const editMutation = useEditTagMutation(mediaType);
-    const isOwner = !!currentUser && currentUser?.name === username;
-    const { data } = useSuspenseQuery(tagsViewOptions(mediaType, username, filters));
+    const { tagsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(tagsQueryOptions).data;
     const { localSearch, setLocalSearch, handleInputChange, updateFilters } = useSearchNavigate<SimpleSearch>({
         search: filters.search ?? "",
         options: { resetScroll: false },
     });
 
+    const isOwner = !!currentUser && currentUser?.name === username;
+
     const trimLowSearch = localSearch.trim().toLowerCase();
     const searchIsSynced = trimLowSearch === (filters.search ?? "").trim().toLowerCase();
-    const showCreateButton = isOwner && trimLowSearch.length > 0 && searchIsSynced && !data.exactMatch;
+    const showCreateButton = isOwner && trimLowSearch.length > 0 && searchIsSynced && !apiData.exactMatch;
 
     const clearSearch = () => {
         setLocalSearch("");
@@ -110,14 +115,14 @@ function TagsView() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
-                {data.items.length === 0 ?
+                {apiData.items.length === 0 ?
                     <EmptyState
                         icon={Tags}
                         className="col-span-full py-20"
                         message={filters.search ? `No tags found matching "${filters.search}". Create it?` : "No tags created yet."}
                     />
                     :
-                    data.items.map((col) =>
+                    apiData.items.map((col) =>
                         <TagCard
                             tag={col}
                             key={col.tagId}
@@ -131,8 +136,8 @@ function TagsView() {
                 }
             </div>
             <Pagination
-                currentPage={data.page}
-                totalPages={data.pages}
+                currentPage={apiData.page}
+                totalPages={apiData.pages}
                 onChangePage={(page) => updateFilters({ page })}
             />
         </>

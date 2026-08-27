@@ -2,10 +2,10 @@ import {Suspense} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {ExternalLink, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
@@ -29,14 +29,18 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
     params: {
         parse: (params) => {
             const result = mediaTypeMediaIdSchema.safeParse(params);
-            if (!result.success) return false;
-            return result.data;
+            return result.success ? result.data : false;
         },
     },
-    loader: async ({ context: { queryClient }, params: { mediaType, mediaId } }) => {
-        const details = await queryClient.ensureQueryData(mediaDetailsOptions(mediaType, mediaId));
-        void queryClient.prefetchQuery(mediaCommunityCollectionsOptions(details.media.id, mediaType));
-        void queryClient.prefetchQuery(mediaCommunityActivityOptions(details.media.id, mediaType, { page: 1, perPage: 8 }));
+    context: ({ params: { mediaType, mediaId } }) => ({
+        mediaDetailsQueryOptions: mediaDetailsOptions(mediaType, mediaId),
+        communityCollectionsQueryOptions: mediaCommunityCollectionsOptions(mediaId, mediaType),
+        communityActivityQueryOptions: mediaCommunityActivityOptions(mediaId, mediaType, { page: 1, perPage: 8 }),
+    }),
+    loader: async ({ context }) => {
+        await context.queryClient.ensureQueryData(context.mediaDetailsQueryOptions);
+        void context.queryClient.prefetchQuery(context.communityCollectionsQueryOptions);
+        void context.queryClient.prefetchQuery(context.communityActivityQueryOptions);
     },
     component: MediaDetailsPage,
 });
@@ -45,9 +49,11 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
 function MediaDetailsPage() {
     const { currentUser, isAnonymous } = useAuth();
     const { mediaType, mediaId } = Route.useParams();
+    const { mediaDetailsQueryOptions, communityCollectionsQueryOptions, communityActivityQueryOptions } = Route.useRouteContext();
+
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
-    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsOptions(mediaType, mediaId));
-    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsOptions(mediaType, mediaId)).data;
+    const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsQueryOptions);
+    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsQueryOptions).data;
 
     const handleAddMediaToUser = () => {
         addMediaToListMutation.mutate({ data: { mediaType, mediaId: media.id } });
@@ -86,15 +92,15 @@ function MediaDetailsPage() {
 
                     <Suspense>
                         <MediaCommunityActivity
-                            mediaId={media.id}
+                            mediaId={mediaId}
                             mediaType={mediaType}
+                            queryOptions={communityActivityQueryOptions}
                         />
                     </Suspense>
 
                     <Suspense>
                         <MediaCommunityCollections
-                            mediaId={media.id}
-                            mediaType={mediaType}
+                            queryOptions={communityCollectionsQueryOptions}
                         />
                     </Suspense>
                 </div>

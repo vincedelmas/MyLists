@@ -11,8 +11,11 @@ import {AchievementSummary} from "@/lib/client/components/achievements/Achieveme
 
 
 export const Route = createFileRoute("/_main/_viewer/achievements/$username/_header/")({
-    loader: async ({ context: { queryClient }, params: { username } }) => {
-        return queryClient.ensureQueryData(achievementOptions(username));
+    context: ({ params: { username } }) => ({
+        achievementQueryOptions: achievementOptions(username),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.achievementQueryOptions);
     },
     component: AchievementPage,
 });
@@ -20,7 +23,8 @@ export const Route = createFileRoute("/_main/_viewer/achievements/$username/_hea
 
 function AchievementPage() {
     const { username } = Route.useParams();
-    const apiData = useSuspenseQuery(achievementOptions(username)).data;
+    const { achievementQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(achievementQueryOptions).data;
     const [activeTab, setActiveTab] = useState<MediaType | "all">("all");
     const mediaTabs = createMediaTabItems(apiData.userActivatedMediaTypes, { leading: "all" });
     const mediaAchievements = apiData.result.filter((r) => activeTab === "all" || r.mediaType === activeTab);

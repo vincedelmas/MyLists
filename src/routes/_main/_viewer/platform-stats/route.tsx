@@ -13,8 +13,11 @@ import {createMediaTabItems} from "@/lib/client/components/general/media-type-op
 export const Route = createFileRoute("/_main/_viewer/platform-stats")({
     validateSearch: statsActiveTabSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(platformStatsOptions(search.activeTab));
+    context: ({ deps: { search } }) => ({
+        platformStatsQueryOptions: platformStatsOptions(search.activeTab),
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.platformStatsQueryOptions);
     },
     component: PlatformStatsPage,
 });
@@ -23,7 +26,8 @@ export const Route = createFileRoute("/_main/_viewer/platform-stats")({
 function PlatformStatsPage() {
     const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
-    const apiData = useSuspenseQuery(platformStatsOptions(activeTab)).data;
+    const { platformStatsQueryOptions } = Route.useRouteContext();
+    const apiData = useSuspenseQuery(platformStatsQueryOptions).data;
     const mediaTabs = createMediaTabItems(ALL_MEDIA_TYPES, { leading: "overview" });
 
     const handleTabChange = async (value: StatsActiveTab) => {

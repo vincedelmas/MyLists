@@ -316,6 +316,13 @@
       "when": 1787780252829,
       "tag": "0044_normalize_blank_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1787826444552,
+      "tag": "0045_better_auth_1_7",
+      "breakpoints": true
     }
   ]
 }

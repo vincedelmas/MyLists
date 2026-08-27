@@ -24,7 +24,7 @@
         "build:entry": "bun build ./server.ts --target=bun --outfile=./dist/server.js",
         "new:db": "mkdir -p instance && bun run dk push --force && bun run seed:achievements",
         "new:db:docker": "mkdir -p instance && bun run dk push --force && bun run cli:docker -- seed-achievements",
-        "auth:generate": "bunx @better-auth/cli@latest generate --y --output src/lib/server/database/schema/auth.schema.ts"
+        "auth:generate": "bunx --bun auth@1.7.2 generate --yes --config src/lib/server/core/auth.ts --output src/lib/server/database/schema/auth.schema.ts"
     },
     "dependencies": {
         "@base-ui/react": "^1.6.0",
@@ -44,7 +44,7 @@
         "@tanstack/react-virtual": "^3.14.7",
         "@tanstack/router-ssr-query-core": "^1.169.1",
         "bcrypt": "^6.0.0",
-        "better-auth": "1.6.23",
+        "better-auth": "1.7.2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "commander": "^15.0.0",

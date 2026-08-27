@@ -1,6 +1,8 @@
+import {APIError} from "better-auth/api";
 import {auth} from "@/lib/server/core/auth";
 import {MediaType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
+import {getRequest} from "@tanstack/react-start/server";
 import {user} from "@/lib/server/database/schema/index";
 import {getContainer} from "@/lib/server/core/container";
 import {ValidationError} from "@/lib/utils/error-classes";
@@ -128,17 +130,20 @@ export const getDownloadListAsCSV = createServerFn({ method: "GET" })
 export const postPasswordSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(passwordSettingsSchema)
-    .handler(async ({ data: { newPassword, currentPassword }, context: { currentUser } }) => {
-        const ctx = await auth.$context;
-        const [userAccount] = await ctx.internalAdapter.findAccountByUserId(currentUser.id.toString());
+    .handler(async ({ data: { newPassword, currentPassword } }) => {
+        try {
+            await auth.api.changePassword({
+                headers: getRequest().headers,
+                body: { newPassword, currentPassword },
+            });
+        }
+        catch (error) {
+            if (!(error instanceof APIError) || error.body?.code !== "INVALID_PASSWORD") {
+                throw error;
+            }
 
-        const isValid = await ctx.password.verify({ hash: userAccount?.password ?? "", password: currentPassword });
-        if (!isValid) {
             throw new ValidationError<PasswordSettingsForm>("currentPassword", "Current password incorrect");
         }
-
-        const hash = await ctx.password.hash(newPassword);
-        await ctx.internalAdapter.updatePassword(currentUser.id.toString(), hash);
     });
 
 

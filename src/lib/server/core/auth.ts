@@ -11,6 +11,7 @@ import {createServerOnlyFn} from "@tanstack/react-start";
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
+import {hashPassword, verifyPassword} from "better-auth/crypto";
 import {user as userTable, userMediaSettings} from "@/lib/server/database/schema";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 
@@ -173,8 +174,10 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
             },
         } : {}),
         password: {
-            hash: async (password: string) => bcrypt.hash(password, 12),
-            verify: async ({ hash, password }) => bcrypt.compare(password, Buffer.from(hash).toString()),
+            hash: hashPassword,
+            verify: ({ hash, password }) => hash.startsWith("$2")
+                ? bcrypt.compare(password, hash)
+                : verifyPassword({ hash, password }),
         },
     },
     ...(mailEnabled ? {

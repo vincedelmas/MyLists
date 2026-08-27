@@ -1,7 +1,8 @@
 import {z} from "zod";
 import {RoleType} from "@/lib/utils/enums";
 import {auth} from "@/lib/server/core/auth";
-import {UserWithRole} from "better-auth/plugins";
+import type {UserWithRole} from "better-auth/plugins";
+import {createLocalAccountIssuer} from "better-auth/db";
 import {defineTask} from "@/lib/server/tasks/define-task";
 
 
@@ -35,7 +36,7 @@ export const createUserTask = defineTask({
                 role: input.role,
                 emailVerified: true,
                 name: input.username,
-            });
+            }, { method: "admin" });
             if (!user) {
                 throw new Error("Failed to create user.");
             }
@@ -46,6 +47,7 @@ export const createUserTask = defineTask({
                 accountId: user.id,
                 providerId: "credential",
                 password: hashedPassword,
+                issuer: createLocalAccountIssuer("credential"),
             });
 
             ctx.metric("userId", user.id);

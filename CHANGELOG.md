@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.1](https://github.com/vincedelmas/MyLists/compare/v3.3.0...v3.3.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* **app:** prevent browser APIs during SPA shell rendering ([b5ef693](https://github.com/vincedelmas/MyLists/commit/b5ef6932478112f7aa00e19bfdf8de317ce0e663))
+
 ## [3.3.0](https://github.com/vincedelmas/MyLists/compare/v3.2.0...v3.3.0) (2026-08-27)
 
 

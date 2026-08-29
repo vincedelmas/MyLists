@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.4.0](https://github.com/vincedelmas/MyLists/compare/v3.3.1...v3.4.0) (2026-08-29)
+
+
+### Features
+
+* add Mediadle leaderboard and refresh game layout ([fcba4c8](https://github.com/vincedelmas/MyLists/commit/fcba4c8486f4a2a18edfcb8d63e66661b885af35))
+* revamp Which Came First game ([3b9ace7](https://github.com/vincedelmas/MyLists/commit/3b9ace76ef02e103055184f615b01dadfcce4e2c))
+
+
+### Bug Fixes
+
+* **auth:** legacy password hashes blob -&gt; str ([0ada097](https://github.com/vincedelmas/MyLists/commit/0ada0973130f30b55e261582ed14e6975a743d1b))
+
 ## [3.3.1](https://github.com/vincedelmas/MyLists/compare/v3.3.0...v3.3.1) (2026-08-27)
 
 

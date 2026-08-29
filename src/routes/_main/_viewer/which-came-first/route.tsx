@@ -4,25 +4,46 @@ import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
-import {Checkbox} from "@/lib/client/components/ui/checkbox";
+import {Progress} from "@/lib/client/components/ui/progress";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {WCF_MAX_ROUNDS, WCF_MEDIA_TYPES} from "@/lib/schemas/wcf.schema";
-import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
+import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
+import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 import {dateFromUTCInput, extractDate, formatDate} from "@/lib/utils/date-formatting";
+import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
+import {WcfLeaderboard} from "@/lib/client/components/which-came-first/WcfLeaderboard";
 import {whichCameFirstOptions} from "@/lib/client/react-query/query-options/wcf.options";
-import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
-import {ArrowRight, CalendarClock, Check, ChevronRight, Gauge, House, Layers3, RotateCcw, Target, Trash2, Trophy, X} from "lucide-react";
 import {useAbandonWCFRunMutation, useAnswerWCFRoundMutation, useResetWCFStatsMutation, useStartWCFRunMutation} from "@/lib/client/react-query/query-mutations/wcf.mutations";
+import {
+    ArrowRight,
+    CalendarClock,
+    ChartNoAxesColumnIncreasing,
+    Check,
+    ChevronRight,
+    Gauge,
+    GitCompareArrows,
+    House,
+    Layers3,
+    RotateCcw,
+    Target,
+    Trash2,
+    Trophy,
+    X
+} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_viewer/which-came-first")({
-    context: () => ({ whichCameFirstQueryOptions: whichCameFirstOptions }),
-    loader: ({ context }) => context.queryClient.ensureQueryData(context.whichCameFirstQueryOptions),
+    context: () => ({
+        whichCameFirstQueryOptions: whichCameFirstOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.whichCameFirstQueryOptions);
+    },
     component: WhichCameFirstPage,
 });
 
@@ -38,15 +59,9 @@ function WhichCameFirstPage() {
     const abandonMutation = useAbandonWCFRunMutation();
     const { whichCameFirstQueryOptions } = Route.useRouteContext();
     const [showGameOver, setShowGameOver] = useState(false);
-    const { activeRun, stats } = useSuspenseQuery(whichCameFirstQueryOptions).data;
     const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
+    const { activeRun, leaderboard, stats } = useSuspenseQuery(whichCameFirstQueryOptions).data;
     const [selectedTypes, setSelectedTypes] = useState<MediaType[]>(activeRun?.selectedMediaTypes ?? [...WCF_MEDIA_TYPES]);
-
-    const toggleMediaType = (mediaType: MediaType) => {
-        setSelectedTypes((current) => current.includes(mediaType)
-            ? current.filter((type) => type !== mediaType)
-            : [...current, mediaType]);
-    };
 
     const submitAnswer = (selectedSide: "left" | "right") => {
         if (!activeRun || answerResult || answerMutation.isPending) return;
@@ -102,36 +117,68 @@ function WhichCameFirstPage() {
     }, [answerResult]);
 
     return (
-        <PageTitle title="Which Came First?" subtitle="Choose the media that was released first. One mistake ends the run.">
-            <div className="mx-auto max-w-5xl space-y-6">
-                <Stats
-                    stats={stats}
-                    canReset={!activeRun && !answerResult}
-                />
-                {activeRun && showGameOver && answerResult ?
-                    <GameOverScreen
-                        run={activeRun}
-                        result={answerResult}
-                        onMainMenu={continueGame}
-                        onPlayAgain={playAgain}
-                        isStarting={startMutation.isPending}
+        <PageTitle title="Which Came First?" onlyHelmet>
+            <div className="mb-8 flex flex-col pt-8">
+                <header className="flex items-end justify-between gap-8 border-b pb-6 max-sm:flex-col max-sm:items-start">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+                            <GitCompareArrows className="size-4" aria-hidden="true"/>
+                            Release date challenge
+                        </div>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                            Which Came First?
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Two covers. Pick the title released first. One mistake ends the run.
+                        </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1 max-sm:items-start">
+                        <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                            Run limit
+                        </span>
+                        <div className="flex items-center gap-2 text-lg">
+                            <Target className="size-4 text-muted-foreground" aria-hidden="true"/>
+                            Up to {WCF_MAX_ROUNDS} rounds
+                        </div>
+                    </div>
+                </header>
+
+                <section className="grid grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] items-stretch gap-10 pt-8 max-lg:grid-cols-1">
+                    <div className="min-w-0">
+                        {activeRun && showGameOver && answerResult ?
+                            <GameOverScreen
+                                run={activeRun}
+                                result={answerResult}
+                                onMainMenu={continueGame}
+                                onPlayAgain={playAgain}
+                                isStarting={startMutation.isPending}
+                            />
+                            : activeRun ?
+                                <GameBoard
+                                    run={activeRun}
+                                    result={answerResult}
+                                    onAnswer={submitAnswer}
+                                    isPending={answerMutation.isPending}
+                                    onAbandon={() => abandonMutation.mutate({ data: { runId: activeRun.id } })}
+                                />
+                                :
+                                <GameSetup
+                                    onStart={startGame}
+                                    selectedTypes={selectedTypes}
+                                    onSelectionChange={setSelectedTypes}
+                                    isPending={startMutation.isPending}
+                                />
+                        }
+                    </div>
+                    <Stats
+                        stats={stats}
+                        canReset={!activeRun && !answerResult}
                     />
-                    : activeRun ?
-                        <GameBoard
-                            run={activeRun}
-                            result={answerResult}
-                            onAnswer={submitAnswer}
-                            isPending={answerMutation.isPending}
-                            onAbandon={() => abandonMutation.mutate({ data: { runId: activeRun.id } })}
-                        />
-                        :
-                        <GameSetup
-                            onStart={startGame}
-                            onToggle={toggleMediaType}
-                            selectedTypes={selectedTypes}
-                            isPending={startMutation.isPending}
-                        />
-                }
+                </section>
+
+                <WcfLeaderboard
+                    leaderboard={leaderboard}
+                />
             </div>
         </PageTitle>
     );
@@ -142,120 +189,97 @@ interface GameSetupProps {
     isPending: boolean;
     onStart: () => void;
     selectedTypes: MediaType[];
-    onToggle: (type: MediaType) => void;
+    onSelectionChange: (types: MediaType[]) => void;
 }
 
 
-function GameSetup({ selectedTypes, onToggle, isPending, onStart }: GameSetupProps) {
-    const clearOrSelectAll = () => {
-        if (selectedTypes.length === WCF_MEDIA_TYPES.length) {
-            selectedTypes.forEach(onToggle);
-        }
-        else {
-            WCF_MEDIA_TYPES.filter((type) => !selectedTypes.includes(type)).forEach(onToggle);
-        }
-    };
-
+function GameSetup({ selectedTypes, onSelectionChange, isPending, onStart }: GameSetupProps) {
     return (
-        <Card className="relative mx-auto max-w-4xl overflow-hidden p-0 shadow-lg shadow-black/5 ring-border/80">
-            <div className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-brand/10 blur-3xl"/>
-            <div className="grid md:grid-cols-[minmax(0,1fr)_17rem]">
-                <div className="relative p-6 sm:p-8">
-                    <CardHeader className="mb-6 gap-3">
-                        <div className="flex size-11 items-center justify-center rounded-xl border border-brand/20 bg-brand/10 text-brand">
-                            <CalendarClock className="size-5"/>
-                        </div>
-                        <div>
-                            <CardTitle className="text-2xl">
-                                Choose Your Media Pool
-                            </CardTitle>
-                            <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                                Pick the media you know best. Every round mixes two titles from your chosen pool.
-                            </p>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-5 gap-2 max-lg:grid-cols-3 max-sm:grid-cols-2">
-                            {WCF_MEDIA_TYPES.map((mediaType) => {
-                                const selected = selectedTypes.includes(mediaType);
-
-                                return (
-                                    <label
-                                        key={mediaType}
-                                        htmlFor={`which-came-first-${mediaType}`}
-                                        className={cn("group relative flex min-h-20 cursor-pointer flex-col justify-between " +
-                                            "overflow-hidden rounded-lg border p-3.5",
-                                            "transition-all duration-200 hover:-translate-y-0.5 hover:bg-accent/60",
-                                            selected ? "border-brand/60 bg-brand/8 shadow-sm ring-1 ring-brand/15"
-                                                : "border-border/80 bg-background/40",
-                                        )}
-                                    >
-                                        <Checkbox
-                                            checked={selected}
-                                            id={`which-came-first-${mediaType}`}
-                                            className="absolute right-3.5 top-3.5"
-                                            onCheckedChange={() => onToggle(mediaType)}
-                                        />
-                                        <MainThemeIcon
-                                            size={22}
-                                            type={mediaType}
-                                            className="transition-transform group-hover:scale-110"
-                                        />
-                                        <span className="block text-sm font-semibold capitalize">
-                                            {mediaType}
-                                        </span>
-                                    </label>
-                                );
-                            })}
-                        </div>
-                        <button
-                            type="button"
-                            onClick={clearOrSelectAll}
-                            className="mt-5 text-xs font-medium text-muted-foreground underline-offset-4 transition-colors
-                            hover:text-foreground hover:underline"
-                        >
-                            {selectedTypes.length === WCF_MEDIA_TYPES.length ? "Clear selection" : "Select all"}
-                        </button>
-                    </CardContent>
+        <section className="flex h-full flex-col">
+            <div className="mb-7">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <CalendarClock className="size-4" aria-hidden="true"/>
+                    Build your run
                 </div>
-                <aside className="relative flex flex-col justify-between border-l bg-muted/35 p-6 max-md:border-l-0 max-md:border-t sm:p-8">
-                    <div>
-                        <span className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                            Your game
-                        </span>
-                        <div className="mt-5 flex items-end gap-2">
-                            <strong className="text-5xl font-bold leading-none tabular-nums text-foreground">
-                                {selectedTypes.length}
-                            </strong>
-                            <span className="pb-1 text-sm text-muted-foreground">
-                                {selectedTypes.length === 1 ? "category" : "categories"}
-                            </span>
-                        </div>
-                        <div className="mt-5 flex flex-wrap gap-1.5">
-                            {selectedTypes.length > 0 ? selectedTypes.map((mediaType) =>
-                                    <Badge key={mediaType} variant="overlay" className="capitalize">
-                                        <MainThemeIcon type={mediaType}/>
-                                        {mediaType}
-                                    </Badge>
-                                ) :
-                                <span className="text-sm text-muted-foreground">
-                                    Choose at least one to play.
+                <h2 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
+                    Choose your media pool
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                    Pick the categories you know best. Every round draws two titles from this pool.
+                </p>
+            </div>
+
+            <ToggleGroup
+                multiple
+                spacing={0}
+                variant="brand"
+                orientation="vertical"
+                value={selectedTypes}
+                aria-label="Media pool"
+                className="w-full items-stretch border-y"
+                onValueChange={(types) => onSelectionChange(types as MediaType[])}
+            >
+                {WCF_MEDIA_TYPES.map((mediaType) => {
+                    const selected = selectedTypes.includes(mediaType);
+
+                    return (
+                        <ToggleGroupItem
+                            key={mediaType}
+                            value={mediaType}
+                            aria-label={`${selected ? "Remove" : "Add"} ${mediaType}`}
+                            className="group h-14 w-full shrink justify-between rounded-none border-x-0 border-t-0 px-1 last:border-b-0"
+                        >
+                            <span className="flex items-center gap-3">
+                                <span className="flex size-8 items-center justify-center text-muted-foreground group-aria-pressed:text-brand">
+                                    <MainThemeIcon size={19} type={mediaType}/>
                                 </span>
-                            }
-                        </div>
-                    </div>
+                                <span className="font-semibold capitalize">
+                                    {mediaType}
+                                </span>
+                            </span>
+                            <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                {selected ? "In pool" : "Add"}
+                                {selected && <Check aria-hidden="true"/>}
+                            </span>
+                        </ToggleGroupItem>
+                    );
+                })}
+            </ToggleGroup>
+
+            <div className="mt-6 flex items-center justify-between gap-5 border-b pb-6 max-sm:flex-col max-sm:items-stretch">
+                <div className="flex items-baseline gap-2">
+                    <strong className="font-mono text-3xl font-semibold leading-none tabular-nums text-foreground">
+                        {selectedTypes.length}
+                    </strong>
+                    <span className="text-sm text-muted-foreground">
+                        {selectedTypes.length === 1 ? "category selected" : "categories selected"}
+                    </span>
+                </div>
+                <div className="flex items-center gap-2 max-sm:w-full">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onSelectionChange(selectedTypes.length === WCF_MEDIA_TYPES.length ? [] : [...WCF_MEDIA_TYPES])}
+                    >
+                        {selectedTypes.length === WCF_MEDIA_TYPES.length ? "Clear" : "Select all"}
+                    </Button>
                     <Button
                         size="lg"
                         onClick={onStart}
                         disabled={selectedTypes.length === 0 || isPending}
-                        className="mt-5 w-full shadow-md shadow-primary/15"
+                        className="max-sm:flex-1"
                     >
                         Start the run
-                        <ArrowRight/>
+                        <ArrowRight data-icon="inline-end"/>
                     </Button>
-                </aside>
+                </div>
             </div>
-        </Card>
+
+            {selectedTypes.length === 0 &&
+                <p className="mt-3 text-xs text-muted-foreground">
+                    Choose at least one category to start.
+                </p>
+            }
+        </section>
     );
 }
 
@@ -273,28 +297,22 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
     const displayedScore = result?.score ?? run.score;
 
     return (
-        <div className="space-y-6">
-            <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-xl border bg-card px-3 py-2.5 shadow-sm sm:px-4">
-                <div className="flex items-center gap-3 sm:gap-5">
-                    <div className="flex items-center gap-2">
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-brand/12 text-brand">
-                            <Trophy className="size-4"/>
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                Score
-                            </p>
-                            <p className="text-lg font-bold leading-none tabular-nums">
-                                {displayedScore}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="h-8 w-px bg-border"/>
+        <section className="flex h-full flex-col">
+            <div className="flex items-end justify-between gap-5 border-b pb-5 max-sm:flex-col max-sm:items-stretch">
+                <div className="flex items-end gap-6">
                     <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                            Score
+                        </p>
+                        <p className="mt-1 font-mono text-2xl font-semibold leading-none tabular-nums">
+                            {displayedScore}
+                        </p>
+                    </div>
+                    <div className="border-l pl-6">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                             Round
                         </p>
-                        <p className="text-lg font-bold leading-none tabular-nums">
+                        <p className="mt-1 font-mono text-2xl font-semibold leading-none tabular-nums">
                             {run.round.number} / {WCF_MAX_ROUNDS}
                         </p>
                     </div>
@@ -303,13 +321,19 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                     </Badge>
                 </div>
                 {!result &&
-                    <Button variant="destructiveGhost" onClick={onAbandon}>
-                        <X/>
+                    <Button
+                        aria-label="End run"
+                        className="max-sm:self-end"
+                        variant="destructiveGhost"
+                        onClick={onAbandon}
+                    >
+                        <X data-icon="inline-start"/>
                         <span className="max-sm:hidden">End run</span>
                     </Button>
                 }
             </div>
-            <div className="relative mx-auto grid max-w-xl grid-cols-2 gap-4 sm:gap-7">
+
+            <div className="relative mt-6 grid w-full grid-cols-2 gap-3 sm:gap-6">
                 <MediaCard
                     side="left"
                     result={result}
@@ -317,9 +341,9 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                     card={run.round.left}
                     disabled={isPending || !!result}
                 />
-                <div className="absolute left-1/2 top-1/2 z-20 flex size-14 -translate-x-1/2 -translate-y-1/2
-                    items-center justify-center rounded-full border-4 border-background bg-primary text-lg font-black
-                    tracking-wider text-primary-foreground shadow-xl max-sm:size-10"
+                <div className="absolute left-1/2 top-1/2 z-20 flex size-10 -translate-x-1/2 -translate-y-1/2
+                    items-center justify-center rounded-full border-2 border-background bg-primary font-mono text-[10px]
+                    font-semibold tracking-[0.12em] text-primary-foreground shadow-lg max-sm:size-8"
                 >
                     VS
                 </div>
@@ -331,7 +355,8 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                     disabled={isPending || !!result}
                 />
             </div>
-            <div className="min-h-12 text-center" aria-live="polite">
+
+            <div className="mt-5 min-h-16 border-b pb-5 text-center" aria-live="polite">
                 {!result ?
                     <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                         <span className="size-1.5 rounded-full bg-brand"/>
@@ -360,7 +385,7 @@ function GameBoard({ run, result, isPending, onAnswer, onAbandon }: GameBoardPro
                         </div>
                 }
             </div>
-        </div>
+        </section>
     );
 }
 
@@ -382,55 +407,56 @@ function GameOverScreen({ run, result, isStarting, onMainMenu, onPlayAgain }: Ga
         : getRunVerdict(result.score);
 
     return (
-        <Card className={cn("relative mx-auto max-w-4xl animate-in overflow-hidden p-0 shadow-xl shadow-black/5",
-            "fade-in zoom-in-95 duration-300", completedWithoutLoss ? "ring-brand/30" : "ring-destructive/30")}>
-            <div className={cn("pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b to-transparent",
-                completedWithoutLoss ? "from-brand/8" : "from-destructive/8")}/>
-            <CardContent className="relative space-y-7 px-6 py-9 text-center sm:px-10">
-                <div className={cn("mx-auto flex size-16 items-center justify-center rounded-2xl border shadow-sm",
-                    completedWithoutLoss
-                        ? "border-brand/20 bg-brand/10 text-brand"
-                        : "border-destructive/20 bg-destructive/10 text-destructive")}>
-                    {completedWithoutLoss ? <Trophy className="size-10"/> : <X className="size-10"/>}
+        <section className="animate-in fade-in zoom-in-95 duration-300">
+            <div className="border-b pb-7">
+                <div className={cn("flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em]",
+                    completedWithoutLoss ? "text-brand" : "text-destructive")}>
+                    {completedWithoutLoss ? <Trophy className="size-4"/> : <X className="size-4"/>}
+                    {result.won ? "Run won" : result.poolExhausted ? "Pool exhausted" : "Run complete"}
                 </div>
-                <div className="space-y-2">
-                    <span className={cn("text-sm font-semibold uppercase tracking-[0.2em]",
-                        completedWithoutLoss ? "text-brand" : "text-destructive")}>
-                        {result.won ? "Run won" : result.poolExhausted ? "Pool exhausted" : "Run complete"}
-                    </span>
-                    <h2 className="text-4xl font-bold tracking-tight">
-                        {result.won ? "You cleared all 30 rounds"
-                            : result.poolExhausted ? `You cleared ${result.score} rounds`
-                                : `You scored: ${result.score}`}
-                    </h2>
-                    <p className="mx-auto max-w-lg text-muted-foreground">
-                        {verdict}
-                    </p>
-                </div>
+                <h2 className="mt-3 text-3xl font-bold tracking-tight">
+                    {result.won ? `You cleared all ${WCF_MAX_ROUNDS} rounds`
+                        : result.poolExhausted ? `You cleared ${result.score} rounds`
+                            : `You scored ${result.score}`}
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                    {verdict}
+                </p>
+            </div>
 
-                <div className="grid grid-cols-3 gap-2 max-md:grid-cols-2">
-                    <SimpleStatCard
-                        title="Correct"
-                        value={result.score}
-                        className="bg-background/60 shadow-none"
-                    />
-                    <SimpleStatCard
-                        title="Rounds"
-                        className="bg-background/60 shadow-none"
-                        value={`${roundsAnswered} / ${WCF_MAX_ROUNDS}`}
-                    />
-                    <SimpleStatCard title="Difficulty" className="bg-background/60 shadow-none">
-                        <span className="text-xl font-bold text-foreground">
-                            {run.round.difficulty}
-                        </span>
-                    </SimpleStatCard>
-                </div>
+            <div className="border-b py-7">
+                <CompactStatsGrid
+                    color={completedWithoutLoss ? "var(--brand)" : "var(--destructive)"}
+                    columns={3}
+                    items={[
+                        {
+                            label: "Correct",
+                            note: "right answers",
+                            icon: <Check className="size-4"/>,
+                            value: formatNumber(result.score),
+                        },
+                        {
+                            label: "Rounds",
+                            note: `of ${WCF_MAX_ROUNDS}`,
+                            icon: <Layers3 className="size-4"/>,
+                            value: formatNumber(roundsAnswered),
+                        },
+                        {
+                            label: "Difficulty",
+                            note: "final tier",
+                            icon: <Gauge className="size-4"/>,
+                            value: run.round.difficulty,
+                        },
+                    ]}
+                />
+            </div>
 
-                <div className="space-y-2">
+            <div className="flex items-end justify-between gap-6 pt-6 max-sm:flex-col max-sm:items-stretch">
+                <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Your Media pool
+                        Your media pool
                     </p>
-                    <div className="flex flex-wrap justify-center gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2">
                         {run.selectedMediaTypes.map((mediaType) =>
                             <Badge key={mediaType} variant="outline" className="capitalize">
                                 <MainThemeIcon type={mediaType}/>
@@ -440,18 +466,18 @@ function GameOverScreen({ run, result, isStarting, onMainMenu, onPlayAgain }: Ga
                     </div>
                 </div>
 
-                <div className="flex justify-center items-center gap-3 pt-1 max-sm:flex-col">
+                <div className="flex shrink-0 items-center gap-2">
                     <Button variant="outline" disabled={isStarting} onClick={onMainMenu}>
-                        <House/>
+                        <House data-icon="inline-start"/>
                         Main menu
                     </Button>
                     <Button disabled={isStarting} onClick={onPlayAgain}>
-                        <RotateCcw/>
+                        <RotateCcw data-icon="inline-start"/>
                         Play again
                     </Button>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </section>
     );
 }
 
@@ -491,12 +517,12 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
             disabled={disabled}
             onClick={() => onSelect(side)}
             className={cn(
-                "@container/media-card group relative aspect-2/3 overflow-hidden rounded-lg border-2 bg-card text-left text-white",
-                "transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl disabled:pointer-events-none",
-                state === "correct" && "scale-[1.01] border-success shadow-lg shadow-success/30",
-                state === "incorrect" && "animate-wcf-shake border-destructive shadow-lg shadow-destructive/30",
+                "@container/media-card group relative aspect-2/3 overflow-hidden rounded-lg border bg-card text-left text-white",
+                "shadow-2xl ring-1 transition-all duration-300 disabled:pointer-events-none",
+                state === "correct" && "border-success shadow-success/20 ring-success/40",
+                state === "incorrect" && "animate-wcf-shake border-destructive shadow-destructive/20 ring-destructive/40",
                 !!result && state === "neutral" && "opacity-55 grayscale-35",
-                !result && "border-border/80 shadow-md shadow-black/10 hover:border-brand/70",
+                !result && "border-transparent ring-foreground/10 hover:ring-brand/60",
             )}
         >
             <div className="absolute inset-0 overflow-hidden bg-muted">
@@ -575,58 +601,111 @@ function Stats({ stats, canReset }: StatsProps) {
     };
 
     return (
-        <section className="rounded-xl border border-border/70 bg-card/50 px-3 py-3 sm:px-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                    <Target className="size-4 text-brand"/>
-                    <h3 className="text-sm font-semibold">
-                        Your statistics
-                    </h3>
+        <section className="relative h-full">
+            <div className="px-6 py-9 max-sm:px-0">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        <ChartNoAxesColumnIncreasing className="size-4" aria-hidden="true"/>
+                        Your record
+                    </div>
+                    <Button
+                        aria-label="Reset statistics"
+                        size="sm"
+                        variant="destructiveGhost"
+                        onClick={() => setResetDialogOpen(true)}
+                        disabled={!hasStats || !canReset || resetStatsMutation.isPending}
+                    >
+                        <Trash2 data-icon="inline-start"/>
+                        <span className="max-sm:hidden">Reset</span>
+                    </Button>
                 </div>
-                <Button
-                    variant="destructiveGhost"
-                    onClick={() => setResetDialogOpen(true)}
-                    disabled={!hasStats || !canReset || resetStatsMutation.isPending}
-                >
-                    <Trash2/>
-                    <span className="max-sm:hidden">Reset statistics</span>
-                </Button>
+                <div className="mt-7">
+                    <CompactStatsGrid
+                        columns={3}
+                        items={[
+                            {
+                                label: "Runs",
+                                note: "completed runs",
+                                icon: <Layers3 className="size-4"/>,
+                                value: formatNumber(stats.runsPlayed),
+                            },
+                            {
+                                label: "Best score",
+                                note: `of ${WCF_MAX_ROUNDS} rounds`,
+                                icon: <Trophy className="size-4"/>,
+                                value: formatNumber(stats.bestScore),
+                            },
+                            {
+                                label: "Average",
+                                note: "rounds per run",
+                                icon: <Gauge className="size-4"/>,
+                                value: formatNumber(stats.averageScore, { fractionDigits: 1, locale: "en" }),
+                            },
+                            {
+                                label: "Answers",
+                                note: "all-time choices",
+                                icon: <Check className="size-4"/>,
+                                value: formatNumber(stats.totalAnswers),
+                            },
+                            {
+                                label: "Accuracy",
+                                note: "correct answers",
+                                icon: <Target className="size-4"/>,
+                                value: formatPercent(stats.accuracy, { fractionDigits: 0 }),
+                            },
+                            {
+                                label: "Best tier",
+                                note: "highest reached",
+                                icon: <ChevronRight className="size-4"/>,
+                                value: stats.highestTier,
+                            },
+                        ]}
+                    />
+                </div>
             </div>
-            <div className="grid grid-cols-6 gap-2 max-lg:grid-cols-3 max-sm:grid-cols-2">
-                <SimpleStatCard
-                    title="Runs"
-                    value={stats.runsPlayed}
-                    icon={<Layers3 className="size-4 text-muted-foreground"/>}
-                    className="border-0 bg-muted/45 px-3 py-3 shadow-none [&_span:last-child]:text-2xl"
-                />
-                <SimpleStatCard
-                    title="Best score"
-                    value={stats.bestScore}
-                    icon={<Trophy className="size-4 text-brand"/>}
-                    className="border-0 bg-muted/45 px-3 py-3 shadow-none [&_span:last-child]:text-2xl"
-                />
-                <SimpleStatCard
-                    title="Average"
-                    value={stats.averageScore.toFixed(1)}
-                    className="border-0 bg-muted/45 px-3 py-3 shadow-none [&_span:last-child]:text-2xl"
-                />
-                <SimpleStatCard
-                    title="Answers"
-                    value={stats.totalAnswers}
-                    className="border-0 bg-muted/45 px-3 py-3 shadow-none [&_span:last-child]:text-2xl"
-                />
-                <SimpleStatCard
-                    title="Accuracy"
-                    value={`${stats.accuracy.toFixed(0)}%`}
-                    className="border-0 bg-muted/45 px-3 py-3 shadow-none [&_span:last-child]:text-2xl"
-                />
-                <SimpleStatCard
-                    title="Best tier"
-                    value={stats.highestTier}
-                    icon={<ChevronRight className="size-4 text-muted-foreground"/>}
-                    className="border-0 bg-muted/45 px-3 py-3 shadow-none [&_span:last-child]:text-2xl"
-                />
+
+            <div className="flex flex-col gap-7 border-t px-6 py-8 max-sm:px-0">
+                <div>
+                    <div className="flex items-end justify-between gap-3 text-xs text-muted-foreground">
+                        <h3 className="font-semibold uppercase tracking-[0.18em]">
+                            Personal best
+                        </h3>
+                        <span className="font-mono tabular-nums">
+                            {stats.bestScore} / {WCF_MAX_ROUNDS}
+                        </span>
+                    </div>
+                    <Progress
+                        className="mt-3"
+                        value={(stats.bestScore / WCF_MAX_ROUNDS) * 100}
+                        aria-label={`${stats.bestScore} of ${WCF_MAX_ROUNDS} rounds`}
+                    />
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                        {stats.bestScore === WCF_MAX_ROUNDS
+                            ? "Perfect run completed."
+                            : `${WCF_MAX_ROUNDS - stats.bestScore} rounds from a perfect run.`
+                        }
+                    </p>
+                </div>
+                <div>
+                    <div className="flex items-end justify-between gap-3 text-xs text-muted-foreground">
+                        <h3 className="font-semibold uppercase tracking-[0.18em]">
+                            Answer accuracy
+                        </h3>
+                        <span className="font-mono tabular-nums">
+                            {formatPercent(stats.accuracy, { fractionDigits: 0 })}
+                        </span>
+                    </div>
+                    <Progress
+                        className="mt-3"
+                        value={stats.accuracy}
+                        aria-label={`${stats.accuracy.toFixed(0)} percent answer accuracy`}
+                    />
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                        Based on {formatNumber(stats.totalAnswers)} answered matchups.
+                    </p>
+                </div>
             </div>
+
             <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -641,6 +720,7 @@ function Stats({ stats, canReset }: StatsProps) {
                             Cancel
                         </Button>
                         <Button variant="destructive" onClick={resetStats} disabled={resetStatsMutation.isPending}>
+                            <Trash2 data-icon="inline-start"/>
                             Reset statistics
                         </Button>
                     </DialogFooter>

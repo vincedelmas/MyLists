@@ -296,6 +296,99 @@ export class WcfRepository {
         };
     }
 
+    static getLeaderboard(currentUserId: number) {
+        const rows = getDbClient().all<{
+            rank: number;
+            name: string;
+            userId: number;
+            bestScore: number;
+            runsPlayed: number;
+            perfectRuns: number;
+            image: string | null;
+            averageScore: number;
+            totalAnswers: number;
+            correctAnswers: number;
+        }>(sql`
+            WITH completed_runs AS (
+                SELECT runs.*
+                FROM which_came_first_runs runs
+                WHERE (
+                    runs.status IN ('won', 'lost', 'exhausted')
+                    OR (runs.status = 'abandoned' AND runs.score > 0)
+                )
+                AND EXISTS (
+                    SELECT 1
+                    FROM which_came_first_rounds rounds
+                    WHERE rounds.run_id = runs.id
+                        AND rounds.correct IS NOT NULL
+                )
+            ),
+            run_stats AS (
+                SELECT
+                    user_id,
+                    COUNT(*) AS runs_played,
+                    COALESCE(SUM(CASE WHEN status = 'won' THEN 1 ELSE 0 END), 0) AS perfect_runs,
+                    COALESCE(MAX(score), 0) AS best_score,
+                    COALESCE(AVG(score), 0) AS average_score
+                FROM completed_runs
+                GROUP BY user_id
+            ),
+            answer_stats AS (
+                SELECT
+                    runs.user_id,
+                    COUNT(rounds.id) AS total_answers,
+                    COALESCE(SUM(CASE WHEN rounds.correct = 1 THEN 1 ELSE 0 END), 0) AS correct_answers
+                FROM completed_runs runs
+                INNER JOIN which_came_first_rounds rounds ON rounds.run_id = runs.id
+                WHERE rounds.correct IS NOT NULL
+                GROUP BY runs.user_id
+            ),
+            ranked_players AS (
+                SELECT
+                    ROW_NUMBER() OVER (
+                        ORDER BY
+                            run_stats.best_score DESC,
+                            run_stats.perfect_runs DESC,
+                            run_stats.average_score DESC,
+                            run_stats.runs_played DESC,
+                            u.name ASC,
+                            u.id ASC
+                    ) AS rank,
+                    u.id AS userId,
+                    u.name AS name,
+                    u.image AS image,
+                    run_stats.runs_played AS runsPlayed,
+                    run_stats.perfect_runs AS perfectRuns,
+                    run_stats.best_score AS bestScore,
+                    run_stats.average_score AS averageScore,
+                    answer_stats.total_answers AS totalAnswers,
+                    answer_stats.correct_answers AS correctAnswers
+                FROM run_stats
+                INNER JOIN "user" u ON u.id = run_stats.user_id
+                INNER JOIN answer_stats ON answer_stats.user_id = run_stats.user_id
+            )
+            SELECT *
+            FROM ranked_players
+            WHERE rank <= 10 OR userId = ${currentUserId}
+            ORDER BY rank ASC
+        `).map((row) => ({
+            name: row.name,
+            rank: Number(row.rank),
+            userId: Number(row.userId),
+            bestScore: Number(row.bestScore),
+            runsPlayed: Number(row.runsPlayed),
+            perfectRuns: Number(row.perfectRuns),
+            averageScore: Number(row.averageScore),
+            image: row.image ? getImageUrl("profile-covers", row.image) : null,
+            accuracy: Number(row.totalAnswers) > 0 ? (Number(row.correctAnswers) / Number(row.totalAnswers)) * 100 : 0,
+        }));
+
+        return {
+            entries: rows.filter((entry) => entry.rank <= 10),
+            currentUserEntry: rows.find((entry) => entry.userId === currentUserId) ?? null,
+        };
+    }
+
     static getAdminSummary() {
         const row = getDbClient().all<{
             startedRuns: number;

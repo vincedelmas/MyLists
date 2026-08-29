@@ -100,7 +100,7 @@ function MediadlePage() {
                             Daily cover · No. {String(mediadleData.mediadleId).padStart(4, "0")}
                         </span>
                         <figure className="relative w-full max-w-86 px-8">
-                            <div className="overflow-hidden shadow-2xl ring-1 ring-foreground/10">
+                            <div className="overflow-hidden rounded-lg shadow-2xl ring-1 ring-foreground/10">
                                 <div className="aspect-2/3 overflow-hidden bg-muted">
                                     {mediadleData.result ?
                                         <Link

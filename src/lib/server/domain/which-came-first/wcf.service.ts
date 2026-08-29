@@ -35,11 +35,14 @@ export class WcfService {
             throw new FormattedError("Not enough media found to create a Which Came First game.");
         }
 
-        const { highestRound, ...stats } = await this.repository.getStats(userId);
         const activeRun = this.repository.getActiveRun(userId);
+        const leaderboard = this.repository.getLeaderboard(userId);
+
+        const { highestRound, ...stats } = await this.repository.getStats(userId);
         const serializedActiveRun = activeRun ? await this._serializeActiveRun(activeRun) : null;
 
         return {
+            leaderboard,
             activeRun: serializedActiveRun,
             stats: {
                 ...stats,

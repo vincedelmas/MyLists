@@ -25,7 +25,7 @@ export const CountdownTimer = () => {
     }, []);
 
     return (
-        <span className="font-medium text-brand mt-0.5">
+        <span className="font-mono font-medium tabular-nums text-brand mt-0.5">
             {timeLeft.hours.toString().padStart(2, "0")}:
             {timeLeft.minutes.toString().padStart(2, "0")}:
             {timeLeft.seconds.toString().padStart(2, "0")}

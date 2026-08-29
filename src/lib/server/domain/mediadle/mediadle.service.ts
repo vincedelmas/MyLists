@@ -13,6 +13,10 @@ export class MediadleService {
         return this.repository.getAllUsersStatsForAdmin(data);
     }
 
+    async getLeaderboard(currentUserId?: number) {
+        return this.repository.getLeaderboard(currentUserId);
+    }
+
     async getUserMediadleStats(userId: number) {
         const userMediadleStats = await this.repository.getUserMediadleStats(userId);
         if (!userMediadleStats) {

@@ -4,11 +4,92 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {paginate} from "@/lib/server/database/pagination";
 import {toDateInputValue} from "@/lib/utils/date-formatting";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {and, count, desc, eq, getTableColumns, gte, isNotNull, like, notInArray, sql} from "drizzle-orm";
 import {dailyMediadle, mediadleStats, movies, user, userMediadleProgress} from "@/lib/server/database/schema";
+import {and, asc, count, desc, eq, getTableColumns, gt, gte, isNotNull, like, lt, notInArray, or, sql} from "drizzle-orm";
 
 
 export class MediadleRepository {
+    static async getLeaderboard(currentUserId?: number) {
+        const totalWon = sql<number>`coalesce(${mediadleStats.totalWon}, 0)`;
+        const bestStreak = sql<number>`coalesce(${mediadleStats.bestStreak}, 0)`;
+        const averageAttempts = sql<number>`coalesce(${mediadleStats.averageAttempts}, 0)`;
+
+        const selection = {
+            totalWon,
+            bestStreak,
+            averageAttempts,
+            userId: user.id,
+            name: user.name,
+            image: user.image,
+            currentStreak: sql<number>`coalesce(${mediadleStats.streak}, 0)`,
+            winRate: sql<number>`CASE
+                WHEN ${mediadleStats.totalPlayed} > 0
+                THEN (CAST(${mediadleStats.totalWon} AS REAL) / ${mediadleStats.totalPlayed}) * 100
+                ELSE 0
+            END`,
+        };
+        const leaderboardFilter = and(
+            eq(mediadleStats.mediaType, MediaType.MOVIES),
+            gt(mediadleStats.totalPlayed, 0),
+        );
+
+        const topEntries = await getDbClient()
+            .select(selection)
+            .from(mediadleStats)
+            .innerJoin(user, eq(mediadleStats.userId, user.id))
+            .where(leaderboardFilter)
+            .orderBy(desc(totalWon), desc(bestStreak), asc(averageAttempts), asc(user.name))
+            .limit(10);
+
+        const entries = topEntries.map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+
+        if (!currentUserId) return { entries, currentUserEntry: null };
+
+        const leaderboardEntry = entries.find((entry) => entry.userId === currentUserId);
+        if (leaderboardEntry) return { entries, currentUserEntry: leaderboardEntry };
+
+        const currentUserEntry = await getDbClient()
+            .select(selection)
+            .from(mediadleStats)
+            .innerJoin(user, eq(mediadleStats.userId, user.id))
+            .where(and(leaderboardFilter, eq(user.id, currentUserId)))
+            .get();
+
+        if (!currentUserEntry) return { entries, currentUserEntry: null };
+
+        const usersAhead = await getDbClient()
+            .select({ count: count() })
+            .from(mediadleStats)
+            .innerJoin(user, eq(mediadleStats.userId, user.id))
+            .where(and(
+                leaderboardFilter,
+                or(
+                    gt(totalWon, currentUserEntry.totalWon),
+                    and(eq(totalWon, currentUserEntry.totalWon), gt(bestStreak, currentUserEntry.bestStreak)),
+                    and(
+                        eq(totalWon, currentUserEntry.totalWon),
+                        eq(bestStreak, currentUserEntry.bestStreak),
+                        lt(averageAttempts, currentUserEntry.averageAttempts),
+                    ),
+                    and(
+                        eq(totalWon, currentUserEntry.totalWon),
+                        eq(bestStreak, currentUserEntry.bestStreak),
+                        eq(averageAttempts, currentUserEntry.averageAttempts),
+                        lt(user.name, currentUserEntry.name),
+                    ),
+                ),
+            ))
+            .get();
+
+        return {
+            entries,
+            currentUserEntry: {
+                ...currentUserEntry,
+                rank: (usersAhead?.count ?? 0) + 1,
+            },
+        };
+    }
+
     static async getAllUsersStatsForAdmin(data: SearchType) {
         const search = data.search ?? "";
         const { items, total, pages } = await paginate({

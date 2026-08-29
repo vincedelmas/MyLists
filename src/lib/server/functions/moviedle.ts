@@ -17,6 +17,14 @@ export const getDailyMediadle = createServerFn({ method: "GET" })
     });
 
 
+export const getMediadleLeaderboard = createServerFn({ method: "GET" })
+    .middleware([publicAuthMiddleware, transactionMiddleware])
+    .handler(async ({ context: { currentUser } }) => {
+        const mediadleService = await getContainer().then((container) => container.services.mediadle);
+        return mediadleService.getLeaderboard(currentUser?.id);
+    });
+
+
 export const getMediadleSuggestions = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware, transactionMiddleware])
     .validator(mediadleSuggestionsSchema)

@@ -1,10 +1,17 @@
 import {queryOptions} from "@tanstack/react-query";
-import {getDailyMediadle, getMediadleSuggestions} from "@/lib/server/functions/moviedle";
+import {getDailyMediadle, getMediadleLeaderboard, getMediadleSuggestions} from "@/lib/server/functions/moviedle";
 
 
 export const dailyMediadleOptions = queryOptions({
     queryKey: ["daily-mediadle"],
     queryFn: () => getDailyMediadle(),
+});
+
+
+export const mediadleLeaderboardOptions = queryOptions({
+    queryKey: ["mediadle-leaderboard"],
+    queryFn: () => getMediadleLeaderboard(),
+    staleTime: 5 * 60 * 1000,
 });
 
 

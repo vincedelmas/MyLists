@@ -1,7 +1,6 @@
 import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {PartyPopper, ThumbsDown} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
@@ -13,10 +12,11 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CountdownTimer} from "@/lib/client/components/moviedle/CountdownTimer";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
-import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
-import {Card, CardContent, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
+import {MediadleLeaderboard} from "@/lib/client/components/moviedle/MediadleLeaderboard";
+import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {useMoviedleGuessMutation} from "@/lib/client/react-query/query-mutations/mediadle.mutations";
-import {dailyMediadleOptions, mediadleSuggestionsOptions,} from "@/lib/client/react-query/query-options";
+import {Award, ChartNoAxesColumnIncreasing, Check, Clapperboard, Clock3, Flame, Gauge, PartyPopper, SkipForward, Target, ThumbsDown, Trophy} from "lucide-react";
+import {dailyMediadleOptions, mediadleLeaderboardOptions, mediadleSuggestionsOptions} from "@/lib/client/react-query/query-options";
 
 
 // Explicit constant for skipped guesses (lol c'est sale)
@@ -24,19 +24,28 @@ const SKIP_VAL = "rtehsqqt";
 
 
 export const Route = createFileRoute("/_main/_viewer/moviedle")({
-    context: () => ({ dailyMediadleQueryOptions: dailyMediadleOptions }),
-    loader: ({ context }) => context.queryClient.ensureQueryData(context.dailyMediadleQueryOptions),
+    context: () => ({
+        dailyMediadleQueryOptions: dailyMediadleOptions,
+        mediadleLeaderboardQueryOptions: mediadleLeaderboardOptions,
+    }),
+    loader: ({ context }) => Promise.all([
+        context.queryClient.ensureQueryData(context.dailyMediadleQueryOptions),
+        context.queryClient.ensureQueryData(context.mediadleLeaderboardQueryOptions),
+    ]),
     component: MediadlePage,
 });
 
 
 function MediadlePage() {
-    const { isAnonymous } = useAuth();
+    const { dailyMediadleQueryOptions, mediadleLeaderboardQueryOptions } = Route.useRouteContext();
+
+    const { currentUser, isAnonymous } = useAuth();
     const makeGuessMutation = useMoviedleGuessMutation();
-    const { dailyMediadleQueryOptions } = Route.useRouteContext();
+    const leaderboard = useSuspenseQuery(mediadleLeaderboardQueryOptions).data;
     const { userData, ...mediadleData } = useSuspenseQuery(dailyMediadleQueryOptions).data;
     const { search, setSearch, selectValue, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer();
     const { data: suggestions = [], isLoading, error } = useQuery(mediadleSuggestionsOptions(debouncedSearch));
+    const coverSrc = mediadleData.result?.nonPixelatedCover ?? `data:image/png;base64,${mediadleData.pixelatedCover}`;
 
     const handleSearchClick = (input: string) => {
         selectValue(input);
@@ -59,77 +68,129 @@ function MediadlePage() {
     };
 
     return (
-        <PageTitle title="Daily Movie Challenge" subtitle="Play the daily movie game to check your skills!">
-            <div className="grid gap-6 grid-cols-2 mt-6 max-lg:grid-cols-1">
-                <Card className="flex flex-col justify-between">
-                    <CardHeader className="space-y-4 pb-4">
-                        <div className="flex items-center justify-center gap-2">
-                            <CardTitle>Next game in</CardTitle>
+        <PageTitle title="Mediadle" onlyHelmet>
+            <div className="mb-8 flex flex-col pt-8">
+                <header className="flex items-end justify-between gap-8 border-b pb-6 max-sm:flex-col max-sm:items-start">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-movies">
+                            <Clapperboard className="size-4" aria-hidden="true"/>
+                            Daily movie challenge
+                        </div>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                            Mediadle
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            One poster. {mediadleData.maxAttempts} attempts. A new film every day.
+                        </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1 max-sm:items-start">
+                        <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                            Next cover in
+                        </span>
+                        <div className="flex items-center gap-2 text-lg">
+                            <Clock3 className="size-4 text-muted-foreground" aria-hidden="true"/>
                             <CountdownTimer/>
                         </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 flex flex-col justify-center">
-                        <div className="space-y-4 w-full">
-                            <div className="relative aspect-2/3 max-w-75 mx-auto">
-                                {mediadleData.result ?
-                                    <Link
-                                        to="/details/$mediaType/$mediaId"
-                                        params={{ mediaType: MediaType.MOVIES, mediaId: mediadleData.result.mediaId }}
-                                    >
+                    </div>
+                </header>
+
+                <section className="grid grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] items-stretch gap-10 pt-8 max-lg:grid-cols-1">
+                    <div className="flex min-w-0 flex-col items-center">
+                        <span className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                            Daily cover · No. {String(mediadleData.mediadleId).padStart(4, "0")}
+                        </span>
+                        <figure className="relative w-full max-w-86 px-8">
+                            <div className="overflow-hidden shadow-2xl ring-1 ring-foreground/10">
+                                <div className="aspect-2/3 overflow-hidden bg-muted">
+                                    {mediadleData.result ?
+                                        <Link
+                                            className="block size-full"
+                                            to="/details/$mediaType/$mediaId"
+                                            params={{ mediaType: MediaType.MOVIES, mediaId: mediadleData.result.mediaId }}
+                                        >
+                                            <img
+                                                src={coverSrc}
+                                                alt="Movie Cover"
+                                                className="size-full object-cover transition-transform duration-500 hover:scale-[1.025]"
+                                            />
+                                        </Link>
+                                        :
                                         <img
+                                            src={coverSrc}
                                             alt="Movie Cover"
-                                            src={mediadleData.result.nonPixelatedCover}
-                                            className="w-full h-full object-cover rounded-lg transition-transform hover:scale-[1.02]"
+                                            className="size-full object-cover"
                                         />
-                                    </Link>
-                                    :
-                                    <img
-                                        alt="Movie Cover"
-                                        className="w-full h-full object-cover rounded-lg"
-                                        src={`data:image/png;base64,${mediadleData.pixelatedCover}`}
-                                    />
-                                }
+                                    }
+                                </div>
                             </div>
-                            {isAnonymous ?
-                                <LockedContent
-                                    className="relative"
-                                    isAnonymous={isAnonymous}
-                                    title="Sign in to join the moviedle game!"
-                                    description="Track your daily streak, compare global stats, and show off your movie knowledge."
-                                />
-                                :
-                                (userData && userData.completed) ?
-                                    <div className="animate-fade-up rounded-lg bg-popover text-center p-4 max-w-100 mx-auto mb-8 border">
-                                        {userData.succeeded
-                                            ? <PartyPopper className="size-6 text-success mx-auto mb-1"/>
-                                            : <ThumbsDown className="size-6 text-destructive mx-auto mb-1"/>
-                                        }
-                                        <h3 className="font-semibold">
-                                            {userData.succeeded ? "Congratulations!" : "Game Over :("}
-                                        </h3>
-                                        <p className="text-sm text-muted-foreground">
-                                            {userData.succeeded
-                                                ? `You got it in ${userData.attempts} ${userData.attempts === 1 ? "try" : "tries"}!`
-                                                : "Better luck tomorrow!"
-                                            }
-                                        </p>
+                            <figcaption>
+                                <span
+                                    className="absolute top-0 bottom-0 left-0 flex rotate-180 items-center justify-center whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground [writing-mode:vertical-rl]">
+                                    {mediadleData.result
+                                        ? "Cover revealed"
+                                        : "Pixelated cover"
+                                    }
+                                </span>
+                                <span
+                                    className="absolute top-0 right-0 bottom-0 flex items-center justify-center whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground [writing-mode:vertical-rl]">
+                                    {userData?.completed
+                                        ? "Final cut"
+                                        : `Clue ${Math.min((userData?.attempts ?? 0) + 1, mediadleData.maxAttempts)} / ${mediadleData.maxAttempts}`
+                                    }
+                                </span>
+                            </figcaption>
+                        </figure>
+
+                        <div className="mt-6 flex w-full max-w-lg flex-col gap-6">
+                            <div>
+                                {isAnonymous ?
+                                    <div className="w-full">
+                                        <LockedContent
+                                            variant="inline"
+                                            isAnonymous={isAnonymous}
+                                            title="Sign in to play today's Mediadle"
+                                            description="Track your daily streak, compare global stats, and show off your movie knowledge."
+                                        />
                                     </div>
                                     :
-                                    <div ref={containerRef} className="max-w-100 mx-auto mb-8">
-                                        <div className="space-y-4">
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between text-xs font-medium uppercase text-muted-foreground">
+                                    (userData && userData.completed) ?
+                                        <div className={cn("animate-fade-up flex max-w-2xl items-start gap-4 border-l-2 py-2 pl-4",
+                                            userData.succeeded ? "border-success" : "border-destructive")}>
+                                            <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-full",
+                                                userData.succeeded ? "bg-success/15" : "bg-destructive/10")}>
+                                                {userData.succeeded
+                                                    ? <PartyPopper className="size-5 text-success"/>
+                                                    : <ThumbsDown className="size-5 text-destructive"/>
+                                                }
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold">
+                                                    {userData.succeeded ? "That's a wrap!" : "End credits"}
+                                                </h3>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {userData.succeeded
+                                                        ? `You found it in ${userData.attempts} ${userData.attempts === 1 ? "try" : "tries"}.`
+                                                        : "The film got away. A new cover arrives tomorrow."
+                                                    }
+                                                </p>
+                                            </div>
+                                        </div>
+                                        :
+                                        <div ref={containerRef} className="flex w-full flex-col gap-4">
+                                            <div className="flex flex-col gap-1.5">
+                                                <div className="flex justify-between text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                                     <span>Attempts</span>
                                                     <span>{userData?.attempts ?? 0} / {mediadleData.maxAttempts}</span>
                                                 </div>
-                                                <div className="flex gap-1.5 h-2">
+                                                <div className="flex h-1.5 gap-1.5" aria-hidden="true">
                                                     {Array.from({ length: mediadleData.maxAttempts }).map((_, idx) => {
                                                         const isUsed = idx < (userData?.attempts ?? 0);
                                                         return (
                                                             <div
                                                                 key={idx}
-                                                                className={cn("flex-1 rounded-sm bg-muted-foreground/30 " +
-                                                                    "transition-colors duration-300", isUsed && "bg-destructive",
+                                                                className={cn(
+                                                                    "flex-1 rounded-full bg-muted transition-colors duration-300",
+                                                                    isUsed && "bg-destructive",
                                                                 )}
                                                             />
                                                         );
@@ -139,8 +200,7 @@ function MediadlePage() {
                                             <div className="relative">
                                                 <SearchInput
                                                     value={search}
-                                                    className="max-w-100"
-                                                    placeholder="Search a movie..."
+                                                    placeholder="Search for a film..."
                                                     onChange={(ev) => setSearch(ev.target.value)}
                                                 />
                                                 <SearchContainer
@@ -150,17 +210,16 @@ function MediadlePage() {
                                                     isOpen={isOpen}
                                                     minSearchLength={1}
                                                     isPending={isLoading}
-                                                    className={"max-w-100"}
                                                     debouncedSearch={debouncedSearch}
                                                     hasResults={!!suggestions?.length}
                                                 >
-                                                    <div className="flex flex-col overflow-y-auto scrollbar-thin max-h-60">
+                                                    <div className="flex max-h-60 flex-col overflow-y-auto scrollbar-thin">
                                                         {suggestions?.map((item) =>
                                                             <button
                                                                 key={item.id}
                                                                 type="button"
                                                                 onClick={() => handleSearchClick(item.name)}
-                                                                className="flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors"
+                                                                className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-accent"
                                                             >
                                                                 <ProfileIcon
                                                                     fallbackSize="text-xs"
@@ -177,22 +236,29 @@ function MediadlePage() {
                                             </div>
                                             <div className="flex gap-2">
                                                 <Button className="flex-1" variant="secondary" onClick={onSkipClick}>
+                                                    <SkipForward className="size-3.5" data-icon="inline-start"/>
                                                     Skip
                                                 </Button>
                                                 <Button className="flex-2" onClick={onGuessClick} disabled={!search.trim()}>
-                                                    Submit Guess
+                                                    <Check data-icon="inline-start"/>
+                                                    Submit guess
                                                 </Button>
                                             </div>
                                         </div>
-                                    </div>
-                            }
+                                }
+                            </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
 
-                <UserStats
-                    userData={userData}
-                    isAnonymous={isAnonymous}
+                    <UserStats
+                        userData={userData}
+                        isAnonymous={isAnonymous}
+                    />
+                </section>
+
+                <MediadleLeaderboard
+                    leaderboard={leaderboard}
+                    currentUserId={currentUser?.id}
                 />
             </div>
         </PageTitle>
@@ -217,67 +283,102 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
     const maxFreq = frequencies.length > 0 ? Math.max(...frequencies) : 0;
 
     return (
-        <div className="relative space-y-6">
+        <section className="relative h-full">
             <LockedContent
                 showAuthButtons={true}
-                title="Statistics Locked"
+                title="Statistics locked"
                 isAnonymous={isAnonymous}
-                description="Sign in to keep a dynamic record of your game history, custom streaks, and win rate."
+                description="Sign in to keep your game history, streaks, and win rate."
             />
-            <div className={cn("grid gap-2 grid-cols-3 max-sm:grid-cols-2 transition-all",
-                isAnonymous && "blur-xs pointer-events-none select-none")}>
-                <SimpleStatCard
-                    title="Total Played"
-                    value={userData?.stats?.totalPlayed ?? 0}
-                />
-                <SimpleStatCard
-                    title="Total Won"
-                    value={userData?.stats?.totalWon ?? 0}
-                />
-                <SimpleStatCard
-                    title="Win Rate"
-                    value={formatPercent(userData?.stats?.winRate ?? 0)}
-                />
-                <SimpleStatCard
-                    title="Current Streak"
-                    value={userData?.stats?.currentStreak ?? 0}
-                />
-                <SimpleStatCard
-                    title="Best Streak"
-                    value={userData?.stats?.bestStreak ?? 0}
-                />
-                <SimpleStatCard
-                    title="Avg. Attempts"
-                    value={formatNumber(userData?.stats?.averageAttempts ?? 0, { fractionDigits: 2, locale: "en" })}
-                />
-            </div>
+            <div className={cn(
+                "flex h-full flex-col transition-all",
+                isAnonymous && "pointer-events-none select-none blur-xs",
+            )}>
+                <div className="px-6 py-9 max-sm:px-0">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        <ChartNoAxesColumnIncreasing className="size-4" aria-hidden="true"/>
+                        Your record
+                    </div>
+                    <div className="mt-7">
+                        <CompactStatsGrid
+                            columns={3}
+                            items={[
+                                {
+                                    label: "Played",
+                                    note: "daily covers",
+                                    icon: <Clapperboard className="size-4"/>,
+                                    value: formatNumber(userData?.stats?.totalPlayed ?? 0),
+                                },
+                                {
+                                    label: "Won",
+                                    note: "correct guesses",
+                                    icon: <Trophy className="size-4"/>,
+                                    value: formatNumber(userData?.stats?.totalWon ?? 0),
+                                },
+                                {
+                                    label: "Win rate",
+                                    note: "across all games",
+                                    icon: <Target className="size-4"/>,
+                                    value: formatPercent(userData?.stats?.winRate ?? 0),
+                                },
+                                {
+                                    label: "Current streak",
+                                    note: "consecutive wins",
+                                    icon: <Flame className="size-4"/>,
+                                    value: formatNumber(userData?.stats?.currentStreak ?? 0),
+                                },
+                                {
+                                    label: "Best streak",
+                                    note: "personal record",
+                                    icon: <Award className="size-4"/>,
+                                    value: formatNumber(userData?.stats?.bestStreak ?? 0),
+                                },
+                                {
+                                    label: "Avg. attempts",
+                                    note: "per completed game",
+                                    icon: <Gauge className="size-4"/>,
+                                    value: formatNumber(userData?.stats?.averageAttempts ?? 0, {
+                                        fractionDigits: 2,
+                                        locale: "en",
+                                    }),
+                                },
+                            ]}
+                        />
+                    </div>
+                </div>
 
-            <div className={cn("mb-10 transition-all", isAnonymous && "blur-xs pointer-events-none select-none")}>
-                <h4 className="text-sm font-semibold text-foreground mb-3">
-                    Guess Distribution
-                </h4>
-                <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map((num) => {
-                        const count = frequencyMap[num] ?? 0;
-                        const percentage = maxFreq > 0 ? (count / maxFreq) * 100 * 0.92 : 0;
+                <div className="flex flex-1 flex-col gap-5 border-t px-6 py-8 max-sm:px-0">
+                    <div className="flex items-end justify-between gap-3">
+                        <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Guess distribution
+                        </h3>
+                        <span className="text-xs text-muted-foreground">
+                            Wins by attempt
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        {[1, 2, 3, 4, 5].map((num) => {
+                            const count = frequencyMap[num] ?? 0;
+                            const percentage = maxFreq > 0 ? (count / maxFreq) * 100 * 0.92 : 0;
 
-                        return (
-                            <div key={num} className="flex items-center gap-3 text-sm">
-                                <span className="w-2 font-mono text-foreground">{num}</span>
-                                <div className="flex-1 h-6 bg-popover rounded-r-md overflow-hidden flex items-center border border-border/40">
-                                    <div
-                                        style={{ width: `${Math.max(percentage, 8)}%` }}
-                                        className="h-full transition-all duration-500 bg-primary rounded-r-md"
-                                    />
-                                    <span className="ml-2 text-xs font-bold text-foreground">
-                                        {count}
-                                    </span>
+                            return (
+                                <div key={num} className="flex items-center gap-3 text-sm">
+                                    <span className="w-2 font-mono text-xs text-muted-foreground">{num}</span>
+                                    <div className="relative flex h-7 flex-1 items-center overflow-hidden rounded-md bg-muted/50 ring-1 ring-foreground/5">
+                                        <div
+                                            style={{ width: `${Math.max(percentage, 8)}%` }}
+                                            className="h-full rounded-r-md bg-primary transition-all duration-500"
+                                        />
+                                        <span className="absolute right-2 font-mono text-xs font-semibold tabular-nums text-foreground">
+                                            {count}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
     );
 }

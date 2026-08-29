@@ -7,3 +7,4 @@
   modified to support the use case.
 - Do not use overly defensive programming. Add checks where necessary; otherwise, trust the types.
 - Prefer the smallest change that fixes the root cause. Do not add fallback logic when an enforced data invariant is enough.
+- After creating the feature, fix, refactor, etc. give me the name of the commit using a conventional commit message.

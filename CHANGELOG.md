@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.5.0](https://github.com/vincedelmas/MyLists/compare/v3.4.0...v3.5.0) (2026-09-02)
+
+
+### Features
+
+* **navigation:** make primary tabs link-backed ([90ace54](https://github.com/vincedelmas/MyLists/commit/90ace54f669cf4041e0b5b0c8eeaa163b155a46f))
+* **ui:** redesign headers and pages ([799f667](https://github.com/vincedelmas/MyLists/commit/799f6675a86aa0ef02a67a79fe6daa56a91fdcf0))
+
+
+### Bug Fixes
+
+* **activity:** hide media type labels in yearly view ([549eb41](https://github.com/vincedelmas/MyLists/commit/549eb412454dbfceaa49f29d6c6ea0e6f6e5b0c8))
+* **mal:** handle &gt; 64 char anime genre searches ([9d4bc2e](https://github.com/vincedelmas/MyLists/commit/9d4bc2ece7a9d5902305da3d5996df4e2e48768d))
+* **ui:** revamp 404 / Unexpected Error page to full-width ([7b766bb](https://github.com/vincedelmas/MyLists/commit/7b766bbe845c35a135626808727af937aa022fd3))
+
+
+### Code Refactoring
+
+* **theme:** consolidate color tokens and palettes ([9625bf2](https://github.com/vincedelmas/MyLists/commit/9625bf28e9ea57455cfcbf25691ffcc1c868d5d3))
+
 ## [3.4.0](https://github.com/vincedelmas/MyLists/compare/v3.3.1...v3.4.0) (2026-08-29)
 
 

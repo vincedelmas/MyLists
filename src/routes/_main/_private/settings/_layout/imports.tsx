@@ -66,8 +66,8 @@ function SettingsImportsPage() {
             <section>
                 <TabHeader
                     tabs={sourceTabs}
-                    activeTab={activeSource}
-                    setActiveTab={(source) => form.setValue("source", source, { shouldValidate: true })}
+                    value={activeSource}
+                    onValueChange={(source) => form.setValue("source", source, { shouldValidate: true })}
                 />
 
                 <div className="mt-4 px-2">

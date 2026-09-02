@@ -1,12 +1,11 @@
 import {cn} from "@/lib/utils/classnames";
-import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Label} from "@/lib/client/components/ui/label";
-import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {HeartHandshake, UsersRound} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {formatNumber} from "@/lib/utils/number-formatting";
+import {createFileRoute, Link} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -58,10 +57,6 @@ function TasteMatchesPage() {
         void updateFilters({ page: 1, sorting: value as TasteMatchesSearch["sorting"] });
     }
 
-    const handleTabChange = async (value: string) => {
-        void updateFilters({ page: 1, activeTab: value as ("all" | MediaType) })
-    };
-
     return (
         <PageTitle title="Taste matches" onlyHelmet>
             <div className="mb-8 flex flex-col pt-8">
@@ -76,9 +71,16 @@ function TasteMatchesPage() {
                     navigation={
                         <TabHeader
                             tabs={mediaTabs}
-                            className="max-sm:px-3"
-                            activeTab={currentActiveTab}
-                            setActiveTab={handleTabChange}
+                            value={currentActiveTab}
+                            triggerClassName="max-sm:px-3"
+                            renderTrigger={(tab, props) =>
+                                <Link
+                                    {...props}
+                                    to="/taste-matches"
+                                    resetScroll={false}
+                                    search={{ ...filters, page: 1, activeTab: tab.id === "all" ? undefined : tab.id }}
+                                />
+                            }
                         />
                     }
                 />

@@ -1,14 +1,14 @@
-import {useState} from "react";
-import {CalendarClock, CalendarDays, List} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
-import {createFileRoute} from "@tanstack/react-router";
-import {useSuspenseQuery} from "@tanstack/react-query";
-import {ComingNextItem} from "@/lib/types/query.options.types";
+import {mediaTabSearchSchema} from "@/lib/schemas";
 import {capitalize} from "@/lib/utils/text-formatting";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatNumber} from "@/lib/utils/number-formatting";
-import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {createFileRoute, Link} from "@tanstack/react-router";
+import {ComingNextItem} from "@/lib/types/query.options.types";
+import {CalendarClock, CalendarDays, List} from "lucide-react";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {upcomingOptions} from "@/lib/client/react-query/query-options";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
@@ -17,6 +17,7 @@ import {compareCalendarDates, formatCalendarRelativeDate} from "@/lib/utils/date
 
 
 export const Route = createFileRoute("/_main/_private/coming-next")({
+    validateSearch: mediaTabSearchSchema,
     context: () => ({ upcomingQueryOptions: upcomingOptions }),
     loader: ({ context }) => context.queryClient.ensureQueryData(context.upcomingQueryOptions),
     component: ComingNextPage,
@@ -24,14 +25,15 @@ export const Route = createFileRoute("/_main/_private/coming-next")({
 
 
 function ComingNextPage() {
+    const { activeTab } = Route.useSearch();
     const { upcomingQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(upcomingQueryOptions).data;
     const mediaTypes = apiData.map((next) => next.mediaType);
     const mediaTabs = createMediaTabItems(mediaTypes, { leading: "all" });
 
-    const [activeTab, setActiveTab] = useState<"all" | MediaType>("all");
+    const currentTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "all";
     const allItems = apiData.flatMap(g => g.items.map(item => ({ ...item, mediaType: g.mediaType })));
-    const filteredByTab = activeTab === "all" ? allItems : allItems.filter((item) => item.mediaType === activeTab);
+    const filteredByTab = currentTab === "all" ? allItems : allItems.filter((item) => item.mediaType === currentTab);
 
     const processedData = filteredByTab.filter((item) => {
         if (!item.date) return true;
@@ -77,14 +79,21 @@ function ComingNextPage() {
                     eyebrowIcon={CalendarClock}
                     eyebrow="Your release calendar"
                     description="See when your next episodes, premieres and releases arrive."
-                    asideLabel={activeTab === "all" ? "Coming up" : `${capitalize(activeTab)} coming up`}
+                    asideLabel={currentTab === "all" ? "Coming up" : `${capitalize(currentTab)} coming up`}
                     asideValue={<>{formatNumber(processedData.length)} {processedData.length === 1 ? "release" : "releases"}</>}
                     navigation={
                         <TabHeader
                             tabs={mediaTabs}
-                            activeTab={activeTab}
-                            className="max-sm:px-3"
-                            setActiveTab={setActiveTab}
+                            value={currentTab}
+                            triggerClassName="max-sm:px-3"
+                            renderTrigger={(tab, props) =>
+                                <Link
+                                    {...props}
+                                    to="/coming-next"
+                                    resetScroll={false}
+                                    search={{ activeTab: tab.id === "all" ? undefined : tab.id }}
+                                />
+                            }
                         />
                     }
                 />
@@ -116,7 +125,7 @@ function ComingNextPage() {
                             icon={List}
                             iconSize={40}
                             className="min-h-72 rounded-xl border shadow-xs"
-                            message={`No upcoming ${activeTab === "all" ? "media" : activeTab} found.`}
+                            message={`No upcoming ${currentTab === "all" ? "media" : currentTab} found.`}
                         />
                     }
                 </div>

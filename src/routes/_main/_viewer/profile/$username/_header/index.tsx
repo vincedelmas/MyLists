@@ -1,7 +1,7 @@
+import {profileSearchSchema} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {ProfileActiveTab, profileSearchSchema} from "@/lib/schemas";
+import {createFileRoute, Link} from "@tanstack/react-router";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {profileOptions} from "@/lib/client/react-query/query-options";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
@@ -30,7 +30,6 @@ export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/"
 
 function ProfileMain() {
     const { currentUser } = useAuth();
-    const navigate = Route.useNavigate();
     const { username } = Route.useParams();
     const { activeTab } = Route.useSearch();
     const { profileQueryOptions } = Route.useRouteContext();
@@ -38,11 +37,7 @@ function ProfileMain() {
     const activeMediaTypes = getActiveMediaTypes(apiData.userData.userMediaSettings);
 
     const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "overview", size: 15 });
-    const effectiveActiveTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "overview";
-
-    const setActiveTab = (newTab: ProfileActiveTab) => {
-        void navigate({ search: prev => ({ ...prev, activeTab: newTab === "overview" ? undefined : newTab }), resetScroll: false });
-    };
+    const currentTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "overview";
 
     return (
         <div className="grid grid-cols-[0.26fr_0.74fr] gap-6 pt-2 max-lg:grid-cols-5 max-sm:grid-cols-1">
@@ -72,11 +67,19 @@ function ProfileMain() {
             <div className="space-y-6 max-lg:col-span-3 max-sm:col-span-2 max-sm:space-y-4 max-sm:mt-4">
                 <TabHeader
                     tabs={mediaTabs}
-                    setActiveTab={setActiveTab}
-                    activeTab={effectiveActiveTab}
+                    value={currentTab}
+                    renderTrigger={(tab, props) =>
+                        <Link
+                            {...props}
+                            resetScroll={false}
+                            params={{ username }}
+                            to="/profile/$username"
+                            search={{ activeTab: tab.id === "overview" ? undefined : tab.id }}
+                        />
+                    }
                 />
                 <div className="animate-in fade-in duration-300">
-                    {effectiveActiveTab === "overview" ?
+                    {currentTab === "overview" ?
                         <OverviewTab
                             perMedia={apiData.perMediaSummary}
                             globalStats={apiData.mediaGlobalSummary}
@@ -87,8 +90,8 @@ function ProfileMain() {
                         <MediaStatsTab
                             username={username}
                             ratingSystem={apiData.userData.ratingSystem}
-                            highlightedMedia={apiData.highlightedMedia[effectiveActiveTab]}
-                            mediaSummary={apiData.perMediaSummary.find((p) => p.mediaType === effectiveActiveTab)!}
+                            highlightedMedia={apiData.highlightedMedia[currentTab]}
+                            mediaSummary={apiData.perMediaSummary.find((p) => p.mediaType === currentTab)!}
                         />
                     }
                 </div>

@@ -8,10 +8,10 @@ import {Button} from "@/lib/client/components/ui/button";
 import {NotifTab} from "@/lib/types/notifications.types";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
-import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {Bell, MessageCircleOff, MoveRight, Play, Users, X} from "lucide-react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {formatCalendarRelativeDate, formatDate, formatRelativeTime} from "@/lib/utils/date-formatting";
@@ -51,7 +51,7 @@ export const Notifications = () => {
         setOpen(isOpen);
     };
 
-    const tabs = [
+    const tabs: TabItem<NotifTab>[] = [
         {
             id: "media",
             label: (
@@ -95,8 +95,8 @@ export const Notifications = () => {
             <PopoverContent className="p-0 w-82 max-h-76 overflow-y-auto scrollbar-thin max-sm:max-h-88" align="end">
                 <TabHeader
                     tabs={tabs}
-                    activeTab={activeTab}
-                    setActiveTab={handleTabChange}
+                    value={activeTab}
+                    onValueChange={handleTabChange}
                 />
 
                 <div className="px-3 py-2">

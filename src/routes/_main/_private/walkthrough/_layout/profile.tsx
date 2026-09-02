@@ -96,8 +96,8 @@ function ProfileOnboarding() {
                     <div className="w-[95%] min-w-0 space-y-6 max-lg:w-3/5 max-sm:mt-4 max-sm:w-full max-sm:space-y-4">
                         <TabHeader
                             tabs={mediaTabs}
-                            setActiveTab={setActiveTab}
-                            activeTab={effectiveActiveTab}
+                            value={effectiveActiveTab}
+                            onValueChange={setActiveTab}
                         />
                         <div className="min-h-113 animate-in fade-in duration-300">
                             {effectiveActiveTab === "overview" ?

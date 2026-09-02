@@ -77,13 +77,19 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
 
     return (
         <Card className="bg-popover w-full p-3">
-            <TabHeader tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} className="px-2.5">
-                <UpdateFavorite
-                    disabled={backlogMode}
-                    isFavorite={userMedia.favorite}
-                    updateFavorite={updateUserMediaMutation}
-                />
-            </TabHeader>
+            <TabHeader
+                tabs={tabs}
+                value={activeTab}
+                triggerClassName="px-2.5"
+                onValueChange={setActiveTab}
+                trailing={
+                    <UpdateFavorite
+                        disabled={backlogMode}
+                        isFavorite={userMedia.favorite}
+                        updateFavorite={updateUserMediaMutation}
+                    />
+                }
+            />
 
             {activeTab === "progress" ?
                 <div className="space-y-2 px-4 mt-1">

@@ -55,7 +55,6 @@ const STATUS_STYLES: Record<FeatureStatus, string> = {
 
 function FeatureVotesPage() {
     const fieldId = useId();
-    const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
     const { currentUser, isAnonymous } = useAuth();
     const toggleVoteMutation = useToggleFeatureVoteMutation();
@@ -94,10 +93,6 @@ function FeatureVotesPage() {
 
     const handleVote = (featureId: number) => {
         toggleVoteMutation.mutate({ data: { featureId } });
-    };
-
-    const setActiveTab = (newTab: FeatureVotesActiveTab) => {
-        void navigate({ search: { activeTab: newTab === "active" ? undefined : newTab }, resetScroll: false });
     };
 
     const statusTabs: TabItem<FeatureVotesActiveTab>[] = [
@@ -284,9 +279,16 @@ function FeatureVotesPage() {
 
                     <TabHeader
                         tabs={statusTabs}
-                        activeTab={activeTab}
-                        className="max-sm:px-3"
-                        setActiveTab={setActiveTab}
+                        value={activeTab}
+                        triggerClassName="max-sm:px-3"
+                        renderTrigger={(tab, props) =>
+                            <Link
+                                {...props}
+                                to="/features-vote"
+                                resetScroll={false}
+                                search={{ activeTab: tab.id === "active" ? undefined : tab.id }}
+                            />
+                        }
                     />
 
                     {filteredRequests.length === 0

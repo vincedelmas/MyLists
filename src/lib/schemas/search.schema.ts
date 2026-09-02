@@ -27,6 +27,11 @@ const profileActiveTabSchema = z.union([
     z.enum(MediaType),
 ]);
 
+const mediaActiveTabSchema = z.union([
+    z.literal("all"),
+    z.enum(MediaType),
+]);
+
 
 const optionalAdvancedTextSchema = z.preprocess((value) => {
     return typeof value === "string" ? value.trim() || undefined : value;
@@ -190,6 +195,11 @@ const urlAdvancedSearchFiltersSchema = z.discriminatedUnion("provider", [
 
 export const profileSearchSchema = z.object({
     activeTab: profileActiveTabSchema.optional().default("overview").catch("overview"),
+});
+
+
+export const mediaTabSearchSchema = z.object({
+    activeTab: mediaActiveTabSchema.optional().default("all").catch("all"),
 });
 
 

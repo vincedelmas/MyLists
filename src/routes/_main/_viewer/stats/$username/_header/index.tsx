@@ -1,18 +1,18 @@
 import {MediaType} from "@/lib/utils/enums";
-import {CalendarRange, ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
-import {createFileRoute, redirect} from "@tanstack/react-router";
-import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {formatHours} from "@/lib/utils/number-formatting";
-import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
+import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {YearRecapReleaseStatus} from "@/lib/types/year-recap.types";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {createFileRoute, Link, redirect} from "@tanstack/react-router";
+import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
+import {CalendarRange, ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
 import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {YearRecapDashboard} from "@/lib/client/components/year-recap/YearRecapDashboard";
@@ -202,43 +202,52 @@ function StatsNavigation({ mediaTabs, releases }: StatsNavigationProps) {
         })),
     ];
 
-    const handleTabChange = async (val: StatsActiveTab) => {
-        await navigate({ search: (prev) => ({ ...prev, activeTab: val }) });
-    };
-
     return (
         <>
-            <TabHeader tabs={mediaTabs} activeTab={activeTab} setActiveTab={handleTabChange}>
-                <div className="flex items-center gap-3">
-                    <Select
-                        items={periodItems}
-                        value={recap?.toString() ?? "all-time"}
-                        onValueChange={(value) => {
-                            if (value === null) return;
-                            void navigate({
-                                search: { activeTab, recap: value === "all-time" ? undefined : Number(value) },
-                            });
-                        }}
-                    >
-                        <SelectTrigger size="sm" className="w-34 font-semibold">
-                            <SelectValue/>
-                        </SelectTrigger>
-                        <SelectContent align="end">
-                            <SelectGroup>
-                                {periodItems.map((item) =>
-                                    <SelectItem key={item.value} value={item.value} disabled={item.disabled}>
-                                        {item.label}
-                                    </SelectItem>
-                                )}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                    <QuickActions
-                        username={username}
-                        mediaType={activeTab === "overview" ? undefined : activeTab as MediaType}
+            <TabHeader
+                tabs={mediaTabs}
+                value={activeTab}
+                trailing={
+                    <div className="flex items-center gap-3">
+                        <Select
+                            items={periodItems}
+                            value={recap?.toString() ?? "all-time"}
+                            onValueChange={(value) => {
+                                if (value === null) return;
+                                void navigate({
+                                    search: { activeTab, recap: value === "all-time" ? undefined : Number(value) },
+                                });
+                            }}
+                        >
+                            <SelectTrigger size="sm" className="w-34 font-semibold">
+                                <SelectValue/>
+                            </SelectTrigger>
+                            <SelectContent align="end">
+                                <SelectGroup>
+                                    {periodItems.map((item) =>
+                                        <SelectItem key={item.value} value={item.value} disabled={item.disabled}>
+                                            {item.label}
+                                        </SelectItem>
+                                    )}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <QuickActions
+                            username={username}
+                            mediaType={activeTab === "overview" ? undefined : activeTab as MediaType}
+                        />
+                    </div>
+                }
+                renderTrigger={(tab, props) =>
+                    <Link
+                        {...props}
+                        resetScroll={false}
+                        to="/stats/$username"
+                        params={{ username }}
+                        search={{ recap, activeTab: tab.id === "overview" ? undefined : tab.id }}
                     />
-                </div>
-            </TabHeader>
+                }
+            />
         </>
     );
 }

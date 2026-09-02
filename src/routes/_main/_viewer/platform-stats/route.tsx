@@ -1,13 +1,13 @@
-import {ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
-import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
-import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {formatHours} from "@/lib/utils/number-formatting";
+import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
+import {createFileRoute, Link} from "@tanstack/react-router";
+import {ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
+import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
-import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {platformStatsOptions} from "@/lib/client/react-query/query-options";
 import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
@@ -54,23 +54,31 @@ function PlatformStatsPage() {
                     navigation={
                         <TabHeader
                             tabs={mediaTabs}
-                            className="max-sm:px-3"
-                            activeTab={activeTab}
-                            setActiveTab={handleTabChange}
-                        >
-                            <div
-                                title="Platform statistics are cached for up to 24 hours"
-                                className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground"
-                            >
-                                <Clock3 className="size-3.5"/>
-                                <span className="max-sm:hidden">
-                                    Updated daily
-                                </span>
-                                <span className="sm:hidden">
-                                    Daily
-                                </span>
-                            </div>
-                        </TabHeader>
+                            value={activeTab}
+                            triggerClassName="max-sm:px-3"
+                            trailing={
+                                <div
+                                    title="Platform statistics are cached for up to 24 hours"
+                                    className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground"
+                                >
+                                    <Clock3 className="size-3.5"/>
+                                    <span className="max-sm:hidden">
+                                        Updated daily
+                                    </span>
+                                    <span className="sm:hidden">
+                                        Daily
+                                    </span>
+                                </div>
+                            }
+                            renderTrigger={(tab, props) =>
+                                <Link
+                                    {...props}
+                                    resetScroll={false}
+                                    to="/platform-stats"
+                                    search={{ activeTab: tab.id === "overview" ? undefined : tab.id }}
+                                />
+                            }
+                        />
                     }
                 />
 

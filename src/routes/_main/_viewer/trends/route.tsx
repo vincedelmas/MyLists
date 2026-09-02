@@ -1,8 +1,8 @@
 import {MediaType} from "@/lib/utils/enums";
 import {Flame, TrendingUp} from "lucide-react";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {createFileRoute} from "@tanstack/react-router";
 import {formatNumber} from "@/lib/utils/number-formatting";
+import {createFileRoute, Link} from "@tanstack/react-router";
 import {compareDateInputs} from "@/lib/utils/date-formatting";
 import {TrendGrid} from "@/lib/client/components/trends/TrendGrid";
 import {TrendHero} from "@/lib/client/components/trends/TrendHero";
@@ -10,7 +10,7 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {trendsOptions} from "@/lib/client/react-query/query-options";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
-import {TREND_MEDIA_TYPES, TrendsActiveTab, trendsSearchSchema} from "@/lib/schemas";
+import {TREND_MEDIA_TYPES, trendsSearchSchema} from "@/lib/schemas";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 
 
@@ -27,15 +27,10 @@ export const Route = createFileRoute("/_main/_viewer/trends")({
 
 
 function TrendsPage() {
-    const navigate = Route.useNavigate();
     const { activeTab } = Route.useSearch();
     const { trendsQueryOptions } = Route.useRouteContext();
     const mediaTabs = createMediaTabItems(TREND_MEDIA_TYPES, { leading: "all" });
     const { gamesTrends, seriesTrends, moviesTrends } = useSuspenseQuery(trendsQueryOptions).data;
-
-    const setActiveTab = (newTab: TrendsActiveTab) => {
-        void navigate({ search: (prev) => ({ ...prev, activeTab: newTab === "all" ? undefined : newTab }) });
-    };
 
     const allTrends = [...seriesTrends, ...moviesTrends, ...gamesTrends]
         .sort((a, b) => compareDateInputs(b.releaseDate, a.releaseDate));
@@ -70,9 +65,16 @@ function TrendsPage() {
                     navigation={
                         <TabHeader
                             tabs={mediaTabs}
-                            activeTab={activeTab}
-                            className="max-sm:px-3"
-                            setActiveTab={setActiveTab}
+                            value={activeTab}
+                            triggerClassName="max-sm:px-3"
+                            renderTrigger={(tab, props) =>
+                                <Link
+                                    {...props}
+                                    to="/trends"
+                                    resetScroll={false}
+                                    search={{ activeTab: tab.id === "all" ? undefined : tab.id }}
+                                />
+                            }
                         />
                     }
                 />

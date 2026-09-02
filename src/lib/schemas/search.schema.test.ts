@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
-import {ApiProviderType} from "@/lib/utils/enums";
-import {globalSearchSchema, navbarSearchSchema} from "@/lib/schemas/search.schema";
+import {ApiProviderType, MediaType} from "@/lib/utils/enums";
+import {globalSearchSchema, mediaTabSearchSchema, navbarSearchSchema} from "@/lib/schemas/search.schema";
 
 
 const getValidationMessages = (value: unknown) => {
@@ -38,6 +38,15 @@ describe("globalSearchSchema", () => {
         });
 
         expect(result.advancedFilters).toEqual({ provider: ApiProviderType.BOOKS });
+    });
+});
+
+
+describe("mediaTabSearchSchema", () => {
+    it("defaults missing or invalid tabs to all and accepts media tabs", () => {
+        expect(mediaTabSearchSchema.parse({})).toEqual({ activeTab: "all" });
+        expect(mediaTabSearchSchema.parse({ activeTab: "invalid" })).toEqual({ activeTab: "all" });
+        expect(mediaTabSearchSchema.parse({ activeTab: MediaType.GAMES })).toEqual({ activeTab: MediaType.GAMES });
     });
 });
 

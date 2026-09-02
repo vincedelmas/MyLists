@@ -87,6 +87,16 @@ describe("createMalApi", () => {
         }
     });
 
+    it("caps anime genre search queries and requests five matches", async () => {
+        const mal = await createMalApi();
+        await mal.searchAnimeGenres("A".repeat(80));
+
+        const url = new URL(httpMocks.call.mock.calls[0][0]);
+        expect(url.pathname).toBe("/v2/anime");
+        expect(url.searchParams.get("q")).toBe("A".repeat(64));
+        expect(url.searchParams.get("limit")).toBe("5");
+    });
+
     it("fails lazily with a clear message when MAL is not configured", async () => {
         envMocks.serverEnv.MAL_CLIENT_ID = undefined;
         const mal = await createMalApi();

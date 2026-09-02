@@ -9,6 +9,9 @@ type MalApiConfig = ApiClientConfig & {
 };
 
 
+const MAL_SEARCH_QUERY_MAX_LENGTH = 64;
+
+
 const createConfig = (): MalApiConfig => ({
     resultsPerPage: 20,
     consumeKey: "mal-API",
@@ -98,11 +101,11 @@ export const createMalApi = async () => {
 
         async searchAnimeGenres(animeName: string): Promise<MalAnimeSearchResponse> {
             const params = new URLSearchParams({
-                q: animeName,
-                limit: "10",
+                limit: "5",
                 fields: "id,title,alternative_titles,start_date,genres",
+                q: animeName.trim().slice(0, MAL_SEARCH_QUERY_MAX_LENGTH).trimEnd(),
             });
-            
+
             const response = await http.call(`${config.baseUrl}/anime?${params.toString()}`, "get", getRequestOptions());
             return response.json();
         },

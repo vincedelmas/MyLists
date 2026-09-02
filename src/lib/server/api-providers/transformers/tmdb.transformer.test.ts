@@ -167,6 +167,7 @@ describe("tmdbTransformer", () => {
                 node: {
                     id: 1,
                     title: "Anime",
+                    alternative_titles: { en: "Anime" },
                     genres: [
                         { id: 1, name: "Action" },
                         { id: 2, name: "Adventure" },
@@ -180,7 +181,7 @@ describe("tmdbTransformer", () => {
             paging: {},
         } satisfies MalAnimeSearchResponse;
 
-        expect(tmdbTransformer.addAnimeSpecificGenres(malData, [{ name: "Animation" }], 5)).toEqual([
+        expect(tmdbTransformer.addAnimeSpecificGenres(malData, "Anime", [{ name: "Animation" }], 5)).toEqual([
             { name: "Action" },
             { name: "Adventure" },
             { name: "Comedy" },
@@ -192,12 +193,64 @@ describe("tmdbTransformer", () => {
     it("falls back to TMDB genres when MAL returns no matching genres", () => {
         const malData = { data: [], paging: {} } satisfies MalAnimeSearchResponse;
 
-        expect(tmdbTransformer.addAnimeSpecificGenres(malData, [
+        expect(tmdbTransformer.addAnimeSpecificGenres(malData, "Anime", [
             { name: "Animation" },
             { name: "Comedy" },
         ], 5)).toEqual([
             { name: "Animation" },
             { name: "Comedy" },
         ]);
+    });
+
+    it("uses genres from the matching English title instead of the first MAL result", () => {
+        const malData = {
+            data: [
+                {
+                    node: {
+                        id: 1,
+                        title: "Anime Special",
+                        alternative_titles: { en: "Target Anime: Special" },
+                        genres: [{ id: 22, name: "Romance" }],
+                    },
+                },
+                {
+                    node: {
+                        id: 2,
+                        title: "Anime",
+                        alternative_titles: { en: "Target Anime" },
+                        genres: [{ id: 1, name: "Action" }],
+                    },
+                },
+            ],
+            paging: {},
+        } satisfies MalAnimeSearchResponse;
+
+        expect(tmdbTransformer.addAnimeSpecificGenres(
+            malData,
+            "target anime",
+            [{ name: "Animation" }],
+            5,
+        )).toEqual([{ name: "Action" }]);
+    });
+
+    it("keeps TMDB genres when no MAL English title matches", () => {
+        const malData = {
+            data: [{
+                node: {
+                    id: 1,
+                    title: "Different Anime",
+                    alternative_titles: { en: "Different Anime" },
+                    genres: [{ id: 1, name: "Action" }],
+                },
+            }],
+            paging: {},
+        } satisfies MalAnimeSearchResponse;
+
+        expect(tmdbTransformer.addAnimeSpecificGenres(
+            malData,
+            "Target Anime",
+            [{ name: "Animation" }],
+            5,
+        )).toEqual([{ name: "Animation" }]);
     });
 });

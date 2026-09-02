@@ -293,8 +293,16 @@ const transformTvTrends = async (
 };
 
 
-const addAnimeSpecificGenres = (malData: MalAnimeSearchResponse, genresData: { name: string }[] | null | undefined, maxGenres: number) => {
-    const genres = malData?.data?.[0]?.node?.genres ?? [];
+const addAnimeSpecificGenres = (
+    malData: MalAnimeSearchResponse,
+    animeName: string,
+    genresData: { name: string }[] | null | undefined,
+    maxGenres: number,
+) => {
+    const lowTrimAnimeName = animeName.trim().toLowerCase();
+    const matchingAnime = malData?.data?.find(({ node }) => node.alternative_titles?.en?.trim().toLowerCase() === lowTrimAnimeName);
+    
+    const genres = matchingAnime?.node.genres ?? [];
 
     const genreList = toUniqueNamedData(genres, genres.length) ?? [];
     const demographicsList = genreList.filter((genre) => MAL_DEMOGRAPHIC_GENRE_NAMES.has(genre.name));

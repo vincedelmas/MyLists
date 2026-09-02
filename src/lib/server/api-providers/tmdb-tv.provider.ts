@@ -27,7 +27,7 @@ const createAnimeGenresEnricher = (mal: MalApi, maxGenres: number): MediaDetails
 
             return {
                 ...details,
-                genresData: tmdbTransformer.addAnimeSpecificGenres(malData, details.genresData, maxGenres),
+                genresData: tmdbTransformer.addAnimeSpecificGenres(malData, details.mediaData.name, details.genresData, maxGenres),
             };
         }
         catch (err) {
@@ -81,7 +81,7 @@ const createTmdbTvProvider = (tmdb: TmdbApi, definition: TvDefinition): External
             const raw = await tmdb.getTvTrending();
             return tmdbTransformer.transformTvTrends(raw, tmdbIdentities);
         },
-        
+
         getChangedIds() {
             return tmdb.getTvChangedIds();
         },

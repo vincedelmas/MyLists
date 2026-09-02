@@ -1,10 +1,10 @@
-import {useAuth} from "@/lib/client/hooks/use-auth";
 import {BookOpenCheck} from "lucide-react";
-import {createFileRoute, Link, Outlet, useLocation} from "@tanstack/react-router";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
-import {OnboardingNav} from "@/lib/client/components/onboarding/OnBoardingShared";
 import {LinkSidebarItem} from "@/lib/client/components/general/LinkSidebar";
+import {OnboardingNav} from "@/lib/client/components/onboarding/OnBoardingShared";
+import {createFileRoute, Link, Outlet, useLocation} from "@tanstack/react-router";
 
 
 export const Route = createFileRoute("/_main/_private/walkthrough/_layout")({
@@ -15,18 +15,18 @@ export const Route = createFileRoute("/_main/_private/walkthrough/_layout")({
 const sidebarItems: LinkSidebarItem[] = [
     {
         id: "search",
-        to: "/walkthrough/search-media",
         label: "Search for media",
+        to: "/walkthrough/search-media",
     },
     {
         id: "add",
-        to: "/walkthrough/add-media",
         label: "Add media",
+        to: "/walkthrough/add-media",
     },
     {
         id: "activate",
-        to: "/walkthrough/activate-lists",
         label: "Activate lists",
+        to: "/walkthrough/activate-lists",
     },
     {
         id: "manageLists",
@@ -40,13 +40,13 @@ const sidebarItems: LinkSidebarItem[] = [
     },
     {
         id: "profile",
-        to: "/walkthrough/profile",
         label: "Profile & social",
+        to: "/walkthrough/profile",
     },
     {
         id: "and-more",
-        to: "/walkthrough/and-more",
         label: "Explore more",
+        to: "/walkthrough/and-more",
     },
 ];
 

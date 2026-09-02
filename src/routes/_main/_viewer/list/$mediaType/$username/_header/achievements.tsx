@@ -27,7 +27,7 @@ function AchievementPage() {
                     summary={apiData.summary[mediaType]}
                 />
 
-                <div className="grid grid-cols-3 gap-6 max-lg:grid-cols-2 max-sm:grid-cols-1">
+                <div className="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1">
                     {mediaAchievements.map((achievement) =>
                         <AchievementCard
                             key={achievement.id}

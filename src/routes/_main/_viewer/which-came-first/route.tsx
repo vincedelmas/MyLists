@@ -6,6 +6,7 @@ import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {WCF_MAX_ROUNDS, WCF_MEDIA_TYPES} from "@/lib/schemas/wcf.schema";
@@ -66,13 +67,7 @@ function WhichCameFirstPage() {
     const submitAnswer = (selectedSide: "left" | "right") => {
         if (!activeRun || answerResult || answerMutation.isPending) return;
 
-        answerMutation.mutate({
-            data: {
-                selectedSide,
-                runId: activeRun.id,
-                roundId: activeRun.round.id,
-            },
-        }, {
+        answerMutation.mutate({ data: { selectedSide, runId: activeRun.id, roundId: activeRun.round.id } }, {
             onSuccess: (result) => setAnswerResult(result),
         });
     };
@@ -119,38 +114,24 @@ function WhichCameFirstPage() {
     return (
         <PageTitle title="Which Came First?" onlyHelmet>
             <div className="mb-8 flex flex-col pt-8">
-                <header className="flex items-end justify-between gap-8 border-b pb-6 max-sm:flex-col max-sm:items-start">
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">
-                            <GitCompareArrows className="size-4" aria-hidden="true"/>
-                            Release date challenge
-                        </div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                            Which Came First?
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Two covers. Pick the title released first. One mistake ends the run.
-                        </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1 max-sm:items-start">
-                        <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                            Run limit
-                        </span>
-                        <div className="flex items-center gap-2 text-lg">
-                            <Target className="size-4 text-muted-foreground" aria-hidden="true"/>
-                            Up to {WCF_MAX_ROUNDS} rounds
-                        </div>
-                    </div>
-                </header>
+                <PageHeader
+                    asideIcon={Target}
+                    asideLabel="Run limit"
+                    title="Which Came First?"
+                    eyebrowIcon={GitCompareArrows}
+                    eyebrow="Release date challenge"
+                    asideValue={`Up to ${WCF_MAX_ROUNDS} rounds`}
+                    description="Two covers. Pick the title released first. One mistake ends the run."
+                />
 
-                <section className="grid grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] items-stretch gap-10 pt-8 max-lg:grid-cols-1">
-                    <div className="min-w-0">
+                <section className="mt-8 grid grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] items-stretch overflow-hidden rounded-xl border shadow-xs max-lg:grid-cols-1">
+                    <div className="min-w-0 p-5 sm:p-6">
                         {activeRun && showGameOver && answerResult ?
                             <GameOverScreen
                                 run={activeRun}
                                 result={answerResult}
-                                onMainMenu={continueGame}
                                 onPlayAgain={playAgain}
+                                onMainMenu={continueGame}
                                 isStarting={startMutation.isPending}
                             />
                             : activeRun ?
@@ -205,7 +186,7 @@ function GameSetup({ selectedTypes, onSelectionChange, isPending, onStart }: Gam
                     Choose your media pool
                 </h2>
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                    Pick the categories you know best. Every round draws two titles from this pool.
+                    Pick the media types you know best. Every round draws two titles from this pool.
                 </p>
             </div>
 
@@ -216,7 +197,7 @@ function GameSetup({ selectedTypes, onSelectionChange, isPending, onStart }: Gam
                 orientation="vertical"
                 value={selectedTypes}
                 aria-label="Media pool"
-                className="w-full items-stretch border-y"
+                className="w-full items-stretch overflow-hidden rounded-xl border"
                 onValueChange={(types) => onSelectionChange(types as MediaType[])}
             >
                 {WCF_MEDIA_TYPES.map((mediaType) => {
@@ -246,7 +227,7 @@ function GameSetup({ selectedTypes, onSelectionChange, isPending, onStart }: Gam
                 })}
             </ToggleGroup>
 
-            <div className="mt-6 flex items-center justify-between gap-5 border-b pb-6 max-sm:flex-col max-sm:items-stretch">
+            <div className="mt-6 flex items-center justify-between gap-5 max-sm:flex-col max-sm:items-stretch">
                 <div className="flex items-baseline gap-2">
                     <strong className="font-mono text-3xl font-semibold leading-none tabular-nums text-foreground">
                         {selectedTypes.length}
@@ -273,12 +254,6 @@ function GameSetup({ selectedTypes, onSelectionChange, isPending, onStart }: Gam
                     </Button>
                 </div>
             </div>
-
-            {selectedTypes.length === 0 &&
-                <p className="mt-3 text-xs text-muted-foreground">
-                    Choose at least one category to start.
-                </p>
-            }
         </section>
     );
 }
@@ -517,7 +492,7 @@ function MediaCard({ side, card, result, disabled, onSelect }: MediaCardProps) {
             disabled={disabled}
             onClick={() => onSelect(side)}
             className={cn(
-                "@container/media-card group relative aspect-2/3 overflow-hidden rounded-lg border bg-card text-left text-white",
+                "@container/media-card group relative aspect-2/3 overflow-hidden rounded-xl border bg-card text-left text-white",
                 "shadow-2xl ring-1 transition-all duration-300 disabled:pointer-events-none",
                 state === "correct" && "border-success shadow-success/20 ring-success/40",
                 state === "incorrect" && "animate-wcf-shake border-destructive shadow-destructive/20 ring-destructive/40",
@@ -601,16 +576,16 @@ function Stats({ stats, canReset }: StatsProps) {
     };
 
     return (
-        <section className="relative h-full">
-            <div className="px-6 py-9 max-sm:px-0">
+        <section className="relative h-full border-l max-lg:border-l-0 max-lg:border-t">
+            <div className="px-5 pt-5 pb-7 sm:px-6 sm:pt-6">
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         <ChartNoAxesColumnIncreasing className="size-4" aria-hidden="true"/>
                         Your record
                     </div>
                     <Button
-                        aria-label="Reset statistics"
                         size="sm"
+                        aria-label="Reset Stats"
                         variant="destructiveGhost"
                         onClick={() => setResetDialogOpen(true)}
                         disabled={!hasStats || !canReset || resetStatsMutation.isPending}
@@ -656,17 +631,17 @@ function Stats({ stats, canReset }: StatsProps) {
                             {
                                 label: "Best tier",
                                 note: "highest reached",
-                                icon: <ChevronRight className="size-4"/>,
                                 value: stats.highestTier,
+                                icon: <ChevronRight className="size-4"/>,
                             },
                         ]}
                     />
                 </div>
             </div>
 
-            <div className="flex flex-col gap-7 border-t px-6 py-8 max-sm:px-0">
+            <div className="flex flex-col gap-7 border-t px-5 py-7 sm:px-6">
                 <div>
-                    <div className="flex items-end justify-between gap-3 text-xs text-muted-foreground">
+                    <div className="flex items-end justify-between gap-3 text-xs">
                         <h3 className="font-semibold uppercase tracking-[0.18em]">
                             Personal best
                         </h3>
@@ -675,7 +650,7 @@ function Stats({ stats, canReset }: StatsProps) {
                         </span>
                     </div>
                     <Progress
-                        className="mt-3"
+                        className="mt-2"
                         value={(stats.bestScore / WCF_MAX_ROUNDS) * 100}
                         aria-label={`${stats.bestScore} of ${WCF_MAX_ROUNDS} rounds`}
                     />
@@ -687,7 +662,7 @@ function Stats({ stats, canReset }: StatsProps) {
                     </p>
                 </div>
                 <div>
-                    <div className="flex items-end justify-between gap-3 text-xs text-muted-foreground">
+                    <div className="flex items-end justify-between gap-3 text-xs">
                         <h3 className="font-semibold uppercase tracking-[0.18em]">
                             Answer accuracy
                         </h3>
@@ -696,7 +671,7 @@ function Stats({ stats, canReset }: StatsProps) {
                         </span>
                     </div>
                     <Progress
-                        className="mt-3"
+                        className="mt-2"
                         value={stats.accuracy}
                         aria-label={`${stats.accuracy.toFixed(0)} percent answer accuracy`}
                     />

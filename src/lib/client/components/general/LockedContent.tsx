@@ -36,7 +36,7 @@ export const LockedContent = ({ isAnonymous, title, description, showAuthButtons
                 </p>
                 {showAuthButtons &&
                     <div className="flex justify-center items-center gap-2 mt-4">
-                        <Button variant="ghost" onClick={() => openLogin(location.href)}>
+                        <Button variant="outline" onClick={() => openLogin(location.href)}>
                             Login
                         </Button>
                         <Button onClick={() => openRegister(location.href)}>

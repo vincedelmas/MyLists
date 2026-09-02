@@ -9,6 +9,7 @@ import {TasteMatch} from "@/lib/types/query.options.types";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {buttonVariants} from "@/lib/client/components/ui/button";
+import {getThemeColor} from "@/lib/utils/theme-utils";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
@@ -17,48 +18,48 @@ import {MainThemeIcon, PrivacyIcon} from "@/lib/client/components/general/MainIc
 
 export const FeaturedTasteMatch = ({ match, activeTab }: { match: TasteMatch; activeTab: "all" | MediaType }) => {
     return (
-        <Card className="bg-linear-to-br from-achievement/8 p-6 ring-achievement/40 md:p-8">
-            <div className="grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-center">
-                <div className="space-y-6">
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-achievement/40 px-3 py-1.5 text-sm font-medium">
-                        <Crown className="size-4 text-achievement"/>{" "}
-                        Your closest taste match
-                    </div>
-                    <UserIdentity
-                        match={match}
-                        featured={true}
-                    />
-                    <SharedFavMedia
-                        match={match}
-                    />
-                    <div className="flex flex-wrap gap-3">
-                        <FollowButton
-                            profileUsername={match.name}
-                            social={{ followId: match.id, followStatus: match.followStatus }}
-                        />
-                        <Link to="/profile/$username" params={{ username: match.name }} className={buttonVariants({ variant: "secondary" })}>
-                            View profile
-                        </Link>
-                    </div>
+        <section className="grid min-w-0 overflow-hidden rounded-xl border shadow-xs lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.90fr)]">
+            <div className="flex min-w-0 flex-col gap-5 p-6 sm:p-7">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-brand">
+                    <Crown className="size-4" aria-hidden="true"/>
+                    Closest match
                 </div>
+                <UserIdentity
+                    match={match}
+                    featured={true}
+                />
+                <SharedFavMedia
+                    match={match}
+                />
+                <div className="flex flex-wrap gap-3">
+                    <FollowButton
+                        profileUsername={match.name}
+                        social={{ followId: match.id, followStatus: match.followStatus }}
+                    />
+                    <Link to="/profile/$username" params={{ username: match.name }} className={buttonVariants({ variant: "secondary" })}>
+                        View profile
+                    </Link>
+                </div>
+            </div>
 
-                <div className="rounded-xl border bg-background p-5">
-                    <div className="mb-5 flex flex-col items-center">
-                        <MatchScore
-                            featured={true}
-                            score={match.similarity}
-                        />
-                        <p className="mt-2 text-sm">
-                            Overall Taste Match
-                        </p>
-                    </div>
+            <div className="flex min-w-0 flex-col border-l p-6 max-lg:border-l-0 max-lg:border-t sm:p-7 lg:px-8">
+                <div className="flex flex-col items-center">
+                    <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Overall taste match
+                    </p>
+                    <MatchScore
+                        featured={true}
+                        score={match.similarity}
+                    />
+                </div>
+                <div className="mt-7">
                     <MediaScores
                         match={match}
                         activeTab={activeTab}
                     />
                 </div>
             </div>
-        </Card>
+        </section>
     );
 };
 
@@ -127,18 +128,18 @@ const MediaScores = ({ match, activeTab }: { match: TasteMatch; activeTab: Media
     const displayedTypes = activeTab === "all" ? ALL_MEDIA_TYPES : [activeTab];
 
     return (
-        <div className="grid grid-cols-2 gap-x-5 gap-y-2">
+        <div className={cn("grid min-w-0 gap-x-5 gap-y-2", activeTab === "all" ? "grid-cols-2" : "grid-cols-1")}>
             {displayedTypes.map((type) => {
                 const score = match.perMedia.find((entry) => entry.mediaType === type);
 
                 return (
                     <div
                         key={type}
-                        className="grid grid-cols-[auto_1fr] items-center gap-2"
+                        className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2"
                         title={score ? `${formatNumber(score.sharedRatings)} shared ratings` : "Not enough shared ratings"}
                     >
                         <MainThemeIcon type={type} size={15}/>
-                        <div>
+                        <div className="min-w-0">
                             <div className="mb-1 flex items-center justify-between gap-2 text-xs">
                                 <span>{capitalize(type)}</span>
                                 <span>
@@ -149,7 +150,7 @@ const MediaScores = ({ match, activeTab }: { match: TasteMatch; activeTab: Media
                                 </span>
                             </div>
                             <Progress
-                                color="var(--primary)"
+                                color={getThemeColor(type)}
                                 value={score?.similarity ?? 0}
                             />
                         </div>

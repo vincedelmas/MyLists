@@ -1,15 +1,16 @@
-import React from "react";
 import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
-import {BookOpen, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
+import {LibraryBig, ListOrdered, Plus, UsersRound} from "lucide-react";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {communityCollectionsSchema, CommunitySearch} from "@/lib/schemas";
@@ -39,30 +40,46 @@ function CollectionsDiscoverPage() {
     const { communityCollectionsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(communityCollectionsQueryOptions).data;
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<CommunitySearch>({ search });
-    const mediaTypeItems = createMediaSelectItems(ALL_MEDIA_TYPES, { leading: "all", leadingLabel: "All Types" });
+
+    const hasFilters = Boolean(search || mediaType);
+    const mediaTypeItems = createMediaSelectItems(ALL_MEDIA_TYPES, { leading: "all", leadingLabel: "All types" });
 
     return (
-        <PageTitle title="Community collections" subtitle="Public collections created and shared by the community.">
-            <div className="pt-2">
-                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center sm:gap-4">
-                    <div className="col-span-2 sm:w-60">
-                        <SearchInput
-                            className="w-full"
-                            value={localSearch}
-                            onChange={handleInputChange}
-                            placeholder="Search collections..."
-                        />
-                    </div>
+        <PageTitle title="Community collections" onlyHelmet>
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    asideIcon={UsersRound}
+                    eyebrowIcon={ListOrdered}
+                    eyebrow="Made by the community"
+                    title="Community collections"
+                    asideLabel={hasFilters ? "Collections found" : "Shared collections"}
+                    description="Browse collections that people on MyLists have chosen to share."
+                    asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "collection" : "collections"}</>}
+                />
 
-                    <div className={cn("sm:w-40 col-span-1", !isAnonymous && "sm:mr-auto")}>
+                <div className="grid grid-cols-[minmax(0,1fr)_11rem_auto] items-center gap-3 pt-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <SearchInput
+                        value={localSearch}
+                        onChange={handleInputChange}
+                        placeholder="Search collections..."
+                        aria-label="Search community collections"
+                        className="w-full max-w-md max-sm:col-span-2"
+                    />
+
+                    <div className={cn("w-full", isAnonymous && "max-sm:col-span-2")}>
                         <Select
                             items={mediaTypeItems}
                             value={mediaType ?? "all"}
-                            onValueChange={(val) => {
-                                return updateFilters({ page: 1, mediaType: val === "all" ? undefined : (val as MediaType) })
+                            onValueChange={(value) => {
+                                if (value !== null) {
+                                    void updateFilters({
+                                        page: 1,
+                                        mediaType: value === "all" ? undefined : value as MediaType,
+                                    });
+                                }
                             }}
                         >
-                            <SelectTrigger className="w-full capitalize">
+                            <SelectTrigger aria-label="Filter by media type" className="w-full capitalize">
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
@@ -78,26 +95,39 @@ function CollectionsDiscoverPage() {
                     </div>
 
                     {!isAnonymous &&
-                        <Link to="/collections/create" className={buttonVariants({ className: "max-sm:max-w-36" })}>
-                            <Plus className="shrink-0"/> New collection
+                        <Link
+                            to="/collections/create"
+                            className={buttonVariants({ className: "whitespace-nowrap" })}
+                        >
+                            <Plus data-icon="inline-start"/>
+                            New collection
                         </Link>
                     }
                 </div>
 
-                {apiData.items.length === 0 ?
+                <div className="flex items-center justify-between gap-4 pb-4 pt-6">
+                    <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        {hasFilters ? "Filtered collections" : "Popular collections"}
+                    </h2>
+                    {apiData.pages > 1 &&
+                        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                            Page {page} / {apiData.pages}
+                        </span>
+                    }
+                </div>
+
+                {apiData.items.length === 0
+                    ?
                     <EmptyState
                         iconSize={40}
-                        icon={BookOpen}
-                        className="py-20"
-                        message={`No public collections found${search ? ` for '${search}'` : ""}.`}
+                        icon={LibraryBig}
+                        className="rounded-xl border py-20 shadow-xs"
+                        message={search ? `No public collections found for “${search}”.` : "No public collections found."}
                     />
                     :
-                    <div className="grid gap-4 grid-cols-3 pt-4 max-sm:grid-cols-1">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                         {apiData.items.map((collection) =>
-                            <CollectionCard
-                                key={collection.id}
-                                collection={collection}
-                            />
+                            <CollectionCard key={collection.id} collection={collection} variant="showcase"/>
                         )}
                     </div>
                 }

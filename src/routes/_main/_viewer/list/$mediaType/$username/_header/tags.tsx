@@ -88,7 +88,7 @@ function TagsView() {
                     <Input
                         value={localSearch}
                         onChange={handleInputChange}
-                        className="h-10 bg-popover/50"
+                        className="h-10"
                         placeholder="Find or create tag..."
                         onKeyDown={(ev) => {
                             if (ev.key === "Enter" && showCreateButton) handleCreateTag();
@@ -106,7 +106,7 @@ function TagsView() {
                                 CREATE
                             </Button>
                             :
-                            <div className="px-2 py-1 rounded bg-popover/50 border text-[10px] text-muted-foreground font-mono tracking-tighter">
+                            <div className="rounded border px-2 py-1 font-mono text-[10px] tracking-tighter text-muted-foreground">
                                 ESC
                             </div>
                         }
@@ -118,7 +118,7 @@ function TagsView() {
                 {apiData.items.length === 0 ?
                     <EmptyState
                         icon={Tags}
-                        className="col-span-full py-20"
+                        className="col-span-full rounded-xl border py-20 shadow-xs"
                         message={filters.search ? `No tags found matching "${filters.search}". Create it?` : "No tags created yet."}
                     />
                     :
@@ -182,14 +182,14 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
     };
 
     return (
-        <div>
+        <article className="rounded-xl border p-3 shadow-xs transition-colors hover:border-brand/35">
             <Link
                 to="/list/$mediaType/$username"
                 params={{ mediaType, username }}
                 className={isEditing ? "pointer-events-none" : ""}
                 search={{ tags: [tag.tagName] }}
             >
-                <div className="aspect-video rounded-lg border overflow-hidden duration-200 hover:border-brand/50">
+                <div className="aspect-video overflow-hidden rounded-lg">
                     <div className="relative flex h-full items-center justify-center p-6">
                         {tag.medias.map((item, idx, arr) => {
                             const offset = idx - (arr.length - 1) / 2;
@@ -258,6 +258,6 @@ const TagCard = ({ tag, isOwner, mediaType, username, onRename, onDelete }: TagC
                     </div>
                 }
             </div>
-        </div>
+        </article>
     );
 };

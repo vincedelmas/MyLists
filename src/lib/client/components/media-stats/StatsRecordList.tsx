@@ -17,7 +17,7 @@ interface StatsRecordListProps {
 
 export function StatsRecordList({ records, color = "var(--brand)" }: StatsRecordListProps) {
     return (
-        <div className="divide-y border-y h-fit">
+        <div className="h-fit divide-y border-y px-4">
             {records.map((record) =>
                 <div key={record.label} className="flex items-center gap-3 py-4">
                     <span style={{ color }}>

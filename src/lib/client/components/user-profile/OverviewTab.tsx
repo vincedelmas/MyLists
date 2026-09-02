@@ -1,14 +1,14 @@
 import {RatingSystemType} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 import {getFeelingIcon} from "@/lib/utils/ratings-formatting";
-import {Clock, ClockAlert, Star} from "lucide-react";
+import {ChartNoAxesColumn, Clock, ClockAlert, LibraryBig, Star} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
-import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
 import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
 import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
 import {MediaGlobalSummaryType, PerMediaSummaryType} from "@/lib/types/query.options.types";
+import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {SegmentedDistributionBar} from "@/lib/client/components/general/SegmentedDistributionBar";
 
 
@@ -38,27 +38,40 @@ export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMe
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-2">
-                <SimpleStatCard
-                    title="Total Time"
-                    value={`${formatNumber(globalStats.totalDays, { fractionDigits: 0 })} d`}
-                />
-                <SimpleStatCard
-                    title="Total Entries"
-                    value={globalStats.totalEntries}
-                />
-                <SimpleStatCard
-                    title="Avg. Rating"
-                    value={ratingDisplay}
-                    icon={<Star className="size-5 text-rating mt-1"/>}
-                />
-                <SimpleStatCard
-                    title="Rated Media"
-                    value={globalStats.percentRated ? formatPercent(globalStats.percentRated) : undefined}
-                />
-            </div>
+            <section className="overflow-hidden rounded-xl border shadow-xs">
+                <div className="p-5 sm:p-6">
+                    <CompactStatsGrid
+                    columns={4}
+                    items={[
+                        {
+                            label: "Total time",
+                            note: "across all media",
+                            icon: <Clock className="size-4"/>,
+                            value: `${formatNumber(globalStats.totalDays, { fractionDigits: 0 })} d`,
+                        },
+                        {
+                            label: "Total entries",
+                            note: "tracked media",
+                            icon: <LibraryBig className="size-4"/>,
+                            value: formatNumber(globalStats.totalEntries),
+                        },
+                        {
+                            label: "Average rating",
+                            note: "personal average",
+                            icon: <Star className="size-4"/>,
+                            value: ratingDisplay,
+                        },
+                        {
+                            label: "Rated media",
+                            note: "of tracked entries",
+                            icon: <ChartNoAxesColumn className="size-4"/>,
+                            value: globalStats.percentRated ? formatPercent(globalStats.percentRated) : undefined,
+                        },
+                    ]}
+                    />
+                </div>
 
-            <DistributionContainer label="Time Distribution" icon={Clock}>
+                <DistributionContainer label="Time Distribution" icon={Clock}>
                 {distributionTotalDays === 0 ?
                     <EmptyState
                         icon={ClockAlert}
@@ -87,7 +100,8 @@ export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMe
                         </div>
                     )}
                 </div>
-            </DistributionContainer>
+                </DistributionContainer>
+            </section>
 
             <HighlightedMedia
                 showMediaType={true}

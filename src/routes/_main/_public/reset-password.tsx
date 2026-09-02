@@ -11,6 +11,8 @@ import {createFileRoute, Link, SearchParamError} from "@tanstack/react-router";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {KeyRound, ShieldCheck} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_public/reset-password")({
@@ -61,8 +63,18 @@ function ResetPasswordPage() {
     };
 
     return (
-        <PageTitle title="Reset Your Password" subtitle="You can now change your password to a new one">
-            <div className="mt-4 w-75 max-sm:w-full">
+        <PageTitle title="Reset your password" onlyHelmet>
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    title="Choose a new password"
+                    eyebrow="Almost there"
+                    eyebrowIcon={KeyRound}
+                    asideIcon={ShieldCheck}
+                    asideLabel="One last step"
+                    asideValue="Choose a new password"
+                    description="Choose the password you’ll use the next time you sign in."
+                />
+                <section className="mt-6 w-full max-w-md self-center rounded-xl border p-5 shadow-xs sm:p-6">
                 <FormProvider {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
                         <FieldSet disabled={form.formState.isSubmitting}>
@@ -109,6 +121,7 @@ function ResetPasswordPage() {
                         </FormSubmitButton>
                     </form>
                 </FormProvider>
+                </section>
             </div>
         </PageTitle>
     );

@@ -81,17 +81,10 @@ function ActivityCleanupSettings() {
 
     return (
         <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="flex w-100 flex-col gap-6 max-sm:w-full">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="flex w-full flex-col gap-6">
                 <FieldSet disabled={bulkMutation.isPending}>
-                    <FieldGroup>
-                        <div className="font-medium text-lg">
-                            Cleanup Activity
-                            <div className="text-sm font-normal text-muted-foreground">
-                                Hide import activity from recap totals without deleting it.
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
+                    <FieldGroup className="grid gap-5 md:grid-cols-2 xl:grid-cols-[1.35fr_repeat(3,minmax(0,1fr))] xl:items-end">
+                        <div className="flex flex-col gap-3 md:col-span-2 xl:col-span-1">
                             <div className="text-sm font-medium">
                                 Quick ranges
                                 <div className="text-xs font-normal text-muted-foreground">
@@ -180,13 +173,13 @@ function ActivityCleanupSettings() {
                                 </Field>
                             }
                         />
-                        <div className="rounded-xl border p-3 text-sm border-brand bg-brand/10">
+                        <div className="rounded-xl border border-brand/40 border-l-2 border-l-brand bg-brand/5 px-4 py-3 text-sm md:col-span-2 xl:col-span-4">
                             This is not month-specific. It applies to all activities with a progress date inside the selected range.
                         </div>
                     </FieldGroup>
                 </FieldSet>
                 <FormError/>
-                <FormSubmitButton isLoading={bulkMutation.isPending}>
+                <FormSubmitButton className="self-end" isLoading={bulkMutation.isPending}>
                     Hide Matching Activity
                 </FormSubmitButton>
             </form>

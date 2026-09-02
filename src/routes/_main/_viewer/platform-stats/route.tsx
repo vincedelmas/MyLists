@@ -1,9 +1,12 @@
-import {Clock3} from "lucide-react";
+import {ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {ALL_MEDIA_TYPES} from "@/lib/utils/media-mapping";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
+import {capitalize} from "@/lib/utils/text-formatting";
+import {formatHours} from "@/lib/utils/number-formatting";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {platformStatsOptions} from "@/lib/client/react-query/query-options";
 import {DashboardContent} from "@/lib/client/components/media-stats/DashboardContent";
@@ -34,26 +37,46 @@ function PlatformStatsPage() {
         await navigate({ search: { activeTab: value } });
     };
 
-    return (
-        <PageTitle title="MyLists Statistics" subtitle="Statistics across the MyLists community">
-            <TabHeader tabs={mediaTabs} activeTab={activeTab} setActiveTab={handleTabChange}>
-                <div
-                    title="Platform statistics are cached for up to 24 hours"
-                    className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground"
-                >
-                    <Clock3 className="size-3.5"/>
-                    <span className="max-sm:hidden">
-                        Updated daily
-                    </span>
-                    <span className="sm:hidden">
-                        Daily
-                    </span>
-                </div>
-            </TabHeader>
+    const isOverview = apiData.kind === "overview";
+    const trackedHours = isOverview ? apiData.totalHours : apiData.timeSpentHours;
 
-            <div className="mt-6">
+    return (
+        <PageTitle title="Platform statistics" onlyHelmet>
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    title="MyLists stats"
+                    asideIcon={Clock3}
+                    eyebrow="Across the community"
+                    asideValue={formatHours(trackedHours)}
+                    eyebrowIcon={ChartNoAxesColumnIncreasing}
+                    asideLabel={isOverview ? "Total time tracked" : `${capitalize(apiData.mediaType)} time tracked`}
+                    description="A look at what people are tracking, rating and enjoying across MyLists."
+                    navigation={
+                        <TabHeader
+                            tabs={mediaTabs}
+                            className="max-sm:px-3"
+                            activeTab={activeTab}
+                            setActiveTab={handleTabChange}
+                        >
+                            <div
+                                title="Platform statistics are cached for up to 24 hours"
+                                className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground"
+                            >
+                                <Clock3 className="size-3.5"/>
+                                <span className="max-sm:hidden">
+                                    Updated daily
+                                </span>
+                                <span className="sm:hidden">
+                                    Daily
+                                </span>
+                            </div>
+                        </TabHeader>
+                    }
+                />
+
                 <DashboardContent
                     data={apiData}
+                    showHero={false}
                     onSelectMediaType={handleTabChange}
                 />
             </div>

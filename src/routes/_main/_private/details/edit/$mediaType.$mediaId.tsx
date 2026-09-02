@@ -1,20 +1,24 @@
 import {useId} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {splitIntoColumns} from "@/lib/utils/arrays";
 import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {THEME_ICONS_MAP} from "@/lib/utils/theme-utils";
+import {Button} from "@/lib/client/components/ui/button";
+import {ArrowLeft, PencilLine, Save} from "lucide-react";
 import {Textarea} from "@/lib/client/components/ui/textarea";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {createFileRoute, useRouter} from "@tanstack/react-router";
 import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {editMediaDetailsOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {useEditMediaMutation} from "@/lib/client/react-query/query-mutations/media.mutations";
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
+import {Field, FieldDescription, FieldError, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {EditMediaDetailsPayload, editMediaDetailsPayloadSchema, mediaTypeMediaIdSchema} from "@/lib/schemas";
 
 
@@ -75,7 +79,8 @@ function MediaEditPage() {
             hltbTotalCompleteTime: apiData.fields?.hltbTotalCompleteTime,
         }
     });
-    const parts = splitIntoColumns(Object.entries(apiData.fields), 3);
+    const MediaIcon = THEME_ICONS_MAP[mediaType];
+    const mediaName = apiData.fields?.name ?? capitalize(mediaType);
 
     const onSubmit = (submittedData: EditMediaDetailsPayload) => {
         const payload = { ...submittedData };
@@ -98,19 +103,23 @@ function MediaEditPage() {
         });
     };
 
-    const renderField = (myForm: any, fieldEntry: [string, any]) => {
+    const renderField = (fieldEntry: [string, any]) => {
         const [key, _] = fieldEntry;
 
         return (
             <Controller
                 key={key}
                 name={key}
-                control={myForm.control}
+                control={form.control}
                 render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid} data-disabled={editMediaMutation.isPending}>
+                    <Field
+                        data-invalid={fieldState.invalid}
+                        data-disabled={editMediaMutation.isPending}
+                        className={cn(key === "synopsis" && "md:col-span-2")}
+                    >
                         <FieldLabel htmlFor={`${fieldId}-${key}`}>{capitalize(key.replaceAll("_", " "))}</FieldLabel>
                         {key === "synopsis"
-                            ? <Textarea {...field} id={`${fieldId}-${key}`} className="h-60" aria-invalid={fieldState.invalid}/>
+                            ? <Textarea {...field} id={`${fieldId}-${key}`} className="min-h-48" aria-invalid={fieldState.invalid}/>
                             : <Input {...field} id={`${fieldId}-${key}`} aria-invalid={fieldState.invalid}/>
                         }
                         <FieldError errors={[fieldState.error]}/>
@@ -121,41 +130,93 @@ function MediaEditPage() {
     };
 
     return (
-        <PageTitle title={`Edit ${capitalize(mediaType)} Details`} subtitle={`Update the media information`}>
-            <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="mx-auto mt-6 flex w-full flex-col gap-5">
-                    <FieldSet disabled={editMediaMutation.isPending}>
-                        <div className="grid grid-cols-3 gap-8 max-sm:grid-cols-1">
-                            <FieldGroup className="gap-4">
+        <PageTitle title={`Edit ${mediaName}`} onlyHelmet>
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    asideIcon={MediaIcon}
+                    eyebrowIcon={PencilLine}
+                    asideLabel="You’re editing"
+                    title={`Edit ${mediaName}`}
+                    eyebrow="Media details"
+                    description="Change the information shown for this title on MyLists."
+                    asideValue={
+                        <div className="flex items-baseline gap-2">
+                            <span className="capitalize">
+                                {mediaType}
+                            </span>
+                            <span className="font-mono text-sm text-muted-foreground">
+                                #{mediaId}
+                            </span>
+                        </div>
+                    }
+                />
+
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-5 pt-8">
+                        <FieldSet disabled={editMediaMutation.isPending}>
+                            <section className="grid grid-cols-[minmax(12rem,0.35fr)_minmax(0,1fr)] gap-10 rounded-xl border p-5 shadow-xs max-lg:grid-cols-1 max-lg:gap-5 sm:p-6">
+                                <div>
+                                    <div className="font-mono text-xs font-semibold text-brand">01</div>
+                                    <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                        Cover source
+                                    </h2>
+                                    <p className="mt-1 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                                        Replace the current artwork with an image from a public URL.
+                                    </p>
+                                </div>
+
                                 <Controller
                                     name="imageCover"
                                     control={form.control}
                                     render={({ field, fieldState }) => (
-                                        <Field data-invalid={fieldState.invalid} data-disabled={editMediaMutation.isPending}>
+                                        <Field
+                                            data-invalid={fieldState.invalid}
+                                            data-disabled={editMediaMutation.isPending}
+                                            className="max-w-2xl"
+                                        >
                                             <FieldLabel htmlFor={`${fieldId}-image-cover`}>Image Cover URL</FieldLabel>
                                             <Input {...field} id={`${fieldId}-image-cover`} aria-invalid={fieldState.invalid}/>
+                                            <FieldDescription>
+                                                Leave this empty to keep the current cover.
+                                            </FieldDescription>
                                             <FieldError errors={[fieldState.error]}/>
                                         </Field>
                                     )}
                                 />
-                                {parts[0].map(array => renderField(form, array))}
-                            </FieldGroup>
-                            <FieldGroup className="gap-4">
-                                {parts[1].map(array => renderField(form, array))}
-                            </FieldGroup>
-                            <FieldGroup className="gap-4">
-                                {parts[2].map(arr => renderField(form, arr))}
-                            </FieldGroup>
+                            </section>
+
+                            <section className="mt-5 grid grid-cols-[minmax(12rem,0.35fr)_minmax(0,1fr)] gap-10 rounded-xl border p-5 shadow-xs max-lg:grid-cols-1 max-lg:gap-5 sm:p-6">
+                                <div>
+                                    <div className="font-mono text-xs font-semibold text-brand">02</div>
+                                    <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                                        Media information
+                                    </h2>
+                                    <p className="mt-1 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                                        Review the title, release data, credits, and type-specific details.
+                                    </p>
+                                </div>
+
+                                <div className="grid min-w-0 grid-cols-2 gap-x-5 gap-y-5 max-md:grid-cols-1">
+                                    {Object.entries(apiData.fields).map(renderField)}
+                                </div>
+                            </section>
+                        </FieldSet>
+
+                        <FormError/>
+
+                        <div className="flex items-center justify-between gap-4 py-5 max-sm:flex-col-reverse max-sm:items-stretch">
+                            <Button type="button" variant="ghost" onClick={() => history.go(-1)}>
+                                <ArrowLeft data-icon="inline-start"/>
+                                Cancel
+                            </Button>
+                            <FormSubmitButton isLoading={editMediaMutation.isPending}>
+                                <Save data-icon="inline-start"/>
+                                Save changes
+                            </FormSubmitButton>
                         </div>
-                    </FieldSet>
-                    <FormError/>
-                    <div className="flex justify-end">
-                        <FormSubmitButton isLoading={editMediaMutation.isPending}>
-                            Save Changes
-                        </FormSubmitButton>
-                    </div>
-                </form>
-            </FormProvider>
+                    </form>
+                </FormProvider>
+            </div>
         </PageTitle>
     );
 }

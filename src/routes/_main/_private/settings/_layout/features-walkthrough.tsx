@@ -1,4 +1,4 @@
-import React from "react";
+import {BookOpenCheck} from "lucide-react";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 
@@ -10,20 +10,22 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/features-
 
 function FeaturesWalkthroughPage() {
     return (
-        <div className="flex flex-col h-fit max-w-125 gap-5 rounded-xl bg-popover/50 border p-6">
-            <div>
-                <h3 className="text-base font-bold">
-                    Feature Walkthrough
-                </h3>
-                <p className="text-sm mt-1 max-w-xl">
-                    New to the platform? Replay the tutorial to learn how
-                    to navigate the app and use our main features.
-                </p>
+        <section className="flex max-w-2xl items-center justify-between gap-6 rounded-xl border p-5 max-sm:flex-col max-sm:items-start">
+            <div className="flex items-start gap-3">
+                <BookOpenCheck className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden="true"/>
+                <div>
+                    <h3 className="font-medium text-foreground">
+                        Take the guided tour
+                    </h3>
+                    <p className="mt-1 max-w-lg text-sm text-muted-foreground">
+                        Revisit the essentials for searching, building lists and navigating your profile.
+                    </p>
+                </div>
             </div>
 
-            <Link to="/walkthrough/search-media" className={buttonVariants({ className: "w-fit mx-auto" })}>
-                Start Tutorial
+            <Link to="/walkthrough/search-media" className={buttonVariants({ className: "w-fit" })}>
+                Start walkthrough
             </Link>
-        </div>
+        </section>
     );
 }

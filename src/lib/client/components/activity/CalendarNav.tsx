@@ -2,6 +2,10 @@ import {cn} from "@/lib/utils/classnames";
 import {ActivityPeriod} from "@/lib/schemas";
 
 
+const START_YEAR = 2026;
+const shortMonthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+
 interface CalendarNavProps {
     activeYear: number;
     activeMonth: number;
@@ -10,15 +14,11 @@ interface CalendarNavProps {
 }
 
 
-const START_YEAR = 2026;
-const shortMonthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-
 export function CalendarNav({ onDateChange, activeMonth, activeYear, view }: CalendarNavProps) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
-    const yearsList = Array.from({ length: currentYear - START_YEAR + 1 }, (_, i) => START_YEAR + i);
+    const yearsList = Array.from({ length: currentYear - START_YEAR + 1 }, (_, i) => currentYear - i);
 
     const handleSelect = (year: number, month: number) => {
         onDateChange(String(year), String(month), "month");
@@ -27,7 +27,7 @@ export function CalendarNav({ onDateChange, activeMonth, activeYear, view }: Cal
     const onYearChange = (year: number) => {
         const newMonth = isFuture(year, activeMonth - 1) ? currentMonth : activeMonth;
         onDateChange(String(year), String(newMonth), "year");
-    }
+    };
 
     const isFuture = (year: number, monthIdx: number) => {
         const monthNum = monthIdx + 1;
@@ -36,24 +36,37 @@ export function CalendarNav({ onDateChange, activeMonth, activeYear, view }: Cal
     };
 
     return (
-        <div className="max-w-140 rounded-lg border border-border p-2 max-sm:w-full">
-            <div className="flex flex-wrap gap-1 border-b border-border mb-2 pb-2">
-                {yearsList.map((year) =>
-                    <button
-                        key={year}
-                        onClick={() => onYearChange(year)}
-                        className={cn("cursor-pointer rounded px-2 py-0.5 text-xs font-bold uppercase tracking-wider transition-colors",
-                            activeYear === year
-                                ? "bg-primary text-primary-foreground"
-                                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                        )}
-                    >
-                        {year}
-                    </button>
-                )}
+        <nav
+            aria-label="Activity period"
+            className="flex min-w-0 items-stretch overflow-hidden rounded-xl py-2 border px-2 shadow-xs max-sm:flex-col"
+        >
+            <div className="scrollbar-thin flex max-w-full shrink-0 items-center gap-1 overflow-x-auto max-sm:w-full max-sm:border-b
+            max-sm:pb-1.5 sm:max-w-64 sm:pr-3">
+                <span className="mr-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Year
+                </span>
+                {yearsList.map((year) => {
+                    const active = activeYear === year;
+
+                    return (
+                        <button
+                            key={year}
+                            type="button"
+                            onClick={() => onYearChange(year)}
+                            aria-current={active && view === "year" ? "page" : undefined}
+                            className={cn(
+                                "h-6 shrink-0 rounded-lg px-2 text-xs font-semibold tabular-nums transition-colors",
+                                active ? "bg-background/70 text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                                active && view === "year" && "bg-brand/10 text-brand shadow-xs",
+                            )}
+                        >
+                            {year}
+                        </button>
+                    );
+                })}
             </div>
 
-            <div className="grid grid-cols-12 gap-1 max-sm:grid-cols-6">
+            <div className="scrollbar-thin flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto max-sm:pt-1.5 sm:border-l sm:pl-3">
                 {shortMonthNames.map((month, idx) => {
                     const monthIdx = idx + 1;
                     const disabled = isFuture(activeYear, idx);
@@ -62,14 +75,15 @@ export function CalendarNav({ onDateChange, activeMonth, activeYear, view }: Cal
                     return (
                         <button
                             key={month}
+                            type="button"
                             disabled={disabled}
+                            aria-label={`${month} ${activeYear}`}
+                            aria-current={active ? "page" : undefined}
                             onClick={() => handleSelect(activeYear, monthIdx)}
-                            className={cn("flex h-7 items-center justify-center rounded text-[11px] font-medium transition-all",
-                                active
-                                    ? "bg-brand/20 text-brand ring-1 ring-brand/50"
-                                    : disabled
-                                        ? "cursor-default opacity-20"
-                                        : "cursor-pointer text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            className={cn(
+                                "h-6 min-w-12 flex-1 shrink-0 rounded-lg px-2 text-xs font-medium transition-colors",
+                                active ? "bg-background text-brand shadow-xs" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                                disabled && "cursor-default opacity-20 hover:bg-transparent hover:text-muted-foreground",
                             )}
                         >
                             {month}
@@ -77,6 +91,6 @@ export function CalendarNav({ onDateChange, activeMonth, activeYear, view }: Cal
                     );
                 })}
             </div>
-        </div>
+        </nav>
     );
 }

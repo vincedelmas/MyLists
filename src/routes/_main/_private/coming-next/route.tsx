@@ -1,9 +1,12 @@
 import {useState} from "react";
-import {List} from "lucide-react";
+import {CalendarClock, CalendarDays, List} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {ComingNextItem} from "@/lib/types/query.options.types";
+import {capitalize} from "@/lib/utils/text-formatting";
+import {formatNumber} from "@/lib/utils/number-formatting";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
@@ -66,43 +69,57 @@ function ComingNextPage() {
 
 
     return (
-        <PageTitle title="Coming Next" subtitle="Your personalized schedule for upcoming episodes, premieres, and releases.">
-            <TabHeader
-                tabs={mediaTabs}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-            />
-
-            <div className="space-y-10 mt-7 mb-12">
-                <ComingNextSection
-                    title="Releasing Now"
-                    items={sections.today}
-                />
-                <ComingNextSection
-                    title="This Week"
-                    items={sections.thisWeek}
-                />
-                <ComingNextSection
-                    title="Coming this Month"
-                    items={sections.next30Days}
-                />
-                <ComingNextSection
-                    items={sections.later}
-                    title="Later this Year"
-                />
-                <ComingNextSection
-                    items={sections.tba}
-                    title="To Be Announced"
+        <PageTitle title="Coming Next" onlyHelmet>
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    title="Coming Next"
+                    asideIcon={CalendarDays}
+                    eyebrowIcon={CalendarClock}
+                    eyebrow="Your release calendar"
+                    description="See when your next episodes, premieres and releases arrive."
+                    asideLabel={activeTab === "all" ? "Coming up" : `${capitalize(activeTab)} coming up`}
+                    asideValue={<>{formatNumber(processedData.length)} {processedData.length === 1 ? "release" : "releases"}</>}
+                    navigation={
+                        <TabHeader
+                            tabs={mediaTabs}
+                            activeTab={activeTab}
+                            className="max-sm:px-3"
+                            setActiveTab={setActiveTab}
+                        />
+                    }
                 />
 
-                {processedData.length === 0 &&
-                    <EmptyState
-                        icon={List}
-                        iconSize={35}
-                        className="py-20"
-                        message={`No upcoming ${activeTab === "all" ? "media" : activeTab} found`}
+                <div className="space-y-8 pt-7 pb-12">
+                    <ComingNextSection
+                        title="Releasing now"
+                        items={sections.today}
                     />
-                }
+                    <ComingNextSection
+                        title="This week"
+                        items={sections.thisWeek}
+                    />
+                    <ComingNextSection
+                        title="Coming this month"
+                        items={sections.next30Days}
+                    />
+                    <ComingNextSection
+                        items={sections.later}
+                        title="Later this year"
+                    />
+                    <ComingNextSection
+                        items={sections.tba}
+                        title="To be announced"
+                    />
+
+                    {processedData.length === 0 &&
+                        <EmptyState
+                            icon={List}
+                            iconSize={40}
+                            className="min-h-72 rounded-xl border shadow-xs"
+                            message={`No upcoming ${activeTab === "all" ? "media" : activeTab} found.`}
+                        />
+                    }
+                </div>
             </div>
         </PageTitle>
     );

@@ -1,10 +1,15 @@
 import {MediaType} from "@/lib/utils/enums";
+import {CalendarRange, ChartNoAxesColumnIncreasing, Clock3} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {InactiveMediaTypeError} from "@/lib/utils/error-classes";
 import {createFileRoute, redirect} from "@tanstack/react-router";
 import {StatsActiveTab, statsActiveTabSchema} from "@/lib/schemas";
+import {capitalize} from "@/lib/utils/text-formatting";
+import {formatHours} from "@/lib/utils/number-formatting";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
 import {YearRecapReleaseStatus} from "@/lib/types/year-recap.types";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
@@ -93,17 +98,41 @@ function AllTimeStatsPage({ releases, queryOptions }: {
 
     const apiData = useSuspenseQuery(queryOptions).data;
     const mediaTabs = createMediaTabItems(apiData.activatedMediaTypes, { leading: "overview" }) as TabItem<StatsActiveTab>[];
+    const isOverview = apiData.kind === "overview";
+    const trackedHours = isOverview ? apiData.totalHours : apiData.timeSpentHours;
 
     return (
         <PageTitle title={`${username} Stats`} onlyHelmet>
-            <StatsNavigation
-                releases={releases}
-                mediaTabs={mediaTabs}
-            />
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    asideIcon={Clock3}
+                    eyebrow="At a glance"
+                    title={`${username}'s stats`}
+                    asideValue={formatHours(trackedHours)}
+                    eyebrowIcon={ChartNoAxesColumnIncreasing}
+                    description={`A look at what ${username} has tracked, rated and enjoyed.`}
+                    asideLabel={
+                        <span className="flex items-center gap-1.5">
+                            {isOverview
+                                ? "Total time tracked"
+                                : `${capitalize(apiData.mediaType)} time tracked`
+                            }
+                            <InfoPopover label="Statistics cache information">
+                                Statistics are cached for 1h, so recent changes may take time to appear.
+                            </InfoPopover>
+                        </span>
+                    }
+                    navigation={
+                        <StatsNavigation
+                            releases={releases}
+                            mediaTabs={mediaTabs}
+                        />
+                    }
+                />
 
-            <div className="mt-6">
                 <DashboardContent
                     data={apiData}
+                    showHero={false}
                     subjectName={username}
                     onSelectMediaType={(val) => void navigate({ search: (prev) => ({ ...prev, activeTab: val }) })}
                 />
@@ -125,13 +154,26 @@ function RecapStatsPage({ releases, queryOptions }: {
 
     return (
         <PageTitle title={`${username} Recap ${year}`} onlyHelmet>
-            <StatsNavigation
-                releases={releases}
-                mediaTabs={mediaTabs}
-            />
-            <div className="mt-6">
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    asideIcon={Clock3}
+                    eyebrow="Year in review"
+                    eyebrowIcon={CalendarRange}
+                    title={`${username}'s ${year} recap`}
+                    asideValue={formatHours(recap.totals.hours)}
+                    asideLabel={recap.scope === "all" ? "Time tracked this year" : `${capitalize(recap.scope)} time tracked`}
+                    description={`A look back at what ${username} finished, revisited and added to My Activity.`}
+                    navigation={
+                        <StatsNavigation
+                            releases={releases}
+                            mediaTabs={mediaTabs}
+                        />
+                    }
+                />
+
                 <YearRecapDashboard
                     recap={recap}
+                    showHero={false}
                     canGenerateImage={currentUser?.name.toLocaleLowerCase() === username.toLocaleLowerCase()}
                 />
             </div>

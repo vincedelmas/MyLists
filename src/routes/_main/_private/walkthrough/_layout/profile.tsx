@@ -9,7 +9,7 @@ import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab"
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
-import {Activity, ArrowBigUpDash, ArrowUp10, Award, ChartNoAxesColumn, LayoutGrid, User} from "lucide-react";
+import {Activity, ArrowUp10, Award, LayoutGrid, User} from "lucide-react";
 import {ONBOARDING_PROFILE_NAME, onboardingProfileFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
 import {OnboardingContainer, OnboardingDemoBox, OnboardingNote, OnboardingSection, OnboardingSubSection} from "@/lib/client/components/onboarding/OnBoardingShared";
 
@@ -117,16 +117,7 @@ function ProfileOnboarding() {
                             }
                         </div>
                     </div>
-                    <div className="absolute bottom-0 right-25 bg-primary text-primary-foreground font-bold text-[10px]
-                    px-2 py-1 rounded flex items-center gap-1">
-                        ACCESS ADVANCED STATS<ArrowBigUpDash className="size-3 animate-bounce"/>
-                    </div>
                 </OnboardingDemoBox>
-
-                <OnboardingNote title="Advanced Stats" icon={ChartNoAxesColumn}>
-                    Want to see your progress in numbers? The <b>Advanced Stats</b> dashboard offers a high-level summary
-                    of your data, plus media-type data tailored to your lists (Movies, Books, Games, etc.).
-                </OnboardingNote>
             </OnboardingSubSection>
 
             <OnboardingSubSection

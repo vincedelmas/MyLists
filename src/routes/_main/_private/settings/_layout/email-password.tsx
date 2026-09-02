@@ -4,7 +4,6 @@ import authClient from "@/lib/utils/auth-client";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
-import {Separator} from "@/lib/client/components/ui/separator";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {PasswordSettingsForm, passwordSettingsFormSchema} from "@/lib/schemas";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
@@ -65,29 +64,35 @@ function EmailAndPasswordPage() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="grid w-full max-w-3xl gap-8 md:grid-cols-2">
             <FormProvider {...emailForm}>
-                <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="flex w-full max-w-sm flex-col gap-4">
+                <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="flex min-w-0 flex-col gap-4 border-b pb-8 md:border-b-0 md:border-r md:pb-0 md:pr-8">
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground">Email address</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            A confirmation link will be sent to the new address.
+                        </p>
+                    </div>
                     <FieldSet disabled={emailForm.formState.isSubmitting}>
                         <FieldGroup>
-                        <Controller
-                            name="email"
-                            control={emailForm.control}
-                            rules={{ required: "Email is required" }}
-                            render={({field, fieldState}) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={emailForm.formState.isSubmitting}>
-                                    <FieldLabel htmlFor={`${fieldId}-email`}>Change Your Email</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        id={`${fieldId}-email`}
-                                        type="email"
-                                        placeholder="new-email@example.com"
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
-                        />
+                            <Controller
+                                name="email"
+                                control={emailForm.control}
+                                rules={{ required: "Email is required" }}
+                                render={({field, fieldState}) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={emailForm.formState.isSubmitting}>
+                                        <FieldLabel htmlFor={`${fieldId}-email`}>New email address</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-email`}
+                                            type="email"
+                                            placeholder="new-email@example.com"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                )}
+                            />
                         </FieldGroup>
                     </FieldSet>
                     {changeEmailSuccess &&
@@ -102,63 +107,67 @@ function EmailAndPasswordPage() {
                 </form>
             </FormProvider>
 
-            <Separator className="max-w-sm"/>
-
             <FormProvider {...passwordForm}>
-                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="flex w-full max-w-sm flex-col gap-4">
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="flex min-w-0 flex-col gap-4">
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground">Password</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            Confirm your current password before choosing a new one.
+                        </p>
+                    </div>
                     <FieldSet disabled={passwordMutation.isPending}>
                         <FieldGroup>
-                        <Controller
-                            name="currentPassword"
-                            control={passwordForm.control}
-                            render={({field, fieldState}) =>
-                                <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-current-password`}>Current Password</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        id={`${fieldId}-current-password`}
-                                        type="password"
-                                        placeholder="********"
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            }
-                        />
-                        <Controller
-                            name="newPassword"
-                            control={passwordForm.control}
-                            render={({field, fieldState}) =>
-                                <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-new-password`}>New Password</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        id={`${fieldId}-new-password`}
-                                        type="password"
-                                        placeholder="********"
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            }
-                        />
-                        <Controller
-                            name="confirmNewPassword"
-                            control={passwordForm.control}
-                            render={({field, fieldState}) =>
-                                <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-confirm-new-password`}>Confirm New Password</FieldLabel>
-                                    <Input
-                                        {...field}
-                                        id={`${fieldId}-confirm-new-password`}
-                                        type="password"
-                                        placeholder="********"
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            }
-                        />
+                            <Controller
+                                name="currentPassword"
+                                control={passwordForm.control}
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-current-password`}>Current password</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-current-password`}
+                                            type="password"
+                                            placeholder="********"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                }
+                            />
+                            <Controller
+                                name="newPassword"
+                                control={passwordForm.control}
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-new-password`}>New password</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-new-password`}
+                                            type="password"
+                                            placeholder="********"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                }
+                            />
+                            <Controller
+                                name="confirmNewPassword"
+                                control={passwordForm.control}
+                                render={({field, fieldState}) =>
+                                    <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-confirm-new-password`}>Confirm new password</FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-confirm-new-password`}
+                                            type="password"
+                                            placeholder="********"
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                }
+                            />
                         </FieldGroup>
                     </FieldSet>
                     <FormError/>

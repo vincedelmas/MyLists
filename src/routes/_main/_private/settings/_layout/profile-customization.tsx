@@ -62,17 +62,9 @@ function ProfileCustomForm() {
 
     return (
         <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col gap-6">
+            <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col gap-8">
                 <FieldSet disabled={mutation.isPending}>
-                    <div>
-                        <h2 className="text-lg font-semibold text-foreground">
-                            Profile Customization
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                            Configure the Highlighted Media block independently for each profile tab.
-                        </p>
-                    </div>
-                    <div className="grid gap-6 grid-cols-[200px_0.8fr] max-lg:grid-cols-1">
+                    <div className="grid items-start gap-8 lg:grid-cols-[12rem_minmax(0,1fr)]">
                         <ProfileSidebarTabs
                             activeTab={activeTab}
                             setActiveTab={setActiveTab}
@@ -88,8 +80,8 @@ function ProfileCustomForm() {
                     </div>
                 </FieldSet>
                 <FormError/>
-                <FormSubmitButton className="w-fit" disabled={!form.formState.isDirty} isLoading={mutation.isPending}>
-                    Save Customization
+                <FormSubmitButton className="self-end" disabled={!form.formState.isDirty} isLoading={mutation.isPending}>
+                    Save changes
                 </FormSubmitButton>
             </form>
         </FormProvider>

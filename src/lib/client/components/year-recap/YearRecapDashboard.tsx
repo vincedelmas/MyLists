@@ -22,11 +22,12 @@ import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardLeftCorner, Media
 
 interface YearRecapDashboardProps {
     recap: YearRecap;
+    showHero?: boolean;
     canGenerateImage?: boolean;
 }
 
 
-export function YearRecapDashboard({ recap, canGenerateImage = false }: YearRecapDashboardProps) {
+export function YearRecapDashboard({ recap, canGenerateImage = false, showHero = true }: YearRecapDashboardProps) {
     const color = recap.scope === "all" ? "var(--brand)" : getThemeColor(recap.scope);
     const activeMedia = recap.media[0];
     const averageActiveMonth = recap.totals.activeMonths > 0
@@ -35,7 +36,7 @@ export function YearRecapDashboard({ recap, canGenerateImage = false }: YearReca
 
     if (recap.totals.titleCount === 0) {
         return (
-            <div className="grid min-h-96 place-items-center rounded-2xl border border-dashed bg-card/20 p-8 text-center">
+            <div className="grid min-h-96 place-items-center rounded-xl border border-dashed p-8 text-center shadow-xs">
                 <div>
                     <CalendarRange className="mx-auto size-9 text-muted-foreground"/>
                     <h2 className="mt-4 text-xl font-bold">
@@ -51,33 +52,35 @@ export function YearRecapDashboard({ recap, canGenerateImage = false }: YearReca
 
     return (
         <div className="pb-12">
-            <StatsHero
-                color={color}
-                category="Year recap"
-                metricLabel="Time tracked this year"
-                metricValue={formatHours(recap.totals.hours)}
-                title={<>{recap.user.name}&apos;s {recap.year}</>}
-                context={recap.scope === "all" ? "All media" : recap.scope}
-                metricNote={`across ${formatNumber(recap.totals.titleCount)} titles`}
-                description="A record of the progress, completions, repeats, and titles preserved in MyActivity."
-                decoration={
-                    <>
-                        <div className="pointer-events-none absolute right-0 top-1/2 -z-10 -translate-y-1/2
-                        text-[15rem] font-black leading-none text-foreground/2.5 sm:text-[22rem]">
-                            {String(recap.year).slice(-2)}
-                        </div>
-                        {recap.scope !== "all" &&
-                            <MainThemeIcon
-                                size={390}
-                                type={recap.scope}
-                                className="pointer-events-none absolute -right-12 -top-16 -z-10 opacity-[0.035]"
-                            />
-                        }
-                    </>
-                }
-            />
+            {showHero &&
+                <StatsHero
+                    color={color}
+                    category="Year recap"
+                    metricLabel="Time tracked this year"
+                    metricValue={formatHours(recap.totals.hours)}
+                    title={<>{recap.user.name}&apos;s {recap.year}</>}
+                    context={recap.scope === "all" ? "All media" : recap.scope}
+                    metricNote={`across ${formatNumber(recap.totals.titleCount)} titles`}
+                    description="A record of the progress, completions, repeats, and titles preserved in MyActivity."
+                    decoration={
+                        <>
+                            <div className="pointer-events-none absolute right-0 top-1/2 -z-10 -translate-y-1/2
+                            text-[15rem] font-black leading-none text-foreground/2.5 sm:text-[22rem]">
+                                {String(recap.year).slice(-2)}
+                            </div>
+                            {recap.scope !== "all" &&
+                                <MainThemeIcon
+                                    size={390}
+                                    type={recap.scope}
+                                    className="pointer-events-none absolute -right-12 -top-16 -z-10 opacity-[0.035]"
+                                />
+                            }
+                        </>
+                    }
+                />
+            }
 
-            <section className="border-b py-7">
+            <section className="mt-6 rounded-xl border p-5 shadow-xs sm:p-6">
                 <CompactStatsGrid
                     color={color}
                     items={[
@@ -163,7 +166,8 @@ export function YearRecapDashboard({ recap, canGenerateImage = false }: YearReca
 
                 {recap.scope === "all" ?
                     <>
-                        <div className="flex h-5 overflow-hidden rounded-sm bg-muted">
+                        <div className="rounded-xl border p-5 shadow-xs sm:p-6">
+                            <div className="flex h-5 overflow-hidden rounded-sm bg-muted">
                             {recap.media.map((media) =>
                                 <div
                                     key={media.mediaType}
@@ -174,8 +178,8 @@ export function YearRecapDashboard({ recap, canGenerateImage = false }: YearReca
                                     }}
                                 />
                             )}
-                        </div>
-                        <div className="mt-6 grid gap-x-7 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+                            </div>
+                            <div className="mt-6 grid gap-x-7 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
                             {recap.media.map((media) =>
                                 <div key={media.mediaType} className="border-l pl-4" style={{ borderColor: getThemeColor(media.mediaType) }}>
                                     <div className="flex items-center gap-2">
@@ -198,6 +202,7 @@ export function YearRecapDashboard({ recap, canGenerateImage = false }: YearReca
                                     </div>
                                 </div>
                             )}
+                            </div>
                         </div>
                     </>
                     :
@@ -301,7 +306,7 @@ export function YearRecapDashboard({ recap, canGenerateImage = false }: YearReca
             </section>
 
             {canGenerateImage &&
-                <section className="mt-12 border-y py-9 sm:mt-16">
+                <section className="mt-12 rounded-xl border p-5 shadow-xs sm:mt-16 sm:p-7">
                     <YearRecapShareCard recap={recap} color={color}/>
                 </section>
             }

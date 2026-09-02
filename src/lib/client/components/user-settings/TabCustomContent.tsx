@@ -1,4 +1,5 @@
 import React, {useId} from "react";
+import {EyeOff, ListOrdered, Shuffle} from "lucide-react";
 import {Input} from "@/lib/client/components/ui/input";
 import {Controller, useFormContext, useWatch} from "react-hook-form";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
@@ -17,9 +18,9 @@ interface TabCustomContentProps {
 
 
 const modeOptions = [
-    { value: "random", label: "Random", description: "Automatically pull random favorites from this list." },
-    { value: "curated", label: "Curated", description: "Choose exactly which media to highlight." },
-    { value: "disabled", label: "Disabled", description: "Hide this section on the profile tab." },
+    { value: "random", label: "Random favorites", description: "Rotate through favorites from this list.", icon: Shuffle },
+    { value: "curated", label: "Choose titles", description: "Pick and order up to seven titles yourself.", icon: ListOrdered },
+    { value: "disabled", label: "Hide section", description: "Do not show this section on your profile.", icon: EyeOff },
 ] as const;
 
 
@@ -29,70 +30,83 @@ export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache }: T
     const activeMode = useWatch({ control, name: `${activeTab}.mode` });
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base capitalize">
+        <Card className="gap-0 py-0">
+            <CardHeader className="border-b bg-muted/20 px-5 py-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-lg capitalize">
                     <MainThemeIcon type={activeTab} size={18}/>
-                    {activeTab}
+                    {activeTab} highlights
                 </CardTitle>
                 <CardDescription>
                     {activeTab === "overview"
-                        ? <>Mix media from any of your activated lists.</>
-                        : <>Only {activeTab} from your {activeTab} list.</>
+                        ? <>Choose what appears in the highlighted section at the top of your profile.</>
+                        : <>Choose what appears on the {activeTab} tab of your profile.</>
                     }
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-5 sm:p-6">
                 <FieldGroup className="gap-6">
-                <Controller
-                    control={control}
-                    name={`${activeTab}.title`}
-                    render={({field, fieldState}) =>
-                        <Field data-invalid={fieldState.invalid}>
-                            <FieldLabel htmlFor={`${fieldId}-title`}>Custom Title</FieldLabel>
-                            <Input
-                                {...field}
-                                id={`${fieldId}-title`}
-                                maxLength={50}
-                                placeholder="Highlighted Media"
-                                aria-invalid={fieldState.invalid}
-                            />
-                            <FieldError errors={[fieldState.error]}/>
-                        </Field>
-                    }
-                />
+                    <Controller
+                        control={control}
+                        name={`${activeTab}.title`}
+                        render={({field, fieldState}) =>
+                            <Field data-invalid={fieldState.invalid}>
+                                <FieldLabel htmlFor={`${fieldId}-title`}>Section title</FieldLabel>
+                                <Input
+                                    {...field}
+                                    id={`${fieldId}-title`}
+                                    maxLength={50}
+                                    placeholder="Highlighted media"
+                                    aria-invalid={fieldState.invalid}
+                                />
+                                <FieldDescription>
+                                    This heading appears above the media on your profile.
+                                </FieldDescription>
+                                <FieldError errors={[fieldState.error]}/>
+                            </Field>
+                        }
+                    />
 
-                <Controller
+                    <Controller
                         control={control}
                         name={`${activeTab}.mode`}
                         render={({field, fieldState}) =>
                             <Field data-invalid={fieldState.invalid}>
                                 <FieldSet>
-                                    <FieldLegend id={`${fieldId}-mode`} variant="label">Display Mode</FieldLegend>
+                                    <FieldLegend id={`${fieldId}-mode`} variant="label">What to show</FieldLegend>
                                     <RadioGroup
                                         value={field.value}
                                         onValueChange={field.onChange}
                                         aria-invalid={fieldState.invalid}
                                         aria-labelledby={`${fieldId}-mode`}
-                                        className="flex flex-col gap-3"
+                                        className="grid gap-3 sm:grid-cols-3"
                                     >
-                                        {modeOptions.map((option) =>
-                                            <Field key={option.value} orientation="horizontal" className="items-start rounded-lg border p-3">
-                                                <RadioGroupItem
-                                                    id={`${fieldId}-mode-${option.value}`}
-                                                    className="mt-0.5"
-                                                    value={option.value}
-                                                />
-                                                <FieldContent>
-                                                    <FieldLabel htmlFor={`${fieldId}-mode-${option.value}`} className="font-normal">
-                                                        {option.label}
-                                                    </FieldLabel>
-                                                    <FieldDescription className="text-xs">
-                                                        {option.description}
-                                                    </FieldDescription>
-                                                </FieldContent>
-                                            </Field>
-                                        )}
+                                        {modeOptions.map((option) => {
+                                            const Icon = option.icon;
+
+                                            return (
+                                                <Field
+                                                    key={option.value}
+                                                    orientation="horizontal"
+                                                    className="items-start rounded-xl border p-3 transition-colors
+                                                    has-data-checked:border-brand/40 has-data-checked:bg-brand/5"
+                                                >
+                                                    <RadioGroupItem
+                                                        id={`${fieldId}-mode-${option.value}`}
+                                                        className="mt-0.5"
+                                                        value={option.value}
+                                                    />
+                                                    <FieldContent>
+                                                        <FieldLabel htmlFor={`${fieldId}-mode-${option.value}`} className="font-medium">
+                                                            <Icon className="size-3.5 text-muted-foreground" aria-hidden="true"/>
+                                                            {option.label}
+                                                        </FieldLabel>
+                                                        <FieldDescription className="mt-1 text-xs">
+                                                            {option.description}
+                                                        </FieldDescription>
+                                                    </FieldContent>
+                                                </Field>
+                                            );
+                                        })}
                                     </RadioGroup>
                                 </FieldSet>
                                 <FieldError errors={[fieldState.error]}/>
@@ -100,13 +114,13 @@ export const TabCustomContent = ({ activeTab, previewCache, setPreviewCache }: T
                         }
                     />
 
-                {activeMode === "curated" &&
-                    <CuratedMediaManager
-                        activeTab={activeTab}
-                        previewCache={previewCache}
-                        setPreviewCache={setPreviewCache}
-                    />
-                }
+                    {activeMode === "curated" &&
+                        <CuratedMediaManager
+                            activeTab={activeTab}
+                            previewCache={previewCache}
+                            setPreviewCache={setPreviewCache}
+                        />
+                    }
                 </FieldGroup>
             </CardContent>
         </Card>

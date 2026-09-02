@@ -145,16 +145,16 @@ function MediaListFormPage() {
     return (
         <div className="space-y-6">
             <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-90 flex-col gap-8 max-sm:w-full">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-full max-w-3xl flex-col gap-8">
                     <FieldSet disabled={listSettingsMutation.isPending}>
-                        <FieldGroup className="gap-8">
-                            <FieldSet>
+                        <FieldGroup className="grid gap-6 md:grid-cols-2">
+                            <FieldSet className="md:col-span-2">
                                 <FieldLegend variant="label">Active Content</FieldLegend>
                                 <FieldDescription>
                                     Disabled media are hidden from your profile, stats, feeds, activity, achievements, etc.
                                     Your data are kept and returns if you re-enable it.
                                 </FieldDescription>
-                                <FieldGroup data-slot="checkbox-group" className="gap-2!">
+                                <FieldGroup data-slot="checkbox-group" className="grid gap-2! sm:grid-cols-2">
                                     {mediaTypeConfigs.map((config) => (
                                         <Controller
                                             key={config.name}
@@ -186,7 +186,7 @@ function MediaListFormPage() {
                                     ))}
                                 </FieldGroup>
                             </FieldSet>
-                            <FieldSet>
+                            <FieldSet className="md:col-span-2">
                                 <FieldLegend variant="label">Automatic List Updates</FieldLegend>
                                 <Controller
                                     name="autoMoveCompletedTvToOnHold"
@@ -331,13 +331,13 @@ function MediaListFormPage() {
                         </FieldGroup>
                     </FieldSet>
                     <FormError/>
-                    <FormSubmitButton disabled={!form.formState.isDirty} isLoading={listSettingsMutation.isPending}>
+                    <FormSubmitButton className="self-end" disabled={!form.formState.isDirty} isLoading={listSettingsMutation.isPending}>
                         Update Settings
                     </FormSubmitButton>
                 </form>
             </FormProvider>
             <Separator/>
-            <div className="w-90 max-sm:w-full space-y-4">
+            <div className="w-full max-w-3xl space-y-4">
                 <div className="text-base font-medium mb-3">
                     Export Your List as CSV
                     <div className="text-xs font-normal text-muted-foreground">
@@ -353,7 +353,7 @@ function MediaListFormPage() {
                                 if (value !== null) setSelectedListForExport(value as MediaType);
                             }}
                         >
-                            <SelectTrigger id="list-export-select" className="w-40 max-sm:max-w-full">
+                            <SelectTrigger id="list-export-select" className="w-50 max-sm:max-w-full">
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>

@@ -15,6 +15,8 @@ export const THEME_ICONS_MAP = {
 
 
 const THEME_COLOR_MAP: Record<string, string> = {
+    brand: "var(--brand)",
+
     [MediaType.SERIES]: "var(--color-series)",
     [MediaType.ANIME]: "var(--color-anime)",
     [MediaType.MOVIES]: "var(--color-movies)",
@@ -90,10 +92,14 @@ export const getThemeColor = (type: MediaType | Status | string | undefined) => 
 };
 
 
-export const getStaticMediaColor = (mediaType: MediaType) => STATIC_MEDIA_COLOR_MAP[mediaType];
+export const getStaticMediaColor = (mediaType: MediaType) => {
+    return STATIC_MEDIA_COLOR_MAP[mediaType];
+}
 
 
-export const getUpdateTypeColor = (updateType: UpdateType) => UPDATE_TYPE_COLOR_MAP[updateType];
+export const getUpdateTypeColor = (updateType: UpdateType) => {
+    return UPDATE_TYPE_COLOR_MAP[updateType];
+}
 
 
 export const getDifficultyColors = (difficulty: AchievementDifficulty | "total" | undefined, variant: "text" | "border" | "ring" | "bg" = "text") => {

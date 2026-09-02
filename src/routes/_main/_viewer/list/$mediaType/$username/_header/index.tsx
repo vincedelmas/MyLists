@@ -1,12 +1,10 @@
 import {useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {statusUtils} from "@/lib/utils/media-mapping";
-import {capitalize} from "@/lib/utils/text-formatting";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Header} from "@/lib/client/components/media/base/Header";
 import {MediaListArgs, mediaListSearchSchema} from "@/lib/schemas";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MediaGrid} from "@/lib/client/components/media/base/MediaGrid";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
@@ -86,7 +84,7 @@ function MediaList() {
     };
 
     return (
-        <PageTitle title={`${username} ${capitalize(mediaType)} List`} onlyHelmet>
+        <>
             <Header
                 isGrid={isGrid}
                 filters={filters}
@@ -142,6 +140,6 @@ function MediaList() {
                 onOpenChange={setFiltersPanelOpen}
                 onFilterApply={(filters) => handleFilterChange(filters)}
             />
-        </PageTitle>
+        </>
     );
 }

@@ -8,7 +8,9 @@ import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {randomPublicProfile} from "@/lib/client/react-query/query-options";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDollarSign, Code, Download, LayoutGrid, Lightbulb, Popcorn, Shield, Sparkles, Trophy, Users} from "lucide-react";
+import {ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDollarSign, Code, Download, LayoutGrid, Popcorn, Shield, Sparkles, Trophy, Users} from "lucide-react";
+import {MediaType} from "@/lib/utils/enums";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 
 
 export const Route = createFileRoute("/_main/_public/")({
@@ -21,8 +23,8 @@ export const Route = createFileRoute("/_main/_public/")({
             canonical: "/",
             image: "/logo512.png",
             title: "MyLists - Track movies, series, anime, games, books and manga",
-            description: "Organize every movie, series, anime, game, book and manga list in one place with stats, " +
-                "achievements, collections, privacy controls and social discovery.",
+            description: "Keep track of movies, series, anime, games, books, and manga. Update your progress, see your " +
+                "stats, and share your lists if you want to.",
         }),
     }),
 })
@@ -31,41 +33,40 @@ export const Route = createFileRoute("/_main/_public/")({
 const faqs = [
     {
         question: "What can I track on MyLists?",
-        answer: "Movies, series, anime, games, books, and manga in one account.",
+        answer: "Movies, series, anime, games, books, and manga. Each one has its own list.",
     },
     {
         question: "Is MyLists free?",
-        answer: "Yes. There are no ads, no premium tier, and no locked core features.",
+        answer: "Yes. There are no ads or paid features.",
     },
     {
         question: "Can I keep my profile private?",
-        answer: "Yes. You can control profile visibility and limit access to approved followers.",
+        answer: "Yes. Your profile can be public, visible only to signed-in users, or limited to approved followers.",
     },
     {
         question: "Can I export my data?",
         answer: "Yes. You can export your media lists as CSV files.",
     },
     {
-        question: "Do I need to use the social or gamification features?",
-        answer: "No. You can use MyLists as a simple personal tracker, or also use the community, achievements, and leaderboards if that is your thing.",
+        question: "Do I have to follow people or care about achievements?",
+        answer: "No. You can ignore all of that and just use MyLists to keep your own lists.",
     },
     {
-        question: "Will you add importers from Letterboxd, MAL, IMDb, and similar platforms?",
+        question: "Will you add imports from Letterboxd, MAL, IMDb, and other sites?",
         answer:
-            "Not for now. MyLists is a solo project, and I would rather build imports properly than ship something fragile. " +
-            "Some third-party services also have rate-limit and data-mapping constraints, so this needs more work " +
-            "before it is worth releasing.",
+            "They are in the works, but not available right now. I work on MyLists by myself, and imports from other sites take a lot " +
+            "of work to get right.",
     },
     {
         question: "Is MyLists still actively developed?",
-        answer: "Yes. It is actively maintained, but as a solo project features are prioritized carefully and shipped progressively.",
+        answer: "Yes. I work on it regularly, though it may take a while for larger changes to make it onto the site.",
     },
     {
-        question: "Can I suggest features I would like to see?",
+        question: "Can I suggest something for the site?",
         answer: (
             <>
-                Yes. There is a dedicated feature request and voting system, so you can suggest ideas and vote on what should be built next.
-                Check the <b>Lightbulb on the bottom right corner</b> of the page (accessible once logged in).
+                Yes. Once you are signed in, use the <b>lightbulb in the bottom-right corner</b> to suggest an idea or vote
+                on someone else&apos;s.
             </>
         ),
     },
@@ -74,31 +75,31 @@ const faqs = [
 const trustPrinciples = [
     {
         icon: CircleDollarSign,
-        badge: "No paywalls",
+        badge: "Free",
         variant: "success",
-        title: "Free means free.",
-        description: "No ads, premium tier, or locked core features. Create an account and use every core feature.",
+        title: "The site is free.",
+        description: "There are no ads, subscriptions, or features kept behind a payment.",
     },
     {
         icon: Shield,
-        badge: "Privacy controls",
+        badge: "Privacy",
         variant: "info",
-        title: "You decide who sees your profile.",
-        description: "Keep your profile public or limit access to approved followers when you want a more private archive.",
+        title: "Your profile does not have to be public.",
+        description: "You can make it public, visible only to signed-in users, or limited to approved followers.",
     },
     {
         icon: Download,
         badge: "CSV export",
         variant: "warning",
-        title: "Your lists are not trapped here.",
-        description: "Export your media lists as CSV files whenever you want a local copy or need to take your data elsewhere.",
+        title: "You can download your lists.",
+        description: "Export any of your lists as a CSV file whenever you want a copy.",
     },
     {
         icon: Code,
         badge: "Open source",
         variant: "achievement",
-        title: "Built in the open, maintained honestly.",
-        description: "MyLists is a solo project with public source code. Features are prioritized carefully and shipped progressively.",
+        title: "The code is public.",
+        description: "MyLists is made by one person, and its source code is available on GitHub.",
         href: "https://github.com/Crossoufire/MyLists",
     },
 ] as const;
@@ -118,26 +119,26 @@ function HomePage() {
                     <div className="absolute bottom-0 left-1/2 size-64 -translate-x-1/2 rounded-full bg-movies/10 blur-3xl"/>
                 </div>
 
-                <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-center justify-center px-6 py-16 lg:px-8">
+                <div className="relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl items-center justify-center px-6 pt-16 pb-24 lg:px-8">
                     <div className="flex max-w-4xl flex-col items-center gap-6 text-center">
                         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                            <span className="h-px w-8 bg-brand" aria-hidden="true"/>
-                            Your media. One living archive.
-                            <span className="h-px w-8 bg-brand" aria-hidden="true"/>
+                            <span className="h-px w-10 bg-brand" aria-hidden="true"/>
+                            Movies, Series, Anime, Games, Books, and Manga
+                            <span className="h-px w-10 bg-brand" aria-hidden="true"/>
                         </div>
                         <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-                            One home for <span className="font-serif font-normal italic text-brand">everything</span> you watch,
+                            Keep track of what you <span className="text-brand">watch</span>,
                             read, and play.
                         </h1>
                         <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground text-balance sm:text-xl">
-                            Build lists across movies, series, anime, games, books, and manga. Track progress, uncover your
-                            habits, and share a profile that feels yours.
+                            Make lists, update your progress, and see a few stats along the way. You can keep it to yourself
+                            or share it with other people.
                         </p>
 
                         <div className="flex flex-wrap justify-center gap-3">
                             <Button size="lg" onClick={() => openRegister("/")}>
                                 <Popcorn data-icon="inline-start"/>
-                                Create your free account
+                                Create an account
                             </Button>
                             {randomProfile &&
                                 <Link
@@ -145,14 +146,14 @@ function HomePage() {
                                     params={{ username: randomProfile.name }}
                                     className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
                                 >
-                                    Explore a public profile
+                                    See a random profile
                                     <ArrowRight data-icon="inline-end"/>
                                 </Link>
                             }
                         </div>
 
                         <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-                            {["Free", "No ads", "Export anytime"].map((item) =>
+                            {["Free to use", "No ads", "CSV export"].map((item) =>
                                 <li key={item} className="flex items-center gap-1.5">
                                     <Check className="size-4 text-brand" aria-hidden="true"/>
                                     {item}
@@ -160,18 +161,28 @@ function HomePage() {
                             )}
                         </ul>
                     </div>
+
+                    <a
+                        href="#features"
+                        aria-label="Scroll to the next section"
+                        className="absolute bottom-6 left-1/2 flex size-11 -translate-x-1/2 items-center justify-center rounded-full
+                            border border-border/70 bg-background/70 text-muted-foreground shadow-sm backdrop-blur-sm
+                            transition-colors hover:border-border hover:text-foreground focus-visible:outline-none
+                            focus-visible:ring-2 focus-visible:ring-ring/50"
+                    >
+                        <ChevronDown aria-hidden="true" className="size-6 motion-safe:animate-bounce"/>
+                    </a>
                 </div>
             </section>
 
-            <section id="features" className="container mx-auto scroll-mt-20 px-6 py-24">
+            <section id="features" className="container mx-auto scroll-mt-15 px-6 py-24">
                 <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
-                    <Badge variant="outline">Inside MyLists</Badge>
                     <h2 className="text-3xl font-bold text-balance md:text-5xl">
-                        Built for the whole habit, not just the checklist.
+                        Keep a list, update it, and see the numbers.
                     </h2>
                     <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground text-balance">
-                        Keep every medium organized, understand the time you spend with it, and decide how social—or
-                        competitive—you want the experience to be.
+                        The stats, achievements, and social parts are there if you want them. If not, you can just keep
+                        track of what you have watched, read, or played.
                     </p>
                 </div>
 
@@ -180,24 +191,27 @@ function HomePage() {
                         <CardHeader className="relative">
                             <Badge variant="success">
                                 <LayoutGrid data-icon="inline-start"/>
-                                Unified library
+                                Your lists
                             </Badge>
                             <CardTitle className="text-2xl sm:pr-16 md:text-3xl">
-                                <h3>Six media types. One identity.</h3>
+                                <h3>A separate list for each kind of media.</h3>
                             </CardTitle>
                             <CardDescription className="max-w-xl text-base leading-relaxed">
-                                Movies, series, anime, games, books, and manga each keep their own list while contributing
-                                to one profile and one set of statistics.
+                                Movies, series, anime, games, books, and manga each have their own list. They all show up
+                                on the same profile and in the same stats.
                             </CardDescription>
-                            <span aria-hidden="true" className="absolute top-0 right-4 hidden font-serif text-5xl text-muted-foreground/20 sm:block">
+                            <span aria-hidden="true" className="absolute top-0 right-4 hidden text-5xl text-muted-foreground/20 sm:block">
                                 01
                             </span>
                         </CardHeader>
                         <CardContent>
-                            <ul className="flex flex-wrap gap-2" aria-label="Supported media types">
-                                {["Movies", "Series", "Anime", "Games", "Books", "Manga"].map((mediaType) =>
+                            <ul className="flex flex-wrap gap-3" aria-label="Supported media types">
+                                {Object.values(MediaType).map((mediaType) =>
                                     <li key={mediaType}>
-                                        <Badge variant="outline">{mediaType}</Badge>
+                                        <Badge variant="outline" className="capitalize">
+                                            <MainThemeIcon type={mediaType} dataIcon="inline-start"/>
+                                            {mediaType}
+                                        </Badge>
                                     </li>
                                 )}
                             </ul>
@@ -208,14 +222,16 @@ function HomePage() {
                         <CardHeader className="relative">
                             <Badge variant="achievement">
                                 <Trophy data-icon="inline-start"/>
-                                Gamification
+                                Achievements
                             </Badge>
-                            <CardTitle className="text-2xl sm:pr-16"><h3>Progress that feels rewarding.</h3></CardTitle>
+                            <CardTitle className="text-2xl sm:pr-16">
+                                <h3>Levels and achievements, if you are into that.</h3>
+                            </CardTitle>
                             <CardDescription className="text-base leading-relaxed">
-                                Logged progress builds XP, levels, and achievements—with the Hall of Fame there when you
-                                feel competitive.
+                                Updating your progress earns XP and achievements. There are also leaderboards if you feel
+                                like comparing numbers.
                             </CardDescription>
-                            <span aria-hidden="true" className="absolute top-0 right-4 hidden font-serif text-5xl text-muted-foreground/20 sm:block">
+                            <span aria-hidden="true" className="absolute top-0 right-4 hidden text-5xl text-muted-foreground/20 sm:block">
                                 02
                             </span>
                         </CardHeader>
@@ -236,16 +252,16 @@ function HomePage() {
                         <CardHeader className="relative">
                             <Badge variant="info">
                                 <Users data-icon="inline-start"/>
-                                Community
+                                People
                             </Badge>
                             <CardTitle className="text-2xl sm:pr-16">
-                                <h3>Social when you want it.</h3>
+                                <h3>See what your friends are up to.</h3>
                             </CardTitle>
                             <CardDescription className="text-base leading-relaxed">
-                                Follow friends, share lists, compare statistics, and discover what people you trust are
-                                enjoying—without making community features mandatory.
+                                Follow people to see their lists and recent updates. Or do not, the site works fine as a
+                                private tracker too.
                             </CardDescription>
-                            <span aria-hidden="true" className="absolute top-0 right-4 hidden font-serif text-5xl text-muted-foreground/20 sm:block">
+                            <span aria-hidden="true" className="absolute top-0 right-4 hidden text-5xl text-muted-foreground/20 sm:block">
                                 03
                             </span>
                         </CardHeader>
@@ -253,22 +269,21 @@ function HomePage() {
 
                     <Card className="relative bg-card/60 lg:col-span-7">
                         <CardHeader className="relative">
-                            <Badge variant="warning">
-                                <Popcorn data-icon="inline-start"/>
+                            <Badge variant="destructive">
                                 Daily challenge
                             </Badge>
                             <CardTitle className="text-2xl sm:pr-16 md:text-3xl">
-                                <h3>One more reason to come back tomorrow.</h3>
+                                <h3>There are also some small games.</h3>
                             </CardTitle>
                             <CardDescription className="max-w-xl text-base leading-relaxed">
-                                Moviedle turns a pixelated cover into a daily movie challenge. Guess the title and keep
-                                your streak alive.
+                                Moviedle shows you a pixelated movie cover. Guess the title in as few tries as you can.
+                                Which came first? Find which media released first between the two dates.
                             </CardDescription>
-                            <span aria-hidden="true" className="absolute top-0 right-4 hidden font-serif text-5xl text-muted-foreground/20 sm:block">
+                            <span aria-hidden="true" className="absolute top-0 right-4 hidden text-5xl text-muted-foreground/20 sm:block">
                                 04
                             </span>
                         </CardHeader>
-                        <CardFooter>
+                        <CardFooter className="flex items-center gap-2">
                             <Link to="/moviedle" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                                 Play today's Moviedle
                                 <ArrowRight data-icon="inline-end"/>
@@ -281,12 +296,11 @@ function HomePage() {
             <section id="principles" className="border-y border-border/50 bg-muted/10 py-20">
                 <div className="container mx-auto grid gap-12 px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
                     <div className="flex max-w-lg flex-col items-start gap-5">
-                        <Badge variant="outline">What you can count on</Badge>
                         <h2 className="text-3xl font-bold text-balance md:text-5xl">
-                            Useful without holding your archive hostage.
+                            A few things before you sign up.
                         </h2>
                         <p className="text-lg leading-relaxed text-muted-foreground">
-                            The important promises should be simple enough to state plainly—and concrete enough to verify.
+                            MyLists is free, open source, and made by one person.
                         </p>
                     </div>
 
@@ -298,7 +312,7 @@ function HomePage() {
                                 <li key={principle.title}>
                                     <article
                                         className={cn(
-                                            "grid gap-4 sm:grid-cols-[10rem_1fr] sm:gap-8",
+                                            "grid sm:grid-cols-[10rem_1fr]",
                                             index === 0 ? "pt-0" : "pt-6",
                                             index === trustPrinciples.length - 1 ? "pb-0" : "pb-6",
                                         )}
@@ -340,15 +354,11 @@ function HomePage() {
             <section id="faq" className="container mx-auto scroll-mt-20 px-6 py-24">
                 <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.62fr_1fr] lg:gap-20">
                     <div className="flex max-w-lg flex-col items-start gap-5">
-                        <Badge variant="outline">
-                            <Lightbulb data-icon="inline-start"/>
-                            FAQ
-                        </Badge>
                         <h2 className="text-3xl font-bold text-balance md:text-5xl">
-                            The practical questions, answered plainly.
+                            Questions people usually have.
                         </h2>
                         <p className="text-lg leading-relaxed text-muted-foreground">
-                            Start with the essentials, then dig into imports, development, and feature requests.
+                            A few more details about privacy, imports, and how the site is run.
                         </p>
                     </div>
 
@@ -394,29 +404,28 @@ function HomePage() {
                     <div className="flex max-w-2xl flex-col items-start gap-5">
                         <Badge variant="outline">
                             <Sparkles data-icon="inline-start"/>
-                            Ready when you are
+                            Want to try it?
                         </Badge>
                         <h2 id="closing-cta-title" className="text-4xl font-bold text-balance md:text-5xl">
-                            Your media history is worth keeping.
+                            Make a list and see if you like it.
                         </h2>
                         <p className="text-lg leading-relaxed text-muted-foreground text-balance">
-                            Give every movie night, finished book, completed game, and new discovery one lasting home—built
-                            around your taste, not a single medium.
+                            Start with a few titles. You can add the rest whenever you feel like it.
                         </p>
                     </div>
 
                     <Card className="bg-background/80 shadow-sm backdrop-blur-sm">
                         <CardHeader>
                             <CardTitle className="text-2xl">
-                                <h3>Start with your own archive.</h3>
+                                <h3>Create an account</h3>
                             </CardTitle>
                             <CardDescription className="text-base leading-relaxed">
-                                Everything important is included from the beginning.
+                                Then choose which lists you want to use.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <ul className="flex flex-col gap-3 text-sm">
-                                {["All core features included", "No ads or premium tier", "CSV export whenever you want"].map((item) =>
+                                {["Free to use", "Public or private profile", "Downloadable CSV lists"].map((item) =>
                                     <li key={item} className="flex items-center gap-2">
                                         <Check className="size-4 text-brand" aria-hidden="true"/>
                                         {item}
@@ -427,7 +436,7 @@ function HomePage() {
                         <CardFooter className="flex-col items-stretch gap-3">
                             <Button size="lg" onClick={() => openRegister("/")}>
                                 <Sparkles data-icon="inline-start"/>
-                                Create your free account
+                                Create an account
                             </Button>
                             {randomProfile &&
                                 <Link
@@ -435,7 +444,7 @@ function HomePage() {
                                     params={{ username: randomProfile.name }}
                                     className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
                                 >
-                                    Explore a public profile
+                                    See a random profile
                                     <ArrowRight data-icon="inline-end"/>
                                 </Link>
                             }

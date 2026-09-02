@@ -1,11 +1,11 @@
 import {useId, useState} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {FeatureStatus} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
 import {formatDateTime} from "@/lib/utils/date-formatting";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Textarea} from "@/lib/client/components/ui/textarea";
@@ -13,17 +13,19 @@ import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {CalendarClock, ChevronUp, ExternalLink} from "lucide-react";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {featureVotesOptions} from "@/lib/client/react-query/query-options";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {AdminFeatureControlsDialog} from "@/lib/client/components/feature-votes/AdminFeaturesDialog";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/lib/client/components/ui/card";
 import {FeatureVotesActiveTab, featureVotesSearchSchema, PostFeatureRequest, postFeatureRequestSchema} from "@/lib/schemas";
+import {CalendarClock, ChevronUp, CircleHelp, ExternalLink, Lightbulb, ListChecks, MessageSquarePlus, SearchX} from "lucide-react";
 import {useCreateFeatureRequestMutation, useToggleFeatureVoteMutation} from "@/lib/client/react-query/query-mutations/feature-votes.mutations";
 
 
@@ -112,229 +114,287 @@ function FeatureVotesPage() {
     ];
 
     return (
-        <PageTitle title="Feature Voting Hub" subtitle="Submit ideas, search, and vote on what MyLists should have next.">
-            <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1">
-                    <Card className="ring-border">
-                        <CardHeader>
-                            <CardTitle>Quick Q&A</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <dl className="space-y-4 text-sm text-muted-foreground">
-                                <div>
-                                    <dt className="font-semibold text-foreground">
-                                        How do votes work?
-                                    </dt>
-                                    <dd>
-                                        Each feature gets one vote per user. You can rescind it while voting is open.
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="font-semibold text-foreground">
-                                        Can I vote more than once?
-                                    </dt>
-                                    <dd>
-                                        No. Each account gets one vote per feature request.
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="font-semibold text-foreground">
-                                        Will I be notified about feature updates?
-                                    </dt>
-                                    <dd>
-                                        Yes. When an admins adds a note or changes your request status, you will receive an
-                                        in-app notification.
-                                    </dd>
-                                </div>
-                            </dl>
-                        </CardContent>
-                    </Card>
-                    <Card className="relative overflow-hidden ring-brand/40">
+        <PageTitle title="Feature Voting Hub" onlyHelmet>
+            <div className="mb-12 flex flex-col pt-8">
+                <PageHeader
+                    asideIcon={ListChecks}
+                    eyebrowIcon={Lightbulb}
+                    title="Help shape MyLists"
+                    eyebrow="Feature ideas"
+                    description="Share an idea or vote for the changes you’d most like to see."
+                    asideValue={<>{filteredRequests.length} {filteredRequests.length === 1 ? "idea" : "ideas"}</>}
+                    asideLabel={searchQuery ? "Ideas found" : activeTab === "active" ? "Open ideas" : `${activeTab} ideas`}
+                />
+
+                <section className="mt-7 grid grid-cols-[minmax(0,1.08fr)_minmax(19rem,0.92fr)] overflow-hidden rounded-xl border shadow-xs max-lg:grid-cols-1">
+                    <div className="relative overflow-hidden border-r p-6 max-lg:border-b max-lg:border-r-0 sm:p-7">
                         <LockedContent
                             showAuthButtons={true}
                             isAnonymous={isAnonymous}
                             title="Have an idea for MyLists?"
-                            description="Log-in or register to submit your proposal and join the community in voting for our next features."
+                            description="Sign in or create an account to share an idea and vote for what I build next."
                         />
-                        <CardHeader>
-                            <CardTitle>Propose a new feature</CardTitle>
-                            <CardDescription>
-                                Share a short title and optional description.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <FormProvider {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmitAddNewFeature)} className="flex flex-col gap-4">
-                                    <FieldSet disabled={createFeatureMutation.isPending || isAnonymous}>
-                                        <FieldGroup>
-                                            <Controller
-                                                name="title"
-                                                control={form.control}
-                                                render={({ field, fieldState }) =>
-                                                    <Field
-                                                        data-invalid={fieldState.invalid}
-                                                        data-disabled={createFeatureMutation.isPending || isAnonymous}
-                                                    >
-                                                        <FieldLabel htmlFor={`${fieldId}-title`}>
-                                                            Title
-                                                        </FieldLabel>
-                                                        <Input
-                                                            {...field}
-                                                            id={`${fieldId}-title`}
-                                                            placeholder="Feature title"
-                                                            aria-invalid={fieldState.invalid}
-                                                        />
-                                                        <FieldError errors={[fieldState.error]}/>
-                                                    </Field>
-                                                }
-                                            />
-                                            <Controller
-                                                name="description"
-                                                control={form.control}
-                                                render={({ field, fieldState }) =>
-                                                    <Field
-                                                        data-invalid={fieldState.invalid}
-                                                        data-disabled={createFeatureMutation.isPending || isAnonymous}
-                                                    >
-                                                        <FieldLabel htmlFor={`${fieldId}-desc`}>
-                                                            Description
-                                                        </FieldLabel>
-                                                        <Textarea
-                                                            {...field}
-                                                            rows={3}
-                                                            id={`${fieldId}-desc`}
-                                                            placeholder="Optional: add a short context or use-case."
-                                                            aria-invalid={fieldState.invalid}
-                                                        />
-                                                        <FieldError errors={[fieldState.error]}/>
-                                                    </Field>
-                                                }
-                                            />
-                                        </FieldGroup>
-                                    </FieldSet>
-                                    <FormError/>
-                                    <div className="flex items-center justify-center">
-                                        <FormSubmitButton disabled={isAnonymous} isLoading={createFeatureMutation.isPending}>
-                                            Add Feature for Voting
-                                        </FormSubmitButton>
-                                    </div>
-                                </form>
-                            </FormProvider>
-                        </CardContent>
-                    </Card>
-                </div>
-                <Card className="h-fit ring-brand/40">
-                    <CardHeader>
-                        <CardTitle>Discussions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                        <div>
-                            If you want to discuss a feature idea in more details and exchange with me,
-                            please do not hesitate to open a new discussion on GitHub discussions here:{" "}
+                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-brand">
+                            <MessageSquarePlus className="size-4" aria-hidden="true"/>
+                            Share an idea
                         </div>
-                        <div className="text-center">
-                            <a href="https://github.com/Crossoufire/MyLists/discussions" target="_blank" rel="noreferrer">
-                                <Button>
-                                    Github Discussions <ExternalLink/>
-                                </Button>
+                        <h2 className="mt-3 text-xl font-bold tracking-tight text-foreground">
+                            Propose a new feature
+                        </h2>
+                        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                            Give the idea a clear title and add enough context for other members to understand it.
+                        </p>
+
+                        <FormProvider {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmitAddNewFeature)} className="mt-6 flex flex-col gap-4">
+                                <FieldSet disabled={createFeatureMutation.isPending || isAnonymous}>
+                                    <FieldGroup className="gap-4">
+                                        <Controller
+                                            name="title"
+                                            control={form.control}
+                                            render={({ field, fieldState }) =>
+                                                <Field
+                                                    data-invalid={fieldState.invalid}
+                                                    data-disabled={createFeatureMutation.isPending || isAnonymous}
+                                                >
+                                                    <FieldLabel htmlFor={`${fieldId}-title`}>
+                                                        Title
+                                                    </FieldLabel>
+                                                    <Input
+                                                        {...field}
+                                                        id={`${fieldId}-title`}
+                                                        placeholder="Feature title"
+                                                        aria-invalid={fieldState.invalid}
+                                                    />
+                                                    <FieldError errors={[fieldState.error]}/>
+                                                </Field>
+                                            }
+                                        />
+                                        <Controller
+                                            name="description"
+                                            control={form.control}
+                                            render={({ field, fieldState }) =>
+                                                <Field
+                                                    data-invalid={fieldState.invalid}
+                                                    data-disabled={createFeatureMutation.isPending || isAnonymous}
+                                                >
+                                                    <FieldLabel htmlFor={`${fieldId}-desc`}>
+                                                        Description
+                                                    </FieldLabel>
+                                                    <Textarea
+                                                        {...field}
+                                                        rows={3}
+                                                        id={`${fieldId}-desc`}
+                                                        aria-invalid={fieldState.invalid}
+                                                        placeholder="Optional: add a short context or use-case."
+                                                    />
+                                                    <FieldError errors={[fieldState.error]}/>
+                                                </Field>
+                                            }
+                                        />
+                                    </FieldGroup>
+                                </FieldSet>
+                                <FormError/>
+                                <div className="flex justify-end">
+                                    <FormSubmitButton disabled={isAnonymous} isLoading={createFeatureMutation.isPending}>
+                                        Submit proposal
+                                    </FormSubmitButton>
+                                </div>
+                            </form>
+                        </FormProvider>
+                    </div>
+
+                    <aside className="p-6 sm:p-7">
+                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-brand">
+                            <CircleHelp className="size-4" aria-hidden="true"/>
+                            How it works
+                        </div>
+                        <h2 className="mt-3 text-xl font-bold tracking-tight text-foreground">
+                            A simple community signal
+                        </h2>
+
+                        <dl className="mt-5 border-t">
+                            <div className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b py-3.5">
+                                <span className="font-mono text-xs font-semibold text-brand" aria-hidden="true">01</span>
+                                <div>
+                                    <dt className="text-sm font-semibold text-foreground">One vote per idea</dt>
+                                    <dd className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                        Every account can support each proposal once.
+                                    </dd>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b py-3.5">
+                                <span className="font-mono text-xs font-semibold text-brand" aria-hidden="true">02</span>
+                                <div>
+                                    <dt className="text-sm font-semibold text-foreground">Change your mind</dt>
+                                    <dd className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                        You can rescind your vote while voting remains open.
+                                    </dd>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 border-b py-3.5">
+                                <span className="font-mono text-xs font-semibold text-brand" aria-hidden="true">03</span>
+                                <div>
+                                    <dt className="text-sm font-semibold text-foreground">Follow the outcome</dt>
+                                    <dd className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                        Status changes and admin notes generate an in-app notification.
+                                    </dd>
+                                </div>
+                            </div>
+                        </dl>
+
+                        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                            <p className="max-w-xs text-sm leading-relaxed">
+                                Need a longer conversation before proposing something?
+                            </p>
+                            <a
+                                target="_blank"
+                                rel="noreferrer"
+                                className={cn(buttonVariants({ variant: "outline" }))}
+                                href="https://github.com/Crossoufire/MyLists/discussions"
+                            >
+                                GitHub discussions
+                                <ExternalLink data-icon="inline-end"/>
                             </a>
                         </div>
-                    </CardContent>
-                </Card>
+                    </aside>
+                </section>
 
-                <SearchInput
-                    value={searchQuery}
-                    className="max-w-sm max-sm:w-full mb-2"
-                    placeholder="Search by title or description..."
-                    onChange={(ev) => setSearchQuery(ev.target.value)}
-                />
+                <section className="pt-12">
+                    <div className="flex items-end justify-between gap-6 pb-5 max-sm:flex-col max-sm:items-start max-sm:gap-3">
+                        <div>
+                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
+                                Browse proposals
+                            </div>
+                            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+                                Community roadmap
+                            </h2>
+                        </div>
+                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                            Sorted by community votes
+                        </span>
+                    </div>
 
-                <TabHeader
-                    tabs={statusTabs}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                />
+                    <SearchInput
+                        value={searchQuery}
+                        className="mb-3 w-full max-w-md max-sm:max-w-none"
+                        placeholder="Search by title or description..."
+                        onChange={(ev) => setSearchQuery(ev.target.value)}
+                    />
 
-                <div className="grid gap-6">
-                    {filteredRequests.map((req) => {
-                        const voteLabel = req.hasUserVote ? "Rescind vote" : "Vote";
-                        const isLocked = req.status === FeatureStatus.REJECTED || req.status === FeatureStatus.COMPLETED;
+                    <TabHeader
+                        tabs={statusTabs}
+                        activeTab={activeTab}
+                        className="max-sm:px-3"
+                        setActiveTab={setActiveTab}
+                    />
 
-                        return (
-                            <Card key={req.id}>
-                                <CardHeader>
-                                    <CardTitle>{req.title}</CardTitle>
-                                    <CardDescription className="text-xs flex flex-wrap items-center gap-2">
-                                        {req.author &&
-                                            <Link
-                                                to="/profile/$username"
-                                                params={{ username: req.author.name }}
-                                                className="inline-flex items-center gap-1.5 text-foreground hover:text-brand"
-                                            >
-                                                <ProfileIcon
-                                                    className="size-5 border"
-                                                    fallbackSize="text-[0.6rem]"
-                                                    user={{ image: req.author.image, name: req.author.name }}
-                                                />
-                                                <span className="font-medium">
-                                                    {req.author.name}
-                                                </span>
-                                            </Link>
-                                        }
-                                        {req.author && <span>&bull;</span>}
-                                        <span className="inline-flex items-center gap-1">
-                                            <CalendarClock className="size-3"/>
-                                            Created {formatDateTime(req.createdAt)}
-                                        </span>
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="flex gap-3">
-                                        <Badge className={STATUS_STYLES[req.status]}>
-                                            {req.status}
-                                        </Badge>
-                                        <Badge variant="outline">
-                                            <ChevronUp/> {req.totalVotes} votes
-                                        </Badge>
-                                    </div>
+                    {filteredRequests.length === 0
+                        ?
+                        <EmptyState
+                            icon={SearchX}
+                            className="mt-4 rounded-xl border py-20"
+                            message={searchQuery ? "No proposals match this search." : "No proposals have this status yet."}
+                        />
+                        :
+                        <div className="grid gap-3 pt-4">
+                            {filteredRequests.map((req) => {
+                                const voteLabel = req.hasUserVote ? "Rescind vote" : "Vote";
+                                const isLocked = req.status === FeatureStatus.REJECTED || req.status === FeatureStatus.COMPLETED;
 
-                                    <div className="flex flex-wrap items-center gap-3 text-sm">
-                                        {req.description}
-                                    </div>
-
-                                    {req.adminComment &&
-                                        <div className="rounded-lg border border-dashed px-3 py-2 text-sm">
-                                            <div className="text-sm font-semibold text-brand">
-                                                Admin note:
-                                            </div>
-                                            {req.adminComment}
-                                        </div>
-                                    }
-
-                                    <div className="flex flex-wrap gap-2 items-center justify-between">
-                                        <div className="flex flex-wrap items-center gap-2">
+                                return (
+                                    <article
+                                        key={req.id}
+                                        className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-5 rounded-xl border p-5 shadow-xs max-sm:grid-cols-[3.75rem_minmax(0,1fr)] max-sm:gap-3 max-sm:p-4"
+                                    >
+                                        <div className="flex flex-col items-center border-r pr-5 max-sm:pr-3">
                                             <Button
+                                                size="icon-sm"
                                                 onClick={() => handleVote(req.id)}
                                                 variant={req.hasUserVote ? "selected" : "outline"}
                                                 disabled={toggleVoteMutation.isPending || isLocked || isAnonymous}
+                                                aria-label={`${voteLabel} for ${req.title}`}
+                                                title={isAnonymous ? "Sign in to vote" : isLocked ? "Voting is closed" : voteLabel}
                                             >
-                                                {voteLabel}
+                                                <ChevronUp/>
                                             </Button>
+                                            <strong className="mt-2 font-mono text-lg leading-none tabular-nums text-foreground">
+                                                {req.totalVotes}
+                                            </strong>
+                                            <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                                                {req.totalVotes === 1 ? "vote" : "votes"}
+                                            </span>
                                         </div>
 
-                                        {isAdmin &&
-                                            <AdminFeatureControlsDialog
-                                                featureId={req.id}
-                                                currentStatus={req.status}
-                                                currentComment={req.adminComment}
-                                            />
-                                        }
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
-                </div>
+                                        <div className="min-w-0">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <h3 className="text-base font-semibold text-foreground">
+                                                            {req.title}
+                                                        </h3>
+                                                        <Badge className={STATUS_STYLES[req.status]}>
+                                                            {req.status}
+                                                        </Badge>
+                                                    </div>
+
+                                                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                                        {req.author &&
+                                                            <Link
+                                                                to="/profile/$username"
+                                                                params={{ username: req.author.name }}
+                                                                className="inline-flex items-center gap-1.5 text-foreground hover:text-brand"
+                                                            >
+                                                                <ProfileIcon
+                                                                    className="size-5 border"
+                                                                    fallbackSize="text-[0.6rem]"
+                                                                    user={{ image: req.author.image, name: req.author.name }}
+                                                                />
+                                                                <span className="font-medium">
+                                                                    {req.author.name}
+                                                                </span>
+                                                            </Link>
+                                                        }
+                                                        {req.author && <span aria-hidden="true">&bull;</span>}
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <CalendarClock className="size-3"/>
+                                                            Created {formatDateTime(req.createdAt)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {isAdmin &&
+                                                    <AdminFeatureControlsDialog
+                                                        featureId={req.id}
+                                                        currentStatus={req.status}
+                                                        currentComment={req.adminComment}
+                                                    />
+                                                }
+                                            </div>
+
+                                            {req.description &&
+                                                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                                                    {req.description}
+                                                </p>
+                                            }
+
+                                            {req.adminComment &&
+                                                <div className="mt-4 border-l-2 border-brand/50 pl-3 text-sm leading-relaxed">
+                                                    <div className="text-xs font-semibold uppercase tracking-wider text-brand">
+                                                        Admin note
+                                                    </div>
+                                                    <p className="mt-1 text-muted-foreground">
+                                                        {req.adminComment}
+                                                    </p>
+                                                </div>
+                                            }
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    }
+                </section>
             </div>
         </PageTitle>
     );

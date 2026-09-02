@@ -21,10 +21,9 @@ export const MediaLevel = ({ timeSpentMin, mediaType, containerClassName, classN
     return (
         <div className={cn("mx-auto flex items-center justify-center", containerClassName)}>
             <div className={cn("font-bold text-xl text", className)} style={{ color }}>
-                {isActive ?
-                    intLevel
-                    :
-                    <Ban className="size-4 mt-2 mb-1"/>
+                {isActive
+                    ? intLevel
+                    : <Ban className="size-4 mt-2 mb-1"/>
                 }
             </div>
         </div>

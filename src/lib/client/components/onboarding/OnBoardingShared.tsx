@@ -15,19 +15,22 @@ interface OnboardingSectionProps {
 
 
 export const OnboardingSection = ({ title, icon: Icon, description, children }: OnboardingSectionProps) => (
-    <section className="space-y-2">
-        <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg shrink-0 bg-brand/20 text-brand">
-                <Icon className="size-4"/>
+    <section className="space-y-3">
+        <div className="flex items-start gap-3">
+            <Icon className="mt-1 size-5 shrink-0 text-brand" aria-hidden="true"/>
+            <div>
+                <div className="text-[0.65rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                    In this step
+                </div>
+                <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground">
+                    {title}
+                </h2>
             </div>
-            <h2 className="text-2xl font-bold tracking-tight">
-                {title}
-            </h2>
         </div>
-        <div className="text-muted-foreground leading-relaxed">
+        <div className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:pl-8">
             {description}
         </div>
-        {children}
+        {children && <div className="pt-2 sm:pl-8">{children}</div>}
     </section>
 );
 
@@ -41,13 +44,13 @@ interface OnboardingSubSectionProps {
 
 
 export const OnboardingSubSection = ({ title, description, icon: Icon, children }: OnboardingSubSectionProps) => (
-    <section className="space-y-6">
-        <div className="space-y-1">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
+    <section className="space-y-5">
+        <div className="space-y-1.5">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
                 {Icon && <Icon className="size-4 text-brand"/>}
                 {title}
             </h3>
-            <div className="text-muted-foreground">
+            <div className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {description}
             </div>
         </div>
@@ -59,9 +62,9 @@ export const OnboardingSubSection = ({ title, description, icon: Icon, children 
 export const OnboardingDemoBox = ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <div
         className={cn(
-            "p-8 bg-accent/20 rounded-xl border border-dashed flex",
-            "justify-center items-center relative group pointer-events-none",
-            "select-none max-sm:px-3 max-sm:py-6", className,
+            "group relative flex items-center justify-center overflow-x-auto rounded-xl bg-muted/20 p-8",
+            "select-none [&>*]:pointer-events-none max-sm:justify-start max-sm:px-3 max-sm:py-6",
+            className,
         )}
     >
         {children}
@@ -78,27 +81,30 @@ interface OnboardingNoteProps {
 
 
 export const OnboardingNote = ({ title, children, icon: Icon = Info, variant = "info" }: OnboardingNoteProps) => (
-    <section className="p-4 rounded-lg bg-card border flex gap-4">
-        <div className="mt-1">
+    <aside className={cn(
+        "flex gap-3 rounded-xl border-l-2 px-4 py-3",
+        variant === "info" ? "border-brand bg-brand/5" : "border-warning bg-warning/5",
+    )}>
+        <div className="mt-0.5">
             <Icon
-                className={cn("size-5", variant === "info" ? "text-info" : "text-warning")}
+                className={cn("size-4", variant === "info" ? "text-brand" : "text-warning")}
             />
         </div>
         <div>
-            <h4 className="font-bold">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
                 {title}
             </h4>
-            <div className="text-sm text-muted-foreground">
+            <div className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 {children}
             </div>
         </div>
-    </section>
+    </aside>
 );
 
 
 export const OnboardingGrid = ({ children }: { children: React.ReactNode }) => {
     return (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-x-6 gap-y-8 md:grid-cols-2">
             {children}
         </div>
     );
@@ -113,25 +119,23 @@ interface OnboardingFeatureCardProps {
 
 
 export const OnboardingFeatureCard = ({ icon: Icon, title, description }: OnboardingFeatureCardProps) => (
-    <div className="p-5 rounded-xl border bg-card hover:border-brand/50 transition-colors">
-        <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg shrink-0 bg-brand/20 text-brand">
-                <Icon className="size-5"/>
-            </div>
-            <h4 className="font-bold capitalize">
+    <article className="border-l border-brand/40 py-1 pl-4">
+        <div className="flex items-center gap-2.5">
+            <Icon className="size-4 shrink-0 text-brand" aria-hidden="true"/>
+            <h4 className="font-semibold capitalize text-foreground">
                 {title}
             </h4>
         </div>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <div className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {description}
-        </p>
-    </div>
+        </div>
+    </article>
 );
 
 
 export const OnboardingContainer = ({ children, className }: { children: React.ReactNode, className?: string }) => {
     return (
-        <div className={cn("space-y-10 max-w-3xl w-full", className)}>
+        <div className={cn("w-full max-w-4xl space-y-12", className)}>
             {children}
         </div>
     );
@@ -164,28 +168,33 @@ export const OnboardingNav = ({ username, items, position }: OnboardingNavProps)
     };
 
     return (
-        <div className={cn(position === "top"
-            ? "flex flex-col sm:flex-row items-center justify-between gap-4 mb-5 pb-5 border-b"
-            : "flex flex-col sm:flex-row items-center justify-between gap-4 pt-5 mt-10 border-t"
-        )}>
-            <div className="flex items-center gap-3 order-2 sm:order-1">
-                <Button size="sm" variant="outline" disabled={!prevStep} onClick={() => handleNavigate(prevStep?.to)}>
-                    <ChevronLeft/> Prev
-                </Button>
+        <nav
+            aria-label={`${position === "top" ? "Top" : "Bottom"} walkthrough navigation`}
+            className={cn(
+                "flex items-center justify-between gap-4",
+                position === "top" ? "mb-8" : "mt-10 pt-2",
+            )}
+        >
+            <Button size="sm" variant="hover" disabled={!prevStep} onClick={() => handleNavigate(prevStep?.to)}>
+                <ChevronLeft/> Previous
+            </Button>
 
+            <div className="flex items-center gap-2">
+                {position === "top" &&
+                    <Button size="sm" variant="hover" onClick={handleSkip} className="text-muted-foreground">
+                        <X className="size-4"/> <span className="max-sm:sr-only">Exit guide</span>
+                    </Button>
+                }
                 {nextStep ?
                     <Button size="sm" onClick={() => handleNavigate(nextStep?.to)}>
-                        Next <ChevronRight/>
+                        Next <span className="max-sm:hidden">- {nextStep.label}</span> <ChevronRight/>
                     </Button>
                     :
                     <Button size="sm" onClick={handleSkip}>
-                        Finish Walkthrough
+                        Finish walkthrough
                     </Button>
                 }
             </div>
-            <Button size="sm" variant="hover" onClick={handleSkip} className="text-muted-foreground order-1 sm:order-2">
-                <X className="size-4"/> Skip Walkthrough
-            </Button>
-        </div>
+        </nav>
     );
 };

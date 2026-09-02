@@ -23,6 +23,7 @@ function UserStatsPage() {
         <>
             <DashboardContent
                 data={apiData}
+                showHero={false}
             />
         </>
     );

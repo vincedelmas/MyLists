@@ -5,6 +5,7 @@ import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {formatNumber, formatPercent} from "@/lib/utils/number-formatting";
@@ -12,11 +13,11 @@ import {useSearchContainer} from "@/lib/client/hooks/use-search-container";
 import {LockedContent} from "@/lib/client/components/general/LockedContent";
 import {CountdownTimer} from "@/lib/client/components/moviedle/CountdownTimer";
 import {SearchContainer} from "@/lib/client/components/general/SearchContainer";
-import {MediadleLeaderboard} from "@/lib/client/components/moviedle/MediadleLeaderboard";
 import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
+import {MediadleLeaderboard} from "@/lib/client/components/moviedle/MediadleLeaderboard";
 import {useMoviedleGuessMutation} from "@/lib/client/react-query/query-mutations/mediadle.mutations";
-import {Award, ChartNoAxesColumnIncreasing, Check, Clapperboard, Clock3, Flame, Gauge, PartyPopper, SkipForward, Target, ThumbsDown, Trophy} from "lucide-react";
 import {dailyMediadleOptions, mediadleLeaderboardOptions, mediadleSuggestionsOptions} from "@/lib/client/react-query/query-options";
+import {Award, ChartNoAxesColumnIncreasing, Check, Clapperboard, Clock3, Flame, Gauge, PartyPopper, SkipForward, Target, ThumbsDown, Trophy} from "lucide-react";
 
 
 // Explicit constant for skipped guesses (lol c'est sale)
@@ -44,6 +45,7 @@ function MediadlePage() {
     const leaderboard = useSuspenseQuery(mediadleLeaderboardQueryOptions).data;
     const { userData, ...mediadleData } = useSuspenseQuery(dailyMediadleQueryOptions).data;
     const { search, setSearch, selectValue, debouncedSearch, isOpen, reset, containerRef } = useSearchContainer();
+
     const { data: suggestions = [], isLoading, error } = useQuery(mediadleSuggestionsOptions(debouncedSearch));
     const coverSrc = mediadleData.result?.nonPixelatedCover ?? `data:image/png;base64,${mediadleData.pixelatedCover}`;
 
@@ -68,31 +70,18 @@ function MediadlePage() {
     };
 
     return (
-        <PageTitle title="Mediadle" onlyHelmet>
+        <PageTitle title="Moviedle" onlyHelmet>
             <div className="mb-8 flex flex-col pt-8">
-                <header className="flex items-end justify-between gap-8 border-b pb-6 max-sm:flex-col max-sm:items-start">
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-movies">
-                            <Clapperboard className="size-4" aria-hidden="true"/>
-                            Daily movie challenge
-                        </div>
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                            Mediadle
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            One poster. {mediadleData.maxAttempts} attempts. A new film every day.
-                        </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1 max-sm:items-start">
-                        <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                            Next cover in
-                        </span>
-                        <div className="flex items-center gap-2 text-lg">
-                            <Clock3 className="size-4 text-muted-foreground" aria-hidden="true"/>
-                            <CountdownTimer/>
-                        </div>
-                    </div>
-                </header>
+                <PageHeader
+                    title="Moviedle"
+                    asideIcon={Clock3}
+                    eyebrowIcon={Clapperboard}
+                    asideLabel="Next cover in"
+                    eyebrowClassName="text-movies"
+                    asideValue={<CountdownTimer/>}
+                    eyebrow="Daily movie challenge"
+                    description={`One poster. ${mediadleData.maxAttempts} attempts. A new film every day.`}
+                />
 
                 <section className="grid grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] items-stretch gap-10 pt-8 max-lg:grid-cols-1">
                     <div className="flex min-w-0 flex-col items-center">
@@ -100,7 +89,7 @@ function MediadlePage() {
                             Daily cover · No. {String(mediadleData.mediadleId).padStart(4, "0")}
                         </span>
                         <figure className="relative w-full max-w-86 px-8">
-                            <div className="overflow-hidden rounded-lg shadow-2xl ring-1 ring-foreground/10">
+                            <div className="overflow-hidden rounded-xl shadow-2xl ring-1 ring-foreground/10">
                                 <div className="aspect-2/3 overflow-hidden bg-muted">
                                     {mediadleData.result ?
                                         <Link
@@ -123,22 +112,6 @@ function MediadlePage() {
                                     }
                                 </div>
                             </div>
-                            <figcaption>
-                                <span
-                                    className="absolute top-0 bottom-0 left-0 flex rotate-180 items-center justify-center whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground [writing-mode:vertical-rl]">
-                                    {mediadleData.result
-                                        ? "Cover revealed"
-                                        : "Pixelated cover"
-                                    }
-                                </span>
-                                <span
-                                    className="absolute top-0 right-0 bottom-0 flex items-center justify-center whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground [writing-mode:vertical-rl]">
-                                    {userData?.completed
-                                        ? "Final cut"
-                                        : `Clue ${Math.min((userData?.attempts ?? 0) + 1, mediadleData.maxAttempts)} / ${mediadleData.maxAttempts}`
-                                    }
-                                </span>
-                            </figcaption>
                         </figure>
 
                         <div className="mt-6 flex w-full max-w-lg flex-col gap-6">
@@ -154,8 +127,12 @@ function MediadlePage() {
                                     </div>
                                     :
                                     (userData && userData.completed) ?
-                                        <div className={cn("animate-fade-up flex max-w-2xl items-start gap-4 border-l-2 py-2 pl-4",
-                                            userData.succeeded ? "border-success" : "border-destructive")}>
+                                        <div className={cn(
+                                            "animate-fade-up flex max-w-2xl items-start gap-4 rounded-xl border px-4 py-3",
+                                            userData.succeeded
+                                                ? "border-success/30 bg-success/5"
+                                                : "border-destructive/30 bg-destructive/5",
+                                        )}>
                                             <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-full",
                                                 userData.succeeded ? "bg-success/15" : "bg-destructive/10")}>
                                                 {userData.succeeded
@@ -283,18 +260,15 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
     const maxFreq = frequencies.length > 0 ? Math.max(...frequencies) : 0;
 
     return (
-        <section className="relative h-full">
+        <section className="relative h-fit overflow-hidden rounded-xl border shadow-xs">
             <LockedContent
                 showAuthButtons={true}
                 title="Statistics locked"
                 isAnonymous={isAnonymous}
                 description="Sign in to keep your game history, streaks, and win rate."
             />
-            <div className={cn(
-                "flex h-full flex-col transition-all",
-                isAnonymous && "pointer-events-none select-none blur-xs",
-            )}>
-                <div className="px-6 py-9 max-sm:px-0">
+            <div className={cn("flex flex-col transition-all", isAnonymous && "pointer-events-none select-none blur-xs")}>
+                <div className="p-5 pb-7 sm:p-6 sm:pb-8">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         <ChartNoAxesColumnIncreasing className="size-4" aria-hidden="true"/>
                         Your record
@@ -347,7 +321,7 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
                     </div>
                 </div>
 
-                <div className="flex flex-1 flex-col gap-5 border-t px-6 py-8 max-sm:px-0">
+                <div className="flex flex-col gap-5 border-t p-5 sm:p-6">
                     <div className="flex items-end justify-between gap-3">
                         <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                             Guess distribution

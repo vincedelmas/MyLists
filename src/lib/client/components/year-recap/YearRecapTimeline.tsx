@@ -13,7 +13,7 @@ export function YearRecapTimeline({ months, color }: YearRecapTimelineProps) {
     const maximum = Math.max(...months.map((month) => month.hours), 0);
 
     return (
-        <div className="scrollbar-thin overflow-x-auto rounded-xl border bg-card/40 px-4 pb-5 pt-7 sm:px-6">
+        <div className="scrollbar-thin overflow-x-auto rounded-xl border px-4 pb-5 pt-7 shadow-xs sm:px-6">
             <div className="flex min-w-150 items-end gap-2">
                 {months.map((month) => {
                     const height = maximum > 0 ? (month.hours / maximum) * 100 : 0;

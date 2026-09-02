@@ -64,10 +64,10 @@ function CollectionsTab() {
                 </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-3 gap-4 gap-y-7 max-sm:grid-cols-1">
+            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {apiData.items.length === 0 ?
                     <EmptyState
-                        className="col-span-full py-20"
+                        className="col-span-full rounded-xl border py-20 shadow-xs"
                         icon={ListOrdered}
                         message={filters.search
                             ? `No collections found matching "${filters.search}".`
@@ -80,6 +80,7 @@ function CollectionsTab() {
                     apiData.items.map((collection) =>
                         <CollectionCard
                             showOwner={false}
+                            variant="showcase"
                             key={collection.id}
                             collection={collection}
                         />

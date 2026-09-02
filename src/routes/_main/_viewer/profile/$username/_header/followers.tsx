@@ -34,7 +34,6 @@ function ProfileFollowers() {
     const apiData = useSuspenseQuery(followersQueryOptions).data;
 
     const isViewingOwnProfile = currentUser?.name === profileOwner;
-
     return (
         <PageTitle
             title="Followers"
@@ -106,16 +105,16 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                         />
                         <div
                             title={`Privacy: ${follower.privacy}`}
-                            className="bg-background absolute -bottom-1 -right-1 rounded-full border p-0.5"
+                            className="absolute -bottom-1 -right-1 rounded-full border bg-background p-0.5"
                         >
-                            <div className="bg-background rounded-full p-0.5">
+                            <div className="rounded-full bg-background p-0.5">
                                 <PrivacyIcon type={follower.privacy}/>
                             </div>
                         </div>
                     </div>
                     <div>
                         <Link to="/profile/$username" params={{ username: follower.username }}>
-                            <h3 className="text-foreground hover:text-brand font-medium leading-none">
+                            <h3 className="font-medium leading-none text-foreground hover:text-brand">
                                 {follower.username}
                             </h3>
                         </Link>
@@ -154,7 +153,7 @@ function FollowerCard({ follower, currentUserName, profileOwner, isViewingOwnPro
                                         title="Remove Follower"
                                         onClick={handleRemoveFollower}
                                         disabled={removeMutation.isPending}
-                                        className="hover:bg-destructive/30 hover:text-foreground hover:border-transparent shrink-0"
+                                        className="shrink-0 hover:border-transparent hover:bg-destructive/30 hover:text-foreground"
                                     >
                                         {removeMutation.isPending ?
                                             <Spinner data-icon="inline-start"/> : <UserX className="size-4"/>
@@ -220,7 +219,7 @@ function FollowerActionButton({ followerId, followStatus, profileOwner, isViewin
                                 <Clock className="size-3.5"/> Requested
                             </span>
                             <span className="hidden items-center gap-2 group-hover:flex">
-                                <UserX className="size-3.5"/> Cancel
+                                <UserX className="size-3.5"/> Cancel request
                             </span>
                         </>
                         :

@@ -22,11 +22,12 @@ import {BarChart3, CalendarDays, Check, Clock3, Heart, List, MessageCircle, Play
 
 
 interface MediaTypeDashboardProps {
+    showHero?: boolean;
     stats: ExtractStatsByType<MediaType>;
 }
 
 
-export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
+export function MediaTypeDashboard({ stats, showHero = true }: MediaTypeDashboardProps) {
     const { mediaType, ratingSystem, specificMediaStats } = stats;
 
     const color = getThemeColor(mediaType);
@@ -119,35 +120,37 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
 
     return (
         <div className="pb-12">
-            <StatsHero
-                color={color}
-                category={capitalize(mediaType)}
-                metricLabel="Total time tracked"
-                title={`${capitalize(mediaType)} statistics`}
-                metricValue={formatHours(stats.timeSpentHours)}
-                context={stats.scope === "platform" ? "All users" : "Personal statistics"}
-                metricNote={`${formatNumber(stats.timeSpentDays, { fractionDigits: 0 })} continuous days`}
-                description={stats.scope === "platform"
-                    ? `Combined ${mediaType} statistics across the MyLists community.`
-                    : `A summary of tracked ${mediaType}, ratings, time spent, and activity.`
-                }
-                decoration={
-                    <MainThemeIcon
-                        size={420}
-                        type={mediaType}
-                        className="pointer-events-none absolute right-15 -top-10 -z-10 opacity-[0.035]"
-                    />
-                }
-            />
+            {showHero &&
+                <StatsHero
+                    color={color}
+                    category={capitalize(mediaType)}
+                    metricLabel="Total time tracked"
+                    title={`${capitalize(mediaType)} statistics`}
+                    metricValue={formatHours(stats.timeSpentHours)}
+                    context={stats.scope === "platform" ? "All users" : "Personal statistics"}
+                    metricNote={`${formatNumber(stats.timeSpentDays, { fractionDigits: 0 })} continuous days`}
+                    description={stats.scope === "platform"
+                        ? `Combined ${mediaType} statistics across the MyLists community.`
+                        : `A summary of tracked ${mediaType}, ratings, time spent, and activity.`
+                    }
+                    decoration={
+                        <MainThemeIcon
+                            size={420}
+                            type={mediaType}
+                            className="pointer-events-none absolute right-15 -top-10 -z-10 opacity-[0.035]"
+                        />
+                    }
+                />
+            }
 
-            <section className="border-b py-7">
+            <section className="mt-6 rounded-xl border p-5 shadow-xs sm:p-6">
                 <CompactStatsGrid
                     color={color}
                     items={ledger}
                 />
             </section>
 
-            <section className="pt-12 sm:pt-16">
+            <section className="pt-12">
                 <StatsSectionHeader
                     index="01"
                     color={color}
@@ -336,7 +339,6 @@ export function MediaTypeDashboard({ stats }: MediaTypeDashboardProps) {
                     />
                 </section>
             }
-
         </div>
     );
 }

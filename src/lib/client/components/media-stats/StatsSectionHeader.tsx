@@ -23,7 +23,7 @@ export function StatsSectionHeader({ index, title, description, aside, color = "
                 {index}
             </div>
             <div>
-                <h3 className="text-2xl font-black tracking-tight sm:text-3xl">
+                <h3 className="text-xl font-black tracking-tight sm:text-2xl">
                     {title}
                 </h3>
                 <p className="mt-2 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-sm">

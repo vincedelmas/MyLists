@@ -3,15 +3,15 @@ import {PageTitle} from "@/lib/client/components/general/PageTitle";
 
 
 export const Route = createFileRoute("/_main/_viewer/achievements/$username/_header")({
-    component: StatsHeader,
+    component: AchievementLayout,
 });
 
 
-function StatsHeader() {
+function AchievementLayout() {
     const { username } = Route.useParams();
 
     return (
-        <PageTitle title={`${username} Achievements`} subtitle="View all the achievements the user gained.">
+        <PageTitle title={`${username} Achievements`} onlyHelmet>
             <Outlet/>
         </PageTitle>
     );

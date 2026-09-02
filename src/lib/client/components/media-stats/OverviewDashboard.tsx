@@ -15,13 +15,14 @@ import {ArrowDownRight, ArrowRight, Award, CalendarDays, Clock3, Heart, List, Me
 
 
 interface OverviewDashboardProps {
+    showHero?: boolean;
     subjectName?: string;
     stats: ExtractStatsByType<null>;
     onSelectMediaType?: (mt: MediaType) => void;
 }
 
 
-export function OverviewDashboard({ stats, subjectName, onSelectMediaType }: OverviewDashboardProps) {
+export function OverviewDashboard({ stats, subjectName, onSelectMediaType, showHero = true }: OverviewDashboardProps) {
     const mediaBreakdown = [...stats.mediaBreakdown].sort((l, r) => r.timeSpentHours - l.timeSpentHours);
     const totalMediaHours = mediaBreakdown.reduce((sum, item) => sum + item.timeSpentHours, 0);
 
@@ -31,17 +32,9 @@ export function OverviewDashboard({ stats, subjectName, onSelectMediaType }: Ove
     const averageHoursPerEntry = stats.totalEntriesNoPlan ? stats.totalHours / stats.totalEntriesNoPlan : 0;
     const hoursThisYear = stats.activityByMonth.data.reduce((sum, month) => sum + month.total, 0);
 
-    const leadingShare = leadingMedia && totalMediaHours > 0
-        ? (leadingMedia.timeSpentHours / totalMediaHours) * 100
-        : 0;
-
-    const favoriteRate = stats.totalEntriesNoPlan
-        ? (stats.totalFavorites / stats.totalEntriesNoPlan) * 100
-        : 0;
-
-    const redoRate = stats.totalEntriesNoPlan
-        ? (stats.totalRedo / stats.totalEntriesNoPlan) * 100
-        : 0;
+    const redoRate = stats.totalEntriesNoPlan ? (stats.totalRedo / stats.totalEntriesNoPlan) * 100 : 0;
+    const favoriteRate = stats.totalEntriesNoPlan ? (stats.totalFavorites / stats.totalEntriesNoPlan) * 100 : 0;
+    const leadingShare = leadingMedia && totalMediaHours > 0 ? (leadingMedia.timeSpentHours / totalMediaHours) * 100 : 0;
 
     const peakMonth = activeMonths.reduce<(typeof activeMonths)[number] | null>((peak, month) => {
         return !peak || month.total > peak.total ? month : peak;
@@ -61,26 +54,28 @@ export function OverviewDashboard({ stats, subjectName, onSelectMediaType }: Ove
 
     return (
         <div className="pb-12">
-            <StatsHero
-                title={pageTitle}
-                category="Overview"
-                metricLabel="Total time tracked"
-                metricValue={formatHours(stats.totalHours)}
-                context={stats.scope === "platform" ? "All users" : "All media"}
-                metricNote={`${formatNumber(stats.totalDays, { fractionDigits: 0 })} days`}
-                description={stats.scope === "platform"
-                    ? "Combined tracking, ratings, favorites, and activity across the MyLists community."
-                    : "A summary of tracked media, time spent, ratings, and recent activity."
-                }
-                decoration={
-                    <div className="pointer-events-none absolute right-0 top-0 text-[16rem] font-black leading-none
-                    text-foreground/2.5 sm:text-[24rem]">
-                        00
-                    </div>
-                }
-            />
+            {showHero &&
+                <StatsHero
+                    title={pageTitle}
+                    category="Overview"
+                    metricLabel="Total time tracked"
+                    metricValue={formatHours(stats.totalHours)}
+                    context={stats.scope === "platform" ? "All users" : "All media"}
+                    metricNote={`${formatNumber(stats.totalDays, { fractionDigits: 0 })} days`}
+                    description={stats.scope === "platform"
+                        ? "Combined tracking, ratings, favorites, and activity across the MyLists community."
+                        : "A summary of tracked media, time spent, ratings, and recent activity."
+                    }
+                    decoration={
+                        <div className="pointer-events-none absolute right-0 top-0 text-[16rem] font-black leading-none
+                        text-foreground/2.5 sm:text-[24rem]">
+                            00
+                        </div>
+                    }
+                />
+            }
 
-            <section className="border-b py-7">
+            <section className="mt-6 rounded-xl border p-5 shadow-xs sm:p-6">
                 <CompactStatsGrid
                     items={[
                         {
@@ -131,12 +126,11 @@ export function OverviewDashboard({ stats, subjectName, onSelectMediaType }: Ove
                 />
             </section>
 
-            <section className="pt-12 sm:pt-16">
+            <section className="pt-12">
                 <StatsSectionHeader
                     index="01"
                     title="Media breakdown"
-                    description="The size of each circle represents its share of total tracked time.
-                    Select one to view its detailed stats."
+                    description="The size of each circle represents its share of total tracked time. Select one to view its detailed stats."
                 />
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.55fr)]">
                     <MediaConstellation
@@ -144,7 +138,7 @@ export function OverviewDashboard({ stats, subjectName, onSelectMediaType }: Ove
                         ratingSystem={stats.ratingSystem}
                         onSelectMediaType={onSelectMediaType}
                     />
-                    <div className="flex flex-col justify-between border-y py-6 lg:border-l lg:border-y-0 lg:pl-7">
+                    <div className="flex flex-col justify-between border-y px-4 py-6 lg:px-6">
                         <div>
                             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                                 Most Tracked Media Type

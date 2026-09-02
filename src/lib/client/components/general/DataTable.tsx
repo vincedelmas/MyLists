@@ -19,7 +19,7 @@ export function DataTable<TFeatures extends TableFeatures, TData extends RowData
     const rows = table.getRowModel().rows;
 
     return (
-        <div className={cn("rounded-md border p-3 pt-0", className)}>
+        <div className={cn("overflow-hidden rounded-xl border p-3 pt-0 shadow-xs", className)}>
             <Table>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) =>

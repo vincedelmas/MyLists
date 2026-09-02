@@ -3,7 +3,6 @@ import {cn} from "@/lib/utils/classnames";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {getDifficultyColors} from "@/lib/utils/theme-utils";
 import {AchSummary} from "@/lib/types/query.options.types";
-import {SimpleStatCard} from "@/lib/client/components/user-profile/SimpleStatCard";
 
 
 interface AchievementSummaryProps {
@@ -13,16 +12,40 @@ interface AchievementSummaryProps {
 
 export const AchievementSummary = ({ summary }: AchievementSummaryProps) => {
     return (
-        <div className="grid grid-cols-5 gap-6 w-[80%] mx-auto max-lg:w-[95%] max-sm:grid-cols-3 max-sm:w-full max-sm:gap-2">
-            {summary.map((diff) =>
-                <SimpleStatCard
-                    key={diff.tier}
-                    value={diff.count}
-                    title={capitalize(diff.tier)!}
-                    icon={<Award className={cn("mt-1 size-6", getDifficultyColors(diff.tier))}/>}
-                    className={getDifficultyColors(diff.tier, "border") ?? "border-muted-foreground"}
-                />
-            )}
-        </div>
+        <section aria-label="Achievement summary" className="mt-6 rounded-xl border p-5 shadow-xs sm:p-6">
+            <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
+                {summary.map((item, index) => {
+                    const isTotal = item.tier === "total";
+
+                    return (
+                        <div
+                            key={item.tier}
+                            className={cn(
+                                "flex min-w-0 items-start gap-3",
+                                index % 2 === 1 && "border-l pl-4",
+                                index % 3 === 0 ? "sm:border-l-0 sm:pl-0" : "sm:border-l sm:pl-5",
+                                index % 5 === 0 ? "lg:border-l-0 lg:pl-0" : "lg:border-l lg:pl-5",
+                            )}
+                        >
+                            <Award
+                                aria-hidden="true"
+                                className={cn("mt-1 size-4 shrink-0", isTotal ? "text-brand" : getDifficultyColors(item.tier))}
+                            />
+                            <div className="min-w-0">
+                                <div className="wrap-break-word text-xl font-black tabular-nums">
+                                    {item.count}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                    {isTotal ? "Overall progress" : capitalize(item.tier)}
+                                </div>
+                                <div className="mt-0.5 text-[10px] leading-4 text-muted-foreground/80">
+                                    {isTotal ? "achievements earned" : "highest tier earned"}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </section>
     );
 };

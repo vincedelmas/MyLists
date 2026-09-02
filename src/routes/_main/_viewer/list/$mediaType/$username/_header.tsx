@@ -1,13 +1,16 @@
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaTypeUsernameSchema} from "@/lib/schemas";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {THEME_ICONS_MAP} from "@/lib/utils/theme-utils";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
+import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {MediaLevel} from "@/lib/client/components/general/MediaLevel";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {userListHeaderOption} from "@/lib/client/react-query/query-options";
 import {createFileRoute, Outlet, useLocation} from "@tanstack/react-router";
-import {Award, ChartNoAxesColumn, Library, ListOrdered, Tags, User, Zap} from "lucide-react";
+import {Award, ChartNoAxesColumn, Library, ListOrdered, Tags, Zap} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header")({
@@ -27,10 +30,14 @@ export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_
 
 function ListHeader() {
     const location = useLocation();
+    const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
     const { username, mediaType } = Route.useParams();
     const { userListHeaderQueryOptions } = Route.useRouteContext();
     const { timeSpent } = useSuspenseQuery(userListHeaderQueryOptions).data;
+
+    const MediaIcon = THEME_ICONS_MAP[mediaType];
+    const isOwner = currentUser?.name === username;
 
     const activeTab = location.pathname.endsWith("/tags")
         ? "tags" : location.pathname.endsWith("/collections")
@@ -38,6 +45,7 @@ function ListHeader() {
                 ? "stats" : location.pathname.endsWith("/achievements")
                     ? "achievements" : location.pathname.endsWith("/activity")
                         ? "activity" : "list";
+    const hasFlushContent = activeTab === "stats" || activeTab === "achievements" || activeTab === "activity";
 
     const onTabChange = (tabName: string) => {
         if (tabName === activeTab) return;
@@ -103,40 +111,42 @@ function ListHeader() {
 
     return (
         <PageTitle title={`${username} ${capitalize(mediaType)} ${capitalize(activeTab)}`} onlyHelmet>
-            <div className="pt-6">
-                <div className="flex items-center gap-4">
-                    <div className="relative">
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    eyebrowIcon={MediaIcon}
+                    eyebrow={`${capitalize(mediaType)} list`}
+                    asideLabel={`${capitalize(mediaType)} level`}
+                    title={isOwner ? `Your ${capitalize(mediaType)}` : `${username}'s ${capitalize(mediaType)}`}
+                    description={isOwner
+                        ? "Everything you have added here, with your progress, stats and collections."
+                        : `Everything ${username} has added here, with their progress, stats and collections.`
+                    }
+                    asideValue={
                         <MediaLevel
-                            className="text-2xl"
+                            className="text-lg"
                             mediaType={mediaType}
                             timeSpentMin={timeSpent}
-                            containerClassName="pt-1"
+                            containerClassName="mx-0"
                         />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight capitalize">
-                            {mediaType} {activeTab}
-                        </h1>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2">
-                            <User className="size-3"/> {username}
-                        </p>
-                    </div>
+                    }
+                    navigation={
+                        <TabHeader
+                            tabs={tabs}
+                            activeTab={activeTab}
+                            className="max-sm:px-3"
+                            setActiveTab={(tabName) => onTabChange(tabName)}
+                        >
+                            <QuickActions
+                                username={username}
+                                mediaType={mediaType}
+                            />
+                        </TabHeader>
+                    }
+                />
+
+                <div className={hasFlushContent ? undefined : "pt-6"}>
+                    <Outlet/>
                 </div>
-                <div className="pt-5">
-                    <TabHeader
-                        tabs={tabs}
-                        activeTab={activeTab}
-                        setActiveTab={(tabName) => onTabChange(tabName)}
-                    >
-                        <QuickActions
-                            username={username}
-                            mediaType={mediaType}
-                        />
-                    </TabHeader>
-                </div>
-            </div>
-            <div className="pt-4">
-                <Outlet/>
             </div>
         </PageTitle>
     );

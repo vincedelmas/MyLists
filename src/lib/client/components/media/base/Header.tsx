@@ -1,11 +1,9 @@
-import React from "react";
 import {Status} from "@/lib/utils/enums";
 import {cn} from "@/lib/utils/classnames";
 import {Filter, Grid2X2, List} from "lucide-react";
 import {MediaListArgs, SearchType} from "@/lib/schemas";
 import {Button} from "@/lib/client/components/ui/button";
 import {ListPagination} from "@/lib/types/query.options.types";
-import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
@@ -25,64 +23,27 @@ interface HeaderProps {
 
 
 export const Header = (props: HeaderProps) => {
-    const isBelowSm = useBreakpoint("sm");
     const { allStatuses, filters, isGrid, onGridClick, onFilterClick, pagination, onSortChange, onStatusChange } = props;
     const { localSearch, handleInputChange } = useSearchNavigate<SearchType>({ search: filters.search ?? "" });
 
-    if (isBelowSm) {
-        return (
-            <div className="space-y-3">
-                <SearchInput
-                    value={localSearch}
-                    onChange={handleInputChange}
-                    placeholder={`Search in ${filters.status ?? "All Media"}...`}
-                />
-
-                <div className="flex w-full gap-3">
-                    <StatusComponent
-                        className="grow"
-                        filters={filters}
-                        allStatuses={allStatuses}
-                        onStatusChange={({ status }) => onStatusChange({ status })}
-                    />
-                    <SortComponent
-                        className="grow"
-                        applySorting={onSortChange}
-                        sorting={pagination.sorting}
-                        allSorting={pagination.availableSorting}
-                    />
-                </div>
-
-                <div className="flex items-center justify-start gap-3">
-                    <Button variant="outline" onClick={onFilterClick} title="Advanced Filters">
-                        <Filter/> Filters
-                    </Button>
-                    <ViewModeToggle
-                        isGrid={isGrid}
-                        onGridClick={onGridClick}
-                    />
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_10rem_10rem_auto_auto] items-center gap-3
+        max-lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] max-sm:grid-cols-2">
+            <SearchInput
+                value={localSearch}
+                onChange={handleInputChange}
+                className="w-full max-lg:col-span-full"
+                placeholder="Search this list..."
+                aria-label="Search this media list"
+            />
             <StatusComponent
-                className="w-45"
+                className="max-w-none"
                 filters={filters}
                 allStatuses={allStatuses}
                 onStatusChange={({ status }) => onStatusChange({ status })}
             />
-            <div className="grow">
-                <SearchInput
-                    value={localSearch}
-                    onChange={handleInputChange}
-                    placeholder={`Search in ${filters.status ?? "All Media"}...`}
-                />
-            </div>
             <SortComponent
-                className="w-45"
+                className="max-w-none"
                 applySorting={onSortChange}
                 sorting={pagination.sorting}
                 allSorting={pagination.availableSorting}
@@ -90,15 +51,17 @@ export const Header = (props: HeaderProps) => {
             <Button
                 variant="outline"
                 onClick={onFilterClick}
-                title="Advanced Filters"
-                className="w-full md:w-auto"
+                title="Advanced filters"
+                className="max-sm:w-full"
             >
-                <Filter/> Filters
+                <Filter data-icon="inline-start"/> Filters
             </Button>
-            <ViewModeToggle
-                isGrid={isGrid}
-                onGridClick={onGridClick}
-            />
+            <div className="justify-self-end">
+                <ViewModeToggle
+                    isGrid={isGrid}
+                    onGridClick={onGridClick}
+                />
+            </div>
         </div>
     );
 };
@@ -160,7 +123,7 @@ const StatusComponent = ({ filters, allStatuses, onStatusChange, className }: St
 
     return (
         <Select items={selectItems} value={selectedStatus} onValueChange={(val) => handleStatusChange(val)}>
-            <SelectTrigger className={cn("w-full max-w-48", className)}>
+            <SelectTrigger aria-label="Filter by status" className={cn("w-full max-w-48", className)}>
                 <SelectValue/>
             </SelectTrigger>
             <SelectContent>
@@ -196,7 +159,7 @@ const SortComponent = ({ sorting, allSorting, applySorting, className }: SortCom
 
     return (
         <Select items={sortItems} value={selectedSorting} onValueChange={(val) => handleSortChange(val)}>
-            <SelectTrigger className={cn("w-full max-w-48", className)}>
+            <SelectTrigger aria-label="Sort media list" className={cn("w-full max-w-48", className)}>
                 <SelectValue/>
             </SelectTrigger>
             <SelectContent>

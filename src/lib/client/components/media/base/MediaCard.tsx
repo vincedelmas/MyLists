@@ -55,7 +55,7 @@ const MediaCardFrame = ({ children, className, ...props }: React.ComponentProps<
         <article
             data-slot="media-card"
             className={cn(
-                "@container/media-card group relative aspect-2/3 h-full overflow-hidden rounded-lg border bg-muted text-white " +
+                "@container/media-card group relative aspect-2/3 h-full overflow-hidden rounded-xl border bg-muted text-white " +
                 "transition-all duration-300 hover:border-brand/50 focus-within:border-brand/50 focus-within:ring-2 " +
                 "focus-within:ring-brand/30",
                 className,

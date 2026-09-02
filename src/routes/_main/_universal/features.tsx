@@ -1,8 +1,10 @@
 import {JSX} from "react";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
+import {Button} from "@/lib/client/components/ui/button";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Popover, PopoverContent, PopoverTrigger} from "@/lib/client/components/ui/popover";
 import {
     Activity,
@@ -10,10 +12,10 @@ import {
     BarChart3,
     BellRing,
     BookOpen,
+    CalendarDays,
     CheckCheck,
     ChevronDown,
     ClockCheck,
-    ClockPlus,
     Edit3,
     Gamepad2,
     GraduationCap,
@@ -23,6 +25,7 @@ import {
     ListOrdered,
     LucideIcon,
     Monitor,
+    Newspaper,
     Repeat,
     Search,
     Shield,
@@ -31,7 +34,6 @@ import {
     Users,
     Wrench,
 } from "lucide-react";
-import {Button} from "@/lib/client/components/ui/button";
 
 
 export const Route = createFileRoute("/_main/_universal/features")({
@@ -80,38 +82,72 @@ function FeaturesPage() {
     };
 
     return (
-        <PageTitle title="News & Features" subtitle="The latest changes first, then a quick look at what MyLists can do today.">
-            <div className="mb-20 space-y-16">
-                <section>
-                    <SectionHeader
-                        icon={ClockPlus}
-                        title="Latest Release"
-                        description="This is the place where I put the last things I shipped (mix of new stuff, fixes, and bigger rewrites)."
-                    />
-                    <ReleaseCard
-                        release={LATEST_RELEASE}
-                    />
-                </section>
+        <PageTitle title="News & Features" onlyHelmet>
+            <div className="mb-16 flex flex-col pt-8">
+                <PageHeader
+                    eyebrow="What’s new"
+                    title="News & features"
+                    eyebrowIcon={Newspaper}
+                    asideIcon={CalendarDays}
+                    asideLabel="Latest update"
+                    asideValue={LATEST_RELEASE.date}
+                    description="See what changed recently and what you can do with MyLists today."
+                />
 
-                <div className="space-y-15">
-                    {activeCategories.map((category) =>
-                        <section key={category}>
-                            <SectionHeader
-                                title={category}
-                                icon={getCategoryIcon(category)}
-                                description={AREA_DESCRIPTIONS[category]}
-                            />
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                {groupedFeatures[category]?.map((feature) =>
-                                    <FeatureCard
-                                        feature={feature}
-                                        key={feature.name}
-                                    />
-                                )}
-                            </div>
-                        </section>
-                    )}
-                </div>
+                <ReleaseCard
+                    release={LATEST_RELEASE}
+                />
+
+                <section className="pt-8">
+                    <div className="flex items-end justify-between gap-8 pb-4 max-sm:flex-col max-sm:items-start max-sm:gap-3">
+                        <div>
+                            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+                                Explore MyLists
+                            </h2>
+                            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                                The tools available across tracking, statistics, community, customization, and play.
+                            </p>
+                        </div>
+                        <div className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                            {FEATURES_DATA.length} features · {activeCategories.length} areas
+                        </div>
+                    </div>
+
+                    {activeCategories.map((category, idx) => {
+                        const CategoryIcon = getCategoryIcon(category);
+
+                        return (
+                            <section
+                                key={category}
+                                className="grid grid-cols-[minmax(13rem,0.34fr)_minmax(0,1fr)] gap-10 py-6 max-lg:grid-cols-1 max-lg:gap-6"
+                            >
+                                <div>
+                                    <div className="flex items-center gap-2 text-brand">
+                                        <CategoryIcon className="size-4" aria-hidden="true"/>
+                                        <span className="text-xs font-semibold tabular-nums">
+                                            {String(idx + 1).padStart(2, "0")}
+                                        </span>
+                                    </div>
+                                    <h3 className="mt-3 text-lg font-semibold tracking-tight text-foreground">
+                                        {category}
+                                    </h3>
+                                    <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                                        {AREA_DESCRIPTIONS[category]}
+                                    </p>
+                                </div>
+
+                                <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
+                                    {groupedFeatures[category]?.map((feature) =>
+                                        <FeatureCard
+                                            feature={feature}
+                                            key={feature.name}
+                                        />
+                                    )}
+                                </div>
+                            </section>
+                        );
+                    })}
+                </section>
             </div>
         </PageTitle>
     );
@@ -411,94 +447,64 @@ const FeatureCard = ({ feature }: { feature: FeatureData }) => {
     const Icon = feature.icon;
 
     return (
-        <div className="relative overflow-hidden rounded-lg border transition-all duration-300 flex flex-col bg-background">
-            <div className="p-4 flex-1">
-                <div className="flex items-start gap-3">
-                    <div className="p-2.5 rounded-lg shrink-0 bg-brand/20 text-brand">
-                        <Icon className="size-5"/>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-base mb-1.5">
-                            {feature.name}
-                        </h3>
-                        <div className="text-sm text-muted-foreground leading-normal">
-                            {feature.description}
-                        </div>
-                    </div>
-                </div>
+        <article className="group flex min-w-0 gap-3 rounded-xl border p-4 shadow-xs transition-colors hover:border-brand/35">
+            <div className="flex size-8 shrink-0 items-start justify-center pt-0.5 text-brand">
+                <Icon className="size-4.5" aria-hidden="true"/>
             </div>
+            <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-semibold text-foreground">
+                    {feature.name}
+                </h4>
+                <div className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    {feature.description}
+                </div>
 
-            {feature.details &&
-                <Popover>
-                    <PopoverTrigger render={<Button variant="tame"/>} className="m-2 mt-0">
-                        Learn More
-                        <ChevronDown/>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-(--anchor-width) p-4 text-sm shadow-xl">
-                        <div className="space-y-2">
-                            <h4 className="font-bold flex items-center gap-2">
-                                <Icon className="size-4 text-brand"/>
-                                {feature.name}
-                            </h4>
-                            <div className="pt-2 border-t text-muted-foreground leading-relaxed">
-                                {feature.details}
+                {feature.details &&
+                    <Popover>
+                        <PopoverTrigger render={<Button size="bare" variant="ghost"/>} className="mt-3 gap-1.5 text-xs font-semibold text-brand">
+                            Learn more
+                            <ChevronDown className="size-3.5"/>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 max-w-[calc(100vw-2rem)] p-4 text-sm shadow-xl">
+                            <div className="space-y-2">
+                                <h4 className="flex items-center gap-2 font-bold">
+                                    <Icon className="size-4 text-brand"/>
+                                    {feature.name}
+                                </h4>
+                                <div className="border-t pt-2 leading-relaxed text-muted-foreground">
+                                    {feature.details}
+                                </div>
                             </div>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            }
-        </div>
+                        </PopoverContent>
+                    </Popover>
+                }
+            </div>
+        </article>
     );
 };
-
-
-const SectionHeader = ({ title, icon: Icon, description }: { title: string, icon: LucideIcon, description?: string }) => (
-    <div className="mb-6">
-        <div className="flex items-center gap-2">
-            <Icon className="size-4 text-brand"/>
-            <h2 className="text-lg font-bold text-foreground tracking-wide">
-                {title}
-            </h2>
-        </div>
-        {description &&
-            <p className="max-w-3xl text-sm text-muted-foreground leading-relaxed mb-2">
-                {description}
-            </p>
-        }
-        <div className="h-1 w-30 bg-linear-to-r from-brand to-transparent rounded-full mb-2"/>
-    </div>
-);
 
 
 const ReleaseCard = ({ release }: { release: ReleaseData }) => {
     const Icon = release.icon;
 
     return (
-        <div className="rounded-lg border bg-background overflow-hidden">
-            <div className="p-4 border-b bg-popover/40">
-                <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg shrink-0 bg-brand/20 text-brand md:p-3">
-                                <Icon className="size-5 md:size-7"/>
-                            </div>
-                            <div className="flex flex-col">
-                                <h3 className="text-xl font-bold text-foreground leading-tight md:text-2xl">
-                                    {release.title}
-                                </h3>
-                                <span className="mt-0.5 text-xs text-muted-foreground font-medium">
-                                    {release.date}
-                                </span>
-                            </div>
-                        </div>
-                        <p className="mt-4 max-w-3xl text-sm text-muted-foreground leading-relaxed">
-                            {release.summary}
-                        </p>
+        <div className="mt-8 overflow-hidden rounded-xl border shadow-xs">
+            <div className="p-6 pt-4">
+                <div>
+                    <div className="flex items-center gap-3">
+                        <Icon className="size-5 text-brand" aria-hidden="true"/>
+                        <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                            {release.title}
+                        </h2>
+                        <UpdateTypeBadge type={release.type}/>
                     </div>
+                    <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                        {release.summary}
+                    </p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 border-t md:grid-cols-3">
                 {release.items.map((item, idx) =>
                     <ReleaseItem
                         item={item}
@@ -515,18 +521,15 @@ const ReleaseItem = ({ item }: { item: FeatureData }) => {
     const Icon = item.icon;
 
     return (
-        <div className="p-5">
-            <div className="mb-3 flex items-center gap-2">
+        <article className="p-5 [&:not(:last-child)]:border-b md:[&:not(:last-child)]:border-b-0 md:[&:not(:last-child)]:border-r">
+            <h3 className="flex items-center gap-2 font-semibold text-foreground">
                 <Icon className="size-4 text-brand"/>
-                <UpdateTypeBadge type={item.type}/>
-            </div>
-            <h4 className="font-bold text-foreground mb-2">
                 {item.name}
-            </h4>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {item.description}
             </p>
-        </div>
+        </article>
     );
 };
 

@@ -12,15 +12,19 @@ type CompactStatItem = {
 
 interface CompactStatsGridProps {
     color?: string;
-    columns?: 3 | 4;
+    columns?: 3 | 4 | 6;
     items: CompactStatItem[];
 }
 
 
 export const CompactStatsGrid = ({ items, color = "var(--brand)", columns = 4 }: CompactStatsGridProps) => (
-    <div className={cn("grid grid-cols-2 gap-y-7", columns === 3 ? "sm:grid-cols-3" : "sm:grid-cols-4")}>
+    <div className={cn(
+        "grid grid-cols-2 gap-y-7",
+        columns === 3 ? "sm:grid-cols-3" : columns === 6 ? "sm:grid-cols-3 lg:grid-cols-6" : "sm:grid-cols-4",
+    )}>
         {items.map((item, idx) => {
-            const startsDesktopRow = idx % columns === 0;
+            const startsSmallRow = idx % (columns === 6 ? 3 : columns) === 0;
+            const startsLargeRow = idx % columns === 0;
 
             return (
                 <div
@@ -28,7 +32,8 @@ export const CompactStatsGrid = ({ items, color = "var(--brand)", columns = 4 }:
                     className={cn(
                         "flex min-w-0 items-start gap-3",
                         idx % 2 === 1 && "border-l pl-4",
-                        startsDesktopRow ? "sm:border-l-0 sm:pl-0" : "sm:border-l sm:pl-5",
+                        startsSmallRow ? "sm:border-l-0 sm:pl-0" : "sm:border-l sm:pl-5",
+                        columns === 6 && (startsLargeRow ? "lg:border-l-0 lg:pl-0" : "lg:border-l lg:pl-5"),
                     )}
                 >
                     <span className="mt-1 shrink-0" style={{ color }}>

@@ -1,6 +1,6 @@
 import {createFileRoute} from "@tanstack/react-router";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
-import {ArrowBigUpDash, Search, TriangleAlert} from "lucide-react";
+import {ArrowDown, Search, TriangleAlert} from "lucide-react";
 import {OnboardingContainer, OnboardingDemoBox, OnboardingNote, OnboardingSection, OnboardingSubSection} from "@/lib/client/components/onboarding/OnBoardingShared";
 
 
@@ -25,25 +25,27 @@ function SearchMediaOnboarding() {
             </OnboardingSection>
 
             <OnboardingSubSection
-                title="1. Select the Search Type"
+                title="1. Select the search type"
                 description={
-                    "Click the left dropdown to choose what kind of media you are looking for. " +
+                    "Use the dropdown on the right of the search bar to choose what you are looking for. " +
                     "It defaults to Media (Series, Movies, and Anime)."
                 }
             >
                 <OnboardingDemoBox>
-                    <div className="flex items-center w-full max-w-md shadow-sm opacity-70">
-                        <SearchBar/>
-                    </div>
-                    <div className="absolute bottom-0 left-10 bg-primary text-primary-foreground font-bold text-[10px] px-2 py-1
-                    rounded flex items-center gap-1">
-                        HERE TO CHANGE MEDIA TYPE <ArrowBigUpDash className="size-3 animate-bounce"/>
+                    <div className="relative w-full max-w-md pt-8">
+                        <div className="flex w-full items-center opacity-70 shadow-sm [&>*]:w-full">
+                            <SearchBar/>
+                        </div>
+                        <div className="absolute right-2 top-0 flex items-center gap-1 rounded-md bg-primary px-2 py-1
+                        text-[10px] font-bold text-primary-foreground">
+                            Change search type <ArrowDown className="size-3 animate-bounce"/>
+                        </div>
                     </div>
                 </OnboardingDemoBox>
 
                 <OnboardingNote title="Note" icon={TriangleAlert} variant="warning">
                     The <b>Anime list</b> is not activated by default.
-                    See 'Activate More Lists Type', on the left sidebar.
+                    See <b>Activate lists</b> in the step menu.
                 </OnboardingNote>
 
                 <OnboardingNote title="Info">

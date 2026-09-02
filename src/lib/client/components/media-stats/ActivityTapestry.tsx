@@ -17,7 +17,7 @@ export function ActivityTapestry({ data, mediaTypes }: ActivityTapestryProps) {
     const rows = visibleMediaTypes.length > 0 ? visibleMediaTypes : mediaTypes;
 
     return (
-        <div className="scrollbar-thin overflow-x-auto rounded-xl border p-4 sm:p-5 h-fit">
+        <div className="scrollbar-thin h-fit overflow-x-auto rounded-xl border p-4 shadow-xs sm:p-5">
             <div className="min-w-180">
                 <div
                     className="grid items-center gap-2"

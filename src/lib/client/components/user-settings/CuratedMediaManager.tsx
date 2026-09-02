@@ -40,10 +40,10 @@ export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache }
     };
 
     return (
-        <FieldGroup className="gap-6">
+        <FieldGroup className="gap-6 border-t pt-6">
             <Field>
                 <FieldLabel htmlFor={`${fieldId}-search`}>
-                    Add Media
+                    Add media
                 </FieldLabel>
                 <div ref={containerRef} className="relative">
                     <SearchInput
@@ -63,7 +63,7 @@ export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache }
                         isPending={isFetching}
                         debouncedSearch={debouncedSearch}
                         hasResults={!!searchResults?.length}
-                        emptyMessage="No Matching Media Found in Your List."
+                        emptyMessage="No matching media found in your list."
                     >
                         <div className="max-h-80 divide-y overflow-y-auto">
                             {searchResults?.map((item) => {
@@ -106,14 +106,14 @@ export const CuratedMediaManager = ({ activeTab, previewCache, setPreviewCache }
             </Field>
 
             <FieldSet>
-                <FieldLegend variant="label">Curated Items</FieldLegend>
+                <FieldLegend variant="label">Chosen titles</FieldLegend>
                 <FieldDescription>
                     Up to {PROFILE_MAX_HIGHLIGHTED_MEDIA} items. Use arrows to control order.
                 </FieldDescription>
 
                 {fields.length === 0 ?
                     <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                        No Media Selected Yet.
+                        No media selected yet.
                     </div>
                     :
                     <div className="flex flex-col gap-2">
@@ -153,10 +153,17 @@ interface CuratedItemRowProps {
 
 const CuratedItemRow = ({ idx, total, item, preview, onMove, onRemove }: CuratedItemRowProps) => {
     return (
-        <div className="flex items-center gap-3 rounded-lg border p-3">
-            <div className="flex items-center justify-center text-muted-foreground">
+        <div className="flex items-center gap-3 rounded-lg border p-2.5">
+            <div className="flex w-5 shrink-0 items-center justify-center font-mono text-xs text-muted-foreground">
                 #{idx + 1}
             </div>
+            {preview?.mediaCover &&
+                <img
+                    alt=""
+                    src={preview.mediaCover}
+                    className="h-12 w-8 shrink-0 rounded-md object-cover"
+                />
+            }
             <div className="min-w-0 flex-1">
                 <div className="line-clamp-1 font-medium">
                     {preview?.mediaName ?? `Media #${item.mediaId}`}

@@ -47,7 +47,7 @@ export function YearRecapShareCard({ recap, color }: YearRecapShareCardProps) {
 
     return (
         <div className="grid gap-7 lg:grid-cols-[minmax(0,0.65fr)_minmax(300px,0.35fr)] lg:items-start">
-            <div className="overflow-hidden rounded-2xl border bg-muted/20">
+            <div className="overflow-hidden rounded-lg">
                 {generatedImage ?
                     <img
                         className="h-auto w-full"

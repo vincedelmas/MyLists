@@ -39,7 +39,7 @@ function DangerForm() {
     };
 
     return (
-        <div className="h-fit max-w-125 rounded-xl border border-destructive/40 bg-destructive/2 p-4">
+        <section className="h-fit max-w-2xl rounded-xl border border-destructive/35 p-5">
             <div className="flex flex-col gap-4">
                 <div>
                     <h3 className="font-medium">
@@ -55,6 +55,6 @@ function DangerForm() {
                     Delete Account
                 </Button>
             </div>
-        </div>
+        </section>
     );
 }

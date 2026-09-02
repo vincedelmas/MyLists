@@ -52,7 +52,7 @@ export const QuickActions = ({ username, mediaType }: { username: string, mediaT
             <DropdownMenuTrigger className="opacity-70 hover:opacity-100">
                 <EllipsisVertical className="size-4"/>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-46">
+            <DropdownMenuContent align="end" className="w-50">
                 {actions
                     .filter((action) => pathname !== action.match)
                     .map((action) =>

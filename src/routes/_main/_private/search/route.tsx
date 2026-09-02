@@ -1,6 +1,5 @@
 import {useEffect} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Badge} from "@/lib/client/components/ui/badge";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
@@ -9,6 +8,7 @@ import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {Field, FieldError} from "@/lib/client/components/ui/field";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {ButtonGroup} from "@/lib/client/components/ui/button-group";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
@@ -17,12 +17,11 @@ import {AdvancedSearchFilters, globalSearchSchema} from "@/lib/schemas";
 import {resolveMediaTypeActive} from "@/lib/utils/media-list-activation";
 import {Controller, FormProvider, useForm, useWatch} from "react-hook-form";
 import {getAdvancedSearchConfig} from "@/lib/client/components/media/media-config";
-import {ChevronLeft, ChevronRight, Search, SearchX, SlidersHorizontal} from "lucide-react";
+import {ChevronLeft, ChevronRight, Database, ScanSearch, Search, SearchX} from "lucide-react";
 import {countAdvancedSearchFilters, hasSearchCriteria} from "@/lib/utils/advanced-search.utils";
 import {MediaTypeIcon, MediaTypeText} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {SearchMediaListIndicator} from "@/lib/client/components/media/base/SearchMediaListIndicator";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
@@ -77,7 +76,6 @@ function SearchPage() {
     const SearchFilterPanel = definition?.FilterPanel;
     const AppliedFilterChips = definition?.AppliedFilters;
 
-    const draftFilterCount = countAdvancedSearchFilters(draftFilters);
     const appliedFilterCount = countAdvancedSearchFilters(advancedFilters);
 
     const isViewingAppliedProvider = selectedProvider === apiProvider;
@@ -96,6 +94,7 @@ function SearchPage() {
             : []),
         { label: "Users", value: ApiProviderType.USERS },
     ];
+    const selectedProviderLabel = searchProviderItems.find((item) => item.value === selectedProvider)?.label ?? "Media";
 
     const commitSearch = async (submitted: SearchFormValues) => {
         const trimmedQuery = submitted.query.trim();
@@ -168,81 +167,74 @@ function SearchPage() {
     };
 
     return (
-        <PageTitle title="Search" subtitle="A focused place to search your active catalogs.">
-            <FormProvider {...form}>
-                <div className="mt-2 space-y-6">
-                    <form onSubmit={form.handleSubmit(commitSearch)} className="space-y-6">
-                        <div className="flex items-start gap-3 max-sm:flex-col">
-                            <Controller
-                                name="apiProvider"
-                                control={form.control}
-                                render={({ field }) =>
-                                    <Select value={field.value} items={searchProviderItems} onValueChange={handleProviderChange}>
-                                        <SelectTrigger aria-label="Search provider" className="w-full sm:w-36">
-                                            <SelectValue/>
-                                        </SelectTrigger>
-                                        <SelectContent align="start">
-                                            <SelectGroup>
-                                                {searchProviderItems.map((item) =>
-                                                    <SelectItem key={item.value} value={item.value}>
-                                                        {item.label}
-                                                    </SelectItem>
-                                                )}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                }
-                            />
+        <PageTitle title="Search" onlyHelmet>
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    title="Search"
+                    asideIcon={Database}
+                    eyebrowIcon={ScanSearch}
+                    eyebrow="Find something"
+                    asideLabel="Searching in"
+                    asideValue={selectedProviderLabel}
+                    description="Look for media and people across the sources available to you."
+                />
 
-                            <Controller
-                                name="query"
-                                control={form.control}
-                                render={({ field, fieldState }) =>
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <SearchInput
-                                            {...field}
-                                            autoFocus={true}
-                                            aria-invalid={fieldState.invalid}
-                                            aria-label={"Search title or name"}
-                                            inputClassName="placeholder:text-xs sm:placeholder:text-sm"
-                                            placeholder={definition ? "Title (optional when filters are selected)" : "Title or Name"}
-                                            onChange={(ev) => {
-                                                field.onChange(ev);
-                                                form.clearErrors();
-                                            }}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                }
-                            />
-                            <Button type="submit">
-                                <Search data-icon="inline-start"/>
-                                Search
-                            </Button>
-                        </div>
-
-                        {definition && SearchFilterPanel && draftFilters &&
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>
-                                        <div className="flex items-center gap-2">
-                                            <SlidersHorizontal className="size-4"/>
-                                            {definition.label}
+                <FormProvider {...form}>
+                    <div className="space-y-6">
+                        <form onSubmit={form.handleSubmit(commitSearch)} className="space-y-5">
+                            <div className="grid grid-cols-[9rem_minmax(0,1fr)_auto] items-start gap-3 pt-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+                                <Controller
+                                    name="apiProvider"
+                                    control={form.control}
+                                    render={({ field }) =>
+                                        <div className="max-sm:col-span-2">
+                                            <Select value={field.value} items={searchProviderItems} onValueChange={handleProviderChange}>
+                                                <SelectTrigger aria-label="Search provider" className="w-full">
+                                                    <SelectValue/>
+                                                </SelectTrigger>
+                                                <SelectContent align="start">
+                                                    <SelectGroup>
+                                                        {searchProviderItems.map((item) =>
+                                                            <SelectItem key={item.value} value={item.value}>
+                                                                {item.label}
+                                                            </SelectItem>
+                                                        )}
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                    </CardTitle>
-                                    <CardAction>
-                                        {draftFilterCount > 0 &&
-                                            <Badge variant="secondary">
-                                                {draftFilterCount} selected
-                                            </Badge>
-                                        }
-                                    </CardAction>
-                                    <CardDescription>
-                                        Select and adjust the advanced fields as you need.
-                                    </CardDescription>
-                                </CardHeader>
+                                    }
+                                />
 
-                                <CardContent>
+                                <Controller
+                                    name="query"
+                                    control={form.control}
+                                    render={({ field, fieldState }) =>
+                                        <Field className="min-w-0" data-invalid={fieldState.invalid}>
+                                            <SearchInput
+                                                {...field}
+                                                autoFocus={true}
+                                                aria-invalid={fieldState.invalid}
+                                                aria-label={"Search title or name"}
+                                                inputClassName="placeholder:text-xs sm:placeholder:text-sm"
+                                                placeholder={definition ? "Title (optional when filters are selected)" : "Title or Name"}
+                                                onChange={(ev) => {
+                                                    field.onChange(ev);
+                                                    form.clearErrors();
+                                                }}
+                                            />
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    }
+                                />
+                                <Button type="submit">
+                                    <Search data-icon="inline-start"/>
+                                    Search
+                                </Button>
+                            </div>
+
+                            {definition && SearchFilterPanel && draftFilters &&
+                                <section className="rounded-xl border p-4 shadow-xs sm:p-5">
                                     <Controller
                                         name="advancedFilters"
                                         control={form.control}
@@ -260,64 +252,42 @@ function SearchPage() {
                                             );
                                         }}
                                     />
-                                </CardContent>
+                                </section>
+                            }
+                        </form>
 
-                                <CardFooter className="flex-col items-stretch gap-3 py-3 sm:flex-row sm:items-center">
-                                    <FieldError
-                                        className="sm:mr-auto"
-                                        errors={[form.formState.errors.root]}
-                                    />
-                                    <div className="flex justify-end gap-2 sm:ml-auto">
-                                        <Button
-                                            size="sm"
-                                            type="button"
-                                            variant="hover"
-                                            onClick={() => void handleClearFilters()}
-                                            disabled={draftFilterCount === 0 && (!isViewingAppliedProvider || appliedFilterCount === 0)}
-                                        >
-                                            Clear filters
-                                        </Button>
-                                        <Button type="submit" size="sm">
-                                            <Search data-icon="inline-start"/>
-                                            Apply search
-                                        </Button>
-                                    </div>
-                                </CardFooter>
-                            </Card>
+                        {isViewingAppliedProvider && AppliedFilterChips && advancedFilters && appliedFilterCount > 0 &&
+                            <div className="flex flex-wrap items-center gap-2" aria-label="Applied filters">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                    Applied filters
+                                </span>
+
+                                <AppliedFilterChips
+                                    filters={advancedFilters}
+                                    onChange={handleAppliedFiltersChange}
+                                />
+
+                                <Button type="button" size="xs" variant="hover" onClick={() => void handleClearFilters()}>
+                                    Clear all
+                                </Button>
+                            </div>
                         }
-                    </form>
 
-                    {isViewingAppliedProvider && AppliedFilterChips && advancedFilters && appliedFilterCount > 0 &&
-                        <div className="flex flex-wrap items-center gap-2" aria-label="Applied filters">
-                            <span className="text-xs font-medium text-muted-foreground">
-                                Applied
-                            </span>
-
-                            <AppliedFilterChips
-                                filters={advancedFilters}
-                                onChange={handleAppliedFiltersChange}
+                        {hasSubmittedSearch ?
+                            <SearchResultsQuery
+                                page={page}
+                                onPageChange={handlePageChange}
                             />
-
-                            <Button type="button" size="xs" variant="hover" onClick={() => void handleClearFilters()}>
-                                Clear all
-                            </Button>
-                        </div>
-                    }
-
-                    {hasSubmittedSearch ?
-                        <SearchResultsQuery
-                            page={page}
-                            onPageChange={handlePageChange}
-                        />
-                        :
-                        <EmptyState
-                            icon={Search}
-                            className="min-h-48 rounded-xl border px-4 py-10 text-center"
-                            message="Choose a media type, add a title or filters, then search."
-                        />
-                    }
-                </div>
-            </FormProvider>
+                            :
+                            <EmptyState
+                                icon={Search}
+                                className="min-h-48 rounded-xl border px-4 py-12 text-center shadow-xs"
+                                message="Choose a media type, add a title or filters, then search."
+                            />
+                        }
+                    </div>
+                </FormProvider>
+            </div>
         </PageTitle>
     );
 }
@@ -358,7 +328,7 @@ const SearchResults = ({ data, page, hasNextPage, onPageChange }: SearchResultsP
         return (
             <EmptyState
                 icon={SearchX}
-                className="min-h-48 rounded-xl border px-4 py-10 text-center"
+                className="min-h-48 rounded-xl border px-4 py-12 text-center shadow-xs"
                 message="No results found. Try a broader title or remove one of the applied filters."
             />
         );
@@ -367,15 +337,15 @@ const SearchResults = ({ data, page, hasNextPage, onPageChange }: SearchResultsP
     return (
         <section aria-labelledby="search-results-heading" className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3">
-                <h2 id="search-results-heading" className="text-lg font-semibold">
-                    Results
+                <h2 id="search-results-heading" className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Search results
                 </h2>
-                <Badge variant="outline">
+                <span className="text-xs tabular-nums text-muted-foreground">
                     Page {page}
-                </Badge>
+                </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {data.map((item) =>
                     <SearchResultCard
                         item={item}
@@ -425,7 +395,6 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
                             <MediaCardDetails>
                                 <MediaTypeIcon mediaType={mediaType}/>
                                 <MediaTypeText mediaType={mediaType}/>
-                                <span aria-hidden="true">•</span>
                                 {formatDate(item.date)}
                             </MediaCardDetails>
                         </MediaCardMeta>
@@ -436,11 +405,12 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
     }
 
     return (
-        <Card className="gap-0 py-0 transition-colors hover:ring-foreground/25">
+        <article
+            className="overflow-hidden rounded-lg border bg-muted transition-colors hover:border-brand/50 focus-within:border-brand/50 focus-within:ring-2 focus-within:ring-brand/30">
             <Link
                 to="/profile/$username"
                 params={{ username: item.name }}
-                className="group relative aspect-2/3 overflow-hidden rounded-xl"
+                className="group relative block aspect-2/3 overflow-hidden rounded-lg outline-none"
             >
                 <img
                     loading="lazy"
@@ -462,6 +432,6 @@ const SearchResultCard = ({ item }: { item: ProviderSearchResult }) => {
                     }
                 </div>
             </Link>
-        </Card>
+        </article>
     );
 };

@@ -36,7 +36,7 @@ const LeaderboardRow = ({ entry, isCurrentUser, isPinned = false }: LeaderboardR
         >
             <TableCell className="pl-4 text-center">
                 <div className={cn(
-                    "mx-auto flex size-7 items-center justify-center rounded-full font-mono text-xs " +
+                    "mx-auto flex size-7 items-center justify-center rounded-full text-sm " +
                     "font-semibold text-muted-foreground",
                     entry.rank === 1 && "bg-gold/15 text-gold",
                     entry.rank === 2 && "bg-silver/15 text-silver",
@@ -62,11 +62,11 @@ const LeaderboardRow = ({ entry, isCurrentUser, isPinned = false }: LeaderboardR
                     />
                     <div className="min-w-0">
                         <div className="flex min-w-0 items-center gap-2">
-                            <Link to="/profile/$username" className="min-w-0 truncate" params={{ username: entry.name }}>
+                            <Link to="/profile/$username" className="min-w-0 truncate hover:text-brand" params={{ username: entry.name }}>
                                 {entry.name}
                             </Link>
                             {isCurrentUser &&
-                                <Badge className="shrink-0" variant="secondary">
+                                <Badge className="shrink-0">
                                     You
                                 </Badge>
                             }
@@ -79,19 +79,19 @@ const LeaderboardRow = ({ entry, isCurrentUser, isPinned = false }: LeaderboardR
                     </div>
                 </div>
             </TableCell>
-            <TableCell className="text-right font-mono font-semibold tabular-nums">
+            <TableCell className="text-right font-semibold tabular-nums">
                 {entry.bestScore}
             </TableCell>
-            <TableCell className="text-right font-mono text-muted-foreground tabular-nums max-lg:hidden">
+            <TableCell className="text-right text-muted-foreground tabular-nums max-lg:hidden">
                 {formatPercent(entry.accuracy, { fractionDigits: 0 })}
             </TableCell>
-            <TableCell className="text-right font-mono text-muted-foreground tabular-nums max-sm:hidden">
+            <TableCell className="text-right text-muted-foreground tabular-nums max-sm:hidden">
                 {entry.perfectRuns}
             </TableCell>
-            <TableCell className="text-right font-mono text-muted-foreground tabular-nums max-md:hidden">
+            <TableCell className="text-right text-muted-foreground tabular-nums max-md:hidden">
                 {formatNumber(entry.averageScore, { fractionDigits: 1, locale: "en" })}
             </TableCell>
-            <TableCell className="pr-4 text-right font-mono tabular-nums">
+            <TableCell className="pr-4 text-right tabular-nums">
                 {entry.runsPlayed}
             </TableCell>
         </TableRow>

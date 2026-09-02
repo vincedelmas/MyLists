@@ -38,7 +38,7 @@ export function UpdatesDial({ fingerprint }: UpdatesDialProps) {
     }).join(", ");
 
     return (
-        <div className="grid gap-7 rounded-4xl border p-5 sm:grid-cols-[180px_1fr] sm:p-7 h-fit">
+        <div className="grid h-fit gap-7 rounded-xl border p-5 shadow-xs sm:grid-cols-[180px_1fr] sm:p-7">
             <div
                 className="relative mx-auto grid size-44 place-items-center rounded-full"
                 style={{ background: total > 0 ? `conic-gradient(${gradient})` : "var(--muted)" }}

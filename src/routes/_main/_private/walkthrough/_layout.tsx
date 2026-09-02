@@ -1,8 +1,10 @@
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {createFileRoute, Outlet} from "@tanstack/react-router";
+import {BookOpenCheck} from "lucide-react";
+import {createFileRoute, Link, Outlet, useLocation} from "@tanstack/react-router";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {OnboardingNav} from "@/lib/client/components/onboarding/OnBoardingShared";
-import {LinkSidebar, LinkSidebarItem} from "@/lib/client/components/general/LinkSidebar";
+import {LinkSidebarItem} from "@/lib/client/components/general/LinkSidebar";
 
 
 export const Route = createFileRoute("/_main/_private/walkthrough/_layout")({
@@ -14,67 +16,119 @@ const sidebarItems: LinkSidebarItem[] = [
     {
         id: "search",
         to: "/walkthrough/search-media",
-        label: "Search For A Media",
+        label: "Search for media",
     },
     {
         id: "add",
         to: "/walkthrough/add-media",
-        label: "Add A Media To Your List",
+        label: "Add media",
     },
     {
         id: "activate",
         to: "/walkthrough/activate-lists",
-        label: "Activate More Lists Type",
+        label: "Activate lists",
     },
     {
         id: "manageLists",
-        label: "Managing The Lists",
+        label: "Manage your lists",
         to: "/walkthrough/manage-lists",
     },
     {
         id: "comingNext",
-        label: "Coming Next Media",
+        label: "Coming next",
         to: "/walkthrough/coming-next",
     },
     {
         id: "profile",
         to: "/walkthrough/profile",
-        label: "Profile & Social",
+        label: "Profile & social",
     },
     {
         id: "and-more",
         to: "/walkthrough/and-more",
-        label: "And More...",
+        label: "Explore more",
     },
 ];
 
 
 function SidebarLayout() {
     const { currentUser } = useAuth();
+    const { pathname } = useLocation();
     if (!currentUser) return null;
 
-    return (
-        <PageTitle title="How to use MyLists.info" subtitle="Here to guide you how to use mylists.info :).">
-            <div className="flex flex-col md:grid md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr] gap-6 md:gap-10 mt-2 w-full max-w-full">
-                <aside className="sticky top-14 md:top-25 self-start z-10 bg-background pt-2 min-w-0 w-full">
-                    <LinkSidebar
-                        items={sidebarItems}
-                    />
-                </aside>
+    const currentStepIndex = sidebarItems.findIndex((item) => pathname === item.to);
+    const activeStepIndex = currentStepIndex === -1 ? 0 : currentStepIndex;
 
-                <main className="min-w-0 w-full flex flex-col max-w-3xl mt-2">
-                    <OnboardingNav
-                        position="top"
-                        items={sidebarItems}
-                        username={currentUser.name}
-                    />
-                    <Outlet/>
-                    <OnboardingNav
-                        position="bottom"
-                        items={sidebarItems}
-                        username={currentUser.name}
-                    />
-                </main>
+    return (
+        <PageTitle title="How to use MyLists" onlyHelmet>
+            <div className="mb-8 flex flex-col pt-8">
+                <PageHeader
+                    title="How to use MyLists"
+                    eyebrow="Getting started"
+                    eyebrowIcon={BookOpenCheck}
+                    asideLabel="Your progress"
+                    asideValue={`Step ${activeStepIndex + 1} of ${sidebarItems.length}`}
+                    description="A quick tour of tracking media, organizing lists and setting up your profile."
+                    navigation={
+                        <div
+                            role="progressbar"
+                            aria-label="Walkthrough progress"
+                            aria-valuemin={1}
+                            aria-valuemax={sidebarItems.length}
+                            aria-valuenow={activeStepIndex + 1}
+                            className="grid grid-cols-7 gap-1"
+                        >
+                            {sidebarItems.map((item, index) =>
+                                <span
+                                    key={item.id}
+                                    className={index <= activeStepIndex ? "h-1 rounded-full bg-brand" : "h-1 rounded-full bg-border"}
+                                />
+                            )}
+                        </div>
+                    }
+                />
+
+                <div className="grid w-full min-w-0 gap-8 pt-6 md:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
+                    <aside className="sticky top-14 z-10 min-w-0 self-start bg-background/95 backdrop-blur-sm md:top-25">
+                        <nav
+                            aria-label="Walkthrough steps"
+                            className="flex gap-1 overflow-x-auto border-b pb-3 scrollbar-thin md:flex-col md:overflow-visible md:border-b-0 md:border-r md:pb-0 md:pr-5"
+                        >
+                            {sidebarItems.map((item, index) =>
+                                <Link
+                                    to={item.to}
+                                    key={item.id}
+                                    activeOptions={{ exact: true }}
+                                    activeProps={{ className: "border-brand/30 bg-brand/5 text-foreground" }}
+                                    className="group flex shrink-0 items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-sm text-muted-foreground
+                                    transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40
+                                    md:w-full"
+                                >
+                                    <span className="font-mono text-[0.65rem] tabular-nums text-muted-foreground group-aria-[current=page]:text-brand">
+                                        {String(index + 1).padStart(2, "0")}
+                                    </span>
+                                    <span className="whitespace-nowrap font-medium">
+                                        {item.label}
+                                    </span>
+                                </Link>
+                            )}
+                        </nav>
+                    </aside>
+
+                    <main className="flex min-w-0 w-full max-w-4xl flex-col">
+                        <OnboardingNav
+                            position="top"
+                            items={sidebarItems}
+                            username={currentUser.name}
+                        />
+                        <Outlet/>
+                        <OnboardingNav
+                            position="bottom"
+                            items={sidebarItems}
+                            username={currentUser.name}
+                        />
+                    </main>
+                </div>
             </div>
         </PageTitle>
     );

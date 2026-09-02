@@ -1,61 +1,57 @@
-import {Clock} from "lucide-react";
-import {ActivityPeriod} from "@/lib/schemas";
-import {useSuspenseQuery} from "@tanstack/react-query";
+import {Clock3} from "lucide-react";
+import {cn} from "@/lib/utils/classnames";
+import {capitalize} from "@/lib/utils/text-formatting";
 import {formatMinutes} from "@/lib/utils/number-formatting";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {getMonthlyActivityStatSummary} from "@/lib/utils/activity-utils";
 import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options";
+import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
+
+
+type ActivityStats = Awaited<ReturnType<NonNullable<ReturnType<typeof monthlyActivityStatsOptions>["queryFn"]>>>;
 
 
 interface MonthlyActivityStatsProps {
-    view: ActivityPeriod;
-    queryOptions: ReturnType<typeof monthlyActivityStatsOptions>;
+    stats: ActivityStats;
+    showTotalTime?: boolean;
 }
 
 
-export function MonthlyActivityStats({ queryOptions, view }: MonthlyActivityStatsProps) {
-    const stats = useSuspenseQuery(queryOptions).data;
+export function MonthlyActivityStats({ stats, showTotalTime = true }: MonthlyActivityStatsProps) {
+    if (stats.mediaStats.length === 0) return null;
 
     return (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
-            <div className="flex min-h-20 w-full min-w-0 flex-col justify-between rounded-lg border bg-background px-3 py-2">
-                <div className="flex min-w-0 items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                        <Clock className="text-brand" size={15}/>
-                        <span className="truncate text-sm font-medium capitalize">
-                        {view === "year" ? "Yearly Time" : "Monthly Time"}
-                    </span>
+        <section className="mt-4 rounded-xl border p-5 shadow-xs sm:p-6">
+            <div className={cn("grid gap-5", showTotalTime && "lg:grid-cols-[10rem_minmax(0,1fr)] lg:gap-0")}>
+                {showTotalTime &&
+                    <div className="flex min-w-0 items-start gap-3 border-b pb-5 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-5">
+                        <Clock3 className="mt-1 size-4 shrink-0 text-brand" aria-hidden="true"/>
+                        <div className="min-w-0">
+                            <div className="wrap-break-word text-xl font-black tabular-nums">
+                                {formatMinutes(stats.totalTime)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                                Total time
+                            </div>
+                            <div className="mt-0.5 text-[10px] leading-4 text-muted-foreground/80">
+                                across all media
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div className="text-lg font-semibold">
-                    {formatMinutes(stats.totalTime)}
+                }
+
+                <div className={cn(showTotalTime && "lg:pl-5")}>
+                    <CompactStatsGrid
+                        columns={6}
+                        items={stats.mediaStats.map((stat) => ({
+                            label: capitalize(stat.mediaType),
+                            value: formatMinutes(stat.timeGained),
+                            icon: <MainThemeIcon type={stat.mediaType} size={16}/>,
+                            note: getMonthlyActivityStatSummary(stat.mediaType, stat.progressTotal, stat.count),
+                        }))}
+                    />
                 </div>
             </div>
-
-            {stats.mediaStats.map((stat) => {
-                const summary = getMonthlyActivityStatSummary(stat.mediaType, stat.progressTotal, stat.count);
-
-                return (
-                    <div key={stat.mediaType} className="flex min-h-20 w-full min-w-0 flex-col justify-between rounded-lg border bg-background px-3 py-2">
-                        <div className="flex min-w-0 items-center justify-between gap-2">
-                            <div className="flex min-w-0 items-center gap-2">
-                                <MainThemeIcon type={stat.mediaType} size={15}/>
-                                <span className="truncate text-sm font-medium capitalize">
-                                    {stat.mediaType}
-                                </span>
-                            </div>
-                            {summary &&
-                                <span className="shrink-0 text-xs text-muted-foreground">
-                                    {summary}
-                                </span>
-                            }
-                        </div>
-                        <div className="text-lg font-semibold">
-                            {formatMinutes(stat.timeGained)}
-                        </div>
-                    </div>
-                )
-            })}
-        </div>
+        </section>
     );
 }

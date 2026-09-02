@@ -6,16 +6,18 @@ import {MediaTypeDashboard} from "@/lib/client/components/media-stats/MediaTypeD
 
 interface DashboardContentProps {
     subjectName?: string;
+    showHero?: boolean;
     data: UserStatsResult;
     onSelectMediaType?: (mediaType: MediaType) => void;
 }
 
 
-export const DashboardContent = ({ data, subjectName, onSelectMediaType }: DashboardContentProps) => {
+export const DashboardContent = ({ data, subjectName, onSelectMediaType, showHero = true }: DashboardContentProps) => {
     if (data.kind === "overview") {
         return (
             <OverviewDashboard
                 stats={data}
+                showHero={showHero}
                 subjectName={subjectName}
                 onSelectMediaType={onSelectMediaType}
             />
@@ -25,6 +27,7 @@ export const DashboardContent = ({ data, subjectName, onSelectMediaType }: Dashb
     return (
         <MediaTypeDashboard
             stats={data}
+            showHero={showHero}
         />
     );
 };

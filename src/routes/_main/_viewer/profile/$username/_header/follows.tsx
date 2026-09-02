@@ -12,7 +12,7 @@ import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {followsOptions} from "@/lib/client/react-query/query-options";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
-import {useFollowMutation, useUnfollowMutation,} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {useFollowMutation, useUnfollowMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/follows")({
@@ -33,7 +33,6 @@ function ProfileFollows() {
     const apiData = useSuspenseQuery(followsQueryOptions).data;
 
     const isViewingOwnProfile = currentUser?.name === profileOwner;
-
     return (
         <PageTitle
             title="Follows"
@@ -82,7 +81,7 @@ function FollowCard({ follow, currentUsername, profileOwner, isViewingOwnProfile
     const isOwner = currentUsername === follow.username;
 
     return (
-        <div className="flex flex-col justify-between rounded-xl border p-4 space-y-5">
+        <div className="flex flex-col justify-between space-y-5 rounded-xl border p-4">
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                     <div className="relative">
@@ -93,7 +92,7 @@ function FollowCard({ follow, currentUsername, profileOwner, isViewingOwnProfile
                         />
                         <div
                             title={`Privacy: ${follow.privacy}`}
-                            className="bg-background absolute -bottom-1 -right-1 rounded-full border p-0.5"
+                            className="absolute -bottom-1 -right-1 rounded-full border bg-background p-0.5"
                         >
                             <div className="rounded-full p-0.5">
                                 <PrivacyIcon type={follow.privacy}/>
@@ -102,7 +101,7 @@ function FollowCard({ follow, currentUsername, profileOwner, isViewingOwnProfile
                     </div>
                     <div>
                         <Link to="/profile/$username" params={{ username: follow.username }}>
-                            <h3 className="text-foreground hover:text-brand font-medium leading-none">
+                            <h3 className="font-medium leading-none text-foreground hover:text-brand">
                                 {follow.username}
                             </h3>
                         </Link>
@@ -193,7 +192,7 @@ function FollowActionButton({ targetUserId, followStatus, profileOwner, isViewin
                                 <Clock className="size-3.5"/> Requested
                             </span>
                             <span className="hidden items-center gap-2 group-hover:flex">
-                                <UserX className="size-3.5"/> Cancel
+                                <UserX className="size-3.5"/> Cancel request
                             </span>
                         </>
                         :

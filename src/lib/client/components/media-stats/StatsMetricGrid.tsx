@@ -16,7 +16,7 @@ interface StatsMetricGridProps {
 
 export function StatsMetricGrid({ items }: StatsMetricGridProps) {
     return (
-        <div className="grid border-y sm:grid-cols-3">
+        <div className="grid overflow-hidden rounded-xl border shadow-xs sm:grid-cols-3">
             {items.map((item, idx) =>
                 <div
                     key={item.label}

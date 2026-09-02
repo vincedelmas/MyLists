@@ -21,9 +21,9 @@ interface MediadleLeaderboardProps {
 
 
 interface LeaderboardRowProps {
-    entry: LeaderboardEntry;
-    isCurrentUser: boolean;
     isPinned?: boolean;
+    isCurrentUser: boolean;
+    entry: LeaderboardEntry;
 }
 
 
@@ -41,8 +41,7 @@ const LeaderboardRow = ({ entry, isCurrentUser, isPinned = false }: LeaderboardR
         >
             <TableCell className="pl-4 text-center">
                 <div className={cn(
-                    "mx-auto flex size-7 items-center justify-center rounded-full font-mono text-xs " +
-                    "font-semibold text-muted-foreground",
+                    "mx-auto flex size-7 items-center justify-center rounded-full text-sm font-semibold text-muted-foreground",
                     entry.rank === 1 && "bg-gold/15 text-gold",
                     entry.rank === 2 && "bg-silver/15 text-silver",
                     entry.rank === 3 && "bg-bronze/15 text-bronze",
@@ -71,7 +70,7 @@ const LeaderboardRow = ({ entry, isCurrentUser, isPinned = false }: LeaderboardR
                                 {entry.name}
                             </Link>
                             {isCurrentUser &&
-                                <Badge variant="secondary">
+                                <Badge className="shrink-0">
                                     You
                                 </Badge>
                             }
@@ -84,16 +83,16 @@ const LeaderboardRow = ({ entry, isCurrentUser, isPinned = false }: LeaderboardR
                     </div>
                 </div>
             </TableCell>
-            <TableCell className="text-right font-mono font-semibold tabular-nums">
+            <TableCell className="text-right font-semibold tabular-nums">
                 {entry.totalWon}
             </TableCell>
-            <TableCell className="text-right font-mono text-muted-foreground tabular-nums max-sm:hidden">
+            <TableCell className="text-right text-muted-foreground tabular-nums max-sm:hidden">
                 {formatPercent(entry.winRate, { fractionDigits: 0 })}
             </TableCell>
-            <TableCell className="text-right font-mono tabular-nums">
+            <TableCell className="text-right tabular-nums">
                 {entry.currentStreak}
             </TableCell>
-            <TableCell className="pr-4 text-right font-mono text-muted-foreground tabular-nums max-md:hidden">
+            <TableCell className="pr-4 text-right text-muted-foreground tabular-nums max-md:hidden">
                 {formatNumber(entry.averageAttempts, { fractionDigits: 1, locale: "en" })}
             </TableCell>
         </TableRow>
@@ -162,9 +161,9 @@ export const MediadleLeaderboard = ({ leaderboard, currentUserId }: MediadleLead
                         {currentUserEntry && currentUserEntry.rank > 10 &&
                             <TableFooter className="border-t-2 border-primary/20 bg-primary/5">
                                 <LeaderboardRow
-                                    isPinned
-                                    entry={currentUserEntry}
+                                    isPinned={true}
                                     isCurrentUser={true}
+                                    entry={currentUserEntry}
                                 />
                             </TableFooter>
                         }

@@ -53,7 +53,7 @@ export const BaseMediaFollowCard = ({ followData, rating, redoDisplay, mediaDeta
                         </Badge>
                     </div>
                 </div>
-                <div className="flex gap-x-3 text-xs text-muted-foreground mt-2">
+                <div className="flex gap-x-3 text-xs items-center text-muted-foreground mt-2">
                     {mediaDetailsDisplay}
 
                     <DisplayRating

@@ -1,10 +1,11 @@
 import {clientEnv} from "@/env/client";
+import {FaGithub} from "react-icons/fa";
 import {createFileRoute} from "@tanstack/react-router";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
-import {Separator} from "@/lib/client/components/ui/separator";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {Code2, Database, ExternalLink, Info, Mail, Palette} from "lucide-react";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
+import {buttonVariants} from "@/lib/client/components/ui/button";
+import {CircleUserRound, Code2, Database, ExternalLink, Info, Mail, Palette} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_universal/about")({
@@ -23,34 +24,75 @@ export const Route = createFileRoute("/_main/_universal/about")({
 
 function AboutPage() {
     return (
-        <PageTitle title="About MyLists.info" subtitle="Learn more about MyLists.info and the technologies behind it.">
-            <div className="flex flex-col gap-8 max-w-4xl">
-                <section>
-                    <p className="text-muted-foreground leading-relaxed text-justify">
-                        I'm only one person (French) maintaining this website. It is a personal project developed during
-                        my free time to help me and my friends keep track of series, anime, movies, games, books and manga.
-                        If you have any constructive remarks, find any bugs, or want to be involved in the evolution
-                        of MyLists.info, please do not hesitate to contact me.
-                    </p>
-                    <div className="mt-4">
-                        <a
-                            href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`}
-                            className="inline-flex items-center gap-2 text-brand hover:underline font-medium"
-                        >
-                            <Mail className="size-4"/>
-                            Contact Me
-                        </a>
+        <PageTitle title="About MyLists" onlyHelmet>
+            <div className="mb-16 flex flex-col pt-8">
+                <PageHeader
+                    asideIcon={Code2}
+                    asideLabel="Made by"
+                    title="About MyLists"
+                    eyebrowIcon={CircleUserRound}
+                    eyebrow="A little about the site"
+                    asideValue="One person · open source"
+                    description="Why I built MyLists, what it runs on and where its media data comes from."
+                />
+
+                <section className="mt-6 grid grid-cols-[minmax(13rem,0.34fr)_minmax(0,1fr)] gap-10 rounded-xl border p-5 shadow-xs
+                max-lg:grid-cols-1 max-lg:gap-5 sm:p-7">
+                    <div>
+                        <div className="text-sm font-semibold text-brand">
+                            01
+                        </div>
+                        <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
+                            A personal tracker,<br className="max-lg:hidden"/> shared publicly
+                        </h2>
+                    </div>
+
+                    <div className="max-w-2xl">
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                            MyLists is maintained by one person in France. I started it in my free time to help my friends
+                            and me keep track of series, anime, movies, games, books, and manga in one place.
+                        </p>
+                        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                            Constructive feedback, bug reports, and contributions are always welcome—the project keeps
+                            improving through the people who use it.
+                        </p>
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            <a
+                                href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`}
+                                className={buttonVariants()}
+                            >
+                                <Mail data-icon="inline-start"/>
+                                Contact me
+                            </a>
+                            <a
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href="https://github.com/Crossoufire/MyLists"
+                                className={buttonVariants({ variant: "outline" })}
+                            >
+                                <FaGithub data-icon="inline-start"/>
+                                View source
+                            </a>
+                        </div>
                     </div>
                 </section>
 
-                <Separator/>
-
-                <section>
-                    <div className="flex items-center gap-2 mb-6">
-                        <Code2 className="w-5 h-5 text-brand"/>
-                        <h3 className="text-xl font-semibold">Tech Stack</h3>
+                <section className="pt-12">
+                    <div className="flex items-end justify-between gap-6 pb-6 max-sm:flex-col max-sm:items-start max-sm:gap-2">
+                        <div>
+                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+                                <Code2 className="size-4" aria-hidden="true"/>
+                                Technology
+                            </div>
+                            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Core stack</h2>
+                            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                                The open-source tools used to build and run MyLists.
+                            </p>
+                        </div>
+                        <span className="font-mono text-xs tabular-nums text-muted-foreground">04 projects</span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <div className="grid gap-4 md:grid-cols-2">
                         <TechCard
                             title="Bun"
                             href="https://bun.sh/"
@@ -73,19 +115,27 @@ function AboutPage() {
                             title="Shadcn UI"
                             href="https://ui.shadcn.com/"
                             licenseHref="https://github.com/shadcn-ui/ui/blob/main/LICENSE.md"
-                            description="Beautifully designed components built with Radix UI and Tailwind CSS"
+                            description="Components built with accessible primitives and Tailwind CSS"
                         />
                     </div>
                 </section>
 
-                <Separator/>
-
-                <section>
-                    <div className="flex items-center gap-2 mb-6">
-                        <Database className="w-5 h-5 text-brand"/>
-                        <h3 className="text-xl font-semibold">Data Sources & APIs</h3>
+                <section className="pt-12">
+                    <div className="flex items-end justify-between gap-6 pb-6 max-sm:flex-col max-sm:items-start max-sm:gap-2">
+                        <div>
+                            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+                                <Database className="size-4" aria-hidden="true"/>
+                                Catalogs
+                            </div>
+                            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground">Data sources & APIs</h2>
+                            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                                The external catalogs that supply media metadata across MyLists.
+                            </p>
+                        </div>
+                        <span className="font-mono text-xs tabular-nums text-muted-foreground">04 providers</span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <div className="grid gap-4 md:grid-cols-2">
                         <ApiCard
                             title="TMDB API"
                             href="https://www.themoviedb.org/"
@@ -108,36 +158,27 @@ function AboutPage() {
                             title="MyAnimeList API"
                             href="https://myanimelist.net/"
                             apiHref="https://myanimelist.net/apiconfig/references/api/v2"
-                            description="Official MyAnimeList API for anime and manga data. Not endorsed or certified by MyAnimeList."
+                            description="Official anime and manga data. Not endorsed or certified by MyAnimeList."
                         />
                     </div>
                 </section>
 
-                <Separator/>
-
-                <section>
-                    <div className="flex items-center gap-2 mb-6">
-                        <Palette className="w-5 h-5 text-brand"/>
-                        <h3 className="text-xl font-semibold">Assets & Credits</h3>
+                <section className="mt-12 grid grid-cols-[minmax(13rem,0.34fr)_minmax(0,1fr)] gap-10 rounded-xl border p-5 shadow-xs max-lg:grid-cols-1 max-lg:gap-4 sm:p-6">
+                    <div className="flex items-center gap-2 text-brand">
+                        <Palette className="size-4" aria-hidden="true"/>
+                        <h2 className="text-sm font-semibold uppercase tracking-[0.16em]">Assets & credits</h2>
                     </div>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Logo</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">
-                                The MyLists.info logo was sourced from FreePik and created by&nbsp;
-                                <a
-                                    href="https://fr.freepik.com/vecteurs-libre/logo-degrade-colore-initial-vecteur-m_28762027.htm"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-brand hover:underline inline-flex items-center gap-1"
-                                >
-                                    logturnal <ExternalLink className="w-3 h-3"/>
-                                </a>.
-                            </p>
-                        </CardContent>
-                    </Card>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                        The MyLists.info logo was sourced from FreePik and created by&nbsp;
+                        <a
+                            href="https://fr.freepik.com/vecteurs-libre/logo-degrade-colore-initial-vecteur-m_28762027.htm"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-brand hover:underline"
+                        >
+                            logturnal <ExternalLink className="size-3"/>
+                        </a>.
+                    </p>
                 </section>
             </div>
         </PageTitle>
@@ -155,26 +196,27 @@ interface TechCardProps {
 
 function TechCard({ title, description, href, licenseHref }: TechCardProps) {
     return (
-        <Card className="flex flex-col justify-between">
-            <CardHeader>
-                <CardTitle className="text-base flex items-center justify-between">
-                    {title}
-                    <a href={href} target="_blank" rel="noopener noreferrer"
-                       className="text-muted-foreground transition-colors hover:text-brand">
-                        <ExternalLink className="size-4"/>
-                    </a>
-                </CardTitle>
-                <CardDescription className="text-xs">
-                    {description}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
+        <article className="flex min-w-0 items-start justify-between gap-4 rounded-xl border p-5 shadow-xs">
+            <div className="min-w-0">
+                <h3 className="font-semibold text-foreground">{title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
                 <a href={licenseHref} target="_blank" rel="noopener noreferrer"
-                   className="text-xs text-brand hover:underline">
-                    View License
+                   className="text-xs text-muted-foreground transition-colors hover:text-brand">
+                    License
                 </a>
-            </CardContent>
-        </Card>
+                <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Visit ${title}`}
+                    className="text-muted-foreground transition-colors hover:text-brand"
+                >
+                    <ExternalLink className="size-4"/>
+                </a>
+            </div>
+        </article>
     );
 }
 
@@ -189,25 +231,31 @@ interface ApiCardProps {
 
 function ApiCard({ title, description, href, apiHref }: ApiCardProps) {
     return (
-        <Card className="flex flex-col justify-between">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center justify-between">
-                    {title}
-                    <div className="flex gap-2">
-                        <a href={href} target="_blank" rel="noopener noreferrer" title="Website"
-                           className="text-muted-foreground transition-colors hover:text-brand">
-                            <Info className="size-4"/>
-                        </a>
-                        <a href={apiHref} target="_blank" rel="noopener noreferrer" title="API Docs"
-                           className="text-muted-foreground transition-colors hover:text-brand">
-                            <ExternalLink className="size-4"/>
-                        </a>
-                    </div>
-                </CardTitle>
-                <CardDescription className="text-xs">
-                    {description}
-                </CardDescription>
-            </CardHeader>
-        </Card>
+        <article className="flex min-w-0 items-start justify-between gap-4 rounded-xl border p-5 shadow-xs">
+            <div className="min-w-0">
+                <h3 className="font-semibold text-foreground">{title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+                <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${title} website`}
+                    className="text-muted-foreground transition-colors hover:text-brand"
+                >
+                    <Info className="size-4"/>
+                </a>
+                <a
+                    href={apiHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${title} documentation`}
+                    className="text-muted-foreground transition-colors hover:text-brand"
+                >
+                    <ExternalLink className="size-4"/>
+                </a>
+            </div>
+        </article>
     );
 }

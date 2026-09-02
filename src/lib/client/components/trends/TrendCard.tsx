@@ -19,7 +19,10 @@ export const TrendCard = ({ media }: { media: TrendsMedia }) => {
                 </MediaCardTitle>
                 <MediaCardMeta>
                     <MediaCardDetails>
-                        <MediaTypeIcon mediaType={media.mediaType}/>
+                        <span className="flex min-w-0 items-center gap-1.5 capitalize">
+                            <MediaTypeIcon mediaType={media.mediaType}/>
+                            <span className="truncate">{media.mediaType}</span>
+                        </span>
                         <MediaReleaseDate date={media.releaseDate}/>
                     </MediaCardDetails>
                 </MediaCardMeta>

@@ -1,4 +1,6 @@
+import {CalendarDays} from "lucide-react";
 import {MediaType} from "@/lib/utils/enums";
+import {formatNumber} from "@/lib/utils/number-formatting";
 import {ComingNextItem} from "@/lib/types/query.options.types";
 import {ComingNextCard} from "@/lib/client/components/coming-next/ComingNextCard";
 
@@ -14,11 +16,16 @@ export const ComingNextSection = ({ title, items }: ComingNextSectionProps) => {
 
     return (
         <section>
-            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                <span className="w-2 h-8 rounded bg-brand block mr-1"/>
-                {title}
-            </h2>
-            <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+            <header className="flex items-center justify-between gap-4">
+                <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <CalendarDays className="size-4 text-brand" aria-hidden="true"/>
+                    {title}
+                </h2>
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {formatNumber(items.length)} {items.length === 1 ? "release" : "releases"}
+                </span>
+            </header>
+            <div className="grid gap-3 pt-4 sm:grid-cols-2">
                 {items.map((item, idx) =>
                     <ComingNextCard
                         item={item}

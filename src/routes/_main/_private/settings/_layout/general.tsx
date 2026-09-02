@@ -65,110 +65,129 @@ function GeneralSettingsPage() {
 
     return (
         <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-90 flex-col gap-6 max-sm:w-full">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-full max-w-3xl flex-col gap-6">
                 <FieldSet disabled={generalSettingsMutation.isPending}>
-                    <FieldGroup>
-                        <Controller
-                            name="username"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-username`}>
-                                        Username
-                                    </FieldLabel>
-                                    <Input
-                                        {...field}
-                                        id={`${fieldId}-username`}
-                                        aria-invalid={fieldState.invalid}
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="privacy"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
-                                    <div className="flex items-center gap-1.5">
-                                        <FieldLabel htmlFor={`${fieldId}-privacy`}>
-                                            Privacy
+                    <div className="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+                        <FieldGroup>
+                            <div>
+                                <h3 className="text-sm font-semibold text-foreground">Identity & Access</h3>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    The name users see, and who can access your profile.
+                                </p>
+                            </div>
+                            <Controller
+                                name="username"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-username`}>
+                                            Username
                                         </FieldLabel>
-                                        <PrivacyPopover/>
-                                    </div>
-                                    <Select
-                                        value={field.value}
-                                        items={privacyItems}
-                                        onValueChange={(value) => {
-                                            if (value !== null) field.onChange(value);
-                                        }}
-                                    >
-                                        <SelectTrigger id={`${fieldId}-privacy`} className="w-full" aria-invalid={fieldState.invalid}>
-                                            <SelectValue placeholder="Select a privacy mode"/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                {privacyItems.map((item) =>
-                                                    <SelectItem key={item.value} value={item.value}>
-                                                        {item.label}
-                                                    </SelectItem>
-                                                )}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="profileImage"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-pi`}>
-                                        Profile image
-                                    </FieldLabel>
-                                    <ImageCropper
-                                        aspect={1}
-                                        cropShape="round"
-                                        fileName={field.name}
-                                        inputId={`${fieldId}-pi`}
-                                        onCropApplied={field.onChange}
-                                        aria-invalid={fieldState.invalid}
-                                        key={`profile-${imageCropperResetKey}`}
-                                        resultClassName="h-[150px] rounded-full"
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="backgroundImage"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
-                                    <FieldLabel htmlFor={`${fieldId}-bi`}>
-                                        Background Image
-                                    </FieldLabel>
-                                    <ImageCropper
-                                        cropShape="rect"
-                                        sliceHeight={256}
-                                        fileName={field.name}
-                                        inputId={`${fieldId}-bi`}
-                                        onCropApplied={field.onChange}
-                                        aria-invalid={fieldState.invalid}
-                                        key={`background-${imageCropperResetKey}`}
-                                        resultClassName="w-full h-16 object-cover rounded"
-                                    />
-                                    <FieldError errors={[fieldState.error]}/>
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
+                                        <Input
+                                            {...field}
+                                            id={`${fieldId}-username`}
+                                            aria-invalid={fieldState.invalid}
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="privacy"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
+                                        <div className="flex items-center gap-1.5">
+                                            <FieldLabel htmlFor={`${fieldId}-privacy`}>
+                                                Privacy
+                                            </FieldLabel>
+                                            <PrivacyPopover/>
+                                        </div>
+                                        <Select
+                                            value={field.value}
+                                            items={privacyItems}
+                                            onValueChange={(value) => {
+                                                if (value !== null) field.onChange(value);
+                                            }}
+                                        >
+                                            <SelectTrigger id={`${fieldId}-privacy`} className="w-full" aria-invalid={fieldState.invalid}>
+                                                <SelectValue placeholder="Select a privacy mode"/>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectGroup>
+                                                    {privacyItems.map((item) =>
+                                                        <SelectItem key={item.value} value={item.value}>
+                                                            {item.label}
+                                                        </SelectItem>
+                                                    )}
+                                                </SelectGroup>
+                                            </SelectContent>
+                                        </Select>
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+
+                        <FieldGroup className="border-t pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
+                            <div>
+                                <h3 className="text-sm font-semibold text-foreground">
+                                    Profile Personalized Covers
+                                </h3>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Personalize your avatar and profile backdrop.
+                                </p>
+                            </div>
+                            <Controller
+                                name="profileImage"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-pi`}>
+                                            Profile image
+                                        </FieldLabel>
+                                        <ImageCropper
+                                            aspect={1}
+                                            cropShape="round"
+                                            fileName={field.name}
+                                            inputId={`${fieldId}-pi`}
+                                            onCropApplied={field.onChange}
+                                            aria-invalid={fieldState.invalid}
+                                            key={`profile-${imageCropperResetKey}`}
+                                            resultClassName="h-[150px] rounded-full"
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="backgroundImage"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid} data-disabled={generalSettingsMutation.isPending}>
+                                        <FieldLabel htmlFor={`${fieldId}-bi`}>
+                                            Background image
+                                        </FieldLabel>
+                                        <ImageCropper
+                                            cropShape="rect"
+                                            sliceHeight={256}
+                                            fileName={field.name}
+                                            inputId={`${fieldId}-bi`}
+                                            onCropApplied={field.onChange}
+                                            aria-invalid={fieldState.invalid}
+                                            key={`background-${imageCropperResetKey}`}
+                                            resultClassName="h-16 w-full rounded object-cover"
+                                        />
+                                        <FieldError errors={[fieldState.error]}/>
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </div>
                 </FieldSet>
                 <FormError/>
-                <FormSubmitButton isLoading={generalSettingsMutation.isPending}>
-                    Update
+                <FormSubmitButton className="w-fit" isLoading={generalSettingsMutation.isPending}>
+                    Save changes
                 </FormSubmitButton>
             </form>
         </FormProvider>

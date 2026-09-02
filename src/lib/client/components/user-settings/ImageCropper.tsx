@@ -141,7 +141,7 @@ export const ImageCropper = ({ aspect, inputId, fileName, sliceHeight, cropShape
                     aria-invalid={ariaInvalid}
                     className="file:text-muted-foreground cursor-pointer"
                 />
-                <FieldDescription>
+                <FieldDescription className="mt-1">
                     Choose an image to crop and resize.
                 </FieldDescription>
             </div>

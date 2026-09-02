@@ -24,8 +24,8 @@ export function ErrorCatchBoundary({ error }: Readonly<ErrorComponentProps>) {
     if (!message) {
         return (
             <ErrorComponent
+                icon={<Skull/>}
                 title="Well, This is Awkward"
-                icon={<Skull className="size-9"/>}
                 footerText="If this keeps happening, we probably broke something important."
                 text="Sorry, it looks like something isn't working right now. Please try refreshing the page or come back later."
             />
@@ -35,8 +35,14 @@ export function ErrorCatchBoundary({ error }: Readonly<ErrorComponentProps>) {
     return (
         <ErrorComponent
             footerText="If this keeps happening, we probably broke something important."
-            title={upstreamFailure ? "App Temporarily Unavailable" : "An Error Occurred"}
-            text={upstreamFailure ? "Sorry, the app is temporarily unavailable. Please refresh the page or try again in a few minutes." : message}
+            title={upstreamFailure
+                ? "App Temporarily Unavailable"
+                : "An Error Occurred"
+            }
+            text={upstreamFailure
+                ? "Sorry, the app is temporarily unavailable. Please refresh the page or try again in a few minutes."
+                : message
+            }
         />
     );
 }

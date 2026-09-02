@@ -427,6 +427,14 @@ input[type="search"]::-webkit-search-cancel-button:hover {
 }
 
 @layer utilities {
+    body:has([data-error-page]) main {
+        min-height: auto;
+    }
+
+    body:has([data-error-page]) footer {
+        display: none;
+    }
+
     /* --- Use for thin scrollbar on overflow --- */
     .scrollbar-thin::-webkit-scrollbar {
         height: 4px;

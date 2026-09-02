@@ -254,7 +254,11 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                                             {(!fixedMediaType && activeTab === "all") &&
                                                 <span className="flex min-w-0 items-center gap-1 capitalize">
                                                     <MediaTypeIcon mediaType={row.mediaType}/>
-                                                    <span className="truncate">{row.mediaType}</span>
+                                                    {view === "month" &&
+                                                        <span className="truncate">
+                                                            {row.mediaType}
+                                                        </span>
+                                                    }
                                                 </span>
                                             }
                                             {formatMinutes(row.timeGained)}

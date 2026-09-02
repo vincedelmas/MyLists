@@ -3,8 +3,6 @@ import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {coercedPositiveIntFieldSchema, optionalTrimmedSearchFieldSchema} from "@/lib/schemas/common.schema";
 
 
-export type TrendsActiveTab = z.infer<typeof trendsActiveTabSchema>;
-export type ProfileActiveTab = z.infer<typeof profileActiveTabSchema>;
 export type AdvancedSearchFilters = z.infer<typeof advancedSearchFiltersSchema>;
 export type BookAdvancedSearchFilters = z.infer<typeof bookAdvancedSearchFiltersSchema>;
 export type GameAdvancedSearchFilters = z.infer<typeof gameAdvancedSearchFiltersSchema>;

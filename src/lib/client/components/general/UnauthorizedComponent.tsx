@@ -19,12 +19,13 @@ export const UnauthorizedComponent = ({ type }: UnauthorizedComponentProps) => {
 
     return (
         <Card className="w-full max-w-sm mx-auto bg-popover relative overflow-hidden shadow-2xl">
-            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-                <div
-                    className="absolute inset-0 bg-size-[36px_36px]
-                    bg-[linear-gradient(to_right,#e2e2e215_1px,transparent_1px),linear-gradient(to_bottom,#e2e2e215_1px,transparent_1px)]"
-                />
-            </div>
+            <div
+                className="pointer-events-none absolute inset-0 z-0 opacity-50 bg-size-[32px_32px]"
+                style={{
+                    backgroundImage: `linear-gradient(to right, color-mix(in oklch, var(--foreground) 8%, transparent) 1px, transparent 1px),
+                    linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 8%, transparent) 1px, transparent 1px)`,
+                }}
+            />
             <div className="relative z-10 flex flex-col items-center justify-center px-6 py-12 text-center space-y-4">
                 <div className="flex items-center justify-center size-16 rounded-full bg-popover border shadow-inner group">
                     <Lock className="size-7 text-foreground/90"/>

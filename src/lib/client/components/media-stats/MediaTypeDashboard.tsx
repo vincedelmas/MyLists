@@ -199,7 +199,7 @@ export function MediaTypeDashboard({ stats, showHero = true }: MediaTypeDashboar
                                 <div
                                     key={status.name}
                                     title={`${status.name}: ${formatNumber(status.value)} (${formatPercent(percentage)})`}
-                                    style={{ flexGrow: status.value, backgroundColor: getThemeColor(String(status.name)) }}
+                                    style={{ flexGrow: status.value, backgroundColor: getThemeColor(status.name as Status) }}
                                     className="flex min-w-1 basis-0 items-center justify-center overflow-hidden px-2
                                     text-center text-xs font-semibold text-black"
                                 >
@@ -221,7 +221,7 @@ export function MediaTypeDashboard({ stats, showHero = true }: MediaTypeDashboar
                             <div
                                 key={status.name}
                                 className="flex items-center gap-3 border-l pl-3"
-                                style={{ borderColor: getThemeColor(String(status.name)) }}
+                                style={{ borderColor: getThemeColor(status.name as Status) }}
                             >
                                 <div className="min-w-0 flex-1">
                                     <div className="truncate text-xs font-medium">

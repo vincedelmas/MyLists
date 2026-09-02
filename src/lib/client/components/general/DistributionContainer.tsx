@@ -1,12 +1,13 @@
 import React from "react";
 import {LucideIcon} from "lucide-react";
+import {MediaType} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/utils/theme-utils";
 
 
 interface DistributionContainerProps {
     label: string;
     icon: LucideIcon;
-    mediaType?: string;
+    mediaType?: MediaType;
     children: React.ReactNode;
 }
 
@@ -17,7 +18,7 @@ export const DistributionContainer = ({ label, mediaType, icon: Icon, children }
             <div className="flex items-center gap-2 mb-4">
                 <Icon
                     className="size-4"
-                    style={{ color: getThemeColor(mediaType ? mediaType : "brand") }}
+                    style={{ color: getThemeColor(mediaType ?? "brand") }}
                 />
                 <span className="text-sm font-semibold text-foreground">
                     {label}

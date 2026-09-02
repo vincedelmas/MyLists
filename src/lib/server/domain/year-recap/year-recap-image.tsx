@@ -3,11 +3,10 @@ import {serverEnv} from "@/env/server";
 import {Renderer} from "takumi-js/node";
 import {createRequire} from "node:module";
 import {FontDetails, render} from "takumi-js";
-import {RatingSystemType} from "@/lib/utils/enums";
 import {capitalize} from "@/lib/utils/text-formatting";
 import {getImageFilename} from "@/lib/utils/image-url";
+import {MediaType, RatingSystemType} from "@/lib/utils/enums";
 import {YearRecap, YearRecapTitle} from "@/lib/types/year-recap.types";
-import {getStaticMediaColor, STATIC_BRAND_COLOR} from "@/lib/utils/theme-utils";
 import {formatContinuousTime, formatHours, formatNumber, formatPercent} from "@/lib/utils/number-formatting";
 import {MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardStatic, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
@@ -16,14 +15,50 @@ const WIDTH = 1080;
 const HEIGHT = 1350;
 const fontWeights = [400, 700] as const;
 
+
+const YEAR_RECAP_PALETTE = {
+    brand: "#20d69b",
+    panel: "#ffffff0b",
+    overlay: "#05070dcc",
+    mediaCard: "#1c2233",
+    foreground: "#f8fafc",
+    background: "#080b14",
+    metricLabel: "#b5bfd0",
+    gradientEnd: "#11111e",
+    gradientStart: "#11172a",
+    panelBorder: "#ffffff16",
+    chartBorder: "#ffffff12",
+    overlayStrong: "#05070df8",
+    mutedForeground: "#aeb8ca",
+    subtleForeground: "#9da8ba",
+    metrics: {
+        titles: "#29c7e8",
+        repeats: "#f47d9f",
+        completions: "#8c7cf4",
+        activeMonths: "#f2b84b",
+    },
+    media: {
+        [MediaType.SERIES]: "#51c7d5",
+        [MediaType.ANIME]: "#ef7d62",
+        [MediaType.MOVIES]: "#e6b744",
+        [MediaType.GAMES]: "#50bd67",
+        [MediaType.BOOKS]: "#ba83d4",
+        [MediaType.MANGA]: "#ea6ea8",
+    } satisfies Record<MediaType, string>,
+} as const;
+
+const YEAR_RECAP_CHART_COLORS = [
+    YEAR_RECAP_PALETTE.brand,
+    YEAR_RECAP_PALETTE.metrics.titles,
+    YEAR_RECAP_PALETTE.metrics.repeats,
+    YEAR_RECAP_PALETTE.metrics.completions,
+    YEAR_RECAP_PALETTE.metrics.activeMonths,
+] as const;
+
 const resolveDependency = createRequire(import.meta.url).resolve;
 const feelingLabels = ["Awful", "Disliked", "Not for me", "Liked", "Loved", "Favorite"];
 const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-
-const fontSubsets = [
-    "latin", "latin-ext", "cyrillic", "cyrillic-ext", "greek",
-    "greek-ext", "hebrew", "vietnamese", "symbols", "math",
-] as const;
+const fontSubsets = ["latin", "latin-ext", "cyrillic", "cyrillic-ext", "greek", "greek-ext", "hebrew", "vietnamese", "symbols", "math"] as const;
 
 
 const fontSources: (Omit<FontDetails, "data"> & { file: string })[] = [
@@ -92,18 +127,20 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
         };
     }));
 
-    const accent = recap.scope === "all" ? STATIC_BRAND_COLOR : getStaticMediaColor(recap.scope);
+    const accent = recap.scope === "all" ? YEAR_RECAP_PALETTE.brand : YEAR_RECAP_PALETTE.media[recap.scope];
     const maximumMonth = Math.max(...recap.months.map((month) => month.hours), 1);
     const scopeLabel = recap.scope === "all" ? "ALL MEDIA" : recap.scope.toUpperCase();
 
     const png = await render(
         <div
-            className="flex h-337.5 w-270 flex-col px-15.5 py-11.5 text-[#f8fafc]"
+            className="flex h-337.5 w-270 flex-col px-15.5 py-11.5"
             style={{
-                backgroundColor: "#080b14",
+                color: YEAR_RECAP_PALETTE.foreground,
+                backgroundColor: YEAR_RECAP_PALETTE.background,
                 fontFamily: "Open Sans, Noto Sans JP, Noto Emoji",
                 backgroundImage: `radial-gradient(circle at 92% 4%, ${accent}55 0%, transparent 32%),
-                linear-gradient(145deg, #11172a 0%, #080b14 48%, #11111e 100%)`,
+                linear-gradient(145deg, ${YEAR_RECAP_PALETTE.gradientStart} 0%, ${YEAR_RECAP_PALETTE.background} 48%,
+                ${YEAR_RECAP_PALETTE.gradientEnd} 100%)`,
             }}
         >
             <div className="flex items-center justify-between">
@@ -113,7 +150,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                         MYLISTS YEAR RECAP
                     </span>
                 </div>
-                <span className="text-[20px] font-bold tracking-[3px] text-[#aeb8ca]">
+                <span className="text-[20px] font-bold tracking-[3px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
                     {scopeLabel}
                 </span>
             </div>
@@ -131,14 +168,14 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                     <span className="text-[48px] font-bold" style={{ color: accent }}>
                         {formatContinuousTime(recap.totals.hours)}
                     </span>
-                    <span className="text-[18px] tracking-[2px] text-[#aeb8ca]">
+                    <span className="text-[18px] tracking-[2px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
                         TIME TRACKED
                     </span>
                 </div>
             </div>
 
             <div className="mt-6.5 flex items-center">
-                <span className="text-[16px] font-bold tracking-[2.5px] text-[#aeb8ca]">
+                <span className="text-[16px] font-bold tracking-[2.5px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
                     TITLES THAT DEFINED THE YEAR
                 </span>
             </div>
@@ -146,21 +183,23 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                 {topTitles.map((title) =>
                     <MediaCardStatic
                         key={`${title.mediaType}-${title.mediaId}`}
+                        className="relative h-52.5 w-37.25 flex-[0_0_149px] overflow-hidden rounded-[10px] border text-white"
+                        style={{
+                            borderColor: YEAR_RECAP_PALETTE.mediaCard,
+                            backgroundColor: YEAR_RECAP_PALETTE.mediaCard,
+                        }}
                         item={{
                             mediaName: title.name,
                             mediaId: title.mediaId,
                             imageCover: title.coverDataUrl ?? undefined,
                         }}
-                        className="relative h-52.5 w-37.25 flex-[0_0_149px] overflow-hidden rounded-[10px]
-                        border-[#1c2233] bg-[#1c2233] text-white"
                     >
                         {title.ratingLabel &&
                             <span
-                                className="absolute left-2 top-2 z-20 rounded-full border px-2 py-1 text-[10px]
-                                font-bold leading-none text-white"
+                                className="absolute left-2 top-2 z-20 rounded-full border px-2 py-1 text-[10px] font-bold leading-none text-white"
                                 style={{
-                                    borderColor: getStaticMediaColor(title.mediaType),
-                                    backgroundColor: "#05070dcc",
+                                    backgroundColor: YEAR_RECAP_PALETTE.overlay,
+                                    borderColor: YEAR_RECAP_PALETTE.media[title.mediaType],
                                 }}
                             >
                                 {title.ratingLabel}
@@ -169,7 +208,8 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                         <MediaCardFooter
                             className="absolute inset-x-0 bottom-0 flex flex-col gap-1 px-2.5 pb-2.75 pt-9"
                             style={{
-                                backgroundImage: "linear-gradient(to top, #05070df8 12%, #05070dcc 58%, transparent 100%)",
+                                backgroundImage: `linear-gradient(to top, ${YEAR_RECAP_PALETTE.overlayStrong} 12%,
+                                ${YEAR_RECAP_PALETTE.overlay} 58%, transparent 100%)`,
                             }}
                         >
                             <MediaCardTitle
@@ -178,11 +218,13 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                             >
                                 {title.name}
                             </MediaCardTitle>
-                            <MediaCardMeta className="flex items-center justify-between gap-1.25 text-[9px]
-                            font-bold text-[#aeb8ca]">
+                            <MediaCardMeta
+                                style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}
+                                className="flex items-center justify-between gap-1.25 text-[9px] font-bold"
+                            >
                                 <MediaCardDetails
                                     className="flex items-center gap-1 tracking-[0.7px]"
-                                    style={{ color: getStaticMediaColor(title.mediaType) }}
+                                    style={{ color: YEAR_RECAP_PALETTE.media[title.mediaType] }}
                                 >
                                     {recap.scope === "all" &&
                                         <span>{title.mediaType.toUpperCase()}</span>
@@ -199,10 +241,10 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
 
             <div className="mt-6.5 flex gap-3.5">
                 {[
-                    [formatNumber(recap.totals.titleCount), "TITLES", "#29c7e8"],
-                    [formatNumber(recap.totals.completions), "COMPLETIONS", "#8c7cf4"],
-                    [formatNumber(recap.totals.repeats), "REPEATS", "#f47d9f"],
-                    [`${recap.totals.activeMonths}/12`, "ACTIVE MONTHS", "#f2b84b"],
+                    [formatNumber(recap.totals.titleCount), "TITLES", YEAR_RECAP_PALETTE.metrics.titles],
+                    [formatNumber(recap.totals.completions), "COMPLETIONS", YEAR_RECAP_PALETTE.metrics.completions],
+                    [formatNumber(recap.totals.repeats), "REPEATS", YEAR_RECAP_PALETTE.metrics.repeats],
+                    [`${recap.totals.activeMonths}/12`, "ACTIVE MONTHS", YEAR_RECAP_PALETTE.metrics.activeMonths],
                 ].map(([value, label, color]) =>
                     <div
                         key={label}
@@ -212,7 +254,10 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                         <span className="text-[34px] font-bold" style={{ color }}>
                             {value}
                         </span>
-                        <span className="mt-1.25 text-[15px] font-bold tracking-[1.5px] text-[#b5bfd0]">
+                        <span
+                            style={{ color: YEAR_RECAP_PALETTE.metricLabel }}
+                            className="mt-1.25 text-[15px] font-bold tracking-[1.5px]"
+                        >
                             {label}
                         </span>
                     </div>
@@ -220,15 +265,18 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
             </div>
 
             <div className="mt-8 flex flex-col">
-                <span className="text-[18px] font-bold tracking-[3px] text-[#aeb8ca]">
+                <span className="text-[18px] font-bold tracking-[3px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
                     THE YEAR IN MOTION
                 </span>
-                <div className="mt-3.5 flex h-48.5 items-end gap-3.5 rounded-[20px]
-                border border-[#ffffff12] bg-[#ffffff0b] px-5 pb-3 pt-4.5">
+                <div
+                    className="mt-3.5 flex h-48.5 items-end gap-3.5 rounded-[20px] border px-5 pb-3 pt-4.5"
+                    style={{ borderColor: YEAR_RECAP_PALETTE.chartBorder, backgroundColor: YEAR_RECAP_PALETTE.panel }}
+                >
                     {recap.months.map((month, idx) => {
                         const barHeight = Math.max(month.hours > 0 ? 10 : 3, (month.hours / maximumMonth) * 128);
+
                         const barColor = recap.scope === "all"
-                            ? [STATIC_BRAND_COLOR, "#29c7e8", "#8c7cf4", "#f47d9f", "#f2b84b"][idx % 5]
+                            ? YEAR_RECAP_CHART_COLORS[idx % YEAR_RECAP_CHART_COLORS.length]
                             : accent;
 
                         return (
@@ -237,7 +285,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                                     className="w-9.5 rounded-t-[7px] rounded-b-[3px]"
                                     style={{ height: barHeight, backgroundColor: barColor }}
                                 />
-                                <span className="mt-2.5 text-[13px] font-bold text-[#9da8ba]">
+                                <span className="mt-2.5 text-[13px] font-bold" style={{ color: YEAR_RECAP_PALETTE.subtleForeground }}>
                                     {monthNames[idx]}
                                 </span>
                             </div>
@@ -248,7 +296,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
 
             {recap.scope === "all"
                 ? <div className="mt-7 flex flex-col">
-                    <span className="text-[18px] font-bold tracking-[3px] text-[#aeb8ca]">
+                    <span className="text-[18px] font-bold tracking-[3px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
                         MEDIA MIX
                     </span>
                     <div className="mt-4.25 flex gap-3">
@@ -257,17 +305,17 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                                 key={media.mediaType}
                                 className="flex min-w-0 flex-1 flex-col rounded-2xl px-4 py-4.5"
                                 style={{
-                                    backgroundColor: `${getStaticMediaColor(media.mediaType)}18`,
-                                    border: `1px solid ${getStaticMediaColor(media.mediaType)}55`,
+                                    backgroundColor: `${YEAR_RECAP_PALETTE.media[media.mediaType]}18`,
+                                    border: `1px solid ${YEAR_RECAP_PALETTE.media[media.mediaType]}55`,
                                 }}
                             >
-                                <span className="text-[17px] font-bold" style={{ color: getStaticMediaColor(media.mediaType) }}>
+                                <span className="text-[17px] font-bold" style={{ color: YEAR_RECAP_PALETTE.media[media.mediaType] }}>
                                     {capitalize(media.mediaType)}
                                 </span>
                                 <span className="mt-2 text-[25px] font-bold">
                                     {formatPercent(media.share, { fractionDigits: 0 })}
                                 </span>
-                                <span className="mt-0.75 text-[13px] text-[#aeb8ca]">
+                                <span className="mt-0.75 text-[13px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
                                     {formatHours(media.hours)}
                                 </span>
                             </div>
@@ -277,12 +325,9 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                 : <div className="mt-7 flex gap-4">
                     <div
                         className="flex flex-1 flex-col rounded-[18px] p-5"
-                        style={{
-                            backgroundColor: `${accent}18`,
-                            border: `1px solid ${accent}55`,
-                        }}
+                        style={{ backgroundColor: `${accent}18`, border: `1px solid ${accent}55` }}
                     >
-                        <span className="text-[15px] tracking-[2px] text-[#aeb8ca]">
+                        <span className="text-[15px] tracking-[2px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
                             FAMOUS TITLE EQUIVALENT
                         </span>
                         <span className="mt-2.5 text-[34px] font-bold" style={{ color: accent }}>
@@ -292,11 +337,14 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                             {recap.comparison?.referenceLabel}
                         </span>
                     </div>
-                    <div className="flex flex-1 flex-col rounded-[18px] border border-[#ffffff16] bg-[#ffffff0b] p-5">
-                        <span className="text-[15px] tracking-[2px] text-[#aeb8ca]">
+                    <div
+                        className="flex flex-1 flex-col rounded-[18px] border p-5"
+                        style={{ borderColor: YEAR_RECAP_PALETTE.panelBorder, backgroundColor: YEAR_RECAP_PALETTE.panel }}
+                    >
+                        <span className="text-[15px] tracking-[2px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
                             ANOTHER WAY TO COUNT IT
                         </span>
-                        <span className="mt-2.5 text-[34px] font-bold text-[#f2b84b]">
+                        <span className="mt-2.5 text-[34px] font-bold" style={{ color: YEAR_RECAP_PALETTE.metrics.activeMonths }}>
                             {formatNumber(recap.comparison?.secondaryCount, { fractionDigits: 1 })}
                         </span>
                         <span className="mt-1 text-[18px]">
@@ -306,12 +354,15 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                 </div>
             }
 
-            <div className="mt-auto flex items-center justify-between border-t border-[#ffffff16] pt-6">
+            <div
+                className="mt-auto flex items-center justify-between border-t pt-6"
+                style={{ borderTopColor: YEAR_RECAP_PALETTE.panelBorder }}
+            >
                 <div className="flex flex-col">
                     <span className="text-[18px] font-bold tracking-[2px]">
                         MYLISTS.INFO
                     </span>
-                    <span className="mt-1 text-[14px] text-[#9da8ba]">
+                    <span className="mt-1 text-[14px]" style={{ color: YEAR_RECAP_PALETTE.subtleForeground }}>
                         Annual activity summary.
                     </span>
                 </div>

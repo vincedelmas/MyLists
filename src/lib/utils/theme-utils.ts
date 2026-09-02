@@ -2,6 +2,11 @@ import {AchievementDifficulty, MediaType, Status, UpdateType} from "@/lib/utils/
 import {BookImage, Cat, Gamepad2, LayoutGrid, Library, Monitor, Popcorn} from "lucide-react";
 
 
+type DifficultyColorVariant = "text" | "border" | "ring" | "bg";
+type ThemeColorKey = MediaType | Status | "all" | "brand" | "overview";
+type DifficultyColorKey = `${DifficultyColorVariant}-${AchievementDifficulty}`;
+
+
 export const THEME_ICONS_MAP = {
     all: LayoutGrid,
     overview: LayoutGrid,
@@ -14,56 +19,48 @@ export const THEME_ICONS_MAP = {
 };
 
 
-const THEME_COLOR_MAP: Record<string, string> = {
+const THEME_COLOR_MAP = {
     brand: "var(--brand)",
+    all: "var(--muted-foreground)",
+    overview: "var(--muted-foreground)",
 
-    [MediaType.SERIES]: "var(--color-series)",
-    [MediaType.ANIME]: "var(--color-anime)",
-    [MediaType.MOVIES]: "var(--color-movies)",
-    [MediaType.BOOKS]: "var(--color-books)",
-    [MediaType.GAMES]: "var(--color-games)",
-    [MediaType.MANGA]: "var(--color-manga)",
+    [MediaType.SERIES]: "var(--series)",
+    [MediaType.ANIME]: "var(--anime)",
+    [MediaType.MOVIES]: "var(--movies)",
+    [MediaType.BOOKS]: "var(--books)",
+    [MediaType.GAMES]: "var(--games)",
+    [MediaType.MANGA]: "var(--manga)",
 
-    [Status.PLAYING]: "var(--color-playing)",
-    [Status.READING]: "var(--color-reading)",
-    [Status.WATCHING]: "var(--color-watching)",
-    [Status.COMPLETED]: "var(--color-completed)",
-    [Status.ON_HOLD]: "var(--color-on_hold)",
-    [Status.MULTIPLAYER]: "var(--color-multiplayer)",
-    [Status.RANDOM]: "var(--color-random)",
-    [Status.DROPPED]: "var(--color-dropped)",
-    [Status.ENDLESS]: "var(--color-endless)",
-    [Status.PLAN_TO_WATCH]: "var(--color-plan_to_watch)",
-    [Status.PLAN_TO_READ]: "var(--color-plan_to_read)",
-    [Status.PLAN_TO_PLAY]: "var(--color-plan_to_play)",
-};
-
-
-const STATIC_MEDIA_COLOR_MAP: Record<MediaType, string> = {
-    [MediaType.SERIES]: "#51c7d5",
-    [MediaType.ANIME]: "#ef7d62",
-    [MediaType.MOVIES]: "#e6b744",
-    [MediaType.GAMES]: "#50bd67",
-    [MediaType.BOOKS]: "#ba83d4",
-    [MediaType.MANGA]: "#ea6ea8",
-};
+    [Status.PLAYING]: "var(--playing)",
+    [Status.READING]: "var(--reading)",
+    [Status.WATCHING]: "var(--watching)",
+    [Status.COMPLETED]: "var(--completed)",
+    [Status.ON_HOLD]: "var(--on_hold)",
+    [Status.MULTIPLAYER]: "var(--multiplayer)",
+    [Status.RANDOM]: "var(--random)",
+    [Status.DROPPED]: "var(--dropped)",
+    [Status.ENDLESS]: "var(--endless)",
+    [Status.PLAN_TO_WATCH]: "var(--plan_to_watch)",
+    [Status.PLAN_TO_READ]: "var(--plan_to_read)",
+    [Status.PLAN_TO_PLAY]: "var(--plan_to_play)",
+} satisfies Record<ThemeColorKey, string>;
 
 
 const UPDATE_TYPE_COLOR_MAP: Record<UpdateType, string> = {
     [UpdateType.STATUS]: "var(--brand)",
-    [UpdateType.TV]: "var(--color-series)",
-    [UpdateType.PLAYTIME]: "var(--color-games)",
-    [UpdateType.PAGE]: "var(--color-books)",
-    [UpdateType.CHAPTER]: "var(--color-manga)",
-    [UpdateType.REDO]: "var(--color-favorite)",
-    [UpdateType.RATING]: "var(--color-rating)",
-    [UpdateType.COMMENT]: "var(--color-info)",
-    [UpdateType.FAVORITE]: "var(--color-favorite)",
-    [UpdateType.PLATFORM]: "var(--color-info)",
+    [UpdateType.TV]: "var(--series)",
+    [UpdateType.PLAYTIME]: "var(--games)",
+    [UpdateType.PAGE]: "var(--books)",
+    [UpdateType.CHAPTER]: "var(--manga)",
+    [UpdateType.REDO]: "var(--favorite)",
+    [UpdateType.RATING]: "var(--rating)",
+    [UpdateType.COMMENT]: "var(--info)",
+    [UpdateType.FAVORITE]: "var(--favorite)",
+    [UpdateType.PLATFORM]: "var(--info)",
 };
 
 
-const DIFFICULTY_COLORS: Record<string, string> = {
+const DIFFICULTY_COLORS = {
     "border-bronze": "border-bronze",
     "border-silver": "border-silver",
     "border-gold": "border-gold",
@@ -80,20 +77,12 @@ const DIFFICULTY_COLORS: Record<string, string> = {
     "text-silver": "text-silver",
     "text-gold": "text-gold",
     "text-platinum": "text-platinum",
-};
+} satisfies Record<DifficultyColorKey, string>;
 
 
-export const STATIC_BRAND_COLOR = "#20d69b";
-
-
-export const getThemeColor = (type: MediaType | Status | string | undefined) => {
-    if (!type) return "var(--color-muted-foreground)";
-    return THEME_COLOR_MAP[type] ?? "var(--color-muted-foreground)";
-};
-
-
-export const getStaticMediaColor = (mediaType: MediaType) => {
-    return STATIC_MEDIA_COLOR_MAP[mediaType];
+export const getThemeColor = (type: ThemeColorKey | undefined) => {
+    if (!type) return "var(--muted-foreground)";
+    return THEME_COLOR_MAP[type];
 }
 
 
@@ -102,7 +91,8 @@ export const getUpdateTypeColor = (updateType: UpdateType) => {
 }
 
 
-export const getDifficultyColors = (difficulty: AchievementDifficulty | "total" | undefined, variant: "text" | "border" | "ring" | "bg" = "text") => {
+export const getDifficultyColors = (difficulty: AchievementDifficulty | undefined, variant: DifficultyColorVariant = "text") => {
     if (!difficulty) return "";
-    return DIFFICULTY_COLORS[`${variant}-${difficulty}`];
+    const key: DifficultyColorKey = `${variant}-${difficulty}`;
+    return DIFFICULTY_COLORS[key];
 };

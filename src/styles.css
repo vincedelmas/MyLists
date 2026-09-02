@@ -199,8 +199,6 @@ input[type="search"]::-webkit-search-cancel-button:hover {
 .dark {
     color-scheme: dark;
 
-    --brand: oklch(69.6% 0.17 162.48);
-
     --success: var(--brand);
     --success-foreground: var(--primary-foreground);
 
@@ -403,22 +401,8 @@ input[type="search"]::-webkit-search-cancel-button:hover {
         }
     }
 
-    @keyframes glow {
-        0%,
-        100% {
-            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
-        }
-        50% {
-            box-shadow: 0 0 30px rgba(34, 211, 238, 0.5);
-        }
-    }
-
     .float-animation {
         animation: float 4s ease-in-out infinite;
-    }
-
-    .glow-animation {
-        animation: glow 3s ease-in-out infinite;
     }
 
     @keyframes wcf-shake {

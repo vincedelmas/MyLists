@@ -1,8 +1,8 @@
 import {Award} from "lucide-react";
 import {cn} from "@/lib/utils/classnames";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {getDifficultyColors} from "@/lib/utils/theme-utils";
 import {AchSummary} from "@/lib/types/query.options.types";
+import {getDifficultyColors} from "@/lib/utils/theme-utils";
 
 
 interface AchievementSummaryProps {
@@ -16,6 +16,7 @@ export const AchievementSummary = ({ summary }: AchievementSummaryProps) => {
             <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
                 {summary.map((item, index) => {
                     const isTotal = item.tier === "total";
+                    const tierColor = item.tier === "total" ? "text-brand" : getDifficultyColors(item.tier);
 
                     return (
                         <div
@@ -29,7 +30,7 @@ export const AchievementSummary = ({ summary }: AchievementSummaryProps) => {
                         >
                             <Award
                                 aria-hidden="true"
-                                className={cn("mt-1 size-4 shrink-0", isTotal ? "text-brand" : getDifficultyColors(item.tier))}
+                                className={cn("mt-1 size-4 shrink-0", tierColor)}
                             />
                             <div className="min-w-0">
                                 <div className="wrap-break-word text-xl font-black tabular-nums">

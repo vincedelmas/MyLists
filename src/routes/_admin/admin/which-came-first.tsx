@@ -35,14 +35,33 @@ export const Route = createFileRoute("/_admin/admin/which-came-first")({
 
 const statusChartKeys = ["won", "lost", "abandoned", "exhausted", "active"] as const satisfies readonly WcfRunStatus[];
 
-
-const statusChartColors: Record<WcfRunStatus, string> = {
-    won: "#45b29d",
-    lost: "#df5a49",
-    exhausted: "#efc94c",
-    abandoned: "#71717a",
-    active: "var(--brand)",
-};
+const statusConfig = {
+    won: {
+        label: "Reached cap",
+        color: "var(--success)",
+        badgeClassName: "border-success/30 bg-success/10 text-success",
+    },
+    lost: {
+        label: "Lost",
+        color: "var(--destructive)",
+        badgeClassName: "border-destructive/30 bg-destructive/10 text-destructive",
+    },
+    exhausted: {
+        label: "Pool exhausted",
+        color: "var(--warning)",
+        badgeClassName: "border-warning/30 bg-warning/10 text-warning",
+    },
+    abandoned: {
+        label: "Abandoned",
+        color: "var(--muted-foreground)",
+        badgeClassName: "border-muted-foreground/30 bg-muted text-muted-foreground",
+    },
+    active: {
+        label: "Open",
+        color: "var(--brand)",
+        badgeClassName: "border-brand/30 bg-brand/10 text-brand",
+    },
+} satisfies Record<WcfRunStatus, { label: string; color: string; badgeClassName: string }>;
 
 
 function AdminWhichCameFirstPage() {
@@ -159,10 +178,10 @@ function AdminWhichCameFirstPage() {
                                 data={dailyRuns}
                                 seriesOrder={statusChartKeys}
                                 ariaLabel="Played sessions over the last 30 days"
+                                fill={({ status }) => statusConfig[status].color}
                                 tooltipTitleFormatter={(value) => `Day: ${value}`}
                                 tooltipValueFormatter={(value) => formatNumber(value, { locale: "en" })}
-                                fill={({ status }) => statusChartColors[status]}
-                                tooltipSeriesFormatter={(series) => getStatusLabel(series as WcfRunStatus)}
+                                tooltipSeriesFormatter={(series) => statusConfig[series as WcfRunStatus].label}
                             />
                         </CardContent>
                     </Card>
@@ -204,9 +223,9 @@ function StatusBreakdownCard({ rows }: { rows: AdminWcfStats["runsByStatus"] }) 
                                 <span className="flex items-center gap-2 font-medium">
                                     <span
                                         className="size-2.5 rounded-full"
-                                        style={{ backgroundColor: statusChartColors[row.status] }}
+                                        style={{ backgroundColor: statusConfig[row.status].color }}
                                     />
-                                    {getStatusLabel(row.status)}
+                                    {statusConfig[row.status].label}
                                 </span>
                                 <span className="text-muted-foreground">
                                     {formatNumber(row.count, { locale: "en" })} · {formatPercent(pct, { fractionDigits: 0 })}
@@ -215,7 +234,7 @@ function StatusBreakdownCard({ rows }: { rows: AdminWcfStats["runsByStatus"] }) 
                             <div className="h-2 rounded-full bg-muted">
                                 <div
                                     className="h-2 rounded-full"
-                                    style={{ width: `${pct}%`, backgroundColor: statusChartColors[row.status] }}
+                                    style={{ width: `${pct}%`, backgroundColor: statusConfig[row.status].color }}
                                 />
                             </div>
                         </div>
@@ -435,42 +454,8 @@ function RecentRunsCard({ rows }: { rows: AdminWcfStats["recentRuns"] }) {
 
 function StatusBadge({ status }: { status: WcfRunStatus }) {
     return (
-        <Badge variant="outline" className={getStatusBadgeClass(status)}>
-            {getStatusLabel(status)}
+        <Badge variant="outline" className={statusConfig[status].badgeClassName}>
+            {statusConfig[status].label}
         </Badge>
     );
 }
-
-
-const getStatusBadgeClass = (status: WcfRunStatus) => {
-    switch (status) {
-        case "won":
-            return "border-success/30 bg-success/10 text-success";
-        case "lost":
-            return "border-destructive/30 bg-destructive/10 text-destructive";
-        case "exhausted":
-            return "border-warning/30 bg-warning/10 text-warning";
-        case "active":
-            return "border-brand/30 bg-brand/10 text-brand";
-        case "abandoned":
-        default:
-            return "border-muted-foreground/30 bg-muted text-muted-foreground";
-    }
-};
-
-
-const getStatusLabel = (status: WcfRunStatus) => {
-    switch (status) {
-        case "won":
-            return "Reached cap";
-        case "active":
-            return "Open";
-        case "lost":
-            return "Lost";
-        case "exhausted":
-            return "Pool exhausted";
-        case "abandoned":
-        default:
-            return "Abandoned";
-    }
-};

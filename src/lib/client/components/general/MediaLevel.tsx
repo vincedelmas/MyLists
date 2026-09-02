@@ -16,7 +16,7 @@ interface MediaLevelProps {
 
 export const MediaLevel = ({ timeSpentMin, mediaType, containerClassName, className, isActive = true }: MediaLevelProps) => {
     const intLevel = Math.floor(formatLevel(timeSpentMin));
-    const color = isActive ? getThemeColor(mediaType) : "grey";
+    const color = isActive ? getThemeColor(mediaType) : "var(--muted-foreground)";
 
     return (
         <div className={cn("mx-auto flex items-center justify-center", containerClassName)}>

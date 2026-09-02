@@ -347,7 +347,7 @@ function VirtualLogViewer({ entries, scrollKey }: VirtualLogViewerProps) {
     }, [entries.length, scrollKey]);
 
     return (
-        <div ref={parentRef} className="h-[90vh] overflow-auto bg-[#070707]">
+        <div ref={parentRef} className="h-[90vh] overflow-auto bg-background">
             <div className="relative w-full" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                     const entry = entries[virtualRow.index];

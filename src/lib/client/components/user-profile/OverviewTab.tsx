@@ -34,72 +34,72 @@ export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMe
 
     const ratingDisplay = ratingSystem === "score"
         ? formatNumber(rating, { fractionDigits: 2, locale: "en" })
-        : getFeelingIcon(rating, { size: 28, className: "mt-1" });
+        : getFeelingIcon(rating, { size: 22, className: "mt-0.5" });
 
     return (
         <div className="space-y-6">
             <section className="overflow-hidden rounded-xl border shadow-xs">
                 <div className="p-5 sm:p-6">
                     <CompactStatsGrid
-                    columns={4}
-                    items={[
-                        {
-                            label: "Total time",
-                            note: "across all media",
-                            icon: <Clock className="size-4"/>,
-                            value: `${formatNumber(globalStats.totalDays, { fractionDigits: 0 })} d`,
-                        },
-                        {
-                            label: "Total entries",
-                            note: "tracked media",
-                            icon: <LibraryBig className="size-4"/>,
-                            value: formatNumber(globalStats.totalEntries),
-                        },
-                        {
-                            label: "Average rating",
-                            note: "personal average",
-                            icon: <Star className="size-4"/>,
-                            value: ratingDisplay,
-                        },
-                        {
-                            label: "Rated media",
-                            note: "of tracked entries",
-                            icon: <ChartNoAxesColumn className="size-4"/>,
-                            value: globalStats.percentRated ? formatPercent(globalStats.percentRated) : undefined,
-                        },
-                    ]}
+                        columns={4}
+                        items={[
+                            {
+                                label: "Total time",
+                                note: "across all media",
+                                icon: <Clock className="size-4"/>,
+                                value: `${formatNumber(globalStats.totalDays, { fractionDigits: 0 })} d`,
+                            },
+                            {
+                                note: "tracked media",
+                                label: "Total entries",
+                                icon: <LibraryBig className="size-4"/>,
+                                value: formatNumber(globalStats.totalEntries),
+                            },
+                            {
+                                value: ratingDisplay,
+                                label: "Average rating",
+                                note: "personal average",
+                                icon: <Star className="size-4"/>,
+                            },
+                            {
+                                label: "Rated media",
+                                note: "of tracked entries",
+                                icon: <ChartNoAxesColumn className="size-4"/>,
+                                value: globalStats.percentRated ? formatPercent(globalStats.percentRated) : undefined,
+                            },
+                        ]}
                     />
                 </div>
 
                 <DistributionContainer label="Time Distribution" icon={Clock}>
-                {distributionTotalDays === 0 ?
-                    <EmptyState
-                        icon={ClockAlert}
-                        message="No time to display yet."
-                    />
-                    :
-                    <SegmentedDistributionBar
-                        segments={timeSegments}
-                        renderSegment={({ percentage }) => percentage > 5 ?
-                            <span className="truncate px-0.5 text-xs font-medium tracking-wider text-black">
+                    {distributionTotalDays === 0 ?
+                        <EmptyState
+                            icon={ClockAlert}
+                            message="No time to display yet."
+                        />
+                        :
+                        <SegmentedDistributionBar
+                            segments={timeSegments}
+                            renderSegment={({ percentage }) => percentage > 5 ?
+                                <span className="truncate px-0.5 text-xs font-medium tracking-wider text-black">
                                 {formatPercent(percentage, { fractionDigits: 0 })}
                             </span>
-                            :
-                            null
-                        }
-                    />
-                }
-                <div className="flex w-full gap-1 mt-1 pb-2">
-                    {timeSegments.map(({ label, percentage }) =>
-                        <div key={label} className="basis-0 overflow-hidden" style={{ flexGrow: percentage }}>
-                            {percentage > 5 &&
-                                <span className="block font-medium text-xs text-muted-foreground uppercase tracking-wider truncate">
+                                :
+                                null
+                            }
+                        />
+                    }
+                    <div className="flex w-full gap-1 mt-1 pb-2">
+                        {timeSegments.map(({ label, percentage }) =>
+                            <div key={label} className="basis-0 overflow-hidden" style={{ flexGrow: percentage }}>
+                                {percentage > 5 &&
+                                    <span className="block font-medium text-xs text-muted-foreground uppercase tracking-wider truncate">
                                     {label}
                                 </span>
-                            }
-                        </div>
-                    )}
-                </div>
+                                }
+                            </div>
+                        )}
+                    </div>
                 </DistributionContainer>
             </section>
 

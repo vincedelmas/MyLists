@@ -48,7 +48,7 @@ export const AppliedFilters = ({ mediaType, filters, totalItems, onFilterRemove 
     return (
         <div className="flex min-h-9 flex-wrap items-center gap-x-3 gap-y-2 py-4">
             <div className="flex items-baseline gap-1.5">
-                <span className="font-mono text-sm font-semibold tabular-nums text-foreground">
+                <span className="text-sm font-semibold tabular-nums text-foreground">
                     {formatNumber(totalItems)}
                 </span>
                 <span className="text-xs text-muted-foreground">

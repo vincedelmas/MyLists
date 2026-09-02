@@ -36,9 +36,9 @@ const providerColors = [
     "var(--chart-3)",
     "var(--chart-4)",
     "var(--chart-5)",
-    "var(--color-games)",
-    "var(--color-movies)",
-    "var(--color-books)",
+    "var(--games)",
+    "var(--movies)",
+    "var(--books)",
 ];
 
 const rangeOptions = [

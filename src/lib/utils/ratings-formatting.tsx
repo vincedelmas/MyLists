@@ -49,7 +49,7 @@ export const getFeelingList = ({ className, size = 20 }: { className?: string, s
 
 export const formatAvgRating = (ratingSystem: RatingSystemType, value: number | null) => {
     if (ratingSystem === RatingSystemType.FEELING) {
-        return getFeelingIcon(value, { size: 30 });
+        return getFeelingIcon(value, { size: 22, className: "mt-0.5" });
     }
 
     return formatNumber(value, { fractionDigits: 2, locale: "en" });

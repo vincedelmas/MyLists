@@ -6,7 +6,7 @@ import {getThemeColor} from "@/lib/utils/theme-utils";
 
 export const StatusBadge = ({ status, className = "" }: { status: Status, className?: string }) => {
     return (
-        <Badge style={{ color: "black", background: getThemeColor(status) }} className={className}>
+        <Badge style={{ color: "var(--background)", background: getThemeColor(status) }} className={className}>
             {status}
         </Badge>
     );

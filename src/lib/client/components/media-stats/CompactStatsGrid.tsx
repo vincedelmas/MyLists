@@ -20,7 +20,11 @@ interface CompactStatsGridProps {
 export const CompactStatsGrid = ({ items, color = "var(--brand)", columns = 4 }: CompactStatsGridProps) => (
     <div className={cn(
         "grid grid-cols-2 gap-y-7",
-        columns === 3 ? "sm:grid-cols-3" : columns === 6 ? "sm:grid-cols-3 lg:grid-cols-6" : "sm:grid-cols-4",
+        columns === 3
+            ? "sm:grid-cols-3"
+            : columns === 6
+                ? "sm:grid-cols-3 lg:grid-cols-6"
+                : "sm:grid-cols-4",
     )}>
         {items.map((item, idx) => {
             const startsSmallRow = idx % (columns === 6 ? 3 : columns) === 0;

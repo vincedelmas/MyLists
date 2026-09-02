@@ -27,7 +27,7 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
     const rating = mediaSummary.avgRated;
     const ratingDisplay = ratingSystem === "score"
         ? formatNumber(rating, { fractionDigits: 2, locale: "en" })
-        : getFeelingIcon(rating, { size: 28, className: "mt-1" });
+        : getFeelingIcon(rating, { size: 22, className: "mt-0.5" });
 
     const statusSegments = mediaSummary.statusList.map(({ status, percent }) => ({
         label: status,
@@ -56,10 +56,10 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
                                 value: `${formatNumber(mediaSummary.timeSpentDays, { fractionDigits: 0 })} d`,
                             },
                             {
+                                value: ratingDisplay,
                                 label: "Average rating",
                                 note: "personal average",
                                 icon: <Star className="size-4"/>,
-                                value: ratingDisplay,
                             },
                             {
                                 label: "Completed",

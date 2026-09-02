@@ -115,8 +115,8 @@ function MediaList() {
                         mediaType={mediaType}
                         isCurrent={isCurrent}
                         results={apiData.results}
-                        queryOption={mediaListOptions(mediaType, username, filters)}
                         onChangePage={(filters) => handleFilterChange(filters)}
+                        queryOption={mediaListOptions(mediaType, username, filters)}
                     />
                 }
             </div>

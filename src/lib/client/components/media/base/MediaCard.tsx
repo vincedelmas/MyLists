@@ -136,7 +136,7 @@ export const MediaCardRightCorner = ({ children, className, ...props }: React.Co
                 aria-hidden="true"
                 data-slot="media-card-right-corner-background"
                 className="absolute right-0 top-0 rounded-tr-md border-solid border-t-0 border-r-44 border-b-44
-                border-l-0 border-[transparent_#030712] opacity-70 @min-[128px]/media-card:border-r-54
+                border-l-0 border-[transparent_var(--background)] opacity-70 @min-[128px]/media-card:border-r-54
                 @min-[128px]/media-card:border-b-54 @min-[200px]/media-card:border-r-55
                 @min-[200px]/media-card:border-b-55 @min-[250px]/media-card:border-r-64
                 @min-[250px]/media-card:border-b-64"

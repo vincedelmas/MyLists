@@ -30,8 +30,8 @@ export const MediaListItem = <T extends MediaType>(props: MediaListItemProps<T>)
             userMedia={userMedia}
             queryOption={queryOption}
             isConnected={isConnected}
-            isMediaTypeActive={isMediaTypeActive}
             allStatuses={allStatuses}
+            isMediaTypeActive={isMediaTypeActive}
         />
     );
 };

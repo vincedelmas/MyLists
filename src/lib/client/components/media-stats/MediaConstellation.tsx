@@ -29,7 +29,7 @@ export function MediaConstellation({ media, ratingSystem, onSelectMediaType }: M
 
     return (
         <div
-            className="relative h-107.5 rounded-xl border bg-[radial-gradient(circle_at_center,var(--color-muted)_0,transparent_1px)] shadow-xs
+            className="relative h-107.5 rounded-xl border bg-[radial-gradient(circle_at_center,var(--muted)_0,transparent_1px)] shadow-xs
             bg-size-[22px_22px] max-sm:h-97.5"
         >
             <div

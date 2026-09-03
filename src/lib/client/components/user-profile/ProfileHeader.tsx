@@ -1,23 +1,27 @@
 import {Link} from "@tanstack/react-router";
-import {CalendarDays, Users} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {formatDate} from "@/lib/utils/date-formatting";
 import {capitalize} from "@/lib/utils/text-formatting";
+import {Button} from "@/lib/client/components/ui/button";
 import {formatLevel} from "@/lib/utils/number-formatting";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
+import {ArrowRight, CalendarDays, InfoIcon, Users, X} from "lucide-react";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {FollowButton} from "@/lib/client/components/user-profile/FollowButton";
 import {ProfileHeaderOptionsType, UserDataType} from "@/lib/types/query.options.types";
+import {Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger} from "@/lib/client/components/ui/popover";
 
 
 interface ProfileHeaderProps {
     profileUser: UserDataType;
+    showUsernameNotice: boolean;
+    onDismissUsernameNotice: () => void;
     social: ProfileHeaderOptionsType["social"];
 }
 
 
-export const ProfileHeader = ({ profileUser, social }: ProfileHeaderProps) => {
+export const ProfileHeader = ({ profileUser, social, showUsernameNotice, onDismissUsernameNotice }: ProfileHeaderProps) => {
     const { currentUser } = useAuth();
     const isConnected = (!!currentUser);
     const isBelowSm = useBreakpoint("sm");
@@ -46,12 +50,12 @@ export const ProfileHeader = ({ profileUser, social }: ProfileHeaderProps) => {
                             user={{ name: profileUser.name, image: profileUser.image }}
                         />
                         <div className="absolute -bottom-2 left-12 w-18 h-7 z-20 flex items-center justify-center
-                    rounded-full border-4 border-background bg-primary/70 text-xs font-bold text-primary-foreground shadow-lg">
+                        rounded-full border-4 border-background bg-primary/70 text-xs font-bold text-primary-foreground shadow-lg">
                             Lvl. {profileLevel}
                         </div>
                     </div>
                     <div className="flex flex-col mb-1 px-4">
-                        <div className="flex items-baseline gap-3">
+                        <div className="flex items-center gap-3">
                             <Link to="/profile/$username" params={{ username: profileUser.name }}>
                                 <h1 className="text-3xl font-bold mb-1 max-sm:text-2xl max-sm:wrap-break-word">
                                     {profileUser.name}
@@ -60,6 +64,12 @@ export const ProfileHeader = ({ profileUser, social }: ProfileHeaderProps) => {
                             <p title={`${capitalize(profileUser.privacy)} account`}>
                                 <PrivacyIcon type={profileUser.privacy} className="size-3.5"/>
                             </p>
+                            {(isCurrent && showUsernameNotice) &&
+                                <UsernameNotice
+                                    username={profileUser.name}
+                                    onDismiss={onDismissUsernameNotice}
+                                />
+                            }
                         </div>
                         <div className="flex flex-wrap items-center justify-start text-sm gap-x-4 gap-y-1 text-muted-foreground">
                             <span className="flex items-center gap-1">
@@ -103,7 +113,7 @@ export const ProfileHeader = ({ profileUser, social }: ProfileHeaderProps) => {
                         </div>
 
                         <div className="flex-1 mb-1">
-                            <div className="flex items-baseline gap-3">
+                            <div className="flex items-center gap-3">
                                 <Link to="/profile/$username" params={{ username: profileUser.name }}>
                                     <h1 className="text-3xl font-bold mb-1">
                                         {profileUser.name}
@@ -112,6 +122,12 @@ export const ProfileHeader = ({ profileUser, social }: ProfileHeaderProps) => {
                                 <p title={`${capitalize(profileUser.privacy)} account`}>
                                     <PrivacyIcon type={profileUser.privacy} className="size-4"/>
                                 </p>
+                                {(isCurrent && showUsernameNotice) &&
+                                    <UsernameNotice
+                                        username={profileUser.name}
+                                        onDismiss={onDismissUsernameNotice}
+                                    />
+                                }
                             </div>
                             <div className="text-sm flex flex-wrap items-center justify-start gap-4 text-muted-foreground">
                                 <span className="flex items-center gap-1">
@@ -146,3 +162,43 @@ export const ProfileHeader = ({ profileUser, social }: ProfileHeaderProps) => {
         </div>
     );
 };
+
+
+const UsernameNotice = ({ username, onDismiss }: { username: string; onDismiss: () => void }) => (
+    <Popover open onOpenChange={(_, eventDetails) => eventDetails.cancel()}>
+        <PopoverTrigger
+            render={
+                <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="secondary"
+                    aria-label="About your assigned username"
+                />
+            }
+        >
+            <InfoIcon aria-hidden="true"/>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="relative w-80 max-w-[calc(100vw-2rem)] p-4 shadow-xl">
+            <Button
+                type="button"
+                size="icon-xs"
+                variant="ghost"
+                className="absolute top-2 right-2"
+                aria-label="Dismiss username notice"
+                onClick={onDismiss}
+            >
+                <X aria-hidden="true"/>
+            </Button>
+            <PopoverHeader className="pr-7">
+                <PopoverTitle>We gave you @{username}</PopoverTitle>
+                <PopoverDescription>
+                    Your OAuth profile name needed a bigger adjustment to fit MyLists and stay unique. Keep it, or change it anytime.
+                </PopoverDescription>
+            </PopoverHeader>
+            <Button size="sm" nativeButton={false} render={<Link to="/settings/general"/>}>
+                Change in settings
+                <ArrowRight data-icon="inline-end" aria-hidden="true"/>
+            </Button>
+        </PopoverContent>
+    </Popover>
+);

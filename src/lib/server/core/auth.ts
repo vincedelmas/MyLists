@@ -5,9 +5,10 @@ import {clientEnv} from "@/env/client";
 import {serverEnv} from "@/env/server";
 import {db} from "@/lib/server/database/db";
 import {betterAuth} from "better-auth/minimal";
+import {logger} from "@/lib/server/core/logger";
 import {sendEmail} from "@/lib/utils/mail-sender";
-import {RateLimiterRes} from "rate-limiter-flexible";
 import {statusUtils} from "@/lib/utils/media-mapping";
+import {clearAdminCookie} from "@/lib/utils/admin-utils";
 import {createServerOnlyFn} from "@tanstack/react-start";
 import {usernameSchema} from "@/lib/schemas/common.schema";
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
@@ -15,16 +16,12 @@ import {APIError, createAuthMiddleware} from "better-auth/api";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {hashPassword, verifyPassword} from "better-auth/crypto";
-import {createRateLimiter} from "@/lib/server/core/rate-limiter";
+import {addUsernameSuffix, checkOAuthUsername} from "@/lib/utils/auth-utils";
 import {user as userTable, userMediaSettings} from "@/lib/server/database/schema";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 
 
 const mailEnabled = !!(serverEnv.ADMIN_MAIL_USERNAME && serverEnv.ADMIN_MAIL_PASSWORD);
-const verificationEmailRateLimiter = mailEnabled
-    ? createRateLimiter({ points: 3, duration: 10 * 60, keyPrefix: "auth-verification-email" })
-    : null;
-
 const githubOAuthConfig = serverEnv.GITHUB_CLIENT_ID && serverEnv.GITHUB_CLIENT_SECRET
     ? { clientId: serverEnv.GITHUB_CLIENT_ID, clientSecret: serverEnv.GITHUB_CLIENT_SECRET }
     : null;
@@ -32,6 +29,12 @@ const githubOAuthConfig = serverEnv.GITHUB_CLIENT_ID && serverEnv.GITHUB_CLIENT_
 const googleOAuthConfig = serverEnv.GOOGLE_CLIENT_ID && serverEnv.GOOGLE_CLIENT_SECRET
     ? { clientId: serverEnv.GOOGLE_CLIENT_ID, clientSecret: serverEnv.GOOGLE_CLIENT_SECRET }
     : null;
+
+
+const deliverAuthEmail = (message: Parameters<typeof sendEmail>[0]) => {
+    void sendEmail(message)
+        .catch((err) => logger.error({ err, template: message.template }, "Failed to send authentication email"));
+};
 
 
 const getAuthConfig = createServerOnlyFn(() => betterAuth({
@@ -47,44 +50,59 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
     database: drizzleAdapter(db, {
         provider: "sqlite",
     }),
+    rateLimit: {
+        customRules: {
+            "/send-verification-email": { max: 3, window: 5 * 60 },
+        },
+    },
     hooks: {
-        before: createAuthMiddleware(async (ctx) => {
-            if (ctx.path !== "/send-verification-email") return;
-
-            const email = (ctx.body as { email?: string } | undefined)?.email;
-            if (!email || !verificationEmailRateLimiter) return;
-
-            try {
-                await (await verificationEmailRateLimiter).consume(crypto.createHash("sha256")
-                    .update(email.trim().toLowerCase())
-                    .digest("hex")
-                );
-            }
-            catch (error) {
-                if (!(error instanceof RateLimiterRes)) throw error;
-
-                throw new APIError("TOO_MANY_REQUESTS", {
-                    message: "Too many verification emails requested. Please try again later.",
-                });
+        after: createAuthMiddleware(async (ctx) => {
+            if (ctx.path === "/sign-out") {
+                clearAdminCookie();
             }
         }),
     },
     databaseHooks: {
+        // MyLists does not use provider ID tokens after the OAuth callback.
+        account: {
+            create: {
+                before: async (account) => ({ data: { ...account, idToken: null } }),
+            },
+            update: {
+                before: async (account) => ({ data: { ...account, idToken: null } }),
+            },
+        },
         user: {
             create: {
                 before: async (user, context) => {
-                    // If OAuth connection, user aways needs to configure his username
                     if (context?.path?.startsWith("/callback/")) {
+                        const baseUsername = checkOAuthUsername(user.name);
+                        let username = baseUsername
+                            ?? addUsernameSuffix("user", crypto.randomBytes(3).toString("hex"));
+
+                        let usernameExists = getDbClient()
+                            .select({ id: userTable.id })
+                            .from(userTable)
+                            .where(eq(userTable.name, username))
+                            .get();
+
+                        while (usernameExists) {
+                            username = addUsernameSuffix(baseUsername ?? "user", crypto.randomBytes(3).toString("hex"));
+                            usernameExists = getDbClient()
+                                .select({ id: userTable.id })
+                                .from(userTable)
+                                .where(eq(userTable.name, username))
+                                .get();
+                        }
+
                         return {
                             data: {
                                 ...user,
-                                usernameConfigured: false,
-                                name: `oauth-${crypto.randomBytes(6).toString("base64url")}`,
+                                name: username,
                             },
                         };
                     }
 
-                    // Otherwise checks are done
                     const parsedUsername = usernameSchema.safeParse(user.name);
                     if (!parsedUsername.success) {
                         throw new APIError("BAD_REQUEST", {
@@ -109,7 +127,6 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
                     return {
                         data: {
                             ...user,
-                            usernameConfigured: true,
                             name: parsedUsername.data,
                         },
                     };
@@ -196,12 +213,6 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
                 type: "boolean",
                 defaultValue: true,
             },
-            usernameConfigured: {
-                input: false,
-                returned: true,
-                type: "boolean",
-                defaultValue: false,
-            },
         },
         changeEmail: {
             enabled: mailEnabled,
@@ -212,6 +223,9 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
             enabled: true,
             maxAge: 5 * 60,
         },
+    },
+    account: {
+        encryptOAuthTokens: true,
     },
     socialProviders: {
         ...(githubOAuthConfig ? { github: githubOAuthConfig } : {}),
@@ -224,10 +238,11 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         maxPasswordLength: 128,
         disableSignUp: !mailEnabled,
         resetPasswordTokenExpiresIn: 3600,
+        revokeSessionsOnPasswordReset: true,
         requireEmailVerification: mailEnabled,
         ...(mailEnabled ? {
             sendResetPassword: async ({ user, url }: { user: { email: string; name: string }; url: string }) => {
-                await sendEmail({
+                deliverAuthEmail({
                     link: url,
                     to: user.email,
                     username: user.name,
@@ -250,7 +265,7 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
             sendOnSignIn: false,
             autoSignInAfterVerification: true,
             sendVerificationEmail: async ({ user, url }: { user: { email: string; name: string }; url: string }) => {
-                await sendEmail({
+                deliverAuthEmail({
                     link: url,
                     to: user.email,
                     username: user.name,

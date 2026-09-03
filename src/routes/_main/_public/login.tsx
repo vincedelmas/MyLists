@@ -1,22 +1,23 @@
 import {useEffect, useId, useState} from "react";
 import {Login, loginSchema} from "@/lib/schemas";
 import {FaGithub, FaGoogle} from "react-icons/fa";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {LogIn, RefreshCw, ShieldCheck} from "lucide-react";
-import {getOAuthErrorMessage} from "@/lib/utils/auth-utils";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
-import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
+import {AuthState, getAuthState, getOAuthErrorMessage} from "@/lib/utils/auth-utils";
+import {createFileRoute, Link, useRouteContext, useSearch} from "@tanstack/react-router";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
-import {createFileRoute, Link, useRouteContext, useRouter, useSearch} from "@tanstack/react-router";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {useEmailLoginMutation, useResendVerificationEmailMutation, useSocialSignInMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 
@@ -28,28 +29,32 @@ export const Route = createFileRoute("/_main/_public/login")({
 
 function LoginPage() {
     const fieldId = useId();
-    const router = useRouter();
     const navigate = Route.useNavigate();
-    const queryClient = useQueryClient();
-    const [unverifiedEmail, setUnverifiedEmail] = useState<string>();
-    const { error, message, redirect } = useSearch({ from: "/_main/_public" });
-    const { authQueryOptions, authMethodsQueryOptions } = useRouteContext({ from: "__root__" });
-
-    const redirectTarget = redirect || "/";
+    const { completeSignIn } = useAuth();
     const loginMutation = useEmailLoginMutation();
+    const [unverifiedEmail, setUnverifiedEmail] = useState<string>();
+    const { authMethodsQueryOptions } = useRouteContext({ from: "__root__" });
+    const { error, message, redirect } = useSearch({ from: "/_main/_public" });
+
     const oauthErrorMessage = getOAuthErrorMessage(error);
     const authMethods = useSuspenseQuery(authMethodsQueryOptions).data;
 
+    const authState = getAuthState(null, !!unverifiedEmail);
+    const isAwaitingVerification = authState === AuthState.AWAITING_EMAIL_VERIFICATION;
+
+    const redirectTarget = redirect || "/";
     const oauthSearch = new URLSearchParams({ redirect: redirectTarget });
     const verificationCallbackURL = `/register?${new URLSearchParams({ redirect: redirectTarget })}`;
+
     const socialMutation = useSocialSignInMutation({
         callbackURL: redirectTarget,
         errorCallbackURL: `/login?${oauthSearch}`,
-        newUserCallbackURL: `/choose-username?${oauthSearch}`,
+        newUserCallbackURL: "/?usernameNotice=check",
     });
-    const resendMutation = useResendVerificationEmailMutation(verificationCallbackURL);
 
     const hasSocialProvider = authMethods.google || authMethods.github;
+    const resendMutation = useResendVerificationEmailMutation(verificationCallbackURL);
+
     const form = useForm<Login>({
         resolver: zodResolver(loginSchema),
         shouldFocusError: false,
@@ -81,12 +86,7 @@ function LoginPage() {
                 handleServerFormErrors(form, error);
             },
             onSuccess: async () => {
-                const currentUser = await queryClient.fetchQuery({ ...authQueryOptions, staleTime: 0 });
-                if (!currentUser) return;
-
-                await navigate({ href: redirectTarget, replace: true });
-                await router.invalidate();
-                await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== authQueryOptions.queryKey[0] });
+                await completeSignIn(redirectTarget);
             },
         });
     }
@@ -168,7 +168,8 @@ function LoginPage() {
                                     />
                                 </FieldGroup>
                             </FieldSet>
-                            {unverifiedEmail &&
+
+                            {(isAwaitingVerification && unverifiedEmail) &&
                                 <InlineErrorContainer onDismiss={() => setUnverifiedEmail(undefined)}>
                                     <div className="flex flex-col items-start gap-2">
                                         <p>
@@ -191,6 +192,7 @@ function LoginPage() {
                                     </div>
                                 </InlineErrorContainer>
                             }
+
                             <FormError/>
                             <Button type="submit" className="w-full" disabled={loginMutation.isPending} aria-busy={loginMutation.isPending}>
                                 {loginMutation.isPending &&

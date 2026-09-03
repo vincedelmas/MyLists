@@ -13,7 +13,6 @@ export function AuthSessionSync() {
     const { currentUser } = useAuth();
     const queryClient = useQueryClient();
     const currentUserId = currentUser?.id ?? null;
-    const suppressNextBroadcastRef = useRef(false);
     const previousUserIdRef = useRef<number | null | undefined>(undefined);
 
     const broadcastAuthChange = (userId: number | null | undefined) => {
@@ -26,51 +25,39 @@ export function AuthSessionSync() {
     };
 
     useEffect(() => {
-        const refreshAuthenticatedRouteData = async () => {
-            await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
-            await router.invalidate();
-        };
-
         const previousUserId = previousUserIdRef.current;
         const isInitialSync = previousUserId === undefined;
 
         if (isInitialSync) {
             previousUserIdRef.current = currentUserId;
-
-            if (currentUserId) {
-                broadcastAuthChange(currentUserId);
-            }
-
+            if (currentUserId) broadcastAuthChange(currentUserId);
             return;
         }
 
         if (previousUserId === currentUserId) return;
-
         previousUserIdRef.current = currentUserId;
-        void refreshAuthenticatedRouteData();
-
-        if (suppressNextBroadcastRef.current) {
-            suppressNextBroadcastRef.current = false;
-            return;
-        }
-
         broadcastAuthChange(currentUserId);
-    }, [currentUserId, queryClient, router]);
+    }, [currentUserId]);
 
     useEffect(() => {
-        const onStorage = (event: StorageEvent) => {
+        const onStorage = async (event: StorageEvent) => {
             if (event.key !== AUTH_SYNC_STORAGE_KEY || !event.newValue) return;
+            if (event.newValue === JSON.stringify({ userId: currentUserId })) return;
 
-            suppressNextBroadcastRef.current = true;
-            void queryClient.fetchQuery({ ...authOptions, staleTime: 0 });
+            await queryClient.fetchQuery({ ...authOptions, staleTime: 0 });
+            await queryClient.cancelQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
+
+            queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
+            await router.invalidate();
         };
 
-        window.addEventListener("storage", onStorage);
+        const handleStorage = (event: StorageEvent) => void onStorage(event);
+        window.addEventListener("storage", handleStorage);
 
         return () => {
-            window.removeEventListener("storage", onStorage);
+            window.removeEventListener("storage", handleStorage);
         };
-    }, [queryClient]);
+    }, [currentUserId, queryClient, router]);
 
     return null;
 }

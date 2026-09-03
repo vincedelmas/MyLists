@@ -14,12 +14,12 @@ import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
-import {getOAuthErrorMessage, isVerificationError} from "@/lib/utils/auth-utils";
 import {createFileRoute, Link, useRouteContext, useSearch} from "@tanstack/react-router";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {ForgotPassword, forgotPasswordSchema, Register, registerSchema} from "@/lib/schemas";
 import {ClockAlert, MailCheck, RefreshCw, ShieldAlert, ShieldCheck, UserPlus} from "lucide-react";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
+import {AuthState, getAuthState, getOAuthErrorMessage, isVerificationError} from "@/lib/utils/auth-utils";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
 import {useEmailRegistrationMutation, useResendVerificationEmailMutation, useSocialSignInMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 
@@ -84,6 +84,9 @@ function RegisterPage() {
             ? "invalid" : step === "verify"
                 ? "pending" : null;
 
+    const authState = getAuthState(null, verificationStatus !== null);
+    const isAwaitingVerification = authState === AuthState.AWAITING_EMAIL_VERIFICATION;
+
     const content = verificationStatus ? verificationContent[verificationStatus] : null;
     const StatusIcon = content?.icon;
 
@@ -95,7 +98,7 @@ function RegisterPage() {
     const socialMutation = useSocialSignInMutation({
         callbackURL: redirectTarget,
         errorCallbackURL: `/register?${oauthSearch}`,
-        newUserCallbackURL: `/choose-username?${oauthSearch}`,
+        newUserCallbackURL: "/?usernameNotice=check",
     });
     const registrationMutation = useEmailRegistrationMutation(verificationCallbackURL);
     const resendMutation = useResendVerificationEmailMutation(verificationCallbackURL);
@@ -142,15 +145,15 @@ function RegisterPage() {
     }, [error, message, navigate, redirect, step]);
 
     return (
-        <PageTitle title={verificationStatus ? "Verify email" : "Register"} onlyHelmet>
+        <PageTitle title={isAwaitingVerification ? "Verify email" : "Register"} onlyHelmet>
             <div className="mb-8 flex flex-col pt-8">
                 <PageHeader
                     asideIcon={ShieldCheck}
-                    eyebrowIcon={verificationStatus ? MailCheck : UserPlus}
-                    eyebrow={verificationStatus ? "Email verification" : "New to MyLists?"}
-                    asideLabel={verificationStatus ? "Verification links" : "What you need"}
-                    title={verificationStatus ? "Verify your email" : "Create your account"}
-                    asideValue={verificationStatus ? "Expire after one hour" : "Just a few details"}
+                    eyebrowIcon={isAwaitingVerification ? MailCheck : UserPlus}
+                    eyebrow={isAwaitingVerification ? "Email verification" : "New to MyLists?"}
+                    asideLabel={isAwaitingVerification ? "Verification links" : "What you need"}
+                    title={isAwaitingVerification ? "Verify your email" : "Create your account"}
+                    asideValue={isAwaitingVerification ? "Expire after one hour" : "Just a few details"}
                     description={verificationStatus === "pending"
                         ? "Open the verification email we just sent to finish setting up your account."
                         : verificationStatus
@@ -160,7 +163,7 @@ function RegisterPage() {
                 />
 
                 <section className="mt-10 w-full max-w-md self-center rounded-xl border p-5 shadow-xs sm:p-6">
-                    {verificationStatus && content && StatusIcon ?
+                    {isAwaitingVerification && verificationStatus && content && StatusIcon ?
                         <Empty className="min-h-96 border bg-muted/20 px-4 py-8">
                             <EmptyHeader aria-live="polite">
                                 <EmptyMedia variant="icon" className="size-12 rounded-full">

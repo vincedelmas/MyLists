@@ -1,8 +1,57 @@
-const verificationErrors = new Set(["TOKEN_EXPIRED", "INVALID_TOKEN", "USER_NOT_FOUND"]);
+import {USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH} from "@/lib/schemas/common.schema";
+
+
+export const AuthState = {
+    ANONYMOUS: "anonymous",
+    AUTHENTICATED: "authenticated",
+    AWAITING_EMAIL_VERIFICATION: "awaiting-email-verification",
+} as const;
+export type AuthState = typeof AuthState[keyof typeof AuthState];
+
+
+export const getAuthState = (currentUser: object | null | undefined, awaitingEmailVerification = false) => {
+    if (currentUser) return AuthState.AUTHENTICATED;
+    return awaitingEmailVerification ? AuthState.AWAITING_EMAIL_VERIFICATION : AuthState.ANONYMOUS;
+};
+
+
+export const isAuthenticatedAuthState = (state: AuthState) => {
+    return state === AuthState.AUTHENTICATED;
+};
+
+
+export const checkOAuthUsername = (profileName: string) => {
+    const username = profileName
+        .normalize("NFKD")
+        .replace(/\p{M}/gu, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, "-")
+        .replace(/[-_]{2,}/g, "-")
+        .replace(/^[-_]+|[-_]+$/g, "")
+        .slice(0, USERNAME_MAX_LENGTH)
+        .replace(/[-_]+$/g, "");
+
+    return username.length >= USERNAME_MIN_LENGTH
+        ? username
+        : undefined;
+};
+
+
+export const addUsernameSuffix = (username: string, suffix: string) => {
+    const baseMaxLength = USERNAME_MAX_LENGTH - suffix.length - 1;
+    const base = username.slice(0, baseMaxLength).replace(/[-_]+$/g, "");
+
+    return `${base}-${suffix}`;
+};
+
+
+export const hasGeneratedUsernameSuffix = (username: string) => {
+    return /-[0-9a-f]{6}$/.test(username);
+}
 
 
 export const isVerificationError = (error?: string) => {
-    return !!error && verificationErrors.has(error);
+    return !!error && ["TOKEN_EXPIRED", "INVALID_TOKEN", "USER_NOT_FOUND"].includes(error);
 }
 
 

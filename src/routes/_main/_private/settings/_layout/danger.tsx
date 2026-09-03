@@ -1,10 +1,8 @@
 import {Trash2} from "lucide-react";
-import authClient from "@/lib/utils/auth-client";
-import {useQueryClient} from "@tanstack/react-query";
+import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
-import {authOptions} from "@/lib/client/react-query/query-options";
-import {createFileRoute, useNavigate} from "@tanstack/react-router";
 import {useDeleteAccountMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 
 
@@ -15,8 +13,7 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/danger")(
 
 function DangerForm() {
     const confirm = useConfirm();
-    const navigate = useNavigate();
-    const queryClient = useQueryClient();
+    const { clearSession, signOut } = useAuth();
     const deleteAccountMutation = useDeleteAccountMutation();
 
     const onSubmit = async () => {
@@ -30,10 +27,12 @@ function DangerForm() {
 
         deleteAccountMutation.mutate(undefined, {
             onSuccess: async () => {
-                await authClient.signOut();
-                queryClient.setQueryData(authOptions.queryKey, null);
-                await navigate({ to: "/", replace: true });
-                queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
+                try {
+                    await signOut();
+                }
+                catch {
+                    await clearSession();
+                }
             }
         });
     };

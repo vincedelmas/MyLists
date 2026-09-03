@@ -55,7 +55,7 @@ const mediaTypeConfigs = [
 
 function MediaListFormPage() {
     const fieldId = useId();
-    const { currentUser, setCurrentUser } = useAuth();
+    const { currentUser, refreshCurrentUser } = useAuth();
     const downloadListAsCSVMutation = useDownloadListAsCSVMutation();
     const listSettingsMutation = useListSettingsMutation({ noErrorToast: true });
     const [selectedListForExport, setSelectedListForExport] = useState<MediaType>(MediaType.SERIES);
@@ -117,7 +117,7 @@ function MediaListFormPage() {
                 handleServerFormErrors(form, error);
             },
             onSuccess: async () => {
-                await setCurrentUser();
+                await refreshCurrentUser();
             }
         });
     };

@@ -334,8 +334,8 @@
     {
       "idx": 47,
       "version": "6",
-      "when": 1788440072568,
-      "tag": "0047_oauth_username_setup",
+      "when": 1788449918704,
+      "tag": "0047_harden_auth_data",
       "breakpoints": true
     }
   ]

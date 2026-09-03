@@ -196,6 +196,11 @@ export const profileSearchSchema = z.object({
 });
 
 
+export const profileHeaderSearchSchema = z.object({
+    usernameNotice: z.literal("assigned").optional().catch(undefined),
+});
+
+
 export const mediaTabSearchSchema = z.object({
     activeTab: mediaActiveTabSchema.optional().default("all").catch("all"),
 });

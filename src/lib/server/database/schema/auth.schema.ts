@@ -16,7 +16,6 @@ export const user = sqliteTable("user", {
     privacy: text("privacy").$type<PrivacyType>().default(PrivacyType.RESTRICTED).notNull(),
     gridListView: integer("grid_list_view", { mode: "boolean" }).default(true).notNull(),
     showOnboarding: integer("show_onboarding", { mode: "boolean" }).default(true).notNull(),
-    usernameConfigured: integer("username_configured", { mode: "boolean" }).default(false).notNull(),
     showUpdateModal: integer("show_update_modal", { mode: "boolean" }).default(true).notNull(),
     backgroundImage: imageUrl("background_image", "profile-back-covers").default("default.jpg").notNull(),
     ratingSystem: text("rating_system").$type<RatingSystemType>().default(RatingSystemType.SCORE).notNull(),

@@ -200,20 +200,20 @@ export const useDeleteAccountMutation = () => {
 
 
 export const useFeatureFlagMutation = () => {
-    const { setCurrentUser } = useAuth();
+    const { refreshCurrentUser } = useAuth();
 
     return useMutation({
         mutationFn: postUpdateFeatureFlag,
-        onSuccess: () => setCurrentUser(),
+        onSuccess: () => refreshCurrentUser(),
     });
 };
 
 
 export const useUpdateOnboardingMutation = () => {
-    const { setCurrentUser } = useAuth();
+    const { refreshCurrentUser } = useAuth();
 
     return useMutation({
         mutationFn: postUpdateShowOnboarding,
-        onSuccess: () => setCurrentUser(),
+        onSuccess: () => refreshCurrentUser(),
     });
 };

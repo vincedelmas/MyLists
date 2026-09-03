@@ -1,8 +1,8 @@
 {
+  "id": "0b94262b-14b3-45e7-b6dd-4393ba794aa3",
+  "prevId": "f0b35f29-6694-4d39-9710-135fffbe49d8",
   "version": "6",
   "dialect": "sqlite",
-  "id": "6ea4fd16-f730-410b-a49c-8ef294812cf6",
-  "prevId": "f0b35f29-6694-4d39-9710-135fffbe49d8",
   "tables": {
     "account": {
       "name": "account",
@@ -107,13 +107,6 @@
         }
       },
       "indexes": {
-        "account_user_id_idx": {
-          "name": "account_user_id_idx",
-          "columns": [
-            "user_id"
-          ],
-          "isUnique": false
-        },
         "account_issuer_account_id_unique": {
           "name": "account_issuer_account_id_unique",
           "columns": [
@@ -121,21 +114,28 @@
             "account_id"
           ],
           "isUnique": true
+        },
+        "account_user_id_idx": {
+          "name": "account_user_id_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "account_user_id_user_id_fk": {
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -222,15 +222,15 @@
         "session_user_id_user_id_fk": {
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -328,14 +328,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": true
-        },
-        "username_configured": {
-          "name": "username_configured",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
         },
         "show_update_modal": {
           "name": "show_update_modal",
@@ -508,28 +500,28 @@
         "followers_follower_id_user_id_fk": {
           "name": "followers_follower_id_user_id_fk",
           "tableFrom": "followers",
-          "tableTo": "user",
           "columnsFrom": [
             "follower_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "followers_followed_id_user_id_fk": {
           "name": "followers_followed_id_user_id_fk",
           "tableFrom": "followers",
-          "tableTo": "user",
           "columnsFrom": [
             "followed_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -603,15 +595,15 @@
         "profile_custom_user_id_user_id_fk": {
           "name": "profile_custom_user_id_user_id_fk",
           "tableFrom": "profile_custom",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -756,15 +748,15 @@
         "user_media_monthly_activity_user_id_user_id_fk": {
           "name": "user_media_monthly_activity_user_id_user_id_fk",
           "tableFrom": "user_media_monthly_activity",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -920,15 +912,15 @@
         "user_media_settings_user_id_user_id_fk": {
           "name": "user_media_settings_user_id_user_id_fk",
           "tableFrom": "user_media_settings",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1105,15 +1097,15 @@
         "user_media_stats_history_user_id_user_id_fk": {
           "name": "user_media_stats_history_user_id_user_id_fk",
           "tableFrom": "user_media_stats_history",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1226,15 +1218,15 @@
         "user_media_update_user_id_user_id_fk": {
           "name": "user_media_update_user_id_user_id_fk",
           "tableFrom": "user_media_update",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -1521,15 +1513,15 @@
         "series_actors_media_id_series_id_fk": {
           "name": "series_actors_media_id_series_id_fk",
           "tableFrom": "series_actors",
-          "tableTo": "series",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "series",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1582,15 +1574,15 @@
         "series_episodes_per_season_media_id_series_id_fk": {
           "name": "series_episodes_per_season_media_id_series_id_fk",
           "tableFrom": "series_episodes_per_season",
-          "tableTo": "series",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "series",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1644,15 +1636,15 @@
         "series_genre_media_id_series_id_fk": {
           "name": "series_genre_media_id_series_id_fk",
           "tableFrom": "series_genre",
-          "tableTo": "series",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "series",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1786,8 +1778,8 @@
             "user_id",
             "media_id"
           ],
-          "isUnique": false,
-          "where": "\"series_list\".\"rating\" IS NOT NULL"
+          "where": "\"series_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         },
         "ix_series_list_media_user_rated": {
           "name": "ix_series_list_media_user_rated",
@@ -1795,36 +1787,36 @@
             "media_id",
             "user_id"
           ],
-          "isUnique": false,
-          "where": "\"series_list\".\"rating\" IS NOT NULL"
+          "where": "\"series_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "series_list_user_id_user_id_fk": {
           "name": "series_list_user_id_user_id_fk",
           "tableFrom": "series_list",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "series_list_media_id_series_id_fk": {
           "name": "series_list_media_id_series_id_fk",
           "tableFrom": "series_list",
-          "tableTo": "series",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "series",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1887,15 +1879,15 @@
         "series_network_media_id_series_id_fk": {
           "name": "series_network_media_id_series_id_fk",
           "tableFrom": "series_network",
-          "tableTo": "series",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "series",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1942,8 +1934,8 @@
             "media_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"series_tags\".\"media_id\" IS NOT NULL"
+          "where": "\"series_tags\".\"media_id\" IS NOT NULL",
+          "isUnique": true
         },
         "ux_series_tags_user_placeholder_name": {
           "name": "ux_series_tags_user_placeholder_name",
@@ -1951,8 +1943,8 @@
             "user_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"series_tags\".\"media_id\" IS NULL"
+          "where": "\"series_tags\".\"media_id\" IS NULL",
+          "isUnique": true
         },
         "ix_series_tags_user_name_media": {
           "name": "ix_series_tags_user_name_media",
@@ -1968,28 +1960,28 @@
         "series_tags_user_id_user_id_fk": {
           "name": "series_tags_user_id_user_id_fk",
           "tableFrom": "series_tags",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "series_tags_media_id_series_id_fk": {
           "name": "series_tags_media_id_series_id_fk",
           "tableFrom": "series_tags",
-          "tableTo": "series",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "series",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2230,15 +2222,15 @@
         "anime_actors_media_id_anime_id_fk": {
           "name": "anime_actors_media_id_anime_id_fk",
           "tableFrom": "anime_actors",
-          "tableTo": "anime",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "anime",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2291,15 +2283,15 @@
         "anime_episodes_per_season_media_id_anime_id_fk": {
           "name": "anime_episodes_per_season_media_id_anime_id_fk",
           "tableFrom": "anime_episodes_per_season",
-          "tableTo": "anime",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "anime",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2353,15 +2345,15 @@
         "anime_genre_media_id_anime_id_fk": {
           "name": "anime_genre_media_id_anime_id_fk",
           "tableFrom": "anime_genre",
-          "tableTo": "anime",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "anime",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2495,8 +2487,8 @@
             "user_id",
             "media_id"
           ],
-          "isUnique": false,
-          "where": "\"anime_list\".\"rating\" IS NOT NULL"
+          "where": "\"anime_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         },
         "ix_anime_list_media_user_rated": {
           "name": "ix_anime_list_media_user_rated",
@@ -2504,36 +2496,36 @@
             "media_id",
             "user_id"
           ],
-          "isUnique": false,
-          "where": "\"anime_list\".\"rating\" IS NOT NULL"
+          "where": "\"anime_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "anime_list_user_id_user_id_fk": {
           "name": "anime_list_user_id_user_id_fk",
           "tableFrom": "anime_list",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "anime_list_media_id_anime_id_fk": {
           "name": "anime_list_media_id_anime_id_fk",
           "tableFrom": "anime_list",
-          "tableTo": "anime",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "anime",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2596,15 +2588,15 @@
         "anime_network_media_id_anime_id_fk": {
           "name": "anime_network_media_id_anime_id_fk",
           "tableFrom": "anime_network",
-          "tableTo": "anime",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "anime",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2651,8 +2643,8 @@
             "media_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"anime_tags\".\"media_id\" IS NOT NULL"
+          "where": "\"anime_tags\".\"media_id\" IS NOT NULL",
+          "isUnique": true
         },
         "ux_anime_tags_user_placeholder_name": {
           "name": "ux_anime_tags_user_placeholder_name",
@@ -2660,8 +2652,8 @@
             "user_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"anime_tags\".\"media_id\" IS NULL"
+          "where": "\"anime_tags\".\"media_id\" IS NULL",
+          "isUnique": true
         },
         "ix_anime_tags_user_name_media": {
           "name": "ix_anime_tags_user_name_media",
@@ -2677,28 +2669,28 @@
         "anime_tags_user_id_user_id_fk": {
           "name": "anime_tags_user_id_user_id_fk",
           "tableFrom": "anime_tags",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "anime_tags_media_id_anime_id_fk": {
           "name": "anime_tags_media_id_anime_id_fk",
           "tableFrom": "anime_tags",
-          "tableTo": "anime",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "anime",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2925,15 +2917,15 @@
         "movies_actors_media_id_movies_id_fk": {
           "name": "movies_actors_media_id_movies_id_fk",
           "tableFrom": "movies_actors",
-          "tableTo": "movies",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "movies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2987,15 +2979,15 @@
         "movies_genre_media_id_movies_id_fk": {
           "name": "movies_genre_media_id_movies_id_fk",
           "tableFrom": "movies_genre",
-          "tableTo": "movies",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "movies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3115,8 +3107,8 @@
             "user_id",
             "media_id"
           ],
-          "isUnique": false,
-          "where": "\"movies_list\".\"rating\" IS NOT NULL"
+          "where": "\"movies_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         },
         "ix_movies_list_media_user_rated": {
           "name": "ix_movies_list_media_user_rated",
@@ -3124,36 +3116,36 @@
             "media_id",
             "user_id"
           ],
-          "isUnique": false,
-          "where": "\"movies_list\".\"rating\" IS NOT NULL"
+          "where": "\"movies_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "movies_list_user_id_user_id_fk": {
           "name": "movies_list_user_id_user_id_fk",
           "tableFrom": "movies_list",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "movies_list_media_id_movies_id_fk": {
           "name": "movies_list_media_id_movies_id_fk",
           "tableFrom": "movies_list",
-          "tableTo": "movies",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "movies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3205,8 +3197,8 @@
             "media_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"movies_tags\".\"media_id\" IS NOT NULL"
+          "where": "\"movies_tags\".\"media_id\" IS NOT NULL",
+          "isUnique": true
         },
         "ux_movies_tags_user_placeholder_name": {
           "name": "ux_movies_tags_user_placeholder_name",
@@ -3214,8 +3206,8 @@
             "user_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"movies_tags\".\"media_id\" IS NULL"
+          "where": "\"movies_tags\".\"media_id\" IS NULL",
+          "isUnique": true
         },
         "ix_movies_tags_user_name_media": {
           "name": "ix_movies_tags_user_name_media",
@@ -3231,28 +3223,28 @@
         "movies_tags_user_id_user_id_fk": {
           "name": "movies_tags_user_id_user_id_fk",
           "tableFrom": "movies_tags",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "movies_tags_media_id_movies_id_fk": {
           "name": "movies_tags_media_id_movies_id_fk",
           "tableFrom": "movies_tags",
-          "tableTo": "movies",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "movies",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3483,15 +3475,15 @@
         "games_companies_media_id_games_id_fk": {
           "name": "games_companies_media_id_games_id_fk",
           "tableFrom": "games_companies",
-          "tableTo": "games",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "games",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3545,15 +3537,15 @@
         "games_genre_media_id_games_id_fk": {
           "name": "games_genre_media_id_games_id_fk",
           "tableFrom": "games_genre",
-          "tableTo": "games",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "games",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3672,8 +3664,8 @@
             "user_id",
             "media_id"
           ],
-          "isUnique": false,
-          "where": "\"games_list\".\"rating\" IS NOT NULL"
+          "where": "\"games_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         },
         "ix_games_list_media_user_rated": {
           "name": "ix_games_list_media_user_rated",
@@ -3681,36 +3673,36 @@
             "media_id",
             "user_id"
           ],
-          "isUnique": false,
-          "where": "\"games_list\".\"rating\" IS NOT NULL"
+          "where": "\"games_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "games_list_user_id_user_id_fk": {
           "name": "games_list_user_id_user_id_fk",
           "tableFrom": "games_list",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "games_list_media_id_games_id_fk": {
           "name": "games_list_media_id_games_id_fk",
           "tableFrom": "games_list",
-          "tableTo": "games",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "games",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3769,15 +3761,15 @@
         "games_platforms_media_id_games_id_fk": {
           "name": "games_platforms_media_id_games_id_fk",
           "tableFrom": "games_platforms",
-          "tableTo": "games",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "games",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3824,8 +3816,8 @@
             "media_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"games_tags\".\"media_id\" IS NOT NULL"
+          "where": "\"games_tags\".\"media_id\" IS NOT NULL",
+          "isUnique": true
         },
         "ux_games_tags_user_placeholder_name": {
           "name": "ux_games_tags_user_placeholder_name",
@@ -3833,8 +3825,8 @@
             "user_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"games_tags\".\"media_id\" IS NULL"
+          "where": "\"games_tags\".\"media_id\" IS NULL",
+          "isUnique": true
         },
         "ix_games_tags_user_name_media": {
           "name": "ix_games_tags_user_name_media",
@@ -3850,28 +3842,28 @@
         "games_tags_user_id_user_id_fk": {
           "name": "games_tags_user_id_user_id_fk",
           "tableFrom": "games_tags",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "games_tags_media_id_games_id_fk": {
           "name": "games_tags_media_id_games_id_fk",
           "tableFrom": "games_tags",
-          "tableTo": "games",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "games",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4028,15 +4020,15 @@
         "books_authors_media_id_books_id_fk": {
           "name": "books_authors_media_id_books_id_fk",
           "tableFrom": "books_authors",
-          "tableTo": "books",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "books",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4090,15 +4082,15 @@
         "books_genre_media_id_books_id_fk": {
           "name": "books_genre_media_id_books_id_fk",
           "tableFrom": "books_genre",
-          "tableTo": "books",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "books",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4225,8 +4217,8 @@
             "user_id",
             "media_id"
           ],
-          "isUnique": false,
-          "where": "\"books_list\".\"rating\" IS NOT NULL"
+          "where": "\"books_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         },
         "ix_books_list_media_user_rated": {
           "name": "ix_books_list_media_user_rated",
@@ -4234,36 +4226,36 @@
             "media_id",
             "user_id"
           ],
-          "isUnique": false,
-          "where": "\"books_list\".\"rating\" IS NOT NULL"
+          "where": "\"books_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "books_list_user_id_user_id_fk": {
           "name": "books_list_user_id_user_id_fk",
           "tableFrom": "books_list",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "books_list_media_id_books_id_fk": {
           "name": "books_list_media_id_books_id_fk",
           "tableFrom": "books_list",
-          "tableTo": "books",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "books",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4315,8 +4307,8 @@
             "media_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"books_tags\".\"media_id\" IS NOT NULL"
+          "where": "\"books_tags\".\"media_id\" IS NOT NULL",
+          "isUnique": true
         },
         "ux_books_tags_user_placeholder_name": {
           "name": "ux_books_tags_user_placeholder_name",
@@ -4324,8 +4316,8 @@
             "user_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"books_tags\".\"media_id\" IS NULL"
+          "where": "\"books_tags\".\"media_id\" IS NULL",
+          "isUnique": true
         },
         "ix_books_tags_user_name_media": {
           "name": "ix_books_tags_user_name_media",
@@ -4341,28 +4333,28 @@
         "books_tags_user_id_user_id_fk": {
           "name": "books_tags_user_id_user_id_fk",
           "tableFrom": "books_tags",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "books_tags_media_id_books_id_fk": {
           "name": "books_tags_media_id_books_id_fk",
           "tableFrom": "books_tags",
-          "tableTo": "books",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "books",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4568,15 +4560,15 @@
         "manga_authors_media_id_manga_id_fk": {
           "name": "manga_authors_media_id_manga_id_fk",
           "tableFrom": "manga_authors",
-          "tableTo": "manga",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "manga",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4630,15 +4622,15 @@
         "manga_genre_media_id_manga_id_fk": {
           "name": "manga_genre_media_id_manga_id_fk",
           "tableFrom": "manga_genre",
-          "tableTo": "manga",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "manga",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4765,8 +4757,8 @@
             "user_id",
             "media_id"
           ],
-          "isUnique": false,
-          "where": "\"manga_list\".\"rating\" IS NOT NULL"
+          "where": "\"manga_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         },
         "ix_manga_list_media_user_rated": {
           "name": "ix_manga_list_media_user_rated",
@@ -4774,36 +4766,36 @@
             "media_id",
             "user_id"
           ],
-          "isUnique": false,
-          "where": "\"manga_list\".\"rating\" IS NOT NULL"
+          "where": "\"manga_list\".\"rating\" IS NOT NULL",
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "manga_list_user_id_user_id_fk": {
           "name": "manga_list_user_id_user_id_fk",
           "tableFrom": "manga_list",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "manga_list_media_id_manga_id_fk": {
           "name": "manga_list_media_id_manga_id_fk",
           "tableFrom": "manga_list",
-          "tableTo": "manga",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "manga",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4855,8 +4847,8 @@
             "media_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"manga_tags\".\"media_id\" IS NOT NULL"
+          "where": "\"manga_tags\".\"media_id\" IS NOT NULL",
+          "isUnique": true
         },
         "ux_manga_tags_user_placeholder_name": {
           "name": "ux_manga_tags_user_placeholder_name",
@@ -4864,8 +4856,8 @@
             "user_id",
             "name"
           ],
-          "isUnique": true,
-          "where": "\"manga_tags\".\"media_id\" IS NULL"
+          "where": "\"manga_tags\".\"media_id\" IS NULL",
+          "isUnique": true
         },
         "ix_manga_tags_user_name_media": {
           "name": "ix_manga_tags_user_name_media",
@@ -4881,28 +4873,28 @@
         "manga_tags_user_id_user_id_fk": {
           "name": "manga_tags_user_id_user_id_fk",
           "tableFrom": "manga_tags",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "manga_tags_media_id_manga_id_fk": {
           "name": "manga_tags_media_id_manga_id_fk",
           "tableFrom": "manga_tags",
-          "tableTo": "manga",
           "columnsFrom": [
             "media_id"
           ],
+          "tableTo": "manga",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -5043,15 +5035,15 @@
         "mediadle_stats_user_id_user_id_fk": {
           "name": "mediadle_stats_user_id_user_id_fk",
           "tableFrom": "mediadle_stats",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -5137,28 +5129,28 @@
         "user_mediadle_progress_user_id_user_id_fk": {
           "name": "user_mediadle_progress_user_id_user_id_fk",
           "tableFrom": "user_mediadle_progress",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "user_mediadle_progress_daily_mediadle_id_daily_mediadle_id_fk": {
           "name": "user_mediadle_progress_daily_mediadle_id_daily_mediadle_id_fk",
           "tableFrom": "user_mediadle_progress",
-          "tableTo": "daily_mediadle",
           "columnsFrom": [
             "daily_mediadle_id"
           ],
+          "tableTo": "daily_mediadle",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -5340,23 +5332,23 @@
           "columns": [
             "run_id"
           ],
-          "isUnique": true,
-          "where": "\"which_came_first_rounds\".\"answered_at\" IS NULL"
+          "where": "\"which_came_first_rounds\".\"answered_at\" IS NULL",
+          "isUnique": true
         }
       },
       "foreignKeys": {
         "which_came_first_rounds_run_id_which_came_first_runs_id_fk": {
           "name": "which_came_first_rounds_run_id_which_came_first_runs_id_fk",
           "tableFrom": "which_came_first_rounds",
-          "tableTo": "which_came_first_runs",
           "columnsFrom": [
             "run_id"
           ],
+          "tableTo": "which_came_first_runs",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -5454,23 +5446,23 @@
           "columns": [
             "user_id"
           ],
-          "isUnique": true,
-          "where": "\"which_came_first_runs\".\"status\" = 'active'"
+          "where": "\"which_came_first_runs\".\"status\" = 'active'",
+          "isUnique": true
         }
       },
       "foreignKeys": {
         "which_came_first_runs_user_id_user_id_fk": {
           "name": "which_came_first_runs_user_id_user_id_fk",
           "tableFrom": "which_came_first_runs",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -5599,15 +5591,15 @@
         "achievement_tier_achievement_id_achievement_id_fk": {
           "name": "achievement_tier_achievement_id_achievement_id_fk",
           "tableFrom": "achievement_tier",
-          "tableTo": "achievement",
           "columnsFrom": [
             "achievement_id"
           ],
+          "tableTo": "achievement",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -5713,57 +5705,57 @@
             "user_id",
             "completed_at"
           ],
-          "isUnique": false,
-          "where": "\"user_achievement\".\"completed\" = 1"
+          "where": "\"user_achievement\".\"completed\" = 1",
+          "isUnique": false
         },
         "ix_user_achievement_completed_tier": {
           "name": "ix_user_achievement_completed_tier",
           "columns": [
             "tier_id"
           ],
-          "isUnique": false,
-          "where": "\"user_achievement\".\"completed\" = 1"
+          "where": "\"user_achievement\".\"completed\" = 1",
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "user_achievement_user_id_user_id_fk": {
           "name": "user_achievement_user_id_user_id_fk",
           "tableFrom": "user_achievement",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "user_achievement_achievement_id_achievement_id_fk": {
           "name": "user_achievement_achievement_id_achievement_id_fk",
           "tableFrom": "user_achievement",
-          "tableTo": "achievement",
           "columnsFrom": [
             "achievement_id"
           ],
+          "tableTo": "achievement",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "user_achievement_tier_id_achievement_tier_id_fk": {
           "name": "user_achievement_tier_id_achievement_tier_id_fk",
           "tableFrom": "user_achievement",
-          "tableTo": "achievement_tier",
           "columnsFrom": [
             "tier_id"
           ],
+          "tableTo": "achievement_tier",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -5894,23 +5886,23 @@
           "columns": [
             "user_id"
           ],
-          "isUnique": false,
-          "where": "\"media_notifications\".\"read\" = 0"
+          "where": "\"media_notifications\".\"read\" = 0",
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "media_notifications_user_id_user_id_fk": {
           "name": "media_notifications_user_id_user_id_fk",
           "tableFrom": "media_notifications",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -5985,8 +5977,8 @@
             "actor_id",
             "type"
           ],
-          "isUnique": true,
-          "where": "\"social_notifications\".\"feature_request_id\" IS NULL"
+          "where": "\"social_notifications\".\"feature_request_id\" IS NULL",
+          "isUnique": true
         },
         "social_feature_notif_unique": {
           "name": "social_feature_notif_unique",
@@ -5996,8 +5988,8 @@
             "type",
             "feature_request_id"
           ],
-          "isUnique": true,
-          "where": "\"social_notifications\".\"feature_request_id\" IS NOT NULL"
+          "where": "\"social_notifications\".\"feature_request_id\" IS NOT NULL",
+          "isUnique": true
         },
         "ix_social_notifications_user_created_at": {
           "name": "ix_social_notifications_user_created_at",
@@ -6012,49 +6004,49 @@
           "columns": [
             "user_id"
           ],
-          "isUnique": false,
-          "where": "\"social_notifications\".\"read\" = 0"
+          "where": "\"social_notifications\".\"read\" = 0",
+          "isUnique": false
         }
       },
       "foreignKeys": {
         "social_notifications_actor_id_user_id_fk": {
           "name": "social_notifications_actor_id_user_id_fk",
           "tableFrom": "social_notifications",
-          "tableTo": "user",
           "columnsFrom": [
             "actor_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "social_notifications_user_id_user_id_fk": {
           "name": "social_notifications_user_id_user_id_fk",
           "tableFrom": "social_notifications",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "social_notifications_feature_request_id_feature_requests_id_fk": {
           "name": "social_notifications_feature_request_id_feature_requests_id_fk",
           "tableFrom": "social_notifications",
-          "tableTo": "feature_requests",
           "columnsFrom": [
             "feature_request_id"
           ],
+          "tableTo": "feature_requests",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -6389,15 +6381,15 @@
         "media_refresh_log_user_id_user_id_fk": {
           "name": "media_refresh_log_user_id_user_id_fk",
           "tableFrom": "media_refresh_log",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -6505,15 +6497,15 @@
         "task_history_user_id_user_id_fk": {
           "name": "task_history_user_id_user_id_fk",
           "tableFrom": "task_history",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -6638,15 +6630,15 @@
         "feature_requests_created_by_user_id_fk": {
           "name": "feature_requests_created_by_user_id_fk",
           "tableFrom": "feature_requests",
-          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -6707,28 +6699,28 @@
         "feature_votes_user_id_user_id_fk": {
           "name": "feature_votes_user_id_user_id_fk",
           "tableFrom": "feature_votes",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "feature_votes_feature_id_feature_requests_id_fk": {
           "name": "feature_votes_feature_id_feature_requests_id_fk",
           "tableFrom": "feature_votes",
-          "tableTo": "feature_requests",
           "columnsFrom": [
             "feature_id"
           ],
+          "tableTo": "feature_requests",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -6820,15 +6812,15 @@
         "collection_items_collection_id_collections_id_fk": {
           "name": "collection_items_collection_id_collections_id_fk",
           "tableFrom": "collection_items",
-          "tableTo": "collections",
           "columnsFrom": [
             "collection_id"
           ],
+          "tableTo": "collections",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -6894,28 +6886,28 @@
         "collection_likes_user_id_user_id_fk": {
           "name": "collection_likes_user_id_user_id_fk",
           "tableFrom": "collection_likes",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "collection_likes_collection_id_collections_id_fk": {
           "name": "collection_likes_collection_id_collections_id_fk",
           "tableFrom": "collection_likes",
-          "tableTo": "collections",
           "columnsFrom": [
             "collection_id"
           ],
+          "tableTo": "collections",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -7043,15 +7035,15 @@
         "collections_owner_id_user_id_fk": {
           "name": "collections_owner_id_user_id_fk",
           "tableFrom": "collections",
-          "tableTo": "user",
           "columnsFrom": [
             "owner_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -7195,15 +7187,15 @@
         "import_items_job_id_import_jobs_id_fk": {
           "name": "import_items_job_id_import_jobs_id_fk",
           "tableFrom": "import_items",
-          "tableTo": "import_jobs",
           "columnsFrom": [
             "job_id"
           ],
+          "tableTo": "import_jobs",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -7351,23 +7343,23 @@
           "columns": [
             "user_id"
           ],
-          "isUnique": true,
-          "where": "\"import_jobs\".\"status\" IN ('parsing', 'queued', 'processing')"
+          "where": "\"import_jobs\".\"status\" IN ('parsing', 'queued', 'processing')",
+          "isUnique": true
         }
       },
       "foreignKeys": {
         "import_jobs_user_id_user_id_fk": {
           "name": "import_jobs_user_id_user_id_fk",
           "tableFrom": "import_jobs",
-          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -7383,9 +7375,9 @@
   "views": {},
   "enums": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
+    "tables": {}
   },
   "internal": {
     "indexes": {}

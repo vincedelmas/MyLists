@@ -1,7 +1,6 @@
 import authClient from "@/lib/utils/auth-client";
-import {postOAuthUsername} from "@/lib/server/functions/auth";
+import {ForgotPassword, Login, Register} from "@/lib/schemas";
 import {MutationMeta, useMutation} from "@tanstack/react-query";
-import {ForgotPassword, Login, OAuthUsername, Register} from "@/lib/schemas";
 
 
 export type SocialProvider = "google" | "github";
@@ -48,14 +47,6 @@ export const useSocialSignInMutation = (callbacks: { callbackURL: string; errorC
             if (error) throw error;
         },
         meta,
-    });
-};
-
-
-export const useOAuthUsernameMutation = (meta?: MutationMeta) => {
-    return useMutation<void, AuthMutationError, OAuthUsername>({
-        mutationFn: (data) => postOAuthUsername({ data }),
-        meta: { noErrorToast: true, ...meta },
     });
 };
 

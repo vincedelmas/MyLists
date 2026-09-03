@@ -5,6 +5,7 @@ import {createServerFn} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {user} from "@/lib/server/database/schema/index";
 import {getContainer} from "@/lib/server/core/container";
+import {clearAdminCookie} from "@/lib/utils/admin-utils";
 import {ValidationError} from "@/lib/utils/error-classes";
 import {saveUploadedImage} from "@/lib/utils/image-saver";
 import {getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
@@ -134,7 +135,7 @@ export const postPasswordSettings = createServerFn({ method: "POST" })
         try {
             await auth.api.changePassword({
                 headers: getRequest().headers,
-                body: { newPassword, currentPassword },
+                body: { newPassword, currentPassword, revokeOtherSessions: true },
             });
         }
         catch (error) {
@@ -151,7 +152,9 @@ export const postDeleteUserAccount = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const accountService = await getContainer().then((c) => c.services.account);
-        return accountService.deleteUserAccount({ userId: currentUser.id, type: "manual" });
+        const result = await accountService.deleteUserAccount({ userId: currentUser.id, type: "manual" });
+        clearAdminCookie();
+        return result;
     });
 
 

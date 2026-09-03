@@ -9,6 +9,7 @@ import {sendEmail} from "@/lib/utils/mail-sender";
 import {RateLimiterRes} from "rate-limiter-flexible";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {createServerOnlyFn} from "@tanstack/react-start";
+import {usernameSchema} from "@/lib/schemas/common.schema";
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {APIError, createAuthMiddleware} from "better-auth/api";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -40,6 +41,9 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
     telemetry: {
         enabled: false,
     },
+    onAPIError: {
+        errorURL: new URL("/login", clientEnv.VITE_BASE_URL).toString(),
+    },
     database: drizzleAdapter(db, {
         provider: "sqlite",
     }),
@@ -68,26 +72,51 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
     databaseHooks: {
         user: {
             create: {
-                before: async (user) => {
+                before: async (user, context) => {
+                    // If OAuth connection, user aways needs to configure his username
+                    if (context?.path?.startsWith("/callback/")) {
+                        return {
+                            data: {
+                                ...user,
+                                usernameConfigured: false,
+                                name: `oauth-${crypto.randomBytes(6).toString("base64url")}`,
+                            },
+                        };
+                    }
+
+                    // Otherwise checks are done
+                    const parsedUsername = usernameSchema.safeParse(user.name);
+                    if (!parsedUsername.success) {
+                        throw new APIError("BAD_REQUEST", {
+                            code: "INVALID_USERNAME",
+                            message: parsedUsername.error.issues[0].message,
+                        });
+                    }
+
                     const usernameExist = getDbClient()
                         .select()
                         .from(userTable)
-                        .where(eq(userTable.name, user.name))
+                        .where(eq(userTable.name, parsedUsername.data))
                         .get();
 
-                    if (!usernameExist) {
-                        return { data: user };
+                    if (usernameExist) {
+                        throw new APIError("BAD_REQUEST", {
+                            code: "USERNAME_TAKEN",
+                            message: "This username is already taken. Please choose another one.",
+                        });
                     }
 
                     return {
                         data: {
                             ...user,
-                            name: `${user.name}-${crypto.randomBytes(4).toString("hex")}`,
-                        }
+                            usernameConfigured: true,
+                            name: parsedUsername.data,
+                        },
                     };
                 },
                 after: async (user) => {
                     const mediaTypes = Object.values(MediaType);
+
                     const userMediaSettingsData = mediaTypes.map((mt) => ({
                         mediaType: mt,
                         userId: Number(user.id),
@@ -108,64 +137,70 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
     user: {
         additionalFields: {
             profileViews: {
-                type: "number",
-                defaultValue: 0,
-                returned: true,
                 input: false,
+                type: "number",
+                returned: true,
+                defaultValue: 0,
             },
             backgroundImage: {
-                type: "string",
-                defaultValue: "default.jpg",
-                returned: true,
                 input: false,
+                type: "string",
+                returned: true,
+                defaultValue: "default.jpg",
             },
             role: {
-                type: "string",
-                defaultValue: RoleType.USER,
-                returned: true,
                 input: false,
+                type: "string",
+                returned: true,
+                defaultValue: RoleType.USER,
             },
             showUpdateModal: {
+                input: false,
+                returned: true,
                 type: "boolean",
                 defaultValue: true,
-                returned: true,
-                input: false,
             },
             gridListView: {
+                input: false,
+                returned: true,
                 type: "boolean",
                 defaultValue: true,
-                returned: true,
-                input: false,
             },
             autoMoveCompletedTvToOnHold: {
+                input: false,
+                returned: true,
                 type: "boolean",
                 defaultValue: true,
-                returned: true,
-                input: false,
             },
             privacy: {
-                type: "string",
-                defaultValue: PrivacyType.RESTRICTED,
-                returned: true,
                 input: false,
+                type: "string",
+                returned: true,
+                defaultValue: PrivacyType.RESTRICTED,
             },
             searchSelector: {
-                type: "string",
-                defaultValue: ApiProviderType.TMDB,
-                returned: true,
                 input: false,
+                type: "string",
+                returned: true,
+                defaultValue: ApiProviderType.TMDB,
             },
             ratingSystem: {
-                type: "string",
-                defaultValue: RatingSystemType.SCORE,
-                returned: true,
                 input: false,
+                type: "string",
+                returned: true,
+                defaultValue: RatingSystemType.SCORE,
             },
             showOnboarding: {
+                input: false,
+                returned: true,
                 type: "boolean",
                 defaultValue: true,
-                returned: true,
+            },
+            usernameConfigured: {
                 input: false,
+                returned: true,
+                type: "boolean",
+                defaultValue: false,
             },
         },
         changeEmail: {

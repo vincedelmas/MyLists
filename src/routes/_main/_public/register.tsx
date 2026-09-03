@@ -1,4 +1,4 @@
-import {useId} from "react";
+import {useEffect, useId} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {FaGithub, FaGoogle} from "react-icons/fa";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -14,6 +14,7 @@ import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {Button, buttonVariants} from "@/lib/client/components/ui/button";
+import {getOAuthErrorMessage, isVerificationError} from "@/lib/utils/auth-utils";
 import {createFileRoute, Link, useRouteContext, useSearch} from "@tanstack/react-router";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {ForgotPassword, forgotPasswordSchema, Register, registerSchema} from "@/lib/schemas";
@@ -76,8 +77,10 @@ function RegisterPage() {
         defaultValues: { email: "" },
     });
 
-    const verificationStatus = error === "TOKEN_EXPIRED"
-        ? "expired" : error
+    const oauthErrorMessage = getOAuthErrorMessage(error);
+    const verificationError = isVerificationError(error) ? error : undefined;
+    const verificationStatus = verificationError === "TOKEN_EXPIRED"
+        ? "expired" : verificationError
             ? "invalid" : step === "verify"
                 ? "pending" : null;
 
@@ -86,9 +89,14 @@ function RegisterPage() {
 
     const redirectTarget = redirect || "/";
     const hasSocialProvider = authMethods.google || authMethods.github;
+    const oauthSearch = new URLSearchParams({ redirect: redirectTarget });
     const verificationCallbackURL = `/register?${new URLSearchParams({ redirect: redirectTarget })}`;
 
-    const socialMutation = useSocialSignInMutation(redirectTarget);
+    const socialMutation = useSocialSignInMutation({
+        callbackURL: redirectTarget,
+        errorCallbackURL: `/register?${oauthSearch}`,
+        newUserCallbackURL: `/choose-username?${oauthSearch}`,
+    });
     const registrationMutation = useEmailRegistrationMutation(verificationCallbackURL);
     const resendMutation = useResendVerificationEmailMutation(verificationCallbackURL);
 
@@ -106,6 +114,11 @@ function RegisterPage() {
 
         registrationMutation.mutate(submitted, {
             onError: (mutationError) => {
+                if (mutationError.code === "USERNAME_TAKEN" || mutationError.code === "INVALID_USERNAME") {
+                    registrationForm.setError("username", { message: mutationError.message });
+                    return;
+                }
+
                 handleServerFormErrors(registrationForm, mutationError);
             },
             onSuccess: async () => {
@@ -115,9 +128,19 @@ function RegisterPage() {
         });
     }
 
-    if (message) {
-        toast.add({ title: message, type: "warning" });
-    }
+    useEffect(() => {
+        const feedback = message || oauthErrorMessage;
+        if (!feedback) return;
+
+        toast.add({
+            title: feedback,
+            id: "auth-route-feedback",
+            type: oauthErrorMessage ? "error" : "warning",
+        });
+
+        void navigate({ replace: true, to: "/register", search: { error: verificationError, redirect, step } });
+
+    }, [message, navigate, oauthErrorMessage, redirect, step, verificationError]);
 
     return (
         <PageTitle title={verificationStatus ? "Verify email" : "Register"} onlyHelmet>

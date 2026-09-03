@@ -8,6 +8,14 @@ export type SimpleSearch = z.infer<typeof simpleSearchSchema>;
 export type HallOfFameSearch = z.infer<typeof hallOfFameSearchSchema>;
 
 
+export const usernameSchema = z.string()
+    .trim()
+    .min(1, "Username is required.")
+    .min(3, "The username is too short (3 min).")
+    .max(15, "The username is too long (15 max).")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Use only letters, numbers, underscores, and hyphens.");
+
+
 export const usernameFieldSchema = z.string();
 export const mediaTypeFieldSchema = z.enum(MediaType);
 export const positiveIntFieldSchema = z.number().int().positive();

@@ -1,9 +1,11 @@
 import * as z from "zod";
-import {getSafeRedirectPath} from "@/lib/utils/redirects";
+import {usernameSchema} from "@/lib/schemas/common.schema";
+import {getSafeRedirectPath} from "@/lib/utils/auth-utils";
 
 
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
+export type OAuthUsername = z.infer<typeof oauthUsernameSchema>;
 export type ResetPassword = z.infer<typeof resetPasswordSchema>;
 export type ForgotPassword = z.infer<typeof forgotPasswordSchema>;
 
@@ -16,10 +18,12 @@ export const tokenSchema = z.object({
 export const authRedirectSearchSchema = z.object({
     message: z.string().optional().catch(undefined),
     step: z.enum(["verify"]).optional().catch(undefined),
-    error: z.enum(["TOKEN_EXPIRED", "INVALID_TOKEN", "USER_NOT_FOUND"]).optional().catch(undefined),
+    error: z.string().trim().min(1).max(100).optional().catch(undefined),
     authExpired: z.preprocess((val) => (val === true || val === "true") ? true : undefined, z.literal(true).optional()),
     redirect: z.preprocess((val?: unknown) => getSafeRedirectPath(val, "http://mylists.local"), z.string().optional()),
 });
+
+export const oauthUsernameSearchSchema = authRedirectSearchSchema.pick({ redirect: true });
 
 
 export const resetPasswordSchema = z.object({
@@ -46,10 +50,7 @@ export const forgotPasswordSchema = z.object({
 
 
 export const registerSchema = z.object({
-    username: z.string()
-        .min(1, "Username is required.")
-        .min(3, "The username is too short (3 min).")
-        .max(15, "The username is too long (15 max)."),
+    username: usernameSchema,
     email: z.email().min(1, "Email is required."),
     password: z.string()
         .min(1, "Password is required.")
@@ -59,4 +60,9 @@ export const registerSchema = z.object({
 }).refine((data) => data.password === data.confirmPassword, {
     message: "The passwords do not match.",
     path: ["confirmPassword"],
+});
+
+
+export const oauthUsernameSchema = z.object({
+    username: usernameSchema,
 });

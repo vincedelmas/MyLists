@@ -1,4 +1,4 @@
-import {useId} from "react";
+import {useEffect, useId} from "react";
 import {LogIn, ShieldCheck} from "lucide-react";
 import {Login, loginSchema} from "@/lib/schemas";
 import {FaGithub, FaGoogle} from "react-icons/fa";
@@ -7,6 +7,7 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
+import {getOAuthErrorMessage} from "@/lib/utils/auth-utils";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
@@ -29,13 +30,20 @@ function LoginPage() {
     const router = useRouter();
     const navigate = Route.useNavigate();
     const queryClient = useQueryClient();
-    const { message, redirect } = useSearch({ from: "/_main/_public" });
+    const { error, message, redirect } = useSearch({ from: "/_main/_public" });
     const { authQueryOptions, authMethodsQueryOptions } = useRouteContext({ from: "__root__" });
 
     const redirectTarget = redirect || "/";
     const loginMutation = useEmailLoginMutation();
-    const socialMutation = useSocialSignInMutation(redirectTarget);
+    const oauthErrorMessage = getOAuthErrorMessage(error);
     const authMethods = useSuspenseQuery(authMethodsQueryOptions).data;
+
+    const oauthSearch = new URLSearchParams({ redirect: redirectTarget });
+    const socialMutation = useSocialSignInMutation({
+        callbackURL: redirectTarget,
+        errorCallbackURL: `/login?${oauthSearch}`,
+        newUserCallbackURL: `/choose-username?${oauthSearch}`,
+    });
 
     const hasSocialProvider = authMethods.google || authMethods.github;
     const form = useForm<Login>({
@@ -47,9 +55,19 @@ function LoginPage() {
         },
     });
 
-    if (message) {
-        toast.add({ title: message, type: "warning" });
-    }
+    useEffect(() => {
+        const feedback = message || oauthErrorMessage;
+        if (!feedback) return;
+
+        toast.add({
+            title: feedback,
+            id: "auth-route-feedback",
+            type: oauthErrorMessage ? "error" : "warning",
+        });
+
+        void navigate({ replace: true, to: "/login", search: { redirect } });
+
+    }, [message, navigate, oauthErrorMessage, redirect]);
 
     const handleOnSubmit = async (submitted: Login) => {
         form.clearErrors("root");

@@ -16,7 +16,7 @@ import {ConfirmDialogHost} from "@/lib/client/components/confirm/ConfirmDialogHo
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
 import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
 import {YearRecapReleaseRibbon} from "@/lib/client/components/year-recap/YearRecapReleaseRibbon";
-import {ClientOnly, createRootRouteWithContext, HeadContent, Outlet, Scripts} from "@tanstack/react-router";
+import {ClientOnly, createRootRouteWithContext, HeadContent, Outlet, redirect, Scripts} from "@tanstack/react-router";
 
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -25,11 +25,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         authQueryOptions: authOptions,
         authMethodsQueryOptions: authMethodsOptions,
     }),
-    beforeLoad: async ({ context }) => {
+    beforeLoad: async ({ context, location }) => {
         await Promise.all([
             context.queryClient.ensureQueryData(context.authQueryOptions),
             context.queryClient.ensureQueryData(context.authMethodsQueryOptions),
         ]);
+
+        const currentUser = context.queryClient.getQueryData(context.authQueryOptions.queryKey);
+        if (currentUser && !currentUser.usernameConfigured && location.pathname !== "/choose-username") {
+            throw redirect({
+                replace: true,
+                to: "/choose-username",
+                search: { redirect: location.href },
+            });
+        }
     },
     head: () => ({
         links: [

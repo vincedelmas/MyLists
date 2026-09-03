@@ -1,6 +1,7 @@
 import authClient from "@/lib/utils/auth-client";
-import {ForgotPassword, Login, Register} from "@/lib/schemas";
+import {postOAuthUsername} from "@/lib/server/functions/auth";
 import {MutationMeta, useMutation} from "@tanstack/react-query";
+import {ForgotPassword, Login, OAuthUsername, Register} from "@/lib/schemas";
 
 
 export type SocialProvider = "google" | "github";
@@ -40,13 +41,21 @@ export const useEmailRegistrationMutation = (callbackURL: string, meta?: Mutatio
 };
 
 
-export const useSocialSignInMutation = (callbackURL: string, meta?: MutationMeta) => {
+export const useSocialSignInMutation = (callbacks: { callbackURL: string; errorCallbackURL: string; newUserCallbackURL: string }, meta?: MutationMeta) => {
     return useMutation<void, AuthMutationError, SocialProvider>({
         mutationFn: async (provider) => {
-            const { error } = await authClient.signIn.social({ provider, callbackURL });
+            const { error } = await authClient.signIn.social({ provider, ...callbacks });
             if (error) throw error;
         },
         meta,
+    });
+};
+
+
+export const useOAuthUsernameMutation = (meta?: MutationMeta) => {
+    return useMutation<void, AuthMutationError, OAuthUsername>({
+        mutationFn: (data) => postOAuthUsername({ data }),
+        meta: { noErrorToast: true, ...meta },
     });
 };
 

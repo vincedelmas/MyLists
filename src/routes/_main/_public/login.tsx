@@ -1,5 +1,4 @@
-import {useEffect, useId} from "react";
-import {LogIn, ShieldCheck} from "lucide-react";
+import {useEffect, useId, useState} from "react";
 import {Login, loginSchema} from "@/lib/schemas";
 import {FaGithub, FaGoogle} from "react-icons/fa";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -7,6 +6,7 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
+import {LogIn, RefreshCw, ShieldCheck} from "lucide-react";
 import {getOAuthErrorMessage} from "@/lib/utils/auth-utils";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
@@ -15,9 +15,10 @@ import {Controller, FormProvider, useForm} from "react-hook-form";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {createFileRoute, Link, useRouteContext, useRouter, useSearch} from "@tanstack/react-router";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
-import {useEmailLoginMutation, useSocialSignInMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
+import {useEmailLoginMutation, useResendVerificationEmailMutation, useSocialSignInMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 
 
 export const Route = createFileRoute("/_main/_public/login")({
@@ -30,6 +31,7 @@ function LoginPage() {
     const router = useRouter();
     const navigate = Route.useNavigate();
     const queryClient = useQueryClient();
+    const [unverifiedEmail, setUnverifiedEmail] = useState<string>();
     const { error, message, redirect } = useSearch({ from: "/_main/_public" });
     const { authQueryOptions, authMethodsQueryOptions } = useRouteContext({ from: "__root__" });
 
@@ -39,11 +41,13 @@ function LoginPage() {
     const authMethods = useSuspenseQuery(authMethodsQueryOptions).data;
 
     const oauthSearch = new URLSearchParams({ redirect: redirectTarget });
+    const verificationCallbackURL = `/register?${new URLSearchParams({ redirect: redirectTarget })}`;
     const socialMutation = useSocialSignInMutation({
         callbackURL: redirectTarget,
         errorCallbackURL: `/login?${oauthSearch}`,
         newUserCallbackURL: `/choose-username?${oauthSearch}`,
     });
+    const resendMutation = useResendVerificationEmailMutation(verificationCallbackURL);
 
     const hasSocialProvider = authMethods.google || authMethods.github;
     const form = useForm<Login>({
@@ -56,29 +60,21 @@ function LoginPage() {
     });
 
     useEffect(() => {
-        const feedback = message || oauthErrorMessage;
-        if (!feedback) return;
+        if (!message) return;
 
-        toast.add({
-            title: feedback,
-            id: "auth-route-feedback",
-            type: oauthErrorMessage ? "error" : "warning",
-        });
+        toast.add({ title: message, id: "auth-route-feedback", type: "warning" });
+        void navigate({ replace: true, to: "/login", search: { error, redirect } });
 
-        void navigate({ replace: true, to: "/login", search: { redirect } });
-
-    }, [message, navigate, oauthErrorMessage, redirect]);
+    }, [error, message, navigate, redirect]);
 
     const handleOnSubmit = async (submitted: Login) => {
         form.clearErrors("root");
+        setUnverifiedEmail(undefined);
 
         loginMutation.mutate(submitted, {
             onError: (error) => {
                 if (error.code === "EMAIL_NOT_VERIFIED") {
-                    form.setError("root", {
-                        message: "Your email isn’t verified yet. Use the verification link already sent when you created your account. " +
-                            "If it has expired, opening it will let you request a new one.",
-                    });
+                    setUnverifiedEmail(submitted.email);
                     return;
                 }
 
@@ -112,6 +108,14 @@ function LoginPage() {
                     <h2 className="mb-4 text-xl font-semibold tracking-tight">
                         Sign in to MyLists
                     </h2>
+
+                    {oauthErrorMessage &&
+                        <div className="mb-4">
+                            <InlineErrorContainer onDismiss={() => navigate({ replace: true, to: "/login", search: { redirect } })}>
+                                {oauthErrorMessage}
+                            </InlineErrorContainer>
+                        </div>
+                    }
 
                     <FormProvider {...form}>
                         <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(handleOnSubmit)}>
@@ -164,6 +168,29 @@ function LoginPage() {
                                     />
                                 </FieldGroup>
                             </FieldSet>
+                            {unverifiedEmail &&
+                                <InlineErrorContainer onDismiss={() => setUnverifiedEmail(undefined)}>
+                                    <div className="flex flex-col items-start gap-2">
+                                        <p>
+                                            Your email isn’t verified yet. Request a new verification email to continue.
+                                        </p>
+                                        <Button
+                                            size="sm"
+                                            type="button"
+                                            variant="outline"
+                                            disabled={resendMutation.isPending}
+                                            aria-busy={resendMutation.isPending}
+                                            onClick={() => resendMutation.mutate({ email: unverifiedEmail })}
+                                        >
+                                            {resendMutation.isPending
+                                                ? <Spinner data-icon="inline-start" aria-hidden="true"/>
+                                                : <RefreshCw data-icon="inline-start" aria-hidden="true"/>
+                                            }
+                                            {resendMutation.isPending ? "Sending email…" : "Resend verification email"}
+                                        </Button>
+                                    </div>
+                                </InlineErrorContainer>
+                            }
                             <FormError/>
                             <Button type="submit" className="w-full" disabled={loginMutation.isPending} aria-busy={loginMutation.isPending}>
                                 {loginMutation.isPending &&

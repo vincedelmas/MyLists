@@ -1,10 +1,10 @@
 import {serverEnv} from "@/env/server";
-import {APIError} from "better-auth/api";
 import {auth} from "@/lib/server/core/auth";
 import {oauthUsernameSchema} from "@/lib/schemas";
 import {createServerFn} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {getGlobalCapabilities, toActor} from "@/lib/server/authorization";
 import {transactionMiddleware} from "@/lib/server/middlewares/transaction";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
@@ -52,7 +52,7 @@ export const postOAuthUsername = createServerFn({ method: "POST" })
     .validator(oauthUsernameSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         if (currentUser.usernameConfigured) {
-            throw new APIError("FORBIDDEN", { message: "Your username has already been configured." });
+            throw new FormattedError("Your username has already been configured.");
         }
 
         const accountService = await getContainer().then((container) => container.services.account);

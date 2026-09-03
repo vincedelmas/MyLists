@@ -129,18 +129,17 @@ function RegisterPage() {
     }
 
     useEffect(() => {
-        const feedback = message || oauthErrorMessage;
-        if (!feedback) return;
+        if (!message) return;
 
         toast.add({
-            title: feedback,
+            title: message,
             id: "auth-route-feedback",
-            type: oauthErrorMessage ? "error" : "warning",
+            type: "warning",
         });
 
-        void navigate({ replace: true, to: "/register", search: { error: verificationError, redirect, step } });
+        void navigate({ replace: true, to: "/register", search: { error, redirect, step } });
 
-    }, [message, navigate, oauthErrorMessage, redirect, step, verificationError]);
+    }, [error, message, navigate, redirect, step]);
 
     return (
         <PageTitle title={verificationStatus ? "Verify email" : "Register"} onlyHelmet>
@@ -231,6 +230,20 @@ function RegisterPage() {
                             <h2 className="mb-4 text-xl font-semibold tracking-tight">
                                 Create your MyLists account
                             </h2>
+
+                            {oauthErrorMessage &&
+                                <div className="mb-4">
+                                    <InlineErrorContainer
+                                        onDismiss={() => void navigate({
+                                            replace: true,
+                                            to: "/register",
+                                            search: { redirect, step },
+                                        })}
+                                    >
+                                        {oauthErrorMessage}
+                                    </InlineErrorContainer>
+                                </div>
+                            }
 
                             {authMethods.email ?
                                 <FormProvider {...registrationForm}>

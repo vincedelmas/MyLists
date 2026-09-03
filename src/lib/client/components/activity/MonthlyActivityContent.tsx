@@ -3,20 +3,20 @@ import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Label} from "@/lib/client/components/ui/label";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {CalendarDays, History, LayoutGrid, Plus} from "lucide-react";
 import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
-import {formatMinutes, formatNumber} from "@/lib/utils/number-formatting";
-import {formatMonth, formatMonthYear} from "@/lib/utils/date-formatting";
-import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
+import {CalendarDays, History, LayoutGrid, Plus} from "lucide-react";
+import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {getActiveMediaTypes} from "@/lib/utils/media-list-activation";
 import {SearchInput} from "@/lib/client/components/general/SearchInput";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {formatMonth, formatMonthYear} from "@/lib/utils/date-formatting";
+import {formatMinutes, formatNumber} from "@/lib/utils/number-formatting";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
@@ -113,10 +113,10 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
             <section className="pt-6">
                 <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
                     <SearchInput
+                        className="w-full"
                         value={localSearch}
                         onChange={handleInputChange}
                         aria-label="Search recorded activity"
-                        className="w-full lg:max-w-md lg:flex-1"
                         placeholder={view === "year"
                             ? `Search ${dateFilters.year} activity by title...`
                             : "Search monthly activity by title..."

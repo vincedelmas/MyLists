@@ -45,25 +45,21 @@ export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMe
                         items={[
                             {
                                 label: "Total time",
-                                note: "across all media",
                                 icon: <Clock className="size-4"/>,
                                 value: `${formatNumber(globalStats.totalDays, { fractionDigits: 0 })} d`,
                             },
                             {
-                                note: "tracked media",
                                 label: "Total entries",
                                 icon: <LibraryBig className="size-4"/>,
                                 value: formatNumber(globalStats.totalEntries),
                             },
                             {
                                 value: ratingDisplay,
-                                label: "Average rating",
-                                note: "personal average",
+                                label: "Avg. rating",
                                 icon: <Star className="size-4"/>,
                             },
                             {
                                 label: "Rated media",
-                                note: "of tracked entries",
                                 icon: <ChartNoAxesColumn className="size-4"/>,
                                 value: globalStats.percentRated ? formatPercent(globalStats.percentRated) : undefined,
                             },

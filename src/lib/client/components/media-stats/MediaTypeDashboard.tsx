@@ -112,7 +112,6 @@ export function MediaTypeDashboard({ stats, showHero = true }: MediaTypeDashboar
         }),
         {
             label: "Tags",
-            note: "used on these entries",
             icon: <Tags className="size-4"/>,
             value: formatNumber(specificMediaStats.totalTags),
         },

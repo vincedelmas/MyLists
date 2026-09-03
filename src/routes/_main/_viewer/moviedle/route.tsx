@@ -278,38 +278,32 @@ function UserStats({ userData, isAnonymous }: UserStatsProps) {
                             columns={3}
                             items={[
                                 {
-                                    label: "Played",
-                                    note: "daily covers",
+                                    label: "Played all time",
                                     icon: <Clapperboard className="size-4"/>,
                                     value: formatNumber(userData?.stats?.totalPlayed ?? 0),
                                 },
                                 {
-                                    label: "Won",
-                                    note: "correct guesses",
+                                    label: "Won all time",
                                     icon: <Trophy className="size-4"/>,
                                     value: formatNumber(userData?.stats?.totalWon ?? 0),
                                 },
                                 {
                                     label: "Win rate",
-                                    note: "across all games",
                                     icon: <Target className="size-4"/>,
                                     value: formatPercent(userData?.stats?.winRate ?? 0),
                                 },
                                 {
                                     label: "Current streak",
-                                    note: "consecutive wins",
                                     icon: <Flame className="size-4"/>,
                                     value: formatNumber(userData?.stats?.currentStreak ?? 0),
                                 },
                                 {
                                     label: "Best streak",
-                                    note: "personal record",
                                     icon: <Award className="size-4"/>,
                                     value: formatNumber(userData?.stats?.bestStreak ?? 0),
                                 },
                                 {
                                     label: "Avg. attempts",
-                                    note: "per completed game",
                                     icon: <Gauge className="size-4"/>,
                                     value: formatNumber(userData?.stats?.averageAttempts ?? 0, {
                                         fractionDigits: 2,

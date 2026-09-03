@@ -44,26 +44,22 @@ export const MediaStatsTab = ({ username, mediaSummary, ratingSystem, highlighte
                         color={getThemeColor(mediaSummary.mediaType)}
                         items={[
                             {
-                                label: "Entries",
-                                note: `tracked ${mediaSummary.mediaType}`,
                                 icon: <LibraryBig className="size-4"/>,
+                                label: `Tracked ${mediaSummary.mediaType}`,
                                 value: formatNumber(mediaSummary.totalEntries),
                             },
                             {
-                                label: "Time",
-                                note: "days recorded",
+                                label: "Time spent",
                                 icon: <Clock className="size-4"/>,
                                 value: `${formatNumber(mediaSummary.timeSpentDays, { fractionDigits: 0 })} d`,
                             },
                             {
                                 value: ratingDisplay,
-                                label: "Average rating",
-                                note: "personal average",
+                                label: "Avg. rating",
                                 icon: <Star className="size-4"/>,
                             },
                             {
                                 label: "Completed",
-                                note: "finished entries",
                                 icon: <Check className="size-4"/>,
                                 value: formatNumber(mediaSummary.statusList.find((s) => s.status === "Completed")?.count || 0),
                             },

@@ -599,38 +599,32 @@ function Stats({ stats, canReset }: StatsProps) {
                         columns={3}
                         items={[
                             {
-                                label: "Runs",
-                                note: "completed runs",
+                                label: "Total runs",
                                 icon: <Layers3 className="size-4"/>,
                                 value: formatNumber(stats.runsPlayed),
                             },
                             {
                                 label: "Best score",
-                                note: `of ${WCF_MAX_ROUNDS} rounds`,
                                 icon: <Trophy className="size-4"/>,
                                 value: formatNumber(stats.bestScore),
                             },
                             {
-                                label: "Average",
-                                note: "rounds per run",
+                                label: "Avg. rounds",
                                 icon: <Gauge className="size-4"/>,
                                 value: formatNumber(stats.averageScore, { fractionDigits: 1, locale: "en" }),
                             },
                             {
-                                label: "Answers",
-                                note: "all-time choices",
+                                label: "Total answers",
                                 icon: <Check className="size-4"/>,
                                 value: formatNumber(stats.totalAnswers),
                             },
                             {
-                                label: "Accuracy",
-                                note: "correct answers",
+                                label: "Correct answers",
                                 icon: <Target className="size-4"/>,
                                 value: formatPercent(stats.accuracy, { fractionDigits: 0 }),
                             },
                             {
                                 label: "Best tier",
-                                note: "highest reached",
                                 value: stats.highestTier,
                                 icon: <ChevronRight className="size-4"/>,
                             },

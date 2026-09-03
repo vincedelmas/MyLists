@@ -45,11 +45,6 @@ export const addUsernameSuffix = (username: string, suffix: string) => {
 };
 
 
-export const hasGeneratedUsernameSuffix = (username: string) => {
-    return /-[0-9a-f]{6}$/.test(username);
-}
-
-
 export const isVerificationError = (error?: string) => {
     return !!error && ["TOKEN_EXPIRED", "INVALID_TOKEN", "USER_NOT_FOUND"].includes(error);
 }

@@ -2,7 +2,7 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {authRedirectSearchSchema} from "@/lib/schemas";
 import {createFileRoute, redirect} from "@tanstack/react-router";
 import {authOptions} from "@/lib/client/react-query/query-options";
-import {getAuthState, hasGeneratedUsernameSuffix, isAuthenticatedAuthState} from "@/lib/utils/auth-utils";
+import {getAuthState, isAuthenticatedAuthState} from "@/lib/utils/auth-utils";
 
 
 export const Route = createFileRoute("/_main/_public")({
@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_main/_public")({
                     replace: true,
                     to: "/profile/$username",
                     params: { username: currentUser.name },
-                    search: hasGeneratedUsernameSuffix(currentUser.name) ? { usernameNotice: "assigned" } : {},
+                    search: { usernameNotice: "assigned" },
                 });
             }
 

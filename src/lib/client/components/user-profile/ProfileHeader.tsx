@@ -190,9 +190,12 @@ const UsernameNotice = ({ username, onDismiss }: { username: string; onDismiss: 
                 <X aria-hidden="true"/>
             </Button>
             <PopoverHeader className="pr-7">
-                <PopoverTitle>We gave you @{username}</PopoverTitle>
+                <PopoverTitle>
+                    Your username is @{username}
+                </PopoverTitle>
                 <PopoverDescription>
-                    Your OAuth profile name needed a bigger adjustment to fit MyLists and stay unique. Keep it, or change it anytime.
+                    We used your provider name to create it.
+                    It may have been modified to fit MyLists or stay unique, and you can change it anytime.
                 </PopoverDescription>
             </PopoverHeader>
             <Button size="sm" nativeButton={false} render={<Link to="/settings/general"/>}>

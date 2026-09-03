@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {addUsernameSuffix, AuthState, checkOAuthUsername, getAuthState, getOAuthErrorMessage, hasGeneratedUsernameSuffix, isAuthenticatedAuthState, isVerificationError} from "@/lib/utils/auth-utils";
+import {addUsernameSuffix, AuthState, checkOAuthUsername, getAuthState, getOAuthErrorMessage, isAuthenticatedAuthState, isVerificationError} from "@/lib/utils/auth-utils";
 
 
 describe("auth state", () => {
@@ -31,10 +31,6 @@ describe("OAuth usernames", () => {
         expect(addUsernameSuffix("a-very-long-profile-name", "a3f9c2")).toBe("a-very-l-a3f9c2");
     });
 
-    it("recognizes usernames that received a generated suffix", () => {
-        expect(hasGeneratedUsernameSuffix("francois-a3f9c2")).toBe(true);
-        expect(hasGeneratedUsernameSuffix("francois-dupont")).toBe(false);
-    });
 });
 
 

@@ -13,7 +13,6 @@ import {PwaNavControls} from "@/lib/client/components/general/PwaNavControls";
 import {AuthSessionSync} from "@/lib/client/components/general/AuthSessionSync";
 import {PostHogAuthSync} from "@/lib/client/components/general/PostHogAuthSync";
 import {ConfirmDialogHost} from "@/lib/client/components/confirm/ConfirmDialogHost";
-import {AuthModalProvider} from "@/lib/client/components/general/AuthModalProvider";
 import {FeatureVoteLink} from "@/lib/client/components/feature-votes/FeatureVoteLink";
 import {authMethodsOptions, authOptions} from "@/lib/client/react-query/query-options";
 import {YearRecapReleaseRibbon} from "@/lib/client/components/year-recap/YearRecapReleaseRibbon";
@@ -96,7 +95,6 @@ function AppShell() {
             <AuthSessionSync/>
             <Toaster/>
             <ConfirmDialogHost/>
-            <AuthModalProvider/>
             <YearRecapReleaseRibbon/>
             <Navbar/>
             <Outlet/>

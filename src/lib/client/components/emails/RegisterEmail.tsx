@@ -46,6 +46,11 @@ export const RegisterEmail = ({ username, link, brand = "MyLists" }: RegisterEma
                                 {link}
                             </Link>
                         </Text>
+                        <Section className="mt-4 px-4 py-2 bg-amber-300/50 rounded">
+                            <Text className="text-[12px] m-0 font-semibold">
+                                This verification link will expire in 1 hour.
+                            </Text>
+                        </Section>
                         <Text className="text-gray-500 text-[12px] leading-6 mt-8">
                             If you didn't create an account with us, please ignore this email.
                         </Text>

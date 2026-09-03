@@ -6,17 +6,23 @@ import {serverEnv} from "@/env/server";
 import {db} from "@/lib/server/database/db";
 import {betterAuth} from "better-auth/minimal";
 import {sendEmail} from "@/lib/utils/mail-sender";
+import {RateLimiterRes} from "rate-limiter-flexible";
 import {statusUtils} from "@/lib/utils/media-mapping";
 import {createServerOnlyFn} from "@tanstack/react-start";
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
+import {APIError, createAuthMiddleware} from "better-auth/api";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {hashPassword, verifyPassword} from "better-auth/crypto";
+import {createRateLimiter} from "@/lib/server/core/rate-limiter";
 import {user as userTable, userMediaSettings} from "@/lib/server/database/schema";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 
 
 const mailEnabled = !!(serverEnv.ADMIN_MAIL_USERNAME && serverEnv.ADMIN_MAIL_PASSWORD);
+const verificationEmailRateLimiter = mailEnabled
+    ? createRateLimiter({ points: 3, duration: 10 * 60, keyPrefix: "auth-verification-email" })
+    : null;
 
 const githubOAuthConfig = serverEnv.GITHUB_CLIENT_ID && serverEnv.GITHUB_CLIENT_SECRET
     ? { clientId: serverEnv.GITHUB_CLIENT_ID, clientSecret: serverEnv.GITHUB_CLIENT_SECRET }
@@ -37,6 +43,28 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
     database: drizzleAdapter(db, {
         provider: "sqlite",
     }),
+    hooks: {
+        before: createAuthMiddleware(async (ctx) => {
+            if (ctx.path !== "/send-verification-email") return;
+
+            const email = (ctx.body as { email?: string } | undefined)?.email;
+            if (!email || !verificationEmailRateLimiter) return;
+
+            try {
+                await (await verificationEmailRateLimiter).consume(crypto.createHash("sha256")
+                    .update(email.trim().toLowerCase())
+                    .digest("hex")
+                );
+            }
+            catch (error) {
+                if (!(error instanceof RateLimiterRes)) throw error;
+
+                throw new APIError("TOO_MANY_REQUESTS", {
+                    message: "Too many verification emails requested. Please try again later.",
+                });
+            }
+        }),
+    },
     databaseHooks: {
         user: {
             create: {
@@ -184,10 +212,10 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         emailVerification: {
             expiresIn: 3600,
             sendOnSignUp: true,
-            sendOnSignIn: true,
+            sendOnSignIn: false,
             autoSignInAfterVerification: true,
             sendVerificationEmail: async ({ user, url }: { user: { email: string; name: string }; url: string }) => {
-                void sendEmail({
+                await sendEmail({
                     link: url,
                     to: user.email,
                     username: user.name,

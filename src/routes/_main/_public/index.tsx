@@ -1,16 +1,15 @@
 import {cn} from "@/lib/utils/classnames";
-import {useSuspenseQuery} from "@tanstack/react-query";
+import {MediaType} from "@/lib/utils/enums";
 import {Badge} from "@/lib/client/components/ui/badge";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {addSeo, addSeoLinks} from "@/lib/utils/add-seo";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
-import {Button, buttonVariants} from "@/lib/client/components/ui/button";
+import {buttonVariants} from "@/lib/client/components/ui/button";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {randomPublicProfile} from "@/lib/client/react-query/query-options";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
-import {ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDollarSign, Code, Download, LayoutGrid, Popcorn, Shield, Sparkles, Trophy, Users} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
+import {ArrowRight, ArrowUpRight, Check, ChevronDown, CircleDollarSign, Code, Download, LayoutGrid, Popcorn, Shield, Sparkles, Trophy, UserRoundPlus, Users} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_public/")({
@@ -106,7 +105,6 @@ const trustPrinciples = [
 
 
 function HomePage() {
-    const { openRegister } = useAuthModal();
     const { randomProfileQueryOptions } = Route.useRouteContext();
     const randomProfile = useSuspenseQuery(randomProfileQueryOptions).data;
 
@@ -136,10 +134,14 @@ function HomePage() {
                         </p>
 
                         <div className="flex flex-wrap justify-center gap-3">
-                            <Button size="lg" onClick={() => openRegister("/")}>
+                            <Link
+                                to="/register"
+                                search={{ redirect: "/" }}
+                                className={buttonVariants({ size: "lg" })}
+                            >
                                 <Popcorn data-icon="inline-start"/>
                                 Create an account
-                            </Button>
+                            </Link>
                             {randomProfile &&
                                 <Link
                                     to="/profile/$username"
@@ -434,10 +436,14 @@ function HomePage() {
                             </ul>
                         </CardContent>
                         <CardFooter className="flex-col items-stretch gap-3">
-                            <Button size="lg" onClick={() => openRegister("/")}>
-                                <Sparkles data-icon="inline-start"/>
+                            <Link
+                                to="/register"
+                                search={{ redirect: "/" }}
+                                className={buttonVariants({ size: "lg" })}
+                            >
+                                <UserRoundPlus data-icon="inline-start"/>
                                 Create an account
-                            </Button>
+                            </Link>
                             {randomProfile &&
                                 <Link
                                     to="/profile/$username"

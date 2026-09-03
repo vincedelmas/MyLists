@@ -5,14 +5,13 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useQueryClient} from "@tanstack/react-query";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {Button} from "@/lib/client/components/ui/button";
-import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
 import {authOptions} from "@/lib/client/react-query/query-options";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {Link, useLocation, useNavigate} from "@tanstack/react-router";
 import {MyMediaMenu} from "@/lib/client/components/navbar/MyMediaMenu";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
 import {useFeatureFlagMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {
@@ -58,7 +57,6 @@ export const Navbar = () => {
     const location = useLocation();
     const queryClient = useQueryClient();
     const { currentUser, isAnonymous } = useAuth();
-    const { openLogin, openRegister } = useAuthModal();
     const featureFlagMutation = useFeatureFlagMutation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -144,12 +142,12 @@ export const Navbar = () => {
                     <div className="flex items-center gap-1 max-sm:gap-2">
                         {isAnonymous ?
                             <div className="flex items-center gap-2">
-                                <Button variant="ghost" onClick={() => openLogin(location.href)}>
+                                <Link to="/login" search={{ redirect: location.href }} className={buttonVariants({ variant: "ghost" })}>
                                     Login
-                                </Button>
-                                <Button onClick={() => openRegister(location.href)}>
+                                </Link>
+                                <Link to="/register" search={{ redirect: location.href }} className={buttonVariants()}>
                                     Register
-                                </Button>
+                                </Link>
                             </div>
                             :
                             <>

@@ -30,7 +30,9 @@ export const authRedirectSearchSchema = z.object({
         }
     }, z.string().optional()),
     message: z.string().optional().catch(undefined),
-    authExpired: z.preprocess((val) => (val === true || val === "true") ? true : undefined, z.literal(true).optional())
+    authExpired: z.preprocess((val) => (val === true || val === "true") ? true : undefined, z.literal(true).optional()),
+    step: z.enum(["verify"]).optional().catch(undefined),
+    error: z.enum(["TOKEN_EXPIRED", "INVALID_TOKEN", "USER_NOT_FOUND"]).optional().catch(undefined),
 });
 
 

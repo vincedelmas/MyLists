@@ -1,3 +1,4 @@
+import {clientEnv} from "@/env/client";
 import {RoleType} from "@/lib/utils/enums";
 import {auth} from "@/lib/server/core/auth";
 import {logger} from "@/lib/server/core/logger";
@@ -5,8 +6,9 @@ import {createMiddleware} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
 import {notFound, redirect} from "@tanstack/react-router";
-import {isAdminAuthenticated} from "@/lib/utils/admin-token";
+import {isAdminAuthenticated} from "@/lib/utils/admin-utils";
 import {hasRequiredRole, toActor} from "@/lib/server/authorization";
+import {getAuthState, getSafeRedirectPath, isAuthenticatedAuthState} from "@/lib/utils/auth-utils";
 
 
 export const publicAuthMiddleware = createMiddleware({ type: "function" })
@@ -18,23 +20,32 @@ export const publicAuthMiddleware = createMiddleware({ type: "function" })
         if (currentUser) {
             void getContainer()
                 .then((c) => c.services.account.updateUserLastSeen(c.cacheManager, currentUser.id))
-                .catch((err) => {
-                    logger.warn({ err, userId: currentUser.id }, "Failed to update user last seen");
-                });
+                .catch((err) => logger.warn({ err, userId: currentUser.id }, "Failed to update user last seen"));
         }
 
-        return next({ context: { currentUser } });
+        return next({
+            context: {
+                currentUser,
+                authState: getAuthState(currentUser),
+            }
+        });
     });
 
 
 export const requiredAuthMiddleware = createMiddleware({ type: "function" })
     .middleware([publicAuthMiddleware])
-    .server(async ({ next, context: { currentUser } }) => {
-        if (!currentUser) {
-            throw redirect({ to: "/login", search: { authExpired: true } })
+    .server(async ({ next, context: { authState, currentUser } }) => {
+        if (!currentUser || !isAuthenticatedAuthState(authState)) {
+            const redirectTarget = getSafeRedirectPath(getRequest().headers.get("referer"), clientEnv.VITE_BASE_URL);
+            throw redirect({ to: "/login", search: { authExpired: true, redirect: redirectTarget } });
         }
 
-        return next({ context: { currentUser } });
+        return next({
+            context: {
+                authState,
+                currentUser,
+            }
+        });
     });
 
 

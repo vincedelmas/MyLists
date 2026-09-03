@@ -4,6 +4,7 @@ import {auth} from "@/lib/server/core/auth";
 import type {UserWithRole} from "better-auth/plugins";
 import {createLocalAccountIssuer} from "better-auth/db";
 import {defineTask} from "@/lib/server/tasks/define-task";
+import {usernameSchema} from "@/lib/schemas/common.schema";
 
 
 export const createUserTask = defineTask({
@@ -13,7 +14,7 @@ export const createUserTask = defineTask({
     inputSchema: z.object({
         email: z.email().describe("Email address"),
         password: z.string().min(8).describe("Password (min 8 characters)"),
-        username: z.string().min(3).describe("Username for the new account"),
+        username: usernameSchema.describe("Username for the new account"),
         role: z.enum(RoleType).default(RoleType.USER).describe("User role"),
     }),
     handler: async (ctx, input) => {

@@ -1,9 +1,11 @@
+import crypto from "node:crypto";
 import {serverEnv} from "@/env/server";
 import {signCookieValue} from "@/lib/utils/signed-cookies";
-import {getCookie, setCookie} from "@tanstack/react-start/server";
+import {createRateLimiter} from "@/lib/server/core/rate-limiter";
+import {deleteCookie, getCookie, setCookie} from "@tanstack/react-start/server";
 
 
-export const ADMIN_COOKIE_NAME = "myListsAdminToken";
+const ADMIN_COOKIE_NAME = "myListsAdminToken";
 
 
 const verifyAdminToken = async (token: string, currentUserId: number) => {
@@ -27,6 +29,17 @@ const verifyAdminToken = async (token: string, currentUserId: number) => {
 };
 
 
+export const adminAuthRateLimiter = createRateLimiter({ points: 5, duration: 15 * 60, keyPrefix: "admin-auth" });
+
+
+export const verifyAdminPassword = async (password: string) => {
+    const submittedPassword = crypto.createHash("sha256").update(password).digest();
+    const configPassword = crypto.createHash("sha256").update(serverEnv.ADMIN_PASSWORD).digest();
+
+    return crypto.timingSafeEqual(submittedPassword, configPassword);
+};
+
+
 export const setAdminCookie = async (userId: number) => {
     const exp = Date.now() + serverEnv.ADMIN_TTL_COOKIE_MIN * 60 * 1000;
     const payload = `${userId}:${exp}`;
@@ -37,6 +50,14 @@ export const setAdminCookie = async (userId: number) => {
         httpOnly: true,
         sameSite: "lax",
         maxAge: serverEnv.ADMIN_TTL_COOKIE_MIN * 60,
+        secure: process.env.NODE_ENV === "production",
+    });
+};
+
+
+export const clearAdminCookie = () => {
+    deleteCookie(ADMIN_COOKIE_NAME, {
+        path: "/",
         secure: process.env.NODE_ENV === "production",
     });
 };

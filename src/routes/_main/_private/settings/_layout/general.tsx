@@ -30,7 +30,7 @@ const privacyItems = [
 
 function GeneralSettingsPage() {
     const fieldId = useId();
-    const { currentUser, setCurrentUser } = useAuth();
+    const { currentUser, refreshCurrentUser } = useAuth();
     const [imageCropperResetKey, setImageCropperResetKey] = useState(0);
     const generalSettingsMutation = useGeneralSettingsMutation({ noErrorToast: true });
     const form = useForm<GeneralSettings>({
@@ -55,7 +55,7 @@ function GeneralSettingsPage() {
                 handleServerFormErrors(form, error);
             },
             onSuccess: async () => {
-                await setCurrentUser();
+                await refreshCurrentUser();
                 form.resetField("profileImage");
                 form.resetField("backgroundImage");
                 setImageCropperResetKey((key) => key + 1);

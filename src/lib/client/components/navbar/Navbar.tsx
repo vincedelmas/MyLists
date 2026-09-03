@@ -1,18 +1,15 @@
 import {useState} from "react";
 import {cva} from "class-variance-authority";
-import authClient from "@/lib/utils/auth-client";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {useQueryClient} from "@tanstack/react-query";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/text-formatting";
-import {Button} from "@/lib/client/components/ui/button";
-import {useAuthModal} from "@/lib/client/hooks/use-auth-modal";
+import {Link, useLocation} from "@tanstack/react-router";
 import {SearchBar} from "@/lib/client/components/navbar/SearchBar";
-import {authOptions} from "@/lib/client/react-query/query-options";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
-import {Link, useLocation, useNavigate} from "@tanstack/react-router";
 import {MyMediaMenu} from "@/lib/client/components/navbar/MyMediaMenu";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
+import {Button, buttonVariants} from "@/lib/client/components/ui/button";
 import {Notifications} from "@/lib/client/components/navbar/Notifications";
 import {useFeatureFlagMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {
@@ -54,19 +51,18 @@ const mobileNavStyle = "flex flex-col items-center gap-1 rounded-md p-1 text-mut
 
 
 export const Navbar = () => {
-    const navigate = useNavigate();
     const location = useLocation();
-    const queryClient = useQueryClient();
-    const { currentUser, isAnonymous } = useAuth();
-    const { openLogin, openRegister } = useAuthModal();
     const featureFlagMutation = useFeatureFlagMutation();
+    const { currentUser, isAnonymous, signOut } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const logoutUser = async () => {
-        await authClient.signOut();
-        queryClient.setQueryData(authOptions.queryKey, null);
-        await navigate({ to: "/", replace: true });
-        queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== authOptions.queryKey[0] });
+        try {
+            await signOut();
+        }
+        catch {
+            toast.add({ type: "error", title: "We couldn’t sign you out. Please try again." });
+        }
     };
 
     const onFeaturesClick = async () => {
@@ -144,12 +140,12 @@ export const Navbar = () => {
                     <div className="flex items-center gap-1 max-sm:gap-2">
                         {isAnonymous ?
                             <div className="flex items-center gap-2">
-                                <Button variant="ghost" onClick={() => openLogin(location.href)}>
+                                <Link to="/login" search={{ redirect: location.href }} className={buttonVariants({ variant: "ghost" })}>
                                     Login
-                                </Button>
-                                <Button onClick={() => openRegister(location.href)}>
+                                </Link>
+                                <Link to="/register" search={{ redirect: location.href }} className={buttonVariants()}>
                                     Register
-                                </Button>
+                                </Link>
                             </div>
                             :
                             <>

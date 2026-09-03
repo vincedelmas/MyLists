@@ -1,36 +1,35 @@
-import {useId} from "react";
-import authClient from "@/lib/utils/auth-client";
+import {useId, useState} from "react";
+import {RefreshCw} from "lucide-react";
+import {Link} from "@tanstack/react-router";
 import {Login, loginSchema} from "@/lib/schemas";
-import {FaGithub, FaGoogle} from "react-icons/fa";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
-import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
-import {Separator} from "@/lib/client/components/ui/separator";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {handleServerFormErrors} from "@/lib/utils/forms-utils";
+import {AuthState, getAuthState} from "@/lib/utils/auth-utils";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
-import {useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
-import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {Link, useLocation, useNavigate, useRouteContext, useRouter} from "@tanstack/react-router";
+import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
+import {useEmailLoginMutation, useResendVerificationEmailMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 
 
 interface LoginFormProps {
-    redirectTo?: string;
-    onOpenChange?: (open: boolean) => void;
+    redirectTarget: string;
+    passwordResetEnabled: boolean;
 }
 
 
-export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
-    const { authQueryOptions, authMethodsQueryOptions } = useRouteContext({ from: "__root__" });
-
+export const LoginForm = ({ redirectTarget, passwordResetEnabled }: LoginFormProps) => {
     const fieldId = useId();
-    const router = useRouter();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const queryClient = useQueryClient();
-    const authMethods = useSuspenseQuery(authMethodsQueryOptions).data;
+    const { completeSignIn } = useAuth();
+    const loginMutation = useEmailLoginMutation();
+    const [unverifiedEmail, setUnverifiedEmail] = useState<string>();
+    const isAwaitingVerification = getAuthState(null, !!unverifiedEmail) === AuthState.AWAITING_EMAIL_VERIFICATION;
+    const resendMutation = useResendVerificationEmailMutation(`/register?${new URLSearchParams({ redirect: redirectTarget })}`);
+
     const form = useForm<Login>({
         resolver: zodResolver(loginSchema),
         shouldFocusError: false,
@@ -40,125 +39,103 @@ export const LoginForm = ({ redirectTo, onOpenChange }: LoginFormProps) => {
         },
     });
 
-    const hasSocialProvider = authMethods.google || authMethods.github;
+    const handleSubmit = (submitted: Login) => {
+        form.clearErrors("root");
+        setUnverifiedEmail(undefined);
 
-    const getRedirectTarget = () => {
-        return redirectTo || location.href || "/";
-    };
+        loginMutation.mutate(submitted, {
+            onError: (error) => {
+                if (error.code === "EMAIL_NOT_VERIFIED") {
+                    setUnverifiedEmail(submitted.email);
+                    return;
+                }
 
-    const refreshAuthenticatedRouteData = async () => {
-        await router.invalidate();
-        await queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== authQueryOptions.queryKey[0] });
-    };
-
-    const onSubmit = async (submitted: Login) => {
-        await authClient.signIn.email({
-            rememberMe: true,
-            email: submitted.email,
-            password: submitted.password,
-        }, {
-            onError: (ctx) => {
-                handleServerFormErrors(form, ctx.error);
+                handleServerFormErrors(form, error);
             },
             onSuccess: async () => {
-                const currentUser = await queryClient.fetchQuery({ ...authQueryOptions, staleTime: 0 });
-                onOpenChange?.(false);
-                if (currentUser) {
-                    await navigate({ href: getRedirectTarget(), replace: true });
-                    await refreshAuthenticatedRouteData();
-                }
-            },
-        });
-    };
-
-    const withProvider = async (provider: "google" | "github") => {
-        await authClient.signIn.social({ provider, callbackURL: getRedirectTarget() }, {
-            onError: (ctx) => {
-                toast.add({ title: ctx.error.message, type: "error", priority: "high" });
+                await completeSignIn(redirectTarget);
             },
         });
     };
 
     return (
-        <>
-            <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-                    <FieldSet disabled={form.formState.isSubmitting}>
-                        <FieldGroup>
-                            <Controller
-                                control={form.control}
-                                name="email"
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
-                                        <FieldLabel htmlFor={`${fieldId}-email`}>Email</FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={`${fieldId}-email`}
-                                            type="email"
-                                            placeholder="Email"
-                                            aria-invalid={fieldState.invalid}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                )}
-                            />
-                            <Controller
-                                control={form.control}
-                                name="password"
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid} data-disabled={form.formState.isSubmitting}>
-                                        <div className="flex items-center justify-between">
-                                            <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
-                                            {authMethods.email ?
-                                                <Link
-                                                    to="/forgot-password"
-                                                    className="text-sm underline"
-                                                    onClick={() => onOpenChange?.(false)}
-                                                >
-                                                    Forgot password?
-                                                </Link>
-                                                :
-                                                <span className="text-xs text-muted-foreground">
-                                                Reset unavailable
-                                            </span>
-                                            }
-                                        </div>
-                                        <Input
-                                            {...field}
-                                            id={`${fieldId}-password`}
-                                            type="password"
-                                            placeholder="********"
-                                            aria-invalid={fieldState.invalid}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                )}
-                            />
-                        </FieldGroup>
-                    </FieldSet>
-                    <FormError/>
-                    <FormSubmitButton className="w-full" isLoading={form.formState.isSubmitting}>
-                        Login
-                    </FormSubmitButton>
-                </form>
-            </FormProvider>
-            {hasSocialProvider &&
-                <>
-                    <Separator className="mt-3"/>
-                    <div className="mt-3 flex-col space-y-2">
-                        {authMethods.google &&
-                            <Button variant="secondary" className="w-full" onClick={() => withProvider("google")}>
-                                <FaGoogle className="size-4"/> Continue with Google
+        <FormProvider {...form}>
+            <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(handleSubmit)}>
+                <FieldSet disabled={loginMutation.isPending}>
+                    <FieldGroup>
+                        <Controller
+                            name="email"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid} data-disabled={loginMutation.isPending}>
+                                    <FieldLabel htmlFor={`${fieldId}-email`}>Email</FieldLabel>
+                                    <Input
+                                        {...field}
+                                        type="email"
+                                        placeholder="Email"
+                                        id={`${fieldId}-email`}
+                                        aria-invalid={fieldState.invalid}
+                                    />
+                                    <FieldError errors={[fieldState.error]}/>
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            name="password"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid} data-disabled={loginMutation.isPending}>
+                                    <div className="flex items-center justify-between">
+                                        <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
+                                        {passwordResetEnabled
+                                            ? <Link to="/forgot-password" className="text-sm underline">Forgot password?</Link>
+                                            : <span className="text-xs text-muted-foreground">Reset unavailable</span>
+                                        }
+                                    </div>
+                                    <Input
+                                        {...field}
+                                        type="password"
+                                        placeholder="********"
+                                        id={`${fieldId}-password`}
+                                        aria-invalid={fieldState.invalid}
+                                    />
+                                    <FieldError errors={[fieldState.error]}/>
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
+                </FieldSet>
+
+                {isAwaitingVerification && unverifiedEmail &&
+                    <InlineErrorContainer onDismiss={() => setUnverifiedEmail(undefined)}>
+                        <div className="flex flex-col items-start gap-2">
+                            <p>Your email isn’t verified yet. Request a new verification email to continue.</p>
+                            <Button
+                                size="sm"
+                                type="button"
+                                variant="outline"
+                                disabled={resendMutation.isPending}
+                                aria-busy={resendMutation.isPending}
+                                onClick={() => resendMutation.mutate({ email: unverifiedEmail })}
+                            >
+                                {resendMutation.isPending
+                                    ? <Spinner data-icon="inline-start" aria-hidden="true"/>
+                                    : <RefreshCw data-icon="inline-start" aria-hidden="true"/>
+                                }
+                                {resendMutation.isPending ? "Sending email…" : "Resend verification email"}
                             </Button>
-                        }
-                        {authMethods.github &&
-                            <Button variant="secondary" className="w-full" onClick={() => withProvider("github")}>
-                                <FaGithub className="size-4"/> Continue with GitHub
-                            </Button>
-                        }
-                    </div>
-                </>
-            }
-        </>
+                        </div>
+                    </InlineErrorContainer>
+                }
+
+                <FormError/>
+                <Button type="submit" className="w-full" disabled={loginMutation.isPending} aria-busy={loginMutation.isPending}>
+                    {loginMutation.isPending &&
+                        <Spinner className="text-primary-foreground" data-icon="inline-start" aria-hidden="true"/>
+                    }
+                    {loginMutation.isPending ? "Signing you in…" : "Login"}
+                </Button>
+            </form>
+        </FormProvider>
     );
 };

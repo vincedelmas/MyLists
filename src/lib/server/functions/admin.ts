@@ -1,7 +1,7 @@
 import {z} from "zod";
-import {serverEnv} from "@/env/server";
 import {auth} from "@/lib/server/core/auth";
 import {createServerFn} from "@tanstack/react-start";
+import {RateLimiterRes} from "rate-limiter-flexible";
 import {runTask} from "@/lib/server/tasks/task-runner";
 import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
@@ -9,8 +9,8 @@ import {deleteCookie} from "@tanstack/react-start/server";
 import {setSignedCookie} from "@/lib/utils/signed-cookies";
 import {getAllTasksMetadata, getTask} from "@/lib/server/tasks/registry";
 import {listAdminLogFiles, readAdminLogFile} from "@/lib/server/core/admin-logs-reader";
-import {ADMIN_COOKIE_NAME, isAdminAuthenticated, setAdminCookie} from "@/lib/utils/admin-token";
 import {requiredAuthAndAdminRoleMiddleware, requiredAuthAndAdminTokenMiddleware} from "@/lib/server/middlewares/authentication";
+import {adminAuthRateLimiter, clearAdminCookie, isAdminAuthenticated, setAdminCookie, verifyAdminPassword} from "@/lib/utils/admin-utils";
 import {
     adminApiMonitoringSchema,
     adminDeleteArchivedTaskSchema,
@@ -33,13 +33,32 @@ export const checkAdminAuth = createServerFn({ method: "GET" })
 
 export const adminAuth = createServerFn({ method: "POST" })
     .middleware([requiredAuthAndAdminRoleMiddleware])
-    .validator((data) => z.object({ password: z.string() }).parse(data))
-    .handler(async ({ data, context: { currentUser } }) => {
-        if (data.password !== serverEnv.ADMIN_PASSWORD) {
-            return { success: false, message: "Incorrect Password" };
+    .validator(z.object({ password: z.string() }))
+    .handler(async ({ data: { password }, context: { currentUser } }) => {
+        const limiter = await adminAuthRateLimiter;
+
+        try {
+            await limiter.consume(String(currentUser.id));
+        }
+        catch (error) {
+            if (!(error instanceof RateLimiterRes)) throw error;
+            return {
+                success: false,
+                message: "Too many attempts. Please try again later.",
+            };
         }
 
+        const isValidPassword = await verifyAdminPassword(password);
+        if (!isValidPassword) {
+            return {
+                success: false,
+                message: "Invalid Password",
+            };
+        }
+
+        await limiter.delete(String(currentUser.id));
         await setAdminCookie(currentUser.id);
+
         return { success: true };
     });
 
@@ -252,10 +271,7 @@ export const postImpersonateUser = createServerFn({ method: "POST" })
         if (!newSession) throw new FormattedError("Failed to create session");
 
         // Delete current user and admin cookie
-        deleteCookie(ADMIN_COOKIE_NAME, {
-            path: "/",
-            secure: process.env.NODE_ENV === "production",
-        });
+        clearAdminCookie();
 
         deleteCookie(sessionData.name, {
             path: sessionData.attributes.path,

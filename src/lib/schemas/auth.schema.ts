@@ -1,4 +1,6 @@
 import * as z from "zod";
+import {usernameSchema} from "@/lib/schemas/common.schema";
+import {getSafeRedirectPath} from "@/lib/utils/auth-utils";
 
 
 export type Login = z.infer<typeof loginSchema>;
@@ -13,26 +15,13 @@ export const tokenSchema = z.object({
 
 
 export const authRedirectSearchSchema = z.object({
-    redirect: z.preprocess((val?: unknown) => {
-        if (typeof val !== "string" || !val.trim()) return undefined;
-
-        try {
-            const url = new URL(val, "http://mylists.local");
-            if (url.origin !== "http://mylists.local") return undefined;
-
-            const path = `${url.pathname}${url.search}${url.hash}`;
-            if (!path.startsWith("/") || path.startsWith("//")) return undefined;
-
-            return path;
-        }
-        catch {
-            return undefined;
-        }
-    }, z.string().optional()),
     message: z.string().optional().catch(undefined),
-    authExpired: z.preprocess((val) => (val === true || val === "true") ? true : undefined, z.literal(true).optional())
+    step: z.enum(["verify"]).optional().catch(undefined),
+    usernameNotice: z.literal("check").optional().catch(undefined),
+    error: z.string().trim().min(1).max(100).optional().catch(undefined),
+    authExpired: z.preprocess((val) => (val === true || val === "true") ? true : undefined, z.literal(true).optional()),
+    redirect: z.preprocess((val?: unknown) => getSafeRedirectPath(val, "http://mylists.local"), z.string().optional()),
 });
-
 
 export const resetPasswordSchema = z.object({
     newPassword: z.string()
@@ -58,10 +47,7 @@ export const forgotPasswordSchema = z.object({
 
 
 export const registerSchema = z.object({
-    username: z.string()
-        .min(1, "Username is required.")
-        .min(3, "The username is too short (3 min).")
-        .max(15, "The username is too long (15 max)."),
+    username: usernameSchema,
     email: z.email().min(1, "Email is required."),
     password: z.string()
         .min(1, "Password is required.")

@@ -55,9 +55,8 @@ const DEFAULT = { search: "", page: 1, sorting: "updatedAt" } satisfies SearchTy
 function UserManagementPage() {
     const confirm = useConfirm();
     const filters = Route.useSearch();
-    const { setCurrentUser } = useAuth();
-    const navigate = Route.useNavigate();
     const { search = DEFAULT.search } = filters;
+    const { completeSignIn } = useAuth();
     const { usersQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(usersQueryOptions).data;
     const updateUserMutation = useAdminUpdateUserMutation(filters);
@@ -91,8 +90,7 @@ function UserManagementPage() {
         impersonateMutation.mutate({ data: { userId } }, {
             onError: (error) => toast.add({ title: error.message, type: "error", priority: "high" }),
             onSuccess: async () => {
-                await setCurrentUser();
-                await navigate({ to: "/profile/$username", params: { username } });
+                await completeSignIn(`/profile/${encodeURIComponent(username)}`);
             },
         });
     };

@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.5.1](https://github.com/vincedelmas/MyLists/compare/v3.5.0...v3.5.1) (2026-09-03)
+
+
+### Code Refactoring
+
+* **auth:** refactor auth flow ([ba1154a](https://github.com/vincedelmas/MyLists/commit/ba1154ab8cf4d23138cd62c077f0367bb1953975))
+* **ui:** simplify statistics card labels ([59b06c9](https://github.com/vincedelmas/MyLists/commit/59b06c98dd35141b0604d929b35a9ad4b6ba26c8))
+* **utils:** replace clsx and tailwind-merge with cn ([d72ad45](https://github.com/vincedelmas/MyLists/commit/d72ad451174ecb18b4f1792eea3e83f0dbfd729f))
+
 ## [3.5.0](https://github.com/vincedelmas/MyLists/compare/v3.4.0...v3.5.0) (2026-09-02)
 
 

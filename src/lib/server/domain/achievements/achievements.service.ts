@@ -2,39 +2,32 @@ import {AchievementTier} from "@/lib/schemas";
 import {AchievementDifficulty, MediaType} from "@/lib/utils/enums";
 import {Achievement, AchievementSeedData} from "@/lib/types/achievements.types";
 import {AchievementCatalog} from "@/lib/server/domain/achievements/achievement-catalog";
-import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
+import type {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 
 
-export class AchievementsService {
-    constructor(private repository: typeof AchievementsRepository) {
+export const createAchievementsService = (repository: AchievementsRepository) => {
+    async function seedAchievements(mediaType: MediaType, achievements: readonly AchievementSeedData[]) {
+        return repository.seedAchievements(mediaType, achievements);
     }
 
-    // --- Admin & Tasks -----------------------------------------------------------------
-
-    async seedAchievements(mediaType: MediaType, achievements: readonly AchievementSeedData[]) {
-        return this.repository.seedAchievements(mediaType, achievements);
+    async function updateAchievementForAdmin(achId: number, name: string, description: string) {
+        await repository.updateAchievementForAdmin(achId, name, description);
     }
 
-    async updateAchievementForAdmin(achId: number, name: string, description: string) {
-        await this.repository.updateAchievementForAdmin(achId, name, description);
+    async function updateTiersForAdmin(tiers: AchievementTier[]) {
+        return repository.updateTiersForAdmin(tiers);
     }
 
-    async updateTiersForAdmin(tiers: AchievementTier[]) {
-        return this.repository.updateTiersForAdmin(tiers);
+    async function getAchievementsDetails(userId: number, limit = 3) {
+        return repository.getAchievementsDetails(userId, limit);
     }
 
-    // -----------------------------------------------------------------------------------
-
-    async getAchievementsDetails(userId: number, limit = 3) {
-        return this.repository.getAchievementsDetails(userId, limit);
+    async function getAllAchievements() {
+        return repository.getAllAchievements();
     }
 
-    async getAllAchievements() {
-        return this.repository.getAllAchievements();
-    }
-
-    async getUserAchievementStats(userId: number) {
-        const { completedResult, totalAchievementsResult } = await this.repository.getUserAchievementStats(userId);
+    async function getUserAchievementStats(userId: number) {
+        const { completedResult, totalAchievementsResult } = await repository.getUserAchievementStats(userId);
 
         const mediaTypes = Object.values(MediaType);
         const difficulties = Object.values(AchievementDifficulty);
@@ -84,8 +77,8 @@ export class AchievementsService {
         return results;
     }
 
-    async getUserAchievements(userId: number) {
-        const results = await this.repository.getUserAchievements(userId);
+    async function getUserAchievements(userId: number) {
+        const results = await repository.getUserAchievements(userId);
 
         const uniqueAchIds = [...new Set(results.map((r) => r.achievement.id))];
 
@@ -104,12 +97,24 @@ export class AchievementsService {
         }).sort((a, b) => a.mediaType.localeCompare(b.mediaType) || a.name.localeCompare(b.name));
     }
 
-    async calculateAllAchievementsRarity() {
-        return this.repository.calculateAllAchievementsRarity();
+    async function calculateAllAchievementsRarity() {
+        return repository.calculateAllAchievementsRarity();
     }
 
-    async calculateAchievement(achievement: Achievement, catalog: AchievementCatalog) {
+    async function calculateAchievement(achievement: Achievement, catalog: AchievementCatalog) {
         const progressQuery = catalog.buildProgressQuery(achievement);
-        await this.repository.upsertAchievementProgress(achievement, progressQuery);
+        await repository.upsertAchievementProgress(achievement, progressQuery);
     }
-}
+
+    return {
+        seedAchievements,
+        getAllAchievements,
+        updateTiersForAdmin,
+        getUserAchievements,
+        calculateAchievement,
+        getAchievementsDetails,
+        getUserAchievementStats,
+        updateAchievementForAdmin,
+        calculateAllAchievementsRarity,
+    };
+};

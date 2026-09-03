@@ -7,14 +7,14 @@ import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import {MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
 import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
 import {UpdateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
-import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
+import type {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 
 
 export class StatsService {
     constructor(
         private repository: typeof StatsRepository,
         private activityService: MonthlyActivityService,
-        private achievementsRepository: typeof AchievementsRepository,
+        private achievementsRepository: AchievementsRepository,
         private updateHistoryRepository: typeof UpdateHistoryRepository,
         private mediaStatsRegistry: MediaStatsRegistry,
     ) {

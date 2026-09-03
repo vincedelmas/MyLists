@@ -5,11 +5,11 @@ import {MediadleService} from "@/lib/server/domain/mediadle/mediadle.service";
 import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
 import {CollectionsService} from "@/lib/server/domain/collections/collections.service";
-import {AchievementsService} from "@/lib/server/domain/achievements/achievements.service";
 import {FeatureVotesService} from "@/lib/server/domain/feature-votes/feature-votes.service";
 import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
-import {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
+import {createAchievementsService} from "@/lib/server/domain/achievements/achievements.service";
+import {achievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 
@@ -19,7 +19,7 @@ export function setupFeatureModule(mediaModule: MediaModule, accountModule: Acco
         mediadle: MediadleRepository,
         whichCameFirst: WcfRepository,
         collections: CollectionsRepository,
-        achievements: AchievementsRepository,
+        achievements: achievementsRepository,
         featureVotes: FeatureVotesRepository,
         notifications: NotificationsRepository,
     };
@@ -30,7 +30,7 @@ export function setupFeatureModule(mediaModule: MediaModule, accountModule: Acco
         services: {
             notifications: notificationsService,
             mediadle: new MediadleService(repositories.mediadle),
-            achievements: new AchievementsService(repositories.achievements),
+            achievements: createAchievementsService(repositories.achievements),
             featureVotes: new FeatureVotesService(repositories.featureVotes, notificationsService),
             whichCameFirst: new WcfService(repositories.whichCameFirst, mediaModule.registries.mediaService),
             collections: new CollectionsService(

@@ -23,7 +23,7 @@ const { UpdateHistoryRepository } = await import("@/lib/server/domain/tracking/u
 const { TasteSimilarityRepository } = await import("@/lib/server/domain/social/taste-similarity.repository");
 const { MonthlyActivityRepository } = await import("@/lib/server/domain/tracking/monthly-activity.repository");
 const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime/anime.definition.server");
-const { AchievementsRepository } = await import("@/lib/server/domain/achievements/achievements.repository");
+const { achievementsRepository } = await import("@/lib/server/domain/achievements/achievements.repository");
 
 
 describe("disabled media visibility", () => {
@@ -58,8 +58,8 @@ describe("disabled media visibility", () => {
             startMonth: "2026-04",
             endMonth: "2026-04",
         });
-        const disabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
-        const disabledAchievementPage = await AchievementsRepository.getUserAchievements(42);
+        const disabledAchievements = await achievementsRepository.getAchievementsDetails(42, 10);
+        const disabledAchievementPage = await achievementsRepository.getUserAchievements(42);
         const disabledCommunity = await animeRepository.getMediaCommunityActivity(toActor(), 100, {});
         const disabledTasteAggregates = await TasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
         const disabledSharedFavorites = await TasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
@@ -93,7 +93,7 @@ describe("disabled media visibility", () => {
             startMonth: "2026-04",
             endMonth: "2026-04",
         });
-        const enabledAchievements = await AchievementsRepository.getAchievementsDetails(42, 10);
+        const enabledAchievements = await achievementsRepository.getAchievementsDetails(42, 10);
         const enabledCommunity = await animeRepository.getMediaCommunityActivity(toActor(), 100, {});
         const enabledTasteAggregates = await TasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
         const enabledSharedFavorites = await TasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);

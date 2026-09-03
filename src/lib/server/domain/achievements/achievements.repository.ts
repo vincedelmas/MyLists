@@ -8,311 +8,332 @@ import {and, asc, count, desc, eq, inArray, max, notInArray, sql} from "drizzle-
 import {achievement, achievementTier, user, userAchievement, userMediaSettings} from "@/lib/server/database/schema";
 
 
-export class AchievementsRepository {
-    static async seedAchievements(mediaType: MediaType, achievementsDef: readonly AchievementSeedData[]) {
-        const tx = getDbClient();
+const getSQLTierOrdering = () => sql<number>`CASE ${achievementTier.difficulty}
+        WHEN 'bronze' THEN 1
+        WHEN 'silver' THEN 2
+        WHEN 'gold' THEN 3
+        WHEN 'platinum' THEN 4
+        ELSE 0
+    END`;
 
-        // Upsert achievements and tiers
-        await Promise.all(achievementsDef.map(async (achievementData) => {
-            const [syncedAchievement] = await tx
-                .insert(achievement)
-                .values({
+
+const seedAchievements = async (mediaType: MediaType, achievementsDef: readonly AchievementSeedData[]) => {
+    const tx = getDbClient();
+
+    // Upsert achievements and tiers
+    await Promise.all(achievementsDef.map(async (achievementData) => {
+        const [syncedAchievement] = await tx
+            .insert(achievement)
+            .values({
+                name: achievementData.name,
+                codeName: achievementData.codeName,
+                mediaType: achievementData.mediaType,
+                value: achievementData.value?.toString(),
+                description: achievementData.description,
+            })
+            .onConflictDoUpdate({
+                target: achievement.codeName,
+                set: {
                     name: achievementData.name,
-                    codeName: achievementData.codeName,
                     mediaType: achievementData.mediaType,
                     value: achievementData.value?.toString(),
                     description: achievementData.description,
-                })
-                .onConflictDoUpdate({
-                    target: achievement.codeName,
-                    set: {
-                        name: achievementData.name,
-                        mediaType: achievementData.mediaType,
-                        value: achievementData.value?.toString(),
-                        description: achievementData.description,
-                    },
-                })
-                .returning();
-
-            const tierDiffs = achievementData.tiers.map((tier) => tier.difficulty);
-
-            await tx
-                .delete(achievementTier)
-                .where(and(
-                    notInArray(achievementTier.difficulty, tierDiffs),
-                    eq(achievementTier.achievementId, syncedAchievement.id),
-                ));
-
-            await tx
-                .insert(achievementTier)
-                .values(achievementData.tiers.map((tierData) => ({
-                    criteria: tierData.criteria,
-                    difficulty: tierData.difficulty,
-                    achievementId: syncedAchievement.id,
-                })))
-                .onConflictDoUpdate({
-                    target: [achievementTier.achievementId, achievementTier.difficulty],
-                    set: { criteria: sql`excluded.criteria` },
-                });
-        }));
-
-        // Remove orphaned achievements and tiers
-        const achCodeNames = achievementsDef.map((ach) => ach.codeName);
-
-        const orphanedAchievementIds = await tx
-            .select({ id: achievement.id })
-            .from(achievement)
-            .where(and(eq(achievement.mediaType, mediaType), notInArray(achievement.codeName, achCodeNames)))
-            .then((rows) => rows.map((r) => r.id));
-
-        if (orphanedAchievementIds.length > 0) {
-            await tx
-                .delete(achievement)
-                .where(inArray(achievement.id, orphanedAchievementIds));
-        }
-    }
-
-    static async updateAchievementForAdmin(achId: number, name: string, description: string) {
-        await getDbClient()
-            .update(achievement)
-            .set({ name, description })
-            .where(eq(achievement.id, achId));
-    }
-
-    static async updateTiersForAdmin(tiers: AchievementTier[]) {
-        return db.transaction(async (tx) => {
-            for (const tier of tiers) {
-                await tx
-                    .update(achievementTier)
-                    .set({ criteria: tier.criteria })
-                    .where(eq(achievementTier.id, tier.id));
-            }
-        });
-    }
-
-    static async getAchievementsDetails(userId: number, limit = 3) {
-        const results = await getDbClient()
-            .select({
-                id: achievement.id,
-                name: achievement.name,
-                description: achievement.description,
-                difficulty: achievementTier.difficulty,
-                completedAt: userAchievement.completedAt,
-            })
-            .from(userAchievement)
-            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userAchievement.userId),
-                eq(userMediaSettings.mediaType, achievement.mediaType),
-                eq(userMediaSettings.active, true),
-            ))
-            .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
-            .orderBy(desc(userAchievement.completedAt))
-            .limit(limit);
-
-        return results;
-    }
-
-    static async countPlatinumAchievements(userId?: number) {
-        const forUser = userId ? eq(userAchievement.userId, userId) : undefined;
-
-        const result = getDbClient()
-            .select({ count: count() })
-            .from(userAchievement)
-            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userAchievement.userId),
-                eq(userMediaSettings.mediaType, achievement.mediaType),
-                eq(userMediaSettings.active, true),
-            ))
-            .where(and(
-                forUser,
-                eq(userAchievement.completed, true),
-                eq(achievementTier.difficulty, AchievementDifficulty.PLATINUM),
-            ))
-            .get();
-
-        return result?.count ?? 0;
-    }
-
-    static async getUserAchievementStats(userId: number) {
-        const tierOrder = this._getSQLTierOrdering();
-
-        const activeMediaTypes = await getDbClient()
-            .select({ mediaType: userMediaSettings.mediaType })
-            .from(userMediaSettings)
-            .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.active, true)))
-            .then((rows) => rows.map((r) => r.mediaType));
-
-        const subq = getDbClient()
-            .select({
-                mediaType: achievement.mediaType,
-                achievementId: userAchievement.achievementId,
-                maxTierOrder: max(tierOrder).as("maxTierOrder"),
-            })
-            .from(userAchievement)
-            .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
-            .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
-            .where(and(
-                eq(userAchievement.userId, userId),
-                eq(userAchievement.completed, true),
-                inArray(achievement.mediaType, activeMediaTypes),
-            ))
-            .groupBy(achievement.mediaType, userAchievement.achievementId)
-            .as("subq");
-
-        const completedResult = await getDbClient()
-            .select({
-                mediaType: subq.mediaType,
-                count: count().as("count"),
-                difficulty: achievementTier.difficulty,
-            })
-            .from(achievementTier)
-            .innerJoin(subq, and(eq(achievementTier.achievementId, subq.achievementId), eq(tierOrder, subq.maxTierOrder)))
-            .groupBy(subq.mediaType, achievementTier.difficulty)
-            .orderBy(subq.mediaType, tierOrder);
-
-        const totalAchievementsResult = await getDbClient()
-            .select({
-                total: count().as("total"),
-                mediaType: achievement.mediaType,
-            })
-            .from(achievement)
-            .where(inArray(achievement.mediaType, activeMediaTypes))
-            .groupBy(achievement.mediaType);
-
-        return { completedResult, totalAchievementsResult };
-    }
-
-    static async getUserAchievements(userId: number) {
-        const tierOrder = this._getSQLTierOrdering();
-
-        const results = await getDbClient()
-            .select({
-                tier: achievementTier,
-                achievement: achievement,
-                userProgress: userAchievement,
-            })
-            .from(achievement)
-            .innerJoin(achievementTier, eq(achievement.id, achievementTier.achievementId))
-            .innerJoin(userMediaSettings, and(
-                eq(userMediaSettings.userId, userId),
-                eq(userMediaSettings.mediaType, achievement.mediaType),
-                eq(userMediaSettings.active, true),
-            ))
-            .leftJoin(userAchievement, and(eq(achievementTier.id, userAchievement.tierId), eq(userAchievement.userId, userId)))
-            .orderBy(achievement.id, tierOrder);
-
-        return results;
-    }
-
-    static async getAllAchievements() {
-        const tierOrder = this._getSQLTierOrdering();
-
-        return getDbClient().query.achievement.findMany({
-            orderBy: asc(achievement.id),
-            with: {
-                tiers: {
-                    orderBy: tierOrder,
                 },
-            },
-        });
-    }
+            })
+            .returning();
 
-    static async upsertAchievementProgress(achievementData: Achievement, calculation: StatsCTE) {
-        getDbClient().run(sql`
-            WITH candidate_progress(user_id, value) AS (
-                SELECT calculation.user_id, COALESCE(calculation.value, 0)
-                FROM ${calculation}
+        const tierDiffs = achievementData.tiers.map((tier) => tier.difficulty);
 
-                UNION ALL
+        await tx
+            .delete(achievementTier)
+            .where(and(
+                notInArray(achievementTier.difficulty, tierDiffs),
+                eq(achievementTier.achievementId, syncedAchievement.id),
+            ));
 
-                SELECT existing_progress.user_id, 0
-                FROM ${userAchievement} AS existing_progress
-                WHERE existing_progress.achievement_id = ${achievementData.id}
-            ),
-            resolved_progress(user_id, value) AS (
-                SELECT user_id, MAX(value)
-                FROM candidate_progress
-                GROUP BY user_id
-            )
-            INSERT INTO ${userAchievement} (
-                user_id,
-                achievement_id,
-                tier_id,
-                count,
-                progress,
-                completed,
-                completed_at,
-                last_calculated_at
-            )
-            SELECT
-                resolved_progress.user_id,
-                ${achievementData.id},
-                ${achievementTier.id},
-                resolved_progress.value,
-                CASE
-                    WHEN resolved_progress.value >= CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL)
-                    THEN 100.0
-                    ELSE resolved_progress.value * 100.0 / CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL)
-                END,
-                resolved_progress.value >= CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL),
-                CASE
-                    WHEN resolved_progress.value >= CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL)
-                    THEN datetime('now')
-                    ELSE NULL
-                END,
-                datetime('now')
-            FROM resolved_progress
-            CROSS JOIN ${achievementTier}
-            WHERE ${achievementTier.achievementId} = ${achievementData.id}
-            ON CONFLICT (user_id, tier_id) DO UPDATE SET
-                achievement_id = excluded.achievement_id,
-                count = excluded.count,
-                progress = excluded.progress,
-                completed = excluded.completed,
-                completed_at = CASE
-                    WHEN excluded.completed = 1 AND COALESCE(${userAchievement.completed}, 0) = 0
-                    THEN excluded.completed_at
-                    WHEN excluded.completed = 0
-                    THEN NULL
-                    ELSE ${userAchievement.completedAt}
-                END,
-                last_calculated_at = excluded.last_calculated_at
-        `);
-    }
-
-    static async calculateAllAchievementsRarity() {
-        const totalActiveUsers = getDbClient()
-            .select({ count: count() })
-            .from(user)
-            .where(eq(user.emailVerified, true))
-            .get();
-
-        await getDbClient()
-            .update(achievementTier)
-            .set({
-                rarity: totalActiveUsers?.count
-                    ? sql`COALESCE(
-                        100.0 * (
-                            SELECT COUNT(*)
-                            FROM ${userAchievement} AS completed_progress
-                            WHERE completed_progress.tier_id = ${achievementTier.id} AND completed_progress.completed = 1
-                        ) / ${totalActiveUsers.count}, 0
-                    )`
-                    : 0,
+        await tx
+            .insert(achievementTier)
+            .values(achievementData.tiers.map((tierData) => ({
+                criteria: tierData.criteria,
+                difficulty: tierData.difficulty,
+                achievementId: syncedAchievement.id,
+            })))
+            .onConflictDoUpdate({
+                target: [achievementTier.achievementId, achievementTier.difficulty],
+                set: { criteria: sql`excluded.criteria` },
             });
-    }
+    }));
 
-    private static _getSQLTierOrdering() {
-        return sql<number>`CASE ${achievementTier.difficulty}
-            WHEN 'bronze' THEN 1
-            WHEN 'silver' THEN 2
-            WHEN 'gold' THEN 3
-            WHEN 'platinum' THEN 4
-            ELSE 0
-        END`;
+    // Remove orphaned achievements and tiers
+    const achCodeNames = achievementsDef.map((ach) => ach.codeName);
+
+    const orphanedAchievementIds = await tx
+        .select({ id: achievement.id })
+        .from(achievement)
+        .where(and(eq(achievement.mediaType, mediaType), notInArray(achievement.codeName, achCodeNames)))
+        .then((rows) => rows.map((r) => r.id));
+
+    if (orphanedAchievementIds.length > 0) {
+        await tx
+            .delete(achievement)
+            .where(inArray(achievement.id, orphanedAchievementIds));
     }
-}
+};
+
+
+const updateAchievementForAdmin = async (achId: number, name: string, description: string) => {
+    await getDbClient()
+        .update(achievement)
+        .set({ name, description })
+        .where(eq(achievement.id, achId));
+};
+
+
+const updateTiersForAdmin = async (tiers: AchievementTier[]) => db.transaction(async (tx) => {
+    for (const tier of tiers) {
+        await tx
+            .update(achievementTier)
+            .set({ criteria: tier.criteria })
+            .where(eq(achievementTier.id, tier.id));
+    }
+});
+
+
+const getAchievementsDetails = async (userId: number, limit = 3) => {
+    const results = await getDbClient()
+        .select({
+            id: achievement.id,
+            name: achievement.name,
+            description: achievement.description,
+            difficulty: achievementTier.difficulty,
+            completedAt: userAchievement.completedAt,
+        })
+        .from(userAchievement)
+        .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
+        .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+        .innerJoin(userMediaSettings, and(
+            eq(userMediaSettings.userId, userAchievement.userId),
+            eq(userMediaSettings.mediaType, achievement.mediaType),
+            eq(userMediaSettings.active, true),
+        ))
+        .where(and(eq(userAchievement.userId, userId), eq(userAchievement.completed, true)))
+        .orderBy(desc(userAchievement.completedAt))
+        .limit(limit);
+
+    return results;
+};
+
+
+const countPlatinumAchievements = async (userId?: number) => {
+    const forUser = userId ? eq(userAchievement.userId, userId) : undefined;
+
+    const result = getDbClient()
+        .select({ count: count() })
+        .from(userAchievement)
+        .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
+        .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+        .innerJoin(userMediaSettings, and(
+            eq(userMediaSettings.userId, userAchievement.userId),
+            eq(userMediaSettings.mediaType, achievement.mediaType),
+            eq(userMediaSettings.active, true),
+        ))
+        .where(and(
+            forUser,
+            eq(userAchievement.completed, true),
+            eq(achievementTier.difficulty, AchievementDifficulty.PLATINUM),
+        ))
+        .get();
+
+    return result?.count ?? 0;
+};
+
+
+const getUserAchievementStats = async (userId: number) => {
+    const tierOrder = getSQLTierOrdering();
+
+    const activeMediaTypes = await getDbClient()
+        .select({ mediaType: userMediaSettings.mediaType })
+        .from(userMediaSettings)
+        .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.active, true)))
+        .then((rows) => rows.map((r) => r.mediaType));
+
+    const subq = getDbClient()
+        .select({
+            mediaType: achievement.mediaType,
+            achievementId: userAchievement.achievementId,
+            maxTierOrder: max(tierOrder).as("maxTierOrder"),
+        })
+        .from(userAchievement)
+        .innerJoin(achievementTier, eq(userAchievement.tierId, achievementTier.id))
+        .innerJoin(achievement, eq(userAchievement.achievementId, achievement.id))
+        .where(and(
+            eq(userAchievement.userId, userId),
+            eq(userAchievement.completed, true),
+            inArray(achievement.mediaType, activeMediaTypes),
+        ))
+        .groupBy(achievement.mediaType, userAchievement.achievementId)
+        .as("subq");
+
+    const completedResult = await getDbClient()
+        .select({
+            mediaType: subq.mediaType,
+            count: count().as("count"),
+            difficulty: achievementTier.difficulty,
+        })
+        .from(achievementTier)
+        .innerJoin(subq, and(eq(achievementTier.achievementId, subq.achievementId), eq(tierOrder, subq.maxTierOrder)))
+        .groupBy(subq.mediaType, achievementTier.difficulty)
+        .orderBy(subq.mediaType, tierOrder);
+
+    const totalAchievementsResult = await getDbClient()
+        .select({
+            total: count().as("total"),
+            mediaType: achievement.mediaType,
+        })
+        .from(achievement)
+        .where(inArray(achievement.mediaType, activeMediaTypes))
+        .groupBy(achievement.mediaType);
+
+    return { completedResult, totalAchievementsResult };
+};
+
+
+const getUserAchievements = async (userId: number) => {
+    const tierOrder = getSQLTierOrdering();
+
+    const results = await getDbClient()
+        .select({
+            tier: achievementTier,
+            achievement: achievement,
+            userProgress: userAchievement,
+        })
+        .from(achievement)
+        .innerJoin(achievementTier, eq(achievement.id, achievementTier.achievementId))
+        .innerJoin(userMediaSettings, and(
+            eq(userMediaSettings.userId, userId),
+            eq(userMediaSettings.mediaType, achievement.mediaType),
+            eq(userMediaSettings.active, true),
+        ))
+        .leftJoin(userAchievement, and(eq(achievementTier.id, userAchievement.tierId), eq(userAchievement.userId, userId)))
+        .orderBy(achievement.id, tierOrder);
+
+    return results;
+};
+
+
+const getAllAchievements = async () => {
+    const tierOrder = getSQLTierOrdering();
+
+    return getDbClient().query.achievement.findMany({
+        orderBy: asc(achievement.id),
+        with: {
+            tiers: {
+                orderBy: tierOrder,
+            },
+        },
+    });
+};
+
+
+const upsertAchievementProgress = async (achievementData: Achievement, calculation: StatsCTE) => {
+    getDbClient().run(sql`
+        WITH candidate_progress(user_id, value) AS (
+            SELECT calculation.user_id, COALESCE(calculation.value, 0)
+            FROM ${calculation}
+
+            UNION ALL
+
+            SELECT existing_progress.user_id, 0
+            FROM ${userAchievement} AS existing_progress
+            WHERE existing_progress.achievement_id = ${achievementData.id}
+        ),
+        resolved_progress(user_id, value) AS (
+            SELECT user_id, MAX(value)
+            FROM candidate_progress
+            GROUP BY user_id
+        )
+        INSERT INTO ${userAchievement} (
+            user_id,
+            achievement_id,
+            tier_id,
+            count,
+            progress,
+            completed,
+            completed_at,
+            last_calculated_at
+        )
+        SELECT
+            resolved_progress.user_id,
+            ${achievementData.id},
+            ${achievementTier.id},
+            resolved_progress.value,
+            CASE
+                WHEN resolved_progress.value >= CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL)
+                THEN 100.0
+                ELSE resolved_progress.value * 100.0 / CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL)
+            END,
+            resolved_progress.value >= CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL),
+            CASE
+                WHEN resolved_progress.value >= CAST(json_extract(${achievementTier.criteria}, '$.count') AS REAL)
+                THEN datetime('now')
+                ELSE NULL
+            END,
+            datetime('now')
+        FROM resolved_progress
+        CROSS JOIN ${achievementTier}
+        WHERE ${achievementTier.achievementId} = ${achievementData.id}
+        ON CONFLICT (user_id, tier_id) DO UPDATE SET
+            achievement_id = excluded.achievement_id,
+            count = excluded.count,
+            progress = excluded.progress,
+            completed = excluded.completed,
+            completed_at = CASE
+                WHEN excluded.completed = 1 AND COALESCE(${userAchievement.completed}, 0) = 0
+                THEN excluded.completed_at
+                WHEN excluded.completed = 0
+                THEN NULL
+                ELSE ${userAchievement.completedAt}
+            END,
+            last_calculated_at = excluded.last_calculated_at
+    `);
+};
+
+
+const calculateAllAchievementsRarity = async () => {
+    const totalActiveUsers = getDbClient()
+        .select({ count: count() })
+        .from(user)
+        .where(eq(user.emailVerified, true))
+        .get();
+
+    await getDbClient()
+        .update(achievementTier)
+        .set({
+            rarity: totalActiveUsers?.count
+                ? sql`COALESCE(
+                    100.0 * (
+                        SELECT COUNT(*)
+                        FROM ${userAchievement} AS completed_progress
+                        WHERE completed_progress.tier_id = ${achievementTier.id} AND completed_progress.completed = 1
+                    ) / ${totalActiveUsers.count}, 0
+                )`
+                : 0,
+        });
+};
+
+
+export const achievementsRepository = {
+    seedAchievements,
+    updateAchievementForAdmin,
+    updateTiersForAdmin,
+    getAchievementsDetails,
+    countPlatinumAchievements,
+    getUserAchievementStats,
+    getUserAchievements,
+    getAllAchievements,
+    upsertAchievementProgress,
+    calculateAllAchievementsRarity,
+};
+
+
+export type AchievementsRepository = typeof achievementsRepository;

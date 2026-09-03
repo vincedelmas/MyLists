@@ -1,25 +1,14 @@
-import {useEffect, useId, useState} from "react";
-import {Login, loginSchema} from "@/lib/schemas";
-import {FaGithub, FaGoogle} from "react-icons/fa";
-import {useAuth} from "@/lib/client/hooks/use-auth";
-import {zodResolver} from "@hookform/resolvers/zod";
+import {useEffect} from "react";
+import {LogIn, ShieldCheck} from "lucide-react";
 import {toast} from "@/lib/client/components/ui/toast";
-import {Input} from "@/lib/client/components/ui/input";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
-import {LogIn, RefreshCw, ShieldCheck} from "lucide-react";
-import {Separator} from "@/lib/client/components/ui/separator";
-import {handleServerFormErrors} from "@/lib/utils/forms-utils";
-import {FormError} from "@/lib/client/components/forms/FormError";
-import {Controller, FormProvider, useForm} from "react-hook-form";
+import {getOAuthErrorMessage} from "@/lib/utils/auth-utils";
+import {LoginForm} from "@/lib/client/components/auth/LoginForm";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
-import {AuthState, getAuthState, getOAuthErrorMessage} from "@/lib/utils/auth-utils";
+import {SocialAuthButtons} from "@/lib/client/components/auth/SocialAuthButtons";
 import {createFileRoute, Link, useRouteContext, useSearch} from "@tanstack/react-router";
 import {InlineErrorContainer} from "@/lib/client/components/general/InlineErrorContainer";
-import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
-import {useEmailLoginMutation, useResendVerificationEmailMutation, useSocialSignInMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
 
 
 export const Route = createFileRoute("/_main/_public/login")({
@@ -28,68 +17,20 @@ export const Route = createFileRoute("/_main/_public/login")({
 
 
 function LoginPage() {
-    const fieldId = useId();
     const navigate = Route.useNavigate();
-    const { completeSignIn } = useAuth();
-    const loginMutation = useEmailLoginMutation();
-    const [unverifiedEmail, setUnverifiedEmail] = useState<string>();
     const { authMethodsQueryOptions } = useRouteContext({ from: "__root__" });
     const { error, message, redirect } = useSearch({ from: "/_main/_public" });
 
+    const redirectTarget = redirect || "/";
     const oauthErrorMessage = getOAuthErrorMessage(error);
     const authMethods = useSuspenseQuery(authMethodsQueryOptions).data;
-
-    const authState = getAuthState(null, !!unverifiedEmail);
-    const isAwaitingVerification = authState === AuthState.AWAITING_EMAIL_VERIFICATION;
-
-    const redirectTarget = redirect || "/";
-    const oauthSearch = new URLSearchParams({ redirect: redirectTarget });
-    const verificationCallbackURL = `/register?${new URLSearchParams({ redirect: redirectTarget })}`;
-
-    const socialMutation = useSocialSignInMutation({
-        callbackURL: redirectTarget,
-        errorCallbackURL: `/login?${oauthSearch}`,
-        newUserCallbackURL: "/?usernameNotice=check",
-    });
-
-    const hasSocialProvider = authMethods.google || authMethods.github;
-    const resendMutation = useResendVerificationEmailMutation(verificationCallbackURL);
-
-    const form = useForm<Login>({
-        resolver: zodResolver(loginSchema),
-        shouldFocusError: false,
-        defaultValues: {
-            email: "",
-            password: "",
-        },
-    });
 
     useEffect(() => {
         if (!message) return;
 
         toast.add({ title: message, id: "auth-route-feedback", type: "warning" });
         void navigate({ replace: true, to: "/login", search: { error, redirect } });
-
     }, [error, message, navigate, redirect]);
-
-    const handleOnSubmit = async (submitted: Login) => {
-        form.clearErrors("root");
-        setUnverifiedEmail(undefined);
-
-        loginMutation.mutate(submitted, {
-            onError: (error) => {
-                if (error.code === "EMAIL_NOT_VERIFIED") {
-                    setUnverifiedEmail(submitted.email);
-                    return;
-                }
-
-                handleServerFormErrors(form, error);
-            },
-            onSuccess: async () => {
-                await completeSignIn(redirectTarget);
-            },
-        });
-    }
 
     return (
         <PageTitle title="Login" onlyHelmet>
@@ -104,142 +45,30 @@ function LoginPage() {
                     description="Sign in to keep tracking your media and see what the people you follow are up to."
                 />
 
-                <section className="mt-10 w-full self-center rounded-xl border p-5 shadow-xs sm:p-6 max-w-sm">
+                <section className="mt-10 w-full max-w-sm self-center rounded-xl border p-5 shadow-xs sm:p-6">
                     <h2 className="mb-4 text-xl font-semibold tracking-tight">
                         Sign in to MyLists
                     </h2>
 
                     {oauthErrorMessage &&
                         <div className="mb-4">
-                            <InlineErrorContainer onDismiss={() => navigate({ replace: true, to: "/login", search: { redirect } })}>
+                            <InlineErrorContainer
+                                onDismiss={() => navigate({ replace: true, to: "/login", search: { redirect } })}
+                            >
                                 {oauthErrorMessage}
                             </InlineErrorContainer>
                         </div>
                     }
 
-                    <FormProvider {...form}>
-                        <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(handleOnSubmit)}>
-                            <FieldSet disabled={loginMutation.isPending}>
-                                <FieldGroup>
-                                    <Controller
-                                        name="email"
-                                        control={form.control}
-                                        render={({ field, fieldState }) => (
-                                            <Field data-invalid={fieldState.invalid} data-disabled={loginMutation.isPending}>
-                                                <FieldLabel htmlFor={`${fieldId}-email`}>Email</FieldLabel>
-                                                <Input
-                                                    {...field}
-                                                    type="email"
-                                                    placeholder="Email"
-                                                    id={`${fieldId}-email`}
-                                                    aria-invalid={fieldState.invalid}
-                                                />
-                                                <FieldError errors={[fieldState.error]}/>
-                                            </Field>
-                                        )}
-                                    />
-                                    <Controller
-                                        name="password"
-                                        control={form.control}
-                                        render={({ field, fieldState }) => (
-                                            <Field data-invalid={fieldState.invalid} data-disabled={loginMutation.isPending}>
-                                                <div className="flex items-center justify-between">
-                                                    <FieldLabel htmlFor={`${fieldId}-password`}>Password</FieldLabel>
-                                                    {authMethods.email ?
-                                                        <Link to="/forgot-password" className="text-sm underline">
-                                                            Forgot password?
-                                                        </Link>
-                                                        :
-                                                        <span className="text-xs text-muted-foreground">
-                                                            Reset unavailable
-                                                        </span>
-                                                    }
-                                                </div>
-                                                <Input
-                                                    {...field}
-                                                    type="password"
-                                                    placeholder="********"
-                                                    id={`${fieldId}-password`}
-                                                    aria-invalid={fieldState.invalid}
-                                                />
-                                                <FieldError errors={[fieldState.error]}/>
-                                            </Field>
-                                        )}
-                                    />
-                                </FieldGroup>
-                            </FieldSet>
-
-                            {(isAwaitingVerification && unverifiedEmail) &&
-                                <InlineErrorContainer onDismiss={() => setUnverifiedEmail(undefined)}>
-                                    <div className="flex flex-col items-start gap-2">
-                                        <p>
-                                            Your email isn’t verified yet. Request a new verification email to continue.
-                                        </p>
-                                        <Button
-                                            size="sm"
-                                            type="button"
-                                            variant="outline"
-                                            disabled={resendMutation.isPending}
-                                            aria-busy={resendMutation.isPending}
-                                            onClick={() => resendMutation.mutate({ email: unverifiedEmail })}
-                                        >
-                                            {resendMutation.isPending
-                                                ? <Spinner data-icon="inline-start" aria-hidden="true"/>
-                                                : <RefreshCw data-icon="inline-start" aria-hidden="true"/>
-                                            }
-                                            {resendMutation.isPending ? "Sending email…" : "Resend verification email"}
-                                        </Button>
-                                    </div>
-                                </InlineErrorContainer>
-                            }
-
-                            <FormError/>
-                            <Button type="submit" className="w-full" disabled={loginMutation.isPending} aria-busy={loginMutation.isPending}>
-                                {loginMutation.isPending &&
-                                    <Spinner className="text-primary-foreground" data-icon="inline-start" aria-hidden="true"/>
-                                }
-                                {loginMutation.isPending ? "Signing you in…" : "Login"}
-                            </Button>
-                        </form>
-                    </FormProvider>
-
-                    {hasSocialProvider &&
-                        <>
-                            <Separator className="mt-3"/>
-                            <div className="mt-3 flex flex-col gap-2">
-                                {authMethods.google &&
-                                    <Button
-                                        type="button"
-                                        className="w-full"
-                                        variant="secondary"
-                                        disabled={socialMutation.isPending}
-                                        onClick={() => socialMutation.mutate("google")}
-                                    >
-                                        {socialMutation.isPending && socialMutation.variables === "google"
-                                            ? <Spinner data-icon="inline-start" aria-hidden="true"/>
-                                            : <FaGoogle data-icon="inline-start" aria-hidden="true"/>
-                                        }
-                                        Continue with Google
-                                    </Button>
-                                }
-                                {authMethods.github &&
-                                    <Button
-                                        type="button"
-                                        className="w-full"
-                                        variant="secondary"
-                                        disabled={socialMutation.isPending}
-                                        onClick={() => socialMutation.mutate("github")}
-                                    >
-                                        {socialMutation.isPending && socialMutation.variables === "github"
-                                            ? <Spinner data-icon="inline-start" aria-hidden="true"/>
-                                            : <FaGithub data-icon="inline-start" aria-hidden="true"/>
-                                        }
-                                        Continue with GitHub
-                                    </Button>
-                                }
-                            </div>
-                        </>
-                    }
+                    <LoginForm
+                        redirectTarget={redirectTarget}
+                        passwordResetEnabled={authMethods.email}
+                    />
+                    <SocialAuthButtons
+                        authMethods={authMethods}
+                        errorCallbackPath="/login"
+                        redirectTarget={redirectTarget}
+                    />
 
                     <div className="mt-6 text-center text-sm text-muted-foreground">
                         Don&apos;t have an account?{" "}

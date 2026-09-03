@@ -1,4 +1,5 @@
 import {useId} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {FaGithub, FaGoogle} from "react-icons/fa";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {toast} from "@/lib/client/components/ui/toast";
@@ -20,7 +21,6 @@ import {ClockAlert, MailCheck, RefreshCw, ShieldAlert, ShieldCheck, UserPlus} fr
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
 import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/lib/client/components/ui/empty";
 import {useEmailRegistrationMutation, useResendVerificationEmailMutation, useSocialSignInMutation} from "@/lib/client/react-query/query-mutations/auth.mutations";
-import {cn} from "@/lib/utils/classnames";
 
 
 export const Route = createFileRoute("/_main/_public/register")({
@@ -109,6 +109,7 @@ function RegisterPage() {
                 handleServerFormErrors(registrationForm, mutationError);
             },
             onSuccess: async () => {
+                resendForm.setValue("email", submitted.email);
                 await navigate({ replace: true, to: "/register", search: { redirect, step: "verify" } });
             },
         });
@@ -154,50 +155,49 @@ function RegisterPage() {
                                 </EmptyDescription>
                             </EmptyHeader>
                             <EmptyContent className="max-w-sm gap-4">
-                                {verificationStatus === "pending" ?
+                                {verificationStatus === "pending" &&
                                     <p className="text-xs leading-relaxed text-muted-foreground">
                                         The link is valid for one hour. Check your spam folder if it does not appear in your inbox.
                                     </p>
-                                    :
-                                    <form className="flex w-full flex-col gap-4 text-left" onSubmit={resendForm.handleSubmit(resendSubmit)}>
-                                        <FieldSet disabled={resendMutation.isPending}>
-                                            <FieldGroup>
-                                                <Controller
-                                                    name="email"
-                                                    control={resendForm.control}
-                                                    render={({ field, fieldState }) =>
-                                                        <Field data-invalid={fieldState.invalid} data-disabled={resendMutation.isPending}>
-                                                            <FieldLabel htmlFor={`${fieldId}-verification-email`}>
-                                                                Account email
-                                                            </FieldLabel>
-                                                            <Input
-                                                                {...field}
-                                                                type="email"
-                                                                autoComplete="email"
-                                                                aria-invalid={fieldState.invalid}
-                                                                placeholder="john.doe@example.com"
-                                                                id={`${fieldId}-verification-email`}
-                                                            />
-                                                            <FieldError errors={[fieldState.error]}/>
-                                                        </Field>
-                                                    }
-                                                />
-                                            </FieldGroup>
-                                        </FieldSet>
-                                        <Button
-                                            type="submit"
-                                            className="w-full"
-                                            disabled={resendMutation.isPending}
-                                            aria-busy={resendMutation.isPending}
-                                        >
-                                            {resendMutation.isPending
-                                                ? <Spinner className="text-primary-foreground" data-icon="inline-start" aria-hidden="true"/>
-                                                : <RefreshCw data-icon="inline-start" aria-hidden="true"/>
-                                            }
-                                            {resendMutation.isPending ? "Sending email…" : "Resend verification email"}
-                                        </Button>
-                                    </form>
                                 }
+                                <form className="flex w-full flex-col gap-4 text-left" onSubmit={resendForm.handleSubmit(resendSubmit)}>
+                                    <FieldSet disabled={resendMutation.isPending}>
+                                        <FieldGroup>
+                                            <Controller
+                                                name="email"
+                                                control={resendForm.control}
+                                                render={({ field, fieldState }) =>
+                                                    <Field data-invalid={fieldState.invalid} data-disabled={resendMutation.isPending}>
+                                                        <FieldLabel htmlFor={`${fieldId}-verification-email`}>
+                                                            Account email
+                                                        </FieldLabel>
+                                                        <Input
+                                                            {...field}
+                                                            type="email"
+                                                            autoComplete="email"
+                                                            aria-invalid={fieldState.invalid}
+                                                            placeholder="john.doe@example.com"
+                                                            id={`${fieldId}-verification-email`}
+                                                        />
+                                                        <FieldError errors={[fieldState.error]}/>
+                                                    </Field>
+                                                }
+                                            />
+                                        </FieldGroup>
+                                    </FieldSet>
+                                    <Button
+                                        type="submit"
+                                        className="w-full"
+                                        disabled={resendMutation.isPending}
+                                        aria-busy={resendMutation.isPending}
+                                    >
+                                        {resendMutation.isPending
+                                            ? <Spinner className="text-primary-foreground" data-icon="inline-start" aria-hidden="true"/>
+                                            : <RefreshCw data-icon="inline-start" aria-hidden="true"/>
+                                        }
+                                        {resendMutation.isPending ? "Sending email…" : "Resend verification email"}
+                                    </Button>
+                                </form>
                                 <Link to="/login" search={{ redirect }} className={cn(buttonVariants({ variant: "outline" }))}>
                                     Go to sign in
                                 </Link>

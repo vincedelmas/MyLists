@@ -1,3 +1,4 @@
+import {clientEnv} from "@/env/client";
 import {RoleType} from "@/lib/utils/enums";
 import {auth} from "@/lib/server/core/auth";
 import {logger} from "@/lib/server/core/logger";
@@ -5,6 +6,7 @@ import {createMiddleware} from "@tanstack/react-start";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
 import {notFound, redirect} from "@tanstack/react-router";
+import {getSafeRedirectPath} from "@/lib/utils/redirects";
 import {isAdminAuthenticated} from "@/lib/utils/admin-token";
 import {hasRequiredRole, toActor} from "@/lib/server/authorization";
 
@@ -31,7 +33,8 @@ export const requiredAuthMiddleware = createMiddleware({ type: "function" })
     .middleware([publicAuthMiddleware])
     .server(async ({ next, context: { currentUser } }) => {
         if (!currentUser) {
-            throw redirect({ to: "/login", search: { authExpired: true } })
+            const redirectTarget = getSafeRedirectPath(getRequest().headers.get("referer"), clientEnv.VITE_BASE_URL);
+            throw redirect({ to: "/login", search: { authExpired: true, redirect: redirectTarget } });
         }
 
         return next({ context: { currentUser } });

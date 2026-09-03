@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_main/_public")({
             await queryClient.invalidateQueries({ queryKey: authOptions.queryKey });
             queryClient.clear();
             toast.add({ title: "You need to sign in to access this content.", type: "warning" });
-            throw redirect({ to: "/login", replace: true });
+            throw redirect({ to: "/login", replace: true, search: { redirect: search.redirect } });
         }
 
         if (currentUser) {

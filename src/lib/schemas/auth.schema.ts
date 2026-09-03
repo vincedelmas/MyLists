@@ -1,4 +1,5 @@
 import * as z from "zod";
+import {getSafeRedirectPath} from "@/lib/utils/redirects";
 
 
 export type Login = z.infer<typeof loginSchema>;
@@ -13,26 +14,11 @@ export const tokenSchema = z.object({
 
 
 export const authRedirectSearchSchema = z.object({
-    redirect: z.preprocess((val?: unknown) => {
-        if (typeof val !== "string" || !val.trim()) return undefined;
-
-        try {
-            const url = new URL(val, "http://mylists.local");
-            if (url.origin !== "http://mylists.local") return undefined;
-
-            const path = `${url.pathname}${url.search}${url.hash}`;
-            if (!path.startsWith("/") || path.startsWith("//")) return undefined;
-
-            return path;
-        }
-        catch {
-            return undefined;
-        }
-    }, z.string().optional()),
     message: z.string().optional().catch(undefined),
-    authExpired: z.preprocess((val) => (val === true || val === "true") ? true : undefined, z.literal(true).optional()),
     step: z.enum(["verify"]).optional().catch(undefined),
     error: z.enum(["TOKEN_EXPIRED", "INVALID_TOKEN", "USER_NOT_FOUND"]).optional().catch(undefined),
+    authExpired: z.preprocess((val) => (val === true || val === "true") ? true : undefined, z.literal(true).optional()),
+    redirect: z.preprocess((val?: unknown) => getSafeRedirectPath(val, "http://mylists.local"), z.string().optional()),
 });
 
 

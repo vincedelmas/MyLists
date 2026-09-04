@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {auth} from "@/lib/server/core/auth";
+import {MediaType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {RateLimiterRes} from "rate-limiter-flexible";
 import {runTask} from "@/lib/server/tasks/task-runner";
@@ -146,7 +147,7 @@ export const getAdminMediadleStats = createServerFn({ method: "GET" })
     .validator(searchTypeSchema)
     .handler(async ({ data }) => {
         const mediadleService = await getContainer().then((c) => c.services.mediadle);
-        return mediadleService.getAllUsersStatsForAdmin(data);
+        return mediadleService.getAllUsersStatsForAdmin(MediaType.MOVIES, data);
     });
 
 

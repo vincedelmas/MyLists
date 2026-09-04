@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {createTvAchievementCatalog} from "@/lib/server/domain/media/tv/tv.achievements";
+import {createMoviesMediadleCatalog} from "@/lib/server/domain/media/movies/movies.mediadle";
 import {booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {mangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 import {gamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
@@ -11,6 +12,7 @@ import {createGamesAchievementCatalog} from "@/lib/server/domain/media/games/gam
 import {createMangaAchievementCatalog} from "@/lib/server/domain/media/manga/manga.achievements";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
+import {createMediadleCatalogRegistry} from "@/lib/server/domain/mediadle/mediadle-catalog";
 import {createTvMonthlyActivity, createTvStatistics, TvRepository, TvService} from "@/lib/server/domain/media/tv";
 import {BooksRepository, BooksService, createBooksMonthlyActivity, createBooksStatistics} from "@/lib/server/domain/media/books";
 import {createGamesMonthlyActivity, createGamesStatistics, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
@@ -57,6 +59,10 @@ export function setupMediaModule() {
     };
     const mediaServiceRegistry = createMediaRegistry(services);
 
+    const mediadleCatalogRegistry = createMediadleCatalogRegistry({
+        [MediaType.MOVIES]: createMoviesMediadleCatalog(moviesServerDefinition, services.movies),
+    });
+
     const mediaStatRegistry = createMediaRegistry({
         [MediaType.SERIES]: createTvStatistics(seriesServerDefinition),
         [MediaType.ANIME]: createTvStatistics(animeServerDefinition),
@@ -88,6 +94,7 @@ export function setupMediaModule() {
             mediaStatistics: mediaStatRegistry,
             mediaRepository: mediaRepositoryRegistry,
             mediaAchievements: mediaAchievementsRegistry,
+            mediadleCatalog: mediadleCatalogRegistry,
             mediaMonthlyActivity: mediaMonthlyActivityRegistry,
         }
     };

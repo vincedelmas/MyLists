@@ -3,12 +3,12 @@ import {MediaModule} from "@/lib/server/core/container/media.module";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {ProviderModule} from "@/lib/server/core/container/provider.module";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
-import {createTvMatcher} from "@/lib/server/domain/imports/matchers/tv.matcher";
+import {createTvMatcher} from "@/lib/server/domain/media/tv/tv.matcher";
 import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
-import {createGamesMatcher} from "@/lib/server/domain/imports/matchers/games.matcher";
-import {createBooksMatcher} from "@/lib/server/domain/imports/matchers/books.matcher";
-import {createMangaMatcher} from "@/lib/server/domain/imports/matchers/manga.matcher";
-import {createMoviesMatcher} from "@/lib/server/domain/imports/matchers/movies.matcher";
+import {createGamesMatcher} from "@/lib/server/domain/media/games/games.matcher";
+import {createBooksMatcher} from "@/lib/server/domain/media/books/books.matcher";
+import {createMangaMatcher} from "@/lib/server/domain/media/manga/manga.matcher";
+import {createMoviesMatcher} from "@/lib/server/domain/media/movies/movies.matcher";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
 
 

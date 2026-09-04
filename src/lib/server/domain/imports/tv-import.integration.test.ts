@@ -9,7 +9,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
-import {createTvMatcher} from "@/lib/server/domain/imports/matchers/tv.matcher";
+import {createTvMatcher} from "@/lib/server/domain/media/tv/tv.matcher";
 import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";

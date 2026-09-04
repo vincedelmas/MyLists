@@ -12,6 +12,7 @@ import {createMangaAchievementCatalog} from "@/lib/server/domain/media/manga/man
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
 import {createWcfCatalogRegistry, defineWcfCatalog} from "@/lib/server/domain/which-came-first/wcf-catalog";
+import {defineTasteSimilarityCatalog} from "@/lib/server/domain/social/taste-similarity-catalog";
 import {createTvMonthlyActivity, createTvStatistics, TvRepository, TvService} from "@/lib/server/domain/media/tv";
 import {createMediadleCatalogRegistry, defineMediadleCatalog} from "@/lib/server/domain/mediadle/mediadle-catalog";
 import {BooksRepository, BooksService, createBooksMonthlyActivity, createBooksStatistics} from "@/lib/server/domain/media/books";
@@ -47,6 +48,15 @@ export function setupMediaModule() {
         [MediaType.GAMES]: createGamesAchievementCatalog(gamesServerDefinition),
         [MediaType.BOOKS]: createBooksAchievementCatalog(booksServerDefinition),
         [MediaType.MANGA]: createMangaAchievementCatalog(mangaServerDefinition),
+    });
+
+    const tasteSimilarityCatalogRegistry = createMediaRegistry({
+        [MediaType.SERIES]: defineTasteSimilarityCatalog(seriesServerDefinition),
+        [MediaType.ANIME]: defineTasteSimilarityCatalog(animeServerDefinition),
+        [MediaType.MOVIES]: defineTasteSimilarityCatalog(moviesServerDefinition),
+        [MediaType.GAMES]: defineTasteSimilarityCatalog(gamesServerDefinition),
+        [MediaType.BOOKS]: defineTasteSimilarityCatalog(booksServerDefinition),
+        [MediaType.MANGA]: defineTasteSimilarityCatalog(mangaServerDefinition),
     });
 
     const services = {
@@ -102,6 +112,7 @@ export function setupMediaModule() {
             mediaStatistics: mediaStatRegistry,
             mediaRepository: mediaRepositoryRegistry,
             mediaAchievements: mediaAchievementsRegistry,
+            tasteSimilarityCatalog: tasteSimilarityCatalogRegistry,
             mediadleCatalog: mediadleCatalogRegistry,
             wcfCatalog: wcfCatalogRegistry,
             mediaMonthlyActivity: mediaMonthlyActivityRegistry,

@@ -20,10 +20,15 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { StatsRepository } = await import("@/lib/server/domain/stats/stats.repository");
 const { UpdateHistoryRepository } = await import("@/lib/server/domain/tracking/update-history.repository");
-const { tasteSimilarityRepository } = await import("@/lib/server/domain/social/taste-similarity.repository");
+const { createTasteSimilarityRepository } = await import("@/lib/server/domain/social/taste-similarity.repository");
+const { defineTasteSimilarityCatalog } = await import("@/lib/server/domain/social/taste-similarity-catalog");
 const { MonthlyActivityRepository } = await import("@/lib/server/domain/tracking/monthly-activity.repository");
 const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime/anime.definition.server");
 const { achievementsRepository } = await import("@/lib/server/domain/achievements/achievements.repository");
+const animeTasteSimilarityCatalog = defineTasteSimilarityCatalog(animeServerDefinition);
+const tasteSimilarityRepository = createTasteSimilarityRepository({
+    get: () => animeTasteSimilarityCatalog,
+});
 
 
 describe("disabled media visibility", () => {

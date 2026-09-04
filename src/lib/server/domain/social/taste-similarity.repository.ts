@@ -2,6 +2,7 @@ import {and, eq, inArray, sql, sum} from "drizzle-orm";
 import type {MediaType, SocialState} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {followers, user, userMediaSettings} from "@/lib/server/database/schema";
+import type {TasteSimilarityCatalogRegistry} from "@/lib/server/domain/social/taste-similarity-catalog";
 
 
 type SharedLovedMediaRow = {
@@ -25,9 +26,9 @@ type CandidateAggregateRow = {
 };
 
 
-export const tasteSimilarityRepository = {
+export const createTasteSimilarityRepository = (catalogRegistry: TasteSimilarityCatalogRegistry) => ({
     async findCandidateAggregates(currentUserId: number, mediaTypes: MediaType[]) {
-        const sharedRatings = mediaTypes.map((mediaType) => sharedRatingsBranch(mediaType, currentUserId));
+        const sharedRatings = mediaTypes.map((mediaType) => catalogRegistry.get(mediaType).buildSharedRatingsBranch(currentUserId));
 
         return getDbClient().all<CandidateAggregateRow>(sql`
             WITH shared_ratings AS (
@@ -76,7 +77,9 @@ export const tasteSimilarityRepository = {
     async getSharedFavMedia(currentUserId: number, candidateIds: number[], mediaTypes: MediaType[]) {
         if (candidateIds.length === 0) return [];
 
-        const sharedLovedMedia = mediaTypes.map((mediaType) => sharedLovedMediaBranch(mediaType, currentUserId, candidateIds));
+        const sharedLovedMedia = mediaTypes.map((mediaType) => (
+            catalogRegistry.get(mediaType).buildSharedLovedMediaBranch(currentUserId, candidateIds)
+        ));
 
         return getDbClient().all<SharedLovedMediaRow>(sql`
             WITH shared_loved_media AS (
@@ -110,60 +113,7 @@ export const tasteSimilarityRepository = {
             ORDER BY candidate_id, media_rank
         `);
     },
-};
+});
 
 
-export type TasteSimilarityRepository = typeof tasteSimilarityRepository;
-
-
-const sharedRatingsBranch = (mediaType: MediaType, currentUserId: number) => {
-    const listTable = sql.raw(`${mediaType}_list`);
-
-    return sql`
-            SELECT
-                candidate.user_id AS candidate_id,
-                ${mediaType} AS media_type,
-                mine.rating AS my_rating,
-                candidate.rating AS their_rating
-            FROM ${listTable} AS mine
-            INNER JOIN ${listTable} AS candidate
-                ON candidate.media_id = mine.media_id
-                AND candidate.user_id <> mine.user_id
-            INNER JOIN user_media_settings AS candidate_settings
-                ON candidate_settings.user_id = candidate.user_id
-                AND candidate_settings.media_type = ${mediaType}
-                AND candidate_settings.active = 1
-            WHERE mine.user_id = ${currentUserId}
-                AND mine.rating IS NOT NULL
-                AND candidate.rating IS NOT NULL
-        `;
-};
-
-
-const sharedLovedMediaBranch = (mediaType: MediaType, currentUserId: number, candidateIds: number[]) => {
-    const mediaTable = sql.raw(mediaType);
-    const listTable = sql.raw(`${mediaType}_list`);
-    const idList = sql.join(candidateIds.map((id) => sql`${id}`), sql`, `);
-
-    return sql`
-            SELECT
-                candidate.user_id AS candidate_id,
-                media.id AS media_id,
-                ${mediaType} AS media_type,
-                media.name AS name,
-                CASE WHEN mine.favorite = 1 AND candidate.favorite = 1 THEN 1 ELSE 0 END AS both_favorite,
-                MIN(mine.rating, candidate.rating) AS lowest_rating
-            FROM ${listTable} AS mine
-            INNER JOIN ${listTable} AS candidate
-                ON candidate.media_id = mine.media_id
-                AND candidate.user_id IN (${idList})
-            INNER JOIN user_media_settings AS candidate_settings
-                ON candidate_settings.user_id = candidate.user_id
-                AND candidate_settings.media_type = ${mediaType}
-                AND candidate_settings.active = 1
-            INNER JOIN ${mediaTable} AS media ON media.id = mine.media_id
-            WHERE mine.user_id = ${currentUserId}
-                AND mine.rating >= 8
-                AND candidate.rating >= 8
-        `;
-};
+export type TasteSimilarityRepository = ReturnType<typeof createTasteSimilarityRepository>;

@@ -3,7 +3,7 @@ import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {StatsService} from "@/lib/server/domain/stats/stats.service";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {UpdateHistoryService} from "@/lib/server/domain/tracking/update-history.service";
-import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
+import type {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
 import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
 
 

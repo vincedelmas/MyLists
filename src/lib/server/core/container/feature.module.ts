@@ -5,13 +5,13 @@ import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository
 import {createMediadleService} from "@/lib/server/domain/mediadle/mediadle.service";
 import {mediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
 import {createCollectionsService} from "@/lib/server/domain/collections/collections.service";
-import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
+import {createNotificationsService} from "@/lib/server/domain/notifications/notifications.service";
 import {collectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {createAchievementsService} from "@/lib/server/domain/achievements/achievements.service";
 import {achievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {createFeatureVotesService} from "@/lib/server/domain/feature-votes/feature-votes.service";
 import {featureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
-import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
+import {notificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 
 
 export function setupFeatureModule(mediaModule: MediaModule, accountModule: AccountModule) {
@@ -21,9 +21,9 @@ export function setupFeatureModule(mediaModule: MediaModule, accountModule: Acco
         collections: collectionsRepository,
         achievements: achievementsRepository,
         featureVotes: featureVotesRepository,
-        notifications: NotificationsRepository,
+        notifications: notificationsRepository,
     };
-    const notificationsService = new NotificationsService(repositories.notifications);
+    const notificationsService = createNotificationsService(repositories.notifications);
 
     return {
         repositories,

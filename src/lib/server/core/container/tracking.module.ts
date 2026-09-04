@@ -1,18 +1,18 @@
-import {FeatureModule} from "@/lib/server/core/container/feature.module";
 import {MediaModule} from "@/lib/server/core/container/media.module";
-import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
-import {StatsService} from "@/lib/server/domain/stats/stats.service";
+import {FeatureModule} from "@/lib/server/core/container/feature.module";
+import {statsRepository} from "@/lib/server/domain/stats/stats.repository";
+import {createStatsService} from "@/lib/server/domain/stats/stats.service";
+import {YearRecapService} from "@/lib/server/domain/year-recap/year-recap.service";
+import {updateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
+import {createUpdateHistoryService} from "@/lib/server/domain/tracking/update-history.service";
 import {createMediaTrackingService} from "@/lib/server/domain/tracking/media-tracking.service";
 import {monthlyActivityRepository} from "@/lib/server/domain/tracking/monthly-activity.repository";
 import {createMonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
-import {updateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
-import {createUpdateHistoryService} from "@/lib/server/domain/tracking/update-history.service";
-import {YearRecapService} from "@/lib/server/domain/year-recap/year-recap.service";
 
 
 export function setupTrackingModule(mediaModule: MediaModule, featureModule: FeatureModule) {
     const repositories = {
-        stats: StatsRepository,
+        stats: statsRepository,
         activity: monthlyActivityRepository,
         updateHistory: updateHistoryRepository,
     };
@@ -20,7 +20,7 @@ export function setupTrackingModule(mediaModule: MediaModule, featureModule: Fea
     const updateHistoryService = createUpdateHistoryService(repositories.updateHistory);
     const activityService = createMonthlyActivityService(repositories.activity, mediaModule.registries.mediaMonthlyActivity);
 
-    const statsService = new StatsService(
+    const statsService = createStatsService(
         repositories.stats,
         activityService,
         featureModule.repositories.achievements,

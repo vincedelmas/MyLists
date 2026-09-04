@@ -18,7 +18,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 
 const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
-const { StatsRepository } = await import("@/lib/server/domain/stats/stats.repository");
+const { statsRepository } = await import("@/lib/server/domain/stats/stats.repository");
 const { updateHistoryRepository } = await import("@/lib/server/domain/tracking/update-history.repository");
 const { createTasteSimilarityRepository } = await import("@/lib/server/domain/social/taste-similarity.repository");
 const { defineTasteSimilarityCatalog } = await import("@/lib/server/domain/social/taste-similarity-catalog");
@@ -54,7 +54,7 @@ describe("disabled media visibility", () => {
     it("hides disabled media everywhere without deleting it", async () => {
         const animeRepository = new TvRepository(animeServerDefinition);
 
-        const disabledStats = await StatsRepository.getPreComputedStatsSummary({ userId: 42 });
+        const disabledStats = await statsRepository.getPreComputedStatsSummary({ userId: 42 });
         const disabledUpdates = await updateHistoryRepository.getUserUpdates(42, 10);
         const disabledHistory = await updateHistoryRepository.getUserUpdatesPaginated({}, 42);
         const disabledActivity = await monthlyActivityRepository.getPaginatedMonthlyActivities(42, {
@@ -90,7 +90,7 @@ describe("disabled media visibility", () => {
                 eq(userMediaSettings.mediaType, MediaType.ANIME),
             ));
 
-        const enabledStats = await StatsRepository.getPreComputedStatsSummary({ userId: 42 });
+        const enabledStats = await statsRepository.getPreComputedStatsSummary({ userId: 42 });
         const enabledUpdates = await updateHistoryRepository.getUserUpdates(42, 10);
         const enabledActivity = await monthlyActivityRepository.getPaginatedMonthlyActivities(42, {
             page: 1,
@@ -130,7 +130,7 @@ describe("disabled media visibility", () => {
             .set({ privacy: "private" })
             .where(eq(user.id, 42));
 
-        const hallOfFame = await StatsRepository.userHallOfFameData({});
+        const hallOfFame = await statsRepository.userHallOfFameData({});
         const privateUser = hallOfFame.rankedUsers.find(({ id }) => id === 42);
         const settings = hallOfFame.userSettingsMap.get(42);
 

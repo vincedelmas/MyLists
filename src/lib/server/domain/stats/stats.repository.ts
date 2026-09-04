@@ -10,15 +10,15 @@ import {and, count, countDistinct, eq, gt, inArray, SQL, sql, sum} from "drizzle
 import {user, userMediaSettings, userMediaStatsHistory} from "@/lib/server/database/schema";
 
 
-export class StatsRepository {
-    static async userActiveMediaSettings(userId: number) {
+export const statsRepository = {
+    async userActiveMediaSettings(userId: number) {
         return getDbClient()
             .select()
             .from(userMediaSettings)
             .where(and(eq(userMediaSettings.userId, userId), eq(userMediaSettings.active, true)));
-    }
+    },
 
-    static async updateUserMediaListSettings(userId: number, payload: Partial<Record<MediaType, boolean>>) {
+    async updateUserMediaListSettings(userId: number, payload: Partial<Record<MediaType, boolean>>) {
         const updateCases = Object.entries(payload).map(([mediaType, active]) => {
             return sql`WHEN ${userMediaSettings.mediaType} = ${mediaType} THEN ${active}`;
         });
@@ -27,9 +27,9 @@ export class StatsRepository {
             .update(userMediaSettings)
             .set({ active: sql`CASE ${sql.join(updateCases, sql` `)} ELSE ${userMediaSettings.active} END` })
             .where(eq(userMediaSettings.userId, userId))
-    }
+    },
 
-    static async updateUserPreComputedStatsWithDelta(userId: number, mediaType: MediaType, mediaId: number, delta: DeltaStats) {
+    async updateUserPreComputedStatsWithDelta(userId: number, mediaType: MediaType, mediaId: number, delta: DeltaStats) {
         type UserMediaSettingsUpdate = Partial<{
             [K in keyof typeof userMediaSettings]: (typeof userMediaSettings)[K] | ReturnType<typeof sql>;
         }>;
@@ -91,9 +91,9 @@ export class StatsRepository {
                     ...updateSnapshot,
                 });
         }
-    }
+    },
 
-    static async userHallOfFameData(filters: SearchType, userId?: number) {
+    async userHallOfFameData(filters: SearchType, userId?: number) {
         const { search = "" } = filters;
         const mediaTypes = Object.values(MediaType);
         const sorting = resolveSorting(filters.sorting, ["normalized", "profile", ...mediaTypes] as const, "normalized");
@@ -273,7 +273,7 @@ export class StatsRepository {
                 .get();
 
             // Get Current User's Active Media Settings
-            const settings = await this.userActiveMediaSettings(userId);
+            const settings = await statsRepository.userActiveMediaSettings(userId);
             currentUserActiveSettings = new Set(settings.map((s) => s.mediaType));
         }
 
@@ -287,9 +287,9 @@ export class StatsRepository {
             currentUserRankData: currentUserRankData!,
             page, pages, total,
         };
-    }
+    },
 
-    static async updateAllUsersPreComputedStats(mediaType: MediaType, userStats: UserMediaStats[]) {
+    async updateAllUsersPreComputedStats(mediaType: MediaType, userStats: UserMediaStats[]) {
         const tx = getDbClient();
 
         for (const stats of userStats) {
@@ -298,9 +298,9 @@ export class StatsRepository {
                 .set({ ...stats, mediaType })
                 .where(and(eq(userMediaSettings.userId, stats.userId), eq(userMediaSettings.mediaType, mediaType)));
         }
-    }
+    },
 
-    static async getAggregatedMediaStats({ userId, mediaType }: { userId?: number, mediaType: MediaType }) {
+    async getAggregatedMediaStats({ userId, mediaType }: { userId?: number, mediaType: MediaType }) {
         const conditions = [eq(userMediaSettings.active, true), eq(userMediaSettings.mediaType, mediaType)];
         if (userId) conditions.push(eq(userMediaSettings.userId, userId));
 
@@ -351,9 +351,9 @@ export class StatsRepository {
             timeSpentDays: (stats.timeSpentHours ?? 0) / 24,
             avgRated: (!stats.totalRated || stats.totalRated === 0) ? null : (stats.sumOfAllRatings / stats.totalRated),
         };
-    }
+    },
 
-    static async getPreComputedStatsSummary({ userId }: { userId?: number }) {
+    async getPreComputedStatsSummary({ userId }: { userId?: number }) {
         const conditions: SQL[] = [eq(userMediaSettings.active, true)];
         if (userId) conditions.push(eq(userMediaSettings.userId, userId));
         const activeSettings = and(...conditions);
@@ -428,5 +428,8 @@ export class StatsRepository {
                 distinctMediaTypes: preComputedStats?.distinctMediaTypes ?? 0,
             },
         };
-    }
-}
+    },
+};
+
+
+export type StatsRepository = typeof statsRepository;

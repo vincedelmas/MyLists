@@ -2,7 +2,7 @@ import {ApiProviderType, TvMediaType} from "@/lib/utils/enums";
 import {TvService} from "@/lib/server/domain/media/tv/tv.service";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
-import {ExternalTMDBTvMatcher} from "@/lib/server/domain/imports/matchers/external-tv.matcher";
+import {ExternalTMDBTvMatcher} from "@/lib/server/domain/media/tv/external-tv.matcher";
 import {TvImportListWriter} from "@/lib/server/domain/media/tv/tv-import-list.writer";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";

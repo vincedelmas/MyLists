@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 import {ImportItemsSelect} from "@/lib/types/imports.types";
-import {ExternalTMDBTvMatcher} from "@/lib/server/domain/imports/matchers/external-tv.matcher";
+import {ExternalTMDBTvMatcher} from "@/lib/server/domain/media/tv/external-tv.matcher";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 
 

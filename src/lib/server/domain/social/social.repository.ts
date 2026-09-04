@@ -1,25 +1,25 @@
 import {alias} from "drizzle-orm/sqlite-core";
-import {and, asc, eq, sql} from "drizzle-orm";
 import {SocialState} from "@/lib/utils/enums";
+import {and, asc, eq, sql} from "drizzle-orm";
 import {followers, user} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
 
 
-export class SocialRepository {
-    static async follow(followerId: number, followedId: number, status: SocialState) {
+export const socialRepository = {
+    async follow(followerId: number, followedId: number, status: SocialState) {
         await getDbClient()
             .insert(followers)
             .values({ followerId, followedId, status })
             .onConflictDoNothing();
-    }
+    },
 
-    static async unfollow(followerId: number, followedId: number) {
+    async unfollow(followerId: number, followedId: number) {
         await getDbClient()
             .delete(followers)
             .where(and(eq(followers.followerId, followerId), eq(followers.followedId, followedId)));
-    }
+    },
 
-    static async acceptFollowRequest(followerId: number, followedId: number) {
+    async acceptFollowRequest(followerId: number, followedId: number) {
         return getDbClient()
             .update(followers)
             .set({ status: SocialState.ACCEPTED })
@@ -29,9 +29,9 @@ export class SocialRepository {
                 eq(followers.status, SocialState.REQUESTED),
             ))
             .returning({ id: followers.followerId });
-    }
+    },
 
-    static async declineFollowRequest(followerId: number, followedId: number) {
+    async declineFollowRequest(followerId: number, followedId: number) {
         return getDbClient()
             .delete(followers)
             .where(and(
@@ -40,9 +40,9 @@ export class SocialRepository {
                 eq(followers.status, SocialState.REQUESTED),
             ))
             .returning({ id: followers.followerId });
-    }
+    },
 
-    static async getUserFollowers(currentUserId: number | undefined, userId: number, limit = 8) {
+    async getUserFollowers(currentUserId: number | undefined, userId: number, limit = 8) {
         const currentUserFollows = alias(followers, "currentUserFollows");
         const followersUsers = await getDbClient()
             .select({
@@ -68,9 +68,9 @@ export class SocialRepository {
             .limit(limit);
 
         return { followers: followersUsers };
-    }
+    },
 
-    static async getUserFollows(currentUserId: number | undefined, userId: number, limit = 8) {
+    async getUserFollows(currentUserId: number | undefined, userId: number, limit = 8) {
         const currentUserFollows = alias(followers, "currentUserFollows");
         const followedUsers = await getDbClient()
             .select({
@@ -96,9 +96,9 @@ export class SocialRepository {
             .limit(limit);
 
         return { follows: followedUsers };
-    }
+    },
 
-    static async getFollowCount(userId: number) {
+    async getFollowCount(userId: number) {
         const followsCount = getDbClient()
             .select({ value: sql<number>`count()` })
             .from(followers)
@@ -111,13 +111,16 @@ export class SocialRepository {
             .get()?.value ?? 0;
 
         return { followersCount, followsCount };
-    }
+    },
 
-    static async getFollowingStatus(userId: number, followedId: number) {
+    async getFollowingStatus(userId: number, followedId: number) {
         return getDbClient()
             .select()
             .from(followers)
             .where(and(eq(followers.followerId, userId), eq(followers.followedId, followedId)))
             .get();
-    }
-}
+    },
+};
+
+
+export type SocialRepository = typeof socialRepository;

@@ -1,5 +1,5 @@
 import {and, eq, inArray, sql, sum} from "drizzle-orm";
-import {MediaType, SocialState} from "@/lib/utils/enums";
+import type {MediaType, SocialState} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {followers, user, userMediaSettings} from "@/lib/server/database/schema";
 
@@ -25,9 +25,9 @@ type CandidateAggregateRow = {
 };
 
 
-export class TasteSimilarityRepository {
-    static async findCandidateAggregates(currentUserId: number, mediaTypes: MediaType[]) {
-        const sharedRatings = mediaTypes.map((mediaType) => this._sharedRatingsBranch(mediaType, currentUserId));
+export const tasteSimilarityRepository = {
+    async findCandidateAggregates(currentUserId: number, mediaTypes: MediaType[]) {
+        const sharedRatings = mediaTypes.map((mediaType) => sharedRatingsBranch(mediaType, currentUserId));
 
         return getDbClient().all<CandidateAggregateRow>(sql`
             WITH shared_ratings AS (
@@ -48,9 +48,9 @@ export class TasteSimilarityRepository {
             WHERE candidate_user.email_verified = 1
             GROUP BY shared.candidate_id, shared.media_type
         `);
-    }
+    },
 
-    static async getCandidateProfiles(candidateIds: number[], currentUserId: number) {
+    async getCandidateProfiles(candidateIds: number[], currentUserId: number) {
         if (candidateIds.length === 0) return [];
 
         return getDbClient()
@@ -71,12 +71,12 @@ export class TasteSimilarityRepository {
             .leftJoin(userMediaSettings, and(eq(userMediaSettings.userId, user.id), eq(userMediaSettings.active, true)))
             .where(inArray(user.id, candidateIds))
             .groupBy(user.id);
-    }
+    },
 
-    static async getSharedFavMedia(currentUserId: number, candidateIds: number[], mediaTypes: MediaType[]) {
+    async getSharedFavMedia(currentUserId: number, candidateIds: number[], mediaTypes: MediaType[]) {
         if (candidateIds.length === 0) return [];
 
-        const sharedLovedMedia = mediaTypes.map((mediaType) => this._sharedLovedMediaBranch(mediaType, currentUserId, candidateIds));
+        const sharedLovedMedia = mediaTypes.map((mediaType) => sharedLovedMediaBranch(mediaType, currentUserId, candidateIds));
 
         return getDbClient().all<SharedLovedMediaRow>(sql`
             WITH shared_loved_media AS (
@@ -109,12 +109,17 @@ export class TasteSimilarityRepository {
             WHERE media_rank <= 4
             ORDER BY candidate_id, media_rank
         `);
-    }
+    },
+};
 
-    static _sharedRatingsBranch(mediaType: MediaType, currentUserId: number) {
-        const listTable = sql.raw(`${mediaType}_list`);
 
-        return sql`
+export type TasteSimilarityRepository = typeof tasteSimilarityRepository;
+
+
+const sharedRatingsBranch = (mediaType: MediaType, currentUserId: number) => {
+    const listTable = sql.raw(`${mediaType}_list`);
+
+    return sql`
             SELECT
                 candidate.user_id AS candidate_id,
                 ${mediaType} AS media_type,
@@ -132,14 +137,15 @@ export class TasteSimilarityRepository {
                 AND mine.rating IS NOT NULL
                 AND candidate.rating IS NOT NULL
         `;
-    };
+};
 
-    static _sharedLovedMediaBranch(mediaType: MediaType, currentUserId: number, candidateIds: number[]) {
-        const mediaTable = sql.raw(mediaType);
-        const listTable = sql.raw(`${mediaType}_list`);
-        const idList = sql.join(candidateIds.map((id) => sql`${id}`), sql`, `);
 
-        return sql`
+const sharedLovedMediaBranch = (mediaType: MediaType, currentUserId: number, candidateIds: number[]) => {
+    const mediaTable = sql.raw(mediaType);
+    const listTable = sql.raw(`${mediaType}_list`);
+    const idList = sql.join(candidateIds.map((id) => sql`${id}`), sql`, `);
+
+    return sql`
             SELECT
                 candidate.user_id AS candidate_id,
                 media.id AS media_id,
@@ -160,5 +166,4 @@ export class TasteSimilarityRepository {
                 AND mine.rating >= 8
                 AND candidate.rating >= 8
         `;
-    }
-}
+};

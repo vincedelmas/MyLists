@@ -20,7 +20,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { StatsRepository } = await import("@/lib/server/domain/stats/stats.repository");
 const { UpdateHistoryRepository } = await import("@/lib/server/domain/tracking/update-history.repository");
-const { TasteSimilarityRepository } = await import("@/lib/server/domain/social/taste-similarity.repository");
+const { tasteSimilarityRepository } = await import("@/lib/server/domain/social/taste-similarity.repository");
 const { MonthlyActivityRepository } = await import("@/lib/server/domain/tracking/monthly-activity.repository");
 const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime/anime.definition.server");
 const { achievementsRepository } = await import("@/lib/server/domain/achievements/achievements.repository");
@@ -61,9 +61,9 @@ describe("disabled media visibility", () => {
         const disabledAchievements = await achievementsRepository.getAchievementsDetails(42, 10);
         const disabledAchievementPage = await achievementsRepository.getUserAchievements(42);
         const disabledCommunity = await animeRepository.getMediaCommunityActivity(toActor(), 100, {});
-        const disabledTasteAggregates = await TasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
-        const disabledSharedFavorites = await TasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
-        const [disabledCandidate] = await TasteSimilarityRepository.getCandidateProfiles([42], 43);
+        const disabledTasteAggregates = await tasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
+        const disabledSharedFavorites = await tasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
+        const [disabledCandidate] = await tasteSimilarityRepository.getCandidateProfiles([42], 43);
 
         expect(disabledStats.preComputedStats.totalHours).toBe(8);
         expect(disabledStats.mediaTimeDistribution.map((item) => item.name)).toEqual([MediaType.MOVIES]);
@@ -95,9 +95,9 @@ describe("disabled media visibility", () => {
         });
         const enabledAchievements = await achievementsRepository.getAchievementsDetails(42, 10);
         const enabledCommunity = await animeRepository.getMediaCommunityActivity(toActor(), 100, {});
-        const enabledTasteAggregates = await TasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
-        const enabledSharedFavorites = await TasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
-        const [enabledCandidate] = await TasteSimilarityRepository.getCandidateProfiles([42], 43);
+        const enabledTasteAggregates = await tasteSimilarityRepository.findCandidateAggregates(43, [MediaType.ANIME]);
+        const enabledSharedFavorites = await tasteSimilarityRepository.getSharedFavMedia(43, [42], [MediaType.ANIME]);
+        const [enabledCandidate] = await tasteSimilarityRepository.getCandidateProfiles([42], 43);
 
         expect(enabledStats.preComputedStats.totalHours).toBeCloseTo(1706 / 60);
         expect(enabledStats.mediaTimeDistribution.map((item) => item.name).sort()).toEqual([MediaType.ANIME, MediaType.MOVIES]);

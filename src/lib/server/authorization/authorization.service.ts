@@ -1,6 +1,6 @@
 import {PrivacyType, SocialState} from "@/lib/utils/enums";
 import {AccessDecision, Actor} from "@/lib/server/authorization/utils";
-import {SocialService} from "@/lib/server/domain/social/social.service";
+import type {SocialService} from "@/lib/server/domain/social/social.service";
 import {profilePolicy, ProfileSubject} from "@/lib/server/authorization/policies/profile.policy";
 import {CollectionAction, collectionPolicy, CollectionSubject} from "@/lib/server/authorization/policies/collection.policy";
 

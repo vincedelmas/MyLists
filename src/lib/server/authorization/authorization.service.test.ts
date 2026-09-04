@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 import {toActor} from "@/lib/server/authorization/utils";
-import {SocialService} from "@/lib/server/domain/social/social.service";
+import type {SocialService} from "@/lib/server/domain/social/social.service";
 import {DenialReason, PrivacyType, RoleType, SocialState} from "@/lib/utils/enums";
 import {AuthorizationService} from "@/lib/server/authorization/authorization.service";
 

@@ -3,8 +3,8 @@ import {AuthorizationService, toActor} from "@/lib/server/authorization";
 import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
 import {DenialReason, MediaType, PrivacyType, RoleType} from "@/lib/utils/enums";
 import type {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
-import {CollectionsService} from "@/lib/server/domain/collections/collections.service";
-import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
+import {createCollectionsService} from "@/lib/server/domain/collections/collections.service";
+import type {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 
 
 const createService = () => {
@@ -52,7 +52,7 @@ const createService = () => {
             items: [],
             perPage: 12,
         }),
-    } as unknown as typeof CollectionsRepository;
+    } as unknown as CollectionsRepository;
 
     const capabilities = {
         read: true,
@@ -73,7 +73,7 @@ const createService = () => {
     const mediaRegistry = {
         get: vi.fn().mockReturnValue(mediaService),
     } as unknown as MediaServiceRegistry;
-    const service = new CollectionsService(authorizationService, repository, mediaRegistry);
+    const service = createCollectionsService(authorizationService, repository, mediaRegistry);
 
     return {
         service,
@@ -86,7 +86,7 @@ const createService = () => {
 };
 
 
-describe("CollectionsService.getUserCollections", () => {
+describe("createCollectionsService().getUserCollections", () => {
     it("forwards an admin actor to the repository visibility scope", async () => {
         const { repository, service } = createService();
 
@@ -98,7 +98,7 @@ describe("CollectionsService.getUserCollections", () => {
 });
 
 
-describe("CollectionsService.getPaginatedUserCollections", () => {
+describe("createCollectionsService().getPaginatedUserCollections", () => {
     it("passes filters and the viewer actor through", async () => {
         const { repository, service } = createService();
         const filters = { search: "favorites", page: 2, mediaType: MediaType.MOVIES };
@@ -111,7 +111,7 @@ describe("CollectionsService.getPaginatedUserCollections", () => {
 });
 
 
-describe("CollectionsService authorization", () => {
+describe("createCollectionsService() authorization", () => {
     it("stops collection-detail loading when access is denied and preserves restricted errors", async () => {
         const { authorizationService, repository, service } = createService();
         const actor = toActor();

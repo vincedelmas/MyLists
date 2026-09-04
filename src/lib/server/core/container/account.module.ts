@@ -7,9 +7,9 @@ import {SocialRepository} from "@/lib/server/domain/social/social.repository";
 import {accountRepository} from "@/lib/server/domain/account/account.repository";
 import {ProfileRepository} from "@/lib/server/domain/profile/profile.repository";
 import {TasteSimilarityService} from "@/lib/server/domain/social/taste-similarity.service";
-import {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
+import {createInactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
 import {TasteSimilarityRepository} from "@/lib/server/domain/social/taste-similarity.repository";
-import {InactiveAccountRepository} from "@/lib/server/domain/account/inactive-account.repository";
+import {inactiveAccountRepository} from "@/lib/server/domain/account/inactive-account.repository";
 
 
 export function setupAccountModule(mediaModule: MediaModule) {
@@ -17,12 +17,12 @@ export function setupAccountModule(mediaModule: MediaModule) {
         social: SocialRepository,
         account: accountRepository,
         profile: ProfileRepository,
-        inactiveAccount: InactiveAccountRepository,
+        inactiveAccount: inactiveAccountRepository,
         tasteSimilarity: TasteSimilarityRepository,
     };
 
     const socialService = new SocialService(repositories.social);
-    const inactiveAccountService = new InactiveAccountService(repositories.inactiveAccount);
+    const inactiveAccountService = createInactiveAccountService(repositories.inactiveAccount);
     const accountService = createAccountService(repositories.account, inactiveAccountService);
 
     return {

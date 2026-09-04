@@ -6,8 +6,8 @@ import {WarningFailedPayload, WarningSentPayload} from "@/lib/types/inactive.typ
 import {and, asc, count, eq, exists, gt, gte, inArray, isNotNull, isNull, like, lt, lte, notExists, or, sql} from "drizzle-orm";
 
 
-export class InactiveAccountRepository {
-    static async getWarningTargets(limit: number, maxRetries: number) {
+export const inactiveAccountRepository = {
+    async getWarningTargets(limit: number, maxRetries: number) {
         const db = getDbClient();
         const warningDueAt = sql<string>`datetime('now', '-2 years', '+30 days')`;
 
@@ -69,9 +69,9 @@ export class InactiveAccountRepository {
         return [...retryTargets, ...newTargets]
             .sort((a, b) => a.lastSeenAt.localeCompare(b.lastSeenAt))
             .slice(0, limit);
-    }
+    },
 
-    static async warningSent(payload: WarningSentPayload) {
+    async warningSent(payload: WarningSentPayload) {
         const values = {
             lastEmailError: null,
             status: "warned" as const,
@@ -99,9 +99,9 @@ export class InactiveAccountRepository {
                 lastSeenAt: payload.lastSeenAt,
                 deletionScheduledAt: payload.deletionScheduledAt,
             });
-    }
+    },
 
-    static async warningFailed(payload: WarningFailedPayload) {
+    async warningFailed(payload: WarningFailedPayload) {
         const safeMessage = payload.errorMessage.slice(0, 500);
 
         if (payload.lifecycleId) {
@@ -130,9 +130,9 @@ export class InactiveAccountRepository {
                 lastEmailAttemptAt: sql`datetime('now')`,
                 deletionScheduledAt: payload.deletionScheduledAt,
             });
-    }
+    },
 
-    static async markResurrectedUsers() {
+    async markResurrectedUsers() {
         const db = getDbClient();
 
         const rows = await db
@@ -157,9 +157,9 @@ export class InactiveAccountRepository {
             )).returning({ id: inactiveAccountDeletion.id });
 
         return rows.length;
-    }
+    },
 
-    static async findUserIdByTokenHash(warningTokenHash: string) {
+    async findUserIdByTokenHash(warningTokenHash: string) {
         return getDbClient()
             .select({ userId: inactiveAccountDeletion.userId })
             .from(inactiveAccountDeletion)
@@ -167,9 +167,9 @@ export class InactiveAccountRepository {
                 eq(inactiveAccountDeletion.status, "warned"),
                 eq(inactiveAccountDeletion.warningTokenHash, warningTokenHash),
             )).get();
-    }
+    },
 
-    static async getDeletionTargets(maxRetries: number) {
+    async getDeletionTargets(maxRetries: number) {
         return getDbClient()
             .select({
                 userId: user.id,
@@ -190,9 +190,9 @@ export class InactiveAccountRepository {
                 lte(inactiveAccountDeletion.deletionScheduledAt, sql<string>`datetime('now')`),
             ))
             .orderBy(asc(inactiveAccountDeletion.deletionScheduledAt));
-    }
+    },
 
-    static async markAsDeleted(lifecycleId: number, userId: number, username: string) {
+    async markAsDeleted(lifecycleId: number, userId: number, username: string) {
         const db = getDbClient();
 
         const rows = await db
@@ -224,15 +224,15 @@ export class InactiveAccountRepository {
             .returning({ id: inactiveAccountDeletion.id });
 
         return rows.length > 0;
-    }
+    },
 
-    static async deleteRowsForUser(userId: number) {
+    async deleteRowsForUser(userId: number) {
         await getDbClient()
             .delete(inactiveAccountDeletion)
             .where(eq(inactiveAccountDeletion.userId, userId));
-    }
+    },
 
-    static async getAdminOverview(data: SearchType) {
+    async getAdminOverview(data: SearchType) {
         const search = data.search ?? "";
         const searchCondition = search ? like(inactiveAccountDeletion.username, `%${search}%`) : undefined;
 
@@ -311,5 +311,8 @@ export class InactiveAccountRepository {
                 resurrectionRate: warned + resurrected + deleted > 0 ? resurrected / (warned + resurrected + deleted) : 0,
             },
         };
-    }
-}
+    },
+};
+
+
+export type InactiveAccountRepository = typeof inactiveAccountRepository;

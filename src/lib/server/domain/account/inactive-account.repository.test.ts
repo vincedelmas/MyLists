@@ -18,11 +18,11 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { createAccountService } = await import("@/lib/server/domain/account/account.service");
 const { accountRepository } = await import("@/lib/server/domain/account/account.repository");
-const { InactiveAccountService } = await import("@/lib/server/domain/account/inactive-account.service");
-const { InactiveAccountRepository } = await import("@/lib/server/domain/account/inactive-account.repository");
+const { createInactiveAccountService } = await import("@/lib/server/domain/account/inactive-account.service");
+const { inactiveAccountRepository } = await import("@/lib/server/domain/account/inactive-account.repository");
 
 
-describe("InactiveAccountRepository.markAsDeleted", () => {
+describe("inactiveAccountRepository.markAsDeleted", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -49,7 +49,7 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
             deletionScheduledAt: "2024-02-01 00:00:00",
         });
 
-        const marked = await InactiveAccountRepository.markAsDeleted(lifecycleId, userId, "renamed-user");
+        const marked = await inactiveAccountRepository.markAsDeleted(lifecycleId, userId, "renamed-user");
         const lifecycle = await getLifecycle(lifecycleId);
 
         expect(marked).toBe(true);
@@ -69,7 +69,7 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
             deletionScheduledAt: "2024-02-01 00:00:00",
         });
 
-        const marked = await InactiveAccountRepository.markAsDeleted(lifecycleId, userId, "active-user");
+        const marked = await inactiveAccountRepository.markAsDeleted(lifecycleId, userId, "active-user");
         const lifecycle = await getLifecycle(lifecycleId);
 
         expect(marked).toBe(false);
@@ -86,7 +86,7 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
             deletionScheduledAt: "2999-01-01 00:00:00",
         });
 
-        const marked = await InactiveAccountRepository.markAsDeleted(lifecycleId, userId, "future-user");
+        const marked = await inactiveAccountRepository.markAsDeleted(lifecycleId, userId, "future-user");
         const lifecycle = await getLifecycle(lifecycleId);
 
         expect(marked).toBe(false);
@@ -105,8 +105,8 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
             deletionScheduledAt: "2024-02-01 00:00:00",
         });
 
-        const marked = await InactiveAccountRepository.markAsDeleted(lifecycleId, userId, "unwarned-user");
-        const deletionTargets = await InactiveAccountRepository.getDeletionTargets(3);
+        const marked = await inactiveAccountRepository.markAsDeleted(lifecycleId, userId, "unwarned-user");
+        const deletionTargets = await inactiveAccountRepository.getDeletionTargets(3);
         const lifecycle = await getLifecycle(lifecycleId);
 
         expect(marked).toBe(false);
@@ -125,7 +125,7 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
             deletionScheduledAt: "2024-02-01 00:00:00",
         });
 
-        const marked = await InactiveAccountRepository.markAsDeleted(lifecycleId, userId, "resurrected-user");
+        const marked = await inactiveAccountRepository.markAsDeleted(lifecycleId, userId, "resurrected-user");
         const lifecycle = await getLifecycle(lifecycleId);
 
         expect(marked).toBe(false);
@@ -143,7 +143,7 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
             deletionScheduledAt: "2024-02-01 00:00:00",
         });
 
-        const marked = await InactiveAccountRepository.markAsDeleted(lifecycleId, userId, "deleted-user");
+        const marked = await inactiveAccountRepository.markAsDeleted(lifecycleId, userId, "deleted-user");
         const lifecycle = await getLifecycle(lifecycleId);
 
         expect(marked).toBe(false);
@@ -154,7 +154,7 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
     it("deletes users through the service only when the inactive lifecycle guard passes", async () => {
         const service = createAccountService(
             accountRepository,
-            new InactiveAccountService(InactiveAccountRepository),
+            createInactiveAccountService(inactiveAccountRepository),
         );
 
         const inactiveUserId = await insertUser({ id: 42, updatedAt: "2024-01-01 00:00:00" });

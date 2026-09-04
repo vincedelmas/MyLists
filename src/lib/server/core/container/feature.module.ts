@@ -4,10 +4,10 @@ import {WcfService} from "@/lib/server/domain/which-came-first/wcf.service";
 import {MediadleService} from "@/lib/server/domain/mediadle/mediadle.service";
 import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
 import {MediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
-import {CollectionsService} from "@/lib/server/domain/collections/collections.service";
+import {createCollectionsService} from "@/lib/server/domain/collections/collections.service";
 import {FeatureVotesService} from "@/lib/server/domain/feature-votes/feature-votes.service";
 import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
-import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
+import {collectionsRepository} from "@/lib/server/domain/collections/collections.repository";
 import {createAchievementsService} from "@/lib/server/domain/achievements/achievements.service";
 import {achievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 import {FeatureVotesRepository} from "@/lib/server/domain/feature-votes/feature-votes.repository";
@@ -18,7 +18,7 @@ export function setupFeatureModule(mediaModule: MediaModule, accountModule: Acco
     const repositories = {
         mediadle: MediadleRepository,
         whichCameFirst: WcfRepository,
-        collections: CollectionsRepository,
+        collections: collectionsRepository,
         achievements: achievementsRepository,
         featureVotes: FeatureVotesRepository,
         notifications: NotificationsRepository,
@@ -33,7 +33,7 @@ export function setupFeatureModule(mediaModule: MediaModule, accountModule: Acco
             achievements: createAchievementsService(repositories.achievements),
             featureVotes: new FeatureVotesService(repositories.featureVotes, notificationsService),
             whichCameFirst: new WcfService(repositories.whichCameFirst, mediaModule.registries.mediaService),
-            collections: new CollectionsService(
+            collections: createCollectionsService(
                 accountModule.services.authorization,
                 repositories.collections,
                 mediaModule.registries.mediaService,

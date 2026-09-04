@@ -8,16 +8,16 @@ import {and, asc, count, desc, eq, getTableColumns, like, max, or, sql} from "dr
 import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
 
 
-export class CollectionsRepository {
-    static async createCollection(values: typeof collections.$inferInsert) {
+export const collectionsRepository = {
+    async createCollection(values: typeof collections.$inferInsert) {
         return getDbClient()
             .insert(collections)
             .values(values)
             .returning({ id: collections.id })
             .then((res) => res[0].id);
-    }
+    },
 
-    static async updateCollection(collectionId: number, values: Partial<typeof collections.$inferInsert>) {
+    async updateCollection(collectionId: number, values: Partial<typeof collections.$inferInsert>) {
         await getDbClient()
             .update(collections)
             .set({
@@ -25,17 +25,17 @@ export class CollectionsRepository {
                 updatedAt: sql`datetime('now')`,
             })
             .where(eq(collections.id, collectionId));
-    }
+    },
 
-    static async deleteCollection(collectionId: number) {
+    async deleteCollection(collectionId: number) {
         const tx = getDbClient();
 
         await tx
             .delete(collections)
             .where(eq(collections.id, collectionId));
-    }
+    },
 
-    static async replaceCollectionItems(collectionId: number, items: (typeof collectionItems.$inferInsert)[]) {
+    async replaceCollectionItems(collectionId: number, items: (typeof collectionItems.$inferInsert)[]) {
         await getDbClient()
             .delete(collectionItems)
             .where(eq(collectionItems.collectionId, collectionId));
@@ -45,9 +45,9 @@ export class CollectionsRepository {
         await getDbClient()
             .insert(collectionItems)
             .values(items);
-    }
+    },
 
-    static async getCollectionById(collectionId: number) {
+    async getCollectionById(collectionId: number) {
         return getDbClient()
             .select({
                 ownerName: user.name,
@@ -62,17 +62,17 @@ export class CollectionsRepository {
             .innerJoin(user, eq(collections.ownerId, user.id))
             .where(eq(collections.id, collectionId))
             .get();
-    }
+    },
 
-    static async getCollectionItems(collectionId: number) {
+    async getCollectionItems(collectionId: number) {
         return getDbClient()
             .select()
             .from(collectionItems)
             .where(eq(collectionItems.collectionId, collectionId))
             .orderBy(asc(collectionItems.orderIndex));
-    }
+    },
 
-    static async getPaginatedCollectionItems(collectionId: number, page?: number) {
+    async getPaginatedCollectionItems(collectionId: number, page?: number) {
         return paginate({
             page,
             perPage: 24,
@@ -94,9 +94,9 @@ export class CollectionsRepository {
                     .offset(offset);
             },
         });
-    }
+    },
 
-    static async getUserCollectionMemberships(ownerId: number, mediaId: number, mediaType: MediaType) {
+    async getUserCollectionMemberships(ownerId: number, mediaId: number, mediaType: MediaType) {
         const matchingItem = alias(collectionItems, "matchingItem");
 
         return getDbClient()
@@ -116,30 +116,30 @@ export class CollectionsRepository {
             .leftJoin(matchingItem, and(eq(matchingItem.collectionId, collections.id), eq(matchingItem.mediaId, mediaId)))
             .where(and(eq(collections.ownerId, ownerId), eq(collections.mediaType, mediaType)))
             .orderBy(asc(collections.title));
-    }
+    },
 
-    static async getMaxCollectionItemOrder(collectionId: number) {
+    async getMaxCollectionItemOrder(collectionId: number) {
         return getDbClient()
             .select({ maxOrder: max(collectionItems.orderIndex) })
             .from(collectionItems)
             .where(eq(collectionItems.collectionId, collectionId))
             .get()?.maxOrder ?? 0;
-    }
+    },
 
-    static async insertCollectionItem(item: typeof collectionItems.$inferInsert) {
+    async insertCollectionItem(item: typeof collectionItems.$inferInsert) {
         await getDbClient()
             .insert(collectionItems)
             .values(item)
             .onConflictDoNothing();
-    }
+    },
 
-    static async deleteCollectionItem(collectionId: number, mediaId: number) {
+    async deleteCollectionItem(collectionId: number, mediaId: number) {
         await getDbClient()
             .delete(collectionItems)
             .where(and(eq(collectionItems.collectionId, collectionId), eq(collectionItems.mediaId, mediaId)));
-    }
+    },
 
-    static async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType) {
+    async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType) {
         return getDbClient()
             .select({
                 ownerName: user.name,
@@ -170,9 +170,9 @@ export class CollectionsRepository {
                 profileCollectionVisibilityCondition(actor, targetUserId),
             ))
             .orderBy(desc(collections.likeCount));
-    }
+    },
 
-    static async getPaginatedUserCollections(targetUserId: number, actor: Actor, params: Omit<UserCollectionsSearch, "username">) {
+    async getPaginatedUserCollections(targetUserId: number, actor: Actor, params: Omit<UserCollectionsSearch, "username">) {
         const searchFilter = params.search?.trim();
         const searchCondition = searchFilter ? like(collections.title, `%${searchFilter}%`) : undefined;
         const visibilityCondition = profileCollectionVisibilityCondition(actor, targetUserId);
@@ -228,9 +228,9 @@ export class CollectionsRepository {
                     .offset(offset);
             },
         });
-    }
+    },
 
-    static async getPublicCollections(params: CommunitySearch) {
+    async getPublicCollections(params: CommunitySearch) {
         const searchFilter = params.search?.trim();
         const searchCondition = searchFilter ? or(
             like(user.name, `%${searchFilter}%`),
@@ -288,9 +288,9 @@ export class CollectionsRepository {
                     .offset(offset);
             },
         });
-    }
+    },
 
-    static async getMediaCommunityCollections(mediaId: number, mediaType: MediaType) {
+    async getMediaCommunityCollections(mediaId: number, mediaType: MediaType) {
         return getDbClient()
             .select({
                 ownerName: user.name,
@@ -323,55 +323,58 @@ export class CollectionsRepository {
             .where(eq(collections.privacy, PrivacyType.PUBLIC))
             .orderBy(desc(collections.likeCount))
             .limit(6);
-    }
+    },
 
-    static async findLikedCollection(userId: number, collectionId: number) {
+    async findLikedCollection(userId: number, collectionId: number) {
         return getDbClient()
             .select()
             .from(collectionLikes)
             .where(and(eq(collectionLikes.userId, userId), eq(collectionLikes.collectionId, collectionId)))
             .get();
-    }
+    },
 
-    static async insertLike(userId: number, collectionId: number) {
+    async insertLike(userId: number, collectionId: number) {
         await getDbClient()
             .insert(collectionLikes)
             .values({ userId, collectionId });
-    }
+    },
 
-    static async deleteLike(likeId: number) {
+    async deleteLike(likeId: number) {
         await getDbClient()
             .delete(collectionLikes)
             .where(eq(collectionLikes.id, likeId));
-    }
+    },
 
-    static async incrementViewCount(collectionId: number) {
+    async incrementViewCount(collectionId: number) {
         await getDbClient()
             .update(collections)
             .set({ viewCount: sql`${collections.viewCount} + 1` })
             .where(eq(collections.id, collectionId));
-    }
+    },
 
-    static async incrementLikeCount(collectionId: number) {
+    async incrementLikeCount(collectionId: number) {
         await getDbClient()
             .update(collections)
             .set({ likeCount: sql`${collections.likeCount} + 1` })
             .where(eq(collections.id, collectionId));
-    }
+    },
 
-    static async decrementLikeCount(collectionId: number) {
+    async decrementLikeCount(collectionId: number) {
         await getDbClient()
             .update(collections)
             .set({
                 likeCount: sql`CASE WHEN ${collections.likeCount} > 0 THEN ${collections.likeCount} - 1 ELSE 0 END`,
             })
             .where(eq(collections.id, collectionId));
-    }
+    },
 
-    static async incrementCopyCount(collectionId: number) {
+    async incrementCopyCount(collectionId: number) {
         await getDbClient()
             .update(collections)
             .set({ copiedCount: sql`${collections.copiedCount} + 1` })
             .where(eq(collections.id, collectionId));
-    }
-}
+    },
+};
+
+
+export type CollectionsRepository = typeof collectionsRepository;

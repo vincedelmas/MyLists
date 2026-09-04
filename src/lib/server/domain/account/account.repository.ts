@@ -20,19 +20,78 @@ const orderByMediaType = sql`
 `;
 
 
-export class AccountRepository {
-    // --- Tasks & Admin ----------------------------------------------------
+export const accountRepository = {
+    async findById(userId: number) {
+        return getDbClient().query.user.findFirst({
+            where: eq(user.id, userId),
+            with: { userMediaSettings: true },
+        });
+    },
 
-    static async deleteNonActivatedOldUsers() {
-        const result = await getDbClient()
+    async findUserByName(name: string) {
+        return getDbClient()
+            .select()
+            .from(user)
+            .where(eq(user.name, name))
+            .get();
+    },
+
+    async findByUsername(username: string) {
+        const userResult = await getDbClient().query.user.findFirst({
+            where: eq(user.name, username),
+            with: {
+                userMediaSettings: {
+                    orderBy: () => [asc(orderByMediaType)],
+                },
+            },
+        });
+
+        if (!userResult) return null;
+        return userResult;
+    },
+
+    async adminUpdateUser(userId: number, payload: Omit<AdminUpdatePayload, "deleteUser">) {
+        await getDbClient()
+            .update(user)
+            .set(payload)
+            .where(eq(user.id, userId));
+    },
+
+    async updateFeatureFlag(userId: number) {
+        await getDbClient()
+            .update(user)
+            .set({ showUpdateModal: false })
+            .where(eq(user.id, userId));
+    },
+
+    async deleteUserAccount(userId: number) {
+        await getDbClient()
             .delete(user)
-            .where(and(eq(user.emailVerified, false), sql`${user.createdAt} < datetime('now', '-7 days')`))
-            .returning({ id: user.id });
+            .where(eq(user.id, userId));
+    },
 
-        return result.length;
-    }
+    async updateUserSettings(userId: number, payload: Partial<typeof user.$inferInsert>) {
+        await getDbClient()
+            .update(user)
+            .set(payload)
+            .where(eq(user.id, userId));
+    },
 
-    static async getUserStatsForAdmin() {
+    async updateUserLastSeen(userId: number) {
+        await getDbClient()
+            .update(user)
+            .set({ updatedAt: sql`datetime('now')` })
+            .where(eq(user.id, userId));
+    },
+
+    async updateShowOnboarding(userId: number) {
+        await getDbClient()
+            .update(user)
+            .set({ showOnboarding: false })
+            .where(eq(user.id, userId));
+    },
+
+    async getUserStatsForAdmin() {
         const now = new Date();
         const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
@@ -59,93 +118,27 @@ export class AccountRepository {
                 comparedToLastMonth: (res?.newUsersThisMonth || 0) - (res?.newUsersPreviousMonth || 0),
             },
         };
-    }
+    },
 
-    static async getUsersPerPrivacyValueForAdmin() {
-        const privacyValues = Object.values(PrivacyType);
+    async adminUpdateGlobalFlag(payload: AdminUpdatePayload) {
+        const updateData: Partial<typeof user.$inferInsert> = {};
 
-        const result = await getDbClient()
-            .select({
-                count: count(),
-                privacy: user.privacy,
-            })
-            .from(user)
-            .groupBy(user.privacy);
+        if (payload.showUpdateModal !== undefined) {
+            updateData.showUpdateModal = payload.showUpdateModal;
+        }
 
-        return privacyValues.map((privacy) => ({
-            privacy,
-            count: result.find((r) => r.privacy === privacy)?.count ?? 0,
-        }));
-    }
+        if (payload.showOnboarding !== undefined) {
+            updateData.showOnboarding = payload.showOnboarding;
+        }
 
-    static async getActiveUsersForAdmin(limit: number) {
-        return getDbClient()
-            .select({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                image: user.image,
-                privacy: user.privacy,
-                updatedAt: user.updatedAt,
-                createdAt: user.createdAt,
-            })
-            .from(user)
-            .orderBy(desc(user.updatedAt))
-            .limit(limit);
-    }
+        if (Object.keys(updateData).length === 0) return;
 
-    static async getCumUsersPerMonthForAdmin() {
-        const results = getDbClient()
-            .all<{ month: string, count: number }>(sql`
-                WITH monthly_buckets AS (
-                    SELECT
-                        strftime('%Y-%m', ${user.createdAt}) as month,
-                        strftime('%Y-%m-01', ${user.createdAt}) as month_start
-                    FROM ${user}
-                    WHERE ${user.createdAt} <= date('now')
-                ), 
-                monthly_agg AS (
-                    SELECT 
-                        month,
-                        month_start,
-                        COUNT(*) as monthly_count,
-                        SUM(COUNT(*)) OVER (ORDER BY month_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as cum_count
-                    FROM monthly_buckets
-                    GROUP BY month, month_start
-                )
-                SELECT
-                    month,
-                    cum_count as count
-                FROM (
-                    SELECT *
-                    FROM monthly_agg
-                    ORDER BY month_start DESC
-                ) AS recent_months
-                ORDER BY month_start ASC
-            `);
-
-        return results.map((row) => ({
-            count: Number(row.count),
-            month: formatMonthYear(row.month),
-        }));
-    }
-
-    static async updateUserLastSeen(userId: number) {
         await getDbClient()
             .update(user)
-            .set({ updatedAt: sql`datetime('now')` })
-            .where(eq(user.id, userId));
-    }
+            .set(updateData);
+    },
 
-    static async findUserByName(name: string) {
-        return getDbClient()
-            .select()
-            .from(user)
-            .where(eq(user.name, name))
-            .get();
-    }
-
-    static async getMinimalUserSettings(userId: number) {
+    async getMinimalUserSettings(userId: number) {
         return getDbClient()
             .select({
                 active: userMediaSettings.active,
@@ -154,16 +147,9 @@ export class AccountRepository {
             .from(userMediaSettings)
             .where(eq(userMediaSettings.userId, userId))
             .orderBy(orderByMediaType);
-    }
+    },
 
-    static async updateUserSettings(userId: number, payload: Partial<typeof user.$inferInsert>) {
-        await getDbClient()
-            .update(user)
-            .set(payload)
-            .where(eq(user.id, userId));
-    }
-
-    static async getAdminPaginatedUsers(data: SearchType) {
+    async getAdminPaginatedUsers(data: SearchType) {
         const search = data.search ?? "";
         const sortDesc = data.sortDesc ?? true;
 
@@ -192,71 +178,86 @@ export class AccountRepository {
         });
 
         return { items, total, pages };
-    }
+    },
 
-    static async adminUpdateUser(userId: number, payload: Omit<AdminUpdatePayload, "deleteUser">) {
-        await getDbClient()
-            .update(user)
-            .set(payload)
-            .where(eq(user.id, userId));
-    }
+    async getActiveUsersForAdmin(limit: number) {
+        return getDbClient()
+            .select({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                image: user.image,
+                privacy: user.privacy,
+                updatedAt: user.updatedAt,
+                createdAt: user.createdAt,
+            })
+            .from(user)
+            .orderBy(desc(user.updatedAt))
+            .limit(limit);
+    },
 
-    static async updateFeatureFlag(userId: number) {
-        await getDbClient()
-            .update(user)
-            .set({ showUpdateModal: false })
-            .where(eq(user.id, userId));
-    }
-
-    static async deleteUserAccount(userId: number) {
-        await getDbClient()
+    async deleteNonActivatedOldUsers() {
+        const result = await getDbClient()
             .delete(user)
-            .where(eq(user.id, userId));
-    }
+            .where(and(eq(user.emailVerified, false), sql`${user.createdAt} < datetime('now', '-7 days')`))
+            .returning({ id: user.id });
 
-    static async adminUpdateGlobalFlag(payload: AdminUpdatePayload) {
-        const updateData: Partial<typeof user.$inferInsert> = {};
+        return result.length;
+    },
 
-        if (payload.showUpdateModal !== undefined) {
-            updateData.showUpdateModal = payload.showUpdateModal;
-        }
+    async getCumUsersPerMonthForAdmin() {
+        const results = getDbClient()
+            .all<{ month: string, count: number }>(sql`
+                WITH monthly_buckets AS (
+                    SELECT
+                        strftime('%Y-%m', ${user.createdAt}) as month,
+                        strftime('%Y-%m-01', ${user.createdAt}) as month_start
+                    FROM ${user}
+                    WHERE ${user.createdAt} <= date('now')
+                ),
+                monthly_agg AS (
+                    SELECT
+                        month,
+                        month_start,
+                        COUNT(*) as monthly_count,
+                        SUM(COUNT(*)) OVER (ORDER BY month_start ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as cum_count
+                    FROM monthly_buckets
+                    GROUP BY month, month_start
+                )
+                SELECT
+                    month,
+                    cum_count as count
+                FROM (
+                    SELECT *
+                    FROM monthly_agg
+                    ORDER BY month_start DESC
+                ) AS recent_months
+                ORDER BY month_start ASC
+            `);
 
-        if (payload.showOnboarding !== undefined) {
-            updateData.showOnboarding = payload.showOnboarding;
-        }
+        return results.map((row) => ({
+            count: Number(row.count),
+            month: formatMonthYear(row.month),
+        }));
+    },
 
-        if (Object.keys(updateData).length === 0) return;
+    async getUsersPerPrivacyValueForAdmin() {
+        const privacyValues = Object.values(PrivacyType);
 
-        await getDbClient()
-            .update(user)
-            .set(updateData);
-    }
+        const result = await getDbClient()
+            .select({
+                count: count(),
+                privacy: user.privacy,
+            })
+            .from(user)
+            .groupBy(user.privacy);
 
-    static async findByUsername(username: string) {
-        const userResult = await getDbClient().query.user.findFirst({
-            where: eq(user.name, username),
-            with: {
-                userMediaSettings: {
-                    orderBy: () => [asc(orderByMediaType)],
-                },
-            },
-        });
+        return privacyValues.map((privacy) => ({
+            privacy,
+            count: result.find((r) => r.privacy === privacy)?.count ?? 0,
+        }));
+    },
+};
 
-        if (!userResult) return null;
-        return userResult;
-    }
 
-    static async updateShowOnboarding(userId: number) {
-        await getDbClient()
-            .update(user)
-            .set({ showOnboarding: false })
-            .where(eq(user.id, userId));
-    }
-
-    static async findById(userId: number) {
-        return getDbClient().query.user.findFirst({
-            where: eq(user.id, userId),
-            with: { userMediaSettings: true },
-        });
-    }
-}
+export type AccountRepository = typeof accountRepository;

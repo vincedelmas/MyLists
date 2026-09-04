@@ -1,10 +1,10 @@
 import {AuthorizationService} from "@/lib/server/authorization";
 import {MediaModule} from "@/lib/server/core/container/media.module";
 import {SocialService} from "@/lib/server/domain/social/social.service";
-import {AccountService} from "@/lib/server/domain/account/account.service";
+import {createAccountService} from "@/lib/server/domain/account/account.service";
 import {ProfileService} from "@/lib/server/domain/profile/profile.service";
 import {SocialRepository} from "@/lib/server/domain/social/social.repository";
-import {AccountRepository} from "@/lib/server/domain/account/account.repository";
+import {accountRepository} from "@/lib/server/domain/account/account.repository";
 import {ProfileRepository} from "@/lib/server/domain/profile/profile.repository";
 import {TasteSimilarityService} from "@/lib/server/domain/social/taste-similarity.service";
 import {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
@@ -15,7 +15,7 @@ import {InactiveAccountRepository} from "@/lib/server/domain/account/inactive-ac
 export function setupAccountModule(mediaModule: MediaModule) {
     const repositories = {
         social: SocialRepository,
-        account: AccountRepository,
+        account: accountRepository,
         profile: ProfileRepository,
         inactiveAccount: InactiveAccountRepository,
         tasteSimilarity: TasteSimilarityRepository,
@@ -23,7 +23,7 @@ export function setupAccountModule(mediaModule: MediaModule) {
 
     const socialService = new SocialService(repositories.social);
     const inactiveAccountService = new InactiveAccountService(repositories.inactiveAccount);
-    const accountService = new AccountService(repositories.account, inactiveAccountService);
+    const accountService = createAccountService(repositories.account, inactiveAccountService);
 
     return {
         repositories,

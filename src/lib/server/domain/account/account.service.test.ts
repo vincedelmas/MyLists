@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
-import {AccountService} from "@/lib/server/domain/account/account.service";
-import {AccountRepository} from "@/lib/server/domain/account/account.repository";
-import {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
+import {createAccountService} from "@/lib/server/domain/account/account.service";
+import type {AccountRepository} from "@/lib/server/domain/account/account.repository";
+import type {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
 
 
 vi.mock("@/lib/server/database/async-storage", () => ({
@@ -12,7 +12,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 const createService = () => {
     const accountRepository = {
         deleteUserAccount: vi.fn().mockResolvedValue(undefined),
-    } as unknown as typeof AccountRepository;
+    } as unknown as AccountRepository;
 
     const inactiveAccountService = {
         markAsDeleted: vi.fn().mockResolvedValue(true),
@@ -22,12 +22,12 @@ const createService = () => {
     return {
         accountRepository,
         inactiveAccountService,
-        service: new AccountService(accountRepository, inactiveAccountService),
+        service: createAccountService(accountRepository, inactiveAccountService),
     };
 };
 
 
-describe("AccountService.deleteUserAccount", () => {
+describe("createAccountService().deleteUserAccount", () => {
     it("deletes manual accounts after removing inactive account lifecycle rows", async () => {
         const { service, accountRepository, inactiveAccountService } = createService();
 

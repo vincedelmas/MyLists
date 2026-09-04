@@ -2,9 +2,9 @@ import {user} from "@/lib/server/database/schema";
 import {CacheManager} from "@/lib/server/core/cache-manager";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {FormattedError, ValidationError} from "@/lib/utils/error-classes";
-import {AdminUpdatePayload, GeneralSettings, SearchType} from "@/lib/schemas";
-import {AccountRepository} from "@/lib/server/domain/account/account.repository";
-import {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
+import type {AdminUpdatePayload, GeneralSettings, SearchType} from "@/lib/schemas";
+import type {AccountRepository} from "@/lib/server/domain/account/account.repository";
+import type {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
 
 
 type DeleteUserAccountPayload =
@@ -16,109 +16,104 @@ const LAST_SEEN_CACHE_KEY = "lastSeen";
 const UPDATE_THRESHOLD_MS = 5 * 60 * 1000;
 
 
-export class AccountService {
-    constructor(
-        private repository: typeof AccountRepository,
-        private inactiveAccountService: InactiveAccountService,
-    ) {
-    }
+export const createAccountService = (repository: AccountRepository, inactiveAccountService: InactiveAccountService) => {
+    const service = {
+        async getUserOverviewForAdmin() {
+            const userStats = await repository.getUserStatsForAdmin();
+            const recentUsers = await repository.getActiveUsersForAdmin(20);
+            const usersPerPrivacy = await repository.getUsersPerPrivacyValueForAdmin();
+            const cumulativeUsersPerMonth = await repository.getCumUsersPerMonthForAdmin();
 
-    // --- Admin functions --------------------------------------------
+            return {
+                ...userStats,
+                recentUsers,
+                usersPerPrivacy,
+                cumulativeUsersPerMonth,
+            };
+        },
 
-    async getUserOverviewForAdmin() {
-        const userStats = await this.repository.getUserStatsForAdmin();
-        const recentUsers = await this.repository.getActiveUsersForAdmin(20);
-        const usersPerPrivacy = await this.repository.getUsersPerPrivacyValueForAdmin();
-        const cumulativeUsersPerMonth = await this.repository.getCumUsersPerMonthForAdmin();
+        async getPaginatedUsersForAdmin(data: SearchType) {
+            return repository.getAdminPaginatedUsers(data);
+        },
 
-        return {
-            ...userStats,
-            recentUsers,
-            usersPerPrivacy,
-            cumulativeUsersPerMonth,
-        };
-    }
+        async updateUserForAdmin(userId: number | undefined, payload: AdminUpdatePayload) {
+            const { deleteUser, ...updatePayload } = payload;
 
-    async getPaginatedUsersForAdmin(data: SearchType) {
-        return this.repository.getAdminPaginatedUsers(data);
-    }
-
-    async updateUserForAdmin(userId: number | undefined, payload: AdminUpdatePayload) {
-        const { deleteUser, ...updatePayload } = payload;
-
-        if (!userId && (updatePayload.showUpdateModal !== undefined || updatePayload.showOnboarding !== undefined)) {
-            return this.repository.adminUpdateGlobalFlag(updatePayload);
-        }
-
-        if (!userId) return;
-
-        if (deleteUser) {
-            return this.deleteUserAccount({ userId, type: "manual" });
-        }
-
-        const allowedKeys = new Set<keyof typeof updatePayload>(["emailVerified", "role", "privacy", "showOnboarding", "showUpdateModal"]);
-        const isValidPayload = Object.keys(updatePayload).every((k) => allowedKeys.has(k as keyof typeof updatePayload));
-
-        if (!isValidPayload) {
-            throw new FormattedError("Invalid payload");
-        }
-
-        await this.repository.adminUpdateUser(userId, updatePayload);
-    }
-
-    async updateUserLastSeen(cacheManager: CacheManager, userId: number) {
-        const cacheKey = `${LAST_SEEN_CACHE_KEY}:${userId}`;
-        if (await cacheManager.get(cacheKey)) return;
-        await cacheManager.set(cacheKey, true, UPDATE_THRESHOLD_MS);
-
-        return this.repository.updateUserLastSeen(userId);
-    }
-
-    async deleteUserAccount(payload: DeleteUserAccountPayload) {
-        return withTransaction(async () => {
-            if (payload.type === "manual") {
-                await this.inactiveAccountService.deleteRowsForUser(payload.userId);
+            if (!userId && (updatePayload.showUpdateModal !== undefined || updatePayload.showOnboarding !== undefined)) {
+                return repository.adminUpdateGlobalFlag(updatePayload);
             }
 
-            if (payload.type === "inactive") {
-                const markedDeleted = await this.inactiveAccountService.markAsDeleted(payload.lifecycleId, payload.userId, payload.username);
-                if (!markedDeleted) return false;
+            if (!userId) return;
+
+            if (deleteUser) {
+                return service.deleteUserAccount({ userId, type: "manual" });
             }
 
-            await this.repository.deleteUserAccount(payload.userId);
-            return true;
-        });
-    }
+            const allowedKeys = new Set<keyof typeof updatePayload>(["emailVerified", "role", "privacy", "showOnboarding", "showUpdateModal"]);
+            const isValidPayload = Object.keys(updatePayload).every((k) => allowedKeys.has(k as keyof typeof updatePayload));
 
-    async getMinimalUserSettings(userId: number) {
-        return this.repository.getMinimalUserSettings(userId);
-    }
+            if (!isValidPayload) {
+                throw new FormattedError("Invalid payload");
+            }
 
-    async updateUserSettings(userId: number, payload: Partial<typeof user.$inferInsert>) {
-        await this.repository.updateUserSettings(userId, payload);
-    }
+            await repository.adminUpdateUser(userId, updatePayload);
+        },
 
-    async updateShowOnboarding(userId: number) {
-        await this.repository.updateShowOnboarding(userId);
-    }
+        async updateUserLastSeen(cacheManager: CacheManager, userId: number) {
+            const cacheKey = `${LAST_SEEN_CACHE_KEY}:${userId}`;
+            if (await cacheManager.get(cacheKey)) return;
+            await cacheManager.set(cacheKey, true, UPDATE_THRESHOLD_MS);
 
-    async updateFeatureFlag(userId: number) {
-        return this.repository.updateFeatureFlag(userId);
-    }
+            return repository.updateUserLastSeen(userId);
+        },
 
-    async getUserByUsername(username: string) {
-        return this.repository.findByUsername(username);
-    }
+        async deleteUserAccount(payload: DeleteUserAccountPayload) {
+            return withTransaction(async () => {
+                if (payload.type === "manual") {
+                    await inactiveAccountService.deleteRowsForUser(payload.userId);
+                }
 
-    async getUserById(userId: number) {
-        return this.repository.findById(userId);
-    }
+                if (payload.type === "inactive") {
+                    const markedDeleted = await inactiveAccountService.markAsDeleted(payload.lifecycleId, payload.userId, payload.username);
+                    if (!markedDeleted) return false;
+                }
 
-    async findUserByName(name: string) {
-        const isUsernameTaken = await this.repository.findUserByName(name);
-        if (isUsernameTaken) {
-            throw new ValidationError<GeneralSettings>("username", "Invalid username. Please select another one.");
-        }
-    }
+                await repository.deleteUserAccount(payload.userId);
+                return true;
+            });
+        },
 
-}
+        async getMinimalUserSettings(userId: number) {
+            return repository.getMinimalUserSettings(userId);
+        },
+
+        async updateUserSettings(userId: number, payload: Partial<typeof user.$inferInsert>) {
+            await repository.updateUserSettings(userId, payload);
+        },
+
+        async updateShowOnboarding(userId: number) {
+            await repository.updateShowOnboarding(userId);
+        },
+
+        async updateFeatureFlag(userId: number) {
+            return repository.updateFeatureFlag(userId);
+        },
+
+        async getUserByUsername(username: string) {
+            return repository.findByUsername(username);
+        },
+
+        async getUserById(userId: number) {
+            return repository.findById(userId);
+        },
+
+        async findUserByName(name: string) {
+            const isUsernameTaken = await repository.findUserByName(name);
+            if (isUsernameTaken) {
+                throw new ValidationError<GeneralSettings>("username", "Invalid username. Please select another one.");
+            }
+        },
+    };
+
+    return service;
+};

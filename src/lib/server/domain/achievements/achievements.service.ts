@@ -6,115 +6,105 @@ import type {AchievementsRepository} from "@/lib/server/domain/achievements/achi
 
 
 export const createAchievementsService = (repository: AchievementsRepository) => {
-    async function seedAchievements(mediaType: MediaType, achievements: readonly AchievementSeedData[]) {
-        return repository.seedAchievements(mediaType, achievements);
-    }
+    return {
+        async seedAchievements(mediaType: MediaType, achievements: readonly AchievementSeedData[]) {
+            return repository.seedAchievements(mediaType, achievements);
+        },
 
-    async function updateAchievementForAdmin(achId: number, name: string, description: string) {
-        await repository.updateAchievementForAdmin(achId, name, description);
-    }
+        async updateAchievementForAdmin(achId: number, name: string, description: string) {
+            await repository.updateAchievementForAdmin(achId, name, description);
+        },
 
-    async function updateTiersForAdmin(tiers: AchievementTier[]) {
-        return repository.updateTiersForAdmin(tiers);
-    }
+        async updateTiersForAdmin(tiers: AchievementTier[]) {
+            return repository.updateTiersForAdmin(tiers);
+        },
 
-    async function getAchievementsDetails(userId: number, limit = 3) {
-        return repository.getAchievementsDetails(userId, limit);
-    }
+        async getAchievementsDetails(userId: number, limit = 3) {
+            return repository.getAchievementsDetails(userId, limit);
+        },
 
-    async function getAllAchievements() {
-        return repository.getAllAchievements();
-    }
+        async getAllAchievements() {
+            return repository.getAllAchievements();
+        },
 
-    async function getUserAchievementStats(userId: number) {
-        const { completedResult, totalAchievementsResult } = await repository.getUserAchievementStats(userId);
+        async getUserAchievementStats(userId: number) {
+            const { completedResult, totalAchievementsResult } = await repository.getUserAchievementStats(userId);
 
-        const mediaTypes = Object.values(MediaType);
-        const difficulties = Object.values(AchievementDifficulty);
+            const mediaTypes = Object.values(MediaType);
+            const difficulties = Object.values(AchievementDifficulty);
 
-        const totalAchievementsMap = new Map(totalAchievementsResult.map((item) => [item.mediaType, item.total]));
-        const completedCountsMap = new Map(completedResult.map((item) => [`${item.mediaType}-${item.difficulty}`, item.count]));
-        const allDifficultySums = Object.fromEntries(difficulties.map((diff) => [diff, 0]));
+            const totalAchievementsMap = new Map(totalAchievementsResult.map((item) => [item.mediaType, item.total]));
+            const completedCountsMap = new Map(completedResult.map((item) => [`${item.mediaType}-${item.difficulty}`, item.count]));
+            const allDifficultySums = Object.fromEntries(difficulties.map((diff) => [diff, 0]));
 
-        type TierStat = { count: number | string; tier: AchievementDifficulty | "total" };
+            type TierStat = { count: number | string; tier: AchievementDifficulty | "total" };
 
-        const mediaTypeEntries = {} as Record<MediaType, TierStat[]>;
-        for (const mt of mediaTypes) {
-            mediaTypeEntries[mt] = [] as TierStat[];
-        }
-        const results = { all: [] as TierStat[], ...mediaTypeEntries };
+            const mediaTypeEntries = {} as Record<MediaType, TierStat[]>;
+            for (const mt of mediaTypes) {
+                mediaTypeEntries[mt] = [] as TierStat[];
+            }
+            const results = { all: [] as TierStat[], ...mediaTypeEntries };
 
-        let grandTotal = 0;
-        let grandTotalGained = 0;
-        for (const mediaType of mediaTypes) {
-            let mediaTypeTotalGained = 0;
-            const mediaTypeStats: TierStat[] = [];
+            let grandTotal = 0;
+            let grandTotalGained = 0;
+            for (const mediaType of mediaTypes) {
+                let mediaTypeTotalGained = 0;
+                const mediaTypeStats: TierStat[] = [];
 
-            for (const difficulty of difficulties) {
-                const count = completedCountsMap.get(`${mediaType}-${difficulty}`) || 0;
-                mediaTypeStats.push({ tier: difficulty, count });
-                allDifficultySums[difficulty] += count;
-                mediaTypeTotalGained += count;
+                for (const difficulty of difficulties) {
+                    const count = completedCountsMap.get(`${mediaType}-${difficulty}`) || 0;
+                    mediaTypeStats.push({ tier: difficulty, count });
+                    allDifficultySums[difficulty] += count;
+                    mediaTypeTotalGained += count;
+                }
+
+                const mediaTypeAchievementTotal = totalAchievementsMap.get(mediaType) || 0;
+                mediaTypeStats.push({ tier: "total", count: `${mediaTypeTotalGained}/${mediaTypeAchievementTotal}` });
+
+                results[mediaType] = mediaTypeStats;
+
+                grandTotal += mediaTypeAchievementTotal;
+                grandTotalGained += mediaTypeTotalGained;
             }
 
-            const mediaTypeAchievementTotal = totalAchievementsMap.get(mediaType) || 0;
-            mediaTypeStats.push({ tier: "total", count: `${mediaTypeTotalGained}/${mediaTypeAchievementTotal}` });
+            const allStats: TierStat[] = [];
+            for (const difficulty of difficulties) {
+                allStats.push({ tier: difficulty, count: allDifficultySums[difficulty] });
+            }
 
-            results[mediaType] = mediaTypeStats;
+            allStats.push({ tier: "total", count: `${grandTotalGained}/${grandTotal}` });
+            results["all"] = allStats;
 
-            grandTotal += mediaTypeAchievementTotal;
-            grandTotalGained += mediaTypeTotalGained;
-        }
+            return results;
+        },
 
-        const allStats: TierStat[] = [];
-        for (const difficulty of difficulties) {
-            allStats.push({ tier: difficulty, count: allDifficultySums[difficulty] });
-        }
+        async getUserAchievements(userId: number) {
+            const results = await repository.getUserAchievements(userId);
 
-        allStats.push({ tier: "total", count: `${grandTotalGained}/${grandTotal}` });
-        results["all"] = allStats;
+            const uniqueAchIds = [...new Set(results.map((r) => r.achievement.id))];
 
-        return results;
-    }
+            return uniqueAchIds.map((id) => {
+                const rows = results.filter((r) => r.achievement.id === id);
+                return {
+                    ...rows[0].achievement,
+                    tiers: rows.map(({ tier, userProgress }) => ({
+                        ...tier,
+                        count: userProgress?.count ?? 0,
+                        progress: userProgress?.progress ?? 0,
+                        completed: userProgress?.completed ?? false,
+                        completedAt: userProgress?.completedAt ?? null,
+                    })),
+                };
+            }).sort((a, b) => a.mediaType.localeCompare(b.mediaType) || a.name.localeCompare(b.name));
+        },
 
-    async function getUserAchievements(userId: number) {
-        const results = await repository.getUserAchievements(userId);
+        async calculateAllAchievementsRarity() {
+            return repository.calculateAllAchievementsRarity();
+        },
 
-        const uniqueAchIds = [...new Set(results.map((r) => r.achievement.id))];
-
-        return uniqueAchIds.map((id) => {
-            const rows = results.filter((r) => r.achievement.id === id);
-            return {
-                ...rows[0].achievement,
-                tiers: rows.map(({ tier, userProgress }) => ({
-                    ...tier,
-                    count: userProgress?.count ?? 0,
-                    progress: userProgress?.progress ?? 0,
-                    completed: userProgress?.completed ?? false,
-                    completedAt: userProgress?.completedAt ?? null,
-                })),
-            };
-        }).sort((a, b) => a.mediaType.localeCompare(b.mediaType) || a.name.localeCompare(b.name));
-    }
-
-    async function calculateAllAchievementsRarity() {
-        return repository.calculateAllAchievementsRarity();
-    }
-
-    async function calculateAchievement(achievement: Achievement, catalog: AchievementCatalog) {
-        const progressQuery = catalog.buildProgressQuery(achievement);
-        await repository.upsertAchievementProgress(achievement, progressQuery);
-    }
-
-    return {
-        seedAchievements,
-        getAllAchievements,
-        updateTiersForAdmin,
-        getUserAchievements,
-        calculateAchievement,
-        getAchievementsDetails,
-        getUserAchievementStats,
-        updateAchievementForAdmin,
-        calculateAllAchievementsRarity,
+        async calculateAchievement(achievement: Achievement, catalog: AchievementCatalog) {
+            const progressQuery = catalog.buildProgressQuery(achievement);
+            await repository.upsertAchievementProgress(achievement, progressQuery);
+        },
     };
-};
+}

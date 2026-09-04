@@ -5,7 +5,7 @@ import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.mat
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalMalMangaMatcher} from "@/lib/server/domain/imports/matchers/external-manga.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
-import {MangaImportListWriter} from "@/lib/server/domain/imports/list-writers/manga-import-list.writer";
+import {MangaImportListWriter} from "@/lib/server/domain/media/manga/manga-import-list.writer";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
 

@@ -5,7 +5,7 @@ import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.mat
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalGoogleBooksMatcher} from "@/lib/server/domain/imports/matchers/external-books.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
-import {BooksImportListWriter} from "@/lib/server/domain/imports/list-writers/books-import-list.writer";
+import {BooksImportListWriter} from "@/lib/server/domain/media/books/books-import-list.writer";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
 

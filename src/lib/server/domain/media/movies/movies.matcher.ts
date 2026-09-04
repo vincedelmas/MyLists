@@ -5,7 +5,7 @@ import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.mat
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalTMDBMovieMatcher} from "@/lib/server/domain/imports/matchers/external-movie.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
-import {MoviesImportListWriter} from "@/lib/server/domain/imports/list-writers/movies-import-list.writer";
+import {MoviesImportListWriter} from "@/lib/server/domain/media/movies/movies-import-list.writer";
 import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
 

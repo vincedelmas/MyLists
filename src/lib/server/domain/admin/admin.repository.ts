@@ -10,25 +10,39 @@ import {and, asc, count, countDistinct, desc, eq, gte, like, lte, or, sql} from 
 import {apiCallRollup, collections, mediaRefreshLog, taskHistory, user, yearRecapRelease} from "@/lib/server/database/schema";
 
 
-export class AdminRepository {
-    static async getYearRecapReleaseMode(year: number): Promise<YearRecapReleaseMode> {
+const buildApiCallMsFilter = (days?: number | null) => {
+    if (!days) return undefined;
+    return gte(apiCallRollup.bucketStartMs, Date.now() - (Math.max(days, 1) * 24 * 60 * 60 * 1000));
+};
+
+
+const buildMediaRefreshDateFilter = (days?: number | null) => {
+    if (!days) return undefined;
+
+    const startOffset = `-${Math.max(days - 1, 0)} day`;
+    return gte(sql`date(${mediaRefreshLog.refreshedAt})`, sql`date('now', ${startOffset})`);
+};
+
+
+export const adminRepository = {
+    async getYearRecapReleaseMode(year: number): Promise<YearRecapReleaseMode> {
         return getDbClient()
             .select({ mode: yearRecapRelease.mode })
             .from(yearRecapRelease)
             .where(eq(yearRecapRelease.year, year))
             .get()?.mode ?? "automatic";
-    }
+    },
 
-    static async getYearRecapReleaseModes(startYear: number, endYear: number) {
+    async getYearRecapReleaseModes(startYear: number, endYear: number) {
         return getDbClient()
             .select({
                 year: yearRecapRelease.year,
                 mode: yearRecapRelease.mode,
             }).from(yearRecapRelease)
             .where(and(lte(yearRecapRelease.year, endYear), gte(yearRecapRelease.year, startYear)));
-    }
+    },
 
-    static async updateYearRecapReleaseMode(year: number, mode: YearRecapReleaseMode) {
+    async updateYearRecapReleaseMode(year: number, mode: YearRecapReleaseMode) {
         await getDbClient()
             .insert(yearRecapRelease)
             .values({
@@ -43,9 +57,9 @@ export class AdminRepository {
                     updatedAt: new Date().toISOString(),
                 },
             });
-    }
+    },
 
-    static async getCollectionsOverview() {
+    async getCollectionsOverview() {
         const now = new Date();
         const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
@@ -98,9 +112,9 @@ export class AdminRepository {
                 { mediaType: MediaType.MANGA, count: result?.mangaCount ?? 0 },
             ],
         };
-    }
+    },
 
-    static async getCollectionsCreatedPerMonth() {
+    async getCollectionsCreatedPerMonth() {
         const results = getDbClient()
             .all<{ month: string; count: number }>(sql`
                 SELECT COUNT(*) as count,
@@ -114,9 +128,9 @@ export class AdminRepository {
             count: Number(row.count),
             month: formatMonthYear(row.month),
         }));
-    }
+    },
 
-    static async getPaginatedCollectionsForAdmin(data: SearchType) {
+    async getPaginatedCollectionsForAdmin(data: SearchType) {
         const sortDesc = data.sortDesc ?? true;
         const search = data.search?.trim() ?? "";
 
@@ -195,9 +209,9 @@ export class AdminRepository {
                     .limit(limit);
             },
         });
-    }
+    },
 
-    static async saveTaskToDb(data: SaveTaskToDb) {
+    async saveTaskToDb(data: SaveTaskToDb) {
         await getDbClient()
             .insert(taskHistory)
             .values({
@@ -211,22 +225,22 @@ export class AdminRepository {
                 errorMessage: data.errorMessage ?? null,
                 userId: "userId" in data ? data.userId : null,
             });
-    }
+    },
 
-    static async deleteArchivedTaskForAdmin(taskId: string) {
+    async deleteArchivedTaskForAdmin(taskId: string) {
         await getDbClient()
             .delete(taskHistory)
             .where(eq(taskHistory.taskId, taskId));
-    }
+    },
 
-    static async getArchivedTasksForAdmin() {
+    async getArchivedTasksForAdmin() {
         return getDbClient()
             .select()
             .from(taskHistory)
             .orderBy(desc(taskHistory.startedAt));
-    }
+    },
 
-    static async logMediaRefresh(params: { userId: number; mediaType: MediaType; apiId: number | string }) {
+    async logMediaRefresh(params: { userId: number; mediaType: MediaType; apiId: number | string }) {
         await getDbClient()
             .insert(mediaRefreshLog)
             .values({
@@ -234,10 +248,10 @@ export class AdminRepository {
                 mediaType: params.mediaType,
                 apiId: String(params.apiId),
             });
-    }
+    },
 
-    static async getMediaRefreshDailyCountsByType(days?: number | null) {
-        const dateFilter = this._buildMediaRefreshDateFilter(days);
+    async getMediaRefreshDailyCountsByType(days?: number | null) {
+        const dateFilter = buildMediaRefreshDateFilter(days);
 
         const query = getDbClient()
             .select({
@@ -251,10 +265,10 @@ export class AdminRepository {
         return (dateFilter ? query.where(dateFilter) : query)
             .groupBy(sql`date(${mediaRefreshLog.refreshedAt})`, mediaRefreshLog.mediaType)
             .orderBy(sql`date(${mediaRefreshLog.refreshedAt})`);
-    }
+    },
 
-    static async getMediaRefreshTopUsers(days: number | null) {
-        const dateFilter = this._buildMediaRefreshDateFilter(days);
+    async getMediaRefreshTopUsers(days: number | null) {
+        const dateFilter = buildMediaRefreshDateFilter(days);
 
         const query = getDbClient()
             .select({
@@ -271,9 +285,9 @@ export class AdminRepository {
             .groupBy(mediaRefreshLog.userId, user.name, user.role)
             .orderBy(desc(count(mediaRefreshLog.id).as("count")))
             .limit(8);
-    }
+    },
 
-    static async getMediaRefreshTotalsByRole() {
+    async getMediaRefreshTotalsByRole() {
         return getDbClient()
             .select({
                 role: user.role,
@@ -284,9 +298,9 @@ export class AdminRepository {
             .innerJoin(user, eq(user.id, mediaRefreshLog.userId))
             .groupBy(user.role)
             .orderBy(desc(sql`count(${mediaRefreshLog.id})`));
-    }
+    },
 
-    static async getMediaRefreshTotalsByType() {
+    async getMediaRefreshTotalsByType() {
         return getDbClient()
             .select({
                 mediaType: mediaRefreshLog.mediaType,
@@ -295,9 +309,9 @@ export class AdminRepository {
             .from(mediaRefreshLog)
             .groupBy(mediaRefreshLog.mediaType)
             .orderBy(desc(count(mediaRefreshLog.id)));
-    }
+    },
 
-    static async getMediaRefreshSummary() {
+    async getMediaRefreshSummary() {
         const [summary, busiestDay] = await Promise.all([
             getDbClient()
                 .select({
@@ -326,9 +340,9 @@ export class AdminRepository {
             uniqueUsers: Number(summary?.uniqueUsers ?? 0),
             firstRefreshDate: summary?.firstRefreshDate ?? null,
         };
-    }
+    },
 
-    static async getRecentMediaRefreshes(page: number) {
+    async getRecentMediaRefreshes(page: number) {
         return paginate({
             page,
             maxPerPage: 30,
@@ -356,9 +370,9 @@ export class AdminRepository {
                     .limit(limit);
             },
         });
-    }
+    },
 
-    static async getApiCallProviders() {
+    async getApiCallProviders() {
         const rows = await getDbClient()
             .select({ provider: apiCallRollup.provider })
             .from(apiCallRollup)
@@ -366,9 +380,9 @@ export class AdminRepository {
             .orderBy(apiCallRollup.provider);
 
         return rows.map((row) => row.provider);
-    }
+    },
 
-    static async getApiCallDailyCountsByProvider(days?: number | null) {
+    async getApiCallDailyCountsByProvider(days?: number | null) {
         const dateFilter = days
             ? gte(sql`date(${apiCallRollup.bucketStart})`, sql`date('now', ${`-${Math.max(days - 1, 0)} day`})`)
             : undefined;
@@ -385,10 +399,10 @@ export class AdminRepository {
         return (dateFilter ? query.where(dateFilter) : query)
             .groupBy(sql`date(${apiCallRollup.bucketStart})`, apiCallRollup.provider)
             .orderBy(sql`date(${apiCallRollup.bucketStart})`);
-    }
+    },
 
-    static async getApiCallTotalsByProvider(days?: number | null) {
-        const dateFilter = this._buildApiCallMsFilter(days);
+    async getApiCallTotalsByProvider(days?: number | null) {
+        const dateFilter = buildApiCallMsFilter(days);
 
         const query = getDbClient()
             .select({
@@ -403,10 +417,10 @@ export class AdminRepository {
         return (dateFilter ? query.where(dateFilter) : query)
             .groupBy(apiCallRollup.provider)
             .orderBy(desc(sql`sum(${apiCallRollup.total})`));
-    }
+    },
 
-    static async getApiCallStatusTotals(days?: number | null) {
-        const dateFilter = this._buildApiCallMsFilter(days);
+    async getApiCallStatusTotals(days?: number | null) {
+        const dateFilter = buildApiCallMsFilter(days);
 
         const rows = await getDbClient()
             .select()
@@ -423,10 +437,10 @@ export class AdminRepository {
         return Array.from(counts.entries())
             .map(([status, count]) => ({ status: status === "network-error" ? null : status, count }))
             .sort((a, b) => b.count - a.count);
-    }
+    },
 
-    static async getApiCallSummary(days?: number | null) {
-        const dateFilter = this._buildApiCallMsFilter(days);
+    async getApiCallSummary(days?: number | null) {
+        const dateFilter = buildApiCallMsFilter(days);
 
         const summaryQuery = getDbClient()
             .select({
@@ -495,9 +509,9 @@ export class AdminRepository {
             busiestSecond: busiestSecond?.bucketStartMs ? new Date(busiestSecond.bucketStartMs).toISOString() : null,
             busiestMinute: busiestMinute?.bucketStartMs ? new Date(busiestMinute.bucketStartMs).toISOString() : null,
         };
-    }
+    },
 
-    static async getRecentApiCalls(page: number) {
+    async getRecentApiCalls(page: number) {
         return paginate({
             page,
             maxPerPage: 30,
@@ -517,9 +531,9 @@ export class AdminRepository {
                     .limit(limit);
             },
         });
-    }
+    },
 
-    static async upsertApiCallRollup(rollup: ProviderApiRollup) {
+    async upsertApiCallRollup(rollup: ProviderApiRollup) {
         await getDbClient()
             .insert(apiCallRollup)
             .values({
@@ -542,17 +556,8 @@ export class AdminRepository {
                     durationMsTotal: rollup.durationMsTotal,
                 },
             });
-    };
+    },
+};
 
-    private static _buildApiCallMsFilter(days?: number | null) {
-        if (!days) return undefined;
-        return gte(apiCallRollup.bucketStartMs, Date.now() - (Math.max(days, 1) * 24 * 60 * 60 * 1000));
-    };
 
-    private static _buildMediaRefreshDateFilter(days?: number | null) {
-        if (!days) return undefined;
-
-        const startOffset = `-${Math.max(days - 1, 0)} day`;
-        return gte(sql`date(${mediaRefreshLog.refreshedAt})`, sql`date('now', ${startOffset})`);
-    };
-}
+export type AdminRepository = typeof adminRepository;

@@ -1,12 +1,11 @@
-import {AdminService} from "@/lib/server/domain/admin/admin.service";
-import {AdminRepository} from "@/lib/server/domain/admin/admin.repository";
+import {createAdminService} from "@/lib/server/domain/admin/admin.service";
+import {adminRepository} from "@/lib/server/domain/admin/admin.repository";
 
 
 export function setupAdminModule() {
-    const adminRepository = AdminRepository;
     return {
         services: {
-            admin: new AdminService(adminRepository),
+            admin: createAdminService(adminRepository),
         },
     };
 }

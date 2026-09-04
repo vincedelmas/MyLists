@@ -13,10 +13,10 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const {AdminRepository} = await import("@/lib/server/domain/admin/admin.repository");
+const {adminRepository} = await import("@/lib/server/domain/admin/admin.repository");
 
 
-describe("AdminRepository year recap release", () => {
+describe("adminRepository year recap release", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -33,12 +33,12 @@ describe("AdminRepository year recap release", () => {
     });
 
     it("defaults to automatic and persists later overrides", async () => {
-        await expect(AdminRepository.getYearRecapReleaseMode(2026)).resolves.toBe("automatic");
+        await expect(adminRepository.getYearRecapReleaseMode(2026)).resolves.toBe("automatic");
 
-        await AdminRepository.updateYearRecapReleaseMode(2026, "enabled");
-        await expect(AdminRepository.getYearRecapReleaseMode(2026)).resolves.toBe("enabled");
+        await adminRepository.updateYearRecapReleaseMode(2026, "enabled");
+        await expect(adminRepository.getYearRecapReleaseMode(2026)).resolves.toBe("enabled");
 
-        await AdminRepository.updateYearRecapReleaseMode(2026, "disabled");
-        await expect(AdminRepository.getYearRecapReleaseMode(2026)).resolves.toBe("disabled");
+        await adminRepository.updateYearRecapReleaseMode(2026, "disabled");
+        await expect(adminRepository.getYearRecapReleaseMode(2026)).resolves.toBe("disabled");
     });
 });

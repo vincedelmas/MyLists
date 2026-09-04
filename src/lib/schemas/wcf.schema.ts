@@ -3,6 +3,7 @@ import {MediaType} from "@/lib/utils/enums";
 
 
 export const WCF_MAX_ROUNDS = 30;
+
 export const WCF_MEDIA_TYPES = [MediaType.SERIES, MediaType.ANIME, MediaType.MOVIES, MediaType.GAMES, MediaType.MANGA] as const;
 
 

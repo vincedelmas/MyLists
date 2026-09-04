@@ -1,7 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
 import {createTvAchievementCatalog} from "@/lib/server/domain/media/tv/tv.achievements";
-import {createMoviesMediadleCatalog} from "@/lib/server/domain/media/movies/movies.mediadle";
 import {booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {mangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 import {gamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
@@ -12,8 +11,9 @@ import {createGamesAchievementCatalog} from "@/lib/server/domain/media/games/gam
 import {createMangaAchievementCatalog} from "@/lib/server/domain/media/manga/manga.achievements";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
-import {createMediadleCatalogRegistry} from "@/lib/server/domain/mediadle/mediadle-catalog";
+import {createWcfCatalogRegistry, defineWcfCatalog} from "@/lib/server/domain/which-came-first/wcf-catalog";
 import {createTvMonthlyActivity, createTvStatistics, TvRepository, TvService} from "@/lib/server/domain/media/tv";
+import {createMediadleCatalogRegistry, defineMediadleCatalog} from "@/lib/server/domain/mediadle/mediadle-catalog";
 import {BooksRepository, BooksService, createBooksMonthlyActivity, createBooksStatistics} from "@/lib/server/domain/media/books";
 import {createGamesMonthlyActivity, createGamesStatistics, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
 import {createMangaMonthlyActivity, createMangaStatistics, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
@@ -60,7 +60,15 @@ export function setupMediaModule() {
     const mediaServiceRegistry = createMediaRegistry(services);
 
     const mediadleCatalogRegistry = createMediadleCatalogRegistry({
-        [MediaType.MOVIES]: createMoviesMediadleCatalog(moviesServerDefinition, services.movies),
+        [MediaType.MOVIES]: defineMediadleCatalog({ mediaService: services.movies, mediaType: moviesServerDefinition.identity.mediaType }),
+    });
+
+    const wcfCatalogRegistry = createWcfCatalogRegistry({
+        [MediaType.SERIES]: defineWcfCatalog({ mediaService: services.series, mediaType: seriesServerDefinition.identity.mediaType }),
+        [MediaType.ANIME]: defineWcfCatalog({ mediaService: services.anime, mediaType: animeServerDefinition.identity.mediaType }),
+        [MediaType.MOVIES]: defineWcfCatalog({ mediaService: services.movies, mediaType: moviesServerDefinition.identity.mediaType }),
+        [MediaType.GAMES]: defineWcfCatalog({ mediaService: services.games, mediaType: gamesServerDefinition.identity.mediaType }),
+        [MediaType.MANGA]: defineWcfCatalog({ mediaService: services.manga, mediaType: mangaServerDefinition.identity.mediaType }),
     });
 
     const mediaStatRegistry = createMediaRegistry({
@@ -95,6 +103,7 @@ export function setupMediaModule() {
             mediaRepository: mediaRepositoryRegistry,
             mediaAchievements: mediaAchievementsRegistry,
             mediadleCatalog: mediadleCatalogRegistry,
+            wcfCatalog: wcfCatalogRegistry,
             mediaMonthlyActivity: mediaMonthlyActivityRegistry,
         }
     };

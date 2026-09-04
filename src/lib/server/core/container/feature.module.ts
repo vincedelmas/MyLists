@@ -1,7 +1,7 @@
 import {MediaModule} from "@/lib/server/core/container/media.module";
 import {AccountModule} from "@/lib/server/core/container/account.module";
-import {WcfService} from "@/lib/server/domain/which-came-first/wcf.service";
-import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
+import {createWcfService} from "@/lib/server/domain/which-came-first/wcf.service";
+import {wcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
 import {createMediadleService} from "@/lib/server/domain/mediadle/mediadle.service";
 import {mediadleRepository} from "@/lib/server/domain/mediadle/mediadle.repository";
 import {createCollectionsService} from "@/lib/server/domain/collections/collections.service";
@@ -17,7 +17,7 @@ import {notificationsRepository} from "@/lib/server/domain/notifications/notific
 export function setupFeatureModule(mediaModule: MediaModule, accountModule: AccountModule) {
     const repositories = {
         mediadle: mediadleRepository,
-        whichCameFirst: WcfRepository,
+        whichCameFirst: wcfRepository,
         collections: collectionsRepository,
         achievements: achievementsRepository,
         featureVotes: featureVotesRepository,
@@ -32,7 +32,7 @@ export function setupFeatureModule(mediaModule: MediaModule, accountModule: Acco
             mediadle: createMediadleService(repositories.mediadle, mediaModule.registries.mediadleCatalog),
             achievements: createAchievementsService(repositories.achievements),
             featureVotes: createFeatureVotesService(repositories.featureVotes, notificationsService),
-            whichCameFirst: new WcfService(repositories.whichCameFirst, mediaModule.registries.mediaService),
+            whichCameFirst: createWcfService(repositories.whichCameFirst, mediaModule.registries.wcfCatalog),
             collections: createCollectionsService(
                 accountModule.services.authorization,
                 repositories.collections,

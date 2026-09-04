@@ -1,4 +1,4 @@
-import {MediaType} from "@/lib/utils/enums";
+import type {MediaType} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/utils/image-url";
 import {WCF_MAX_ROUNDS} from "@/lib/schemas/wcf.schema";
 import {FormattedError} from "@/lib/utils/error-classes";
@@ -17,286 +17,25 @@ type WcfPair = {
 };
 
 
-export class WcfRepository {
-    static async syncCuratedPool(mediaType: MediaType, mediaRefs: { id: number; releaseDate: string }[]) {
-        await getDbClient()
-            .delete(whichCameFirstMedia)
-            .where(eq(whichCameFirstMedia.mediaType, mediaType));
-
-        if (mediaRefs.length === 0) return;
-
-        await getDbClient()
-            .insert(whichCameFirstMedia)
-            .values(mediaRefs.map((media) => ({
-                mediaType,
-                mediaId: media.id,
-                releaseDate: media.releaseDate,
-            })));
-    }
-
-    static async countPool(mediaTypes?: MediaType[]) {
-        return getDbClient()
-            .select({
-                count: sql<number>`count(*)`,
-                mediaType: whichCameFirstMedia.mediaType,
-            })
-            .from(whichCameFirstMedia)
-            .where(mediaTypes?.length ? inArray(whichCameFirstMedia.mediaType, mediaTypes) : undefined)
-            .groupBy(whichCameFirstMedia.mediaType);
-    }
-
-    static async findPair(runId: number, leftType: MediaType, rightType: MediaType, minDays: number, maxDays: number | null, excludeRecent: boolean) {
-        const dateDiff = sql`ABS(julianday(first_candidate.release_date) - julianday(second_candidate.release_date))`;
-        const dateFilter = maxDays === null
-            ? sql`${dateDiff} >= ${minDays}`
-            : sql`${dateDiff} BETWEEN ${minDays} AND ${maxDays}`;
-
-        const rows = getDbClient().all<WcfPair>(sql`
-            WITH eligible AS (
-                SELECT
-                    pool.media_id,
-                    pool.media_type,
-                    pool.release_date
-                FROM which_came_first_media pool
-                WHERE pool.media_type IN (${leftType}, ${rightType})
-                    AND pool.release_date <= date('now')
-            ),
-            recent AS (
-                SELECT 
-                    left_media_type, 
-                    left_media_id, 
-                    right_media_type, 
-                    right_media_id
-                FROM which_came_first_rounds
-                WHERE run_id = ${runId}
-                ORDER BY round_number DESC
-                LIMIT 10
-            ),
-            first_candidate AS (
-                SELECT first_candidate.*
-                FROM eligible first_candidate
-                WHERE first_candidate.media_type = ${leftType}
-                    ${excludeRecent ? recentMediaFilter("first_candidate") : sql``}
-                ORDER BY random()
-                LIMIT 1
-            )
-            SELECT
-                first_candidate.media_type AS leftMediaType,
-                first_candidate.media_id AS leftMediaId,
-                first_candidate.release_date AS leftReleaseDate,
-                second_candidate.media_type AS rightMediaType,
-                second_candidate.media_id AS rightMediaId,
-                second_candidate.release_date AS rightReleaseDate
-            FROM first_candidate
-            INNER JOIN eligible second_candidate
-                ON second_candidate.media_type = ${rightType}
-                AND NOT (
-                    second_candidate.media_type = first_candidate.media_type
-                    AND second_candidate.media_id = first_candidate.media_id
-                )
-            WHERE ${dateFilter}
-                ${excludeRecent ? recentMediaFilter("second_candidate") : sql``}
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM which_came_first_rounds played
-                    WHERE played.run_id = ${runId}
-                        AND (
-                            (
-                                played.left_media_type = first_candidate.media_type
-                                AND played.left_media_id = first_candidate.media_id
-                                AND played.right_media_type = second_candidate.media_type
-                                AND played.right_media_id = second_candidate.media_id
-                            )
-                            OR (
-                                played.left_media_type = second_candidate.media_type
-                                AND played.left_media_id = second_candidate.media_id
-                                AND played.right_media_type = first_candidate.media_type
-                                AND played.right_media_id = first_candidate.media_id
-                            )
-                        )
-                )
-            ORDER BY random()
-            LIMIT 1
-        `);
-
-        return rows[0];
-    }
-
-    static getActiveRun(userId: number) {
+export const wcfRepository = {
+    getActiveRun(userId: number) {
         return getDbClient()
             .select()
             .from(whichCameFirstRuns)
             .where(and(eq(whichCameFirstRuns.userId, userId), eq(whichCameFirstRuns.status, "active")))
             .orderBy(desc(whichCameFirstRuns.id))
             .get();
-    }
+    },
 
-    static async createRun(userId: number, mediaTypes: MediaType[]) {
-        await getDbClient()
-            .update(whichCameFirstRuns)
-            .set({ status: "abandoned", completedAt: sql`CURRENT_TIMESTAMP` })
-            .where(and(eq(whichCameFirstRuns.userId, userId), eq(whichCameFirstRuns.status, "active")));
-
-        const [run] = await getDbClient()
-            .insert(whichCameFirstRuns)
-            .values({ userId, selectedMediaTypes: mediaTypes })
-            .returning();
-
-        return run;
-    }
-
-    static getActiveRound(runId: number) {
+    getActiveRound(runId: number) {
         return getDbClient()
             .select()
             .from(whichCameFirstRounds)
             .where(and(eq(whichCameFirstRounds.runId, runId), isNull(whichCameFirstRounds.answeredAt)))
             .get();
-    }
+    },
 
-    static async createRound(data: typeof whichCameFirstRounds.$inferInsert) {
-        const [round] = await getDbClient()
-            .insert(whichCameFirstRounds)
-            .values(data)
-            .returning();
-
-        return round;
-    }
-
-    static async deleteOpenRound(roundId: number) {
-        await getDbClient()
-            .delete(whichCameFirstRounds)
-            .where(and(eq(whichCameFirstRounds.id, roundId), isNull(whichCameFirstRounds.answeredAt)));
-    }
-
-    static async answerRound(userId: number, runId: number, roundId: number, selectedSide: "left" | "right") {
-        const run = getDbClient()
-            .select()
-            .from(whichCameFirstRuns)
-            .where(and(
-                eq(whichCameFirstRuns.id, runId),
-                eq(whichCameFirstRuns.userId, userId),
-                eq(whichCameFirstRuns.status, "active"),
-            ))
-            .get();
-        if (!run) throw new FormattedError("Active game not found.");
-
-        const round = getDbClient()
-            .select()
-            .from(whichCameFirstRounds)
-            .where(and(
-                eq(whichCameFirstRounds.id, roundId),
-                eq(whichCameFirstRounds.runId, runId),
-                isNull(whichCameFirstRounds.answeredAt),
-            ))
-            .get();
-        if (!round) throw new FormattedError("This round has already been answered.");
-
-        const correctSide = round.leftReleaseDate < round.rightReleaseDate ? "left" : "right";
-        const correct = selectedSide === correctSide;
-        const [updatedRound] = await getDbClient()
-            .update(whichCameFirstRounds)
-            .set({ selectedSide, correct, answeredAt: sql`CURRENT_TIMESTAMP` })
-            .where(and(eq(whichCameFirstRounds.id, roundId), isNull(whichCameFirstRounds.answeredAt)))
-            .returning();
-        if (!updatedRound) throw new FormattedError("This round has already been answered.");
-
-        const [updatedRun] = await getDbClient()
-            .update(whichCameFirstRuns)
-            .set(correct
-                ? {
-                    score: sql`${whichCameFirstRuns.score} + 1`,
-                    status: sql`CASE
-                        WHEN ${whichCameFirstRuns.score} + 1 >= ${WCF_MAX_ROUNDS} THEN 'won'
-                        ELSE ${whichCameFirstRuns.status}
-                    END`,
-                    completedAt: sql`CASE
-                        WHEN ${whichCameFirstRuns.score} + 1 >= ${WCF_MAX_ROUNDS} THEN CURRENT_TIMESTAMP
-                        ELSE ${whichCameFirstRuns.completedAt}
-                    END`,
-                }
-                : { status: "lost", completedAt: sql`CURRENT_TIMESTAMP` })
-            .where(and(eq(whichCameFirstRuns.id, runId), eq(whichCameFirstRuns.status, "active")))
-            .returning();
-
-        return {
-            correct,
-            correctSide,
-            run: updatedRun,
-            round: updatedRound,
-        };
-    }
-
-    static async abandonRun(userId: number, runId: number) {
-        await getDbClient()
-            .update(whichCameFirstRuns)
-            .set({ status: "abandoned", completedAt: sql`CURRENT_TIMESTAMP` })
-            .where(and(
-                eq(whichCameFirstRuns.id, runId),
-                eq(whichCameFirstRuns.userId, userId),
-                eq(whichCameFirstRuns.status, "active"),
-            ));
-    }
-
-    static async exhaustRun(runId: number) {
-        await getDbClient()
-            .update(whichCameFirstRuns)
-            .set({ status: "exhausted", completedAt: sql`CURRENT_TIMESTAMP` })
-            .where(and(
-                eq(whichCameFirstRuns.id, runId),
-                eq(whichCameFirstRuns.status, "active"),
-            ));
-    }
-
-    static async deleteUserRuns(userId: number) {
-        await getDbClient()
-            .delete(whichCameFirstRuns)
-            .where(eq(whichCameFirstRuns.userId, userId));
-    }
-
-    static async getStats(userId: number) {
-        const runStats = getDbClient()
-            .select({
-                runsPlayed: sql<number>`count(*)`,
-                bestScore: sql<number>`coalesce(max(${whichCameFirstRuns.score}), 0)`,
-                averageScore: sql<number>`coalesce(avg(${whichCameFirstRuns.score}), 0)`,
-            })
-            .from(whichCameFirstRuns)
-            .where(and(
-                eq(whichCameFirstRuns.userId, userId),
-                or(
-                    eq(whichCameFirstRuns.status, "won"),
-                    eq(whichCameFirstRuns.status, "lost"),
-                    eq(whichCameFirstRuns.status, "exhausted"),
-                    and(eq(whichCameFirstRuns.status, "abandoned"), gt(whichCameFirstRuns.score, 0)),
-                ),
-            ))
-            .get();
-
-        const answerStats = getDbClient()
-            .select({
-                totalAnswers: sql<number>`count(*)`,
-                highestRound: sql<number>`coalesce(max(${whichCameFirstRounds.roundNumber}), 0)`,
-                correctAnswers: sql<number>`coalesce(sum(CASE WHEN ${whichCameFirstRounds.correct} = 1 THEN 1 ELSE 0 END), 0)`,
-            })
-            .from(whichCameFirstRounds)
-            .innerJoin(whichCameFirstRuns, eq(whichCameFirstRounds.runId, whichCameFirstRuns.id))
-            .where(and(
-                eq(whichCameFirstRuns.userId, userId),
-                or(eq(whichCameFirstRounds.correct, true), eq(whichCameFirstRounds.correct, false)),
-            ))
-            .get();
-
-        return {
-            bestScore: runStats?.bestScore ?? 0,
-            runsPlayed: runStats?.runsPlayed ?? 0,
-            averageScore: runStats?.averageScore ?? 0,
-            highestRound: answerStats?.highestRound ?? 0,
-            totalAnswers: answerStats?.totalAnswers ?? 0,
-            correctAnswers: answerStats?.correctAnswers ?? 0,
-        };
-    }
-
-    static getLeaderboard(currentUserId: number) {
+    getLeaderboard(currentUserId: number) {
         const rows = getDbClient().all<{
             rank: number;
             name: string;
@@ -387,9 +126,9 @@ export class WcfRepository {
             entries: rows.filter((entry) => entry.rank <= 10),
             currentUserEntry: rows.find((entry) => entry.userId === currentUserId) ?? null,
         };
-    }
+    },
 
-    static getAdminSummary() {
+    getAdminSummary() {
         const row = getDbClient().all<{
             startedRuns: number;
             playedRuns: number;
@@ -444,9 +183,9 @@ export class WcfRepository {
             uniquePlayers: Number(row?.uniquePlayers ?? 0),
             endedPlayedRuns: Number(row?.endedPlayedRuns ?? 0),
         };
-    }
+    },
 
-    static getAdminAnswerSummary() {
+    getAdminAnswerSummary() {
         const row = getDbClient().all<{
             totalAnswers: number;
             correctAnswers: number;
@@ -462,9 +201,9 @@ export class WcfRepository {
             totalAnswers: Number(row?.totalAnswers ?? 0),
             correctAnswers: Number(row?.correctAnswers ?? 0),
         };
-    }
+    },
 
-    static getAdminPoolByType() {
+    getAdminPoolByType() {
         return getDbClient()
             .select({
                 count: sql<number>`count(*)`,
@@ -475,9 +214,9 @@ export class WcfRepository {
             .from(whichCameFirstMedia)
             .groupBy(whichCameFirstMedia.mediaType)
             .orderBy(desc(sql`count(*)`));
-    }
+    },
 
-    static getAdminRunsByStatus() {
+    getAdminRunsByStatus() {
         return getDbClient().all<{
             count: number;
             status: "active" | "won" | "exhausted" | "lost" | "abandoned";
@@ -497,9 +236,9 @@ export class WcfRepository {
             status: row.status,
             count: Number(row.count),
         }));
-    }
+    },
 
-    static getAdminDailyRuns(days = 30) {
+    getAdminDailyRuns(days = 30) {
         const normalizedDays = Math.max(1, Math.trunc(days));
         const startModifier = `-${normalizedDays - 1} day`;
 
@@ -547,9 +286,9 @@ export class WcfRepository {
             exhausted: Number(row.exhausted),
             abandoned: Number(row.abandoned),
         }));
-    }
+    },
 
-    static getAdminScoreDistribution() {
+    getAdminScoreDistribution() {
         return getDbClient().all<{
             label: string;
             count: number;
@@ -594,9 +333,9 @@ export class WcfRepository {
             minScore: Number(row.minScore),
             maxScore: Number(row.maxScore),
         }));
-    }
+    },
 
-    static getAdminMediaTypeUsage() {
+    getAdminMediaTypeUsage() {
         return getDbClient().all<{
             mediaType: MediaType;
             selectedCount: number;
@@ -634,9 +373,9 @@ export class WcfRepository {
             selectedCount: Number(row.selectedCount),
             roundAppearances: Number(row.roundAppearances),
         }));
-    }
+    },
 
-    static getAdminRoundAccuracy() {
+    getAdminRoundAccuracy() {
         return getDbClient().all<{
             roundNumber: number;
             totalAnswers: number;
@@ -658,9 +397,9 @@ export class WcfRepository {
             correctAnswers: Number(row.correctAnswers),
             accuracy: Number(row.accuracy),
         }));
-    }
+    },
 
-    static getAdminTopPlayers(limit = 8) {
+    getAdminTopPlayers(limit = 8) {
         return getDbClient().all<{
             userId: number;
             name: string;
@@ -745,9 +484,9 @@ export class WcfRepository {
             totalAnswers: Number(row.totalAnswers),
             correctAnswers: Number(row.correctAnswers),
         }));
-    }
+    },
 
-    static getAdminRecentRuns(limit = 12) {
+    getAdminRecentRuns(limit = 12) {
         return getDbClient()
             .select({
                 id: whichCameFirstRuns.id,
@@ -765,17 +504,281 @@ export class WcfRepository {
             .innerJoin(user, eq(user.id, whichCameFirstRuns.userId))
             .orderBy(desc(whichCameFirstRuns.startedAt))
             .limit(limit);
-    }
+    },
 
-    static async deletePoolMedia(mediaType: MediaType, mediaIds: number[]) {
+    async syncCuratedPool(mediaType: MediaType, mediaRefs: { id: number; releaseDate: string }[]) {
+        await getDbClient()
+            .delete(whichCameFirstMedia)
+            .where(eq(whichCameFirstMedia.mediaType, mediaType));
+
+        if (mediaRefs.length === 0) return;
+
+        await getDbClient()
+            .insert(whichCameFirstMedia)
+            .values(mediaRefs.map((media) => ({
+                mediaType,
+                mediaId: media.id,
+                releaseDate: media.releaseDate,
+            })));
+    },
+
+    async countPool(mediaTypes?: MediaType[]) {
+        return getDbClient()
+            .select({
+                count: sql<number>`count(*)`,
+                mediaType: whichCameFirstMedia.mediaType,
+            })
+            .from(whichCameFirstMedia)
+            .where(mediaTypes?.length ? inArray(whichCameFirstMedia.mediaType, mediaTypes) : undefined)
+            .groupBy(whichCameFirstMedia.mediaType);
+    },
+
+    async findPair(runId: number, leftType: MediaType, rightType: MediaType, minDays: number, maxDays: number | null, excludeRecent: boolean) {
+        const dateDiff = sql`ABS(julianday(first_candidate.release_date) - julianday(second_candidate.release_date))`;
+        const dateFilter = maxDays === null
+            ? sql`${dateDiff} >= ${minDays}`
+            : sql`${dateDiff} BETWEEN ${minDays} AND ${maxDays}`;
+
+        const rows = getDbClient().all<WcfPair>(sql`
+            WITH eligible AS (
+                SELECT
+                    pool.media_id,
+                    pool.media_type,
+                    pool.release_date
+                FROM which_came_first_media pool
+                WHERE pool.media_type IN (${leftType}, ${rightType})
+                    AND pool.release_date <= date('now')
+            ),
+            recent AS (
+                SELECT
+                    left_media_type,
+                    left_media_id,
+                    right_media_type,
+                    right_media_id
+                FROM which_came_first_rounds
+                WHERE run_id = ${runId}
+                ORDER BY round_number DESC
+                LIMIT 10
+            ),
+            first_candidate AS (
+                SELECT first_candidate.*
+                FROM eligible first_candidate
+                WHERE first_candidate.media_type = ${leftType}
+                    ${excludeRecent ? recentMediaFilter("first_candidate") : sql``}
+                ORDER BY random()
+                LIMIT 1
+            )
+            SELECT
+                first_candidate.media_type AS leftMediaType,
+                first_candidate.media_id AS leftMediaId,
+                first_candidate.release_date AS leftReleaseDate,
+                second_candidate.media_type AS rightMediaType,
+                second_candidate.media_id AS rightMediaId,
+                second_candidate.release_date AS rightReleaseDate
+            FROM first_candidate
+            INNER JOIN eligible second_candidate
+                ON second_candidate.media_type = ${rightType}
+                AND NOT (
+                    second_candidate.media_type = first_candidate.media_type
+                    AND second_candidate.media_id = first_candidate.media_id
+                )
+            WHERE ${dateFilter}
+                ${excludeRecent ? recentMediaFilter("second_candidate") : sql``}
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM which_came_first_rounds played
+                    WHERE played.run_id = ${runId}
+                        AND (
+                            (
+                                played.left_media_type = first_candidate.media_type
+                                AND played.left_media_id = first_candidate.media_id
+                                AND played.right_media_type = second_candidate.media_type
+                                AND played.right_media_id = second_candidate.media_id
+                            )
+                            OR (
+                                played.left_media_type = second_candidate.media_type
+                                AND played.left_media_id = second_candidate.media_id
+                                AND played.right_media_type = first_candidate.media_type
+                                AND played.right_media_id = first_candidate.media_id
+                            )
+                        )
+                )
+            ORDER BY random()
+            LIMIT 1
+        `);
+
+        return rows[0];
+    },
+
+    async createRun(userId: number, mediaTypes: MediaType[]) {
+        await getDbClient()
+            .update(whichCameFirstRuns)
+            .set({ status: "abandoned", completedAt: sql`CURRENT_TIMESTAMP` })
+            .where(and(eq(whichCameFirstRuns.userId, userId), eq(whichCameFirstRuns.status, "active")));
+
+        const [run] = await getDbClient()
+            .insert(whichCameFirstRuns)
+            .values({ userId, selectedMediaTypes: mediaTypes })
+            .returning();
+
+        return run;
+    },
+
+    async createRound(data: typeof whichCameFirstRounds.$inferInsert) {
+        const [round] = await getDbClient()
+            .insert(whichCameFirstRounds)
+            .values(data)
+            .returning();
+
+        return round;
+    },
+
+    async deleteOpenRound(roundId: number) {
+        await getDbClient()
+            .delete(whichCameFirstRounds)
+            .where(and(eq(whichCameFirstRounds.id, roundId), isNull(whichCameFirstRounds.answeredAt)));
+    },
+
+    async answerRound(userId: number, runId: number, roundId: number, selectedSide: "left" | "right") {
+        const run = getDbClient()
+            .select()
+            .from(whichCameFirstRuns)
+            .where(and(
+                eq(whichCameFirstRuns.id, runId),
+                eq(whichCameFirstRuns.userId, userId),
+                eq(whichCameFirstRuns.status, "active"),
+            ))
+            .get();
+        if (!run) throw new FormattedError("Active game not found.");
+
+        const round = getDbClient()
+            .select()
+            .from(whichCameFirstRounds)
+            .where(and(
+                eq(whichCameFirstRounds.id, roundId),
+                eq(whichCameFirstRounds.runId, runId),
+                isNull(whichCameFirstRounds.answeredAt),
+            ))
+            .get();
+        if (!round) throw new FormattedError("This round has already been answered.");
+
+        const correctSide = round.leftReleaseDate < round.rightReleaseDate ? "left" : "right";
+        const correct = selectedSide === correctSide;
+        const [updatedRound] = await getDbClient()
+            .update(whichCameFirstRounds)
+            .set({ selectedSide, correct, answeredAt: sql`CURRENT_TIMESTAMP` })
+            .where(and(eq(whichCameFirstRounds.id, roundId), isNull(whichCameFirstRounds.answeredAt)))
+            .returning();
+        if (!updatedRound) throw new FormattedError("This round has already been answered.");
+
+        const [updatedRun] = await getDbClient()
+            .update(whichCameFirstRuns)
+            .set(correct
+                ? {
+                    score: sql`${whichCameFirstRuns.score} + 1`,
+                    status: sql`CASE
+                        WHEN ${whichCameFirstRuns.score} + 1 >= ${WCF_MAX_ROUNDS} THEN 'won'
+                        ELSE ${whichCameFirstRuns.status}
+                    END`,
+                    completedAt: sql`CASE
+                        WHEN ${whichCameFirstRuns.score} + 1 >= ${WCF_MAX_ROUNDS} THEN CURRENT_TIMESTAMP
+                        ELSE ${whichCameFirstRuns.completedAt}
+                    END`,
+                }
+                : { status: "lost", completedAt: sql`CURRENT_TIMESTAMP` })
+            .where(and(eq(whichCameFirstRuns.id, runId), eq(whichCameFirstRuns.status, "active")))
+            .returning();
+
+        return {
+            correct,
+            correctSide,
+            run: updatedRun,
+            round: updatedRound,
+        };
+    },
+
+    async abandonRun(userId: number, runId: number) {
+        await getDbClient()
+            .update(whichCameFirstRuns)
+            .set({ status: "abandoned", completedAt: sql`CURRENT_TIMESTAMP` })
+            .where(and(
+                eq(whichCameFirstRuns.id, runId),
+                eq(whichCameFirstRuns.userId, userId),
+                eq(whichCameFirstRuns.status, "active"),
+            ));
+    },
+
+    async exhaustRun(runId: number) {
+        await getDbClient()
+            .update(whichCameFirstRuns)
+            .set({ status: "exhausted", completedAt: sql`CURRENT_TIMESTAMP` })
+            .where(and(
+                eq(whichCameFirstRuns.id, runId),
+                eq(whichCameFirstRuns.status, "active"),
+            ));
+    },
+
+    async deleteUserRuns(userId: number) {
+        await getDbClient()
+            .delete(whichCameFirstRuns)
+            .where(eq(whichCameFirstRuns.userId, userId));
+    },
+
+    async getStats(userId: number) {
+        const runStats = getDbClient()
+            .select({
+                runsPlayed: sql<number>`count(*)`,
+                bestScore: sql<number>`coalesce(max(${whichCameFirstRuns.score}), 0)`,
+                averageScore: sql<number>`coalesce(avg(${whichCameFirstRuns.score}), 0)`,
+            })
+            .from(whichCameFirstRuns)
+            .where(and(
+                eq(whichCameFirstRuns.userId, userId),
+                or(
+                    eq(whichCameFirstRuns.status, "won"),
+                    eq(whichCameFirstRuns.status, "lost"),
+                    eq(whichCameFirstRuns.status, "exhausted"),
+                    and(eq(whichCameFirstRuns.status, "abandoned"), gt(whichCameFirstRuns.score, 0)),
+                ),
+            ))
+            .get();
+
+        const answerStats = getDbClient()
+            .select({
+                totalAnswers: sql<number>`count(*)`,
+                highestRound: sql<number>`coalesce(max(${whichCameFirstRounds.roundNumber}), 0)`,
+                correctAnswers: sql<number>`coalesce(sum(CASE WHEN ${whichCameFirstRounds.correct} = 1 THEN 1 ELSE 0 END), 0)`,
+            })
+            .from(whichCameFirstRounds)
+            .innerJoin(whichCameFirstRuns, eq(whichCameFirstRounds.runId, whichCameFirstRuns.id))
+            .where(and(
+                eq(whichCameFirstRuns.userId, userId),
+                or(eq(whichCameFirstRounds.correct, true), eq(whichCameFirstRounds.correct, false)),
+            ))
+            .get();
+
+        return {
+            bestScore: runStats?.bestScore ?? 0,
+            runsPlayed: runStats?.runsPlayed ?? 0,
+            averageScore: runStats?.averageScore ?? 0,
+            highestRound: answerStats?.highestRound ?? 0,
+            totalAnswers: answerStats?.totalAnswers ?? 0,
+            correctAnswers: answerStats?.correctAnswers ?? 0,
+        };
+    },
+
+    async deletePoolMedia(mediaType: MediaType, mediaIds: number[]) {
         await getDbClient()
             .delete(whichCameFirstMedia)
             .where(and(
                 eq(whichCameFirstMedia.mediaType, mediaType),
                 inArray(whichCameFirstMedia.mediaId, mediaIds),
             ));
-    }
-}
+    },
+};
+
+
+export type WcfRepository = typeof wcfRepository;
 
 
 const recentMediaFilter = (alias: "first_candidate" | "second_candidate") => {

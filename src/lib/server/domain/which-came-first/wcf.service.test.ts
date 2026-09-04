@@ -1,16 +1,15 @@
 import {describe, expect, it, vi} from "vitest";
-import type {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
-import {WcfService} from "@/lib/server/domain/which-came-first/wcf.service";
-import {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
+import {createWcfService} from "@/lib/server/domain/which-came-first/wcf.service";
+import type {WcfCatalogRegistry} from "@/lib/server/domain/which-came-first/wcf-catalog";
+import type {WcfRepository} from "@/lib/server/domain/which-came-first/wcf.repository";
 
 
 vi.mock("@/lib/schemas/wcf.schema", () => ({
     WCF_MAX_ROUNDS: 30,
-    WCF_MEDIA_TYPES: ["series", "anime", "movies", "games", "manga"],
 }));
 
 
-describe("WcfService.getGameData", () => {
+describe("createWcfService.getGameData", () => {
     it("returns a user-facing error when there is not enough media to create a game", async () => {
         const repository = {
             countPool: vi.fn()
@@ -18,21 +17,22 @@ describe("WcfService.getGameData", () => {
                 .mockResolvedValueOnce([]),
             syncCuratedPool: vi.fn().mockResolvedValue(undefined),
             getStats: vi.fn(),
-        } as unknown as typeof WcfRepository;
-        const mediaService = {
-            getPopularMediaRefs: vi.fn().mockResolvedValue([]),
-        };
-        const mediaServiceRegistry = {
-            get: vi.fn().mockReturnValue(mediaService),
-        } as unknown as MediaServiceRegistry;
-        const service = new WcfService(repository, mediaServiceRegistry);
+        } as unknown as WcfRepository;
+        const getPopularMediaRefs = vi.fn().mockResolvedValue([]);
+        const catalogRegistry = {
+            catalogs: ["series", "anime", "movies", "games", "manga"].map((mediaType) => ({
+                mediaType,
+                getPopularMediaRefs,
+            })),
+        } as unknown as WcfCatalogRegistry;
+        const service = createWcfService(repository, catalogRegistry);
 
         await expect(service.getGameData(42)).rejects.toMatchObject({
             name: "FormattedError",
             message: "Not enough media found to create a Which Came First game.",
         });
 
-        expect(mediaServiceRegistry.get).toHaveBeenCalledTimes(5);
+        expect(getPopularMediaRefs).toHaveBeenCalledTimes(5);
         expect(repository.syncCuratedPool).toHaveBeenCalledTimes(5);
         expect(repository.getStats).not.toHaveBeenCalled();
     });

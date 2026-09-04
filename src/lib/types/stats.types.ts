@@ -96,7 +96,7 @@ export type AdvancedMediaStats =
 type StatsScope = "user" | "platform";
 type BaseMediaStats = Awaited<ReturnType<typeof StatsRepository.getAggregatedMediaStats>>;
 type ActivityStats = { activityByMonth: Awaited<ReturnType<MonthlyActivityService["getActivityStatsByMonth"]>> };
-type UpdatesStats = { updateFingerprint: Awaited<ReturnType<typeof UpdateHistoryRepository.mediaUpdateFingerprint>>; };
+type UpdatesStats = { updateFingerprint: Awaited<ReturnType<UpdateHistoryRepository["mediaUpdateFingerprint"]>>; };
 
 type TvSpecificStats = Awaited<ReturnType<TvStatistics["calculateAdvancedMediaStats"]>>;
 type MoviesSpecificStats = Awaited<ReturnType<MoviesStatistics["calculateAdvancedMediaStats"]>>;

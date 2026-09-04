@@ -10,14 +10,33 @@ import {followers, user, userMediaSettings, userMediaUpdate} from "@/lib/server/
 import {and, count, countDistinct, desc, eq, getTableColumns, gt, gte, inArray, isNull, like, SQL, sql} from "drizzle-orm";
 
 
+const UPDATE_THRESHOLD_SEC = 300;
 const BULK_IMPORT_GRACE_MONTHS = 2;
 const BULK_IMPORT_UPDATE_THRESHOLD = 200;
 
 
-export class UpdateHistoryRepository {
-    static readonly updateThresholdSec = 300;
+const getLikelyBulkImportUserMonths = () => {
+    const bulkUpdate = alias(userMediaUpdate, "bulk_update");
 
-    static async getUserUpdates(userId: number, limit = 8) {
+    return getDbClient()
+        .select({
+            userId: bulkUpdate.userId,
+            monthBucket: sql<string>`strftime('%Y-%m', ${bulkUpdate.timestamp})`.as("month_bucket"),
+        })
+        .from(bulkUpdate)
+        .innerJoin(user, eq(user.id, bulkUpdate.userId))
+        .where(and(
+            gte(sql<string>`strftime('%Y-%m', ${bulkUpdate.timestamp})`, sql<string>`strftime('%Y-%m', ${user.createdAt})`),
+            sql`strftime('%Y-%m', ${bulkUpdate.timestamp}) < strftime('%Y-%m', date(${user.createdAt}, 'start of month', '+' || ${BULK_IMPORT_GRACE_MONTHS} || ' months'))`,
+        ))
+        .groupBy(bulkUpdate.userId, sql`strftime('%Y-%m', ${bulkUpdate.timestamp})`)
+        .having(gt(count(), BULK_IMPORT_UPDATE_THRESHOLD))
+        .as("likely_bulk_update_months");
+};
+
+
+export const updateHistoryRepository = {
+    async getUserUpdates(userId: number, limit = 8) {
         return getDbClient()
             .select({
                 ...getTableColumns(userMediaUpdate),
@@ -31,9 +50,9 @@ export class UpdateHistoryRepository {
             .where(eq(userMediaUpdate.userId, userId))
             .orderBy(desc(userMediaUpdate.timestamp))
             .limit(limit);
-    }
+    },
 
-    static async getUserUpdatesPaginated(filters: SimpleSearch, userId?: number) {
+    async getUserUpdatesPaginated(filters: SimpleSearch, userId?: number) {
         const search = filters?.search ?? "";
 
         const baseConditions: SQL[] = [];
@@ -82,9 +101,9 @@ export class UpdateHistoryRepository {
         });
 
         return { total, items };
-    }
+    },
 
-    static async getUserMediaHistory(userId: number, mediaType: MediaType, mediaId: number) {
+    async getUserMediaHistory(userId: number, mediaType: MediaType, mediaId: number) {
         return getDbClient()
             .select()
             .from(userMediaUpdate)
@@ -94,9 +113,9 @@ export class UpdateHistoryRepository {
                 eq(userMediaUpdate.mediaId, mediaId),
             ))
             .orderBy(desc(userMediaUpdate.timestamp));
-    }
+    },
 
-    static async getFollowsUpdates(profileOwnerId: number, actor: Actor, limit = 10) {
+    async getFollowsUpdates(profileOwnerId: number, actor: Actor, limit = 10) {
         // Subquery: People that Profile Owner (User B) follows
         const followedByB = getDbClient()
             .select({ id: followers.followedId })
@@ -122,14 +141,14 @@ export class UpdateHistoryRepository {
             ))
             .orderBy(desc(userMediaUpdate.timestamp))
             .limit(limit);
-    }
+    },
 
-    static async mediaUpdateFingerprint({ mediaType, userId, excludeBulkImports }: { userId?: number, mediaType?: MediaType, excludeBulkImports?: boolean }) {
+    async mediaUpdateFingerprint({ mediaType, userId, excludeBulkImports }: { userId?: number, mediaType?: MediaType, excludeBulkImports?: boolean }) {
         const conditions: SQL[] = [];
         if (userId) conditions.push(eq(userMediaUpdate.userId, userId));
         if (mediaType) conditions.push(eq(userMediaUpdate.mediaType, mediaType));
 
-        const likelyBulkMonths = excludeBulkImports ? this._likelyBulkImportUserMonths() : null;
+        const likelyBulkMonths = excludeBulkImports ? getLikelyBulkImportUserMonths() : null;
         if (likelyBulkMonths) conditions.push(isNull(likelyBulkMonths.userId));
 
         const summaryQuery = getDbClient()
@@ -202,9 +221,9 @@ export class UpdateHistoryRepository {
             lastUpdateAt: summary?.lastUpdateAt ?? null,
             firstUpdateAt: summary?.firstUpdateAt ?? null,
         };
-    }
+    },
 
-    static async deleteUserUpdates(userId: number, updateIds: number[], returnData: boolean) {
+    async deleteUserUpdates(userId: number, updateIds: number[], returnData: boolean) {
         await getDbClient()
             .delete(userMediaUpdate)
             .where(and(eq(userMediaUpdate.userId, userId), inArray(userMediaUpdate.id, updateIds)));
@@ -222,15 +241,15 @@ export class UpdateHistoryRepository {
                 .orderBy(desc(userMediaUpdate.timestamp))
                 .limit(8).then((res) => res[res.length - 1] ?? null);
         }
-    }
+    },
 
-    static async deleteMediaUpdates(mediaType: MediaType, mediaIds: number[]) {
+    async deleteMediaUpdates(mediaType: MediaType, mediaIds: number[]) {
         await getDbClient()
             .delete(userMediaUpdate)
             .where(and(eq(userMediaUpdate.mediaType, mediaType), inArray(userMediaUpdate.mediaId, mediaIds)));
-    }
+    },
 
-    static async deleteRecentInitialAdd(userId: number, mediaType: MediaType, mediaId: number) {
+    async deleteRecentInitialAdd(userId: number, mediaType: MediaType, mediaId: number) {
         const previousUpdate = getDbClient()
             .select()
             .from(userMediaUpdate)
@@ -246,14 +265,14 @@ export class UpdateHistoryRepository {
         if (!previousUpdate || previousUpdate.payload?.old_value !== null) return;
 
         const elapsedSec = (Date.now() - dateFromUTCInput(previousUpdate.timestamp).getTime()) / 1000;
-        if (elapsedSec > this.updateThresholdSec) return;
+        if (elapsedSec > UPDATE_THRESHOLD_SEC) return;
 
         await getDbClient()
             .delete(userMediaUpdate)
             .where(eq(userMediaUpdate.id, previousUpdate.id));
-    }
+    },
 
-    static async logUpdate({ userId, mediaType, media, updateType, payload, timestamp }: LogUpdateParams) {
+    async logUpdate({ userId, mediaType, media, updateType, payload, timestamp }: LogUpdateParams) {
         const newUpdate = {
             userId,
             payload,
@@ -277,7 +296,7 @@ export class UpdateHistoryRepository {
 
         if (previousUpdate && !timestamp) {
             const elapsedSec = (Date.now() - dateFromUTCInput(previousUpdate.timestamp).getTime()) / 1000;
-            if (elapsedSec >= 0 && elapsedSec <= this.updateThresholdSec) {
+            if (elapsedSec >= 0 && elapsedSec <= UPDATE_THRESHOLD_SEC) {
                 await getDbClient()
                     .delete(userMediaUpdate)
                     .where(eq(userMediaUpdate.id, previousUpdate.id));
@@ -287,24 +306,8 @@ export class UpdateHistoryRepository {
         await getDbClient()
             .insert(userMediaUpdate)
             .values(newUpdate);
-    }
+    },
+};
 
-    private static _likelyBulkImportUserMonths() {
-        const bulkUpdate = alias(userMediaUpdate, "bulk_update");
 
-        return getDbClient()
-            .select({
-                userId: bulkUpdate.userId,
-                monthBucket: sql<string>`strftime('%Y-%m', ${bulkUpdate.timestamp})`.as("month_bucket"),
-            })
-            .from(bulkUpdate)
-            .innerJoin(user, eq(user.id, bulkUpdate.userId))
-            .where(and(
-                gte(sql<string>`strftime('%Y-%m', ${bulkUpdate.timestamp})`, sql<string>`strftime('%Y-%m', ${user.createdAt})`),
-                sql`strftime('%Y-%m', ${bulkUpdate.timestamp}) < strftime('%Y-%m', date(${user.createdAt}, 'start of month', '+' || ${BULK_IMPORT_GRACE_MONTHS} || ' months'))`,
-            ))
-            .groupBy(bulkUpdate.userId, sql`strftime('%Y-%m', ${bulkUpdate.timestamp})`)
-            .having(gt(count(), BULK_IMPORT_UPDATE_THRESHOLD))
-            .as("likely_bulk_update_months");
-    }
-}
+export type UpdateHistoryRepository = typeof updateHistoryRepository;

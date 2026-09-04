@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
-import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
+import {createMonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
 
 
 describe("MonthlyActivityService visibility", () => {
@@ -32,7 +32,7 @@ describe("MonthlyActivityService visibility", () => {
             perPage: 48,
         })),
     };
-    const service = new MonthlyActivityService(repository as any, { get: vi.fn() } as any);
+    const service = createMonthlyActivityService(repository as any, { get: vi.fn() } as any);
 
     it("rejects hidden activity requests from non-owners", async () => {
         await expect(service.getMonthlyActivity(1, filters, false)).rejects.toThrow(
@@ -99,7 +99,7 @@ describe("MonthlyActivityService yearly consolidation", () => {
             }]),
             progressToMinutes: vi.fn((progress: number) => progress * 2),
         };
-        const service = new MonthlyActivityService(repository as any, { get: () => monthlyActivity } as any);
+        const service = createMonthlyActivityService(repository as any, { get: () => monthlyActivity } as any);
 
         const result = await service.getMonthlyActivity(1, {
             username: "activity-owner",

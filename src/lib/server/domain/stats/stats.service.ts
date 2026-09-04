@@ -5,8 +5,8 @@ import {statusUtils} from "@/lib/utils/media-mapping";
 import {UserMediaStats} from "@/lib/types/user-media.types";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import {MediaStatsRegistry} from "@/lib/server/domain/media/media.registries";
-import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
-import {UpdateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
+import type {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
+import type {UpdateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
 import type {AchievementsRepository} from "@/lib/server/domain/achievements/achievements.repository";
 
 
@@ -15,7 +15,7 @@ export class StatsService {
         private repository: typeof StatsRepository,
         private activityService: MonthlyActivityService,
         private achievementsRepository: AchievementsRepository,
-        private updateHistoryRepository: typeof UpdateHistoryRepository,
+        private updateHistoryRepository: UpdateHistoryRepository,
         private mediaStatsRegistry: MediaStatsRegistry,
     ) {
     }

@@ -74,8 +74,30 @@ const getFilteredActivityConditions = (userId: number, filters: PaginatedMonthly
 };
 
 
-export class MonthlyActivityRepository {
-    static async addContribution(activity: LogMonthlyActivity) {
+const getLikelyBulkImportUserMonths = () => {
+    const bulkActivity = alias(userMediaMonthlyActivity, "bulk_activity");
+
+    return getDbClient()
+        .select({
+            userId: bulkActivity.userId,
+            monthBucket: bulkActivity.monthBucket,
+        })
+        .from(bulkActivity)
+        .innerJoin(user, eq(user.id, bulkActivity.userId))
+        .where(and(
+            eq(bulkActivity.hidden, false),
+            gt(bulkActivity.progressGained, 0),
+            gte(bulkActivity.monthBucket, sql<string>`strftime('%Y-%m', ${user.createdAt})`),
+            sql`${bulkActivity.monthBucket} < strftime('%Y-%m', date(${user.createdAt}, 'start of month', '+' || ${BULK_IMPORT_GRACE_MONTHS} || ' months'))`,
+        ))
+        .groupBy(bulkActivity.userId, bulkActivity.monthBucket)
+        .having(gt(count(), BULK_IMPORT_ACTIVITY_THRESHOLD))
+        .as("likely_bulk_months");
+};
+
+
+export const monthlyActivityRepository = {
+    async addContribution(activity: LogMonthlyActivity) {
         const date = activity.activityDate ? dateFromUTCInput(activity.activityDate) : new Date();
 
         const { activityDate: _activityDate, ...contribution } = activity;
@@ -106,9 +128,9 @@ export class MonthlyActivityRepository {
                     lastActivityAt: sql`MAX(${userMediaMonthlyActivity.lastActivityAt}, excluded.last_activity_at)`,
                 },
             });
-    }
+    },
 
-    static async getMonthlyStatsContributions(userId: number, mediaTypes: MediaType[], startMonth: string, endMonth: string) {
+    async getMonthlyStatsContributions(userId: number, mediaTypes: MediaType[], startMonth: string, endMonth: string) {
         return getDbClient()
             .select({
                 mediaId: userMediaMonthlyActivity.mediaId,
@@ -127,9 +149,9 @@ export class MonthlyActivityRepository {
             ))
             .groupBy(userMediaMonthlyActivity.mediaType, userMediaMonthlyActivity.mediaId)
             .orderBy(asc(userMediaMonthlyActivity.mediaType), asc(userMediaMonthlyActivity.mediaId));
-    }
+    },
 
-    static async getProgressStatsByMonth(filters: { userId?: number; mediaType?: MediaType; startMonth: string; endMonth: string; excludeBulkImports?: boolean }) {
+    async getProgressStatsByMonth(filters: { userId?: number; mediaType?: MediaType; startMonth: string; endMonth: string; excludeBulkImports?: boolean }) {
         const conditions: SQL[] = [
             eq(userMediaMonthlyActivity.hidden, false),
             gt(userMediaMonthlyActivity.progressGained, 0),
@@ -153,7 +175,7 @@ export class MonthlyActivityRepository {
             .$dynamic();
 
         if (filters.excludeBulkImports) {
-            const likelyBulkMonths = this._likelyBulkImportUserMonths();
+            const likelyBulkMonths = getLikelyBulkImportUserMonths();
             query.leftJoin(likelyBulkMonths, and(
                 eq(userMediaMonthlyActivity.userId, likelyBulkMonths.userId),
                 eq(userMediaMonthlyActivity.monthBucket, likelyBulkMonths.monthBucket),
@@ -165,9 +187,9 @@ export class MonthlyActivityRepository {
             .where(and(...conditions))
             .groupBy(userMediaMonthlyActivity.monthBucket, userMediaMonthlyActivity.mediaType, userMediaMonthlyActivity.mediaId)
             .orderBy(asc(userMediaMonthlyActivity.monthBucket), asc(userMediaMonthlyActivity.mediaType));
-    }
+    },
 
-    static async getYearRecapActivities(userId: number, year: number, mediaType?: MediaType) {
+    async getYearRecapActivities(userId: number, year: number, mediaType?: MediaType) {
         const conditions = getYearActivityConditions(userId, year);
 
         if (mediaType) conditions.push(eq(userMediaMonthlyActivity.mediaType, mediaType));
@@ -185,9 +207,9 @@ export class MonthlyActivityRepository {
             .innerJoin(userMediaSettings, activeMediaSettingsJoin)
             .where(and(...conditions))
             .orderBy(asc(userMediaMonthlyActivity.monthBucket), asc(userMediaMonthlyActivity.mediaType));
-    }
+    },
 
-    static async getYearRecapMediaTypes(userId: number, year: number) {
+    async getYearRecapMediaTypes(userId: number, year: number) {
         const rows = await getDbClient()
             .selectDistinct({ mediaType: userMediaMonthlyActivity.mediaType })
             .from(userMediaMonthlyActivity)
@@ -196,9 +218,9 @@ export class MonthlyActivityRepository {
             .orderBy(asc(userMediaMonthlyActivity.mediaType));
 
         return rows.map((row) => row.mediaType);
-    }
+    },
 
-    static async getMonthlyMediaTypes(userId: number, startMonth: string, endMonth: string, hiddenOnly = false) {
+    async getMonthlyMediaTypes(userId: number, startMonth: string, endMonth: string, hiddenOnly = false) {
         const rows = await getDbClient()
             .selectDistinct({ mediaType: userMediaMonthlyActivity.mediaType })
             .from(userMediaMonthlyActivity)
@@ -212,9 +234,9 @@ export class MonthlyActivityRepository {
             .orderBy(asc(userMediaMonthlyActivity.mediaType));
 
         return rows.map((row) => row.mediaType);
-    }
+    },
 
-    static async getPaginatedMonthlyActivities(userId: number, filters: PaginatedMonthlyActivityFilter) {
+    async getPaginatedMonthlyActivities(userId: number, filters: PaginatedMonthlyActivityFilter) {
         const pagination = resolvePagination({ page: filters.page, perPage: filters.perPage, defaultPerPage: 48, maxPerPage: 48 });
         const conditions = getFilteredActivityConditions(userId, filters);
         if (!conditions) return { items: [], total: 0, page: pagination.page, pages: 0, perPage: pagination.perPage };
@@ -242,9 +264,9 @@ export class MonthlyActivityRepository {
             perPage: pagination.perPage,
             pages: Math.ceil(total / pagination.perPage),
         };
-    }
+    },
 
-    static async getPaginatedYearlyActivities(userId: number, filters: PaginatedMonthlyActivityFilter) {
+    async getPaginatedYearlyActivities(userId: number, filters: PaginatedMonthlyActivityFilter) {
         const pagination = resolvePagination({
             maxPerPage: 48,
             page: filters.page,
@@ -332,9 +354,9 @@ export class MonthlyActivityRepository {
             perPage: pagination.perPage,
             pages: Math.ceil(total / pagination.perPage),
         };
-    }
+    },
 
-    static async updateMonthlyActivity(userId: number, activityId: number, payload: UpdateMonthlyActivity) {
+    async updateMonthlyActivity(userId: number, activityId: number, payload: UpdateMonthlyActivity) {
         const [existing] = await getDbClient()
             .select()
             .from(userMediaMonthlyActivity)
@@ -391,15 +413,15 @@ export class MonthlyActivityRepository {
             .returning();
 
         return updated;
-    }
+    },
 
-    static async removeFromMonth(userId: number, activityId: number) {
+    async removeFromMonth(userId: number, activityId: number) {
         await getDbClient()
             .delete(userMediaMonthlyActivity)
             .where(and(eq(userMediaMonthlyActivity.id, activityId), eq(userMediaMonthlyActivity.userId, userId)));
-    }
+    },
 
-    static async bulkHideMonthlyActivity(userId: number, filters: { startDate: string, endDate: string, mediaType?: MediaType }) {
+    async bulkHideMonthlyActivity(userId: number, filters: { startDate: string, endDate: string, mediaType?: MediaType }) {
         const conditions = [];
         if (filters.mediaType) conditions.push(eq(userMediaMonthlyActivity.mediaType, filters.mediaType));
 
@@ -416,9 +438,9 @@ export class MonthlyActivityRepository {
             .returning({ id: userMediaMonthlyActivity.id });
 
         return { count: updated.length };
-    }
+    },
 
-    static async deleteAssociatedActivities(userId: number, mediaType: MediaType, mediaId: number) {
+    async deleteAssociatedActivities(userId: number, mediaType: MediaType, mediaId: number) {
         await getDbClient()
             .delete(userMediaMonthlyActivity)
             .where(and(
@@ -426,26 +448,8 @@ export class MonthlyActivityRepository {
                 eq(userMediaMonthlyActivity.mediaId, mediaId),
                 eq(userMediaMonthlyActivity.mediaType, mediaType),
             ));
-    }
+    },
+};
 
-    private static _likelyBulkImportUserMonths() {
-        const bulkActivity = alias(userMediaMonthlyActivity, "bulk_activity");
 
-        return getDbClient()
-            .select({
-                userId: bulkActivity.userId,
-                monthBucket: bulkActivity.monthBucket,
-            })
-            .from(bulkActivity)
-            .innerJoin(user, eq(user.id, bulkActivity.userId))
-            .where(and(
-                eq(bulkActivity.hidden, false),
-                gt(bulkActivity.progressGained, 0),
-                gte(bulkActivity.monthBucket, sql<string>`strftime('%Y-%m', ${user.createdAt})`),
-                sql`${bulkActivity.monthBucket} < strftime('%Y-%m', date(${user.createdAt}, 'start of month', '+' || ${BULK_IMPORT_GRACE_MONTHS} || ' months'))`,
-            ))
-            .groupBy(bulkActivity.userId, bulkActivity.monthBucket)
-            .having(gt(count(), BULK_IMPORT_ACTIVITY_THRESHOLD))
-            .as("likely_bulk_months");
-    }
-}
+export type MonthlyActivityRepository = typeof monthlyActivityRepository;

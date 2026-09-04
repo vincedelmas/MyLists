@@ -4,7 +4,7 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaMonthlyActivityRegistry} from "@/lib/server/domain/media/media.registries";
 import {resolveMonthlyActivityMedia} from "@/lib/server/domain/media/base/base.monthly-activity";
-import {MonthlyActivityRepository} from "@/lib/server/domain/tracking/monthly-activity.repository";
+import type {MonthlyActivityRepository} from "@/lib/server/domain/tracking/monthly-activity.repository";
 import {YearRecapData, YearRecapMediaSummary, YearRecapMonth, YearRecapTitle} from "@/lib/types/year-recap.types";
 
 
@@ -16,7 +16,7 @@ type YearRecapOptions = {
 
 export class YearRecapService {
     constructor(
-        private repository: typeof MonthlyActivityRepository,
+        private repository: MonthlyActivityRepository,
         private mediaMonthlyActivityRegistry: MediaMonthlyActivityRegistry,
     ) {
     }

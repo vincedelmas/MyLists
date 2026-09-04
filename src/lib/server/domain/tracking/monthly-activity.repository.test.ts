@@ -15,7 +15,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const {MonthlyActivityRepository} = await import(
+const {monthlyActivityRepository} = await import(
     "@/lib/server/domain/tracking/monthly-activity.repository"
 );
 
@@ -60,19 +60,19 @@ describe("MonthlyActivityRepository", () => {
             activityDate: "2026-06-10T12:00:00.000Z",
         };
 
-        await MonthlyActivityRepository.addContribution({
+        await monthlyActivityRepository.addContribution({
             ...base,
             progressGained: 50,
             hadCompletion: true,
             redoGained: 0,
         });
-        await MonthlyActivityRepository.addContribution({
+        await monthlyActivityRepository.addContribution({
             ...base,
             progressGained: 0,
             hadCompletion: false,
             redoGained: 2,
         });
-        await MonthlyActivityRepository.addContribution({
+        await monthlyActivityRepository.addContribution({
             ...base,
             activityDate: "2026-06-05T12:00:00.000Z",
             progressGained: 25,
@@ -105,7 +105,7 @@ describe("MonthlyActivityRepository", () => {
             redoGained: 2,
         });
 
-        const result = await MonthlyActivityRepository.getPaginatedMonthlyActivities(1, {
+        const result = await monthlyActivityRepository.getPaginatedMonthlyActivities(1, {
             page: 1,
             perPage: 10,
             startMonth: "2026-06",
@@ -117,7 +117,7 @@ describe("MonthlyActivityRepository", () => {
     });
 
     it("creates completion-only and redo-only summaries", async () => {
-        await MonthlyActivityRepository.addContribution({
+        await monthlyActivityRepository.addContribution({
             userId: 1,
             mediaId: 10,
             mediaType: MediaType.BOOKS,
@@ -126,7 +126,7 @@ describe("MonthlyActivityRepository", () => {
             hadCompletion: true,
             redoGained: 0,
         });
-        await MonthlyActivityRepository.addContribution({
+        await monthlyActivityRepository.addContribution({
             userId: 1,
             mediaId: 11,
             mediaType: MediaType.BOOKS,
@@ -168,7 +168,7 @@ describe("MonthlyActivityRepository", () => {
             },
         ]);
 
-        const result = await MonthlyActivityRepository.getPaginatedMonthlyActivities(1, {
+        const result = await monthlyActivityRepository.getPaginatedMonthlyActivities(1, {
             page: 1,
             perPage: 10,
             startMonth: "2026-01",
@@ -210,7 +210,7 @@ describe("MonthlyActivityRepository", () => {
             },
         ]);
 
-        const firstPage = await MonthlyActivityRepository.getPaginatedYearlyActivities(1, {
+        const firstPage = await monthlyActivityRepository.getPaginatedYearlyActivities(1, {
             page: 1,
             perPage: 1,
             startMonth: "2026-01",
@@ -228,7 +228,7 @@ describe("MonthlyActivityRepository", () => {
         });
         expect(firstPage.items[0].occurrences.map((row) => row.monthBucket)).toEqual(["2026-08", "2026-01"]);
 
-        const secondPage = await MonthlyActivityRepository.getPaginatedYearlyActivities(1, {
+        const secondPage = await monthlyActivityRepository.getPaginatedYearlyActivities(1, {
             page: 2,
             perPage: 1,
             startMonth: "2026-01",
@@ -259,7 +259,7 @@ describe("MonthlyActivityRepository", () => {
             redoGained: 2,
         });
 
-        await MonthlyActivityRepository.updateMonthlyActivity(1, june.id, {
+        await monthlyActivityRepository.updateMonthlyActivity(1, june.id, {
             lastActivityAt: "2026-07-20T12:00:00.000Z",
         });
 
@@ -307,8 +307,8 @@ describe("MonthlyActivityRepository", () => {
             },
         ]);
 
-        const activeActivities = await MonthlyActivityRepository.getYearRecapActivities(1, 2026);
-        const activeMediaTypes = await MonthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
+        const activeActivities = await monthlyActivityRepository.getYearRecapActivities(1, 2026);
+        const activeMediaTypes = await monthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
 
         expect(activeActivities).toHaveLength(1);
         expect(activeActivities[0]).toMatchObject({ mediaId: 10, progressGained: 120 });
@@ -316,8 +316,8 @@ describe("MonthlyActivityRepository", () => {
 
         await db.update(userMediaSettings).set({ active: false });
 
-        const activities = await MonthlyActivityRepository.getYearRecapActivities(1, 2026);
-        const mediaTypes = await MonthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
+        const activities = await monthlyActivityRepository.getYearRecapActivities(1, 2026);
+        const mediaTypes = await monthlyActivityRepository.getYearRecapMediaTypes(1, 2026);
 
         expect(activities).toHaveLength(0);
         expect(mediaTypes).toEqual([]);

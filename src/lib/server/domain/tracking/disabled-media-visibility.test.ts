@@ -19,10 +19,10 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { StatsRepository } = await import("@/lib/server/domain/stats/stats.repository");
-const { UpdateHistoryRepository } = await import("@/lib/server/domain/tracking/update-history.repository");
+const { updateHistoryRepository } = await import("@/lib/server/domain/tracking/update-history.repository");
 const { createTasteSimilarityRepository } = await import("@/lib/server/domain/social/taste-similarity.repository");
 const { defineTasteSimilarityCatalog } = await import("@/lib/server/domain/social/taste-similarity-catalog");
-const { MonthlyActivityRepository } = await import("@/lib/server/domain/tracking/monthly-activity.repository");
+const { monthlyActivityRepository } = await import("@/lib/server/domain/tracking/monthly-activity.repository");
 const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime/anime.definition.server");
 const { achievementsRepository } = await import("@/lib/server/domain/achievements/achievements.repository");
 const animeTasteSimilarityCatalog = defineTasteSimilarityCatalog(animeServerDefinition);
@@ -55,9 +55,9 @@ describe("disabled media visibility", () => {
         const animeRepository = new TvRepository(animeServerDefinition);
 
         const disabledStats = await StatsRepository.getPreComputedStatsSummary({ userId: 42 });
-        const disabledUpdates = await UpdateHistoryRepository.getUserUpdates(42, 10);
-        const disabledHistory = await UpdateHistoryRepository.getUserUpdatesPaginated({}, 42);
-        const disabledActivity = await MonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
+        const disabledUpdates = await updateHistoryRepository.getUserUpdates(42, 10);
+        const disabledHistory = await updateHistoryRepository.getUserUpdatesPaginated({}, 42);
+        const disabledActivity = await monthlyActivityRepository.getPaginatedMonthlyActivities(42, {
             page: 1,
             perPage: 48,
             startMonth: "2026-04",
@@ -91,8 +91,8 @@ describe("disabled media visibility", () => {
             ));
 
         const enabledStats = await StatsRepository.getPreComputedStatsSummary({ userId: 42 });
-        const enabledUpdates = await UpdateHistoryRepository.getUserUpdates(42, 10);
-        const enabledActivity = await MonthlyActivityRepository.getPaginatedMonthlyActivities(42, {
+        const enabledUpdates = await updateHistoryRepository.getUserUpdates(42, 10);
+        const enabledActivity = await monthlyActivityRepository.getPaginatedMonthlyActivities(42, {
             page: 1,
             perPage: 48,
             startMonth: "2026-04",

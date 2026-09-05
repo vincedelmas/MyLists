@@ -6,6 +6,7 @@ import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {createTvService} from "@/lib/server/domain/media/tv/tv.service";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {
     series,
@@ -26,7 +27,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
+const { createTvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 
 
 const completedSeriesStatusCounts = () => Object.fromEntries(
@@ -34,16 +35,16 @@ const completedSeriesStatusCounts = () => Object.fromEntries(
 ) as Record<Status, number>;
 
 
-describe("TvRepository season refresh", () => {
+describe("TvRepository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
-    let repository: InstanceType<typeof TvRepository>;
+    let repository: ReturnType<typeof createTvRepository>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
-        repository = new TvRepository(seriesServerDefinition);
+        repository = createTvRepository(seriesServerDefinition);
 
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
@@ -66,6 +67,31 @@ describe("TvRepository season refresh", () => {
     afterEach(() => {
         sqlite.close();
         dbContext.db = undefined;
+    });
+
+    it("uses the TV upcoming-episode query through the shared service", async () => {
+        const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+        await db.insert(user).values({
+            id: 42,
+            name: "viewer",
+            email: "viewer@example.com",
+            emailVerified: true,
+            createdAt: "2026-01-01 00:00:00",
+            updatedAt: "2026-01-01 00:00:00",
+        });
+        await db.update(series).set({
+            releaseDate: "2020-01-01",
+            nextEpisodeToAir: tomorrow,
+            seasonToAir: 3,
+            episodeToAir: 1,
+        }).where(eq(series.id, 100));
+        const { getUpcomingMedia, findById, addMediaToUserList } = createTvService(repository, seriesServerDefinition);
+        await addMediaToUserList(42, 100, Status.WATCHING);
+
+        expect(await findById(100)).toMatchObject({ releaseDate: "2020-01-01" });
+        expect(await getUpcomingMedia(42, true)).toEqual([
+            expect.objectContaining({ mediaId: 100, userId: 42, date: tomorrow, seasonToAir: 3, episodeToAir: 1 }),
+        ]);
     });
 
     it("moves caught-up users to On Hold when enabled and preserves their progress metadata", async () => {

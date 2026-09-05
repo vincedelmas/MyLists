@@ -1,4 +1,4 @@
-import {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
+import type {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
 import {GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
 

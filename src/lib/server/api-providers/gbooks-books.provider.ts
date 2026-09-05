@@ -1,6 +1,6 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import {GBooksApi} from "@/lib/server/api-providers/api";
-import {BooksRepository} from "@/lib/server/domain/media/books";
+import type {BooksRepository} from "@/lib/server/domain/media/books";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 import {booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";

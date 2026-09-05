@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
+import type {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";

@@ -1,5 +1,5 @@
 import {TmdbApi} from "@/lib/server/api-providers/api";
-import {MoviesRepository} from "@/lib/server/domain/media/movies";
+import type {MoviesRepository} from "@/lib/server/domain/media/movies";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {createMediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";

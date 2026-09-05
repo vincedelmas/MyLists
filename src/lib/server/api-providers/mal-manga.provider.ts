@@ -1,6 +1,6 @@
 import {MalApi} from "@/lib/server/api-providers/api";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {MangaRepository} from "@/lib/server/domain/media/manga";
+import type {MangaRepository} from "@/lib/server/domain/media/manga";
 import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
 import {malTransformer} from "@/lib/server/api-providers/transformers/mal.transformer";

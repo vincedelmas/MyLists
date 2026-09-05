@@ -13,22 +13,22 @@ import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.d
 import {createMoviesAchievementCatalog} from "@/lib/server/domain/media/movies/movies.achievements";
 import {createWcfCatalogRegistry, defineWcfCatalog} from "@/lib/server/domain/which-came-first/wcf-catalog";
 import {defineTasteSimilarityCatalog} from "@/lib/server/domain/social/taste-similarity-catalog";
-import {createTvMonthlyActivity, createTvStatistics, TvRepository, TvService} from "@/lib/server/domain/media/tv";
+import {createTvMonthlyActivity, createTvStatistics, createTvRepository, createTvService} from "@/lib/server/domain/media/tv";
 import {createMediadleCatalogRegistry, defineMediadleCatalog} from "@/lib/server/domain/mediadle/mediadle-catalog";
-import {BooksRepository, BooksService, createBooksMonthlyActivity, createBooksStatistics} from "@/lib/server/domain/media/books";
-import {createGamesMonthlyActivity, createGamesStatistics, GamesRepository, GamesService} from "@/lib/server/domain/media/games";
-import {createMangaMonthlyActivity, createMangaStatistics, MangaRepository, MangaService} from "@/lib/server/domain/media/manga";
-import {createMoviesMonthlyActivity, createMoviesStatistics, MoviesRepository, MoviesService} from "@/lib/server/domain/media/movies";
+import {createBooksRepository, createBooksService, createBooksMonthlyActivity, createBooksStatistics} from "@/lib/server/domain/media/books";
+import {createGamesMonthlyActivity, createGamesStatistics, createGamesRepository, createGamesService} from "@/lib/server/domain/media/games";
+import {createMangaMonthlyActivity, createMangaStatistics, createMangaRepository, createMangaService} from "@/lib/server/domain/media/manga";
+import {createMoviesMonthlyActivity, createMoviesStatistics, createMoviesRepository, createMoviesService} from "@/lib/server/domain/media/movies";
 
 
 export function setupMediaModule() {
     const repositories = {
-        series: new TvRepository(seriesServerDefinition),
-        anime: new TvRepository(animeServerDefinition),
-        movies: new MoviesRepository(moviesServerDefinition),
-        games: new GamesRepository(gamesServerDefinition),
-        books: new BooksRepository(booksServerDefinition),
-        manga: new MangaRepository(mangaServerDefinition),
+        series: createTvRepository(seriesServerDefinition),
+        anime: createTvRepository(animeServerDefinition),
+        movies: createMoviesRepository(moviesServerDefinition),
+        games: createGamesRepository(gamesServerDefinition),
+        books: createBooksRepository(booksServerDefinition),
+        manga: createMangaRepository(mangaServerDefinition),
     };
     const mediaRepositoryRegistry = createMediaRegistry(repositories);
 
@@ -60,12 +60,12 @@ export function setupMediaModule() {
     });
 
     const services = {
-        series: new TvService(repositories.series, seriesServerDefinition),
-        anime: new TvService(repositories.anime, animeServerDefinition),
-        movies: new MoviesService(repositories.movies, moviesServerDefinition),
-        games: new GamesService(repositories.games, gamesServerDefinition),
-        books: new BooksService(repositories.books, booksServerDefinition),
-        manga: new MangaService(repositories.manga, mangaServerDefinition),
+        series: createTvService(repositories.series, seriesServerDefinition),
+        anime: createTvService(repositories.anime, animeServerDefinition),
+        movies: createMoviesService(repositories.movies, moviesServerDefinition),
+        games: createGamesService(repositories.games, gamesServerDefinition),
+        books: createBooksService(repositories.books, booksServerDefinition),
+        manga: createMangaService(repositories.manga, mangaServerDefinition),
     };
     const mediaServiceRegistry = createMediaRegistry(services);
 

@@ -1,5 +1,5 @@
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import type {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
 import {
     ExternalMediaProvider,
     IngestionContext,
@@ -11,7 +11,10 @@ import {
 
 
 export function createMediaIngestionService<TDetails>(params: {
-    repository: BaseRepository<any>;
+    repository: Pick<BaseRepository, "findByApiId" | "findByApiIds"> & {
+        storeMediaWithDetails(details: TDetails): Promise<number>;
+        updateMediaWithDetails(details: TDetails): Promise<boolean>;
+    };
     provider: ExternalMediaProvider<TDetails>;
     refreshCandidates?: RefreshCandidateSource;
     enrichers?: MediaDetailsEnricher<TDetails>[];

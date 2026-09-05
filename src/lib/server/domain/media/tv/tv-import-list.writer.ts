@@ -1,5 +1,5 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
-import {TvService} from "@/lib/server/domain/media/tv/tv.service";
+import type {TvService} from "@/lib/server/domain/media/tv/tv.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {tvFinalListInsertSchema, TvImportPayload, tvImportPayloadSchema} from "@/lib/server/domain/media/tv/tv.types";

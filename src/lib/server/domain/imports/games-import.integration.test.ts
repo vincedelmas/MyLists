@@ -18,10 +18,10 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 
 const { ImportService } = await import("@/lib/server/domain/imports/import.service");
-const { GamesService } = await import("@/lib/server/domain/media/games/games.service");
+const { createGamesService } = await import("@/lib/server/domain/media/games/games.service");
 const { ImportRepository } = await import("@/lib/server/domain/imports/import.repository");
 const { createGamesMatcher } = await import("@/lib/server/domain/media/games/games.matcher");
-const { GamesRepository } = await import("@/lib/server/domain/media/games/games.repository");
+const { createGamesRepository } = await import("@/lib/server/domain/media/games/games.repository");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
 const { MediaMatcherRegistry } = await import("@/lib/server/domain/imports/matchers/media-matcher.registry");
 
@@ -64,7 +64,7 @@ describe("games import processing", () => {
 
     it("matches an internal game, adds it to the user list, and completes the import job", async () => {
         const importService = new ImportService(ImportRepository);
-        const gamesService = new GamesService(new GamesRepository());
+        const gamesService = createGamesService(createGamesRepository());
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.GAMES, createGamesMatcher(gamesService, { storeBatchFromExternal: vi.fn() } as any));
         const processor = new ImportJobProcessor(importService, matcherRegistry);

@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {GamesService} from "@/lib/server/domain/media/games/games.service";
+import type {GamesService} from "@/lib/server/domain/media/games/games.service";
 import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";

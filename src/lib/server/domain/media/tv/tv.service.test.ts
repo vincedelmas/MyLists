@@ -1,9 +1,9 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {TvService} from "@/lib/server/domain/media/tv/tv.service";
+import {createTvService} from "@/lib/server/domain/media/tv/tv.service";
 import {TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
-import {RatingSystemType, Status} from "@/lib/utils/enums";
-import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
+import {RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
+import type {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 
@@ -22,7 +22,7 @@ describe("TvService", () => {
             { listTable: createListTableStub() },
             { getMediaEpsPerSeason: async () => epsPerSeasonMock },
         ) as unknown as TvRepository;
-        const tvService = new TvService(tvRepository, seriesServerDefinition);
+        const tvService = createTvService(tvRepository, seriesServerDefinition);
 
         const baseTv: TvType = {
             id: 1,
@@ -73,6 +73,28 @@ describe("TvService", () => {
             ...makeState(overrides),
             tags: [],
             ratingSystem: RatingSystemType.SCORE,
+        });
+
+        it.each([
+            { payload: { type: UpdateType.STATUS, status: Status.PLAN_TO_WATCH }, state: { total: 0, currentEpisode: 0, redo: [0, 0, 0] }, totalDelta: -48 },
+            { payload: { type: UpdateType.REDO, redo: [1, 0, 0] }, state: { redo: [1, 0, 0], total: 60 }, totalDelta: 12 },
+            { payload: { type: UpdateType.TV, currentEpisode: 12 }, state: { currentEpisode: 12, total: 36 }, totalDelta: -12 },
+            { payload: { type: UpdateType.TV, currentSeason: 2 }, state: { currentSeason: 2, currentEpisode: 1, total: 13 }, totalDelta: -35 },
+        ])("dispatches $payload through the composed service", async ({ payload, state, totalDelta }) => {
+            const persist = vi.fn<TvRepository["updateUserMediaDetails"]>(async (_userId, _mediaId, data) => data);
+            const { updateUserMediaDetails } = createTvService({
+                ...tvRepository,
+                findById: async () => baseTv,
+                findUserMedia: async () => makeUserState({}),
+                updateUserMediaDetails: persist,
+            }, seriesServerDefinition);
+
+            const result = await updateUserMediaDetails(1, baseTv.id, payload);
+
+            expect(persist).toHaveBeenCalledWith(1, baseTv.id, expect.objectContaining(state));
+            expect(result.newState).toMatchObject(state);
+            expect(result.delta.totalSpecific).toBe(totalDelta);
+            expect(result.delta.timeSpent).toBe(totalDelta * baseTv.duration);
         });
 
         describe("calculateDeltaStats", () => {

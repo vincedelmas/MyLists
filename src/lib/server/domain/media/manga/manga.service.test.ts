@@ -1,15 +1,15 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import type {Manga, MangaList} from "./manga.types";
-import {RatingSystemType, Status} from "@/lib/utils/enums";
+import {RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MangaService} from "@/lib/server/domain/media/manga/manga.service";
+import {createMangaService} from "@/lib/server/domain/media/manga/manga.service";
 import type {MangaRepository} from "@/lib/server/domain/media/manga/manga.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
 
 describe("MangaService", () => {
     const mangaRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as MangaRepository;
-    const mangaService = new MangaService(mangaRepository);
+    const mangaService = createMangaService(mangaRepository);
     const TIME_PER_CHAPTER = 7;
 
     const baseManga: Manga = {
@@ -55,6 +55,27 @@ describe("MangaService", () => {
         ...makeState(overrides),
         tags: [],
         ratingSystem: RatingSystemType.SCORE,
+    });
+
+    it.each([
+        { payload: { type: UpdateType.STATUS, status: Status.PLAN_TO_READ }, state: { total: 0, currentChapter: 0 }, totalDelta: -100 },
+        { payload: { type: UpdateType.REDO, redo: 2 }, state: { redo: 2, total: 300 }, totalDelta: 200 },
+        { payload: { type: UpdateType.CHAPTER, currentChapter: 50 }, state: { currentChapter: 50, total: 50 }, totalDelta: -50 },
+    ])("dispatches $payload.type through the composed service", async ({ payload, state, totalDelta }) => {
+        const persist = vi.fn<MangaRepository["updateUserMediaDetails"]>(async (_userId, _mediaId, data) => data);
+        const { updateUserMediaDetails } = createMangaService({
+            ...mangaRepository,
+            findById: async () => baseManga,
+            findUserMedia: async () => makeUserState({}),
+            updateUserMediaDetails: persist,
+        });
+
+        const result = await updateUserMediaDetails(1, baseManga.id, payload);
+
+        expect(persist).toHaveBeenCalledWith(1, baseManga.id, expect.objectContaining(state));
+        expect(result.newState).toMatchObject(state);
+        expect(result.delta.totalSpecific).toBe(totalDelta);
+        expect(result.delta.timeSpent).toBe(totalDelta * TIME_PER_CHAPTER);
     });
 
     describe("calculateDeltaStats", () => {

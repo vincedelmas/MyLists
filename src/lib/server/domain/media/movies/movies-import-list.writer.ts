@@ -1,5 +1,5 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
-import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
+import type {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {moviesFinalListInsertSchema, MoviesImportPayload, moviesImportPayloadSchema} from "@/lib/server/domain/media/movies/movies.types";

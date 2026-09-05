@@ -17,7 +17,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
+const { createTvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { statsRepository } = await import("@/lib/server/domain/stats/stats.repository");
 const { updateHistoryRepository } = await import("@/lib/server/domain/tracking/update-history.repository");
 const { createTasteSimilarityRepository } = await import("@/lib/server/domain/social/taste-similarity.repository");
@@ -52,7 +52,7 @@ describe("disabled media visibility", () => {
     });
 
     it("hides disabled media everywhere without deleting it", async () => {
-        const animeRepository = new TvRepository(animeServerDefinition);
+        const animeRepository = createTvRepository(animeServerDefinition);
 
         const disabledStats = await statsRepository.getPreComputedStatsSummary({ userId: 42 });
         const disabledUpdates = await updateHistoryRepository.getUserUpdates(42, 10);

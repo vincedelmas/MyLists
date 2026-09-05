@@ -1,10 +1,10 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import type {BaseService} from "@/lib/server/domain/media/base/base.service";
 import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
 import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
-export const internalApiIdMatcher = (apiProviderType: ApiProviderType, mediaService: BaseService<any, any>): InternalMediaMatcher => ({
+export const internalApiIdMatcher = (apiProviderType: ApiProviderType, mediaService: Pick<BaseService, "findByApiIds">): InternalMediaMatcher => ({
     async match(items: ImportItemsSelect[]) {
         const candidates = items.filter((item) => item.externalApiSource === apiProviderType && item.externalApiId);
 

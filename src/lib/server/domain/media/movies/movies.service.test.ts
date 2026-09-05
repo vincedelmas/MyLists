@@ -1,17 +1,17 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import type {Movie, MoviesList} from "./movies.types";
 import {convertToCsv} from "@/lib/utils/file-download";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
+import {createMoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
-import {ApiProviderType, MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, MediaType, RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
 import type {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
 
 describe("MoviesService", () => {
     const moviesRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as MoviesRepository;
-    const moviesService = new MoviesService(moviesRepository);
+    const moviesService = createMoviesService(moviesRepository);
 
     const baseMovie: Movie = {
         id: 1,
@@ -84,7 +84,7 @@ describe("MoviesService", () => {
                     lastUpdated: "2024-01-02 00:00:00",
                 }],
             }) as unknown as MoviesRepository;
-            const service = new MoviesService(repository);
+            const service = createMoviesService(repository);
 
             const rows = await service.downloadMediaListAsCSV(42);
             const parsed = parseMyListsCsv(convertToCsv(rows!));
@@ -126,6 +126,28 @@ describe("MoviesService", () => {
             expect(parsed.items[0].payload).not.toHaveProperty("addedAt");
             expect(parsed.items[0].payload).not.toHaveProperty("lastUpdated");
         });
+    });
+
+    it.each([
+        { payload: { type: UpdateType.STATUS, status: Status.PLAN_TO_WATCH }, state: { total: 0, status: Status.PLAN_TO_WATCH }, delta: { timeSpent: -120 } },
+        { payload: { type: UpdateType.REDO, redo: 2 }, state: { redo: 2, total: 3 }, delta: { timeSpent: 240 } },
+        { payload: { type: UpdateType.RATING, rating: 8 }, state: { rating: 8 }, delta: { entriesRated: 1, sumEntriesRated: 8 } },
+        { payload: { type: UpdateType.COMMENT, comment: "Great" }, state: { comment: "Great" }, delta: { entriesCommented: 1 } },
+        { payload: { type: UpdateType.FAVORITE, favorite: true }, state: { favorite: true }, delta: { entriesFavorites: 1 } },
+    ])("dispatches $payload.type through the composed service", async ({ payload, state, delta }) => {
+        const persist = vi.fn<MoviesRepository["updateUserMediaDetails"]>(async (_userId, _mediaId, data) => data);
+        const { updateUserMediaDetails } = createMoviesService({
+            ...moviesRepository,
+            findById: async () => baseMovie,
+            findUserMedia: async () => makeUserState({}),
+            updateUserMediaDetails: persist,
+        });
+
+        const result = await updateUserMediaDetails(1, baseMovie.id, payload);
+
+        expect(persist).toHaveBeenCalledWith(1, baseMovie.id, expect.objectContaining(state));
+        expect(result.newState).toMatchObject(state);
+        expect(result.delta).toMatchObject(delta);
     });
 
     describe("calculateDeltaStats", () => {

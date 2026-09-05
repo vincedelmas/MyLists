@@ -1,5 +1,5 @@
 import {ImportItemStatus, Status} from "@/lib/utils/enums";
-import {BooksService} from "@/lib/server/domain/media/books/books.service";
+import type {BooksService} from "@/lib/server/domain/media/books/books.service";
 import {ImportItemOutcome, MatchedImportItem} from "@/lib/types/imports.types";
 import {ImportListWriter} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 import {Book, booksFinalListInsertSchema, BooksImportPayload, booksImportPayloadSchema} from "@/lib/server/domain/media/books/books.types";

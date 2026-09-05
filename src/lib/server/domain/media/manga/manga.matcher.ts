@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {MangaService} from "@/lib/server/domain/media/manga/manga.service";
+import type {MangaService} from "@/lib/server/domain/media/manga/manga.service";
 import {UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";

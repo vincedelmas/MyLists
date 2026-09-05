@@ -16,7 +16,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
+const { createTvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { animeServerDefinition } = await import("@/lib/media-definitions/tv/anime/anime.definition.server");
 
 
@@ -130,7 +130,7 @@ describe("media community activity visibility", () => {
         ["private owner", toActor({ id: 4, role: RoleType.USER }), [2, 3, 4], 7],
         ["admin", toActor({ id: 99, role: RoleType.ADMIN }), [2, 3, 4, 5], 7.5],
     ])("filters rows and aggregates for an %s actor", async (_label, actor, expectedIds, expectedAverage) => {
-        const repository = new TvRepository(animeServerDefinition);
+        const repository = createTvRepository(animeServerDefinition);
         const result = await repository.getMediaCommunityActivity(actor, 100, { perPage: 20 });
 
         expect(result.items.map(({ id }) => id)).toEqual(expectedIds);

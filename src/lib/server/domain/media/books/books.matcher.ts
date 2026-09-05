@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {BooksService} from "@/lib/server/domain/media/books/books.service";
+import type {BooksService} from "@/lib/server/domain/media/books/books.service";
 import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";

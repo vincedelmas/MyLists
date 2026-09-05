@@ -1,5 +1,5 @@
 import {ApiProviderType, TvMediaType} from "@/lib/utils/enums";
-import {TvService} from "@/lib/server/domain/media/tv/tv.service";
+import type {TvService} from "@/lib/server/domain/media/tv/tv.service";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {ExternalTMDBTvMatcher} from "@/lib/server/domain/media/tv/external-tv.matcher";

@@ -1,15 +1,15 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import type {Book, BooksList} from "./books.types";
-import {RatingSystemType, Status} from "@/lib/utils/enums";
+import {RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {BooksService} from "@/lib/server/domain/media/books/books.service";
+import {createBooksService} from "@/lib/server/domain/media/books/books.service";
 import type {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
 
 describe("BooksService", () => {
     const booksRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as BooksRepository;
-    const booksService = new BooksService(booksRepository);
+    const booksService = createBooksService(booksRepository);
 
     const TIME_PER_PAGE = 1.7;
 
@@ -49,6 +49,27 @@ describe("BooksService", () => {
         ...makeState(overrides),
         tags: [],
         ratingSystem: RatingSystemType.SCORE,
+    });
+
+    it.each([
+        { payload: { type: UpdateType.STATUS, status: Status.PLAN_TO_READ }, state: { total: 0, actualPage: 0 }, totalDelta: -100 },
+        { payload: { type: UpdateType.REDO, redo: 2 }, state: { redo: 2, total: 300 }, totalDelta: 200 },
+        { payload: { type: UpdateType.PAGE, actualPage: 50 }, state: { actualPage: 50, total: 50 }, totalDelta: -50 },
+    ])("dispatches $payload.type through the composed service", async ({ payload, state, totalDelta }) => {
+        const persist = vi.fn<BooksRepository["updateUserMediaDetails"]>(async (_userId, _mediaId, data) => data);
+        const { updateUserMediaDetails } = createBooksService({
+            ...booksRepository,
+            findById: async () => baseBook,
+            findUserMedia: async () => makeUserState({}),
+            updateUserMediaDetails: persist,
+        });
+
+        const result = await updateUserMediaDetails(1, baseBook.id, payload);
+
+        expect(persist).toHaveBeenCalledWith(1, baseBook.id, expect.objectContaining(state));
+        expect(result.newState).toMatchObject(state);
+        expect(result.delta.totalSpecific).toBe(totalDelta);
+        expect(result.delta.timeSpent).toBeCloseTo(totalDelta * TIME_PER_PAGE);
     });
 
     describe("calculateDeltaStats", () => {

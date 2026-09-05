@@ -1,15 +1,15 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import type {Game, GamesList} from "./games.types";
-import {RatingSystemType, Status} from "@/lib/utils/enums";
+import {RatingSystemType, Status, UpdateType} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {GamesService} from "@/lib/server/domain/media/games/games.service";
+import {createGamesService} from "@/lib/server/domain/media/games/games.service";
 import type {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
 
 describe("GamesService", () => {
     const gamesRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as GamesRepository;
-    const gamesService = new GamesService(gamesRepository);
+    const gamesService = createGamesService(gamesRepository);
 
     const baseGame: Game = {
         id: 1,
@@ -54,6 +54,26 @@ describe("GamesService", () => {
         ...makeState(overrides),
         tags: [],
         ratingSystem: RatingSystemType.SCORE,
+    });
+
+    it.each([
+        { payload: { type: UpdateType.STATUS, status: Status.PLAN_TO_PLAY }, state: { playtime: 0, status: Status.PLAN_TO_PLAY }, timeDelta: -120 },
+        { payload: { type: UpdateType.PLAYTIME, playtime: 180 }, state: { playtime: 180 }, timeDelta: 60 },
+        { payload: { type: UpdateType.PLATFORM, platform: null }, state: { platform: null }, timeDelta: 0 },
+    ])("dispatches $payload.type through the composed service", async ({ payload, state, timeDelta }) => {
+        const persist = vi.fn<GamesRepository["updateUserMediaDetails"]>(async (_userId, _mediaId, data) => data);
+        const { updateUserMediaDetails } = createGamesService({
+            ...gamesRepository,
+            findById: async () => baseGame,
+            findUserMedia: async () => makeUserState({ playtime: 120 }),
+            updateUserMediaDetails: persist,
+        });
+
+        const result = await updateUserMediaDetails(1, baseGame.id, payload);
+
+        expect(persist).toHaveBeenCalledWith(1, baseGame.id, expect.objectContaining(state));
+        expect(result.newState).toMatchObject(state);
+        expect(result.delta.timeSpent).toBe(timeDelta);
     });
 
     describe("calculateDeltaStats", () => {

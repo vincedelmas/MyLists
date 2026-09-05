@@ -16,19 +16,19 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { MoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
+const { createMoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
 
 
 describe("BaseRepository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
-    let repository: InstanceType<typeof MoviesRepository>;
+    let repository: ReturnType<typeof createMoviesRepository>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
-        repository = new MoviesRepository();
+        repository = createMoviesRepository();
 
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

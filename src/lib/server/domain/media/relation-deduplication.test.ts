@@ -26,8 +26,8 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 }));
 
 
-const { GamesRepository } = await import("@/lib/server/domain/media/games/games.repository");
-const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
+const { createGamesRepository } = await import("@/lib/server/domain/media/games/games.repository");
+const { createTvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 
 
 describe("media relation deduplication", () => {
@@ -65,7 +65,7 @@ describe("media relation deduplication", () => {
     });
 
     it("refreshes a game when every relation payload contains duplicates", async () => {
-        const repository = new GamesRepository();
+        const repository = createGamesRepository();
         const duplicateCompany = { name: "Dry Cactus", developer: true, publisher: true };
         const details = {
             mediaData: {
@@ -90,7 +90,7 @@ describe("media relation deduplication", () => {
     });
 
     it("refreshes a series when actor and other relation payloads contain duplicates", async () => {
-        const repository = new TvRepository(seriesServerDefinition);
+        const repository = createTvRepository(seriesServerDefinition);
         const details = {
             mediaData: {
                 apiId: 110492,

@@ -1,5 +1,5 @@
 import {logger} from "@/lib/server/core/logger";
-import {TvRepository} from "@/lib/server/domain/media/tv";
+import type {TvRepository} from "@/lib/server/domain/media/tv";
 import {MalApi, TmdbApi} from "@/lib/server/api-providers/api";
 import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";

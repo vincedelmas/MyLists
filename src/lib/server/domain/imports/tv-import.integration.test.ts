@@ -4,9 +4,9 @@ import * as schema from "@/lib/server/database/schema";
 import {importItems, importJobs, series, seriesEpisodesPerSeason, seriesList, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
-import {TvService} from "@/lib/server/domain/media/tv/tv.service";
+import {createTvService} from "@/lib/server/domain/media/tv/tv.service";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
+import {createTvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {createTvMatcher} from "@/lib/server/domain/media/tv/tv.matcher";
@@ -70,7 +70,7 @@ describe("TV import processing", () => {
 
     it("matches an internal series and adds it to the user list", async () => {
         const importService = new ImportService(ImportRepository);
-        const seriesService = new TvService(new TvRepository(seriesServerDefinition), seriesServerDefinition);
+        const seriesService = createTvService(createTvRepository(seriesServerDefinition), seriesServerDefinition);
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.SERIES, createTvMatcher(MediaType.SERIES, seriesService, {} as any, {} as any));
         const processor = new ImportJobProcessor(importService, matcherRegistry);

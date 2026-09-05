@@ -1,5 +1,5 @@
 import {ApiProviderType} from "@/lib/utils/enums";
-import {GamesRepository} from "@/lib/server/domain/media/games";
+import type {GamesRepository} from "@/lib/server/domain/media/games";
 import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";

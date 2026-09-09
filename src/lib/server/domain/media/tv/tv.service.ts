@@ -144,6 +144,7 @@ export function createTvService(repository: TvRepository, definition: TvDefiniti
         if (specialStatuses.includes(currentState.status) && !specialStatuses.includes(newState.status)) {
             newState.currentSeason = epsPerSeason[0].season;
             newState.currentEpisode = 1;
+            newState.total = 1;
         }
 
         if (payload.status === Status.COMPLETED) {

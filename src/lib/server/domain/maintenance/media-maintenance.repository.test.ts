@@ -2,7 +2,7 @@ import {eq} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {MediaType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
-import {collectionItems, collections, movies, moviesActors, moviesList, user} from "@/lib/server/database/schema";
+import {collectionItems, collections, dailyMediadle, movies, moviesActors, moviesList, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -48,6 +48,7 @@ describe("MediaMaintenanceRepository", () => {
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         sqlite.close();
         dbContext.db = undefined;
     });
@@ -87,6 +88,27 @@ describe("MediaMaintenanceRepository", () => {
 
         expect(db.select({ id: movies.id }).from(movies).all()).toEqual([{ id: 100 }, { id: 101 }]);
         expect(db.select().from(moviesActors).all()).toEqual([]);
+    });
+
+    it.each([
+        { date: "2026-09-09", mediaType: MediaType.MOVIES, protected: true },
+        { date: "2026-09-10", mediaType: MediaType.MOVIES, protected: true },
+        { date: "2026-09-08", mediaType: MediaType.MOVIES, protected: false },
+        { date: "2026-09-09", mediaType: MediaType.SERIES, protected: false },
+    ])("handles $mediaType daily game on $date during orphan cleanup", ({ date, mediaType, protected: isProtected }) => {
+        vi.useFakeTimers({ toFake: ["Date"] });
+        vi.setSystemTime(new Date("2026-09-09T23:30:00Z"));
+
+        db.insert(dailyMediadle).values({ mediaId: 100, mediaType, date }).run();
+
+        withTransaction(() => {
+            const orphanIds = MediaMaintenanceRepository.getOrphanedMediaIds(MediaType.MOVIES);
+            expect(orphanIds).toEqual(isProtected ? [101] : [100, 101]);
+            MediaMaintenanceRepository.removeMediaByIds(MediaType.MOVIES, orphanIds);
+        });
+
+        expect(db.select({ id: movies.id }).from(movies).all()).toEqual(isProtected ? [{ id: 100 }] : []);
+        expect(db.select().from(dailyMediadle).all()).toHaveLength(1);
     });
 
     it("returns filenames for stored covers and only nonempty custom covers", async () => {

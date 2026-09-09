@@ -204,15 +204,18 @@ describe("movie time clamping after duration corrections", () => {
         expect(settingsFor().timeSpent).toBe(remainingTime);
     });
 
-    it("keeps nonnegative constraints for other counters and media types", () => {
+    it("clamps time for other media types while keeping nonnegative constraints on other counters", () => {
         dbContext.db.insert(schema.userMediaSettings).values({
             userId: 1, mediaType: MediaType.BOOKS, active: true,
         }).run();
-        const before = snapshot();
 
-        expect(() => withTransaction(() => StatsRepository.updateUserPreComputedStatsWithDelta(1, MediaType.BOOKS, 1, {
+        withTransaction(() => StatsRepository.updateUserPreComputedStatsWithDelta(1, MediaType.BOOKS, 1, {
             timeSpent: -1,
-        }))).toThrow();
+        }));
+        expect(dbContext.db.select().from(schema.userMediaSettings)
+            .where(eq(schema.userMediaSettings.mediaType, MediaType.BOOKS)).get()?.timeSpent).toBe(0);
+
+        const before = snapshot();
         expect(() => withTransaction(() => StatsRepository.updateUserPreComputedStatsWithDelta(1, MediaType.MOVIES, 1, {
             totalEntries: -1,
         }))).toThrow();

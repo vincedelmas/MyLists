@@ -16,22 +16,22 @@ vi.mock("@/lib/server/database/db", () => ({
 }));
 
 
-const { MoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
-const { MoviesService } = await import("@/lib/server/domain/media/movies/movies.service");
+const { createMoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
+const { createMoviesService } = await import("@/lib/server/domain/media/movies/movies.service");
 
 
-describe("Base media persistence and list queries", () => {
+describe("Shared media persistence and list queries", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
-    let repository: InstanceType<typeof MoviesRepository>;
-    let service: InstanceType<typeof MoviesService>;
+    let repository: ReturnType<typeof createMoviesRepository>;
+    let service: ReturnType<typeof createMoviesService>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
-        repository = new MoviesRepository();
-        service = new MoviesService(repository);
+        repository = createMoviesRepository();
+        service = createMoviesService(repository);
 
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");

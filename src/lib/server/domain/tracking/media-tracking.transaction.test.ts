@@ -5,10 +5,10 @@ import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
-import {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
-import {TvService} from "@/lib/server/domain/media/tv/tv.service";
-import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
+import {createMoviesService} from "@/lib/server/domain/media/movies/movies.service";
+import {createMoviesRepository, type MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
+import {createTvService} from "@/lib/server/domain/media/tv/tv.service";
+import {createTvRepository, type TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {StatsService} from "@/lib/server/domain/stats/stats.service";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import {MediaTrackingService} from "@/lib/server/domain/tracking/media-tracking.service";
@@ -64,10 +64,10 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
         db.insert(schema.seriesEpisodesPerSeason).values({ mediaId: 1, season: 1, episodes: 8 }).run();
 
         const definition = mediaType === MediaType.MOVIES ? moviesServerDefinition : seriesServerDefinition;
-        const repository = mediaType === MediaType.MOVIES ? new MoviesRepository() : new TvRepository(seriesServerDefinition);
+        const repository = mediaType === MediaType.MOVIES ? createMoviesRepository() : createTvRepository(seriesServerDefinition);
         const mediaService = mediaType === MediaType.MOVIES
-            ? new MoviesService(repository as MoviesRepository)
-            : new TvService(repository as TvRepository, seriesServerDefinition);
+            ? createMoviesService(repository as MoviesRepository)
+            : createTvService(repository as TvRepository, seriesServerDefinition);
         const monthlyActivity = createMediaMonthlyActivity({ definition, repository });
         const activityService = new MonthlyActivityService(MonthlyActivityRepository, { get: () => monthlyActivity } as MediaMonthlyActivityRegistry);
         const statsService = new StatsService(StatsRepository, activityService, AchievementsRepository, UpdateHistoryRepository, {} as MediaStatsRegistry);

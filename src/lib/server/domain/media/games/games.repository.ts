@@ -3,20 +3,19 @@ import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {normalizeGamePlatforms} from "@/lib/server/domain/media/games/platforms";
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms} from "@/lib/server/database/schema";
 import {Game, UpdateGameWithDetails, UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {gamesServerDefinition, GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 
 
-export class GamesRepository extends BaseRepository<GamesServerDefinition> {
-    constructor(definition: GamesServerDefinition = gamesServerDefinition) {
-        super(definition);
-    }
+export function createGamesRepository(definition: GamesServerDefinition = gamesServerDefinition) {
+    const { ingestion, attribution } = definition;
+    const queries = createMediaQueries(definition);
 
-    async getMediaIdsToBeRefreshed() {
-        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
+    async function getMediaIdsToBeRefreshed() {
+        const staleAfter = `-${ingestion.refresh.staleAfterDays} days`;
 
         return getDbClient()
             .select({ apiId: games.apiId })
@@ -29,9 +28,7 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
             .then((res) => res.map((r) => r.apiId));
     }
 
-    // --- Implemented Methods ----------------------------------------------
-
-    addMediaToUserList(userId: number, media: Game, newStatus: Status) {
+    function addMediaToUserList(userId: number, media: Game, newStatus: Status) {
         const [newMedia] = getDbClient()
             .insert(gamesList)
             .values({
@@ -45,7 +42,7 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
         return newMedia;
     }
 
-    async getCompatiblePlatforms(mediaId: number) {
+    async function getCompatiblePlatforms(mediaId: number) {
         // Get IGDB platforms names and normalize then considering my GameEnum
 
         const igdbPlatforms = await getDbClient()
@@ -56,7 +53,7 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
         return normalizeGamePlatforms(igdbPlatforms);
     }
 
-    async findAllAssociatedDetails(mediaId: number) {
+    async function findAllAssociatedDetails(mediaId: number) {
         const details = getDbClient()
             .select({
                 ...getTableColumns(games),
@@ -106,7 +103,7 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
         const result: Game & AddedMediaDetails = {
             ...details,
             providerData: {
-                name: this.attribution.name,
+                name: attribution.name,
                 url: details.igdbUrl ?? "#",
             },
             genres: details.genres || [],
@@ -118,7 +115,7 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
         return result;
     }
 
-    storeMediaWithDetails({ mediaData, companiesData, platformsData, genresData }: UpsertGameWithDetails) {
+    function storeMediaWithDetails({ mediaData, companiesData, platformsData, genresData }: UpsertGameWithDetails) {
         const tx = getDbClient();
 
         const [media] = tx
@@ -150,7 +147,7 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
         return mediaId;
     }
 
-    updateMediaWithDetails({ mediaData, companiesData, platformsData, genresData }: UpdateGameWithDetails) {
+    function updateMediaWithDetails({ mediaData, companiesData, platformsData, genresData }: UpdateGameWithDetails) {
         const tx = getDbClient();
 
         const [media] = tx
@@ -202,4 +199,17 @@ export class GamesRepository extends BaseRepository<GamesServerDefinition> {
 
         return true;
     }
+
+    return {
+        ...queries,
+        getMediaIdsToBeRefreshed,
+        addMediaToUserList,
+        getCompatiblePlatforms,
+        findAllAssociatedDetails,
+        storeMediaWithDetails,
+        updateMediaWithDetails,
+    };
 }
+
+
+export type GamesRepository = ReturnType<typeof createGamesRepository>;

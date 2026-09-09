@@ -2,7 +2,7 @@ import {describe, expect, it, vi} from "vitest";
 import type {Game, GamesList} from "./games.types";
 import {RatingSystemType, Status} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {GamesService} from "@/lib/server/domain/media/games/games.service";
+import {createGamesService} from "@/lib/server/domain/media/games/games.service";
 import type {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
@@ -13,7 +13,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 describe("GamesService", () => {
     const gamesRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as GamesRepository;
-    const gamesService = new GamesService(gamesRepository);
+    const gamesService = createGamesService(gamesRepository);
 
     const baseGame: Game = {
         id: 1,

@@ -19,22 +19,22 @@ vi.mock("@/lib/server/database/db", () => ({
 }));
 vi.mock("@/lib/server/core/images/image-saver", () => ({ saveImageFromUrl: vi.fn().mockResolvedValue("updated.jpg") }));
 
-const { MoviesRepository, MoviesService } = await import("@/lib/server/domain/media/movies");
-const { GamesRepository, GamesService } = await import("@/lib/server/domain/media/games");
-const { BooksRepository, BooksService } = await import("@/lib/server/domain/media/books");
-const { MangaRepository, MangaService } = await import("@/lib/server/domain/media/manga");
-const { TvRepository, TvService } = await import("@/lib/server/domain/media/tv");
+const { createMoviesRepository, createMoviesService } = await import("@/lib/server/domain/media/movies");
+const { createGamesRepository, createGamesService } = await import("@/lib/server/domain/media/games");
+const { createBooksRepository, createBooksService } = await import("@/lib/server/domain/media/books");
+const { createMangaRepository, createMangaService } = await import("@/lib/server/domain/media/manga");
+const { createTvRepository, createTvService } = await import("@/lib/server/domain/media/tv");
 const { saveImageFromUrl } = await import("@/lib/server/core/images/image-saver");
 const { mangaServerDefinition } = await import("@/lib/media-definitions/manga/manga.definition.server");
 const { booksServerDefinition } = await import("@/lib/media-definitions/books/book.definition.server");
 
 const services = {
-    [MediaType.MOVIES]: new MoviesService(new MoviesRepository()),
-    [MediaType.GAMES]: new GamesService(new GamesRepository()),
-    [MediaType.BOOKS]: new BooksService(new BooksRepository()),
-    [MediaType.MANGA]: new MangaService(new MangaRepository()),
-    [MediaType.SERIES]: new TvService(new TvRepository(seriesServerDefinition), seriesServerDefinition),
-    [MediaType.ANIME]: new TvService(new TvRepository(animeServerDefinition), animeServerDefinition),
+    [MediaType.MOVIES]: createMoviesService(createMoviesRepository()),
+    [MediaType.GAMES]: createGamesService(createGamesRepository()),
+    [MediaType.BOOKS]: createBooksService(createBooksRepository()),
+    [MediaType.MANGA]: createMangaService(createMangaRepository()),
+    [MediaType.SERIES]: createTvService(createTvRepository(seriesServerDefinition), seriesServerDefinition),
+    [MediaType.ANIME]: createTvService(createTvRepository(animeServerDefinition), animeServerDefinition),
 };
 
 
@@ -108,7 +108,7 @@ describe("validated metadata edits", () => {
     });
 
     it("returns empty book relations and an empty authors input when none are stored", async () => {
-        const details = await new BooksRepository().findAllAssociatedDetails(1);
+        const details = await createBooksRepository().findAllAssociatedDetails(1);
         expect(details).toMatchObject({ authors: [], genres: [] });
         expect((await services[MediaType.BOOKS].getMediaEditableFields(1)).fields.authors).toBe("");
     });
@@ -118,7 +118,7 @@ describe("validated metadata edits", () => {
             ...mangaServerDefinition,
             service: { ...mangaServerDefinition.service, editableFields: ["publishers", "name"] as const },
         };
-        const service = new MangaService(new MangaRepository(definition), definition);
+        const service = createMangaService(createMangaRepository(definition), definition);
         await db.insert(schema.mangaGenre).values({ mediaId: 1, name: "Drama" });
         const before = service.findById(1);
         const { fields, editableFields } = await service.getMediaEditableFields(1);
@@ -146,7 +146,7 @@ describe("validated metadata edits", () => {
                 editableFields: booksServerDefinition.service.editableFields.filter(field => field !== "authors"),
             },
         };
-        const service = new BooksService(new BooksRepository(definition), definition);
+        const service = createBooksService(createBooksRepository(definition), definition);
         await db.insert(schema.booksAuthors).values({ mediaId: 1, name: "Original author" });
         const { fields, editableFields } = await service.getMediaEditableFields(1);
         expect(fields).not.toHaveProperty("authors");
@@ -163,7 +163,7 @@ describe("validated metadata edits", () => {
                 editableFields: animeServerDefinition.service.editableFields.filter(field => field !== "duration"),
             },
         };
-        const service = new TvService(new TvRepository(definition), definition);
+        const service = createTvService(createTvRepository(definition), definition);
         expect((await service.getMediaEditableFields(1)).fields).not.toHaveProperty("duration");
         await expect(service.updateMediaEditableFields(1, { duration: 30 })).rejects.toThrow();
         await services[MediaType.SERIES].updateMediaEditableFields(1, { duration: 60 });

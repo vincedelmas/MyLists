@@ -4,31 +4,28 @@ import {FormattedError} from "@/lib/utils/error-classes";
 import {LogPayload} from "@/lib/types/user-updates.types";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import {createMediaService} from "@/lib/server/domain/media/base/media.service";
 import {Book, BooksList} from "@/lib/server/domain/media/books/books.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {PagePayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
-import type {EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
+import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
 import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 
 
-export class BooksService extends BaseService<BookServerDefinition, BooksRepository> {
-    constructor(repository: BooksRepository, definition: BookServerDefinition = booksServerDefinition) {
-        super(repository, definition);
+export function createBooksService(repository: BooksRepository, definition: BookServerDefinition = booksServerDefinition) {
+    const { identity, service: servicePolicy } = definition;
+    const editPayloadSchema = createMediaEditPayloadSchema(identity.mediaType, servicePolicy.editableFields);
+    const service = createMediaService(repository, definition, {
+        [UpdateType.PAGE]: updatePageHandler,
+        [UpdateType.REDO]: updateRedoHandler,
+        [UpdateType.STATUS]: updateStatusHandler,
+    });
 
-        this.updateHandlers = {
-            ...this.updateHandlers,
-            [UpdateType.PAGE]: this.updatePageHandler.bind(this),
-            [UpdateType.REDO]: this.updateRedoHandler.bind(this),
-            [UpdateType.STATUS]: this.updateStatusHandler.bind(this),
-        }
-    }
-
-    async getMediaEditableFields(mediaId: number) {
-        const { editableFields } = this.servicePolicy;
+    async function getMediaEditableFields(mediaId: number) {
+        const { editableFields } = servicePolicy;
         const formFields = editableFields.filter(field => field !== "imageCover");
-        const media = await this.repository.findAllAssociatedDetails(mediaId);
+        const media = await repository.findAllAssociatedDetails(mediaId);
         if (!media) throw notFound();
 
         const values = {
@@ -39,11 +36,11 @@ export class BooksService extends BaseService<BookServerDefinition, BooksReposit
         return { fields: pick(values, formFields), editableFields };
     }
 
-    async updateMediaEditableFields(mediaId: number, payload: EditMediaDetailsPayloadByType[typeof MediaType.BOOKS]) {
-        const { coverDirectory } = this.identity;
-        payload = this.editPayloadSchema.parse(payload);
+    async function updateMediaEditableFields(mediaId: number, payload: EditMediaDetailsPayloadByType[typeof MediaType.BOOKS]) {
+        const { coverDirectory } = identity;
+        payload = editPayloadSchema.parse(payload);
 
-        const media = this.repository.findById(mediaId);
+        const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         const { imageCover, authors, ...fields } = payload;
@@ -61,13 +58,13 @@ export class BooksService extends BaseService<BookServerDefinition, BooksReposit
                 .filter(Boolean).map((name) => ({ name })), (author) => author.name
             );
 
-        withTransaction(() => this.repository.updateMediaWithDetails({ mediaData, authorsData }));
+        withTransaction(() => repository.updateMediaWithDetails({ mediaData, authorsData }));
     }
 
-    async updateDefaultCover(mediaId: number, payload: { imageUrl?: string; imageFile?: File }) {
-        const { coverDirectory } = this.identity;
+    async function updateDefaultCover(mediaId: number, payload: { imageUrl?: string; imageFile?: File }) {
+        const { coverDirectory } = identity;
 
-        const media = this.repository.findById(mediaId);
+        const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         const currentCover = media.imageCover.split("/").pop();
@@ -87,11 +84,11 @@ export class BooksService extends BaseService<BookServerDefinition, BooksReposit
             throw new FormattedError("Could not update the book cover. Please choose another one.");
         }
 
-        withTransaction(() => this.repository.updateMediaWithDetails({ mediaData: { apiId: media.apiId, imageCover: imageName } }));
+        withTransaction(() => repository.updateMediaWithDetails({ mediaData: { apiId: media.apiId, imageCover: imageName } }));
     }
 
-    async batchBooksWithoutGenres(batchSize: number) {
-        const booksWithoutGenres = await this.repository.getBooksWithoutGenres();
+    async function batchBooksWithoutGenres(batchSize: number) {
+        const booksWithoutGenres = await repository.getBooksWithoutGenres();
 
         const booksPrompts: string[] = [];
         for (const book of booksWithoutGenres) {
@@ -112,14 +109,14 @@ description: ${book.synopsis}
         return batches;
     }
 
-    async addGenresToBook(bookApiId: string, booksGenres: string[]) {
+    async function addGenresToBook(bookApiId: string, booksGenres: string[]) {
         const mediaData = { apiId: bookApiId };
         const genresData = uniqueBy(booksGenres.map((name) => ({ name })), (genre) => genre.name);
 
-        withTransaction(() => this.repository.updateMediaWithDetails({ mediaData, genresData }));
+        withTransaction(() => repository.updateMediaWithDetails({ mediaData, genresData }));
     }
 
-    getAvailableGenres() {
+    function getAvailableGenres() {
         return [
             "Action & Adventure", "Biography", "Chick lit", "Children", "Classic", "Crime", "Drama",
             "Dystopian", "Essay", "Fantastic", "Fantasy", "Historical Fiction", "History", "Humor", "Horror",
@@ -128,7 +125,7 @@ description: ${book.synopsis}
         ];
     }
 
-    updateRedoHandler(currentState: BooksList, payload: RedoPayload, media: Book): [BooksList, LogPayload] {
+    function updateRedoHandler(currentState: BooksList, payload: RedoPayload, media: Book): [BooksList, LogPayload] {
         const newState = { ...currentState, redo: payload.redo };
         const logPayload = { oldValue: currentState.redo, newValue: payload.redo };
 
@@ -137,7 +134,7 @@ description: ${book.synopsis}
         return [newState, logPayload];
     }
 
-    updateStatusHandler(currentState: BooksList, payload: StatusPayload, media: Book): [BooksList, LogPayload] {
+    function updateStatusHandler(currentState: BooksList, payload: StatusPayload, media: Book): [BooksList, LogPayload] {
         const newState = { ...currentState, status: payload.status };
         const logPayload = { oldValue: currentState.status, newValue: payload.status };
 
@@ -154,7 +151,7 @@ description: ${book.synopsis}
         return [newState, logPayload];
     }
 
-    updatePageHandler(currentState: BooksList, payload: PagePayload, media: Book): [BooksList, LogPayload] {
+    function updatePageHandler(currentState: BooksList, payload: PagePayload, media: Book): [BooksList, LogPayload] {
         if (payload.actualPage > media.pages) {
             throw new FormattedError("Invalid page");
         }
@@ -166,4 +163,20 @@ description: ${book.synopsis}
 
         return [newState, logPayload];
     }
+
+    return {
+        ...service,
+        getMediaEditableFields,
+        updateMediaEditableFields,
+        updateDefaultCover,
+        batchBooksWithoutGenres,
+        addGenresToBook,
+        getAvailableGenres,
+        updateRedoHandler,
+        updateStatusHandler,
+        updatePageHandler,
+    };
 }
+
+
+export type BooksService = ReturnType<typeof createBooksService>;

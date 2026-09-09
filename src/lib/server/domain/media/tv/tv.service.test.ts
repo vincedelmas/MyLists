@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 import {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {TvService} from "@/lib/server/domain/media/tv/tv.service";
+import {createTvService} from "@/lib/server/domain/media/tv/tv.service";
 import {TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
 import {RatingSystemType, Status} from "@/lib/utils/enums";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
@@ -26,7 +26,7 @@ describe("TvService", () => {
             { listTable: createListTableStub() },
             { getMediaEpsPerSeason: () => epsPerSeasonMock },
         ) as unknown as TvRepository;
-        const tvService = new TvService(tvRepository, seriesServerDefinition);
+        const tvService = createTvService(tvRepository, seriesServerDefinition);
 
         const baseTv: TvType = {
             id: 1,

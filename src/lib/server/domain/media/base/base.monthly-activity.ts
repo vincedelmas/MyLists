@@ -4,7 +4,7 @@ import {AnySQLiteColumn} from "drizzle-orm/sqlite-core";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import type {MonthlyActivityMediaRef} from "@/lib/types/activity.types";
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.queries";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
@@ -22,7 +22,7 @@ type Contributions = {
 
 
 type CreateMonthlyActivityOptions = {
-    repository: BaseRepository<any, any>;
+    repository: Pick<MediaQueries, "findById" | "findUserMedia">;
     definition: AnyServerMediaDefinition;
     progressFromDelta?: (delta: DeltaStats) => number;
     durationColumn?: AnySQLiteColumn<{ data: number, notNull: true }>;

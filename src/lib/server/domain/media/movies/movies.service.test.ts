@@ -2,7 +2,7 @@ import {describe, expect, it, vi} from "vitest";
 import type {Movie, MoviesList} from "./movies.types";
 import {convertToCsv} from "@/lib/utils/csv";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
+import {createMoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ApiProviderType, MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import type {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
@@ -15,7 +15,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 describe("MoviesService", () => {
     const moviesRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as MoviesRepository;
-    const moviesService = new MoviesService(moviesRepository);
+    const moviesService = createMoviesService(moviesRepository);
 
     const baseMovie: Movie = {
         id: 1,
@@ -88,7 +88,7 @@ describe("MoviesService", () => {
                     lastUpdated: "2024-01-02 00:00:00",
                 }],
             }) as unknown as MoviesRepository;
-            const service = new MoviesService(repository);
+            const service = createMoviesService(repository);
 
             const rows = await service.downloadMediaListAsCSV(42);
             const parsed = parseMyListsCsv(convertToCsv(rows!));

@@ -1,21 +1,20 @@
 import {Status} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {manga, mangaAuthors, mangaGenre, mangaList} from "@/lib/server/database/schema";
 import {and, eq, getTableColumns, gte, inArray, isNull, lte, or, sql} from "drizzle-orm";
 import {UpdateMangaWithDetails, Manga, UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
 import {mangaServerDefinition, MangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 
 
-export class MangaRepository extends BaseRepository<MangaServerDefinition> {
-    constructor(definition: MangaServerDefinition = mangaServerDefinition) {
-        super(definition);
-    }
+export function createMangaRepository(definition: MangaServerDefinition = mangaServerDefinition) {
+    const { ingestion, attribution } = definition;
+    const queries = createMediaQueries(definition);
 
-    async getMediaIdsToBeRefreshed() {
-        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
-        const activeProdStatuses = [...this.ingestion.refresh.activeProdStatuses];
+    async function getMediaIdsToBeRefreshed() {
+        const staleAfter = `-${ingestion.refresh.staleAfterDays} days`;
+        const activeProdStatuses = [...ingestion.refresh.activeProdStatuses];
 
         const results = await getDbClient()
             .select({ apiId: manga.apiId })
@@ -33,9 +32,7 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
         return results.map((r) => r.apiId);
     }
 
-    // --- Implemented Methods ------------------------------------------------
-
-    addMediaToUserList(userId: number, media: Manga, newStatus: Status) {
+    function addMediaToUserList(userId: number, media: Manga, newStatus: Status) {
         const newTotal = (newStatus === Status.COMPLETED) ? (media.chapters ?? 0) : 0;
 
         const [newMedia] = getDbClient()
@@ -52,7 +49,7 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
         return newMedia;
     }
 
-    async findAllAssociatedDetails(mediaId: number) {
+    async function findAllAssociatedDetails(mediaId: number) {
         const details = getDbClient()
             .select({
                 ...getTableColumns(manga),
@@ -70,8 +67,8 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
         const result: Manga & AddedMediaDetails = {
             ...details,
             providerData: {
-                name: this.attribution.name,
-                url: `${this.attribution.mediaUrl}${details.apiId}`,
+                name: attribution.name,
+                url: `${attribution.mediaUrl}${details.apiId}`,
             },
             genres: details.genres || [],
             authors: details.authors || [],
@@ -80,7 +77,7 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
         return result;
     }
 
-    storeMediaWithDetails({ mediaData, authorsData, genresData }: UpsertMangaWithDetails) {
+    function storeMediaWithDetails({ mediaData, authorsData, genresData }: UpsertMangaWithDetails) {
         const tx = getDbClient();
 
         const [media] = tx
@@ -111,7 +108,7 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
         return mediaId;
     }
 
-    updateMediaWithDetails({ mediaData, authorsData, genresData }: UpdateMangaWithDetails) {
+    function updateMediaWithDetails({ mediaData, authorsData, genresData }: UpdateMangaWithDetails) {
         const tx = getDbClient();
 
         const [media] = tx
@@ -153,4 +150,16 @@ export class MangaRepository extends BaseRepository<MangaServerDefinition> {
 
         return true;
     }
+
+    return {
+        ...queries,
+        getMediaIdsToBeRefreshed,
+        addMediaToUserList,
+        findAllAssociatedDetails,
+        storeMediaWithDetails,
+        updateMediaWithDetails,
+    };
 }
+
+
+export type MangaRepository = ReturnType<typeof createMangaRepository>;

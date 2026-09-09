@@ -3,31 +3,28 @@ import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {LogPayload} from "@/lib/types/user-updates.types";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import {createMediaService, createSimpleUpdateHandler} from "@/lib/server/domain/media/base/media.service";
 import {Game, GamesList} from "@/lib/server/domain/media/games/games.types";
 import {PlaytimePayload, StatusPayload} from "@/lib/types/user-media.types";
 import {GamesRepository} from "@/lib/server/domain/media/games/games.repository";
-import type {EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
+import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
 import {gamesServerDefinition, GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 import {pick} from "@/lib/utils/arrays-objects";
 
 
-export class GamesService extends BaseService<GamesServerDefinition, GamesRepository> {
-    constructor(repository: GamesRepository, definition: GamesServerDefinition = gamesServerDefinition) {
-        super(repository, definition);
+export function createGamesService(repository: GamesRepository, definition: GamesServerDefinition = gamesServerDefinition) {
+    const { identity, service: servicePolicy } = definition;
+    const editPayloadSchema = createMediaEditPayloadSchema(identity.mediaType, servicePolicy.editableFields);
+    const service = createMediaService(repository, definition, {
+        [UpdateType.STATUS]: updateStatusHandler,
+        [UpdateType.PLAYTIME]: updatePlaytimeHandler,
+        [UpdateType.PLATFORM]: createSimpleUpdateHandler("platform"),
+    });
 
-        this.updateHandlers = {
-            ...this.updateHandlers,
-            [UpdateType.STATUS]: this.updateStatusHandler.bind(this),
-            [UpdateType.PLAYTIME]: this.updatePlaytimeHandler.bind(this),
-            [UpdateType.PLATFORM]: this.createSimpleUpdateHandler("platform"),
-        };
-    }
+    async function getMediaEditableFields(mediaId: number) {
+        const { editableFields } = servicePolicy;
 
-    async getMediaEditableFields(mediaId: number) {
-        const { editableFields } = this.servicePolicy;
-
-        const media = this.repository.findById(mediaId);
+        const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         return {
@@ -36,18 +33,18 @@ export class GamesService extends BaseService<GamesServerDefinition, GamesReposi
         };
     }
 
-    async getCompatiblePlatforms(mediaId: number) {
-        const media = this.repository.findById(mediaId);
+    async function getCompatiblePlatforms(mediaId: number) {
+        const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
-        return this.repository.getCompatiblePlatforms(mediaId);
+        return repository.getCompatiblePlatforms(mediaId);
     }
 
-    async updateMediaEditableFields(mediaId: number, payload: EditMediaDetailsPayloadByType[typeof MediaType.GAMES]) {
-        const { coverDirectory } = this.identity;
-        payload = this.editPayloadSchema.parse(payload);
+    async function updateMediaEditableFields(mediaId: number, payload: EditMediaDetailsPayloadByType[typeof MediaType.GAMES]) {
+        const { coverDirectory } = identity;
+        payload = editPayloadSchema.parse(payload);
 
-        const media = this.repository.findById(mediaId);
+        const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         const { imageCover, ...fields } = payload;
@@ -57,10 +54,10 @@ export class GamesService extends BaseService<GamesServerDefinition, GamesReposi
             mediaData.imageCover = await saveImageFromUrl({ dirSaveName: coverDirectory, imageUrl: imageCover });
         }
 
-        withTransaction(() => this.repository.updateMediaWithDetails({ mediaData }));
+        withTransaction(() => repository.updateMediaWithDetails({ mediaData }));
     }
 
-    updateStatusHandler(currentState: GamesList, payload: StatusPayload, _media: Game): [GamesList, LogPayload] {
+    function updateStatusHandler(currentState: GamesList, payload: StatusPayload, _media: Game): [GamesList, LogPayload] {
         const newState = { ...currentState, status: payload.status };
         const logPayload = { oldValue: currentState.status, newValue: payload.status };
 
@@ -69,12 +66,24 @@ export class GamesService extends BaseService<GamesServerDefinition, GamesReposi
         }
 
         return [newState, logPayload];
-    };
+    }
 
-    updatePlaytimeHandler(currentState: GamesList, payload: PlaytimePayload, _media: Game): [GamesList, LogPayload] {
+    function updatePlaytimeHandler(currentState: GamesList, payload: PlaytimePayload, _media: Game): [GamesList, LogPayload] {
         const newState = { ...currentState, playtime: payload.playtime };
         const logPayload = { oldValue: currentState.playtime, newValue: payload.playtime };
 
         return [newState, logPayload];
+    }
+
+    return {
+        ...service,
+        getMediaEditableFields,
+        getCompatiblePlatforms,
+        updateMediaEditableFields,
+        updateStatusHandler,
+        updatePlaytimeHandler,
     };
 }
+
+
+export type GamesService = ReturnType<typeof createGamesService>;

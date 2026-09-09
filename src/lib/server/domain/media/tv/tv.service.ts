@@ -1,38 +1,37 @@
+import {pick} from "@/lib/utils/arrays-objects";
 import {notFound} from "@tanstack/react-router";
-import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {LogPayload} from "@/lib/types/user-updates.types";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {TvList, TvType} from "@/lib/server/domain/media/tv/tv.types";
-import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
-import type {EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
+import {createMediaService} from "@/lib/server/domain/media/base/media.service";
 import {EpsSeasonPayload, RedoTvPayload, StatusPayload} from "@/lib/types/user-media.types";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
-import {pick} from "@/lib/utils/arrays-objects";
+import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
 
 
 type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
 
 
-export class TvService extends BaseService<TvDefinition, TvRepository> {
-    constructor(repository: TvRepository, definition: TvDefinition) {
-        super(repository, definition);
+export function createTvService(repository: TvRepository, definition: TvDefinition) {
+    const { identity, service: servicePolicy } = definition;
 
-        this.updateHandlers = {
-            ...this.updateHandlers,
-            [UpdateType.REDO]: this.updateRedoHandler.bind(this),
-            [UpdateType.STATUS]: this.updateStatusHandler.bind(this),
-            [UpdateType.TV]: this.updateEpsSeasonsHandler.bind(this),
-        }
-    }
+    const editPayloadSchema = createMediaEditPayloadSchema(identity.mediaType, servicePolicy.editableFields);
 
-    async getMediaEditableFields(mediaId: number) {
-        const { editableFields } = this.servicePolicy;
+    const service = createMediaService(repository, definition, {
+        [UpdateType.REDO]: updateRedoHandler,
+        [UpdateType.STATUS]: updateStatusHandler,
+        [UpdateType.TV]: updateEpsSeasonsHandler,
+    });
 
-        const media = this.repository.findById(mediaId);
+    async function getMediaEditableFields(mediaId: number) {
+        const { editableFields } = servicePolicy;
+
+        const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         return {
@@ -41,15 +40,15 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
         };
     }
 
-    getMediaEpsPerSeason(mediaId: number) {
-        return this.repository.getMediaEpsPerSeason(mediaId);
+    function getMediaEpsPerSeason(mediaId: number) {
+        return repository.getMediaEpsPerSeason(mediaId);
     }
 
-    async updateMediaEditableFields(mediaId: number, payload: EditMediaDetailsPayloadByType[typeof MediaType.SERIES | typeof MediaType.ANIME]) {
-        const { coverDirectory } = this.identity;
-        payload = this.editPayloadSchema.parse(payload);
+    async function updateMediaEditableFields(mediaId: number, payload: EditMediaDetailsPayloadByType[typeof MediaType.SERIES | typeof MediaType.ANIME]) {
+        const { coverDirectory } = identity;
+        payload = editPayloadSchema.parse(payload);
 
-        const media = this.repository.findById(mediaId);
+        const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         const { imageCover, ...fields } = payload;
@@ -59,11 +58,11 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
             mediaData.imageCover = await saveImageFromUrl({ dirSaveName: coverDirectory, imageUrl: imageCover });
         }
 
-        withTransaction(() => this.repository.updateMediaWithDetails({ mediaData }));
+        withTransaction(() => repository.updateMediaWithDetails({ mediaData }));
     }
 
-    updateRedoHandler(currentState: TvList, payload: RedoTvPayload, media: TvType): [TvList, LogPayload] {
-        const epsPerSeason = this.repository.getMediaEpsPerSeason(media.id);
+    function updateRedoHandler(currentState: TvList, payload: RedoTvPayload, media: TvType): [TvList, LogPayload] {
+        const epsPerSeason = repository.getMediaEpsPerSeason(media.id);
         const currentRedo = Array.from({ length: epsPerSeason.length }, (_, index) => currentState.redo[index] ?? 0);
         const nextRedo = Array.from({ length: epsPerSeason.length }, (_, index) => payload.redo[index] ?? 0);
 
@@ -81,10 +80,10 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
         return [newState, logPayload];
     }
 
-    updateStatusHandler(currentState: TvList, payload: StatusPayload, media: TvType): [TvList, LogPayload] {
+    function updateStatusHandler(currentState: TvList, payload: StatusPayload, media: TvType): [TvList, LogPayload] {
         const newState = { ...currentState, status: payload.status };
         const specialStatuses: Status[] = [Status.RANDOM, Status.PLAN_TO_WATCH];
-        const epsPerSeason = this.repository.getMediaEpsPerSeason(media.id);
+        const epsPerSeason = repository.getMediaEpsPerSeason(media.id);
         const logPayload = { oldValue: currentState.status, newValue: payload.status };
 
         if (specialStatuses.includes(currentState.status) && !specialStatuses.includes(newState.status)) {
@@ -109,8 +108,8 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
         return [newState, logPayload];
     }
 
-    updateEpsSeasonsHandler(currentState: TvList, payload: EpsSeasonPayload, media: TvType): [TvList, LogPayload] {
-        const epsPerSeason = this.repository.getMediaEpsPerSeason(media.id);
+    function updateEpsSeasonsHandler(currentState: TvList, payload: EpsSeasonPayload, media: TvType): [TvList, LogPayload] {
+        const epsPerSeason = repository.getMediaEpsPerSeason(media.id);
         const epsPerSeasList = epsPerSeason.map((eps) => eps.episodes);
 
         if (payload.currentSeason) {
@@ -155,4 +154,17 @@ export class TvService extends BaseService<TvDefinition, TvRepository> {
 
         return [currentState, null];
     }
+
+    return {
+        ...service,
+        updateRedoHandler,
+        updateStatusHandler,
+        getMediaEpsPerSeason,
+        getMediaEditableFields,
+        updateEpsSeasonsHandler,
+        updateMediaEditableFields,
+    };
 }
+
+
+export type TvService = ReturnType<typeof createTvService>;

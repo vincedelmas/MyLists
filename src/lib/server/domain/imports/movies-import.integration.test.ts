@@ -18,10 +18,10 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 
 const { ImportService } = await import("@/lib/server/domain/imports/import.service");
-const { MoviesService } = await import("@/lib/server/domain/media/movies/movies.service");
+const { createMoviesService } = await import("@/lib/server/domain/media/movies/movies.service");
 const { ImportRepository } = await import("@/lib/server/domain/imports/import.repository");
 const { createMoviesMatcher } = await import("@/lib/server/domain/media/movies/movies.matcher");
-const { MoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
+const { createMoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
 const { MediaMatcherRegistry } = await import("@/lib/server/domain/imports/matchers/media-matcher.registry");
 
@@ -65,7 +65,7 @@ describe("movies import processing", () => {
 
     it("matches an internal movie, adds it to the user list, and completes the import job", async () => {
         const importService = new ImportService(ImportRepository);
-        const moviesService = new MoviesService(new MoviesRepository());
+        const moviesService = createMoviesService(createMoviesRepository());
         const matcherRegistry = MediaMatcherRegistry;
         matcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
             moviesService,
@@ -129,7 +129,7 @@ describe("movies import processing", () => {
 
     it("settles external skipped and failed movie rows and completes the import job with errors", async () => {
         const importService = new ImportService(ImportRepository);
-        const moviesService = new MoviesService(new MoviesRepository());
+        const moviesService = createMoviesService(createMoviesRepository());
         const moviesProvider = {
             search: vi.fn()
                 .mockResolvedValueOnce({ hasNextPage: false, data: [] })

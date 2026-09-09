@@ -1,8 +1,8 @@
 import {describe, expect, it} from "vitest";
 import {Status, UpdateType} from "@/lib/utils/enums";
-import {BooksRepository, createBooksMonthlyActivity} from "@/lib/server/domain/media/books";
-import {GamesRepository, createGamesMonthlyActivity} from "@/lib/server/domain/media/games";
-import {createTvMonthlyActivity, TvRepository} from "@/lib/server/domain/media/tv";
+import {createBooksRepository, createBooksMonthlyActivity} from "@/lib/server/domain/media/books";
+import {createGamesRepository, createGamesMonthlyActivity} from "@/lib/server/domain/media/games";
+import {createTvMonthlyActivity, createTvRepository} from "@/lib/server/domain/media/tv";
 import {booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {gamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
 import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
@@ -11,7 +11,7 @@ import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.defi
 describe("createMediaMonthlyActivity", () => {
     const books = createBooksMonthlyActivity(
         booksServerDefinition,
-        new BooksRepository(booksServerDefinition),
+        createBooksRepository(booksServerDefinition),
     );
 
     it("classifies contribution flags from the current update and keeps them independent", () => {
@@ -49,11 +49,11 @@ describe("createMediaMonthlyActivity", () => {
     it("uses each media's progress and timing policy", () => {
         const games = createGamesMonthlyActivity(
             gamesServerDefinition,
-            new GamesRepository(gamesServerDefinition),
+            createGamesRepository(gamesServerDefinition),
         );
         const anime = createTvMonthlyActivity(
             animeServerDefinition,
-            new TvRepository(animeServerDefinition),
+            createTvRepository(animeServerDefinition),
         );
 
         expect(games.createContribution({

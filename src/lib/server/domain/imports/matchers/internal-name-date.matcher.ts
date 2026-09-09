@@ -1,9 +1,9 @@
-import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
 import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
-export const internalNameDateMatcher = (mediaService: BaseService<any, any>): InternalMediaMatcher => ({
+export const internalNameDateMatcher = (mediaService: Pick<MediaQueries, "findByNames">): InternalMediaMatcher => ({
     async match(items: ImportItemsSelect[]) {
         const candidates = items.filter(item => item.name?.trim() && isSupportedReleaseDate(item.releaseDate));
 

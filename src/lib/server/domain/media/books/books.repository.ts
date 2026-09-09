@@ -2,18 +2,17 @@ import {Status} from "@/lib/utils/enums";
 import {eq, getTableColumns, isNull, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails, IdNamePair} from "@/lib/types/media-common.types";
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {books, booksAuthors, booksGenre, booksList} from "@/lib/server/database/schema";
 import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {Book, InsertBooksWithDetails, UpdateBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 
 
-export class BooksRepository extends BaseRepository<BookServerDefinition> {
-    constructor(definition: BookServerDefinition = booksServerDefinition) {
-        super(definition);
-    }
+export function createBooksRepository(definition: BookServerDefinition = booksServerDefinition) {
+    const { attribution } = definition;
+    const queries = createMediaQueries(definition);
 
-    async getBooksWithoutGenres() {
+    async function getBooksWithoutGenres() {
         return getDbClient()
             .select({
                 title: books.name,
@@ -28,9 +27,7 @@ export class BooksRepository extends BaseRepository<BookServerDefinition> {
             .groupBy(books.id);
     }
 
-    // --- Implemented Methods ------------------------------------------------
-
-    addMediaToUserList(userId: number, media: Book, newStatus: Status) {
+    function addMediaToUserList(userId: number, media: Book, newStatus: Status) {
         const newTotal = (newStatus === Status.COMPLETED) ? media.pages : 0;
 
         const [newMedia] = getDbClient()
@@ -47,7 +44,7 @@ export class BooksRepository extends BaseRepository<BookServerDefinition> {
         return newMedia;
     }
 
-    async findAllAssociatedDetails(mediaId: number) {
+    async function findAllAssociatedDetails(mediaId: number) {
         const details = getDbClient()
             .select({
                 ...getTableColumns(books),
@@ -67,15 +64,15 @@ export class BooksRepository extends BaseRepository<BookServerDefinition> {
         const result = {
             ...details,
             providerData: {
-                name: this.attribution.name,
-                url: `${this.attribution.mediaUrl}${details.apiId}`,
+                name: attribution.name,
+                url: `${attribution.mediaUrl}${details.apiId}`,
             },
         } satisfies Book & AddedMediaDetails;
 
         return result;
     }
 
-    storeMediaWithDetails({ mediaData, authorsData }: InsertBooksWithDetails) {
+    function storeMediaWithDetails({ mediaData, authorsData }: InsertBooksWithDetails) {
         const tx = getDbClient();
 
         const [media] = tx
@@ -99,7 +96,7 @@ export class BooksRepository extends BaseRepository<BookServerDefinition> {
         return mediaId;
     }
 
-    updateMediaWithDetails({ mediaData, authorsData, genresData }: UpdateBooksWithDetails) {
+    function updateMediaWithDetails({ mediaData, authorsData, genresData }: UpdateBooksWithDetails) {
         const tx = getDbClient();
 
         const [media] = tx
@@ -141,4 +138,16 @@ export class BooksRepository extends BaseRepository<BookServerDefinition> {
 
         return true;
     }
+
+    return {
+        ...queries,
+        getBooksWithoutGenres,
+        addMediaToUserList,
+        findAllAssociatedDetails,
+        storeMediaWithDetails,
+        updateMediaWithDetails,
+    };
 }
+
+
+export type BooksRepository = ReturnType<typeof createBooksRepository>;

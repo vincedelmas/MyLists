@@ -1,6 +1,6 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {MediaListDataByType} from "@/lib/server/domain/media/base/base.repository";
+import {MediaListDataByType} from "@/lib/server/domain/media/media-list.types";
 import {activeMediaListAuthorizationMiddleware, activeMediaListPreviewMiddleware} from "@/lib/server/middlewares/authorization";
 import {mediaListFiltersSchema, mediaListSchema, mediaListSearchFiltersSchema, mediaTypeUsernameSchema, simpleSearchSchema} from "@/lib/schemas";
 

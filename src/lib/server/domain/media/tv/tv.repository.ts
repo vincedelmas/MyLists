@@ -3,7 +3,7 @@ import {user} from "@/lib/server/database/schema";
 import {EpsPerSeasonType} from "@/lib/types/media-list.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {TvType, UpdateTvWithDetails, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
@@ -13,13 +13,13 @@ import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max
 type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
 
 
-export class TvRepository extends BaseRepository<TvDefinition> {
-    constructor(definition: TvDefinition) {
-        super(definition);
-    }
+export function createTvRepository(definition: TvDefinition) {
+    const { ingestion, attribution, repository: repoDefinition } = definition;
 
-    getMediaEpsPerSeason(mediaId: number) {
-        const { epsPerSeasonTable } = this.repoDefinition.tables;
+    const queries = createMediaQueries(definition);
+
+    function getMediaEpsPerSeason(mediaId: number) {
+        const { epsPerSeasonTable } = repoDefinition.tables;
 
         return getDbClient()
             .select({
@@ -31,9 +31,9 @@ export class TvRepository extends BaseRepository<TvDefinition> {
             .orderBy(asc(epsPerSeasonTable.season)).all();
     }
 
-    async getMediaIdsToBeRefreshed(apiIds: number[]) {
-        const { mediaTable } = this.repoDefinition.tables;
-        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
+    async function getMediaIdsToBeRefreshed(apiIds: number[]) {
+        const { mediaTable } = repoDefinition.tables;
+        const staleAfter = `-${ingestion.refresh.staleAfterDays} days`;
 
         const airedCondition = and(
             isNotNull(mediaTable.nextEpisodeToAir),
@@ -53,10 +53,8 @@ export class TvRepository extends BaseRepository<TvDefinition> {
             .then((res) => res.map((m) => m.apiId));
     }
 
-    // --- Implemented Methods ------------------------------------------------
-
-    async getUpcomingMedia(userId?: number, maxAWeek?: boolean) {
-        const { mediaTable, listTable, epsPerSeasonTable } = this.repoDefinition.tables;
+    async function getUpcomingMedia(userId?: number, maxAWeek?: boolean) {
+        const { mediaTable, listTable, epsPerSeasonTable } = repoDefinition.tables;
 
         const epsSubq = getDbClient()
             .select({
@@ -91,9 +89,9 @@ export class TvRepository extends BaseRepository<TvDefinition> {
             .orderBy(asc(mediaTable.nextEpisodeToAir));
     }
 
-    addMediaToUserList(userId: number, media: TvType, newStatus: Status) {
-        const { listTable } = this.repoDefinition.tables;
-        const epsPerSeason = this.getMediaEpsPerSeason(media.id);
+    function addMediaToUserList(userId: number, media: TvType, newStatus: Status) {
+        const { listTable } = repoDefinition.tables;
+        const epsPerSeason = getMediaEpsPerSeason(media.id);
 
         let newTotal = 1;
         let newSeason = 1;
@@ -125,8 +123,8 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         return newMedia;
     }
 
-    async findAllAssociatedDetails(mediaId: number) {
-        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.repoDefinition.tables;
+    async function findAllAssociatedDetails(mediaId: number) {
+        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = repoDefinition.tables;
 
         const details = getDbClient()
             .select({
@@ -149,8 +147,8 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         const result: TvType & AddedMediaDetails = {
             ...details,
             providerData: {
-                name: this.attribution.name,
-                url: `${this.attribution.mediaUrl}${details.apiId}`,
+                name: attribution.name,
+                url: `${attribution.mediaUrl}${details.apiId}`,
             },
             genres: details.genres || [],
             actors: details.actors || [],
@@ -161,8 +159,8 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         return result;
     }
 
-    storeMediaWithDetails({ mediaData, actorsData, seasonsData, networkData, genresData }: UpsertTvWithDetails) {
-        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.repoDefinition.tables;
+    function storeMediaWithDetails({ mediaData, actorsData, seasonsData, networkData, genresData }: UpsertTvWithDetails) {
+        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = repoDefinition.tables;
 
         const tx = getDbClient();
 
@@ -202,8 +200,8 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         return mediaId;
     }
 
-    updateMediaWithDetails({ mediaData, actorsData, seasonsData, networkData, genresData }: UpdateTvWithDetails) {
-        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = this.repoDefinition.tables;
+    function updateMediaWithDetails({ mediaData, actorsData, seasonsData, networkData, genresData }: UpdateTvWithDetails) {
+        const { mediaTable, actorTable, genreTable, epsPerSeasonTable, networkTable } = repoDefinition.tables;
 
         const [media] = getDbClient()
             .update(mediaTable)
@@ -233,7 +231,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         }
 
         if (seasonsData && seasonsData.length > 0) {
-            this._updateUsersWithMedia(mediaId, seasonsData);
+            _updateUsersWithMedia(mediaId, seasonsData);
 
             getDbClient().delete(epsPerSeasonTable).where(eq(epsPerSeasonTable.mediaId, mediaId)).run();
             const epsPerSeasonToAdd = seasonsData.map((data) => ({ mediaId, ...data }));
@@ -253,9 +251,9 @@ export class TvRepository extends BaseRepository<TvDefinition> {
 
     // --- Logic When Updating Seasons data -----------------------------------
 
-    private _updateUsersWithMedia(mediaId: number, seasonsData: EpsPerSeasonType[]) {
-        const { listTable } = this.repoDefinition.tables;
-        const oldSeasonsData = this.getMediaEpsPerSeason(mediaId);
+    function _updateUsersWithMedia(mediaId: number, seasonsData: EpsPerSeasonType[]) {
+        const { listTable } = repoDefinition.tables;
+        const oldSeasonsData = getMediaEpsPerSeason(mediaId);
 
         // If nothing changed, do nothing
         if (JSON.stringify(oldSeasonsData) === JSON.stringify(seasonsData)) {
@@ -267,7 +265,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         const oldMaxSeason = Math.max(...oldSeasonsData.map((season) => season.season), 0);
         const newMaxSeason = Math.max(...seasonsData.map((season) => season.season), 0);
         const hasNewSeason = newMaxSeason > oldMaxSeason;
-        const usersWithMediaInTheirList = this._getAllUsersWithMediaInTheirList(mediaId);
+        const usersWithMediaInTheirList = _getAllUsersWithMediaInTheirList(mediaId);
 
         for (const userMedia of usersWithMediaInTheirList) {
             // Calculate how many eps watched in re-watches (oldSeasonsData)
@@ -296,7 +294,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
             const newTotal = absoluteProgress + newRedoTotal;
 
             // Map Absolute Progress to new Season/Episode structure
-            const newPosition = this._reorderSeasEps(absoluteProgress, newEpsList);
+            const newPosition = _reorderSeasEps(absoluteProgress, newEpsList);
 
             // The maintenance task rebuilds precomputed user stats after bulk refresh.
             getDbClient()
@@ -312,8 +310,8 @@ export class TvRepository extends BaseRepository<TvDefinition> {
         }
     }
 
-    private _getAllUsersWithMediaInTheirList(mediaId: number) {
-        const { listTable } = this.repoDefinition.tables;
+    function _getAllUsersWithMediaInTheirList(mediaId: number) {
+        const { listTable } = repoDefinition.tables;
 
         return getDbClient()
             .select({
@@ -325,7 +323,7 @@ export class TvRepository extends BaseRepository<TvDefinition> {
             .where(eq(listTable.mediaId, mediaId)).all();
     }
 
-    private _reorderSeasEps(absoluteProgress: number, epsList: number[]) {
+    function _reorderSeasEps(absoluteProgress: number, epsList: number[]) {
         const totalEpsAvailable = epsList.reduce((a, b) => a + b, 0);
 
         // If series empty / progress exceeds series length, cap at last possible episode
@@ -354,4 +352,18 @@ export class TvRepository extends BaseRepository<TvDefinition> {
 
         return { season: 1, episode: 0 };
     }
+
+    return {
+        ...queries,
+        getUpcomingMedia,
+        addMediaToUserList,
+        getMediaEpsPerSeason,
+        storeMediaWithDetails,
+        updateMediaWithDetails,
+        getMediaIdsToBeRefreshed,
+        findAllAssociatedDetails,
+    };
 }
+
+
+export type TvRepository = ReturnType<typeof createTvRepository>;

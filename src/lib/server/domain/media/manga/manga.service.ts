@@ -5,30 +5,27 @@ import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {LogPayload} from "@/lib/types/user-updates.types";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {BaseService} from "@/lib/server/domain/media/base/base.service";
+import {createMediaService} from "@/lib/server/domain/media/base/media.service";
 import {Manga, MangaList} from "@/lib/server/domain/media/manga/manga.types";
 import {MangaRepository} from "@/lib/server/domain/media/manga/manga.repository";
-import type {EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
+import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
 import {ChapterPayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
 import {mangaServerDefinition, MangaServerDefinition} from "@/lib/media-definitions/manga/manga.definition.server";
 
 
-export class MangaService extends BaseService<MangaServerDefinition, MangaRepository> {
-    constructor(repository: MangaRepository, definition: MangaServerDefinition = mangaServerDefinition) {
-        super(repository, definition);
+export function createMangaService(repository: MangaRepository, definition: MangaServerDefinition = mangaServerDefinition) {
+    const { identity, service: servicePolicy } = definition;
+    const editPayloadSchema = createMediaEditPayloadSchema(identity.mediaType, servicePolicy.editableFields);
+    const service = createMediaService(repository, definition, {
+        [UpdateType.REDO]: updateRedoHandler,
+        [UpdateType.STATUS]: updateStatusHandler,
+        [UpdateType.CHAPTER]: updateChapterHandler,
+    });
 
-        this.updateHandlers = {
-            ...this.updateHandlers,
-            [UpdateType.REDO]: this.updateRedoHandler.bind(this),
-            [UpdateType.STATUS]: this.updateStatusHandler.bind(this),
-            [UpdateType.CHAPTER]: this.updateChapterHandler.bind(this),
-        }
-    }
+    async function getMediaEditableFields(mediaId: number) {
+        const { editableFields } = servicePolicy;
 
-    async getMediaEditableFields(mediaId: number) {
-        const { editableFields } = this.servicePolicy;
-
-        const media = this.repository.findById(mediaId);
+        const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         return {
@@ -37,11 +34,11 @@ export class MangaService extends BaseService<MangaServerDefinition, MangaReposi
         };
     }
 
-    async updateMediaEditableFields(mediaId: number, payload: EditMediaDetailsPayloadByType[typeof MediaType.MANGA]) {
-        const { coverDirectory } = this.identity;
-        payload = this.editPayloadSchema.parse(payload);
+    async function updateMediaEditableFields(mediaId: number, payload: EditMediaDetailsPayloadByType[typeof MediaType.MANGA]) {
+        const { coverDirectory } = identity;
+        payload = editPayloadSchema.parse(payload);
 
-        const media = this.repository.findById(mediaId);
+        const media = repository.findById(mediaId);
         if (!media) throw notFound();
 
         const { imageCover, genres, ...fields } = payload;
@@ -55,10 +52,10 @@ export class MangaService extends BaseService<MangaServerDefinition, MangaReposi
             ? undefined
             : uniqueBy(genres.map(genre => typeof genre === "string" ? { name: genre } : genre), (genre) => genre.name);
 
-        withTransaction(() => this.repository.updateMediaWithDetails({ mediaData, genresData }));
+        withTransaction(() => repository.updateMediaWithDetails({ mediaData, genresData }));
     }
 
-    updateRedoHandler(currentState: MangaList, payload: RedoPayload, media: Manga): [MangaList, LogPayload] {
+    function updateRedoHandler(currentState: MangaList, payload: RedoPayload, media: Manga): [MangaList, LogPayload] {
         if (!media.chapters) {
             throw new FormattedError("Cannot redo a manga without chapters");
         }
@@ -71,7 +68,7 @@ export class MangaService extends BaseService<MangaServerDefinition, MangaReposi
         return [newState, logPayload];
     }
 
-    updateStatusHandler(currentState: MangaList, payload: StatusPayload, media: Manga): [MangaList, LogPayload] {
+    function updateStatusHandler(currentState: MangaList, payload: StatusPayload, media: Manga): [MangaList, LogPayload] {
         const newState = { ...currentState, status: payload.status };
         const logPayload = { oldValue: currentState.status, newValue: payload.status };
 
@@ -90,7 +87,7 @@ export class MangaService extends BaseService<MangaServerDefinition, MangaReposi
         return [newState, logPayload];
     }
 
-    updateChapterHandler(currentState: MangaList, payload: ChapterPayload, media: Manga): [MangaList, LogPayload] {
+    function updateChapterHandler(currentState: MangaList, payload: ChapterPayload, media: Manga): [MangaList, LogPayload] {
         const newState = { ...currentState, currentChapter: payload.currentChapter };
         const logPayload = { oldValue: currentState.currentChapter, newValue: payload.currentChapter };
 
@@ -98,4 +95,16 @@ export class MangaService extends BaseService<MangaServerDefinition, MangaReposi
 
         return [newState, logPayload];
     }
+
+    return {
+        ...service,
+        getMediaEditableFields,
+        updateMediaEditableFields,
+        updateRedoHandler,
+        updateStatusHandler,
+        updateChapterHandler,
+    };
 }
+
+
+export type MangaService = ReturnType<typeof createMangaService>;

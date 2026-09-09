@@ -2,20 +2,19 @@ import {Status} from "@/lib/utils/enums";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
-import {BaseRepository} from "@/lib/server/domain/media/base/base.repository";
+import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
 import {movies, moviesActors, moviesGenre, moviesList} from "@/lib/server/database/schema";
 import {UpdateMovieWithDetails, Movie, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {MovieServerDefinition, moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 
 
-export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
-    constructor(definition: MovieServerDefinition = moviesServerDefinition) {
-        super(definition);
-    }
+export function createMoviesRepository(definition: MovieServerDefinition = moviesServerDefinition) {
+    const { ingestion, attribution } = definition;
+    const queries = createMediaQueries(definition);
 
-    async lockOldMovies() {
-        const lockAfter = `-${this.ingestion.refresh.lockAfterMonths} months`;
+    async function lockOldMovies() {
+        const lockAfter = `-${ingestion.refresh.lockAfterMonths} months`;
 
         const [{ count }] = await getDbClient()
             .select({ count: sql<number>`count(*)` })
@@ -30,7 +29,7 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
         return count;
     }
 
-    async findByTitleAndYear(title: string, year: number) {
+    async function findByTitleAndYear(title: string, year: number) {
         return getDbClient()
             .select()
             .from(movies)
@@ -41,9 +40,9 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
             .get();
     }
 
-    async getMediaIdsToBeRefreshed() {
-        const staleAfter = `-${this.ingestion.refresh.staleAfterDays} days`;
-        const releaseGrace = `-${this.ingestion.refresh.releaseGraceMonths} months`;
+    async function getMediaIdsToBeRefreshed() {
+        const staleAfter = `-${ingestion.refresh.staleAfterDays} days`;
+        const releaseGrace = `-${ingestion.refresh.releaseGraceMonths} months`;
 
         const results = await getDbClient()
             .select({ apiId: movies.apiId })
@@ -57,9 +56,7 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
         return results.map((r) => r.apiId);
     }
 
-    // --- Implemented Methods ------------------------------------------------
-
-    addMediaToUserList(userId: number, media: Movie, newStatus: Status) {
+    function addMediaToUserList(userId: number, media: Movie, newStatus: Status) {
         const newTotal = (newStatus === Status.COMPLETED) ? 1 : 0;
 
         const [newMedia] = getDbClient()
@@ -75,7 +72,7 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
         return newMedia;
     }
 
-    async findAllAssociatedDetails(mediaId: number) {
+    async function findAllAssociatedDetails(mediaId: number) {
         const details = getDbClient()
             .select({
                 ...getTableColumns(movies),
@@ -122,8 +119,8 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
         const result: Movie & AddedMediaDetails = {
             ...details,
             providerData: {
-                name: this.attribution.name,
-                url: `${this.attribution.mediaUrl}${details.apiId}`,
+                name: attribution.name,
+                url: `${attribution.mediaUrl}${details.apiId}`,
             },
             actors: details.actors || [],
             genres: details.genres || [],
@@ -133,7 +130,7 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
         return result;
     }
 
-    storeMediaWithDetails({ mediaData, actorsData, genresData }: UpsertMovieWithDetails) {
+    function storeMediaWithDetails({ mediaData, actorsData, genresData }: UpsertMovieWithDetails) {
         const tx = getDbClient();
 
         const [media] = tx
@@ -162,7 +159,7 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
         return mediaId;
     }
 
-    updateMediaWithDetails({ mediaData, actorsData, genresData }: UpdateMovieWithDetails) {
+    function updateMediaWithDetails({ mediaData, actorsData, genresData }: UpdateMovieWithDetails) {
         const tx = getDbClient();
 
         const [media] = tx
@@ -204,4 +201,18 @@ export class MoviesRepository extends BaseRepository<MovieServerDefinition> {
 
         return true;
     }
+
+    return {
+        ...queries,
+        lockOldMovies,
+        findByTitleAndYear,
+        getMediaIdsToBeRefreshed,
+        addMediaToUserList,
+        findAllAssociatedDetails,
+        storeMediaWithDetails,
+        updateMediaWithDetails,
+    };
 }
+
+
+export type MoviesRepository = ReturnType<typeof createMoviesRepository>;

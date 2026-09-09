@@ -26,8 +26,8 @@ vi.mock("@/lib/server/database/db", () => ({
 }));
 
 
-const { TvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
-const { TvService } = await import("@/lib/server/domain/media/tv/tv.service");
+const { createTvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
+const { createTvService } = await import("@/lib/server/domain/media/tv/tv.service");
 const { createMediaIngestionService } = await import("@/lib/server/api-providers/media-ingestion.service");
 
 
@@ -39,13 +39,13 @@ const completedSeriesStatusCounts = () => Object.fromEntries(
 describe("TvRepository season refresh", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
-    let repository: InstanceType<typeof TvRepository>;
+    let repository: ReturnType<typeof createTvRepository>;
 
     beforeEach(async () => {
         sqlite = new Database(":memory:");
         db = drizzle(sqlite, { schema, casing: "snake_case" });
         dbContext.db = db;
-        repository = new TvRepository(seriesServerDefinition);
+        repository = createTvRepository(seriesServerDefinition);
 
         migrate(db, { migrationsFolder: "./drizzle" });
         sqlite.run("PRAGMA foreign_keys = ON");
@@ -93,7 +93,7 @@ describe("TvRepository season refresh", () => {
                     expect(sqlite.inTransaction).toBe(false);
                     await Promise.resolve();
                     return {
-                        mediaData: { apiId: 1000, name: "Updated title", totalSeasons: 3 },
+                        mediaData: { ...beforeMedia[0], name: "Updated title", totalSeasons: 3 },
                         seasonsData: [
                             { season: 1, episodes: 8 },
                             { season: 2, episodes: 8 },
@@ -309,7 +309,7 @@ describe("TvRepository season refresh", () => {
             },
         ]);
 
-        const service = new TvService(repository, seriesServerDefinition);
+        const service = createTvService(repository, seriesServerDefinition);
         const result = await service.getMediaList(undefined, 42, { sorting: "Re-watched" });
 
         expect(result.items.map((item) => item.mediaId)).toEqual([101, 100]);

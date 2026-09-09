@@ -2,7 +2,7 @@ import {describe, expect, it, vi} from "vitest";
 import type {Book, BooksList} from "./books.types";
 import {RatingSystemType, Status} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
-import {BooksService} from "@/lib/server/domain/media/books/books.service";
+import {createBooksService} from "@/lib/server/domain/media/books/books.service";
 import type {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
@@ -13,7 +13,7 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 
 describe("BooksService", () => {
     const booksRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as BooksRepository;
-    const booksService = new BooksService(booksRepository);
+    const booksService = createBooksService(booksRepository);
 
     const TIME_PER_PAGE = 1.7;
 

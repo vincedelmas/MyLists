@@ -44,7 +44,9 @@ export class StatsRepository {
         for (const field of numericFields) {
             const deltaValue = delta[field];
             if (deltaValue !== undefined && deltaValue !== 0) {
-                setUpdates[field] = sql`${userMediaSettings[field]} + ${deltaValue}`;
+                setUpdates[field] = field === "sumEntriesRated"
+                    ? sql`ROUND(${userMediaSettings.sumEntriesRated} + ${deltaValue}, 10)`
+                    : sql`${userMediaSettings[field]} + ${deltaValue}`;
             }
         }
 
@@ -68,7 +70,7 @@ export class StatsRepository {
             CASE
                 WHEN COALESCE(${userMediaSettings.entriesRated}, 0) + ${deltaEntriesRated} <= 0 
                 THEN NULL
-                ELSE (CAST(COALESCE(${userMediaSettings.sumEntriesRated}, 0) + ${deltaSumEntriesRated} AS REAL) / 
+                ELSE (ROUND(COALESCE(${userMediaSettings.sumEntriesRated}, 0) + ${deltaSumEntriesRated}, 10) /
                 (COALESCE(${userMediaSettings.entriesRated}, 0) + ${deltaEntriesRated}))
             END`;
 

@@ -27,11 +27,12 @@ interface BaseMediaListItemProps {
     isCurrent: boolean;
     isConnected: boolean;
     mediaType: MediaType;
-    allStatuses: readonly Status[];
     rating: React.ReactNode;
     userMedia: UserMediaItem;
     isMediaTypeActive: boolean;
     redoDisplay?: React.ReactNode;
+    allStatuses: readonly Status[];
+    ratingDisplay?: React.ReactNode;
     mediaDetailsDisplay?: React.ReactNode;
     queryOption: ReturnType<typeof mediaListOptions>;
 }
@@ -39,7 +40,19 @@ interface BaseMediaListItemProps {
 
 export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     const [dialogOpen, setDialogOpen] = useState(false);
-    const { isCurrent, queryOption, isConnected, isMediaTypeActive, mediaType, allStatuses, rating, userMedia, redoDisplay, mediaDetailsDisplay } = props;
+    const {
+        rating,
+        isCurrent,
+        mediaType,
+        userMedia,
+        redoDisplay,
+        queryOption,
+        isConnected,
+        allStatuses,
+        ratingDisplay,
+        isMediaTypeActive,
+        mediaDetailsDisplay
+    } = props;
 
     const isCommon = isMediaTypeActive && userMedia.common;
     const showMediaDetails = mediaDetailsDisplay && canShowProgress(userMedia.status);
@@ -81,9 +94,11 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                             {userMedia.mediaName}
                         </MediaCardTitle>
                         <div className="shrink-0">
-                            {rating &&
-                                <DisplayRating rating={rating}/>
-                            }
+                            {ratingDisplay ?? (rating &&
+                                <DisplayRating
+                                    rating={rating}
+                                />
+                            )}
                         </div>
                     </div>
                     <MediaCardMeta>

@@ -12,18 +12,33 @@ interface UpdateSeasonsEpsProps {
 
 
 export const UpdateSeasonsEps = ({ onUpdateMutation, epsPerSeason, currentSeason, currentEpisode }: UpdateSeasonsEpsProps) => {
-    const episodes = [...Array(epsPerSeason[currentSeason - 1].episodes).keys()].map(v => (v + 1).toString());
-    const seasonItems = epsPerSeason.map((item) => ({ label: String(item.season), value: String(item.season) }));
+    const episodes = [...Array(epsPerSeason.find(s => s.season === currentSeason)!.episodes).keys()]
+        .map(v => (v + 1).toString());
+
+    const seasonItems = [...epsPerSeason]
+        .sort((a, b) => a.season - b.season)
+        .map((item) => ({ label: String(item.season), value: String(item.season) }));
+
     const episodeItems = episodes.map((episode) => ({ label: episode, value: episode }));
 
     const handleSeasonUpdate = (season: string | null) => {
         if (season === null) return;
-        onUpdateMutation.mutate({ payload: { currentSeason: parseInt(season), type: UpdateType.TV } });
+        onUpdateMutation.mutate({
+            payload: {
+                type: UpdateType.TV,
+                currentSeason: parseInt(season),
+            }
+        });
     };
 
     const handleEpisodeUpdate = (episode: string | null) => {
         if (episode === null) return;
-        onUpdateMutation.mutate({ payload: { currentEpisode: parseInt(episode), type: UpdateType.TV } });
+        onUpdateMutation.mutate({
+            payload: {
+                type: UpdateType.TV,
+                currentEpisode: parseInt(episode),
+            }
+        });
     };
 
     return (
@@ -32,7 +47,7 @@ export const UpdateSeasonsEps = ({ onUpdateMutation, epsPerSeason, currentSeason
                 <div>Season</div>
                 <Select items={seasonItems} value={currentSeason.toString()} onValueChange={handleSeasonUpdate}
                         disabled={onUpdateMutation.isPending}>
-                    <SelectTrigger size="sm" className="w-34">
+                    <SelectTrigger size="sm" className="w-34" aria-label="Current season">
                         <SelectValue/>
                     </SelectTrigger>
                     <SelectContent>
@@ -50,7 +65,7 @@ export const UpdateSeasonsEps = ({ onUpdateMutation, epsPerSeason, currentSeason
                 <div>Episode</div>
                 <Select items={episodeItems} value={currentEpisode.toString()} onValueChange={handleEpisodeUpdate}
                         disabled={onUpdateMutation.isPending}>
-                    <SelectTrigger size="sm" className="w-34">
+                    <SelectTrigger size="sm" className="w-34" aria-label="Current episode">
                         <SelectValue/>
                     </SelectTrigger>
                     <SelectContent>

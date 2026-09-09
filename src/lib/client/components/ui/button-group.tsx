@@ -11,7 +11,7 @@ const buttonGroupVariants = cva("flex w-fit items-stretch *:focus-visible:relati
     "[&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1", {
     variants: {
         orientation: {
-            horizontal: "*:data-slot:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-lg! " +
+            horizontal: "*:data-slot:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-md! " +
                 "[&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0",
             vertical:
                 "flex-col *:data-slot:rounded-b-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-lg! " +

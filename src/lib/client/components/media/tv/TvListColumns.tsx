@@ -1,7 +1,7 @@
 import {TvMediaType} from "@/lib/utils/enums";
 import {ColumnDef} from "@tanstack/react-table";
 import {ExtractListByType} from "@/lib/types/query.options.types";
-import {DisplayTvRedo} from "@/lib/client/components/media/tv/DisplayTvRedo";
+import {TvSeasonPopover} from "@/lib/client/components/media/tv/TvSeasonPopover";
 import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
 import {CommonInfoTableCell} from "@/lib/client/components/media/base/CommonInfoTableCell";
 import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsAndSeasons";
@@ -30,8 +30,25 @@ export const getTvColumns = (props: ColumnConfigProps): ColumnDef<typeof mediaTa
             <div className="flex items-center gap-3">
                 <CommonInfoTableCell
                     userMedia={original}
+                    ratingDisplay={
+                        <TvSeasonPopover
+                            kind="rating"
+                            value={original.rating}
+                            userId={original.userId}
+                            mediaId={original.mediaId}
+                            ratingSystem={original.ratingSystem}
+                            mediaType={props.mediaType as TvMediaType}
+                        />
+                    }
                 />
-                {original.redo.reduce((a, c) => a + c, 0) > 0 && <DisplayTvRedo redoValues={original.redo}/>}
+                <TvSeasonPopover
+                    kind="redo"
+                    value={original.redo}
+                    userId={original.userId}
+                    mediaId={original.mediaId}
+                    ratingSystem={original.ratingSystem}
+                    mediaType={props.mediaType as TvMediaType}
+                />
             </div>
         ),
     });

@@ -1,12 +1,9 @@
 import {asc, desc, getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {ANIME_FALLBACK_DURATION, animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
-import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, animeNetwork, animeTags} from "@/lib/server/database/schema/media/anime.schema";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
-
-
-const animeRedoCount = sql<number>`COALESCE((SELECT SUM(value) FROM json_each(${animeList.redo})), 0)`;
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, animeListSeasons, animeNetwork, animeTags} from "@/lib/server/database/schema/media/anime.schema";
 
 
 export const animeServerDefinition = defineServerMediaDefinition({
@@ -17,11 +14,12 @@ export const animeServerDefinition = defineServerMediaDefinition({
     repository: {
         tables: {
             mediaTable: anime,
+            tagTable: animeTags,
             listTable: animeList,
             genreTable: animeGenre,
-            tagTable: animeTags,
             actorTable: animeActors,
             networkTable: animeNetwork,
+            seasonStateTable: animeListSeasons,
             epsPerSeasonTable: animeEpisodesPerSeason,
             deleteDependents: [animeEpisodesPerSeason, animeNetwork, animeActors, animeGenre, animeTags],
         },
@@ -86,13 +84,13 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 "Recently Modified": [desc(animeList.lastUpdated), asc(anime.name)],
                 "Rating +": [desc(animeList.rating), asc(anime.name)],
                 "Rating -": [asc(animeList.rating), asc(anime.name)],
-                "Re-watched": [desc(animeRedoCount), asc(anime.name)],
+                "Re-watched": [desc(animeList.redo), asc(anime.name)],
             },
         },
         communityActivity: {
             aggregates: {
                 totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
-                totalRedo: sql<number>`COALESCE(SUM(${animeRedoCount}), 0)`,
+                totalRedo: sql<number>`COALESCE(SUM(${animeList.redo}), 0)`,
             },
         },
         jobs: {
@@ -124,7 +122,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
     },
     statistics: {
         allUsers: {
-            totalRedo: sql<number>`COALESCE(SUM(${animeRedoCount}), 0)`,
+            totalRedo: sql<number>`COALESCE(SUM(${animeList.redo}), 0)`,
             totalSpecific: sql<number>`COALESCE(SUM(${animeList.total}), 0)`,
             timeSpent: sql<number>`COALESCE(SUM(${animeList.total} * ${anime.duration}), 0)`,
         },
@@ -163,7 +161,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
         progressTotals: (state, media) => ({
             totalSpecific: state?.total ?? 0,
             timeSpent: (state?.total ?? 0) * media.duration,
-            totalRedo: state?.redo.reduce((sum, value) => sum + value, 0) ?? 0,
+            totalRedo: state?.redo ?? 0,
         }),
     },
     ingestion: {

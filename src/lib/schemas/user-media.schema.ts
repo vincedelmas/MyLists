@@ -1,5 +1,6 @@
 import * as z from "zod";
 import {isValidActivityDate} from "@/lib/utils/media/activity";
+import {tvSeasonStateSchema} from "@/lib/schemas/tv-seasons.schema";
 import {GamesPlatformsEnum, MediaType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import {emptyStringToNull, importStatusSchema} from "@/lib/server/domain/imports/import-list-validation";
 import {COMMENT_MAX_LENGTH, MIN_ACTIVITY_DATE, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
@@ -25,15 +26,15 @@ export const loggedActivityUpdateTypes = new Set<UpdateType>([
 ]);
 
 const allowedPayloadFieldsByUpdateType = {
-    [UpdateType.RATING]: ["rating"],
     [UpdateType.STATUS]: ["status"],
     [UpdateType.PAGE]: ["actualPage"],
     [UpdateType.COMMENT]: ["comment"],
     [UpdateType.PLAYTIME]: ["playtime"],
     [UpdateType.FAVORITE]: ["favorite"],
     [UpdateType.PLATFORM]: ["platform"],
-    [UpdateType.REDO]: ["redo"],
     [UpdateType.CHAPTER]: ["currentChapter"],
+    [UpdateType.REDO]: ["redo", "seasonRedos"],
+    [UpdateType.RATING]: ["rating", "seasonRating"],
     [UpdateType.TV]: ["currentSeason", "currentEpisode"],
 } satisfies Record<UpdateType, string[]>;
 
@@ -91,17 +92,17 @@ export const updateUserMediaSchema = z.object({
         favorite: z.boolean().optional(),
         status: z.enum(Status).optional(),
         platform: z.enum(GamesPlatformsEnum).optional().nullable(),
-        redo: z.union([
-            z.number().int().min(0).max(REDO_MAX),
-            z.array(z.number().int().min(0).max(REDO_MAX, `A season cannot be re-watched more than ${REDO_MAX} times.`)),
-        ]).optional(),
+        redo: z.number().int().min(0).max(REDO_MAX).optional(),
         rating: z.number().min(0).max(10).optional().nullable(),
+        seasonRating: tvSeasonStateSchema.pick({ season: true, rating: true }).optional(),
         actualPage: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentSeason: z.number().int().min(1).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentChapter: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentEpisode: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         playtime: z.number().min(0).max(PLAYTIME_MAX_MINUTES, `Playtime cannot exceed ${PLAYTIME_MAX_MINUTES}!`).optional(),
         comment: z.preprocess(emptyStringToNull, z.string().max(COMMENT_MAX_LENGTH, `Comment cannot exceed ${COMMENT_MAX_LENGTH} characters`).nullish()),
+        seasonRedos: z.array(tvSeasonStateSchema.pick({ season: true, redo: true })).min(1).max(PROGRESS_MAX)
+            .refine(rows => new Set(rows.map(s => s.season)).size === rows.length, "Duplicate season numbers.").optional(),
     }).superRefine((data, ctx) => {
         const definedFields = Object.entries(data)
             .filter(([key, value]) => key !== "type" && key !== "loggedAt" && value !== undefined)
@@ -128,15 +129,14 @@ export const updateUserMediaSchema = z.object({
         message: "Only progress changes can be backdated.", path: ["loggedAt"],
     })
 }).superRefine((data, ctx) => {
-    if (data.payload.type === UpdateType.REDO && data.payload.redo !== undefined) {
-        const isTvMedia = data.mediaType === MediaType.SERIES || data.mediaType === MediaType.ANIME;
-        if (isTvMedia !== Array.isArray(data.payload.redo)) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["payload", "redo"],
-                message: isTvMedia ? "TV re-watch progress must be an array." : "Re-experience progress must be a number.",
-            });
-        }
+    const isTv = data.mediaType === MediaType.SERIES || data.mediaType === MediaType.ANIME;
+
+    if ((data.payload.seasonRating || data.payload.seasonRedos) && !isTv) {
+        ctx.addIssue({ code: "custom", path: ["payload"], message: "Season updates are only available for TV." });
+    }
+
+    if (data.payload.type === UpdateType.REDO && isTv && !data.payload.seasonRedos) {
+        ctx.addIssue({ code: "custom", path: ["payload", "seasonRedos"], message: "TV rewatches require season numbers." });
     }
 
     if (!data.payload.status) return;

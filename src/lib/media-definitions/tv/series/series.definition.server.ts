@@ -1,12 +1,18 @@
 import {asc, desc, getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {SERIES_FALLBACK_DURATION, seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
-import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {series, seriesActors, seriesEpisodesPerSeason, seriesGenre, seriesList, seriesNetwork, seriesTags} from "@/lib/server/database/schema/media/series.schema";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
-
-
-const seriesRedoCount = sql<number>`COALESCE((SELECT SUM(value) FROM json_each(${seriesList.redo})), 0)`;
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {
+    series,
+    seriesActors,
+    seriesEpisodesPerSeason,
+    seriesGenre,
+    seriesList,
+    seriesListSeasons,
+    seriesNetwork,
+    seriesTags
+} from "@/lib/server/database/schema/media/series.schema";
 
 
 export const seriesServerDefinition = defineServerMediaDefinition({
@@ -18,6 +24,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
         tables: {
             mediaTable: series,
             listTable: seriesList,
+            seasonStateTable: seriesListSeasons,
             genreTable: seriesGenre,
             tagTable: seriesTags,
             actorTable: seriesActors,
@@ -86,12 +93,12 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                 "Recently Modified": [desc(seriesList.lastUpdated), asc(series.name)],
                 "Rating +": [desc(seriesList.rating), asc(series.name)],
                 "Rating -": [asc(seriesList.rating), asc(series.name)],
-                "Re-watched": [desc(seriesRedoCount), asc(series.name)],
+                "Re-watched": [desc(seriesList.redo), asc(series.name)],
             },
         },
         communityActivity: {
             aggregates: {
-                totalRedo: sql<number>`COALESCE(SUM(${seriesRedoCount}), 0)`,
+                totalRedo: sql<number>`COALESCE(SUM(${seriesList.redo}), 0)`,
                 totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
             },
         },
@@ -126,7 +133,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
         allUsers: {
             timeSpent: sql<number>`COALESCE(SUM(${seriesList.total} * ${series.duration}), 0)`,
             totalSpecific: sql<number>`COALESCE(SUM(${seriesList.total}), 0)`,
-            totalRedo: sql<number>`COALESCE(SUM(${seriesRedoCount}), 0)`,
+            totalRedo: sql<number>`COALESCE(SUM(${seriesList.redo}), 0)`,
         },
         affinity: defineAffinityDefinitions(seriesDefinition, {
             networksStats: {
@@ -161,9 +168,9 @@ export const seriesServerDefinition = defineServerMediaDefinition({
             "duration", "originCountry", "prodStatus", "synopsis", "lockStatus", "imageCover",
         ],
         progressTotals: (state, media) => ({
+            totalRedo: state?.redo ?? 0,
             totalSpecific: state?.total ?? 0,
             timeSpent: (state?.total ?? 0) * media.duration,
-            totalRedo: state?.redo.reduce((sum, value) => sum + value, 0) ?? 0,
         }),
     },
     ingestion: {

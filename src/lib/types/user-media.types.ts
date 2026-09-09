@@ -21,9 +21,7 @@ type PlatformPayload = {
     platform: GamesPlatformsEnum | null,
 }
 
-type RatingPayload = {
-    rating: number | null,
-}
+export type RatingPayload = { rating: number | null } | { seasonRating: { season: number; rating: number | null } };
 
 type FavoritePayload = {
     favorite: boolean,
@@ -50,7 +48,7 @@ export type RedoPayload = {
 }
 
 export type RedoTvPayload = {
-    redo: number[],
+    seasonRedos: { season: number; redo: number }[],
 }
 
 export type EpsSeasonPayload = {

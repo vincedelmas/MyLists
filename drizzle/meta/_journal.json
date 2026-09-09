@@ -337,6 +337,13 @@
       "when": 1788449918704,
       "tag": "0047_harden_auth_data",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1788875406624,
+      "tag": "0048_tv_season_state",
+      "breakpoints": true
     }
   ]
 }

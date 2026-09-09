@@ -2,7 +2,6 @@ import {sql} from "drizzle-orm";
 import {MediaType} from "@/lib/utils/enums";
 import {relations} from "drizzle-orm/relations";
 import {user} from "@/lib/server/database/schema/auth.schema";
-import {customJson} from "@/lib/server/database/custom-types";
 import {check, integer, real, sqliteTable, text} from "drizzle-orm/sqlite-core";
 import {
     commMediaEpsCols,
@@ -13,7 +12,9 @@ import {
     commonMediaListCols,
     commonMediaListIndexes,
     commonMediaTagsCols,
-    commonMediaTagsIndexes
+    commonMediaTagsIndexes,
+    commonTvSeasonCols,
+    commonTvSeasonIndexes
 } from "@/lib/server/database/schema/media/_helper";
 
 
@@ -41,13 +42,18 @@ export const series = sqliteTable("series", {
 export const seriesList = sqliteTable("series_list", {
     currentSeason: integer().notNull(),
     currentEpisode: integer().notNull(),
+    redo: integer().default(0).notNull(),
     total: integer("total").default(0).notNull(),
-    redo: customJson<number[]>("redo").default(sql`'[]'`).notNull(),
     ...commonMediaListCols(series.id, MediaType.SERIES),
 }, (table) => [
     ...commonMediaListIndexes(table, MediaType.SERIES),
-    check("series_list_redo_json_check", sql`json_valid(${table.redo})`),
+    check("series_list_redo_check", sql`${table.redo} >= 0`),
 ]);
+
+
+export const seriesListSeasons = sqliteTable("series_list_seasons", {
+    ...commonTvSeasonCols(seriesList.id),
+}, (table) => commonTvSeasonIndexes(table, "series_list_seasons"));
 
 
 export const seriesGenre = sqliteTable("series_genre", {

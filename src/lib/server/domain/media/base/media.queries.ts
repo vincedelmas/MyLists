@@ -18,13 +18,17 @@ const USER_MEDIA_INSERT_BATCH_SIZE = 200;
 export function createMediaQueries<TDef extends AnyServerMediaDefinition>(definition: TDef) {
     const { identity, repository: repoDefinition } = definition;
 
-    async function bulkInsertUserMedia(rows: TDef["repository"]["tables"]["listTable"]["$inferInsert"][]) {
+    type TListTableInsert = TDef["repository"]["tables"]["listTable"]["$inferInsert"];
+    type TListTableSelect = TDef["repository"]["tables"]["listTable"]["$inferSelect"];
+    type TMediaTableSelect = TDef["repository"]["tables"]["mediaTable"]["$inferSelect"];
+
+    async function bulkInsertUserMedia(rows: TListTableInsert[]) {
         const { listTable } = repoDefinition.tables;
 
         if (rows.length === 0) return [];
 
         return withTransaction(() => {
-            const insertedRows: TDef["repository"]["tables"]["listTable"]["$inferSelect"][] = [];
+            const insertedRows: TListTableSelect[] = [];
 
             for (let offset = 0; offset < rows.length; offset += USER_MEDIA_INSERT_BATCH_SIZE) {
                 const batch = rows.slice(offset, offset + USER_MEDIA_INSERT_BATCH_SIZE);
@@ -183,7 +187,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .where(inArray(mediaTable.id, uniqueMediaIds));
     }
 
-    function findById(mediaId: number): TDef["repository"]["tables"]["mediaTable"]["$inferSelect"] | undefined {
+    function findById(mediaId: number): TMediaTableSelect | undefined {
         const { mediaTable } = repoDefinition.tables;
 
         return getDbClient()
@@ -193,7 +197,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             .get();
     }
 
-    async function findByApiId(apiId: number | string): Promise<TDef["repository"]["tables"]["mediaTable"]["$inferSelect"] | undefined> {
+    async function findByApiId(apiId: number | string): Promise<TMediaTableSelect | undefined> {
         const { mediaTable } = repoDefinition.tables;
 
         return getDbClient()
@@ -264,7 +268,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         return matches;
     }
 
-    function updateUserMediaDetails(userId: number, mediaId: number, updateData: TDef["repository"]["tables"]["listTable"]["$inferSelect"]): TDef["repository"]["tables"]["listTable"]["$inferSelect"] {
+    function updateUserMediaDetails(userId: number, mediaId: number, updateData: Partial<TListTableSelect>): TListTableSelect {
         const { listTable } = repoDefinition.tables;
 
         const [result] = getDbClient()
@@ -279,7 +283,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         return result;
     }
 
-    function findUserMedia(userId: number | undefined, mediaId: number): UserMediaWithTags<TDef["repository"]["tables"]["listTable"]["$inferSelect"]> | null {
+    function findUserMedia(userId: number | undefined, mediaId: number): UserMediaWithTags<TListTableSelect> | null {
         const { listTable, tagTable } = repoDefinition.tables;
 
         if (!userId) return null;
@@ -314,7 +318,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         };
     }
 
-    async function downloadMediaListAsCSV(userId: number): Promise<(TDef["repository"]["tables"]["listTable"]["$inferSelect"] & ExportMediaList)[] | undefined> {
+    async function downloadMediaListAsCSV(userId: number): Promise<(TListTableSelect & ExportMediaList)[] | undefined> {
         const { mediaTable, listTable } = repoDefinition.tables;
 
         return getDbClient()

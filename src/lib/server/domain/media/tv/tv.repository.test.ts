@@ -77,7 +77,7 @@ describe("TvRepository season refresh", () => {
         }).run();
         db.insert(seriesList).values({
             userId: 42, mediaId: 100, status: Status.COMPLETED,
-            currentSeason: 2, currentEpisode: 8, redo: [0, 0], total: 16,
+            currentSeason: 2, currentEpisode: 8, redo: 0, total: 16,
         }).run();
         const beforeMedia = db.select().from(series).all();
         const beforeList = db.select().from(seriesList).all();
@@ -152,7 +152,7 @@ describe("TvRepository season refresh", () => {
                 status: Status.COMPLETED,
                 currentSeason: 2,
                 currentEpisode: 8,
-                redo: [1, 0],
+                redo: 1,
                 total: 24,
                 rating: 8,
                 lastUpdated: "2026-02-01 00:00:00",
@@ -163,7 +163,7 @@ describe("TvRepository season refresh", () => {
                 status: Status.COMPLETED,
                 currentSeason: 2,
                 currentEpisode: 8,
-                redo: [0, 0],
+                redo: 0,
                 total: 16,
                 lastUpdated: "2026-02-01 00:00:00",
             },
@@ -173,11 +173,17 @@ describe("TvRepository season refresh", () => {
                 status: Status.COMPLETED,
                 currentSeason: 2,
                 currentEpisode: 7,
-                redo: [0, 0],
+                redo: 0,
                 total: 15,
                 lastUpdated: "2026-02-01 00:00:00",
             },
         ]);
+
+        for (const row of db.select().from(seriesList).all()) {
+            db.insert(schema.seriesListSeasons).values(repository.getMediaEpsPerSeason(row.mediaId).map((s, index) => ({
+                listId: row.id, season: s.season, redo: index === 0 ? row.redo : 0, rating: row.rating,
+            }))).run();
+        }
 
         await repository.updateMediaWithDetails({
             mediaData: {
@@ -201,7 +207,7 @@ describe("TvRepository season refresh", () => {
             status: Status.ON_HOLD,
             currentSeason: 2,
             currentEpisode: 8,
-            redo: [1, 0, 0],
+            redo: 1,
             total: 24,
             rating: 8,
             lastUpdated: "2026-02-01 00:00:00",
@@ -210,11 +216,9 @@ describe("TvRepository season refresh", () => {
         expect(listRows[2].status).toBe(Status.COMPLETED);
 
         const settings = await db.select().from(userMediaSettings).orderBy(userMediaSettings.userId);
-        for (const setting of settings) {
-            expect(setting.statusCounts).toMatchObject({
-                [Status.COMPLETED]: 1,
-                [Status.ON_HOLD]: 0,
-            });
+        expect(settings[0].statusCounts).toMatchObject({ [Status.COMPLETED]: 0, [Status.ON_HOLD]: 1 });
+        for (const setting of settings.slice(1)) {
+            expect(setting.statusCounts).toMatchObject({ [Status.COMPLETED]: 1, [Status.ON_HOLD]: 0 });
         }
         await expect(db.select().from(userMediaUpdate)).resolves.toEqual([]);
         await expect(db.select().from(userMediaMonthlyActivity)).resolves.toEqual([]);
@@ -242,9 +246,15 @@ describe("TvRepository season refresh", () => {
             status: Status.COMPLETED,
             currentSeason: 2,
             currentEpisode: 8,
-            redo: [0, 0],
+            redo: 0,
             total: 16,
         });
+
+        for (const row of db.select().from(seriesList).all()) {
+            db.insert(schema.seriesListSeasons).values(repository.getMediaEpsPerSeason(row.mediaId).map((s, index) => ({
+                listId: row.id, season: s.season, redo: index === 0 ? row.redo : 0, rating: row.rating,
+            }))).run();
+        }
 
         await repository.updateMediaWithDetails({
             mediaData: {
@@ -295,7 +305,7 @@ describe("TvRepository season refresh", () => {
                 status: Status.COMPLETED,
                 currentSeason: 2,
                 currentEpisode: 8,
-                redo: [2, 0],
+                redo: 2,
                 total: 32,
             },
             {
@@ -304,7 +314,7 @@ describe("TvRepository season refresh", () => {
                 status: Status.COMPLETED,
                 currentSeason: 3,
                 currentEpisode: 8,
-                redo: [1, 1, 1],
+                redo: 3,
                 total: 48,
             },
         ]);

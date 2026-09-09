@@ -11,14 +11,14 @@ import {
 
 
 export function createMediaIngestionService<TDetails>(params: {
+    refreshPolicy?: RefreshPolicy;
+    provider: ExternalMediaProvider<TDetails>;
+    refreshCandidates?: RefreshCandidateSource;
+    enrichers?: MediaDetailsEnricher<TDetails>[];
     repository: Pick<MediaQueries, "findByApiId" | "findByApiIds"> & {
         storeMediaWithDetails(details: NoInfer<TDetails>): number;
         updateMediaWithDetails(details: NoInfer<TDetails>): boolean;
     };
-    provider: ExternalMediaProvider<TDetails>;
-    refreshCandidates?: RefreshCandidateSource;
-    enrichers?: MediaDetailsEnricher<TDetails>[];
-    refreshPolicy?: RefreshPolicy;
 }): MediaIngestionService<TDetails> {
     const { repository, provider, refreshCandidates, refreshPolicy, enrichers = [] } = params;
 

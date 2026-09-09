@@ -50,6 +50,11 @@ export class StatsRepository {
             }
         }
 
+        if (delta.timeSpent !== undefined && delta.timeSpent < 0) {
+            // Maintenance recalculates cached time for all media types
+            setUpdates.timeSpent = sql`MAX(0, ${userMediaSettings.timeSpent} + ${delta.timeSpent})`;
+        }
+
         if (delta.statusCounts && Object.keys(delta.statusCounts).length > 0) {
             let jsonUpdateSql = sql`${userMediaSettings.statusCounts}`;
             for (const [status, change] of Object.entries(delta.statusCounts)) {

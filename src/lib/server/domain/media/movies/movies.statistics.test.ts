@@ -1,5 +1,7 @@
 import Database from "bun:sqlite";
+import {eq} from "drizzle-orm";
 import {MediaType, Status} from "@/lib/utils/enums";
+import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import * as schema from "@/lib/server/database/schema";
 import {movies, moviesActors, moviesGenre, moviesList, moviesTags, user, userMediaSettings} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
@@ -57,6 +59,43 @@ describe("MoviesStatistics", () => {
                 [Status.COMPLETED]: 3,
             },
         });
+    });
+
+    it("recomputes empty lists while preserving preferences, views, and other media statistics", () => {
+        db.delete(moviesList).where(eq(moviesList.userId, 2)).run();
+        db.update(userMediaSettings).set({
+            timeSpent: 30, totalEntries: 1, totalRedo: 2, totalSpecific: 3,
+            entriesRated: 1, sumEntriesRated: 8, averageRating: 8,
+            entriesFavorites: 1, entriesCommented: 1, views: 12,
+            statusCounts: { [Status.COMPLETED]: 1 } as Record<Status, number>,
+        }).where(eq(userMediaSettings.userId, 2)).run();
+        db.insert(userMediaSettings).values({
+            userId: 2, mediaType: MediaType.BOOKS, active: true, timeSpent: 170, totalEntries: 1,
+        }).run();
+        const beforeBooks = db.select().from(userMediaSettings).where(eq(userMediaSettings.mediaType, MediaType.BOOKS)).get();
+
+        StatsRepository.updateAllUsersPreComputedStats(MediaType.MOVIES, createMoviesStatistics().computeAllUsersStats());
+
+        const settings = db.select().from(userMediaSettings).where(eq(userMediaSettings.mediaType, MediaType.MOVIES))
+            .orderBy(userMediaSettings.userId).all();
+        expect(settings[0]).toMatchObject({ userId: 1, timeSpent: 480, totalEntries: 3 });
+        expect(settings[1]).toMatchObject({
+            userId: 2, active: false, views: 12, timeSpent: 0, totalEntries: 0, totalRedo: 0,
+            totalSpecific: 0, entriesRated: 0, sumEntriesRated: 0, averageRating: 0,
+            entriesFavorites: 0, entriesCommented: 0,
+            statusCounts: { [Status.COMPLETED]: 0, [Status.PLAN_TO_WATCH]: 0 },
+        });
+        expect(db.select().from(userMediaSettings).where(eq(userMediaSettings.mediaType, MediaType.BOOKS)).get()).toEqual(beforeBooks);
+    });
+
+    it("clears leftover viewing time when every movie list is empty", () => {
+        db.delete(moviesList).run();
+        db.update(userMediaSettings).set({ timeSpent: 30 }).run();
+
+        StatsRepository.updateAllUsersPreComputedStats(MediaType.MOVIES, createMoviesStatistics().computeAllUsersStats());
+
+        expect(db.select({ timeSpent: userMediaSettings.timeSpent }).from(userMediaSettings).all())
+            .toEqual([{ timeSpent: 0 }, { timeSpent: 0 }]);
     });
 
     it("combines common and movie-specific advanced statistics", async () => {

@@ -71,7 +71,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
 
         const results = getDbClient()
             .select({
-                userId: listTable.userId,
+                userId: userMediaSettings.userId,
                 timeSpent: timeSpent.as("timeSpent"),
                 totalSpecific: totalSpecific.as("totalSpecific"),
                 statusCounts: sql`
@@ -83,7 +83,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
                                 status,
                                 COUNT(*) as count_per_status
                             FROM ${listTable} as sub_list
-                            WHERE sub_list.user_id = ${listTable.userId} GROUP BY status
+                            WHERE sub_list.user_id = ${userMediaSettings.userId} GROUP BY status
                         )
                     ), '{}')
                 `.as("statusCounts"),
@@ -101,9 +101,12 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
                     COALESCE(SUM(${listTable.rating}) * 1.0 / NULLIF(COUNT(${listTable.rating}), 0), 0.0)
                 `.as("averageRating"),
             })
-            .from(listTable)
-            .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-            .groupBy(listTable.userId).all();
+            // Include empty lists so maintenance clears any kept stats
+            .from(userMediaSettings)
+            .leftJoin(listTable, eq(listTable.userId, userMediaSettings.userId))
+            .leftJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
+            .where(eq(userMediaSettings.mediaType, mediaType))
+            .groupBy(userMediaSettings.userId).all();
 
         return results.map((row) => {
             let parsed: unknown = row.statusCounts;

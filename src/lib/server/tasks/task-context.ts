@@ -186,19 +186,14 @@ export const createTaskContext = (options: TaskContextOptions) => {
         const finishedAt = new Date().toISOString();
         const durationMs = Date.now() - startedAtMs;
 
-        const analyzeSteps = (stepList: TaskStep[]): { failed: number; partial: number } => {
-            return stepList.reduce((acc, s) => {
-                const childStats = s.children ? analyzeSteps(s.children) : { failed: 0, partial: 0 };
-                return {
-                    failed: acc.failed + (s.status === "failed" ? 1 : 0) + childStats.failed,
-                    partial: acc.partial + (s.status === "partial" ? 1 : 0) + childStats.partial,
-                };
-            }, { failed: 0, partial: 0 });
-        };
+        // Parent step statuses already include failures from their children.
+        const allStepsFailed = steps.length > 0 && steps.every((step) => step.status === "failed");
 
-        const { failed: failedCount, partial: partialCount } = analyzeSteps(steps);
-        const actualStatus: TaskStatus = errorMessage || failedCount === steps.length ? "failed"
-            : failedCount > 0 || partialCount > 0 ? "partial" : status;
+        const hasErrors = steps.some((step) => step.status === "failed" || step.status === "partial")
+            || logs.some((log) => log.level === "error");
+
+        const actualStatus: TaskStatus = status === "failed" || errorMessage || allStepsFailed ? "failed"
+            : hasErrors ? "partial" : status;
 
         const findFirstError = (stepList: TaskStep[]): string | undefined => {
             for (const s of stepList) {

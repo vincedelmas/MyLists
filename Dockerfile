@@ -38,4 +38,4 @@ RUN chmod +x /usr/local/bin/mylists-entrypoint
 EXPOSE 3000
 
 ENTRYPOINT ["mylists-entrypoint"]
-CMD ["bun", "server.ts"]
+CMD ["bun", "dist/server.js"]

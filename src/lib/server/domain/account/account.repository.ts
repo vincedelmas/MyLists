@@ -1,10 +1,10 @@
 import {formatMonthYear} from "@/lib/utils/formatting/date";
 import {AdminUpdatePayload, SearchType} from "@/lib/schemas";
-import {getDbClient} from "@/lib/server/database/async-storage";
 import {PrivacyType, RatingSystemType} from "@/lib/utils/enums";
-import {and, asc, count, desc, eq, like, sql} from "drizzle-orm";
-import {user, userMediaSettings} from "@/lib/server/database/schema";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
+import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
+import {and, asc, count, desc, eq, inArray, like, sql, type SQL} from "drizzle-orm";
+import {collectionLikes, collections, user, userMediaSettings} from "@/lib/server/database/schema";
 
 
 const orderByMediaType = sql`
@@ -24,12 +24,12 @@ export class AccountRepository {
     // --- Tasks & Admin ----------------------------------------------------
 
     static async deleteNonActivatedOldUsers() {
-        const result = await getDbClient()
-            .delete(user)
-            .where(and(eq(user.emailVerified, false), sql`${user.createdAt} < datetime('now', '-7 days')`))
-            .returning({ id: user.id });
-
-        return result.length;
+        // Use the same cutoff for the like-count adjustment and user deletion.
+        const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        return this._deleteUserAccounts(and(
+            eq(user.emailVerified, false),
+            sql`${user.createdAt} < datetime(${cutoff})`,
+        )!);
     }
 
     static async getUserStatsForAdmin() {
@@ -209,9 +209,7 @@ export class AccountRepository {
     }
 
     static deleteUserAccount(userId: number) {
-        getDbClient()
-            .delete(user)
-            .where(eq(user.id, userId)).run();
+        this._deleteUserAccounts(eq(user.id, userId));
     }
 
     static async adminUpdateGlobalFlag(payload: AdminUpdatePayload) {
@@ -258,5 +256,38 @@ export class AccountRepository {
             where: eq(user.id, userId),
             with: { userMediaSettings: true },
         }).sync();
+    }
+
+    private static _deleteUserAccounts(where: SQL) {
+        return withTransaction((tx) => {
+            const usersToDelete = tx
+                .select({ id: user.id })
+                .from(user)
+                .where(where);
+
+            const removedLikes = inArray(collectionLikes.userId, usersToDelete);
+
+            const affectedCollections = tx
+                .select({ id: collectionLikes.collectionId })
+                .from(collectionLikes)
+                .where(removedLikes);
+
+            const removedLikeCount = tx
+                .select({ count: count() })
+                .from(collectionLikes)
+                .where(and(removedLikes, eq(collectionLikes.collectionId, collections.id)));
+
+            // Update cached counts while the users' like records still exist.
+            tx.update(collections)
+                .set({ likeCount: sql`${collections.likeCount} - (${removedLikeCount})` })
+                .where(inArray(collections.id, affectedCollections))
+                .run();
+
+            return tx.delete(user)
+                .where(where)
+                .returning({ id: user.id })
+                .all()
+                .length;
+        });
     }
 }

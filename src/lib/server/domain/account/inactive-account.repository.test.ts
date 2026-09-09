@@ -10,9 +10,8 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 
 
-vi.mock("@/lib/server/database/async-storage", () => ({
-    getDbClient: () => dbContext.db,
-    withTransaction: <T>(action: () => T) => action(),
+vi.mock("@/lib/server/database/db", () => ({
+    get db() { return dbContext.db; },
 }));
 
 

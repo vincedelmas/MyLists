@@ -1,11 +1,13 @@
 import {alias} from "drizzle-orm/sqlite-core";
+import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {paginate} from "@/lib/server/database/pagination";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import {Actor, profileCollectionVisibilityCondition} from "@/lib/server/authorization";
-import {and, asc, count, desc, eq, getTableColumns, like, max, or, sql} from "drizzle-orm";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
+import {and, asc, count, desc, eq, getTableColumns, inArray, like, max, or, sql} from "drizzle-orm";
 
 
 export class CollectionsRepository {
@@ -38,6 +40,10 @@ export class CollectionsRepository {
     }
 
     static replaceCollectionItems(collectionId: number, items: (typeof collectionItems.$inferInsert)[]) {
+        if (items.length > 0) {
+            this._assertMediaExists(items[0].mediaType, items.map(item => item.mediaId));
+        }
+
         getDbClient()
             .delete(collectionItems)
             .where(eq(collectionItems.collectionId, collectionId)).run();
@@ -129,6 +135,8 @@ export class CollectionsRepository {
     }
 
     static insertCollectionItem(item: typeof collectionItems.$inferInsert) {
+        this._assertMediaExists(item.mediaType, [item.mediaId]);
+
         getDbClient()
             .insert(collectionItems)
             .values(item)
@@ -375,5 +383,19 @@ export class CollectionsRepository {
             .update(collections)
             .set({ copiedCount: sql`${collections.copiedCount} + 1` })
             .where(eq(collections.id, collectionId)).run();
+    }
+
+    private static _assertMediaExists(mediaType: MediaType, mediaIds: number[]) {
+        const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
+
+        const result = getDbClient()
+            .select({ count: count() })
+            .from(mediaTable)
+            .where(inArray(mediaTable.id, mediaIds))
+            .get()!;
+
+        if (result.count !== mediaIds.length) {
+            throw new FormattedError("One or more selected media items could not be found.");
+        }
     }
 }

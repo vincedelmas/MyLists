@@ -148,7 +148,22 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
                         .values(userMediaSettingsData)
                         .onConflictDoNothing();
                 },
-            }
+            },
+            update: {
+                before: async (user) => {
+                    if (user.name === undefined) return;
+
+                    const parsedUsername = usernameSchema.safeParse(user.name);
+                    if (!parsedUsername.success) {
+                        throw new APIError("BAD_REQUEST", {
+                            code: "INVALID_USERNAME",
+                            message: parsedUsername.error.issues[0].message,
+                        });
+                    }
+
+                    return { data: { ...user, name: parsedUsername.data } };
+                },
+            },
         },
     },
     user: {

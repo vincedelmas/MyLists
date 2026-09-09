@@ -1,7 +1,8 @@
 import {MediaType} from "@/lib/utils/enums";
-import {collectionItems} from "@/lib/server/database/schema";
+import {toDateInputValue} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {and, eq, inArray, isNotNull, notExists} from "drizzle-orm";
+import {and, eq, gte, inArray, isNotNull, notExists} from "drizzle-orm";
+import {collectionItems, dailyMediadle} from "@/lib/server/database/schema";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
 
@@ -33,6 +34,8 @@ export class MediaMaintenanceRepository {
         const { mediaTable, listTable } = getServerMediaDefinition(mediaType).repository.tables;
 
         const tx = getDbClient();
+        const today = toDateInputValue(new Date(), { timeZone: "utc" });
+
         const mediaToDelete = tx
             .select({ id: mediaTable.id })
             .from(mediaTable)
@@ -44,6 +47,14 @@ export class MediaMaintenanceRepository {
                 notExists(tx.select()
                     .from(collectionItems)
                     .where(and(eq(collectionItems.mediaId, mediaTable.id), eq(collectionItems.mediaType, mediaType)))
+                ),
+                notExists(tx.select()
+                    .from(dailyMediadle)
+                    .where(and(
+                        eq(dailyMediadle.mediaId, mediaTable.id),
+                        eq(dailyMediadle.mediaType, mediaType),
+                        gte(dailyMediadle.date, today),
+                    ))
                 )
             )).all();
 

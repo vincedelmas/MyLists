@@ -10,7 +10,7 @@ import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.defi
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {attachTvSeasonEpisodes, getTvSeasonPosition, getTvSeasonTotals} from "@/lib/utils/media/tv-seasons";
 import {TvListUpdate, TvType, UpdateTvWithDetails, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
-import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, max, notInArray, or, sql} from "drizzle-orm";
+import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, notInArray, or, sql} from "drizzle-orm";
 
 
 type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
@@ -170,30 +170,24 @@ export function createTvRepository(definition: TvDefinition) {
     async function getUpcomingMedia(userId?: number, maxAWeek?: boolean) {
         const { mediaTable, listTable, epsPerSeasonTable } = repoDefinition.tables;
 
-        const epsSubq = getDbClient()
-            .select({
-                mediaId: epsPerSeasonTable.mediaId,
-                maxSeason: max(epsPerSeasonTable.season).as("maxSeason"),
-                lastEpisode: max(epsPerSeasonTable.episodes).as("lastEpisode"),
-            }).from(epsPerSeasonTable)
-            .groupBy(epsPerSeasonTable.mediaId)
-            .as("epsSubq");
-
         return getDbClient()
             .select({
                 mediaId: mediaTable.id,
                 userId: listTable.userId,
                 status: listTable.status,
                 mediaName: mediaTable.name,
-                lastEpisode: epsSubq.lastEpisode,
                 date: mediaTable.nextEpisodeToAir,
                 imageCover: mediaTable.imageCover,
                 seasonToAir: mediaTable.seasonToAir,
                 episodeToAir: mediaTable.episodeToAir,
+                lastEpisode: epsPerSeasonTable.episodes,
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .innerJoin(epsSubq, eq(mediaTable.id, epsSubq.mediaId))
+            .leftJoin(epsPerSeasonTable, and(
+                eq(epsPerSeasonTable.mediaId, mediaTable.id),
+                eq(epsPerSeasonTable.season, mediaTable.seasonToAir),
+            ))
             .where(and(
                 userId ? eq(listTable.userId, userId) : undefined,
                 notInArray(listTable.status, [Status.DROPPED, Status.RANDOM]),

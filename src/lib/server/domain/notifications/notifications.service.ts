@@ -48,7 +48,7 @@ export class NotificationsService {
                         releaseDate: item.date,
                         season: item.seasonToAir,
                         episode: item.episodeToAir,
-                        isSeasonFinale: item.lastEpisode === item.episodeToAir && item.episodeToAir !== 1,
+                        isSeasonFinale: item.lastEpisode != null && item.lastEpisode === item.episodeToAir && item.episodeToAir !== 1,
                     });
                 }
                 else {

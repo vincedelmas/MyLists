@@ -1,4 +1,4 @@
-import {eq, getTableName} from "drizzle-orm";
+import {eq, getTableName, sql} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
@@ -6,6 +6,9 @@ import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
+import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
+import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {
     series,
@@ -34,6 +37,62 @@ const { createMediaIngestionService } = await import("@/lib/server/api-providers
 const completedSeriesStatusCounts = () => Object.fromEntries(
     getMediaDefinition(MediaType.SERIES).statuses.map((status) => [status, status === Status.COMPLETED ? 1 : 0]),
 ) as Record<Status, number>;
+
+
+describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaType finale notifications", definition => {
+    let sqlite: Database;
+    let db: BunSQLiteDatabase<typeof schema>;
+    const { mediaTable, listTable, epsPerSeasonTable } = definition.repository.tables;
+    const repository = createTvRepository(definition);
+    const notifications = new NotificationsService(NotificationsRepository);
+
+    beforeEach(() => {
+        sqlite = new Database(":memory:");
+        db = drizzle(sqlite, { schema, casing: "snake_case" });
+        dbContext.db = db;
+        migrate(db, { migrationsFolder: "./drizzle" });
+        sqlite.run("PRAGMA foreign_keys = ON");
+
+        db.insert(user).values({
+            id: 1, name: "finale-user", email: "finale@example.com", emailVerified: true,
+            createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00",
+        }).run();
+        db.insert(mediaTable).values({
+            id: 1, apiId: 1, name: "Uneven seasons", duration: 30, imageCover: "show.jpg",
+            totalSeasons: 2, totalEpisodes: 18, nextEpisodeToAir: sql`date('now')`,
+        }).run();
+        db.insert(epsPerSeasonTable).values([
+            { mediaId: 1, season: 1, episodes: 10 },
+            { mediaId: 1, season: 2, episodes: 8 },
+        ]).run();
+        db.insert(listTable).values({
+            userId: 1, mediaId: 1, status: Status.WATCHING, currentSeason: 1, currentEpisode: 1,
+        }).run();
+    });
+
+    afterEach(() => {
+        sqlite.close();
+        dbContext.db = undefined;
+    });
+
+    it.each([
+        { season: 2, episode: 8, lastEpisode: 8, isSeasonFinale: true },
+        { season: 2, episode: 7, lastEpisode: 8, isSeasonFinale: false },
+        { season: 1, episode: 10, lastEpisode: 10, isSeasonFinale: true },
+        { season: 3, episode: 10, lastEpisode: null, isSeasonFinale: false },
+        { season: null, episode: null, lastEpisode: null, isSeasonFinale: false },
+    ])("uses season $season episode $episode for the finale flag", async ({ season, episode, lastEpisode, isSeasonFinale }) => {
+        db.update(mediaTable).set({ seasonToAir: season, episodeToAir: episode }).where(eq(mediaTable.id, 1)).run();
+
+        const upcoming = await repository.getUpcomingMedia(undefined, true);
+        expect(upcoming).toEqual([expect.objectContaining({ mediaId: 1, seasonToAir: season, episodeToAir: episode, lastEpisode })]);
+
+        await notifications.createMediaNotifications(definition.identity.mediaType, upcoming);
+        expect(db.select().from(schema.mediaNotifications).all()).toEqual([
+            expect.objectContaining({ mediaId: 1, season, episode, isSeasonFinale }),
+        ]);
+    });
+});
 
 
 describe("TvRepository season refresh", () => {

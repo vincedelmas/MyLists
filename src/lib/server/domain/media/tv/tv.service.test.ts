@@ -133,6 +133,25 @@ describe("TvService", () => {
         });
 
         describe("updateHandlers", () => {
+            it.each([Status.PLAN_TO_WATCH, Status.RANDOM])("counts the first episode when moving from %s to Watching", (status) => {
+                const current = makeUserState({ status, currentSeason: 1, currentEpisode: 0, total: 0 });
+                const [next] = tvService.updateStatusHandler(current, { status: Status.WATCHING }, baseTv);
+
+                expect(next.currentSeason).toBe(1);
+                expect(next.currentEpisode).toBe(1);
+                expect(next.total).toBe(1);
+                expect(tvService.calculateDeltaStats(current, next, baseTv)).toMatchObject({
+                    totalSpecific: 1,
+                    timeSpent: baseTv.duration,
+                });
+
+                const [secondEpisode] = tvService.updateEpsSeasonsHandler(next, { currentEpisode: 2 }, baseTv);
+                expect(tvService.calculateDeltaStats({ ...current, ...next }, secondEpisode, baseTv)).toMatchObject({
+                    totalSpecific: 1,
+                    timeSpent: baseTv.duration,
+                });
+            });
+
             it("updateStatusHandler: PTW -> COMPLETED", async () => {
                 const current = makeState({ status: Status.PLAN_TO_WATCH, currentSeason: 1, currentEpisode: 0, total: 0, redo: 0 });
                 const [next, log] = await tvService.updateStatusHandler(current, { status: Status.COMPLETED }, baseTv);

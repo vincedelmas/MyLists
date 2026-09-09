@@ -5,7 +5,7 @@ import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
 import {movies, moviesActors, moviesGenre, moviesList} from "@/lib/server/database/schema";
-import {UpdateMovieWithDetails, Movie, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
+import {Movie, UpdateMovieWithDetails, UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {MovieServerDefinition, moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 
 
@@ -206,11 +206,11 @@ export function createMoviesRepository(definition: MovieServerDefinition = movie
         ...queries,
         lockOldMovies,
         findByTitleAndYear,
-        getMediaIdsToBeRefreshed,
         addMediaToUserList,
-        findAllAssociatedDetails,
         storeMediaWithDetails,
         updateMediaWithDetails,
+        getMediaIdsToBeRefreshed,
+        findAllAssociatedDetails,
     };
 }
 

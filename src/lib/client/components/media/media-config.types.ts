@@ -28,6 +28,7 @@ export interface MediaUserDetailsProps<T extends MediaType> {
 
 
 export interface MediaFollowCardProps<T extends MediaType> {
+    mediaType: T;
     rating: ReactNode;
     showComment?: boolean;
     followData: ExtractFollowByType<T>;

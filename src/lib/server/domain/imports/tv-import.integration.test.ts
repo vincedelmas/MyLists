@@ -85,8 +85,9 @@ describe("TV import processing", () => {
             externalApiId: "136315",
             externalApiSource: ApiProviderType.TMDB,
             payload: {
-                rating: 8,
                 status: Status.COMPLETED,
+                firstWatchProgress: 18,
+                seasons: [{ season: 1, redo: 0, rating: 8 }, { season: 2, redo: 0, rating: 8 }],
             },
             status: ImportItemStatus.QUEUED,
         }]);
@@ -111,7 +112,7 @@ describe("TV import processing", () => {
             currentSeason: 2,
             currentEpisode: 10,
             total: 18,
-            redo: [0, 0],
+            redo: 0,
         });
         expect(storedImportItem).toMatchObject({
             matchedMediaId: 100,

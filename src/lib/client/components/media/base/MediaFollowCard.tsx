@@ -18,6 +18,7 @@ export const MediaFollowCard = <T extends MediaType>({ followData, mediaType, sh
     return (
         <FollowCardComponent
             rating={rating}
+            mediaType={mediaType}
             followData={followData}
             showComment={showComment}
         />

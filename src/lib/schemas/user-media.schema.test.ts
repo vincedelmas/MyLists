@@ -81,7 +81,7 @@ describe("user media schemas", () => {
         ]));
     });
 
-    it("requires array re-watch progress for TV and scalar progress for other media", () => {
+    it("requires season-keyed rewatch progress for TV and scalar progress for other media", () => {
         const parseRedo = (mediaType: MediaType, redo: number | number[]) => updateUserMediaSchema.safeParse({
             mediaId: 1,
             mediaType,
@@ -91,10 +91,22 @@ describe("user media schemas", () => {
             },
         });
 
-        expect(parseRedo(MediaType.SERIES, [1, 0]).success).toBe(true);
+        expect(updateUserMediaSchema.safeParse({ mediaId: 1, mediaType: MediaType.SERIES,
+            payload: { type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 1 }, { season: 2, redo: 0 }] },
+        }).success).toBe(true);
         expect(parseRedo(MediaType.MOVIES, 1).success).toBe(true);
         expect(parseRedo(MediaType.ANIME, 1).success).toBe(false);
         expect(parseRedo(MediaType.BOOKS, [1]).success).toBe(false);
+    });
+
+    it("validates seasonal ratings and rejects duplicate season updates", () => {
+        const parse = (mediaType: MediaType, payload: unknown) => updateUserMediaSchema.safeParse({ mediaId: 1, mediaType, payload });
+        expect(parse(MediaType.ANIME, { type: UpdateType.RATING, seasonRating: { season: 1, rating: 0 } }).success).toBe(true);
+        expect(parse(MediaType.SERIES, { type: UpdateType.RATING, seasonRating: { season: 1, rating: null } }).success).toBe(true);
+        expect(parse(MediaType.MOVIES, { type: UpdateType.RATING, seasonRating: { season: 1, rating: 9 } }).success).toBe(false);
+        expect(parse(MediaType.SERIES, { type: UpdateType.RATING, seasonRating: { season: 0, rating: 9 } }).success).toBe(false);
+        expect(parse(MediaType.SERIES, { type: UpdateType.RATING, seasonRating: { season: 1, rating: 11 } }).success).toBe(false);
+        expect(parse(MediaType.SERIES, { type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 1 }, { season: 1, redo: 2 }] }).success).toBe(false);
     });
 
     it("applies shared update limits", () => {

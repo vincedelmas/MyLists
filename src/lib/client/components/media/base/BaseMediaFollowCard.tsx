@@ -1,12 +1,12 @@
 import React from "react";
 import {Link} from "@tanstack/react-router";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {FollowData} from "@/lib/types/query.options.types";
 import {ProfileIcon} from "@/lib/client/components/general/ProfileIcon";
 import {RelativeTime} from "@/lib/client/components/general/RelativeTime";
 import {DisplayRating} from "@/lib/client/components/media/base/DisplayRating";
 import {DisplayComment} from "@/lib/client/components/media/base/DisplayComment";
 import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorite";
-import {Badge} from "@/lib/client/components/ui/badge";
 
 
 interface BaseMediaFollowCardProps {
@@ -14,11 +14,12 @@ interface BaseMediaFollowCardProps {
     followData: FollowData;
     rating: React.ReactNode;
     redoDisplay?: React.ReactNode;
+    ratingDisplay?: React.ReactNode;
     mediaDetailsDisplay?: React.ReactNode;
 }
 
 
-export const BaseMediaFollowCard = ({ followData, rating, redoDisplay, mediaDetailsDisplay, showComment = true }: BaseMediaFollowCardProps) => {
+export const BaseMediaFollowCard = ({ followData, rating, ratingDisplay, redoDisplay, mediaDetailsDisplay, showComment = true }: BaseMediaFollowCardProps) => {
     const activityDate = followData.userMedia.lastUpdated ?? followData.userMedia.addedAt;
 
     return (
@@ -56,9 +57,11 @@ export const BaseMediaFollowCard = ({ followData, rating, redoDisplay, mediaDeta
                 <div className="flex gap-x-3 text-xs items-center text-muted-foreground mt-2">
                     {mediaDetailsDisplay}
 
-                    <DisplayRating
-                        rating={rating}
-                    />
+                    {ratingDisplay ??
+                        <DisplayRating
+                            rating={rating}
+                        />
+                    }
 
                     {!!followData.userMedia.favorite &&
                         <DisplayFavorite

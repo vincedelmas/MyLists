@@ -1,8 +1,9 @@
 import {sql} from "drizzle-orm";
+import {REDO_MAX} from "@/lib/utils/constants";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {user} from "@/lib/server/database/schema/auth.schema";
 import {imageUrl, nullableImageUrl} from "@/lib/server/database/custom-types";
-import {check, index, integer, real, SQLiteColumn, text, uniqueIndex} from "drizzle-orm/sqlite-core";
+import {check, index, integer, primaryKey, real, SQLiteColumn, text, uniqueIndex} from "drizzle-orm/sqlite-core";
 
 
 export const commonMediaCols = (mediaTypeName: MediaType) => {
@@ -105,3 +106,19 @@ export const commMediaEpsCols = (modelMediaId: SQLiteColumn) => {
 export const commonMediaEpsIndexes = (table: { mediaId: SQLiteColumn; season: SQLiteColumn }, tableName: string) => {
     return [uniqueIndex(`ux_${tableName}_media_season`).on(table.mediaId, table.season)];
 };
+
+
+export const commonTvSeasonCols = (listId: SQLiteColumn) => ({
+    rating: real(),
+    season: integer().notNull(),
+    redo: integer().default(0).notNull(),
+    listId: integer().notNull().references(() => listId, { onDelete: "cascade" }),
+});
+
+
+export const commonTvSeasonIndexes = (table: { listId: SQLiteColumn; season: SQLiteColumn; redo: SQLiteColumn; rating: SQLiteColumn }, tableName: string) => [
+    primaryKey({ columns: [table.listId, table.season] }),
+    check(`${tableName}_season_check`, sql`${table.season} >= 1`),
+    check(`${tableName}_redo_check`, sql`${table.redo} >= 0 AND ${table.redo} <= ${sql.raw(String(REDO_MAX))}`),
+    check(`${tableName}_rating_check`, sql`${table.rating} IS NULL OR (${table.rating} >= 0 AND ${table.rating} <= 10)`),
+];

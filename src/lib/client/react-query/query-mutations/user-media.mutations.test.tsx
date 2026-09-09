@@ -32,6 +32,7 @@ vi.mock("@/lib/server/functions/user-media", () => ({
     postUpdateUserCustomCover: server.cover,
 }));
 vi.mock("@/lib/client/react-query/query-options", () => ({
+    mediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["details", mediaType, mediaId] }),
     historyOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["onOpenHistory", mediaType, mediaId] }),
 }));
 vi.mock("@/lib/client/components/media/base/UserMediaDetails", () => ({ UserMediaDetails: () => null }));
@@ -90,6 +91,26 @@ afterEach(() => {
 });
 
 describe("list editing refresh timing", () => {
+    it.each([
+        { type: UpdateType.RATING, seasonRating: { season: 1, rating: 8 } },
+        { type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 2 }] },
+    ])("refreshes season details after a $type update without refreshing the edited list", async payload => {
+        const seasonKey = ["tvSeasons", MediaType.SERIES, 1, 10] as const;
+        queryClient.setQueryData(seasonKey, [{ season: 1, rating: null, redo: 0 }]);
+        const fetchSeasons = vi.fn().mockResolvedValue([{ season: 1, rating: 8, redo: 2 }]);
+        const observer = new QueryObserver(queryClient, { queryKey: seasonKey, queryFn: fetchSeasons });
+        const unsubscribeSeasons = observer.subscribe(() => {});
+        try {
+            server.update.mockResolvedValueOnce({ ...item, rating: 8, redo: 2 });
+            await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption).mutateAsync({ payload });
+            expect(server.update).toHaveBeenCalledWith({ data: { mediaType: MediaType.SERIES, mediaId: 1, payload } });
+            expect(fetchSeasons).toHaveBeenCalledTimes(1);
+            expect(queryClient.getQueryData(seasonKey)).toEqual([{ season: 1, rating: 8, redo: 2 }]);
+            expect(fetchList).not.toHaveBeenCalled();
+        }
+        finally { unsubscribeSeasons(); }
+    });
+
     it("keeps a newly completed item in the Watching list for rating until the dialog closes", async () => {
         const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption);
         server.update.mockResolvedValueOnce({ ...item, status: Status.COMPLETED });

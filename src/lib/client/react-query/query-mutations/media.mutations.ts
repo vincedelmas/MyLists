@@ -13,7 +13,11 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) =
             successToastMessage: "Metadata refreshed successfully!",
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
+                queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId] }),
+                queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey }),
+            ]);
         },
     });
 };

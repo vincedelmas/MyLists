@@ -1,5 +1,5 @@
 import {MediaType, TvMediaType} from "@/lib/utils/enums";
-import {DisplayTvRedo} from "@/lib/client/components/media/tv/DisplayTvRedo";
+import {TvSeasonPopover} from "@/lib/client/components/media/tv/TvSeasonPopover";
 import {MediaListCardProps} from "@/lib/client/components/media/media-config.types";
 import {BaseMediaListItem} from "@/lib/client/components/media/base/BaseMediaListItem";
 import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsAndSeasons";
@@ -12,10 +12,24 @@ export const TvListItem = (props: TvListItemProps<TvMediaType>) => {
     return (
         <BaseMediaListItem
             {...props}
+            ratingDisplay={
+                <TvSeasonPopover
+                    kind="rating"
+                    mediaType={props.mediaType}
+                    value={props.userMedia.rating}
+                    userId={props.userMedia.userId}
+                    mediaId={props.userMedia.mediaId}
+                    ratingSystem={props.userMedia.ratingSystem}
+                />
+            }
             redoDisplay={
-                props.userMedia.redo.reduce((a, c) => a + c, 0) > 0 &&
-                <DisplayTvRedo
-                    redoValues={props.userMedia.redo}
+                <TvSeasonPopover
+                    kind="redo"
+                    mediaType={props.mediaType}
+                    value={props.userMedia.redo}
+                    userId={props.userMedia.userId}
+                    mediaId={props.userMedia.mediaId}
+                    ratingSystem={props.userMedia.ratingSystem}
                 />
             }
             mediaDetailsDisplay={

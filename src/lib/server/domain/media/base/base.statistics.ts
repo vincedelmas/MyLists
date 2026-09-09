@@ -168,7 +168,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
         for (const row of rows) {
             if (row.rating == null) continue;
             const index = Math.round(Number(row.rating) * 2);
-            if (index >= 0 && index < buckets.length) buckets[index].value = row.count;
+            if (index >= 0 && index < buckets.length) buckets[index].value += row.count;
         }
 
         return buckets;

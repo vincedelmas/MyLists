@@ -1,5 +1,5 @@
 import {MediaType, TvMediaType} from "@/lib/utils/enums";
-import {DisplayTvRedo} from "@/lib/client/components/media/tv/DisplayTvRedo";
+import {TvSeasonPopover} from "@/lib/client/components/media/tv/TvSeasonPopover";
 import {MediaFollowCardProps} from "@/lib/client/components/media/media-config.types";
 import {BaseMediaFollowCard} from "@/lib/client/components/media/base/BaseMediaFollowCard";
 import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsAndSeasons";
@@ -8,15 +8,30 @@ import {DisplayEpsAndSeasons} from "@/lib/client/components/media/tv/DisplayEpsA
 type TvFollowCardProps<T extends MediaType> = MediaFollowCardProps<T>;
 
 
-export const TvFollowCard = ({ followData, rating, showComment }: TvFollowCardProps<TvMediaType>) => {
+export const TvFollowCard = ({ followData, rating, showComment, mediaType }: TvFollowCardProps<TvMediaType>) => {
     return (
         <BaseMediaFollowCard
             rating={rating}
             followData={followData}
             showComment={showComment}
+            ratingDisplay={
+                <TvSeasonPopover
+                    kind="rating"
+                    mediaType={mediaType}
+                    userId={followData.id}
+                    value={followData.userMedia.rating}
+                    mediaId={followData.userMedia.mediaId}
+                    ratingSystem={followData.ratingSystem}
+                />
+            }
             redoDisplay={
-                <DisplayTvRedo
-                    redoValues={followData.userMedia.redo}
+                <TvSeasonPopover
+                    kind="redo"
+                    mediaType={mediaType}
+                    userId={followData.id}
+                    value={followData.userMedia.redo}
+                    mediaId={followData.userMedia.mediaId}
+                    ratingSystem={followData.ratingSystem}
                 />
             }
             mediaDetailsDisplay={

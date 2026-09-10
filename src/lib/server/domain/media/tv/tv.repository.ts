@@ -10,7 +10,7 @@ import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.defi
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {attachTvSeasonEpisodes, getTvSeasonPosition, getTvSeasonTotals} from "@/lib/utils/media/tv-seasons";
 import {TvListUpdate, TvType, UpdateTvWithDetails, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
-import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, isNull, lte, notInArray, or, sql} from "drizzle-orm";
+import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, lte, notInArray, or, sql} from "drizzle-orm";
 
 
 type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
@@ -163,7 +163,7 @@ export function createTvRepository(definition: TvDefinition) {
         return getDbClient()
             .select({ apiId: mediaTable.apiId })
             .from(mediaTable)
-            .where(and(or(eq(mediaTable.lockStatus, false), isNull(mediaTable.lockStatus)), refreshCriteria))
+            .where(and(eq(mediaTable.lockStatus, false), refreshCriteria))
             .then((res) => res.map((m) => m.apiId));
     }
 

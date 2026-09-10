@@ -13,7 +13,7 @@ export const commonMediaCols = (mediaTypeName: MediaType) => {
         releaseDate: text("release_date"),
         synopsis: text("synopsis"),
         imageCover: imageUrl("image_cover", `${mediaTypeName}-covers`).notNull(),
-        lockStatus: integer({ mode: "boolean" }),
+        lockStatus: integer({ mode: "boolean" }).default(false).notNull(),
         addedAt: text("added_at").default(sql`(CURRENT_TIMESTAMP)`),
         lastApiUpdate: text("last_api_update"),
     };

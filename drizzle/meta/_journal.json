@@ -344,6 +344,13 @@
       "when": 1788875406624,
       "tag": "0048_tv_season_state",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1789075649241,
+      "tag": "0049_media_lock_defaults",
+      "breakpoints": true
     }
   ]
 }

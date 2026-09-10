@@ -47,8 +47,7 @@ const commonEditableFields = {
         z.boolean(),
         z.literal("true").transform(() => true),
         z.literal("false").transform(() => false),
-        blankMetadataFieldSchema,
-    ]).nullable().optional(),
+    ]).optional(),
 };
 
 

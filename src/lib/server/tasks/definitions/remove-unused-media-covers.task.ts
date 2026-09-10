@@ -4,6 +4,7 @@ import * as fs from "fs";
 import {serverEnv} from "@/env/server";
 import {MediaType} from "@/lib/utils/enums";
 import {defineTask} from "@/lib/server/tasks/define-task";
+import {getUnusedImageFiles} from "@/lib/server/core/images/image-cleanup";
 import {MediaMaintenanceRepository} from "@/lib/server/domain/maintenance/media-maintenance.repository";
 
 
@@ -23,39 +24,38 @@ export const removeUnusedMediaCoversTask = defineTask({
 
         for (const mediaType of typesToProcess) {
             await ctx.step(`cleanup-${mediaType}`, async () => {
-                const coversDirectoryPath = path.isAbsolute(baseUploadsLocation)
+                const dirPath = path.isAbsolute(baseUploadsLocation)
                     ? path.join(baseUploadsLocation, `${mediaType}-covers`)
                     : path.join(process.cwd(), baseUploadsLocation, `${mediaType}-covers`);
 
-                if (!fs.existsSync(coversDirectoryPath)) {
-                    ctx.warn(`Directory not found for ${mediaType}`, { path: coversDirectoryPath });
+                if (!fs.existsSync(dirPath)) {
+                    ctx.warn(`Directory not found for ${mediaType}`, { path: dirPath });
                     ctx.metric(`${mediaType}.status`, "dir_missing");
                     return;
                 }
 
-                const dbCoverFilenames = await MediaMaintenanceRepository.getCoverFilenames(mediaType);
-                const dbCustomCoverFilenames = await MediaMaintenanceRepository.getCustomCoverFilenames(mediaType);
-                const dbCoverSet = new Set([...dbCoverFilenames, ...dbCustomCoverFilenames]);
+                const { unusedFiles, onDiskCount, referencedCount } = await getUnusedImageFiles(dirPath, async () => {
+                    const dbCoverFilenames = await MediaMaintenanceRepository.getCoverFilenames(mediaType);
+                    const dbCustomCoverFilenames = await MediaMaintenanceRepository.getCustomCoverFilenames(mediaType);
+                    return [...dbCoverFilenames, ...dbCustomCoverFilenames];
+                });
 
-                const filesOnDisk = await fs.promises.readdir(coversDirectoryPath);
+                ctx.metric(`${mediaType}.on_disk`, onDiskCount);
+                ctx.metric(`${mediaType}.in_db`, referencedCount);
 
-                ctx.metric(`${mediaType}.on_disk`, filesOnDisk.length);
-                ctx.metric(`${mediaType}.in_db`, dbCoverFilenames.length);
-
-                const coversToDelete = filesOnDisk.filter((f) => !dbCoverSet.has(f) && f !== "default.jpg");
-                ctx.metric(`${mediaType}.unused_found`, coversToDelete.length);
-                if (coversToDelete.length === 0) {
+                ctx.metric(`${mediaType}.unused_found`, unusedFiles.length);
+                if (unusedFiles.length === 0) {
                     return;
                 }
 
                 if (input.dryRun) {
-                    ctx.info(`Dry run: would delete ${coversToDelete.length} files for ${mediaType}`);
-                    ctx.metric(`${mediaType}.dry_run_pending`, coversToDelete.length);
+                    ctx.info(`Dry run: would delete ${unusedFiles.length} files for ${mediaType}`);
+                    ctx.metric(`${mediaType}.dry_run_pending`, unusedFiles.length);
                     return;
                 }
 
-                for (const cover of coversToDelete) {
-                    const filePath = path.join(coversDirectoryPath, cover);
+                for (const cover of unusedFiles) {
+                    const filePath = path.join(dirPath, cover);
                     try {
                         await fs.promises.unlink(filePath);
                         ctx.increment(`${mediaType}.deleted`);

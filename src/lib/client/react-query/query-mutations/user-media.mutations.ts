@@ -270,7 +270,10 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
         },
         meta: { ...meta },
         onSuccess: async (data) => {
-            await queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name] }),
+                queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }),
+            ]);
 
             queryClient.setQueryData(tagNamesOptions(mediaType, false).queryKey, (oldData) => {
                 if (!oldData || !data) return;

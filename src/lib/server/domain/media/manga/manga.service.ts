@@ -63,7 +63,7 @@ export function createMangaService(repository: MangaRepository, definition: Mang
         const newState = { ...currentState, redo: payload.redo };
         const logPayload = { oldValue: currentState.redo, newValue: payload.redo };
 
-        newState.total = media.chapters + (payload.redo * media.chapters);
+        newState.total = currentState.currentChapter + (payload.redo * media.chapters);
 
         return [newState, logPayload];
     }

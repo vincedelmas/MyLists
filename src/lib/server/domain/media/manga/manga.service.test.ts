@@ -216,6 +216,23 @@ describe("MangaService", () => {
             expect(log?.newValue).toBe(2);
         });
 
+        it.each([{ redo: 0, total: 50 }, { redo: 2, total: 250 }])(
+            "preserves partial progress when changing rereads to $redo", ({ redo, total }) => {
+                const current = makeState({ status: Status.READING, currentChapter: 50, redo: 1, total: 150 });
+                const [reread, log] = mangaService.updateRedoHandler(current, { redo }, baseManga);
+
+                expect(reread).toMatchObject({ status: Status.READING, currentChapter: 50, redo, total });
+                expect(log).toEqual({ oldValue: 1, newValue: redo });
+
+                const [nextChapter] = mangaService.updateChapterHandler(reread, { currentChapter: 51 }, baseManga);
+                expect(nextChapter.total).toBe(total + 1);
+
+                const delta = mangaService.calculateDeltaStats(makeUserState(reread), nextChapter, baseManga);
+                expect(delta.totalSpecific).toBe(1);
+                expect(delta.timeSpent).toBeCloseTo(TIME_PER_CHAPTER);
+            },
+        );
+
         it("updateChapterHandler should update currentChapter and total", () => {
             const current = makeState({ status: Status.READING, currentChapter: 50, total: 50 });
             const [next, log] = mangaService.updateChapterHandler(current, { currentChapter: 100 }, baseManga);

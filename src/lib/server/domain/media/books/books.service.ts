@@ -129,7 +129,7 @@ description: ${book.synopsis}
         const newState = { ...currentState, redo: payload.redo };
         const logPayload = { oldValue: currentState.redo, newValue: payload.redo };
 
-        newState.total = media.pages + (payload.redo * media.pages);
+        newState.total = (currentState.actualPage ?? 0) + (payload.redo * media.pages);
 
         return [newState, logPayload];
     }

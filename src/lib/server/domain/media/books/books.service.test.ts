@@ -174,6 +174,30 @@ describe("BooksService", () => {
             expect(log?.newValue).toBe(2);
         });
 
+        it.each([{ redo: 0, total: 50 }, { redo: 2, total: 250 }])(
+            "preserves partial progress when changing rereads to $redo", ({ redo, total }) => {
+                const current = makeState({ status: Status.READING, actualPage: 50, redo: 1, total: 150 });
+                const [reread, log] = booksService.updateRedoHandler(current, { redo }, baseBook);
+
+                expect(reread).toMatchObject({ status: Status.READING, actualPage: 50, redo, total });
+                expect(log).toEqual({ oldValue: 1, newValue: redo });
+
+                const [nextPage] = booksService.updatePageHandler(reread, { actualPage: 51 }, baseBook);
+                expect(nextPage.total).toBe(total + 1);
+
+                const delta = booksService.calculateDeltaStats(makeUserState(reread), nextPage, baseBook);
+                expect(delta.totalSpecific).toBe(1);
+                expect(delta.timeSpent).toBeCloseTo(TIME_PER_PAGE);
+            },
+        );
+
+        it("treats unset page progress as zero when editing rereads", () => {
+            const current = makeState({ status: Status.READING, actualPage: null, redo: 1, total: 100 });
+            const [next] = booksService.updateRedoHandler(current, { redo: 2 }, baseBook);
+
+            expect(next).toMatchObject({ actualPage: null, redo: 2, total: 200 });
+        });
+
         it("updatePageHandler should update actualPage and total", () => {
             const current = makeState({ actualPage: 50, total: 50, redo: 0 });
             const [next, log] = booksService.updatePageHandler(current, { actualPage: 80 }, baseBook);

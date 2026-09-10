@@ -115,6 +115,7 @@ export function createMangaRepository(definition: MangaServerDefinition = mangaS
             .update(manga)
             .set({
                 ...mediaData,
+                imageCover: mediaData.imageCover === "default.jpg" ? undefined : mediaData.imageCover,
                 lastApiUpdate: sql`datetime('now')`,
             })
             .where(eq(manga.apiId, mediaData.apiId))

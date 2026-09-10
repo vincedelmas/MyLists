@@ -103,6 +103,7 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
             .update(books)
             .set({
                 ...mediaData,
+                imageCover: mediaData.imageCover === "default.jpg" ? undefined : mediaData.imageCover,
                 lastApiUpdate: sql`datetime('now')`,
             })
             .where(eq(books.apiId, mediaData.apiId))

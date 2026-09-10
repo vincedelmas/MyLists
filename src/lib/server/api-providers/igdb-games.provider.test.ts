@@ -15,6 +15,7 @@ vi.mock("@/lib/server/core/images/image-saver", () => ({ saveImageFromUrl: vi.fn
 
 const { createGamesRepository } = await import("@/lib/server/domain/media/games/games.repository");
 const { createGamesIngestionService, createIgdbGamesProvider } = await import("./igdb-games.provider");
+const { saveImageFromUrl } = await import("@/lib/server/core/images/image-saver");
 
 const igdb = {
     search: vi.fn<IgdbApi["search"]>(),
@@ -97,8 +98,28 @@ describe("IGDB game ingestion", () => {
         });
     });
 
-    it("stores unknown completion times as null when bulk importing a new game", async () => {
+    it.each(["individual", "bulk"])("preserves the existing cover when a download fails during %s refresh", async (mode) => {
+        vi.mocked(saveImageFromUrl).mockResolvedValueOnce("default.jpg");
+
+        if (mode === "bulk") {
+            const results = [];
+            for await (const result of ingestion.bulkRefresh()) results.push(result);
+            expect(results).toEqual([{ apiId: 123, state: "fulfilled", reason: undefined }]);
+        }
+        else {
+            await expect(ingestion.refreshFromExternal(123)).resolves.toBe(true);
+        }
+
+        expect(db.select().from(schema.games).where(eq(schema.games.apiId, 123)).get()).toMatchObject({
+            name: "Updated game",
+            synopsis: "Updated synopsis",
+            imageCover: expect.stringMatching(/\/original\.jpg$/),
+        });
+    });
+
+    it("stores a placeholder and unknown completion times when a new game's cover download fails", async () => {
         igdb.getGamesDetails.mockResolvedValueOnce([{ ...gameDetails, id: 124 }]);
+        vi.mocked(saveImageFromUrl).mockResolvedValueOnce("default.jpg");
 
         const stored = await ingestion.storeBatchFromExternal([124]);
 
@@ -106,6 +127,7 @@ describe("IGDB game ingestion", () => {
         expect(hltb.search).not.toHaveBeenCalled();
         expect(db.select().from(schema.games).where(eq(schema.games.apiId, 124)).get()).toMatchObject({
             name: "Updated game",
+            imageCover: expect.stringMatching(/\/default\.jpg$/),
             hltbMainTime: null,
             hltbMainAndExtraTime: null,
             hltbTotalCompleteTime: null,

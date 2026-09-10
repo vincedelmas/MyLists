@@ -154,6 +154,7 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
             .update(games)
             .set({
                 ...mediaData,
+                imageCover: mediaData.imageCover === "default.jpg" ? undefined : mediaData.imageCover,
                 lastApiUpdate: sql`datetime('now')`,
             })
             .where(eq(games.apiId, mediaData.apiId))

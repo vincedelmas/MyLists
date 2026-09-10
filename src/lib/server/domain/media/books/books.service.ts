@@ -139,7 +139,7 @@ description: ${book.synopsis}
         const logPayload = { oldValue: currentState.status, newValue: payload.status };
 
         if (payload.status === Status.COMPLETED) {
-            newState.total = media.pages;
+            newState.total = media.pages + (currentState.redo * media.pages);
             newState.actualPage = media.pages;
         }
         else if (payload.status === Status.PLAN_TO_READ) {

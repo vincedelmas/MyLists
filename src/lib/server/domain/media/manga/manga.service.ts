@@ -74,7 +74,7 @@ export function createMangaService(repository: MangaRepository, definition: Mang
 
         if (payload.status === Status.COMPLETED) {
             if (media.chapters) {
-                newState.total = media.chapters;
+                newState.total = media.chapters + (currentState.redo * media.chapters);
                 newState.currentChapter = media.chapters;
             }
         }

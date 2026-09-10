@@ -120,6 +120,27 @@ describe("BooksService", () => {
             expect(log?.newValue).toBe(Status.COMPLETED);
         });
 
+        it("preserves recorded rereads when completing before manually adding another redo", () => {
+            const current = makeUserState({ status: Status.READING, actualPage: 50, redo: 1, total: 150 });
+            const [completed] = booksService.updateStatusHandler(current, { status: Status.COMPLETED }, baseBook);
+
+            expect(completed).toMatchObject({ status: Status.COMPLETED, actualPage: 100, redo: 1, total: 200 });
+            const delta = booksService.calculateDeltaStats(current, completed, baseBook);
+            expect(delta.totalSpecific).toBe(50);
+            expect(delta.totalRedo).toBe(0);
+
+            const [reread] = booksService.updateRedoHandler(completed, { redo: 2 }, baseBook);
+            expect(reread).toMatchObject({ actualPage: 100, redo: 2, total: 300 });
+        });
+
+        it("preserves recorded rereads when switching from completed to reading and back", () => {
+            const current = makeState({ status: Status.COMPLETED, actualPage: 100, redo: 3, total: 400 });
+            const [reading] = booksService.updateStatusHandler(current, { status: Status.READING }, baseBook);
+            const [completed] = booksService.updateStatusHandler(reading, { status: Status.COMPLETED }, baseBook);
+
+            expect(completed).toEqual(current);
+        });
+
         it("updateStatusHandler: COMPLETED -> PTR set total, redo and actualPage = 0", () => {
             const current = makeState({ status: Status.COMPLETED, redo: 4, total: 500, actualPage: 100 });
             const [next, log] = booksService.updateStatusHandler(current, { status: Status.PLAN_TO_READ }, baseBook);

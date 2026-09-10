@@ -50,9 +50,6 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails, options: I
         playerPerspective: rawData?.player_perspectives?.[0]?.name,
         gameModes: rawData?.game_modes?.map((mode) => mode?.name).join(","),
         steamApiId: rawData.external_games?.find((source) => source.external_game_source === 1)?.uid,
-        hltbMainTime: null,
-        hltbMainAndExtraTime: null,
-        hltbTotalCompleteTime: null,
         imageCover: await saveImageFromUrl({
             dirSaveName: options.coverDirectory,
             imageUrl: `${imageBaseUrl}${rawData?.cover?.image_id}.jpg`,

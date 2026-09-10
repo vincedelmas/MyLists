@@ -140,6 +140,7 @@ export class MediadleRepository {
             .select({ mediaId: dailyMediadle.mediaId })
             .from(dailyMediadle)
             .where(eq(dailyMediadle.mediaType, MediaType.MOVIES))
+            .orderBy(desc(dailyMediadle.date))
             .limit(200).all().map((r) => r.mediaId);
 
         const selectedMovie = getDbClient()

@@ -220,7 +220,7 @@ const transformMoviesDetailsResults = async (rawData: TmdbMovieDetails, options:
         originalLanguage: rawData?.original_language,
         collectionId: rawData?.belongs_to_collection?.id,
         releaseDate: formatDateForDb(rawData.release_date),
-        duration: rawData?.runtime ?? defaultDuration,
+        duration: rawData?.runtime || defaultDuration,
         directorName: rawData?.credits?.crew?.find((crew) => crew.job === "Director")?.name,
         compositorName: rawData?.credits?.crew?.find((crew) => crew.job === "Original Music Composer")?.name,
         imageCover: await saveImageFromUrl({

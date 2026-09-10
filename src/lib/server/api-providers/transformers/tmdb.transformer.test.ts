@@ -1,6 +1,7 @@
-import {MalAnimeSearchResponse, TmdbTvDetails} from "@/lib/types/provider.types";
+import {MalAnimeSearchResponse, TmdbMovieDetails, TmdbTvDetails} from "@/lib/types/provider.types";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
+import {moviesServerDefinition} from "@/lib/media-definitions/movies/movies.definition.server";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 
 
@@ -71,6 +72,26 @@ describe("tmdbTransformer", () => {
     beforeEach(() => {
         imageMocks.saveImageFromUrl.mockReset();
         imageMocks.saveImageFromUrl.mockResolvedValue("series-covers/default.webp");
+    });
+
+    it.each([
+        { runtime: 0, expectedDuration: 100 },
+        { runtime: null, expectedDuration: 100 },
+        { runtime: undefined, expectedDuration: 100 },
+        { runtime: 1, expectedDuration: 1 },
+        { runtime: 125, expectedDuration: 125 },
+    ])("transforms movie runtime $runtime into $expectedDuration minutes", async ({ runtime, expectedDuration }) => {
+        const details = { id: 1, title: "Movie", runtime, release_date: "2026-01-01" } as TmdbMovieDetails;
+        const { identity, ingestion } = moviesServerDefinition;
+
+        const result = await tmdbTransformer.transformMoviesDetailsResults(details, {
+            coverDirectory: identity.coverDirectory,
+            defaultDuration: ingestion.defaultDuration,
+            maxGenres: ingestion.limits.genres,
+            maxActors: ingestion.limits.actors,
+        });
+
+        expect(result.mediaData.duration).toBe(expectedDuration);
     });
 
     it("deduplicates TV relation names before applying their limits", async () => {

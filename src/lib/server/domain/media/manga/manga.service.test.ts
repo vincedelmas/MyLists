@@ -152,6 +152,27 @@ describe("MangaService", () => {
             expect(log?.newValue).toBe(Status.COMPLETED);
         });
 
+        it("preserves recorded rereads when completing before manually adding another redo", () => {
+            const current = makeUserState({ status: Status.READING, currentChapter: 50, redo: 1, total: 150 });
+            const [completed] = mangaService.updateStatusHandler(current, { status: Status.COMPLETED }, baseManga);
+
+            expect(completed).toMatchObject({ status: Status.COMPLETED, currentChapter: 100, redo: 1, total: 200 });
+            const delta = mangaService.calculateDeltaStats(current, completed, baseManga);
+            expect(delta.totalSpecific).toBe(50);
+            expect(delta.totalRedo).toBe(0);
+
+            const [reread] = mangaService.updateRedoHandler(completed, { redo: 2 }, baseManga);
+            expect(reread).toMatchObject({ currentChapter: 100, redo: 2, total: 300 });
+        });
+
+        it("preserves recorded rereads when switching from completed to reading and back", () => {
+            const current = makeState({ status: Status.COMPLETED, currentChapter: 100, redo: 3, total: 400 });
+            const [reading] = mangaService.updateStatusHandler(current, { status: Status.READING }, baseManga);
+            const [completed] = mangaService.updateStatusHandler(reading, { status: Status.COMPLETED }, baseManga);
+
+            expect(completed).toEqual(current);
+        });
+
         it("updateStatusHandler: preserves entered chapters when a publishing manga has no chapter total", () => {
             const current = makeState({ status: Status.READING, currentChapter: 1, total: 1 });
             const media = { ...baseManga, chapters: null, prodStatus: "Publishing" };

@@ -76,6 +76,7 @@ export const useDeleteHistoryUpdatesMutation = (mediaType: MediaType, mediaId: n
 
 
 export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => {
+    const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -107,6 +108,7 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+                queryClient.invalidateQueries({ queryKey: ["listFilters", variables.data.mediaType, currentUser!.name] }),
             ]);
         }
     });
@@ -114,6 +116,7 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
 
 
 export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption) => {
+    const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -145,6 +148,7 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
                 queryClient.invalidateQueries({ queryKey: ["userList", variables.data.mediaType] }),
+                queryClient.invalidateQueries({ queryKey: ["listFilters", variables.data.mediaType, currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", variables.data.mediaType, variables.data.mediaId] }),
             ]);
         }

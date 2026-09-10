@@ -4,6 +4,7 @@ import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
+import {listFiltersOptions} from "@/lib/client/react-query/query-options/user-media.options";
 import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options/activity.options";
 import {useAddMediaToListMutation, useDeleteProfileUpdateMutation, useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
 
@@ -15,6 +16,7 @@ const server = vi.hoisted(() => ({
     cover: vi.fn(),
     deleteUpdates: vi.fn(),
     activityStats: vi.fn(),
+    listFilters: vi.fn(),
 }));
 
 let queryClient: QueryClient;
@@ -39,6 +41,9 @@ vi.mock("@/lib/server/functions/user-media", () => ({
 }));
 vi.mock("@/lib/server/functions/user-monthly-activity", () => ({
     getMonthlyActivityStats: server.activityStats,
+}));
+vi.mock("@/lib/server/functions/media-lists", () => ({
+    getMediaListFilters: server.listFilters,
 }));
 vi.mock("@/lib/client/react-query/query-options", () => ({
     mediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["details", mediaType, mediaId] }),
@@ -129,6 +134,55 @@ describe("adding completed media", () => {
         // Returning to Activity must fetch new totals despite their infinite stale time.
         expect(await queryClient.fetchQuery(statsOptions)).toEqual(updatedStats);
         expect(server.activityStats).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe("list filter freshness", () => {
+    it.each([
+        ["add", "details"],
+        ["add", "userList"],
+        ["remove", "details"],
+        ["remove", "userList"],
+    ] as const)("reloads the current user's filters after %s from %s", async (action, source) => {
+        const filtersOptions = listFiltersOptions(MediaType.MOVIES, "alice");
+        const dramaOnly = { genres: [{ name: "Drama" }], tags: [] };
+        const withComedy = { genres: [{ name: "Comedy" }, { name: "Drama" }], tags: [] };
+        const initialFilters = action === "add" ? dramaOnly : withComedy;
+        const updatedFilters = action === "add" ? withComedy : dramaOnly;
+        server.listFilters.mockResolvedValue(initialFilters);
+        await queryClient.fetchQuery(filtersOptions);
+        server.listFilters.mockResolvedValue(updatedFilters);
+
+        const otherUserKey = listFiltersOptions(MediaType.MOVIES, "bob").queryKey;
+        const otherMediaKey = listFiltersOptions(MediaType.GAMES, "alice").queryKey;
+        queryClient.setQueryData(otherUserKey, dramaOnly);
+        queryClient.setQueryData(otherMediaKey, dramaOnly);
+
+        const mutationKey = source === "details"
+            ? ["details", MediaType.MOVIES, 2] as const
+            : ["userList", MediaType.MOVIES, action === "add" ? "bob" : "alice", {}] as const;
+        queryClient.setQueryData(mutationKey, source === "details"
+            ? { userMedia: null }
+            : { results: { items: [{ mediaId: 2, common: false }] } });
+        const mutationOptions = { queryKey: mutationKey } as UserMediaQueryOption;
+
+        if (action === "add") {
+            server.add.mockResolvedValueOnce({ mediaId: 2 });
+            await useAddMediaToListMutation(mutationOptions)
+                .mutateAsync({ data: { mediaType: MediaType.MOVIES, mediaId: 2 } });
+        }
+        else {
+            server.remove.mockResolvedValueOnce(undefined);
+            await useRemoveMediaFromListMutation(mutationOptions)
+                .mutateAsync({ data: { mediaType: MediaType.MOVIES, mediaId: 2 } });
+        }
+
+        // Reopening the filter sheet must fetch new options despite its infinite stale time.
+        expect(await queryClient.fetchQuery(filtersOptions)).toEqual(updatedFilters);
+        expect(server.listFilters).toHaveBeenCalledTimes(2);
+        expect(server.listFilters).toHaveBeenLastCalledWith({ data: { mediaType: MediaType.MOVIES, username: "alice" } });
+        expect(queryClient.getQueryState(otherUserKey)?.isInvalidated).toBe(false);
+        expect(queryClient.getQueryState(otherMediaKey)?.isInvalidated).toBe(false);
     });
 });
 

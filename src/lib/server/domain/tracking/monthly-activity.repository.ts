@@ -4,9 +4,10 @@ import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {dateFromUTCInput, monthBucketFromDateInput} from "@/lib/utils/formatting/date";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {LogMonthlyActivity, PaginatedMonthlyActivityFilter} from "@/lib/types/activity.types";
 import {user, userMediaMonthlyActivity, userMediaSettings} from "@/lib/server/database/schema";
-import {and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNull, lte, max, ne, or, SQL, sql, sum} from "drizzle-orm";
+import {and, asc, count, desc, eq, exists, getTableColumns, gt, gte, inArray, isNull, like, lte, max, ne, or, SQL, sql, sum} from "drizzle-orm";
 
 
 const BULK_IMPORT_GRACE_MONTHS = 2;
@@ -57,16 +58,32 @@ const getFilteredActivityConditions = (userId: number, filters: PaginatedMonthly
         }
     }
 
-    if (filters.mediaIdsByType) {
-        const searchConditions = Object.entries(filters.mediaIdsByType)
-            .filter(([_, ids]) => ids.length > 0)
-            .map(([mediaType, ids]) => and(
-                inArray(userMediaMonthlyActivity.mediaId, ids),
-                eq(userMediaMonthlyActivity.mediaType, mediaType as MediaType),
-            ))
-            .filter((condition): condition is SQL => !!condition);
+    const search = filters.search?.trim();
+    if (search) {
+        const pattern = `%${search}%`;
 
-        if (searchConditions.length === 0) return null;
+        const mediaTypes = filters.mediaType
+            ? [filters.mediaType]
+            : Object.values(MediaType);
+
+        const searchConditions = mediaTypes.map((mediaType) => {
+            const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
+            const nameCondition = like(mediaTable.name, pattern);
+
+            return and(
+                eq(userMediaMonthlyActivity.mediaType, mediaType),
+                exists(getDbClient()
+                    .select({ id: mediaTable.id })
+                    .from(mediaTable)
+                    .where(and(
+                        eq(mediaTable.id, userMediaMonthlyActivity.mediaId),
+                        mediaTable.originalName
+                            ? or(nameCondition, like(mediaTable.originalName, pattern))
+                            : nameCondition,
+                    ))),
+            );
+        });
+
         conditions.push(or(...searchConditions)!);
     }
 
@@ -217,7 +234,6 @@ export class MonthlyActivityRepository {
     static async getPaginatedMonthlyActivities(userId: number, filters: PaginatedMonthlyActivityFilter) {
         const pagination = resolvePagination({ page: filters.page, perPage: filters.perPage, defaultPerPage: 48, maxPerPage: 48 });
         const conditions = getFilteredActivityConditions(userId, filters);
-        if (!conditions) return { items: [], total: 0, page: pagination.page, pages: 0, perPage: pagination.perPage };
 
         const total = getDbClient()
             .select({ count: count() })
@@ -253,15 +269,6 @@ export class MonthlyActivityRepository {
         });
 
         const conditions = getFilteredActivityConditions(userId, filters);
-        if (!conditions) {
-            return {
-                total: 0,
-                pages: 0,
-                items: [],
-                page: pagination.page,
-                perPage: pagination.perPage,
-            };
-        }
 
         const groupedActivities = getDbClient()
             .select({

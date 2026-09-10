@@ -1,10 +1,16 @@
 import Database from "bun:sqlite";
+import {eq} from "drizzle-orm";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 import {user, userMediaMonthlyActivity, userMediaSettings} from "@/lib/server/database/schema";
-import {ActivityKind, MediaType} from "@/lib/utils/enums";
+import {ActivityKind, MediaType, Status} from "@/lib/utils/enums";
+import {MonthlyActivityService} from "./monthly-activity.service";
+import {createBooksRepository} from "@/lib/server/domain/media/books/books.repository";
+import {createMediaMonthlyActivity} from "@/lib/server/domain/media/base/base.monthly-activity";
+import {booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
+import type {MediaMonthlyActivityRegistry} from "@/lib/server/domain/media/media.registries";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -51,6 +57,100 @@ describe("MonthlyActivityRepository", () => {
         sqlite.close();
         dbContext.db = undefined;
     });
+
+    it.each(["month", "year"] as const)("searches all matching titles before %s activity pagination", async (view) => {
+        const books = Array.from({ length: 60 }, (_, index) => ({
+            id: index + 1,
+            apiId: String(index + 1),
+            name: `Match ${String(index + 1).padStart(2, "0")}`,
+            pages: 100,
+            imageCover: "default.jpg",
+        }));
+        db.insert(schema.books).values(books).run();
+        db.insert(schema.booksList).values(books.map(book => ({
+            userId: 1, mediaId: book.id, status: Status.COMPLETED, actualPage: 100, total: 100,
+        }))).run();
+        db.insert(userMediaMonthlyActivity).values(books.map(book => ({
+            userId: 1,
+            mediaId: book.id,
+            mediaType: MediaType.BOOKS,
+            monthBucket: book.id <= 10 ? "2025-12" : "2026-06",
+            lastActivityAt: `${book.id <= 10 ? "2025-12" : "2026-06"}-10T12:00:${String(book.id - 1).padStart(2, "0")}.000Z`,
+            progressGained: 100,
+        }))).run();
+
+        const monthlyActivity = createMediaMonthlyActivity({ definition: booksServerDefinition, repository: createBooksRepository() });
+        const service = new MonthlyActivityService(MonthlyActivityRepository, { get: () => monthlyActivity } as MediaMonthlyActivityRegistry);
+        const filters = {
+            view,
+            year: 2026,
+            month: 6,
+            search: " Match ",
+            hiddenOnly: false,
+            username: "monthly-user",
+            activeTab: MediaType.BOOKS,
+            activityKind: ActivityKind.ALL,
+        };
+
+        const firstPage = await service.getMonthlyActivity(1, { ...filters, page: 1 });
+        const secondPage = await service.getMonthlyActivity(1, { ...filters, page: 2 });
+
+        expect(firstPage).toMatchObject({ total: 50, pages: 2, perPage: 48 });
+        expect(firstPage.items).toHaveLength(48);
+        expect(secondPage.items).toHaveLength(2);
+        expect([...firstPage.items, ...secondPage.items].map(item => item.mediaId))
+            .toEqual(Array.from({ length: 50 }, (_, index) => 60 - index));
+        expect((await service.getMonthlyActivity(1, { ...filters, search: "Missing", page: 1 })).total).toBe(0);
+    });
+
+    it.each(["getPaginatedMonthlyActivities", "getPaginatedYearlyActivities"] as const)(
+        "%s searches titles and original names while respecting activity filters",
+        async (method) => {
+            db.insert(user).values({
+                id: 2, name: "other-user", email: "other@example.com", emailVerified: true,
+                createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00",
+            }).run();
+            db.insert(userMediaSettings).values([
+                { userId: 1, mediaType: MediaType.MOVIES, active: true },
+                { userId: 2, mediaType: MediaType.BOOKS, active: true },
+            ]).run();
+            db.insert(schema.books).values([
+                { id: 1, apiId: "1", name: "Unrelated book", pages: 100, imageCover: "default.jpg" },
+                { id: 2, apiId: "2", name: "Star book", pages: 100, imageCover: "default.jpg" },
+                { id: 3, apiId: "3", name: "Star hidden", pages: 100, imageCover: "default.jpg" },
+                { id: 4, apiId: "4", name: "Star previous year", pages: 100, imageCover: "default.jpg" },
+                { id: 5, apiId: "5", name: "Star other user", pages: 100, imageCover: "default.jpg" },
+            ]).run();
+            db.insert(schema.movies).values({
+                id: 1, apiId: 1, name: "Translated title", originalName: "Star original", duration: 120, imageCover: "default.jpg",
+            }).run();
+            const base = { userId: 1, mediaType: MediaType.BOOKS, monthBucket: "2026-06", progressGained: 100 };
+            db.insert(userMediaMonthlyActivity).values([
+                { ...base, mediaId: 1 },
+                { ...base, mediaId: 2 },
+                { ...base, mediaId: 3, hidden: true },
+                { ...base, mediaId: 4, monthBucket: "2025-12" },
+                { ...base, mediaId: 5, userId: 2 },
+                { ...base, mediaId: 1, mediaType: MediaType.MOVIES, hadCompletion: true },
+            ]).run();
+            const filters = { startMonth: "2026-01", endMonth: "2026-12", search: "star" };
+
+            const result = await MonthlyActivityRepository[method](1, filters);
+            expect(result.total).toBe(2);
+            expect(result.items.map(item => `${item.mediaType}:${item.mediaId}`).sort()).toEqual(["books:2", "movies:1"]);
+
+            const booksOnly = await MonthlyActivityRepository[method](1, { ...filters, mediaType: MediaType.BOOKS });
+            expect(booksOnly).toMatchObject({ total: 1, items: [{ mediaId: 2 }] });
+            const hiddenOnly = await MonthlyActivityRepository[method](1, { ...filters, hiddenOnly: true });
+            expect(hiddenOnly).toMatchObject({ total: 1, items: [{ mediaId: 3 }] });
+            const completed = await MonthlyActivityRepository[method](1, { ...filters, activityKind: ActivityKind.COMPLETED });
+            expect(completed).toMatchObject({ total: 1, items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }] });
+
+            db.update(userMediaSettings).set({ active: false }).where(eq(userMediaSettings.mediaType, MediaType.MOVIES)).run();
+            const activeOnly = await MonthlyActivityRepository[method](1, filters);
+            expect(activeOnly).toMatchObject({ total: 1, items: [{ mediaType: MediaType.BOOKS, mediaId: 2 }] });
+        },
+    );
 
     it("aggregates progress, completion, and multiple redo contributions in one month", async () => {
         const base = {

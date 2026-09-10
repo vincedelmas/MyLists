@@ -5,6 +5,7 @@ import {inactiveAccountDeletion, user} from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {dateFromUTCInput} from "@/lib/utils/formatting/date";
 
 
 const dbContext = vi.hoisted(() => ({ db: undefined as any }));
@@ -21,7 +22,7 @@ const { InactiveAccountService } = await import("@/lib/server/domain/account/ina
 const { InactiveAccountRepository } = await import("@/lib/server/domain/account/inactive-account.repository");
 
 
-describe("InactiveAccountRepository.markAsDeleted", () => {
+describe("InactiveAccountRepository", () => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
 
@@ -37,6 +38,53 @@ describe("InactiveAccountRepository.markAsDeleted", () => {
     afterEach(() => {
         sqlite.close();
         dbContext.db = undefined;
+    });
+
+    it.each([
+        { deadline: "expired", offset: "-1 day" },
+        { deadline: "less than 30 days away", offset: "+5 days" },
+        { deadline: "more than 30 days away", offset: "+40 days" },
+    ])("preserves a full grace period when retrying a warning with a deadline $deadline", async ({ offset }) => {
+        const userId = await insertUser({ updatedAt: "2020-01-01 00:00:00" });
+        const originalDeadline = sqlite.query<{ deadline: string }, [string]>(
+            "SELECT datetime('now', ?) AS deadline",
+        ).get(offset)!.deadline;
+        const lifecycleId = await insertLifecycle({
+            userId,
+            emailRetryCount: 1,
+            warningSentAt: null,
+            status: "mail_failed",
+            lastSeenAt: "2020-01-01 00:00:00",
+            deletionScheduledAt: originalDeadline,
+        });
+        const minimumDeadline = Math.floor(Date.now() / 1000) * 1000 + 30 * 24 * 60 * 60 * 1000;
+
+        const targets = await InactiveAccountRepository.getWarningTargets(100, 3);
+        expect(targets).toHaveLength(1);
+        const [target] = targets;
+        expect(target.lifecycleId).toBe(lifecycleId);
+
+        // The task sends this deadline in the email before recording its successful delivery.
+        await InactiveAccountRepository.warningSent({ ...target, warningTokenHash: "retry-token" });
+
+        const service = new AccountService(AccountRepository, new InactiveAccountService(InactiveAccountRepository));
+        const deletionTargets = await InactiveAccountRepository.getDeletionTargets(3);
+        for (const deletionTarget of deletionTargets) {
+            service.deleteUserAccount({ ...deletionTarget, type: "inactive" });
+        }
+
+        expect(await getUser(userId)).toBeDefined();
+        expect(deletionTargets).toEqual([]);
+        expect(service.deleteUserAccount({ type: "inactive", userId, lifecycleId, username: target.username })).toBe(false);
+        expect(dateFromUTCInput(target.deletionScheduledAt).getTime()).toBeGreaterThanOrEqual(minimumDeadline);
+        expect(dateFromUTCInput(target.deletionScheduledAt).getTime()).toBeGreaterThanOrEqual(dateFromUTCInput(originalDeadline).getTime());
+        expect(await getLifecycle(lifecycleId)).toMatchObject({
+            status: "warned",
+            deletedAt: null,
+            warningTokenHash: "retry-token",
+            deletionScheduledAt: target.deletionScheduledAt,
+        });
+        expect(await InactiveAccountRepository.getWarningTargets(100, 3)).toEqual([]);
     });
 
     it("marks a due inactive lifecycle row as deleted", async () => {

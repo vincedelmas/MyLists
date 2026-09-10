@@ -19,7 +19,7 @@ export class InactiveAccountRepository {
                 lastSeenAt: user.updatedAt,
                 lifecycleId: inactiveAccountDeletion.id,
                 emailRetryCount: inactiveAccountDeletion.emailRetryCount,
-                deletionScheduledAt: inactiveAccountDeletion.deletionScheduledAt,
+                deletionScheduledAt: sql<string>`MAX(${inactiveAccountDeletion.deletionScheduledAt}, datetime('now', '+30 days'))`,
             })
             .from(inactiveAccountDeletion)
             .innerJoin(user, eq(user.id, inactiveAccountDeletion.userId))
@@ -79,6 +79,7 @@ export class InactiveAccountRepository {
             warningSentAt: sql`datetime('now')`,
             lastEmailAttemptAt: sql`datetime('now')`,
             warningTokenHash: payload.warningTokenHash,
+            deletionScheduledAt: payload.deletionScheduledAt,
         };
 
         if (payload.lifecycleId) {
@@ -97,7 +98,6 @@ export class InactiveAccountRepository {
                 userId: payload.userId,
                 username: payload.username,
                 lastSeenAt: payload.lastSeenAt,
-                deletionScheduledAt: payload.deletionScheduledAt,
             });
     }
 

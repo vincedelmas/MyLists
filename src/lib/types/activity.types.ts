@@ -43,13 +43,13 @@ export type MonthlyActivityOccurrence = {
 
 export type PaginatedMonthlyActivityFilter = {
     page?: number;
+    search?: string;
     perPage?: number;
     endMonth: string;
     startMonth: string;
     hiddenOnly?: boolean;
     mediaType?: MediaType;
     activityKind?: ActivityKind;
-    mediaIdsByType?: Partial<Record<MediaType, number[]>>;
 }
 
 

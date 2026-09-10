@@ -61,19 +61,14 @@ export class MonthlyActivityService {
         }
 
         const range = getActivityMonthRange(filters.year, filters.month, filters.view);
-        const mediaTypes = filters.activeTab === "all" ? Object.values(MediaType) : [filters.activeTab];
-
-        const mediaIdsByType = filters.search?.trim()
-            ? await this._searchActivityMediaIds(userId, mediaTypes, filters.search.trim())
-            : undefined;
 
         const [availableMediaTypes, result] = await Promise.all([
             this.repository.getMonthlyMediaTypes(userId, range.startMonth, range.endMonth, filters.hiddenOnly),
             this.repository[filters.view === "year" ? "getPaginatedYearlyActivities" : "getPaginatedMonthlyActivities"](userId, {
                 ...range,
                 perPage: 48,
-                mediaIdsByType,
                 page: filters.page,
+                search: filters.search,
                 hiddenOnly: filters.hiddenOnly,
                 activityKind: filters.activityKind,
                 mediaType: filters.activeTab === "all" ? undefined : filters.activeTab,
@@ -215,16 +210,5 @@ export class MonthlyActivityService {
             data: result,
             range: { startMonth, endMonth },
         };
-    }
-
-    private async _searchActivityMediaIds(userId: number, mediaTypes: MediaType[], search: string) {
-        const entries = await Promise.all(mediaTypes.map(async (mediaType) => {
-            const monthlyActivity = this.mediaMonthlyActivityRegistry.get(mediaType);
-            const results = await monthlyActivity.searchUserMedia(userId, search, 20);
-
-            return [mediaType, results.map((result) => result.mediaId)] as const;
-        }));
-
-        return Object.fromEntries(entries) as Partial<Record<MediaType, number[]>>;
     }
 }

@@ -16,6 +16,7 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {hashPassword, verifyPassword} from "better-auth/crypto";
 import {addUsernameSuffix, checkOAuthUsername} from "@/lib/utils/auth";
+import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {user as userTable, userMediaSettings} from "@/lib/server/database/schema";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
@@ -99,6 +100,12 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
                             data: {
                                 ...user,
                                 name: username,
+                                image: await saveImageFromUrl({
+                                    imageUrl: user.image ?? undefined,
+                                    dirSaveName: "profile-covers",
+                                    resize: { width: 300, height: 300 },
+                                    defaultName: "",
+                                }) || null,
                             },
                         };
                     }

@@ -4,13 +4,14 @@ import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
-import {useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation} from "./user-media.mutations";
+import {useDeleteProfileUpdateMutation, useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation} from "./user-media.mutations";
 
 
 const server = vi.hoisted(() => ({
     update: vi.fn(),
     remove: vi.fn(),
     cover: vi.fn(),
+    deleteUpdates: vi.fn(),
 }));
 
 let queryClient: QueryClient;
@@ -30,10 +31,12 @@ vi.mock("@/lib/server/functions/user-media", () => ({
     postUpdateUserMedia: server.update,
     postRemoveMediaFromList: server.remove,
     postUpdateUserCustomCover: server.cover,
+    postDeleteUserUpdates: server.deleteUpdates,
 }));
 vi.mock("@/lib/client/react-query/query-options", () => ({
     mediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["details", mediaType, mediaId] }),
     historyOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["onOpenHistory", mediaType, mediaId] }),
+    profileOptions: (username: string) => ({ queryKey: ["profile", username] }),
 }));
 vi.mock("@/lib/client/components/media/base/UserMediaDetails", () => ({ UserMediaDetails: () => null }));
 vi.mock("@/lib/client/components/ui/dialog", () => ({
@@ -88,6 +91,32 @@ beforeEach(() => {
 afterEach(() => {
     unsubscribe();
     queryClient.clear();
+});
+
+describe("profile activity deletion", () => {
+    it.each([
+        { name: "does not duplicate entries in a short feed", initialIds: [1, 2, 3], remainingIds: [2, 3], returnedUpdate: { id: 3 } },
+        { name: "removes the last entry when the server returns null", initialIds: [1], remainingIds: [], returnedUpdate: null },
+        { name: "appends a new replacement to a full feed", initialIds: [1, 2, 3, 4, 5, 6], remainingIds: [2, 3, 4, 5, 6, 7], returnedUpdate: { id: 7 } },
+        { name: "removes an entry when replacement data is not requested", initialIds: [1, 2, 3], remainingIds: [2, 3], returnedUpdate: undefined },
+    ])("$name", async ({ initialIds, remainingIds, returnedUpdate }) => {
+        const profileKey = ["profile", "alice"] as const;
+        const profile = { userData: { name: "alice" }, userUpdates: initialIds.map(id => ({ id })) };
+        queryClient.setQueryData(profileKey, profile);
+        const expectedProfile = { ...profile, userUpdates: remainingIds.map(id => ({ id })) };
+        const fetchProfile = vi.fn().mockResolvedValue(expectedProfile);
+        const observer = new QueryObserver(queryClient, { queryKey: profileKey, queryFn: fetchProfile });
+        const unsubscribeProfile = observer.subscribe(() => {});
+
+        try {
+            server.deleteUpdates.mockResolvedValueOnce(returnedUpdate);
+            await useDeleteProfileUpdateMutation("alice").mutateAsync({ data: { updateIds: [1], returnData: returnedUpdate !== undefined } });
+
+            expect(queryClient.getQueryData(profileKey)).toEqual(expectedProfile);
+            expect(fetchProfile).not.toHaveBeenCalled();
+        }
+        finally { unsubscribeProfile(); }
+    });
 });
 
 describe("list editing refresh timing", () => {

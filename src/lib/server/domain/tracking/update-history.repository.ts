@@ -207,7 +207,8 @@ export class UpdateHistoryRepository {
     static deleteUserUpdates(userId: number, updateIds: number[], returnData: boolean) {
         getDbClient()
             .delete(userMediaUpdate)
-            .where(and(eq(userMediaUpdate.userId, userId), inArray(userMediaUpdate.id, updateIds))).run();
+            .where(and(eq(userMediaUpdate.userId, userId), inArray(userMediaUpdate.id, updateIds)))
+            .run();
 
         if (returnData) {
             const updates = getDbClient()
@@ -220,7 +221,7 @@ export class UpdateHistoryRepository {
                 ))
                 .where(eq(userMediaUpdate.userId, userId))
                 .orderBy(desc(userMediaUpdate.timestamp))
-                .limit(8)
+                .limit(6)
                 .all();
 
             return updates.at(-1) ?? null;

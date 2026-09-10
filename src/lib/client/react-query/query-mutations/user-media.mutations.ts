@@ -31,10 +31,16 @@ export const useDeleteProfileUpdateMutation = (username: string) => {
         mutationFn: postDeleteUserUpdates,
         onSuccess: (data, variables) => {
             queryClient.setQueryData(profileOptions(username).queryKey, (oldData) => {
-                if (!oldData || !data) return;
+                if (!oldData) return;
+
+                const userUpdates = oldData.userUpdates.filter((up) => !variables.data.updateIds.includes(up.id));
+                if (data && !userUpdates.some((up) => up.id === data.id)) {
+                    userUpdates.push(data);
+                }
+
                 return {
                     ...oldData,
-                    userUpdates: [...oldData.userUpdates.filter((up) => up.id !== variables.data.updateIds[0]), data],
+                    userUpdates,
                 };
             });
         },

@@ -182,6 +182,21 @@ describe("validated metadata edits", () => {
         expect(payload.imageCover).toBe("https://example.com/new.jpg");
     });
 
+    it.each(Object.values(MediaType))("preserves the %s cover after a failed download and accepts a successful replacement", async (mediaType) => {
+        const service = services[mediaType];
+        const originalCover = service.findById(1)!.imageCover;
+        vi.mocked(saveImageFromUrl).mockResolvedValueOnce("default.jpg");
+
+        await service.updateMediaEditableFields(1, { name: "Updated", imageCover: "https://example.com/broken.jpg" });
+
+        expect(service.findById(1)).toMatchObject({ name: "Updated", imageCover: originalCover });
+
+        vi.mocked(saveImageFromUrl).mockResolvedValueOnce("replacement.jpg");
+        await service.updateMediaEditableFields(1, { imageCover: "https://example.com/replacement.jpg" });
+
+        expect(service.findById(1)).toMatchObject({ name: "Updated", imageCover: expect.stringMatching(/\/replacement\.jpg$/) });
+    });
+
     it("preserves omitted book authors and replaces or clears explicit authors", async () => {
         await db.insert(schema.booksAuthors).values({ mediaId: 1, name: "Original author" });
         const service = services[MediaType.BOOKS];

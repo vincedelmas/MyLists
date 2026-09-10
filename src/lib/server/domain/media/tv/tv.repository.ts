@@ -323,6 +323,7 @@ export function createTvRepository(definition: TvDefinition) {
             .update(mediaTable)
             .set({
                 ...mediaData,
+                imageCover: mediaData.imageCover === "default.jpg" ? undefined : mediaData.imageCover,
                 lastApiUpdate: sql`datetime('now')`,
             })
             .where(eq(mediaTable.apiId, mediaData.apiId))

@@ -166,6 +166,7 @@ export function createMoviesRepository(definition: MovieServerDefinition = movie
             .update(movies)
             .set({
                 ...mediaData,
+                imageCover: mediaData.imageCover === "default.jpg" ? undefined : mediaData.imageCover,
                 lastApiUpdate: sql`datetime('now')`,
             })
             .where(eq(movies.apiId, mediaData.apiId))

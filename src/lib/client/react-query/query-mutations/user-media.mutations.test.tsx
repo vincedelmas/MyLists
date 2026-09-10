@@ -4,14 +4,17 @@ import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import {UserMediaItem} from "@/lib/types/query.options.types";
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
-import {useDeleteProfileUpdateMutation, useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation} from "./user-media.mutations";
+import {monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options/activity.options";
+import {useAddMediaToListMutation, useDeleteProfileUpdateMutation, useRemoveMediaFromListMutation, useUpdateCustomCoverMutation, useUpdateUserMediaMutation, UserMediaQueryOption} from "./user-media.mutations";
 
 
 const server = vi.hoisted(() => ({
+    add: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
     cover: vi.fn(),
     deleteUpdates: vi.fn(),
+    activityStats: vi.fn(),
 }));
 
 let queryClient: QueryClient;
@@ -28,10 +31,14 @@ vi.mock("@tanstack/react-query", async (importOriginal) => ({
 vi.mock("@/lib/client/hooks/use-auth", () => ({ useAuth: () => ({ currentUser: { name: "alice" } }) }));
 vi.mock("@/lib/schemas", () => import("@/lib/schemas/user-media.schema"));
 vi.mock("@/lib/server/functions/user-media", () => ({
+    postAddMediaToList: server.add,
     postUpdateUserMedia: server.update,
     postRemoveMediaFromList: server.remove,
     postUpdateUserCustomCover: server.cover,
     postDeleteUserUpdates: server.deleteUpdates,
+}));
+vi.mock("@/lib/server/functions/user-monthly-activity", () => ({
+    getMonthlyActivityStats: server.activityStats,
 }));
 vi.mock("@/lib/client/react-query/query-options", () => ({
     mediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["details", mediaType, mediaId] }),
@@ -91,6 +98,38 @@ beforeEach(() => {
 afterEach(() => {
     unsubscribe();
     queryClient.clear();
+});
+
+describe("adding completed media", () => {
+    it.each(["details", "userList"] as const)("refreshes activity totals when returning after an addition from %s", async (source) => {
+        const statsOptions = monthlyActivityStatsOptions("alice", { year: "2026", month: "9", view: "month" });
+        const initialStats = {
+            totalTime: 120,
+            mediaStats: [{ mediaType: MediaType.MOVIES, count: 1, progressTotal: 1, timeGained: 120 }],
+        };
+        const updatedStats = {
+            totalTime: 240,
+            mediaStats: [{ mediaType: MediaType.MOVIES, count: 2, progressTotal: 2, timeGained: 240 }],
+        };
+        server.activityStats.mockResolvedValue(initialStats);
+        await queryClient.fetchQuery(statsOptions);
+        server.activityStats.mockResolvedValue(updatedStats);
+
+        const addQueryKey = source === "details"
+            ? ["details", MediaType.MOVIES, 2] as const
+            : ["userList", MediaType.MOVIES, "bob", {}] as const;
+        queryClient.setQueryData(addQueryKey, source === "details"
+            ? { userMedia: null }
+            : { results: { items: [{ mediaId: 2, common: false }] } });
+        server.add.mockResolvedValueOnce({ mediaId: 2, status: Status.COMPLETED });
+
+        await useAddMediaToListMutation({ queryKey: addQueryKey } as UserMediaQueryOption)
+            .mutateAsync({ data: { mediaType: MediaType.MOVIES, mediaId: 2, status: Status.COMPLETED } });
+
+        // Returning to Activity must fetch new totals despite their infinite stale time.
+        expect(await queryClient.fetchQuery(statsOptions)).toEqual(updatedStats);
+        expect(server.activityStats).toHaveBeenCalledTimes(2);
+    });
 });
 
 describe("profile activity deletion", () => {

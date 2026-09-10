@@ -83,7 +83,7 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
         meta: {
             successToastMessage: "Media added to your list!",
         },
-        onSuccess: (data, variables) => {
+        onSuccess: async (data, variables) => {
             if (queryOption.queryKey[0] === "details") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                     if (!oldData || !data) return;
@@ -103,6 +103,11 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
                     };
                 });
             }
+
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
+                queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
+            ]);
         }
     });
 };

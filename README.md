@@ -9,14 +9,13 @@
 
 **The all-in-one media tracking platform.**
 
-MyLists is a comprehensive, type-safe web-app designed to help you organize and track your movies, TV series, anime, manga, books, and video games in one unified interface.
+MyLists is a comprehensive, web-app designed to help you organize and track your movies, TV series, anime, manga, books, and video games in one unified interface.
 
 ### Key Features
 
 - **Multi-Media lists**: Dedicated lists for Movies, Series, Anime, Manga, Books, and Games.
 - **Upcoming Media**: Get notified when new Media are released.
-- **Advanced Analytics**: Visualize your habits with detailed statistics, trends, and platform-wide insights.
-- **Modern Full-Stack Architecture**: Built with TanStack Start and end-to-end type-safety.
+- **Advanced Analytics**: Visualize your habits with detailed stats, trends, and platform-wide insights.
 - **Daily Moviedle**: A daily guessing game to test your movie knowledge.
 - **Achievements System**: Earn unique badges and track your progress as you consume more media.
 - **Secure Authentication**: Robust user management powered by Better-Auth.
@@ -78,8 +77,10 @@ Commit `bun.lock` alongside `package.json` when updating dependencies. Deploymen
 
 Docker deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).
 
-The Docker Compose setup builds the app image and starts Redis. It mounts persistent storage for SQLite, images, and Redis data. Provide cron/maintenance scheduling and public
-HTTPS from your deployment platform when needed. PostHog is optional and disabled when its public key is empty.
+The Docker Compose setup builds the app image and starts Redis. 
+It mounts persistent storage for SQLite, images, and Redis data. 
+Provide cron/maintenance scheduling and public HTTPS from your deployment platform when needed. 
+PostHog is optional and disabled when its public key is empty.
 
 ---
 
@@ -146,19 +147,20 @@ Redis caching is optional.
 
 ### Optional Feature Availability
 
-Missing optional configuration does not prevent MyLists from starting. Login and registration only show configured authentication methods, while unavailable media providers return
-a clear error when used.
+Missing optional config does not prevent MyLists from starting. 
+Login and registration only show configured auth methods.
 
 - Without admin mail credentials, email registration, password reset, email changes, and mail-dependent maintenance are disabled. Email login still works for verified accounts
   created with the `create-user` CLI.
-- GitHub and Google OAuth are enabled independently when their complete client ID/secret pair is present.
+- GitHub and Google OAuth are enabled when their complete client ID/secret pair is present.
 - Without TMDB, movie, series, and anime external search/details are unavailable. Without IGDB, game external search/details are unavailable.
 - Without `MAL_CLIENT_ID`, manga external search/details are unavailable and anime uses TMDB genres without MyAnimeList enrichment. Register an API client at
   [MyAnimeList API Configuration](https://myanimelist.net/apiconfig).
 - Google Books remains available without credentials. `GOOGLE_BOOKS_API_KEY` is optional.
 - Without `LLM_API_KEY`, book genre enrichment is skipped with a task warning.
 
-For every optional credential pair, either set both values or leave both blank. A partial pair is treated as a configuration error so typos are caught early.
+For every optional credential pair, either set both values or leave both blank. 
+A partial pair is treated as a config error.
 
 ---
 

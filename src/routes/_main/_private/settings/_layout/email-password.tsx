@@ -36,6 +36,8 @@ function EmailAndPasswordPage() {
     });
 
     const onEmailSubmit = async (values: { email: string }) => {
+        setChangeEmailSuccess(false);
+
         await authClient.changeEmail({ newEmail: values.email.trim() }, {
             onError: (ctx) => {
                 handleServerFormErrors(emailForm, ctx.error);
@@ -70,7 +72,7 @@ function EmailAndPasswordPage() {
                     <div>
                         <h3 className="text-sm font-semibold text-foreground">Email address</h3>
                         <p className="mt-1 text-xs text-muted-foreground">
-                            A confirmation link will be sent to the new address.
+                            Approve the change from your current email address, then verify the new address.
                         </p>
                     </div>
                     <FieldSet disabled={emailForm.formState.isSubmitting}>
@@ -79,15 +81,15 @@ function EmailAndPasswordPage() {
                                 name="email"
                                 control={emailForm.control}
                                 rules={{ required: "Email is required" }}
-                                render={({field, fieldState}) => (
+                                render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid} data-disabled={emailForm.formState.isSubmitting}>
                                         <FieldLabel htmlFor={`${fieldId}-email`}>New email address</FieldLabel>
                                         <Input
                                             {...field}
-                                            id={`${fieldId}-email`}
                                             type="email"
-                                            placeholder="new-email@example.com"
+                                            id={`${fieldId}-email`}
                                             aria-invalid={fieldState.invalid}
+                                            placeholder="new-email@example.com"
                                         />
                                         <FieldError errors={[fieldState.error]}/>
                                     </Field>
@@ -97,7 +99,8 @@ function EmailAndPasswordPage() {
                     </FieldSet>
                     {changeEmailSuccess &&
                         <p className="text-xs font-medium text-success">
-                            Check your inbox to confirm your change of email address.
+                            Check your current inbox to approve the change.
+                            After approval, check your new inbox to verify the new address.
                         </p>
                     }
                     <FormError/>
@@ -120,7 +123,7 @@ function EmailAndPasswordPage() {
                             <Controller
                                 name="currentPassword"
                                 control={passwordForm.control}
-                                render={({field, fieldState}) =>
+                                render={({ field, fieldState }) =>
                                     <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
                                         <FieldLabel htmlFor={`${fieldId}-current-password`}>Current password</FieldLabel>
                                         <Input
@@ -137,7 +140,7 @@ function EmailAndPasswordPage() {
                             <Controller
                                 name="newPassword"
                                 control={passwordForm.control}
-                                render={({field, fieldState}) =>
+                                render={({ field, fieldState }) =>
                                     <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
                                         <FieldLabel htmlFor={`${fieldId}-new-password`}>New password</FieldLabel>
                                         <Input
@@ -154,7 +157,7 @@ function EmailAndPasswordPage() {
                             <Controller
                                 name="confirmNewPassword"
                                 control={passwordForm.control}
-                                render={({field, fieldState}) =>
+                                render={({ field, fieldState }) =>
                                     <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
                                         <FieldLabel htmlFor={`${fieldId}-confirm-new-password`}>Confirm new password</FieldLabel>
                                         <Input

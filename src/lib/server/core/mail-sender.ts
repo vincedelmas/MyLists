@@ -27,14 +27,19 @@ const getTransporter = () => {
 };
 
 
-interface EmailOptions {
+interface BaseEmailOptions {
     to: string;
     link: string;
     subject: string;
     username: string;
     deletionDate?: string;
-    template: "resetPassword" | "register" | "inactiveAccountDeletion";
 }
+
+
+type EmailOptions = BaseEmailOptions & (
+    | { template: "resetPassword" | "register" | "inactiveAccountDeletion" }
+    | { template: "changeEmail"; newEmail: string }
+    );
 
 
 export const sendEmail = createServerOnlyFn(() => async (options: EmailOptions) => {
@@ -42,7 +47,7 @@ export const sendEmail = createServerOnlyFn(() => async (options: EmailOptions) 
         throw new Error("Email delivery is unavailable because admin mail credentials are not configured.");
     }
 
-    const [transporter, { render }, { InactiveAccountDeletionEmail, PasswordResetEmail, RegisterEmail }] = await Promise.all([
+    const [transporter, { render }, { ChangeEmail, InactiveAccountDeletionEmail, PasswordResetEmail, RegisterEmail }] = await Promise.all([
         getTransporter(),
         import("@react-email/render"),
         import("@/lib/client/components/emails"),
@@ -51,6 +56,9 @@ export const sendEmail = createServerOnlyFn(() => async (options: EmailOptions) 
     let htmlContent: string;
     if (options.template === "register") {
         htmlContent = await render(RegisterEmail({ username: options.username, link: options.link }));
+    }
+    else if (options.template === "changeEmail") {
+        htmlContent = await render(ChangeEmail({ username: options.username, link: options.link, newEmail: options.newEmail }));
     }
     else if (options.template === "inactiveAccountDeletion") {
         htmlContent = await render(InactiveAccountDeletionEmail({

@@ -1,6 +1,6 @@
 import path from "node:path";
 import {tmpdir} from "node:os";
-import {ne} from "drizzle-orm";
+import {eq, ne} from "drizzle-orm";
 import Database from "bun:sqlite";
 import {Readable} from "node:stream";
 import {EventEmitter} from "node:events";
@@ -12,6 +12,8 @@ import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from "vitest"
 import * as schema from "@/lib/server/database/schema";
 
 
+const mailMocks = vi.hoisted(() => ({ sendEmail: vi.fn().mockResolvedValue(undefined) }));
+
 const dbContext = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
 const imageMocks = vi.hoisted(() => ({
     lookup: vi.fn(),
@@ -20,6 +22,7 @@ const imageMocks = vi.hoisted(() => ({
 }));
 
 
+vi.mock("@/lib/server/core/mail-sender", () => ({ sendEmail: mailMocks.sendEmail }));
 vi.mock("@/lib/server/database/db", () => ({
     get db() { return dbContext.db; },
 }));
@@ -28,6 +31,8 @@ vi.mock("@/env/server", () => ({
     serverEnv: {
         get BASE_UPLOADS_LOCATION() { return imageMocks.env.BASE_UPLOADS_LOCATION; },
         LOG_LEVEL: "silent",
+        ADMIN_MAIL_USERNAME: "mail@example.com",
+        ADMIN_MAIL_PASSWORD: "test-mail-password",
         UPLOADS_DIR_NAME: "static",
         GITHUB_CLIENT_ID: "github-test-client",
         GITHUB_CLIENT_SECRET: "github-test-secret",
@@ -44,6 +49,7 @@ describe("authentication", () => {
     let sqlite: Database;
     let auth: typeof import("./auth").auth;
     let cookie: string;
+    let userId: number;
 
     beforeAll(async () => {
         imageMocks.env.BASE_UPLOADS_LOCATION = await mkdtemp(path.join(tmpdir(), "mylists-auth-avatar-test-"));
@@ -59,6 +65,7 @@ describe("authentication", () => {
             email: "review@example.com",
             emailVerified: true,
         }, { method: "admin" });
+        userId = Number(user.id);
         await context.internalAdapter.linkAccount({
             userId: user.id,
             accountId: user.id,
@@ -76,6 +83,9 @@ describe("authentication", () => {
 
     beforeEach(() => {
         vi.restoreAllMocks();
+        mailMocks.sendEmail.mockClear();
+        dbContext.db.update(schema.user).set({ email: "review@example.com", emailVerified: true })
+            .where(eq(schema.user.id, userId)).run();
         dbContext.db.delete(schema.user).where(ne(schema.user.email, "review@example.com")).run();
         dbContext.db.update(schema.user).set({ name: "reviewuser" }).run();
         imageMocks.lookup.mockReset().mockResolvedValue([{ address: "93.184.215.14", family: 4 }]);
@@ -123,6 +133,51 @@ describe("authentication", () => {
         expect(response.headers.get("location")).toBe("http://localhost:3000/");
         return dbContext.db.select().from(schema.user).where(ne(schema.user.email, "review@example.com")).get()!;
     };
+
+    it("requires approval at the current address before verifying the new address", async () => {
+        const response = await auth.handler(new Request("http://localhost:3000/api/auth/change-email", {
+            method: "POST",
+            headers: { cookie, origin: "http://localhost:3000", "content-type": "application/json" },
+            body: JSON.stringify({ newEmail: "new@example.com" }),
+        }));
+
+        expect(response.status).toBe(200);
+        expect(mailMocks.sendEmail).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+            to: "review@example.com",
+            newEmail: "new@example.com",
+            template: "changeEmail",
+        }));
+        expect(dbContext.db.select().from(schema.user).where(eq(schema.user.id, userId)).get()?.email)
+            .toBe("review@example.com");
+
+        const approval = await auth.handler(new Request(mailMocks.sendEmail.mock.calls[0][0].link));
+        expect(approval.status).toBe(302);
+        expect(mailMocks.sendEmail).toHaveBeenCalledTimes(2);
+        expect(mailMocks.sendEmail.mock.calls[1][0]).toMatchObject({ to: "new@example.com", template: "register" });
+        expect(dbContext.db.select().from(schema.user).where(eq(schema.user.id, userId)).get()?.email)
+            .toBe("review@example.com");
+
+        const verification = await auth.handler(new Request(mailMocks.sendEmail.mock.calls[1][0].link));
+        expect(verification.status).toBe(302);
+        expect(dbContext.db.select().from(schema.user).where(eq(schema.user.id, userId)).get())
+            .toMatchObject({ email: "new@example.com", emailVerified: true });
+    });
+
+    it("prevents unverified accounts from bypassing current-address approval", async () => {
+        dbContext.db.update(schema.user).set({ emailVerified: false }).where(eq(schema.user.id, userId)).run();
+
+        const response = await auth.handler(new Request("http://localhost:3000/api/auth/change-email", {
+            method: "POST",
+            headers: { cookie, origin: "http://localhost:3000", "content-type": "application/json" },
+            body: JSON.stringify({ newEmail: "new@example.com" }),
+        }));
+
+        expect(response.status).toBe(403);
+        expect(await response.json()).toMatchObject({ code: "EMAIL_NOT_VERIFIED" });
+        expect(mailMocks.sendEmail).not.toHaveBeenCalled();
+        expect(dbContext.db.select().from(schema.user).where(eq(schema.user.id, userId)).get()?.email)
+            .toBe("review@example.com");
+    });
 
     it.each(["", "   ", "ab", "a".repeat(16), "invalid/name", null, 123])("rejects invalid username %j without changing the account", async (name) => {
         const response = await updateUser({ name });

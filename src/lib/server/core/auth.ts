@@ -11,7 +11,6 @@ import {createServerOnlyFn} from "@tanstack/react-start";
 import {usernameSchema} from "@/lib/schemas/common.schema";
 import {drizzleAdapter} from "better-auth/adapters/drizzle";
 import {clearAdminCookie} from "@/lib/server/core/admin-auth";
-import {APIError, createAuthMiddleware} from "better-auth/api";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {tanstackStartCookies} from "better-auth/tanstack-start";
 import {hashPassword, verifyPassword} from "better-auth/crypto";
@@ -19,6 +18,7 @@ import {addUsernameSuffix, checkOAuthUsername} from "@/lib/utils/auth";
 import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {user as userTable, userMediaSettings} from "@/lib/server/database/schema";
+import {APIError, createAuthMiddleware, getSessionFromCtx} from "better-auth/api";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 
 
@@ -57,6 +57,18 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         },
     },
     hooks: {
+        before: createAuthMiddleware(async (ctx) => {
+            if (ctx.path === "/change-email") {
+                const session = await getSessionFromCtx(ctx, { disableCookieCache: true });
+
+                if (session && !session.user.emailVerified) {
+                    throw new APIError("FORBIDDEN", {
+                        code: "EMAIL_NOT_VERIFIED",
+                        message: "Verify your current email address before changing it.",
+                    });
+                }
+            }
+        }),
         after: createAuthMiddleware(async (ctx) => {
             if (ctx.path === "/sign-out") {
                 clearAdminCookie();
@@ -238,6 +250,16 @@ const getAuthConfig = createServerOnlyFn(() => betterAuth({
         },
         changeEmail: {
             enabled: mailEnabled,
+            sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+                deliverAuthEmail({
+                    newEmail,
+                    link: url,
+                    to: user.email,
+                    username: user.name,
+                    template: "changeEmail",
+                    subject: "MyLists - Approve your email address change",
+                });
+            },
         },
     },
     session: {

@@ -1,4 +1,4 @@
-import {Body, Button, Container, Head, Heading, Html, Link, Preview, Section, Tailwind, Text} from "@react-email/components";
+import {EmailLayout, EmailParagraph} from "./_components/EmailLayout";
 
 
 interface InactiveAccountDeletionEmailProps {
@@ -9,49 +9,32 @@ interface InactiveAccountDeletionEmailProps {
 }
 
 
-export const InactiveAccountDeletionEmail = ({ username, link, deletionDate, brand = "MyLists" }: InactiveAccountDeletionEmailProps) => {
-    return (
-        <Html>
-            <Head/>
-            <Preview>Your MyLists account is scheduled for deletion</Preview>
-            <Tailwind>
-                <Body className="bg-white font-sans">
-                    <Container className="mx-auto max-w-150 px-6 py-8">
-                        <Heading className="text-2xl font-bold text-gray-900">
-                            Keep your {brand} account
-                        </Heading>
-                        <Text className="text-base text-gray-700">
-                            Hello {username},
-                        </Text>
-                        <Text className="text-base text-gray-700">
-                            Your account has been inactive for almost 2 years. It is scheduled for deletion on {deletionDate}.
-                        </Text>
-                        <Text className="text-base text-gray-700">
-                            If you want to keep your account, click the button below. This will refresh your activity timer.
-                        </Text>
-                        <Section className="py-4 text-center">
-                            <Button href={link} className="rounded-md bg-black px-5 py-3 text-sm font-semibold text-white">
-                                Keep my account
-                            </Button>
-                        </Section>
-                        <Text className="text-sm text-gray-500">
-                            You can also keep your account by logging in before {deletionDate}.
-                        </Text>
-                        <Text className="text-sm text-gray-500">
-                            If you do not want to keep this account, no action is required.
-                        </Text>
-                        <Text className="text-xs text-gray-400">
-                            If the button does not work, copy this link into your browser:{" "}
-                            <Link href={link} className="text-gray-500 underline">
-                                {link}
-                            </Link>
-                        </Text>
-                    </Container>
-                </Body>
-            </Tailwind>
-        </Html>
-    );
-};
+export const InactiveAccountDeletionEmail = ({ username, link, deletionDate, brand = "MyLists" }: InactiveAccountDeletionEmailProps) => (
+    <EmailLayout
+        link={link}
+        brand={brand}
+        username={username}
+        action="Keep my account"
+        title="Keep your account"
+        preview={`Keep your ${brand} account before ${deletionDate}.`}
+        notice={<>Your account is scheduled for deletion on <strong>{deletionDate}</strong>.</>}
+        footer={<>You can also keep your account by logging in before {deletionDate}. If you no longer want it, no action is required.</>}
+    >
+        <EmailParagraph>
+            It's been almost 2 years since you last used your {brand} account.
+        </EmailParagraph>
+        <EmailParagraph>
+            If you want to keep your account and lists, use the button below to cancel the scheduled deletion.
+        </EmailParagraph>
+    </EmailLayout>
+);
+
+
+InactiveAccountDeletionEmail.PreviewProps = {
+    username: "Alex",
+    deletionDate: "October 12, 2026",
+    link: "https://mylists.info/keep-account?token=preview",
+} satisfies InactiveAccountDeletionEmailProps;
 
 
 export default InactiveAccountDeletionEmail;

@@ -1,4 +1,4 @@
-import {Body, Button, Container, Head, Heading, Html, Link, Preview, Section, Tailwind, Text} from "@react-email/components";
+import {EmailLayout, EmailParagraph} from "./_components/EmailLayout";
 
 
 interface RegisterEmailProps {
@@ -8,63 +8,28 @@ interface RegisterEmailProps {
 }
 
 
-export const RegisterEmail = ({ username, link, brand = "MyLists" }: RegisterEmailProps) => {
-    const today = new Date().getFullYear();
+export const RegisterEmail = ({ username, link, brand = "MyLists" }: RegisterEmailProps) => (
+    <EmailLayout
+        link={link}
+        brand={brand}
+        username={username}
+        action="Verify email address"
+        title="Verify your email address"
+        notice="This verification link expires in 1 hour."
+        preview={`Verify your email address for ${brand}.`}
+        footer="If you didn't request this email, you can safely ignore it."
+    >
+        <EmailParagraph>
+            Please use the button below to verify your email address for {brand}.
+        </EmailParagraph>
+    </EmailLayout>
+);
 
-    return (
-        <Html>
-            <Head/>
-            <Preview>Welcome to {brand}! Please confirm your registration.</Preview>
-            <Tailwind>
-                <Body className="bg-white my-auto mx-auto font-sans px-2">
-                    <Container className="border border-solid border-[#eaeaea] rounded my-10 mx-auto p-5 max-w-116">
-                        <Heading className="text-black text-[24px] font-normal text-center p-0 mt-2 mb-7.5 mx-0">
-                            Welcome to
-                            <Text className="text-[24px]">
-                                <strong>{brand}</strong>
-                            </Text>
-                        </Heading>
-                        <Text className="text-black text-[14px] leading-6">
-                            Hello <strong>{username}</strong>,
-                        </Text>
-                        <Text className="text-black text-[14px] leading-6">
-                            Thank you for signing up! To complete your registration,
-                            please confirm your email address by clicking the button below.
-                        </Text>
-                        <Section className="text-center my-8">
-                            <Button
-                                href={link}
-                                className="bg-black rounded text-white text-[12px] font-semibold no-underline text-center
-                                px-5 py-3 inline-block cursor-pointer"
-                            >
-                                Confirm Registration
-                            </Button>
-                        </Section>
-                        <Text className="text-black text-[14px] leading-6">
-                            Or copy and paste this URL into your browser:{" "}
-                            <Link href={link} className="text-blue-600 no-underline break-all">
-                                {link}
-                            </Link>
-                        </Text>
-                        <Section className="mt-4 px-4 py-2 bg-amber-300/50 rounded">
-                            <Text className="text-[12px] m-0 font-semibold">
-                                This verification link will expire in 1 hour.
-                            </Text>
-                        </Section>
-                        <Text className="text-gray-500 text-[12px] leading-6 mt-8">
-                            If you didn't create an account with us, please ignore this email.
-                        </Text>
-                        <Section className="border-t border-solid">
-                            <Text className="text-gray-600 text-xs text-center">
-                                ©{today} {brand}. All rights reserved.
-                            </Text>
-                        </Section>
-                    </Container>
-                </Body>
-            </Tailwind>
-        </Html>
-    );
-};
+
+RegisterEmail.PreviewProps = {
+    username: "Alex",
+    link: "https://mylists.info/api/auth/verify-email?token=preview",
+} satisfies RegisterEmailProps;
 
 
 export default RegisterEmail;

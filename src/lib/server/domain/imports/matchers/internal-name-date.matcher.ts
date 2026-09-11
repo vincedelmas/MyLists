@@ -1,11 +1,16 @@
+import {ApiProviderType} from "@/lib/utils/enums";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
 import {InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
-export const internalNameDateMatcher = (mediaService: Pick<MediaQueries, "findByNames">): InternalMediaMatcher => ({
+export const internalNameDateMatcher = (mediaService: Pick<MediaQueries, "findByNames">, apiProviderType?: ApiProviderType): InternalMediaMatcher => ({
     async match(items: ImportItemsSelect[]) {
-        const candidates = items.filter(item => item.name?.trim() && isSupportedReleaseDate(item.releaseDate));
+        const canMatchByName = (item: ImportItemsSelect) => item.name?.trim()
+            && isSupportedReleaseDate(item.releaseDate)
+            && !(apiProviderType && item.externalApiSource === apiProviderType && item.externalApiId);
+
+        const candidates = items.filter(canMatchByName);
 
         if (candidates.length === 0) {
             return { matched: [], unresolved: items };
@@ -26,12 +31,12 @@ export const internalNameDateMatcher = (mediaService: Pick<MediaQueries, "findBy
         const unresolved: ImportItemsSelect[] = [];
 
         for (const item of items) {
-            if (!item.name || !isSupportedReleaseDate(item.releaseDate)) {
+            if (!canMatchByName(item)) {
                 unresolved.push(item);
                 continue;
             }
 
-            const dateMatches = (mediaByName.get(item.name.trim().toLowerCase()) ?? [])
+            const dateMatches = (mediaByName.get(item.name!.trim().toLowerCase()) ?? [])
                 .filter(media => releaseDateMatches(media.releaseDate, item.releaseDate!));
 
             if (dateMatches.length === 1) {

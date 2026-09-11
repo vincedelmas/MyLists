@@ -15,7 +15,7 @@ export const createGamesMatcher = (
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.IGDB, gamesService),
-        internalNameDateMatcher(gamesService),
+        internalNameDateMatcher(gamesService, ApiProviderType.IGDB),
     ],
     externalMatchers: [
         new ExternalIGDBGamesMatcher(gamesIngestion),

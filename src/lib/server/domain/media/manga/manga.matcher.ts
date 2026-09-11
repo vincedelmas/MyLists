@@ -16,7 +16,7 @@ export const createMangaMatcher = (
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.MANGA, mangaService),
-        internalNameDateMatcher(mangaService),
+        internalNameDateMatcher(mangaService, ApiProviderType.MANGA),
     ],
     externalMatchers: [
         new ExternalMalMangaMatcher(mangaProvider, mangaIngestion),

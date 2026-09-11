@@ -46,7 +46,7 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
                 }
 
                 const searchResults = await this.tvProvider.search(item.name);
-                const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
+                const candidates = this._filterCandidates(searchResults.data, item.name, item.releaseDate);
 
                 if (candidates.length === 0) {
                     batch.skipped.push(this._createSkippedOutcome(item, TV_API_MATCH_NOT_FOUND_REASON));
@@ -106,8 +106,9 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
         return item.externalApiSource === ApiProviderType.TMDB && !!item.externalApiId;
     }
 
-    private _filterCandidates(candidates: ProviderSearchResult[], releaseDate: string | null) {
-        const tvCandidates = candidates.filter((candidate) => candidate.itemType === this.mediaType);
+    private _filterCandidates(candidates: ProviderSearchResult[], name: string, releaseDate: string | null) {
+        const title = name.trim().toLowerCase();
+        const tvCandidates = candidates.filter((candidate) => candidate.itemType === this.mediaType && candidate.name.trim().toLowerCase() === title);
         if (!releaseDate) return tvCandidates;
 
         return tvCandidates.filter((candidate) => {

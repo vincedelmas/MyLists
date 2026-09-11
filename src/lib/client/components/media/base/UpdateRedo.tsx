@@ -51,12 +51,12 @@ export const UpdateRedo = ({ name, redo, updateRedo }: RedoInputProps) => {
                 step={1}
                 type="number"
                 max={REDO_MAX}
-                className="w-34"
                 inputMode="numeric"
                 value={currentValue}
                 onBlur={validateAndMutate}
                 onKeyDown={handleOnKeyDown}
                 aria-label={`${name} count`}
+                className="w-34 h-7 rounded-md"
                 disabled={updateRedo.isPending}
                 onChange={(ev) => setCurrentValue(ev.target.value)}
             />

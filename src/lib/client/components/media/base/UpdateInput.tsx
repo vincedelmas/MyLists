@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import {UpdateType} from "@/lib/utils/enums";
-import {Input} from "@/lib/client/components/ui/input";
 import {useUpdateUserMediaMutation} from "@/lib/client/react-query/query-mutations/user-media.mutations";
+import {InputGroup, InputGroupAddon, InputGroupInput} from "@/lib/client/components/ui/input-group";
 
 
 interface UpdateInputProps {
@@ -56,17 +56,18 @@ export const UpdateInput = ({ total, initValue, updateInput, payloadName, update
     };
 
     return (
-        <div className="flex items-center w-34 text-sm bg-accent/30 rounded-md border h-8">
-            <Input
+        <InputGroup className="w-34 h-7 rounded-md">
+            <InputGroupInput
                 inputMode="numeric"
                 value={currentValue}
                 onBlur={handleOnBlur}
                 onKeyDown={handleOnKeyDown}
                 disabled={updateInput.isPending}
                 onChange={(ev) => setCurrentValue(ev.target.value)}
-                className="inline-block h-8 w-18 cursor-pointer border-none bg-transparent"
             />
-            <span>{" "}/{" "}{total ?? "?"}</span>
-        </div>
+            <InputGroupAddon align="inline-end">
+                {" "}/{" "}{total ?? "?"}
+            </InputGroupAddon>
+        </InputGroup>
     );
 };

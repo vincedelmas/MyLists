@@ -65,7 +65,7 @@ export const UpdatePlaytime = ({ playtimeInMin, updatePlaytime }: UpdatePlaytime
                 value={currentValue}
                 max={maxPlaytimeHours}
                 onKeyDown={handleOnKeyDown}
-                className="w-34 h-8 text-sm"
+                className="w-34 h-7 rounded-md"
                 disabled={updatePlaytime.isPending}
                 onBlur={() => validateAndMutate()}
                 onChange={(ev) => setCurrentValue(ev.target.value)}

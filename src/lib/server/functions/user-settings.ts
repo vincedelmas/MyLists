@@ -2,14 +2,14 @@ import {APIError} from "better-auth/api";
 import {auth} from "@/lib/server/core/auth";
 import {MediaType} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
-import {getRequest} from "@tanstack/react-start/server";
 import {user} from "@/lib/server/database/schema/index";
+import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
 import {clearAdminCookie} from "@/lib/server/core/admin-auth";
-import {ValidationError} from "@/lib/utils/error-classes";
-import {saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {saveUploadedImage} from "@/lib/server/core/images/image-saver";
+import {ValidationError} from "@/lib/utils/error-classes";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     downloadListAsCsvSchema,
@@ -19,7 +19,7 @@ import {
     mediaListSettingsSchema,
     PasswordSettingsForm,
     passwordSettingsSchema
-} from "@/lib/schemas";
+} from "@/lib/schemas/user-settings.schema";
 
 
 export const postGeneralSettings = createServerFn({ method: "POST" })
@@ -152,10 +152,29 @@ export const postPasswordSettings = createServerFn({ method: "POST" })
 
 export const postDeleteUserAccount = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .handler(async ({ context: { currentUser } }) => {
+    .validator(passwordSettingsSchema.pick({ currentPassword: true }))
+    .handler(async ({ data: { currentPassword }, context: { currentUser } }) => {
+        try {
+            await auth.api.verifyPassword({
+                headers: getRequest().headers,
+                body: {
+                    password: currentPassword,
+                },
+            });
+        }
+        catch (error) {
+            if (!(error instanceof APIError) || error.body?.code !== "INVALID_PASSWORD") {
+                throw error;
+            }
+
+            throw new ValidationError<Pick<PasswordSettingsForm, "currentPassword">>("currentPassword", "Current password incorrect");
+        }
+
         const accountService = await getContainer().then((c) => c.services.account);
         const result = accountService.deleteUserAccount({ userId: currentUser.id, type: "manual" });
+
         clearAdminCookie();
+
         return result;
     });
 

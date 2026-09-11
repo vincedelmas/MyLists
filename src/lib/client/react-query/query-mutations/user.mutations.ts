@@ -189,11 +189,12 @@ export const usePasswordSettingsMutation = (meta?: MutationMeta) => {
 };
 
 
-export const useDeleteAccountMutation = () => {
+export const useDeleteAccountMutation = (meta?: MutationMeta) => {
     return useMutation({
         mutationFn: postDeleteUserAccount,
         meta: {
             successToastMessage: "Your account has been deleted.",
+            ...meta,
         },
     });
 };

@@ -1,9 +1,17 @@
 import {Trash2} from "lucide-react";
+import {useId, useState} from "react";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {useAuth} from "@/lib/client/hooks/use-auth";
+import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
-import {useAuth} from "@/lib/client/hooks/use-auth";
-import {useConfirm} from "@/lib/client/hooks/use-confirm";
+import {handleServerFormErrors} from "@/lib/client/forms";
+import {FormError} from "@/lib/client/components/forms/FormError";
+import {Controller, FormProvider, useForm} from "react-hook-form";
+import {type PasswordSettingsForm, passwordSettingsSchema} from "@/lib/schemas";
+import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {useDeleteAccountMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/danger")({
@@ -12,21 +20,31 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/danger")(
 
 
 function DangerForm() {
-    const confirm = useConfirm();
+    const passwordId = useId();
     const { clearSession, signOut } = useAuth();
-    const deleteAccountMutation = useDeleteAccountMutation();
+    const [open, setOpen] = useState(false);
+    const deleteAccountMutation = useDeleteAccountMutation({ noErrorToast: true });
+    const form = useForm<Pick<PasswordSettingsForm, "currentPassword">>({
+        resolver: zodResolver(passwordSettingsSchema.pick({ currentPassword: true })),
+        defaultValues: { currentPassword: "" },
+    });
 
-    const onSubmit = async () => {
-        if (!await confirm({
-            requireText: "DELETE",
-            variant: "destructive",
-            title: "Delete Your Account?",
-            confirmLabel: "Delete Account",
-            description: "All your data will be permanently deleted. No recovery possible, I don't keep any data. This action cannot be undone.",
-        })) return;
+    const onOpenChange = (nextOpen: boolean) => {
+        if (deleteAccountMutation.isPending) return;
+        setOpen(nextOpen);
+        form.reset();
+    }
 
-        deleteAccountMutation.mutate(undefined, {
+    const onSubmit = (values: Pick<PasswordSettingsForm, "currentPassword">) => {
+        if (deleteAccountMutation.isPending) return;
+
+        deleteAccountMutation.mutate({ data: values }, {
+            onError: (error) => {
+                handleServerFormErrors(form, error);
+            },
             onSuccess: async () => {
+                form.reset();
+                setOpen(false);
                 try {
                     await signOut();
                 }
@@ -49,11 +67,66 @@ function DangerForm() {
                         This action is not reversible, so please continue with caution.
                     </p>
                 </div>
-                <Button variant="destructive" onClick={onSubmit} className="w-fit">
+                <Button variant="destructive" onClick={() => setOpen(true)} className="w-fit">
                     <Trash2 className="size-4"/>
                     Delete Account
                 </Button>
             </div>
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent showCloseButton={!deleteAccountMutation.isPending}>
+                    <FormProvider {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+                            <DialogHeader>
+                                <DialogTitle>Delete Your Account?</DialogTitle>
+                                <DialogDescription>
+                                    All your data will be permanently deleted.
+                                    This action cannot be undone.
+                                    Enter your current password to confirm.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <FieldGroup>
+                                <Controller
+                                    name="currentPassword"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid} data-disabled={deleteAccountMutation.isPending}>
+                                            <FieldLabel htmlFor={passwordId}>
+                                                Current password
+                                            </FieldLabel>
+                                            <Input
+                                                {...field}
+                                                id={passwordId}
+                                                type="password"
+                                                autoComplete="current-password"
+                                                aria-invalid={fieldState.invalid}
+                                                disabled={deleteAccountMutation.isPending}
+                                            />
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    )}
+                                />
+                            </FieldGroup>
+                            <FormError/>
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    disabled={deleteAccountMutation.isPending}
+                                    onClick={() => {
+                                        form.reset();
+                                        setOpen(false);
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button type="submit" variant="destructive" disabled={deleteAccountMutation.isPending}>
+                                    Delete Account
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </FormProvider>
+                </DialogContent>
+            </Dialog>
         </section>
     );
 }

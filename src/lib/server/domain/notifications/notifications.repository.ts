@@ -1,5 +1,5 @@
-import {and, desc, eq, inArray, sql} from "drizzle-orm";
 import {NotifTab} from "@/lib/types/notifications.types";
+import {and, desc, eq, inArray, ne, sql} from "drizzle-orm";
 import {MediaType, SocialNotifType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {mediaNotifications, socialNotifications} from "@/lib/server/database/schema";
@@ -40,7 +40,11 @@ export class NotificationsRepository {
     static async deleteSocialNotif(userId: number, notificationId: number) {
         await getDbClient()
             .delete(socialNotifications)
-            .where(and(eq(socialNotifications.userId, userId), eq(socialNotifications.id, notificationId)));
+            .where(and(
+                eq(socialNotifications.userId, userId),
+                eq(socialNotifications.id, notificationId),
+                ne(socialNotifications.type, SocialNotifType.FOLLOW_REQUESTED),
+            ));
     }
 
     // --- Media Notifications ---------------------------

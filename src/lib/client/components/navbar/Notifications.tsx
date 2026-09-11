@@ -269,9 +269,9 @@ const SocialNotificationItem = ({ notification }: { notification: SocialNotif })
                     <div className="size-2 shrink-0 rounded-full bg-brand"/>
                 }
                 <button
-                    onClick={deleteNotif}
                     className="opacity-70 hover:opacity-100"
                     disabled={deleteMutation.isPending || respondMutation.isPending}
+                    onClick={isFollowRequest ? () => respond("decline") : deleteNotif}
                 >
                     <X className="size-3.5"/>
                 </button>

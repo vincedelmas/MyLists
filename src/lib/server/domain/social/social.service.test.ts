@@ -7,6 +7,7 @@ import * as schema from "@/lib/server/database/schema";
 import {PrivacyType, SocialNotifType, SocialState} from "@/lib/utils/enums";
 import {SocialService} from "@/lib/server/domain/social/social.service";
 import {SocialRepository} from "@/lib/server/domain/social/social.repository";
+import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
 import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 
 
@@ -45,6 +46,33 @@ describe("social relationship and notification transactions", () => {
         social.acceptFollowRequest(1, 2);
         expect(snapshot().followers[0].status).toBe(SocialState.ACCEPTED);
         expect(snapshot().notifications.map(n => n.type)).toEqual([SocialNotifType.FOLLOW_ACCEPTED]);
+    });
+
+    it("keeps a follow request actionable when the generic dismiss endpoint is used", async () => {
+        const notifications = new NotificationsService(NotificationsRepository);
+        social.follow(1, 2, true);
+        const before = snapshot();
+
+        await notifications.deleteSocialNotif(2, before.notifications[0].id);
+        expect(snapshot()).toEqual(before);
+
+        social.declineFollowRequest(1, 2);
+        expect(snapshot().followers).toEqual([]);
+        expect(snapshot().notifications).toMatchObject([
+            { userId: 1, actorId: 2, type: SocialNotifType.FOLLOW_DECLINED },
+        ]);
+    });
+
+    it("lets only the recipient dismiss an ordinary notification without removing the follow", async () => {
+        const notifications = new NotificationsService(NotificationsRepository);
+        social.follow(1, 2, false);
+        const before = snapshot();
+
+        await notifications.deleteSocialNotif(1, before.notifications[0].id);
+        expect(snapshot()).toEqual(before);
+
+        await notifications.deleteSocialNotif(2, before.notifications[0].id);
+        expect(snapshot()).toEqual({ followers: before.followers, notifications: [] });
     });
 
     it("rolls back a new follow and notification deletion if the replacement notification fails", () => {

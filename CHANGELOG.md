@@ -1,5 +1,52 @@
 # Changelog
 
+## [3.6.0](https://github.com/vincedelmas/MyLists/compare/v3.5.2...v3.6.0) (2026-09-11)
+
+
+### Features
+
+* **tv:** add season ratings and rewatches ([b0120d7](https://github.com/vincedelmas/MyLists/commit/b0120d77a0c18710daed74f87878b9ad3a96f01b))
+
+
+### Bug Fixes
+
+* **accounts:** renew deletion grace period after warning retries ([578f31f](https://github.com/vincedelmas/MyLists/commit/578f31fa3fafa6577fcbe8f7a7e2af72c64ebc94))
+* **accounts:** update collection like counts when deleting users ([ea704a4](https://github.com/vincedelmas/MyLists/commit/ea704a496ad4b2fbd8c35210cf8bb4146320333c))
+* **activity:** apply title search before pagination ([c1359af](https://github.com/vincedelmas/MyLists/commit/c1359af3d47502855b50dd7b9f1d6bbed69d3824))
+* **activity:** refresh cached totals after adding media ([45fc1dd](https://github.com/vincedelmas/MyLists/commit/45fc1dd93391226a8e199a623dcf1159ce4a9617))
+* **auth:** download OAuth avatars before storing them ([80350e8](https://github.com/vincedelmas/MyLists/commit/80350e8ab93d47b722188e0a23d5bd3af23228a1))
+* **auth:** validate usernames on user updates ([f2a0fdd](https://github.com/vincedelmas/MyLists/commit/f2a0fddc1858e96477d2467fc251d7d0b52b4f36))
+* **collections:** reject nonexistent media IDs ([57c2ecd](https://github.com/vincedelmas/MyLists/commit/57c2ecd28f60cc82b25cdd5aaba15dc6158a8ee7))
+* **docker:** launch compiled server entry point ([9d73c6e](https://github.com/vincedelmas/MyLists/commit/9d73c6eacaf9c62c263f72ec11196ac321dd2b93))
+* **feed:** update profile feed locally after deletion ([1cd219e](https://github.com/vincedelmas/MyLists/commit/1cd219e421864e81d632afc1b51a0335772a08d8))
+* **games:** preserve completion times during bulk refresh ([752dfaf](https://github.com/vincedelmas/MyLists/commit/752dfaf11a8aa9a1855b60f1996c8c888f1069b9))
+* **images:** preserve newly saved images during cleanup ([54dad61](https://github.com/vincedelmas/MyLists/commit/54dad61a50089932fde3f8a3bddee0063f6647e0))
+* **imports:** prefer provider IDs when matching media ([87807a7](https://github.com/vincedelmas/MyLists/commit/87807a78138d133fb5911e249ce58ee25e67803f))
+* **lists:** prevent duplicate view counts ([12ff004](https://github.com/vincedelmas/MyLists/commit/12ff00424c28fb42e56787496824da1f1566191a))
+* **lists:** refresh filter options after adding or removing media ([8587117](https://github.com/vincedelmas/MyLists/commit/858711769aa736c5df510c8298e8524338349b1c))
+* **maintenance:** preserve active Moviedle movies during cleanup ([5b6e10d](https://github.com/vincedelmas/MyLists/commit/5b6e10d6e7e68e4ae2407ca772daffed2d8f8047))
+* **media:** enforce unlocked defaults for automatic refresh ([dfbbe74](https://github.com/vincedelmas/MyLists/commit/dfbbe749cf1f7ebc201c816d1e57a8b1b0bbe54c))
+* **media:** preserve existing covers when downloads fail ([c3fd6ac](https://github.com/vincedelmas/MyLists/commit/c3fd6acd6f67ada468599b705388f1e3720fa377))
+* **media:** preserve reread totals on completion ([20c0d26](https://github.com/vincedelmas/MyLists/commit/20c0d265704f1a1661eeea848d4cab0fd6b908f8))
+* **moviedle:** exclude the 200 most recent films ([d631ba2](https://github.com/vincedelmas/MyLists/commit/d631ba28c019b1be923ff05d1720a84fbaddddfc))
+* **movies:** use fallback duration for zero TMDB runtimes ([610e1f3](https://github.com/vincedelmas/MyLists/commit/610e1f393b6ff0ffe556cdad8ab9026cf6c73bce))
+* **notifications:** detect finales using the airing season ([76e6b15](https://github.com/vincedelmas/MyLists/commit/76e6b1561c00e0262ea0244ed7271e1086c66c41))
+* **notifications:** display all social notifications ([cdab840](https://github.com/vincedelmas/MyLists/commit/cdab84030891589d0f570fa1a6000da0b3b196dd))
+* **notifications:** resolve follow requests when dismissed ([79aedfc](https://github.com/vincedelmas/MyLists/commit/79aedfc359ae607ed40e040c3aed12ffa7057e95))
+* **reading:** preserve partial progress when editing rereads ([5d3837e](https://github.com/vincedelmas/MyLists/commit/5d3837ebda5ded459a2c5a2ce7b52f675a27bbb3))
+* **server:** correct static caching and drain requests on shutdown ([37fc7b9](https://github.com/vincedelmas/MyLists/commit/37fc7b9a8248b97c32760234d66e71f65364d167))
+* **stats:** repair movie time on underflow ([f0f8642](https://github.com/vincedelmas/MyLists/commit/f0f86429e88669347180a698563bcfbccee30af5))
+* strip sensitive query params from API error logs ([651525f](https://github.com/vincedelmas/MyLists/commit/651525fa1cc3e94da276b0bde1abd4ff1643c0e4))
+* **tags:** refresh list filters after tag changes ([6b062f8](https://github.com/vincedelmas/MyLists/commit/6b062f8aab461b8c1f1c29f828eff13e136144fa))
+* **tasks:** propagate failures after saving task results ([fb5cd2e](https://github.com/vincedelmas/MyLists/commit/fb5cd2e2b9917a8690b4009f6ff06bdbf8e15dae))
+* **tv:** count first episode when starting a planned show ([637f422](https://github.com/vincedelmas/MyLists/commit/637f4220edf75aa0044fe3e0511c2ed8b738e980))
+
+
+### Code Refactoring
+
+* **media:** extract media queries from base repository ([99906fa](https://github.com/vincedelmas/MyLists/commit/99906fa465b76aa81d99f79b38ab9f785f66c809))
+* **media:** replace repository and service inheritance with composition ([24cf07f](https://github.com/vincedelmas/MyLists/commit/24cf07f334daf4ca1c97d4eb4b68daaf742601d4))
+
 ## [3.5.2](https://github.com/vincedelmas/MyLists/compare/v3.5.1...v3.5.2) (2026-09-07)
 
 

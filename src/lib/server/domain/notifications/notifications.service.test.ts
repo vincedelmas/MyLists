@@ -3,7 +3,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
-import {MediaType, Status} from "@/lib/utils/enums";
+import {MediaType, SocialNotifType, Status} from "@/lib/utils/enums";
 import {NotificationsService} from "./notifications.service";
 import {NotificationsRepository} from "./notifications.repository";
 
@@ -11,7 +11,7 @@ import {NotificationsRepository} from "./notifications.repository";
 const context = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return context.db; } }));
 
-describe("media notification generation", () => {
+describe("notifications", () => {
     let sqlite: Database;
     const service = new NotificationsService(NotificationsRepository);
 
@@ -27,6 +27,38 @@ describe("media notification generation", () => {
     });
 
     afterEach(() => sqlite.close());
+
+    it("returns every social notification but only the latest eight media notifications", async () => {
+        const entries = Array.from({ length: 9 }, (_, index) => ({
+            id: index + 1,
+            createdAt: `2026-09-11 12:00:0${index}`,
+        }));
+
+        context.db.insert(schema.user).values(entries.map(({ id, createdAt }) => ({
+            id: id + 1, name: `actor-${id}`, email: `actor-${id}@example.com`,
+            emailVerified: true, createdAt, updatedAt: createdAt,
+        }))).run();
+        context.db.insert(schema.socialNotifications).values(entries.map((entry) => ({
+            ...entry,
+            userId: 1,
+            actorId: entry.id + 1,
+            read: entry.id === 1,
+            type: entry.id === 1 ? SocialNotifType.FOLLOW_REQUESTED : SocialNotifType.NEW_FOLLOWER,
+        }))).run();
+        context.db.insert(schema.mediaNotifications).values(entries.map((entry) => ({
+            ...entry,
+            userId: 1,
+            mediaId: entry.id,
+            mediaType: MediaType.MOVIES,
+            name: `Movie ${entry.id}`,
+        }))).run();
+
+        const social = await service.getLastNotifications(1, "social");
+        const media = await service.getLastNotifications(1, "media");
+
+        expect(social.map(({ id }) => id)).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
+        expect(media.map(({ id }) => id)).toEqual([9, 8, 7, 6, 5, 4, 3, 2]);
+    });
 
     it.each([MediaType.MOVIES, MediaType.SERIES])("avoids duplicates from overlapping %s runs and preserves new releases", async (mediaType) => {
         const release = {

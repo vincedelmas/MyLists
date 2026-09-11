@@ -96,7 +96,6 @@ export class NotificationsRepository {
                     actor: { columns: { id: true, name: true, image: true } },
                 },
                 orderBy: desc(socialNotifications.createdAt),
-                limit,
             });
         }
 

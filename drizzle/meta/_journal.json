@@ -351,6 +351,13 @@
       "when": 1789075649241,
       "tag": "0049_media_lock_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1789126932244,
+      "tag": "0050_clear_unwatched_season_ratings",
+      "breakpoints": true
     }
   ]
 }

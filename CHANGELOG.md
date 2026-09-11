@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.7.0](https://github.com/vincedelmas/MyLists/compare/v3.6.0...v3.7.0) (2026-09-11)
+
+
+### Features
+
+* **account:** require password confirmation for account deletion ([ec9fe8c](https://github.com/vincedelmas/MyLists/commit/ec9fe8c0f05684cd652ca3b8fa93068c89a1bec1))
+* **auth:** require current email approval before changing address ([c523410](https://github.com/vincedelmas/MyLists/commit/c52341079298d74937c3e003d47fb8e238bfcb9a))
+
+
+### Bug Fixes
+
+* **tv:** clear migrated ratings for unwatched seasons ([2aa7099](https://github.com/vincedelmas/MyLists/commit/2aa7099d0860489f1bb7b19d7afb5eb8ee4b5b43))
+* **ui:** update input styles for consistency ([dd793bb](https://github.com/vincedelmas/MyLists/commit/dd793bbe6597845024d2acbb2c987d19f921fa73))
+
 ## [3.6.0](https://github.com/vincedelmas/MyLists/compare/v3.5.2...v3.6.0) (2026-09-11)
 
 

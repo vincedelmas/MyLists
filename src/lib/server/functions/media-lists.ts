@@ -28,12 +28,7 @@ export const getMediaListSF = createServerFn({ method: "GET" })
         const container = await getContainer();
 
         const targetUserId = user.id;
-        const profileService = container.services.profile;
         const currentUserId = currentUser?.id ? currentUser.id : undefined;
-
-        if (currentUser && currentUser.id !== targetUserId) {
-            await profileService.incrementMediaTypeView(targetUserId, mediaType);
-        }
 
         const mediaService = container.registries.mediaService.get(mediaType);
         const results = await mediaService.getMediaList(currentUserId, targetUserId, args) as MediaListDataByType[typeof mediaType];

@@ -45,7 +45,7 @@ export class ExternalMalMangaMatcher implements ExternalMediaMatcher {
                 }
 
                 const searchResults = await this.mangaProvider.search(item.name);
-                const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
+                const candidates = this._filterCandidates(searchResults.data, item.name, item.releaseDate);
 
                 if (candidates.length === 0) {
                     batch.skipped.push(this._createSkippedOutcome(item, MANGA_API_MATCH_NOT_FOUND_REASON));
@@ -105,8 +105,9 @@ export class ExternalMalMangaMatcher implements ExternalMediaMatcher {
         return item.externalApiSource === ApiProviderType.MANGA && !!item.externalApiId;
     }
 
-    private _filterCandidates(candidates: ProviderSearchResult[], releaseDate: string | null) {
-        const mangaCandidates = candidates.filter((candidate) => candidate.itemType === MediaType.MANGA);
+    private _filterCandidates(candidates: ProviderSearchResult[], name: string, releaseDate: string | null) {
+        const title = name.trim().toLowerCase();
+        const mangaCandidates = candidates.filter((candidate) => candidate.itemType === MediaType.MANGA && candidate.name.trim().toLowerCase() === title);
         if (!releaseDate) return mangaCandidates;
 
         return mangaCandidates.filter((candidate) => {

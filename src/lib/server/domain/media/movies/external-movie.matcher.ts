@@ -45,7 +45,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
                 }
 
                 const searchResults = await this.moviesProvider.search(item.name);
-                const candidates = this._filterCandidates(searchResults.data, item.releaseDate);
+                const candidates = this._filterCandidates(searchResults.data, item.name, item.releaseDate);
 
                 if (candidates.length === 0) {
                     batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_NOT_FOUND_REASON));
@@ -105,8 +105,9 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
         return item.externalApiSource === ApiProviderType.TMDB && !!item.externalApiId;
     }
 
-    private _filterCandidates(candidates: ProviderSearchResult[], releaseDate: string | null) {
-        const movieCandidates = candidates.filter((candidate) => candidate.itemType === MediaType.MOVIES);
+    private _filterCandidates(candidates: ProviderSearchResult[], name: string, releaseDate: string | null) {
+        const title = name.trim().toLowerCase();
+        const movieCandidates = candidates.filter((candidate) => candidate.itemType === MediaType.MOVIES && candidate.name.trim().toLowerCase() === title);
         if (!releaseDate) return movieCandidates;
 
         return movieCandidates.filter((candidate) => {

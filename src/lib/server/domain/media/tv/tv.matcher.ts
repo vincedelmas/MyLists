@@ -17,7 +17,7 @@ export const createTvMatcher = (
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.TMDB, tvService),
-        internalNameDateMatcher(tvService),
+        internalNameDateMatcher(tvService, ApiProviderType.TMDB),
     ],
     externalMatchers: [
         new ExternalTMDBTvMatcher(mediaType, tvProvider, tvIngestion),

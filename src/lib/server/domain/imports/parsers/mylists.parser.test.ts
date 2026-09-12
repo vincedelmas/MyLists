@@ -418,6 +418,8 @@ describe("parseMyListsCsv", () => {
     it.each([
         ["rating", "11"], ["rating", "not a number"], ["redo", "-1"], ["redo", ""], ["total", ""],
         ["favorite", "maybe"], ["status", "Not a status"], ["mediaName", ""], ["externalApiId", ""],
+        ["externalApiId", "not-an-id"], ["externalApiId", "-1"], ["externalApiId", "550.5"],
+        ["externalApiId", "1e3"], ["externalApiId", "9007199254740993"],
     ])("reports an invalid %s value as a row error while retaining valid rows", (field, value) => {
         const parsed = parseMyListsCsv(toCsv([movieRow(), movieRow({ [field]: value })]));
         expect(parsed).toMatchObject({ totalCount: 2, failedCount: 1 });

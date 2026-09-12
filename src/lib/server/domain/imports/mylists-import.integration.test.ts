@@ -5,7 +5,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
 import {convertToCsv} from "@/lib/utils/csv";
-import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, ImportItemStatus, ImportJobStatus, ImportSource, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {setupMediaModule} from "@/lib/server/core/container/media.module";
 import {setupImportModule} from "@/lib/server/core/container/import.module";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
@@ -113,6 +113,28 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
             .toMatchObject({ status: ImportJobStatus.QUEUED });
     });
 
+    it("imports and retries without creating Activity or Media Feed entries or changing existing history", async () => {
+        context.db.insert(schema.userMediaMonthlyActivity).values({
+            userId: 43, mediaId: 99, mediaType, monthBucket: "2024-01",
+            progressGained: 1, hadCompletion: true, redoGained: 0,
+        }).run();
+        context.db.insert(schema.userMediaUpdate).values({
+            userId: 43, mediaId: 99, mediaType, mediaName: "Existing manual activity", updateType: UpdateType.STATUS,
+            payload: { old_value: null, new_value: Status.COMPLETED },
+        }).run();
+        const activitiesBefore = context.db.select().from(schema.userMediaMonthlyActivity).all();
+        const feedBefore = context.db.select().from(schema.userMediaUpdate).all();
+
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS, convertToCsv([exported]));
+            await drainImportJobs(imports.importProcessor);
+            expect((await imports.imports.getImportJob(43, job.id)).job.status).toBe(ImportJobStatus.COMPLETED);
+            expect((await mediaModule.services[mediaType].downloadMediaListAsCSV(43))!).toHaveLength(1);
+            expect(context.db.select().from(schema.userMediaMonthlyActivity).all()).toEqual(activitiesBefore);
+            expect(context.db.select().from(schema.userMediaUpdate).all()).toEqual(feedBefore);
+        }
+    });
+
     it("accepts empty nullable fields from an actual export", async () => {
         context.db.update(listTable).set({ rating: null, favorite: null, comment: null }).run();
         context.db.update(mediaTable).set({ releaseDate: null }).run();
@@ -145,6 +167,20 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
         await expect(imports.imports.getImportIssues(44, job.id)).rejects.toBeDefined();
     });
 
+    if (mediaType !== MediaType.BOOKS) {
+        it("rejects malformed external IDs before provider matching while importing valid rows", async () => {
+            const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
+                convertToCsv([exported, { ...exported, externalApiId: "not-an-id" }]));
+            expect(job).toMatchObject({ totalCount: 2, failedCount: 1 });
+            await drainImportJobs(imports.importProcessor);
+            expect((await imports.imports.getImportJob(43, job.id)).job).toMatchObject({
+                status: ImportJobStatus.COMPLETED_WITH_ERRORS, completedCount: 1, failedCount: 1,
+            });
+            expect((await imports.imports.getImportIssues(43, job.id)).items[0].statusReason).toContain("externalApiId");
+            expect(externalCall).not.toHaveBeenCalled();
+        });
+    }
+
     it("finishes an entirely invalid file and allows a corrected upload", async () => {
         const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
             convertToCsv([{ ...exported, status: "invalid status" }]));
@@ -155,6 +191,29 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
         expect(await mediaModule.services[mediaType].downloadMediaListAsCSV(43)).toEqual([]);
         expect(await imports.imports.createImportJob(43, ImportSource.MYLISTS, convertToCsv([exported])))
             .toMatchObject({ status: ImportJobStatus.QUEUED });
+    });
+
+    it("does not substitute a same-title entry when the exported provider ID is missing locally", async () => {
+        const missingId = mediaType === MediaType.BOOKS ? "another-edition" : "999999";
+        const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
+            convertToCsv([{ ...exported, externalApiId: missingId }]));
+        await drainImportJobs(imports.importProcessor);
+        expect(externalCall).toHaveBeenCalled();
+        expect((await imports.imports.getImportJob(43, job.id)).job).toMatchObject({
+            status: ImportJobStatus.COMPLETED_WITH_ERRORS, completedCount: 0, failedCount: 1,
+        });
+        expect(await mediaModule.services[mediaType].downloadMediaListAsCSV(43)).toHaveLength(0);
+    });
+
+    it("rejects a provider that does not belong to this MyLists media format", async () => {
+        const wrongProvider = exported.externalApiSource === ApiProviderType.TMDB ? ApiProviderType.IGDB : ApiProviderType.TMDB;
+        const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
+            convertToCsv([{ ...exported, externalApiSource: wrongProvider }]));
+        expect(job.failedCount).toBe(1);
+        await drainImportJobs(imports.importProcessor);
+        expect((await imports.imports.getImportIssues(43, job.id)).items[0].statusReason).toContain("externalApiSource");
+        expect(await mediaModule.services[mediaType].downloadMediaListAsCSV(43)).toHaveLength(0);
+        expect(externalCall).not.toHaveBeenCalled();
     });
 
     it("rolls back the whole upload if saving its rows fails", async () => {
@@ -180,6 +239,35 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
     });
 
     if (mediaType === MediaType.MOVIES) {
+        it("accepts only one simultaneous upload per user and rolls back the rejected upload", async () => {
+            const csv = convertToCsv([exported]);
+            const results = await Promise.allSettled([
+                imports.imports.createImportJob(43, ImportSource.MYLISTS, csv),
+                imports.imports.createImportJob(43, ImportSource.MYLISTS, csv),
+            ]);
+            expect(results.filter(result => result.status === "fulfilled")).toHaveLength(1);
+            const rejected = results.find(result => result.status === "rejected");
+            expect(rejected?.reason.message).toBe("You already have an import in progress. Wait for it to finish before starting another.");
+            expect(context.db.select().from(schema.importJobs).all()).toHaveLength(1);
+            expect(context.db.select().from(schema.importItems).all()).toHaveLength(1);
+        });
+
+        it("serializes simultaneous drains without importing jobs twice", async () => {
+            const csv = convertToCsv([exported]);
+            const jobs = await Promise.all([43, 44].map(userId => imports.imports.createImportJob(userId, ImportSource.MYLISTS, csv)));
+            const results = await Promise.all([
+                drainImportJobs(imports.importProcessor),
+                drainImportJobs(imports.importProcessor),
+            ]);
+            expect(results.reduce((total, result) => total + result.processedJobs, 0)).toBe(2);
+            for (const job of jobs) {
+                expect((await imports.imports.getImportJob(job.userId, job.id)).job).toMatchObject({
+                    status: ImportJobStatus.COMPLETED, completedCount: 1, processedCount: 1,
+                });
+                expect(await mediaModule.services.movies.downloadMediaListAsCSV(job.userId)).toHaveLength(1);
+            }
+        });
+
         it("paginates admin history across users, filters jobs and reports processing duration without queue time", async () => {
             const jobs = context.db.insert(schema.importJobs).values([
                 { userId: 42, status: ImportJobStatus.COMPLETED, startedAt: "2024-01-01 00:02:00", finishedAt: "2024-01-01 00:03:05" },

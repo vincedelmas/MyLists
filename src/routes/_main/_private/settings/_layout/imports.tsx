@@ -5,7 +5,7 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {TabHeader, TabItem} from "@/lib/client/components/general/TabHeader";
-import {FileSpreadsheet, Info, TriangleAlert, UploadCloud} from "lucide-react";
+import {FileSpreadsheet, Info, UploadCloud} from "lucide-react";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {importSearchSchema, ImportUploadFormValues, importUploadSchema} from "@/lib/schemas";
 import {ExistingImportsPanel} from "@/lib/client/components/user-settings/ExistingImportsPanel";
@@ -96,24 +96,13 @@ function SettingsImportsPage() {
                                         Entries already in your list are ignored and counted as completed.
                                     </li>
                                     <li>
+                                        Imports do not create Activity or Media Feed entries.
+                                    </li>
+                                    <li>
                                         Your import joins a queue. Processing is scheduled every two minutes,
                                         and other imports may be ahead of yours. Refresh the selected job to check progress.
                                     </li>
                                 </ul>
-                            </div>
-                        </div>
-
-                        <div className="rounded-xl border border-warning/80 p-4">
-                            <div className="space-y-2 text-sm leading-relaxed">
-                                <div className="flex gap-2 items-center font-semibold text-foreground">
-                                    <TriangleAlert className="size-4 text-warning"/>
-                                    Caveat
-                                </div>
-                                <div className="text-muted-foreground">
-                                    When adding a media by hand it will automatically create an Activity and a Media Feed.
-                                    You can remove both: the Media Feed Info using the trash icon on you profile, and the Activity in
-                                    the "MyActivity" page or using the "Activity Cleanup" settings page.
-                                </div>
                             </div>
                         </div>
 

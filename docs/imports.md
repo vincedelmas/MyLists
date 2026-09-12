@@ -7,10 +7,13 @@ When an incompatible export change is made, bump that one version for every medi
 Users upload one list per file, up to 5 MB and 3000 rows. Unsupported versions, missing/duplicate columns, mixed media types, and malformed CSV
 are rejected. The error asks the user to re-export from Settings > Content & Lists. Invalid field values are reported per row; valid rows can
 still be imported. Empty nullable values are accepted, but required progress values cannot silently become defaults.
+Each row must use its media type's configured metadata provider and a valid provider ID. Matching uses that ID; a different local title
+match cannot replace it, including for book editions.
 
 Imports preserve supported list progress, ratings, favorites, and comments. Existing entries are kept unchanged and counted as completed.
 Custom covers, tags, original added/updated timestamps, and activity history are not restored. The corresponding list must be enabled in
 Content & Lists to appear on the user's profile.
+Imports write list entries directly and do not create monthly Activity or Media Feed events. Later manual edits use normal activity tracking.
 
 ## Admin monitoring
 
@@ -61,5 +64,6 @@ bun run test src/lib/server/domain/imports src/cli/import-drain-command.test.ts 
 ```
 
 The import integration tests use disposable SQLite databases and actual media exporters for all six media types. They exercise successful
-round trips, duplicate handling, unsupported formats, nullable data, row errors, upload rollback, worker failures, ownership checks, the row
-limit, and interrupted-job recovery. External providers are stubbed; live provider availability is outside these tests.
+round trips, duplicate handling, unsupported formats, nullable data, row errors, provider/ID validation, upload rollback, simultaneous uploads
+and drains, worker failures, ownership checks, the row limit, and interrupted-job recovery. External providers are stubbed; live provider
+availability is outside these tests.

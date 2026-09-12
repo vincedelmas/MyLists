@@ -2,6 +2,7 @@ import * as z from "zod";
 import {parse} from "csv-parse/sync";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType,} from "@/lib/utils/enums";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
 import {booksMyListsCSVRowSchema} from "@/lib/server/domain/media/books/books.types";
 import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/manga.types";
@@ -66,7 +67,13 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
     const firstRawRow = Object.fromEntries(headers.map((header, cellIdx) => [header, rows[0][cellIdx] ?? ""]));
     const result = z.enum(MediaType).safeParse(firstRawRow.mediaType);
     if (!result.success) throw new Error(MYLISTS_FORMAT_ERROR);
-    const mediaZodValidator = mediaRowValidatorMap[result.data].required();
+    const rowSchema = mediaRowValidatorMap[result.data];
+    const mediaZodValidator = rowSchema.required().extend({
+        externalApiSource: z.literal(getServerMediaDefinition(result.data).ingestion.externalApiSource),
+        externalApiId: rowSchema.shape.externalApiId.refine(value => result.data === MediaType.BOOKS
+            || (/^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))),
+        "External media ID must be a positive whole number"),
+    });
 
     // Even nullable fields have a column in a current export. Missing columns must
     // not silently become defaults and discard list data.

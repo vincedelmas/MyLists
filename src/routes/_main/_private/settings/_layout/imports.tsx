@@ -41,9 +41,6 @@ function SettingsImportsPage() {
         formData.set("source", submittedData.source);
 
         createMutation.mutate({ data: formData }, {
-            onError: () => {
-                form.reset({ source: ImportSource.MYLISTS });
-            },
             onSuccess: (result) => {
                 form.reset({ source: ImportSource.MYLISTS });
                 setFileInputResetKey((key) => key + 1);
@@ -77,7 +74,8 @@ function SettingsImportsPage() {
                                 MyLists import
                             </h2>
                             <p className="text-sm text-muted-foreground">
-                                Upload a MyLists CSV export file to add import media to your lists.
+                                Upload a current MyLists CSV export to add media to your lists.
+                                Older exports are not supported; please re-export your list from Content & Lists.
                             </p>
                         </div>
 
@@ -98,8 +96,8 @@ function SettingsImportsPage() {
                                         Entries already in your list are ignored and counted as completed.
                                     </li>
                                     <li>
-                                        The import is parsed immediately, then processed automatically.
-                                        Refresh the selected job to check progress.
+                                        Your import joins a queue. Processing is scheduled every two minutes,
+                                        and other imports may be ahead of yours. Refresh the selected job to check progress.
                                     </li>
                                 </ul>
                             </div>
@@ -126,8 +124,9 @@ function SettingsImportsPage() {
                             <ol className="list-decimal space-y-1.5 pl-4 text-sm text-muted-foreground">
                                 <li>Export your list from the Content & Lists settings page.</li>
                                 <li>Upload the generated MyLists CSV here.</li>
-                                <li>Refresh the job status when needed (updated per batch so can be a minute :)).</li>
-                                <li>Review skipped or failed rows and add them manually if needed.</li>
+                                <li>Make sure that list is enabled in Content & Lists so it appears on your profile.</li>
+                                <li>Refresh the job status to check progress.</li>
+                                <li>Review skipped or failed rows. Correct the file or retry after a temporary error.</li>
                             </ol>
                         </div>
 
@@ -153,7 +152,7 @@ function SettingsImportsPage() {
                                             hover:border-brand hover:bg-brand/5">
                                                 <UploadCloud className="mb-2 size-8 text-muted-foreground transition group-hover:text-brand"/>
                                                 <span className="text-sm font-medium">
-                                                    {selectedFile ? selectedFile.name : "Drop file here or click to upload"}
+                                                    {selectedFile ? selectedFile.name : "Click to choose a CSV file"}
                                                 </span>
                                                 {selectedFile &&
                                                     <span className="mt-1 text-xs text-muted-foreground">

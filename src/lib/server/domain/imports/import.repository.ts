@@ -1,9 +1,10 @@
 import {paginate} from "@/lib/server/database/pagination";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {importItems, importJobs} from "@/lib/server/database/schema";
+import {importItems, importJobs, user} from "@/lib/server/database/schema";
+import type {AdminImportsSearch} from "@/lib/schemas/admin.schema";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 import {ImportItemOutcome, ImportJobCounterDelta, ParsedImportItem} from "@/lib/types/imports.types";
-import {and, asc, count, desc, eq, exists, getTableColumns, inArray, lt, notExists, or, sql} from "drizzle-orm";
+import {and, asc, count, desc, eq, exists, getTableColumns, inArray, like, lt, notExists, or, sql} from "drizzle-orm";
 
 
 const INSERT_BATCH_SIZE = 300;
@@ -17,6 +18,33 @@ const TERMINAL_JOB_STATUSES = [
 
 
 export class ImportRepository {
+    static async getJobsForAdmin({ page, perPage, search, status }: AdminImportsSearch) {
+        const db = getDbClient();
+        const condition = and(
+            status ? eq(importJobs.status, status) : undefined,
+            search ? or(like(user.name, `%${search}%`), eq(sql`cast(${importJobs.id} as text)`, search)) : undefined,
+        );
+
+        return paginate({
+            page,
+            perPage,
+            maxPerPage: 50,
+            getTotal: () => db.select({ count: count() }).from(importJobs)
+                .innerJoin(user, eq(user.id, importJobs.userId)).where(condition).get()!.count,
+            getItems: ({ limit, offset }) => db.select({
+                ...getTableColumns(importJobs),
+                username: user.name,
+                processingDurationMs: sql<number | null>`
+                    (unixepoch(coalesce(${importJobs.finishedAt}, CURRENT_TIMESTAMP)) - unixepoch(${importJobs.startedAt})) * 1000
+                `,
+            }).from(importJobs)
+                .innerJoin(user, eq(user.id, importJobs.userId))
+                .where(condition)
+                .orderBy(desc(importJobs.createdAt), desc(importJobs.id))
+                .limit(limit).offset(offset),
+        });
+    }
+
     static requeueStaleProcessingJobs(staleAfterMinutes: number) {
         const db = getDbClient();
 
@@ -58,17 +86,35 @@ export class ImportRepository {
             .returning().all();
     }
 
-    static async markProcessingJobFailed(jobId: number, error: string) {
-        const [job] = await getDbClient()
+    static markProcessingJobFailed(jobId: number, error: string) {
+        const db = getDbClient();
+        const activeJob = db.select({ id: importJobs.id }).from(importJobs)
+            .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)));
+        const unfinishedItems = db.update(importItems)
+            .set({
+                status: ImportItemStatus.FAILED,
+                statusReason: error.slice(0, 500),
+                updatedAt: sql`datetime('now')`,
+            })
+            .where(and(
+                eq(importItems.jobId, jobId),
+                inArray(importItems.status, [ImportItemStatus.QUEUED, ImportItemStatus.PROCESSING]),
+                exists(activeJob),
+            ))
+            .returning({ id: importItems.id }).all();
+
+        const [job] = db
             .update(importJobs)
             .set({
                 error: error.slice(0, 2_000),
+                failedCount: sql`${importJobs.failedCount} + ${unfinishedItems.length}`,
+                processedCount: sql`${importJobs.processedCount} + ${unfinishedItems.length}`,
                 status: ImportJobStatus.FAILED,
                 updatedAt: sql`datetime('now')`,
                 finishedAt: sql`datetime('now')`,
             })
             .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)))
-            .returning();
+            .returning().all();
 
         return job ?? null;
     }
@@ -218,14 +264,14 @@ export class ImportRepository {
         return claimedJob ?? null;
     }
 
-    static async createJob(userId: number, source: ImportSource) {
-        const [job] = await getDbClient()
+    static createJob(userId: number, source: ImportSource) {
+        const [job] = getDbClient()
             .insert(importJobs)
             .values({
                 userId,
                 source,
                 status: ImportJobStatus.PARSING,
-            }).returning();
+            }).returning().all();
 
         return job;
     }
@@ -396,8 +442,8 @@ export class ImportRepository {
         return job ?? null;
     }
 
-    static async markJobFailed(jobId: number, error: string) {
-        const [job] = await getDbClient()
+    static markJobFailed(jobId: number, error: string) {
+        const [job] = getDbClient()
             .update(importJobs)
             .set({
                 status: ImportJobStatus.FAILED,
@@ -406,7 +452,7 @@ export class ImportRepository {
                 error: error.slice(0, 2_000),
             })
             .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PARSING)))
-            .returning();
+            .returning().all();
 
         return job ?? null;
     }

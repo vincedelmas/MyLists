@@ -1,7 +1,7 @@
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {createFileRoute, Link, Outlet, useLocation} from "@tanstack/react-router";
-import {BookOpenCheck, Brush, CircleUserRound, KeyRound, LibraryBig, ListRestart, Settings2, ShieldAlert,} from "lucide-react";
+import {BookOpenCheck, Brush, CircleUserRound, KeyRound, LibraryBig, ListRestart, Settings2, ShieldAlert, Upload,} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout")({
@@ -24,11 +24,13 @@ const settingsItems = [
         to: "/settings/content-lists",
         description: "Media types, ratings and exports",
     },
-    // {
-    //     id: "imports",
-    //     label: "Imports",
-    //     to: "/settings/imports",
-    // },
+    {
+        id: "imports",
+        icon: Upload,
+        label: "Imports",
+        to: "/settings/imports",
+        description: "Import a current MyLists export",
+    },
     {
         icon: Brush,
         id: "profile-customization",

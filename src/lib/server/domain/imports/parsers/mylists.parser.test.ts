@@ -3,6 +3,7 @@ import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parse
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 
 import {COMMENT_MAX_LENGTH} from "@/lib/utils/constants";
+import {MYLISTS_FORMAT_ERROR} from "@/lib/server/domain/imports/mylists-format";
 
 
 const toCsv = (rows: Record<string, string>[]) => {
@@ -23,7 +24,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Berserk",
-            formatVersion: "1",
+            formatVersion: "2",
             mediaType: MediaType.MANGA,
             externalApiId: "2",
             externalApiSource: ApiProviderType.MANGA,
@@ -66,7 +67,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Dune",
-            formatVersion: "1",
+            formatVersion: "2",
             mediaType: MediaType.BOOKS,
             externalApiId: "book-123",
             externalApiSource: ApiProviderType.BOOKS,
@@ -203,7 +204,7 @@ describe("parseMyListsCsv", () => {
     });
 
     it.each([MediaType.SERIES, MediaType.ANIME])("rejects %s exports without explicit season data", mediaType => {
-        const parsed = parseMyListsCsv(toCsv(["1", "2"].map(formatVersion => ({
+        expect(() => parseMyListsCsv(toCsv(["1", "2"].map(formatVersion => ({
             mediaName: "Show",
             formatVersion,
             mediaType,
@@ -214,17 +215,11 @@ describe("parseMyListsCsv", () => {
             rating: "8",
             redo: "[1,0]",
             firstWatchProgress: "16",
-        }))));
-
-        expect(parsed.failedCount).toBe(2);
-        for (const item of parsed.items) {
-            expect(item.status).toBe(ImportItemStatus.FAILED);
-            expect(item.statusReason).toContain("seasons");
-        }
+        }))))).toThrow(MYLISTS_FORMAT_ERROR);
     });
 
     it.each([MediaType.SERIES, MediaType.ANIME])("requires first-watch progress when importing %s", mediaType => {
-        const parsed = parseMyListsCsv(toCsv([{
+        expect(() => parseMyListsCsv(toCsv([{
             mediaName: "Show",
             formatVersion: "2",
             mediaType,
@@ -234,10 +229,7 @@ describe("parseMyListsCsv", () => {
             status: Status.COMPLETED,
             total: "40",
             seasons: JSON.stringify([{ season: 1, redo: 2, rating: 8 }]),
-        }]));
-
-        expect(parsed.failedCount).toBe(1);
-        expect(parsed.items[0].statusReason).toContain("firstWatchProgress");
+        }]))).toThrow(MYLISTS_FORMAT_ERROR);
     });
 
     it("parses MyLists game rows into a games import payload", () => {
@@ -246,7 +238,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Hades",
-            formatVersion: "1",
+            formatVersion: "2",
             mediaType: MediaType.GAMES,
             externalApiId: "114795",
             externalApiSource: ApiProviderType.IGDB,
@@ -296,7 +288,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Fight Club",
-            formatVersion: "1",
+            formatVersion: "2",
             mediaType: MediaType.MOVIES,
             externalApiId: "550",
             externalApiSource: ApiProviderType.TMDB,
@@ -328,7 +320,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Fight Club",
-            formatVersion: "1",
+            formatVersion: "2",
             mediaType: MediaType.MOVIES,
             externalApiId: "550",
             externalApiSource: ApiProviderType.TMDB,
@@ -361,7 +353,7 @@ describe("parseMyListsCsv", () => {
                 userId: "42",
                 mediaId: "100",
                 mediaName: "Hades",
-                formatVersion: "1",
+                formatVersion: "2",
                 mediaType: MediaType.GAMES,
                 externalApiId: "114795",
                 externalApiSource: ApiProviderType.IGDB,
@@ -381,7 +373,7 @@ describe("parseMyListsCsv", () => {
                 userId: "42",
                 mediaId: "101",
                 mediaName: "Fight Club",
-                formatVersion: "1",
+                formatVersion: "2",
                 mediaType: MediaType.MOVIES,
                 externalApiId: "550",
                 externalApiSource: ApiProviderType.TMDB,
@@ -396,6 +388,58 @@ describe("parseMyListsCsv", () => {
                 lastUpdated: "",
                 customCover: "",
             },
-        ]))).toThrow('The CSV file contains mixed media types. Row 3 is "movies" but expected "games".');
+        ]))).toThrow(MYLISTS_FORMAT_ERROR);
     });
+
+    it.each(["", "0", "1", "3", "99"])("rejects unsupported movie format version %j for the whole file", formatVersion => {
+        expect(() => parseMyListsCsv(toCsv([movieRow(), movieRow({ formatVersion })])))
+            .toThrow(MYLISTS_FORMAT_ERROR);
+    });
+
+    it.each(["formatVersion", "mediaType", "externalApiId", "rating", "status"])("rejects a missing %s column", column => {
+        const row = movieRow();
+        delete row[column];
+        expect(() => parseMyListsCsv(toCsv([row]))).toThrow(MYLISTS_FORMAT_ERROR);
+    });
+
+    it("rejects duplicate headers rather than silently replacing cells", () => {
+        const csv = toCsv([movieRow()]).replace("rating,favorite", "rating,rating");
+        expect(() => parseMyListsCsv(csv)).toThrow(MYLISTS_FORMAT_ERROR);
+    });
+
+    it("handles reordered columns, a BOM, Unicode, quotes, commas and multiline comments", () => {
+        const row = movieRow({ mediaName: 'Amélie, "Paris"', comment: 'Line one\n"Quoted", line two' });
+        const reordered = Object.fromEntries(Object.entries(row).reverse());
+        const parsed = parseMyListsCsv(`\uFEFF${toCsv([reordered])}`);
+        expect(parsed.failedCount).toBe(0);
+        expect(parsed.items[0]).toMatchObject({ name: row.mediaName, payload: { comment: row.comment } });
+    });
+
+    it.each([
+        ["rating", "11"], ["rating", "not a number"], ["redo", "-1"], ["redo", ""], ["total", ""],
+        ["favorite", "maybe"], ["status", "Not a status"], ["mediaName", ""], ["externalApiId", ""],
+    ])("reports an invalid %s value as a row error while retaining valid rows", (field, value) => {
+        const parsed = parseMyListsCsv(toCsv([movieRow(), movieRow({ [field]: value })]));
+        expect(parsed).toMatchObject({ totalCount: 2, failedCount: 1 });
+        expect(parsed.items[0].status).toBe(ImportItemStatus.QUEUED);
+        expect(parsed.items[1]).toMatchObject({ rowNumber: 3, status: ImportItemStatus.FAILED, statusReason: expect.stringContaining(field) });
+    });
+
+    it.each(["", "mediaType,formatVersion\n", 'mediaType,formatVersion\n"unterminated', "a,b\n1,2,3"])("rejects empty or malformed CSV %j", csv => {
+        expect(() => parseMyListsCsv(csv)).toThrow();
+    });
+
+    it("accepts 3000 rows and rejects 3001", () => {
+        const rows = Array.from({ length: 3000 }, () => movieRow());
+        expect(parseMyListsCsv(toCsv(rows)).totalCount).toBe(3000);
+        expect(() => parseMyListsCsv(toCsv([...rows, movieRow()]))).toThrow("Maximum is 3000");
+    });
+});
+
+
+const movieRow = (overrides: Record<string, string> = {}): Record<string, string> => ({
+    mediaName: "Fight Club", mediaType: MediaType.MOVIES, formatVersion: "2",
+    externalApiId: "550", externalApiSource: ApiProviderType.TMDB, releaseDate: "1999-10-15",
+    status: Status.COMPLETED, redo: "0", total: "1", rating: "9", favorite: "false", comment: "",
+    ...overrides,
 });

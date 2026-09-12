@@ -34,7 +34,7 @@ export class BooksImportListWriter implements ImportListWriter {
 
     private _materializeBookListPayload(payload: BooksImportPayload, media: Book) {
         const redo = payload.redo ?? 0;
-        const actualPage = payload.actualPage ?? this._defaultActualPage(payload.status, media);
+        const actualPage = payload.actualPage === undefined ? this._defaultActualPage(payload.status, media) : payload.actualPage;
         const total = payload.total ?? this._calculateTotal(payload.status, actualPage, redo, media);
 
         return {

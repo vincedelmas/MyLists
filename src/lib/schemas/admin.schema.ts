@@ -1,11 +1,17 @@
 import * as z from "zod";
-import {AchievementDifficulty, PrivacyType, RoleType} from "@/lib/utils/enums";
+import {AchievementDifficulty, ImportJobStatus, PrivacyType, RoleType} from "@/lib/utils/enums";
 import {YEAR_RECAP_FIRST_YEAR, yearRecapReleaseModes} from "@/lib/types/year-recap.types";
-import {coercedPositiveIntFieldSchema, positiveIntFieldSchema} from "@/lib/schemas/common.schema";
+import {coercedPositiveIntFieldSchema, positiveIntFieldSchema, simpleSearchSchema} from "@/lib/schemas/common.schema";
 
 
 export type AchievementTier = z.infer<typeof tierAchievementSchema>;
 export type AdminUpdatePayload = z.infer<typeof adminUpdatePayloadSchema>;
+export type AdminImportsSearch = z.infer<typeof adminImportsSchema>;
+
+
+export const adminImportsSchema = simpleSearchSchema.extend({
+    status: z.enum(ImportJobStatus).optional(),
+});
 
 
 const adminUpdatePayloadSchema = z.object({

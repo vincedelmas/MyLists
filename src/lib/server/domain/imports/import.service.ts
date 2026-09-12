@@ -1,10 +1,12 @@
 import {notFound} from "@tanstack/react-router";
+import type {AdminImportsSearch} from "@/lib/schemas/admin.schema";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {logger} from "@/lib/server/core/logger";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
-import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry} from "@/lib/types/imports.types";
+import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry, ParsedImport} from "@/lib/types/imports.types";
 
 
 const OUTCOME_BATCH_SIZE = 200;
@@ -35,7 +37,7 @@ export class ImportService {
     }
 
     async markProcessingJobFailed(jobId: number, error: string) {
-        return this.repository.markProcessingJobFailed(jobId, error);
+        return withTransaction(() => this.repository.markProcessingJobFailed(jobId, error));
     }
 
     async markItemsProcessing(jobId: number, itemIds: number[]) {
@@ -110,6 +112,14 @@ export class ImportService {
         return this.repository.getAllUserJobs(userId);
     }
 
+    getJobsForAdmin(search: AdminImportsSearch) {
+        return this.repository.getJobsForAdmin(search);
+    }
+
+    getIssuesForAdmin(jobId: number, page?: number, perPage?: number) {
+        return this.repository.getIssueItems(jobId, page, perPage);
+    }
+
     async deleteImportJob(userId: number, jobId: number) {
         const deletedJob = await this.repository.deleteTerminalJob(jobId, userId);
         if (deletedJob) return deletedJob;
@@ -126,25 +136,27 @@ export class ImportService {
             throw new FormattedError(ACTIVE_IMPORT_ERROR);
         }
 
-        let job: Awaited<ReturnType<typeof ImportRepository.createJob>>;
-        try {
-            job = await this.repository.createJob(userId, source);
-        }
-        catch (error) {
-            const message = String(error);
-            if (message.includes("ux_import_jobs_user_active") || message.includes("import_jobs.user_id")) {
-                throw new FormattedError(ACTIVE_IMPORT_ERROR);
-            }
-
-            throw error;
-        }
-
+        let parsed: ParsedImport | string;
         try {
             const parser = this.parsers[source];
             if (!parser) throw new Error(`Import source "${source}" is not supported yet`);
+            parsed = parser(contents);
+        }
+        catch (error) {
+            parsed = error instanceof Error ? error.message : "The import could not be parsed. Please re-export your list and try again.";
+        }
 
-            const parsed = parser(contents);
-            const queuedJob = withTransaction(() => {
+        try {
+            // Commit a queued or failed job in one transaction. A stopped web
+            // process must never leave a user blocked by a half-created job.
+            return withTransaction(() => {
+                const job = this.repository.createJob(userId, source);
+                if (typeof parsed === "string") {
+                    const failedJob = this.repository.markJobFailed(job.id, parsed);
+                    if (!failedJob) throw new Error(`Import job ${job.id} could not be marked failed`);
+                    return failedJob;
+                }
+
                 this.repository.insertParsedItems(job.id, parsed.items);
                 const queuedJob = this.repository.markJobQueued(job.id, parsed.totalCount, parsed.failedCount);
                 if (!queuedJob) {
@@ -153,18 +165,15 @@ export class ImportService {
 
                 return queuedJob;
             });
-
-            return queuedJob;
         }
         catch (error) {
-            const errorMessage = error instanceof Error
-                ? String(error.message) :
-                "The import could not be parsed due to an internal error";
+            const message = String(error);
+            if (message.includes("ux_import_jobs_user_active") || message.includes("import_jobs.user_id")) {
+                throw new FormattedError(ACTIVE_IMPORT_ERROR);
+            }
 
-            const failedJob = await this.repository.markJobFailed(job.id, errorMessage);
-            if (failedJob) return failedJob;
-
-            throw error;
+            logger.error({ err: error, userId }, "Could not save import job");
+            throw new FormattedError("The import could not be saved. Please try again.");
         }
     }
 

@@ -17,16 +17,23 @@ describe("drainImportJobs", () => {
         expect(processor.processNextJob).toHaveBeenCalledTimes(3);
     });
 
-    it("continues draining after a processor error and counts failed jobs", async () => {
+    it("continues draining after a persisted job failure and counts failed jobs", async () => {
         const processor = createProcessor({
             processNextJob: vi.fn()
-                .mockRejectedValueOnce(new Error("matcher crashed"))
+                .mockResolvedValueOnce({ id: 1, status: ImportJobStatus.FAILED })
                 .mockResolvedValueOnce({ id: 2, status: ImportJobStatus.COMPLETED })
                 .mockResolvedValueOnce(null),
         });
 
         await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 1, processedJobs: 1 });
         expect(processor.processNextJob).toHaveBeenCalledTimes(3);
+    });
+
+    it("stops on infrastructure errors instead of retrying forever", async () => {
+        const error = new Error("Database unavailable");
+        const processor = createProcessor({ processNextJob: vi.fn().mockRejectedValue(error) });
+        await expect(drainImportJobs(processor as any)).rejects.toBe(error);
+        expect(processor.processNextJob).toHaveBeenCalledOnce();
     });
 
     it("returns zero when there is no queued job", async () => {

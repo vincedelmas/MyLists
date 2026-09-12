@@ -2,6 +2,7 @@ import * as z from "zod";
 import {createInsertSchema} from "drizzle-zod";
 import {MediaType, TvMediaType} from "@/lib/utils/enums";
 import {minimalMyListsCSVSchema} from "@/lib/types/imports.types";
+import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
 import {anime, animeList, series, seriesList} from "@/lib/server/database/schema";
 import {type TvSeasonState, tvSeasonStatesSchema} from "@/lib/schemas/tv-seasons.schema";
 import {
@@ -117,11 +118,11 @@ export const tvFinalListInsertSchema = z.union([seriesFinalListInsertSchema, ani
 
 export const seriesMyListsCSVRowSchema = minimalMyListsCSVSchema.extend({
     ...seriesImportPayloadSchema.shape,
-    formatVersion: z.literal("2"),
+    formatVersion: z.literal(MYLISTS_CSV_VERSION),
 });
 
 
 export const animeMyListsCSVRowSchema = minimalMyListsCSVSchema.extend({
     ...animeImportPayloadSchema.shape,
-    formatVersion: z.literal("2"),
+    formatVersion: z.literal(MYLISTS_CSV_VERSION),
 });

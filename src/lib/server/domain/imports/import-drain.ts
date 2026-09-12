@@ -1,4 +1,5 @@
 import {ImportJobProcessor} from "@/lib/server/domain/imports/import-job.processor";
+import {ImportJobStatus} from "@/lib/utils/enums";
 
 
 const STALE_PROCESSING_JOB_MINUTES = 6 * 60;
@@ -11,15 +12,11 @@ export const drainImportJobs = async (processor: ImportJobProcessor) => {
     await processor.requeueStaleProcessingJobs(STALE_PROCESSING_JOB_MINUTES);
 
     while (true) {
-        try {
-            const job = await processor.processNextJob();
-            if (!job) break;
+        const job = await processor.processNextJob();
+        if (!job) break;
 
-            processedJobs += 1;
-        }
-        catch {
-            failedJobs += 1;
-        }
+        if (job.status === ImportJobStatus.FAILED) failedJobs += 1;
+        else processedJobs += 1;
     }
 
     return { failedJobs, processedJobs };

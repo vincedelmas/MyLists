@@ -1,5 +1,6 @@
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
+import {logger} from "@/lib/server/core/logger";
 
 
 export class ImportJobProcessor {
@@ -41,9 +42,11 @@ export class ImportJobProcessor {
             return finalizedJob;
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            await this.importService.markProcessingJobFailed(job.id, errorMessage);
-            throw error;
+            logger.error({ err: error, jobId: job.id }, "Import processing failed");
+            const failedJob = await this.importService.markProcessingJobFailed(job.id,
+                "The import stopped unexpectedly. Entries already imported were kept. Please try importing the file again.");
+            if (!failedJob) throw error;
+            return failedJob;
         }
     }
 }

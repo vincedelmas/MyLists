@@ -1,8 +1,11 @@
 import {SearchType} from "@/lib/schemas";
 import {queryOptions} from "@tanstack/react-query";
+import type {AdminImportsSearch} from "@/lib/schemas/admin.schema";
 import type {AdminApiMonitoringParams, AdminMediaRefreshStatsParams} from "@/lib/types/admin.types";
 import {
     getAdminAchievements,
+    getAdminImports,
+    getAdminImportIssues,
     getAdminAllCollections,
     getAdminAllUsers,
     getAdminApiMonitoringStats,
@@ -19,6 +22,21 @@ import {
     getAdminWhichCameFirstStats,
     getAdminYearRecapReleases,
 } from "@/lib/server/functions/admin";
+
+
+export const adminImportsOptions = (search: AdminImportsSearch) => queryOptions({
+    queryKey: ["admin", "imports", search],
+    queryFn: () => getAdminImports({ data: search }),
+    refetchInterval: 10_000,
+});
+
+
+export const adminImportIssuesOptions = (jobId: number, page: number, enabled: boolean) => queryOptions({
+    queryKey: ["admin", "import-issues", jobId, page],
+    queryFn: () => getAdminImportIssues({ data: { jobId, page, perPage: 25 } }),
+    refetchInterval: 10_000,
+    enabled,
+});
 
 
 export const userAdminOptions = (search: SearchType) => queryOptions({

@@ -73,6 +73,10 @@ Ensure you have [Bun](https://bun.sh) installed on your machine.
 
 Commit `bun.lock` alongside `package.json` when updating dependencies. Deployment uses the committed lockfile without resolving new versions.
 
+### Imports with PM2 / cron
+
+Queue processing, current CSV formats, and verification are documented in [docs/imports.md](./docs/imports.md).
+
 ### Docker Deployment
 
 Docker deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).

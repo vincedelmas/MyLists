@@ -44,7 +44,7 @@ describe("ImportService.createImportJob", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         transactionMocks.withTransaction.mockImplementation((action) => action());
-        repository.createJob.mockResolvedValue({
+        repository.createJob.mockReturnValue({
             id: 10,
             userId: 42,
             source: ImportSource.MYLISTS,
@@ -146,9 +146,9 @@ describe("ImportService.createImportJob", () => {
     });
 
     it("formats the database constraint error when concurrent requests race", async () => {
-        repository.createJob.mockRejectedValue(new Error("UNIQUE constraint failed: import_jobs.user_id"));
+        repository.createJob.mockImplementation(() => { throw new Error("UNIQUE constraint failed: import_jobs.user_id"); });
         await expect(service.createImportJob(42, ImportSource.MYLISTS, "csv")).rejects.toThrow(FormattedError);
-        expect(parser).not.toHaveBeenCalled();
+        expect(repository.insertParsedItems).not.toHaveBeenCalled();
     });
 
     it("marks file-level parsing errors failed and returns the failed job", async () => {
@@ -162,7 +162,7 @@ describe("ImportService.createImportJob", () => {
             throw new Error("Missing required CSV headers: status");
         });
 
-        repository.markJobFailed.mockResolvedValue(failedJob);
+        repository.markJobFailed.mockReturnValue(failedJob);
 
         await expect(service.createImportJob(42, ImportSource.MYLISTS, "invalid")).resolves.toBe(failedJob);
 
@@ -179,7 +179,7 @@ describe("ImportService.createImportJob", () => {
             error: 'Import source "letterboxd" is not supported yet',
         };
 
-        repository.markJobFailed.mockResolvedValue(failedJob);
+        repository.markJobFailed.mockReturnValue(failedJob);
 
         await expect(serviceWithoutParser.createImportJob(42, ImportSource.LETTERBOXD, "csv")).resolves.toBe(failedJob);
     });
@@ -188,10 +188,10 @@ describe("ImportService.createImportJob", () => {
         parser.mockReturnValue(createParsedImport());
 
         repository.markJobQueued.mockReturnValue(null);
-        repository.markJobFailed.mockResolvedValue(null);
+        repository.markJobFailed.mockReturnValue(null);
 
         await expect(service.createImportJob(42, ImportSource.MYLISTS, "csv"))
-            .rejects.toThrow("Import job 10 is no longer in parsing state");
+            .rejects.toThrow("The import could not be saved. Please try again.");
     });
 
     it("returns the number of jobs ahead of a queued job owned by the user", async () => {

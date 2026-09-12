@@ -8,7 +8,7 @@ import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {JobType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
-import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
 import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.queries";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";

@@ -47,7 +47,7 @@ describe("ImportJobProcessor", () => {
         expect(importService.finalizeProcessingJob).toHaveBeenCalledWith(10);
     });
 
-    it("marks the claimed job failed and rethrows when processing crashes", async () => {
+    it("returns the failed job with a user-facing message when processing crashes", async () => {
         const movieItem = createItem(1, MediaType.MOVIES);
         const error = new Error("Matcher missing");
         const importService = createImportServiceStub();
@@ -62,8 +62,8 @@ describe("ImportJobProcessor", () => {
 
         const processor = new ImportJobProcessor(importService as any, matcherRegistry as any);
 
-        await expect(processor.processNextJob()).rejects.toBe(error);
-        expect(importService.markProcessingJobFailed).toHaveBeenCalledWith(10, "Matcher missing");
+        await expect(processor.processNextJob()).resolves.toMatchObject({ id: 10, status: ImportJobStatus.FAILED });
+        expect(importService.markProcessingJobFailed).toHaveBeenCalledWith(10, expect.stringContaining("Please try importing the file again"));
     });
 
     it("marks the claimed job failed when it cannot be finalized", async () => {
@@ -76,12 +76,21 @@ describe("ImportJobProcessor", () => {
 
         const processor = new ImportJobProcessor(importService as any, matcherRegistry as any);
 
-        await expect(processor.processNextJob())
-            .rejects.toThrow("Import job 10 could not be finalized because it still has unfinished items");
+        await expect(processor.processNextJob()).resolves.toMatchObject({ status: ImportJobStatus.FAILED });
         expect(importService.markProcessingJobFailed).toHaveBeenCalledWith(
             10,
-            "Import job 10 could not be finalized because it still has unfinished items",
+            expect.stringContaining("The import stopped unexpectedly"),
         );
+    });
+
+    it("propagates an error if a failed job cannot be persisted", async () => {
+        const importService = createImportServiceStub();
+        const error = new Error("Database unavailable");
+        importService.claimNextQueuedJob.mockResolvedValue({ id: 10, userId: 42 });
+        importService.getQueuedItemsByMediaType.mockRejectedValue(error);
+        importService.markProcessingJobFailed.mockRejectedValue(error);
+        const processor = new ImportJobProcessor(importService as any, createMatcherRegistryStub() as any);
+        await expect(processor.processNextJob()).rejects.toBe(error);
     });
 });
 
@@ -90,7 +99,7 @@ const createImportServiceStub = () => ({
     applyItemOutcomes: vi.fn(),
     claimNextQueuedJob: vi.fn(),
     requeueStaleProcessingJobs: vi.fn(),
-    markProcessingJobFailed: vi.fn(),
+    markProcessingJobFailed: vi.fn().mockResolvedValue({ id: 10, status: ImportJobStatus.FAILED }),
     markItemsProcessing: vi.fn(),
     finalizeProcessingJob: vi.fn(),
     getQueuedItemsByMediaType: vi.fn(),

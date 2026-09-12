@@ -7,12 +7,10 @@ import {booksMyListsCSVRowSchema} from "@/lib/server/domain/media/books/books.ty
 import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/manga.types";
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/movies.types";
 import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
+import {MYLISTS_CSV_VERSION, MYLISTS_FORMAT_ERROR} from "@/lib/server/domain/imports/mylists-format";
 
 
 const MYLISTS_CSV_MAX_ROWS = 3000;
-
-export const MYLISTS_CSV_VERSION = "1";
-
 
 const parseCsvRecords = (csv: string) => {
     try {
@@ -20,10 +18,10 @@ const parseCsvRecords = (csv: string) => {
             bom: true,
             skip_empty_lines: true,
             relax_column_count: false,
-        });
+        }) as string[][];
     }
     catch (error) {
-        throw new Error("The CSV structure is invalid", { cause: error });
+        throw new Error(`The CSV structure is invalid. ${MYLISTS_FORMAT_ERROR}`, { cause: error });
     }
 };
 
@@ -52,6 +50,10 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
 
     const [headers, ...rows] = records;
 
+    if (new Set(headers).size !== headers.length || headers.some(header => !header.trim())) {
+        throw new Error(MYLISTS_FORMAT_ERROR);
+    }
+
     if (rows.length === 0) {
         throw new Error("The CSV file contains no rows");
     }
@@ -63,15 +65,26 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
     // MyLists exports one media list per file; mixed mediaType is wrong CSV
     const firstRawRow = Object.fromEntries(headers.map((header, cellIdx) => [header, rows[0][cellIdx] ?? ""]));
     const result = z.enum(MediaType).safeParse(firstRawRow.mediaType);
-    if (!result.success) throw new Error("The CSV file does not contain a valid media type");
-    const mediaZodValidator = mediaRowValidatorMap[result.data];
+    if (!result.success) throw new Error(MYLISTS_FORMAT_ERROR);
+    const mediaZodValidator = mediaRowValidatorMap[result.data].required();
+
+    // Even nullable fields have a column in a current export. Missing columns must
+    // not silently become defaults and discard list data.
+    if (Object.keys(mediaZodValidator.shape).some(header => !headers.includes(header))) {
+        throw new Error(MYLISTS_FORMAT_ERROR);
+    }
+
+    const versionColumn = headers.indexOf("formatVersion");
+    if (rows.some(row => row[versionColumn] !== MYLISTS_CSV_VERSION)) {
+        throw new Error(MYLISTS_FORMAT_ERROR);
+    }
 
     const items = rows.map((cells, idx) => {
         const rowNumber = idx + 2;
         const rawRow = Object.fromEntries(headers.map((header, cellIdx) => [header, cells[cellIdx] ?? ""]));
 
         if (rawRow.mediaType?.trim() !== result.data) {
-            throw new Error(`The CSV file contains mixed media types. Row ${rowNumber} is "${rawRow.mediaType}" but expected "${result.data}".`);
+            throw new Error(`The CSV file contains mixed media types. ${MYLISTS_FORMAT_ERROR}`);
         }
 
         const parsedRow = mediaZodValidator.safeParse(rawRow);

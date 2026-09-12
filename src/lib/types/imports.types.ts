@@ -53,10 +53,10 @@ export type ImportItemOutcome = {
 
 
 export const minimalMyListsCSVSchema = z.object({
-    mediaName: z.string(),
+    mediaName: z.string().trim().min(1, "Media name is required"),
     formatVersion: z.string(),
     mediaType: z.enum(MediaType),
-    externalApiId: z.coerce.string(),
+    externalApiId: z.string().trim().min(1, "External media ID is required"),
     releaseDate: z.string().nullable(),
     externalApiSource: z.enum(ApiProviderType),
 });

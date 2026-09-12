@@ -86,7 +86,7 @@ describe("ImportRepository", () => {
     it("allows only one active job per user", async () => {
         const activeJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
 
-        await expect(ImportRepository.createJob(42, ImportSource.MYLISTS)).rejects.toBeDefined();
+        expect(() => ImportRepository.createJob(42, ImportSource.MYLISTS)).toThrow();
         await expect(ImportRepository.findActiveJobForUser(42)).resolves.toMatchObject({
             id: activeJob.id,
             status: ImportJobStatus.PARSING,
@@ -94,7 +94,7 @@ describe("ImportRepository", () => {
 
         await ImportRepository.markJobFailed(activeJob.id, "Invalid file");
 
-        await expect(ImportRepository.createJob(42, ImportSource.MYLISTS)).resolves.toMatchObject({
+        expect(ImportRepository.createJob(42, ImportSource.MYLISTS)).toMatchObject({
             userId: 42,
             status: ImportJobStatus.PARSING,
         });
@@ -392,8 +392,7 @@ describe("ImportRepository", () => {
         await ImportRepository.markJobQueued(processingJob.id, 0, 0);
         await ImportRepository.claimNextQueuedJob();
 
-        await expect(ImportRepository.markProcessingJobFailed(parsingJob.id, "Wrong state"))
-            .resolves.toBeNull();
+        expect(ImportRepository.markProcessingJobFailed(parsingJob.id, "Wrong state")).toBeNull();
 
         const failedJob = await ImportRepository.markProcessingJobFailed(processingJob.id, "x".repeat(2_100));
 

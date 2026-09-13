@@ -5,6 +5,7 @@ import {coercedPositiveIntFieldSchema, paginationSchema} from "@/lib/schemas/com
 
 export type LetterboxdCsvType = z.infer<typeof letterboxdCsvTypeSchema>;
 export type ImportUploadFormValues = z.input<typeof importUploadSchema>;
+export type ImportCsvType = LetterboxdCsvType | z.infer<typeof imdbCsvTypeSchema>;
 
 
 const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024;
@@ -18,6 +19,8 @@ const acceptedCsvMimeTypes = new Set([
     "application/vnd.ms-excel",
 ]);
 
+
+export const imdbCsvTypeSchema = z.enum(["ratings", "watchlist"]);
 
 export const letterboxdCsvTypeSchema = z.enum(["ratings", "watched", "watchlist"]);
 
@@ -36,6 +39,10 @@ export const importUploadSchema = z.discriminatedUnion("source", [
     importFileSchema.extend({
         source: z.literal(ImportSource.LETTERBOXD),
         letterboxdFileType: letterboxdCsvTypeSchema,
+    }),
+    importFileSchema.extend({
+        imdbFileType: imdbCsvTypeSchema,
+        source: z.literal(ImportSource.IMDB),
     }),
 ]);
 

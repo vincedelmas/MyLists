@@ -35,7 +35,21 @@ describe("importUploadSchema", () => {
         }).success).toBe(false);
     });
 
-    it.each([ImportSource.IMDB, ImportSource.TMDB])("keeps unsupported source %s disabled", source => {
+    it.each(["ratings", "watchlist"])("accepts IMDb %s uploads from form data", imdbFileType => {
+        const formData = new FormData();
+        formData.set("source", ImportSource.IMDB);
+        formData.set("imdbFileType", imdbFileType);
+        formData.set("file", file);
+        expect(importUploadSchema.parse(Object.fromEntries(formData.entries()))).toMatchObject({
+            source: ImportSource.IMDB, imdbFileType,
+        });
+    });
+
+    it.each([undefined, "watched", "diary", ""])("rejects missing or unsupported IMDb file type %j", imdbFileType => {
+        expect(importUploadSchema.safeParse({ source: ImportSource.IMDB, imdbFileType, file }).success).toBe(false);
+    });
+
+    it.each([ImportSource.TMDB])("keeps unsupported source %s disabled", source => {
         expect(importUploadSchema.safeParse({ source, file }).success).toBe(false);
     });
 });

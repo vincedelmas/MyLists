@@ -21,6 +21,12 @@ const sourceTabs = [
     },
     {
         isAccent: true,
+        label: "IMDb",
+        id: "/settings/imports/imdb",
+        icon: <FileSpreadsheet className="size-4"/>,
+    },
+    {
+        isAccent: true,
         label: "MyLists",
         id: "/settings/imports/mylists",
         icon: <FileSpreadsheet className="size-4"/>,

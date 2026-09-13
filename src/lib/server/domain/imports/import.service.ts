@@ -2,11 +2,12 @@ import {notFound} from "@tanstack/react-router";
 import {logger} from "@/lib/server/core/logger";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {AdminImportsSearch} from "@/lib/schemas/admin.schema";
+import type {ImportCsvType} from "@/lib/schemas/imports.schema";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {parseImdbCsv} from "@/lib/server/domain/imports/parsers/imdb.parser";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
 import {parseLetterboxdCsv} from "@/lib/server/domain/imports/parsers/letterboxd.parser";
-import type {LetterboxdCsvType} from "@/lib/schemas/imports.schema";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry, ParsedImport} from "@/lib/types/imports.types";
 
@@ -14,7 +15,9 @@ import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry, ParsedImport
 const OUTCOME_BATCH_SIZE = 200;
 const ACTIVE_IMPORT_ERROR = "You already have an import in progress. Wait for it to finish before starting another.";
 
+
 const importParserRegistry: ImportParserRegistry = {
+    [ImportSource.IMDB]: parseImdbCsv,
     [ImportSource.MYLISTS]: parseMyListsCsv,
     [ImportSource.LETTERBOXD]: parseLetterboxdCsv,
 };
@@ -141,7 +144,7 @@ export class ImportService {
         throw new FormattedError("Only queued or finished import jobs can be deleted.");
     }
 
-    async createImportJob(userId: number, source: ImportSource, contents: string, fileType?: LetterboxdCsvType) {
+    async createImportJob(userId: number, source: ImportSource, contents: string, fileType?: ImportCsvType) {
         const activeJob = await this.repository.findActiveJobForUser(userId);
         if (activeJob) {
             throw new FormattedError(ACTIVE_IMPORT_ERROR);
@@ -176,7 +179,8 @@ export class ImportService {
                     return failedJob;
                 }
 
-                const queuedJob = this.repository.markJobQueued(job.id, parsed.totalCount, parsed.failedCount);
+                const skippedCount = parsed.items.filter(item => item.status === ImportItemStatus.SKIPPED).length;
+                const queuedJob = this.repository.markJobQueued(job.id, parsed.totalCount, parsed.failedCount, skippedCount);
                 if (!queuedJob) {
                     throw new Error(`Import job ${job.id} is no longer in parsing state`);
                 }

@@ -63,6 +63,65 @@ describe("movies import processing", () => {
         dbContext.db = undefined;
     });
 
+    it("imports IMDb ratings before watchlist, counts skipped/invalid rows and preserves existing movies", async () => {
+        await db.insert(movies).values({
+            id: 101, apiId: 680, duration: 154, name: "Pulp Fiction", imageCover: "pulp-fiction.jpg", releaseDate: "1994-09-10",
+        });
+        const importService = new ImportService(ImportRepository);
+        const search = vi.fn();
+        MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+            createMoviesService(createMoviesRepository()), { search } as any, { storeFromExternal: vi.fn() } as any,
+        ));
+        const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+        const ratings = await importService.createImportJob(42, ImportSource.IMDB, [
+            "Const,Title,Year,Title Type,Your Rating,Date Rated,IMDb Rating",
+            "tt0137523,Fight Club,1999,Movie,7,2024-01-01,8.8",
+            "tt0903747,Breaking Bad,2008,TV Series,9,2024-01-01,9.5",
+            "tt0110912,Pulp Fiction,1994,Movie,99,2024-01-01,8.9",
+        ].join("\n"), "ratings");
+        expect(ratings).toMatchObject({ totalCount: 3, processedCount: 2, skippedCount: 1, failedCount: 1 });
+        await expect(processor.processNextJob()).resolves.toMatchObject({
+            id: ratings.id, status: ImportJobStatus.COMPLETED_WITH_ERRORS,
+            processedCount: 3, completedCount: 1, skippedCount: 1, failedCount: 1,
+        });
+        const issues = await db.select().from(importItems).where(eq(importItems.jobId, ratings.id)).orderBy(importItems.rowNumber);
+        expect(issues[1]).toMatchObject({ status: ImportItemStatus.SKIPPED, mediaType: null, matchedMediaId: null });
+        expect(issues[1].statusReason).toContain("TV Series");
+        expect(issues[2].status).toBe(ImportItemStatus.FAILED);
+
+        const watchlist = await importService.createImportJob(42, ImportSource.IMDB, [
+            "Position,Created,Const,Title,Year,Title Type,Your Rating",
+            "1,2024-01-01,tt0137523,Fight Club,1999,Movie,10",
+            "2,2024-01-01,tt0110912,Pulp Fiction,1994,Movie,8",
+        ].join("\n"), "watchlist");
+        await expect(processor.processNextJob()).resolves.toMatchObject({
+            id: watchlist.id, status: ImportJobStatus.COMPLETED, processedCount: 2, completedCount: 2,
+        });
+        expect(await db.select().from(moviesList).where(eq(moviesList.userId, 42)).orderBy(moviesList.mediaId)).toMatchObject([
+            { mediaId: 100, rating: 7, status: Status.COMPLETED, total: 1, redo: 0 },
+            { mediaId: 101, rating: null, status: Status.PLAN_TO_WATCH, total: 0, redo: 0 },
+        ]);
+        expect(search).not.toHaveBeenCalled();
+    });
+
+    it.each([false, true])("finishes an IMDb job with no importable movies (contains invalid row: %s)", async includeInvalid => {
+        const importService = new ImportService(ImportRepository);
+        // No matcher is registered: terminal parser rows must never reach matching.
+        const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+        const job = await importService.createImportJob(42, ImportSource.IMDB, [
+            "Const,Title,Year,Title Type,Your Rating,Date Rated",
+            "tt0903747,Breaking Bad,2008,TV Series,9,2024-01-01",
+            ...(includeInvalid ? ["tt0137523,Fight Club,1999,Movie,99,2024-01-01"] : []),
+        ].join("\n"), "ratings");
+        await expect(processor.processNextJob()).resolves.toMatchObject({
+            id: job.id, status: ImportJobStatus.COMPLETED_WITH_ERRORS,
+            totalCount: includeInvalid ? 2 : 1, processedCount: includeInvalid ? 2 : 1,
+            skippedCount: 1, failedCount: includeInvalid ? 1 : 0, completedCount: 0,
+        });
+        expect(await ImportRepository.findActiveJobForUser(42)).toBeUndefined();
+        expect(await db.select().from(moviesList)).toEqual([]);
+    });
+
     it("imports Letterboxd ratings, watched films, and watchlist in order while preserving existing entries", async () => {
         await db.insert(movies).values([
             { id: 101, apiId: 680, duration: 154, name: "Pulp Fiction", imageCover: "pulp-fiction.jpg", releaseDate: "1994-09-10" },

@@ -4,6 +4,7 @@ import {Route as importsRoute} from "./imports";
 import {Route as indexRoute} from "./imports/index";
 import {Route as mylistsRoute} from "./imports/mylists";
 import {Route as letterboxdRoute} from "./imports/letterboxd";
+import {Route as imdbRoute} from "./imports/imdb";
 
 
 vi.mock("@/lib/client/components/imports/ImportUploadForm", () => ({ ImportUploadForm: () => null }));
@@ -16,9 +17,10 @@ function createImportsRouter(url: string) {
     const index = createRoute({ ...indexRoute.options as AnyRoute["options"], getParentRoute: () => imports, path: "/" });
     const mylists = createRoute({ ...mylistsRoute.options as AnyRoute["options"], getParentRoute: () => imports, path: "mylists" });
     const letterboxd = createRoute({ ...letterboxdRoute.options as AnyRoute["options"], getParentRoute: () => imports, path: "letterboxd" });
+    const imdb = createRoute({ ...imdbRoute.options as AnyRoute["options"], getParentRoute: () => imports, path: "imdb" });
 
     return createRouter({
-        routeTree: root.addChildren([imports.addChildren([index, mylists, letterboxd])]),
+        routeTree: root.addChildren([imports.addChildren([index, mylists, letterboxd, imdb])]),
         history: createMemoryHistory({ initialEntries: [url] }),
         isServer: false,
         origin: "http://localhost",
@@ -27,15 +29,15 @@ function createImportsRouter(url: string) {
 
 
 describe("import page navigation", () => {
-    it("redirects the old imports URL to MyLists and preserves job search state", async () => {
+    it("redirects the imports URL to Letterboxd and preserves job search state", async () => {
         const router = createImportsRouter("/settings/imports?jobId=42&page=2");
         await router.load();
 
-        expect(router.state.location.pathname).toBe("/settings/imports/mylists");
+        expect(router.state.location.pathname).toBe("/settings/imports/letterboxd");
         expect(router.state.location.search).toMatchObject({ jobId: 42, page: 2 });
     });
 
-    it.each(["mylists", "letterboxd"])("opens %s directly and keeps its URL when changing job selection or pagination", async source => {
+    it.each(["mylists", "letterboxd", "imdb"])("opens %s directly and keeps its URL when changing job selection or pagination", async source => {
         const path = `/settings/imports/${source}`;
         const router = createImportsRouter(`${path}?jobId=42&page=2`);
         await router.load();

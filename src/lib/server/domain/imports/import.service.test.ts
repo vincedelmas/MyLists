@@ -135,7 +135,7 @@ describe("ImportService.createImportJob", () => {
 
         expect(repository.createJob).toHaveBeenCalledWith(42, ImportSource.MYLISTS);
         expect(repository.insertParsedItems).toHaveBeenCalledWith(10, parsed.items);
-        expect(repository.markJobQueued).toHaveBeenCalledWith(10, 1, 0);
+        expect(repository.markJobQueued).toHaveBeenCalledWith(10, 1, 0, 0);
         expect(repository.markJobFailed).not.toHaveBeenCalled();
     });
 

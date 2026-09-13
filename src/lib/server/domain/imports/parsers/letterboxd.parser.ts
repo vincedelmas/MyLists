@@ -1,19 +1,20 @@
 import * as z from "zod";
 import {parse} from "csv-parse/sync";
 import type {LetterboxdCsvType} from "@/lib/schemas/imports.schema";
-import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
+import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {emptyStringToNull} from "@/lib/server/domain/imports/import-list-validation";
 
 
 const LETTERBOXD_CSV_MAX_ROWS = 3000;
-const LETTERBOXD_FORMAT_ERROR = "Upload the original ratings.csv, watched.csv, or watchlist.csv from your Letterboxd export and select the matching file type.";
+const LETTERBOXD_FORMAT_ERROR = "Upload the original ratings.csv, watched.csv, or watchlist.csv " +
+    "from your Letterboxd export and select the matching file type.";
+
 
 const letterboxdRowSchema = z.object({
     Name: z.string().trim().min(1, "Movie name is required"),
     Year: z.string().trim().regex(/^[1-9]\d{3}$/, "Release year must have four digits"),
-    Rating: z.preprocess(emptyStringToNull,
-        z.coerce.number().min(0.5).max(5).multipleOf(0.5).nullable().optional()),
+    Rating: z.preprocess(emptyStringToNull, z.coerce.number().min(0.5).max(5).multipleOf(0.5).nullable().optional()),
 });
 
 
@@ -32,6 +33,7 @@ export const parseLetterboxdCsv = (csv: string, fileType?: LetterboxdCsvType): P
 
     const [headers, ...rows] = records;
     const expectedHeaders = ["Date", "Name", "Year", "Letterboxd URI", ...(fileType === "ratings" ? ["Rating"] : [])];
+
     if (new Set(headers).size !== headers.length || headers.length !== expectedHeaders.length
         || expectedHeaders.some(header => !headers.includes(header))) {
         throw new Error(LETTERBOXD_FORMAT_ERROR);
@@ -45,20 +47,21 @@ export const parseLetterboxdCsv = (csv: string, fileType?: LetterboxdCsvType): P
     const items = rows.map((cells, idx): ParsedImportItem => {
         const rawRow = Object.fromEntries(headers.map((header, cellIdx) => [header, cells[cellIdx]]));
         const parsedRow = letterboxdRowSchema.safeParse(rawRow);
+
         const item = {
             rowNumber: idx + 2,
-            mediaType: MediaType.MOVIES,
             externalApiId: null,
             externalApiSource: null,
+            mediaType: MediaType.MOVIES,
         };
 
         if (!parsedRow.success) {
             return {
                 ...item,
                 payload: rawRow,
+                status: ImportItemStatus.FAILED,
                 name: rawRow.Name.trim() || null,
                 releaseDate: rawRow.Year.trim() || null,
-                status: ImportItemStatus.FAILED,
                 statusReason: parsedRow.error.issues.map(issue => `${issue.path.join(".")}: ${issue.message}`).join("; "),
             };
         }
@@ -67,12 +70,12 @@ export const parseLetterboxdCsv = (csv: string, fileType?: LetterboxdCsvType): P
         return {
             ...item,
             name: row.Name,
+            statusReason: null,
             releaseDate: row.Year,
             status: ImportItemStatus.QUEUED,
-            statusReason: null,
             payload: {
-                status: fileType === "watchlist" ? Status.PLAN_TO_WATCH : Status.COMPLETED,
                 rating: row.Rating == null ? null : row.Rating * 2,
+                status: fileType === "watchlist" ? Status.PLAN_TO_WATCH : Status.COMPLETED,
             },
         };
     });

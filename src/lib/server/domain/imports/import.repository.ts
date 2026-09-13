@@ -472,15 +472,16 @@ export class ImportRepository {
         }
     }
 
-    static markJobQueued(jobId: number, totalCount: number, failedCount: number) {
+    static markJobQueued(jobId: number, totalCount: number, failedCount: number, skippedCount = 0) {
         const [job] = getDbClient()
             .update(importJobs)
             .set({
                 totalCount,
                 failedCount,
-                processedCount: failedCount,
+                skippedCount,
                 status: ImportJobStatus.QUEUED,
                 updatedAt: sql`datetime('now')`,
+                processedCount: failedCount + skippedCount,
             })
             .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PARSING)))
             .returning()

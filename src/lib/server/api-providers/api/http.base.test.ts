@@ -175,6 +175,43 @@ describe("createApiHttpClient", () => {
         expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
+    it.each([true, false])("handles interrupted response bodies inside transport retries (recovers: %s)", async recovers => {
+        vi.useFakeTimers();
+        const url = "https://example.com/books?key=test-secret";
+        let attempts = 0;
+        const fetchMock = vi.fn().mockImplementation(async () => {
+            if (++attempts > 1 && recovers) return Response.json({ items: [] });
+            return new Response(new ReadableStream({
+                start(controller) {
+                    controller.error(Object.assign(new TypeError("Connection reset"), { code: "ECONNRESET", path: url }));
+                },
+            }));
+        });
+        vi.stubGlobal("fetch", fetchMock);
+        const client = await createApiHttpClient(config);
+        const pending = client.call(url);
+        const assertion = recovers
+            ? expect(pending.then(response => response.json())).resolves.toEqual({ items: [] })
+            : expect(pending).rejects.toMatchObject({ details: { kind: "unavailable" } });
+        await vi.runAllTimersAsync();
+        await assertion;
+        expect(fetchMock).toHaveBeenCalledTimes(recovers ? 2 : 3);
+        expect(transportMocks.setProviderCooldown).toHaveBeenCalledTimes(recovers ? 0 : 1);
+        expect(JSON.stringify(transportMocks.logger.error.mock.calls)).not.toContain("test-secret");
+    });
+
+    it("honors a 429 and Retry-After even when its response body is interrupted", async () => {
+        const fetchMock = vi.fn().mockResolvedValue(new Response(new ReadableStream({
+            start(controller) { controller.error(new TypeError("Connection reset")); },
+        }), { status: 429, headers: { "Retry-After": "120" } }));
+        vi.stubGlobal("fetch", fetchMock);
+        const client = await createApiHttpClient({ ...config, maxConcurrent: 1 });
+        const now = Date.now();
+        await expect(client.call("https://example.com/items")).rejects.toMatchObject({ details: { kind: "rate_limit" } });
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(transportMocks.setProviderCooldown.mock.calls[0][0].details.retryAt).toBeGreaterThanOrEqual(now + 120_000);
+    });
+
     it("preserves Google daily quota reasons and metadata without retrying a 429", async () => {
         const resetAt = Date.now() + 86_400_000;
         const fetchMock = vi.fn().mockResolvedValue(Response.json({ error: {

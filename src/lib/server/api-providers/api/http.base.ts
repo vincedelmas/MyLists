@@ -72,10 +72,14 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     startedAt = Date.now();
                     response = await fetch(url, { ...options, method: method.toUpperCase(), signal });
 
-                    // IGDB bodies are bounded JSON batches. Drain network body before freeing slot,
-                    // leaving original response readable for provider's JSON parser.
-                    if (config.maxConcurrent) {
+                    // Finish downloading inside the retry boundary and before releasing concurrency.
+                    // Keep the original response readable for the provider's JSON/text parser.
+                    try {
                         await response.clone().arrayBuffer();
+                    }
+                    catch (error) {
+                        // An HTTP rejection still carries useful status/Retry-After when its body breaks.
+                        if (response.ok) throw error;
                     }
                 }
                 catch (err) {

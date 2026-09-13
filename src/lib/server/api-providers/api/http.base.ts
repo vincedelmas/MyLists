@@ -6,6 +6,7 @@ import {ProviderRequestError, readProviderError} from "./provider-error";
 import {checkProviderCooldown, setProviderCooldown} from "./provider-cooldown";
 import {createRateLimiter} from "@/lib/server/core/rate-limiter";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
+import {acquireProviderSlot} from "@/lib/server/core/provider-concurrency";
 import {getRollupKey, PENDING_ROLLUPS_KEY, TWO_DAYS_CACHE_TTL_S} from "@/lib/server/core/cache-keys";
 
 
@@ -29,11 +30,13 @@ export type ApiClientConfig = {
     resultsPerPage?: number;
     beforeRequest?: () => Promise<void>;
     getQuotaResetAt?: () => number;
+    maxConcurrent?: number;
     throttleOptions: Parameters<typeof createRateLimiter>[0][];
 };
 
 
 const MAX_CALL_ATTEMPTS = 3;
+const REQUEST_TIMEOUT_MS = 100_000;
 
 
 export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiHttpClient> => {
@@ -44,33 +47,48 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
         async call(url: string, method: ApiRequestMethod = "get", options: RequestInit = {}) {
             for (let attempt = 1; attempt <= MAX_CALL_ATTEMPTS; attempt += 1) {
                 await checkProviderCooldown(config.consumeKey);
-                // Acquire the pacing slot last so longer-window waits cannot leave stale rate tokens.
-                for (const queue of queues) await queue.removeTokens(1, config.consumeKey);
-                await checkProviderCooldown(config.consumeKey);
-                await config.beforeRequest?.();
-
+                const signal = AbortSignal.any([AbortSignal.timeout(REQUEST_TIMEOUT_MS), ...options.signal ? [options.signal] : []]);
+                const deadline = Math.ceil((Date.now() + REQUEST_TIMEOUT_MS) / 1000);
+                let release: (() => Promise<void>) | undefined;
                 let response: Response;
-                const startedAt = Date.now();
+                let startedAt: number | undefined;
 
                 try {
+                    if (config.maxConcurrent) {
+                        release = await acquireProviderSlot(config.consumeKey, config.maxConcurrent, signal, REQUEST_TIMEOUT_MS);
+                    }
+                    // Acquire the pacing slot after concurrency and longer-window waits.
+                    for (const queue of queues) await queue.removeTokens(1, config.consumeKey, deadline);
+                    signal.throwIfAborted();
+                    await checkProviderCooldown(config.consumeKey);
+                    await config.beforeRequest?.();
+                    startedAt = Date.now();
                     response = await fetch(url, {
                         ...options,
                         method: method.toUpperCase(),
-                        signal: AbortSignal.any([AbortSignal.timeout(100_000), ...options.signal ? [options.signal] : []]),
+                        signal,
                     });
+                    // IGDB bodies are bounded JSON batches. Drain the network body before freeing the slot,
+                    // leaving the original response readable for the provider's JSON parser.
+                    if (config.maxConcurrent) await response.clone().arrayBuffer();
                 }
                 catch (err) {
+                    if (options.signal?.aborted) throw options.signal.reason;
+                    if (startedAt === undefined && !signal.aborted) throw err;
                     const errorName = err instanceof Error ? err.name : "UnknownError";
                     const { origin, pathname } = new URL(url);
-                    logger.error({
-                        err, consumeKey: config.consumeKey,
-                        data: { url: `${origin}${pathname}`, method, startedAt, success: false, errorName },
-                    }, "Failed to fetch API");
-                    void recordCall(config.consumeKey, { url, method, startedAt, success: false, errorName })
-                        .catch(err => logger.warn({ err, consumeKey: config.consumeKey }, "Failed to record provider API call"));
+                    if (startedAt !== undefined) {
+                        logger.error({
+                            err, consumeKey: config.consumeKey,
+                            data: { url: `${origin}${pathname}`, method, startedAt, success: false, errorName },
+                        }, "Failed to fetch API");
+                        void recordCall(config.consumeKey, { url, method, startedAt, success: false, errorName })
+                            .catch(err => logger.warn({ err, consumeKey: config.consumeKey }, "Failed to record provider API call"));
+                    }
 
-                    if (options.signal?.aborted) throw options.signal.reason;
                     if (attempt < MAX_CALL_ATTEMPTS) {
+                        await release?.();
+                        release = undefined;
                         await waitBeforeRetry(attempt);
                         continue;
                     }
@@ -80,6 +98,9 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     });
                     await setProviderCooldown(error);
                     throw error;
+                }
+                finally {
+                    await release?.();
                 }
 
                 void recordCall(config.consumeKey, { url, method, startedAt, success: response.ok, status: response.status })

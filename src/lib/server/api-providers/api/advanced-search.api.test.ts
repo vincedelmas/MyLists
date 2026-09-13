@@ -90,6 +90,7 @@ describe("advanced provider searches", () => {
     it("uses IGDB array-membership filters for platform and genre", async () => {
         httpMocks.call.mockResolvedValue({ json: vi.fn().mockResolvedValue([]) });
         const api = await createIgdbApi();
+        expect(httpMocks.createApiHttpClient).toHaveBeenCalledWith(expect.objectContaining({ maxConcurrent: 8 }));
         await api.search("Final Fantasy", 1, {
             provider: ApiProviderType.IGDB,
             platformId: 167,

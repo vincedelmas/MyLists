@@ -43,6 +43,7 @@ const TRENDING_POPULARITY_TYPE_IDS = [1, 2, 3, 4] as const; // Visits and IGDB l
 const createConfig = (): IgdbApiConfig => ({
     resultsPerPage: 20,
     consumeKey: "igdb-API",
+    maxConcurrent: 8,
     tokenCacheKey: "igdb:accessToken",
     tokenCacheExpiryMs: 24 * 60 * 60 * 1000,
     baseUrl: "https://api.igdb.com/v4/games",

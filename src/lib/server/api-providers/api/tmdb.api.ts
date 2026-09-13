@@ -1,6 +1,6 @@
 import {serverEnv} from "@/env/server";
 import {getContainer} from "@/lib/server/core/container";
-import {FormattedError} from "@/lib/utils/error-classes";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {
     SearchData,
@@ -37,7 +37,9 @@ const createConfig = (): TmdbApiConfig => ({
 
 const getApiKey = () => {
     if (!serverEnv.THEMOVIEDB_API_KEY) {
-        throw new FormattedError("Movie, series, and anime search is unavailable because TMDB is not configured.");
+        throw new ProviderRequestError("Movie, series, and anime search is unavailable because TMDB is not configured.", {
+            provider: "tmdb-API", statusCode: 503, kind: "access", reason: "missingCredentials",
+        });
     }
     return serverEnv.THEMOVIEDB_API_KEY;
 };

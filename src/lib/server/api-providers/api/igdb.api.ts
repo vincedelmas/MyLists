@@ -5,7 +5,7 @@ import {ApiProviderType} from "@/lib/utils/enums";
 import {apiTokens} from "@/lib/server/database/schema";
 import {GameAdvancedSearchFilters} from "@/lib/schemas";
 import {getContainer} from "@/lib/server/core/container";
-import {FormattedError} from "@/lib/utils/error-classes";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {
@@ -60,7 +60,9 @@ const createConfig = (): IgdbApiConfig => ({
 
 const getCredentials = () => {
     if (!serverEnv.IGDB_CLIENT_ID || !serverEnv.IGDB_CLIENT_SECRET) {
-        throw new FormattedError("Game search is unavailable because IGDB is not configured.");
+        throw new ProviderRequestError("Game search is unavailable because IGDB is not configured.", {
+            provider: "igdb-API", statusCode: 503, kind: "access", reason: "missingCredentials",
+        });
     }
     return {
         clientId: serverEnv.IGDB_CLIENT_ID,

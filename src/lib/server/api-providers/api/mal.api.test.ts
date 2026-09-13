@@ -103,6 +103,9 @@ describe("createMalApi", () => {
         await expect(mal.searchManga("Berserk")).rejects.toThrow(
             "MyAnimeList is not configured",
         );
+        await expect(mal.getMangaDetails(2)).rejects.toMatchObject({
+            details: { provider: "mal-API", kind: "access", reason: "missingCredentials" },
+        });
         expect(httpMocks.call).not.toHaveBeenCalled();
     });
 });

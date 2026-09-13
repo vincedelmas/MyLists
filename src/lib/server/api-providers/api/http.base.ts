@@ -1,25 +1,14 @@
-import {serverEnv} from "@/env/server";
 import {logger} from "@/lib/server/core/logger";
 import {notFound} from "@tanstack/react-router";
 import {RateLimiterQueue} from "rate-limiter-flexible";
 import {createRateLimiter} from "@/lib/server/core/rate-limiter";
-import {getRedisConnection} from "@/lib/server/core/redis-client";
+import {recordProviderCall} from "@/lib/server/core/api-monitoring";
 import {acquireProviderSlot} from "@/lib/server/core/provider-concurrency";
-import {getRollupKey, PENDING_ROLLUPS_KEY, TWO_DAYS_CACHE_TTL_S} from "@/lib/server/core/cache-keys";
 import {ProviderRequestError, readProviderError} from "@/lib/server/api-providers/api/provider-error";
 import {checkProviderCooldown, setProviderCooldown} from "@/lib/server/api-providers/api/provider-cooldown";
 
 
 type ApiRequestMethod = "get" | "post";
-
-type RecordCallParams = {
-    url: string;
-    status?: number;
-    success: boolean;
-    startedAt: number;
-    errorName?: string;
-    method: ApiRequestMethod;
-}
 
 export type ApiHttpClient = {
     call(url: string, method?: ApiRequestMethod, options?: RequestInit): Promise<Response>;
@@ -103,8 +92,7 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                         data: { url: `${origin}${pathname}`, method, startedAt, success: false, errorName },
                     }, "Failed to fetch API");
 
-                    void recordCall(config.consumeKey, { url, method, startedAt, success: false, errorName })
-                        .catch(err => logger.warn({ err, consumeKey: config.consumeKey }, "Failed to record provider API call"));
+                    void recordProviderCall(config.consumeKey, { startedAt, success: false, errorName });
 
                     if (attempt < MAX_CALL_ATTEMPTS) {
                         await release?.();
@@ -129,9 +117,7 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     await release?.();
                 }
 
-                void recordCall(config.consumeKey, { url, method, startedAt, success: response.ok, status: response.status })
-                    .catch(err => logger.warn({ err, consumeKey: config.consumeKey, status: response.status },
-                        "Failed to record provider API call"));
+                void recordProviderCall(config.consumeKey, { startedAt, success: response.ok, status: response.status });
 
                 if (response.ok) return response;
                 if (response.status === 404) {
@@ -183,35 +169,4 @@ function getRetryAfterSeconds(res: Response) {
 async function waitBeforeRetry(attempt: number, retryAfterMs = 0) {
     const backoffMs = 1_000 * 2 ** (attempt - 1) + Math.floor(Math.random() * 500);
     await new Promise(resolve => setTimeout(resolve, Math.max(backoffMs, retryAfterMs)));
-}
-
-
-async function recordCall(consumeKey: string, params: RecordCallParams) {
-    if (!serverEnv.REDIS_ENABLED) return;
-
-    const redis = await getRedisConnection();
-
-    const calledAtMs = Date.now();
-    const second = Math.floor(calledAtMs / 1000);
-    const durationMs = calledAtMs - params.startedAt;
-
-    const secondInMinute = second % 60;
-    const bucketStartMs = Math.floor(calledAtMs / 60_000) * 60_000;
-    const statusKey = String(params.status ?? params.errorName ?? "network-error");
-
-    await redis
-        .pipeline()
-        .zadd(PENDING_ROLLUPS_KEY, bucketStartMs, `${bucketStartMs}|${consumeKey}`)
-        .hincrby(getRollupKey(bucketStartMs, consumeKey), "total", 1)
-        .hincrby(getRollupKey(bucketStartMs, consumeKey), "errors", params.success ? 0 : 1)
-        .hincrby(getRollupKey(bucketStartMs, consumeKey), "durationMsTotal", durationMs)
-        .hincrby(getRollupKey(bucketStartMs, consumeKey, { statuses: true }), statusKey, 1)
-        .hincrby(getRollupKey(bucketStartMs, consumeKey, { seconds: true }), String(secondInMinute), 1)
-        .hincrby(`api-monitor:second:${second}`, consumeKey, 1)
-        .hincrby(`api-monitor:second:${second}`, "total", 1)
-        .expire(getRollupKey(bucketStartMs, consumeKey), TWO_DAYS_CACHE_TTL_S)
-        .expire(getRollupKey(bucketStartMs, consumeKey, { seconds: true }), TWO_DAYS_CACHE_TTL_S)
-        .expire(getRollupKey(bucketStartMs, consumeKey, { statuses: true }), TWO_DAYS_CACHE_TTL_S)
-        .expire(`api-monitor:second:${second}`, 60 * 60)
-        .exec();
 }

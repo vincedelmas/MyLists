@@ -41,8 +41,7 @@ describe("createMalApi", () => {
         expect(httpMocks.createApiHttpClient).toHaveBeenCalledWith(expect.objectContaining({
             consumeKey: "mal-API",
             throttleOptions: [
-                expect.objectContaining({ points: 1, duration: 1 }),
-                expect.objectContaining({ points: 30, duration: 60 }),
+                expect.objectContaining({ points: 1, duration: 2 }),
             ],
         }));
 

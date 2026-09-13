@@ -16,18 +16,11 @@ const createConfig = (): MalApiConfig => ({
     resultsPerPage: 20,
     consumeKey: "mal-API",
     baseUrl: "https://api.myanimelist.net/v2",
-    throttleOptions: [
-        {
-            points: 1,
-            duration: 1,
-            keyPrefix: "malAPI-sec",
-        },
-        {
-            points: 30,
-            duration: 60,
-            keyPrefix: "malAPI-min",
-        }
-    ],
+    throttleOptions: [{
+        points: 1,
+        duration: 2,
+        keyPrefix: "malAPI-paced",
+    }],
 });
 
 

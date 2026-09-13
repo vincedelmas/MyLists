@@ -3,7 +3,6 @@ import {notFound} from "@tanstack/react-router";
 import {RateLimiterQueue} from "rate-limiter-flexible";
 import {createRateLimiter} from "@/lib/server/core/rate-limiter";
 import {recordProviderCall} from "@/lib/server/core/api-monitoring";
-import {acquireProviderSlot} from "@/lib/server/core/provider-concurrency";
 import {ProviderRequestError, readProviderError} from "@/lib/server/api-providers/api/provider-error";
 import {checkProviderCooldown, setProviderCooldown} from "@/lib/server/api-providers/api/provider-cooldown";
 
@@ -16,7 +15,6 @@ export type ApiHttpClient = {
 
 export type ApiClientConfig = {
     consumeKey: string;
-    maxConcurrent?: number;
     resultsPerPage?: number;
     getQuotaResetAt?: () => number;
     beforeRequest?: () => Promise<void>;
@@ -41,15 +39,11 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
 
                 let response: Response;
                 let startedAt: number | undefined;
-                let release: (() => Promise<void>) | undefined;
                 const deadline = Math.ceil((Date.now() + REQUEST_TIMEOUT_MS) / 1000);
 
                 try {
                     await checkProviderCooldown(config.consumeKey);
-                    if (config.maxConcurrent) {
-                        release = await acquireProviderSlot(config.consumeKey, config.maxConcurrent, signal, REQUEST_TIMEOUT_MS);
-                    }
-                    // Acquire the pacing slot after concurrency and longer-window waits.
+                    // Acquire the pacing slot after longer-window waits.
                     for (const queue of queues) {
                         await queue.removeTokens(1, config.consumeKey, deadline);
                     }
@@ -61,7 +55,7 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     startedAt = Date.now();
                     response = await fetch(url, { ...options, method: method.toUpperCase(), signal });
 
-                    // Finish downloading inside the retry boundary and before releasing concurrency.
+                    // Finish downloading inside the retry boundary.
                     // Keep the original response readable for the provider's JSON/text parser.
                     try {
                         await response.clone().arrayBuffer();
@@ -95,8 +89,6 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     void recordProviderCall(config.consumeKey, { startedAt, success: false, errorName });
 
                     if (attempt < MAX_CALL_ATTEMPTS) {
-                        await release?.();
-                        release = undefined;
                         await waitBeforeRetry(attempt);
                         continue;
                     }
@@ -112,9 +104,6 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     await setProviderCooldown(error);
 
                     throw error;
-                }
-                finally {
-                    await release?.();
                 }
 
                 void recordProviderCall(config.consumeKey, { startedAt, success: response.ok, status: response.status });

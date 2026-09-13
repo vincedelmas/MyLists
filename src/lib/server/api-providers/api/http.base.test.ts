@@ -208,7 +208,7 @@ describe("createApiHttpClient", () => {
             start(controller) { controller.error(new TypeError("Connection reset")); },
         }), { status: 429, headers: { "Retry-After": "120" } }));
         vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient({ ...config, maxConcurrent: 1 });
+        const client = await createApiHttpClient(config);
         const now = Date.now();
         await expect(client.call("https://example.com/items")).rejects.toMatchObject({ details: { kind: "rate_limit" } });
         expect(fetchMock).toHaveBeenCalledOnce();
@@ -312,37 +312,24 @@ describe("createApiHttpClient", () => {
         expect(fetchMock).toHaveBeenCalledOnce();
     });
 
-    it("holds shared concurrency slots until bodies arrive, then leaves responses readable", async () => {
-        const bodies: ReadableStreamDefaultController[] = [];
-        const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(new ReadableStream({
-            start(controller) { bodies.push(controller); },
-        }))));
+    it("waits for the response body and leaves it readable", async () => {
+        let body: ReadableStreamDefaultController;
+        const response = new Response(new ReadableStream({
+            start(controller) { body = controller; },
+        }));
+        const fetchMock = vi.fn().mockResolvedValue(response);
         vi.stubGlobal("fetch", fetchMock);
-        const options = { consumeKey: "body-concurrency", maxConcurrent: 8, throttleOptions: [] };
-        const clients = await Promise.all([createApiHttpClient(options), createApiHttpClient(options)]);
-        const requests = Array.from({ length: 9 }, (_, i) => clients[i % 2].call("https://example.com/games"));
-        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(8));
-        bodies[0].enqueue(new TextEncoder().encode("[]"));
-        bodies[0].close();
-        await requests[0];
-        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(9));
-        for (const body of bodies.slice(1)) {
-            body.enqueue(new TextEncoder().encode("[]"));
-            body.close();
-        }
-        const responses = await Promise.all(requests);
-        expect(await Promise.all(responses.map(response => response.json()))).toEqual(Array.from({ length: 9 }, () => []));
-    });
+        const client = await createApiHttpClient(config);
+        const completed = vi.fn();
+        const request = client.call("https://example.com/games").then(completed);
 
-    it("releases concurrency when a pre-request quota check rejects", async () => {
-        const beforeRequest = vi.fn().mockRejectedValueOnce(new ProviderRequestError("Quota reached", {
-            provider: "quota-slot", kind: "quota", statusCode: 429, retryAt: Date.now() + 86_400_000,
-        })).mockResolvedValue(undefined);
-        const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(Response.json([])));
-        vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient({ consumeKey: "quota-slot", maxConcurrent: 1, throttleOptions: [], beforeRequest });
-        await expect(client.call("https://example.com/games")).rejects.toThrow("Quota reached");
-        await expect(client.call("https://example.com/games")).resolves.toBeInstanceOf(Response);
-        expect(fetchMock).toHaveBeenCalledOnce();
+        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+        expect(completed).not.toHaveBeenCalled();
+        body!.enqueue(new TextEncoder().encode("[]"));
+        body!.close();
+
+        await request;
+        expect(completed).toHaveBeenCalledWith(response);
+        await expect(response.json()).resolves.toEqual([]);
     });
 });

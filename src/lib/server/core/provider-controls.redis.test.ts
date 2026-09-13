@@ -3,7 +3,6 @@ import {afterAll, describe, expect, it, vi} from "vitest";
 import {providerRequestContext} from "./provider-request-context";
 import {getRedisConnection} from "./redis-client";
 import {createRateLimiter} from "./rate-limiter";
-import {acquireProviderSlot} from "./provider-concurrency";
 import {consumeGoogleBooksQuota, getGoogleBooksQuotaWindow} from "../api-providers/api/gbooks-quota";
 import {checkProviderCooldown, setProviderCooldown} from "../api-providers/api/provider-cooldown";
 import {ProviderRequestError} from "../api-providers/api/provider-error";
@@ -87,64 +86,6 @@ describe.skipIf(!process.env.MYLISTS_TEST_REDIS_URL)("shared Redis provider cont
         }
     });
 
-    it("enforces eight slots across processes and releases capacity when a response finishes", async () => {
-        const provider = `redis-slots-${randomUUID()}`;
-        const signal = AbortSignal.timeout(10_000);
-        const releases = await Promise.all(Array.from({ length: 8 }, () => acquireProviderSlot(provider, 8, signal, 10_000)));
-        const worker = startWorker(`
-            const { acquireProviderSlot } = await import("./src/lib/server/core/provider-concurrency.ts");
-            console.log("waiting");
-            const release = await acquireProviderSlot(${JSON.stringify(provider)}, 8, AbortSignal.timeout(10000), 10000);
-            console.log("acquired");
-            await new Promise(resolve => process.stdin.once("data", resolve));
-            await release();
-        `);
-        const reader = worker.stdout.getReader();
-        try {
-            expect(new TextDecoder().decode((await reader.read()).value)).toContain("waiting");
-            let acquired = false;
-            const acquisition = reader.read().then(result => { acquired = true; return result; });
-            await new Promise(resolve => setTimeout(resolve, 150));
-            expect(acquired).toBe(false);
-            await releases.pop()!();
-            expect(new TextDecoder().decode((await acquisition).value)).toContain("acquired");
-            expect(await (await getRedisConnection()).zcard(`provider:concurrency:${provider}`)).toBe(8);
-            worker.stdin.write("release\n");
-            worker.stdin.end();
-            expect(await worker.exited, await new Response(worker.stderr).text()).toBe(0);
-        }
-        finally {
-            worker.kill();
-            reader.releaseLock();
-            await Promise.all(releases.map(release => release()));
-            await (await getRedisConnection()).del(`provider:concurrency:${provider}`);
-        }
-    });
-
-    it("recovers a slot after its owning process is killed", async () => {
-        const provider = `redis-killed-slot-${randomUUID()}`;
-        const worker = startWorker(`
-            const { acquireProviderSlot } = await import("./src/lib/server/core/provider-concurrency.ts");
-            await acquireProviderSlot(${JSON.stringify(provider)}, 1, AbortSignal.timeout(5000), 100);
-            console.log("acquired");
-            await new Promise(resolve => process.stdin.once("data", resolve));
-        `);
-        const reader = worker.stdout.getReader();
-        try {
-            expect(new TextDecoder().decode((await reader.read()).value)).toContain("acquired");
-            worker.kill("SIGKILL");
-            await worker.exited;
-            const release = await acquireProviderSlot(provider, 1, AbortSignal.timeout(5_000), 5_000);
-            await release();
-            expect(await (await getRedisConnection()).zcard(`provider:concurrency:${provider}`)).toBe(0);
-        }
-        finally {
-            worker.kill();
-            reader.releaseLock();
-            await (await getRedisConnection()).del(`provider:concurrency:${provider}`);
-        }
-    });
-
     it("pauses provider requests within a bounded wait when Redis stops responding", async () => {
         const redis = await getRedisConnection();
         const client = await createApiHttpClient({ consumeKey: "redis-unresponsive", throttleOptions: [] });
@@ -164,7 +105,7 @@ describe.skipIf(!process.env.MYLISTS_TEST_REDIS_URL)("shared Redis provider cont
         }
     }, 15_000);
 
-    it("preserves provider results when Redis cooldown writes or slot releases fail", async () => {
+    it("preserves provider results when Redis cooldown writes fail", async () => {
         const provider = `redis-cleanup-${randomUUID()}`;
         const redis = await getRedisConnection();
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("busy", { status: 429 }));
@@ -176,18 +117,7 @@ describe.skipIf(!process.env.MYLISTS_TEST_REDIS_URL)("shared Redis provider cont
         finally {
             evalMock.mockRestore();
             fetchMock.mockRestore();
-        }
-
-        const releaseMock = vi.spyOn(redis, "zrem").mockRejectedValueOnce(new Error("Redis unavailable"));
-        const successMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json([]));
-        try {
-            const client = await createApiHttpClient({ consumeKey: provider, throttleOptions: [], maxConcurrent: 1 });
-            await expect(client.call("https://example.com/items").then(response => response.json())).resolves.toEqual([]);
-        }
-        finally {
-            releaseMock.mockRestore();
-            successMock.mockRestore();
-            await redis.del(`provider:concurrency:${provider}`, `provider:cooldown:${provider}`);
+            await redis.del(`provider:cooldown:${provider}`);
         }
     });
 });

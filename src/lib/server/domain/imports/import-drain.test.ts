@@ -36,6 +36,15 @@ describe("drainImportJobs", () => {
         expect(processor.processNextJob).toHaveBeenCalledOnce();
     });
 
+    it("counts paused attempts so completed rows still trigger statistics recomputation", async () => {
+        const processor = createProcessor({ processNextJob: vi.fn()
+            .mockResolvedValueOnce({ id: 1, status: ImportJobStatus.QUEUED })
+            .mockResolvedValueOnce({ id: 2, status: ImportJobStatus.COMPLETED })
+            .mockResolvedValueOnce(null),
+        });
+        await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
+    });
+
     it("returns zero when there is no queued job", async () => {
         const processor = createProcessor({
             processNextJob: vi.fn().mockResolvedValue(null),

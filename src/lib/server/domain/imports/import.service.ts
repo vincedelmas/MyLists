@@ -40,6 +40,10 @@ export class ImportService {
         return withTransaction(() => this.repository.markProcessingJobFailed(jobId, error));
     }
 
+    pauseProcessingJob(jobId: number, error: string, retryAt: number) {
+        return withTransaction(() => this.repository.pauseProcessingJob(jobId, error, retryAt));
+    }
+
     async markItemsProcessing(jobId: number, itemIds: number[]) {
         return this.repository.markItemsProcessing(jobId, itemIds);
     }
@@ -101,7 +105,7 @@ export class ImportService {
         if (job.status === ImportJobStatus.PROCESSING) {
             jobsAhead = 0;
         }
-        else if (job.status === ImportJobStatus.QUEUED) {
+        else if (job.status === ImportJobStatus.QUEUED && !job.nextAttemptAt) {
             jobsAhead = await this.repository.countJobsAhead(job);
         }
 

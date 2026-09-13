@@ -74,6 +74,11 @@ describe("CLI import queue preflight", () => {
         expect(await runCli()).toEqual({ exitCode: 0, stdout: "", stderr: "" });
     });
 
+    it("exits quietly when all queued jobs are waiting for their retry time", async () => {
+        sqlite.run("INSERT INTO import_jobs (user_id, source, status, next_attempt_at) VALUES (1, 'mylists', 'queued', datetime('now', '+1 day'))");
+        expect(await runCli()).toEqual({ exitCode: 0, stdout: "", stderr: "" });
+    });
+
     it.each([undefined, ""])("reports an unconfigured DATABASE_URL (%j) clearly", async databaseUrl => {
         const result = await runCli(["import-drain"], false, { DATABASE_URL: databaseUrl });
         expect(result.exitCode).toBe(1);
@@ -96,9 +101,11 @@ describe("CLI import queue preflight", () => {
         expect(result.stderr).toContain("Could not check the import queue");
     });
 
-    it.each([ImportJobStatus.QUEUED, ImportJobStatus.PROCESSING])("loads the real drain for a %s job, including recovery without queued jobs", async status => {
+    it.each([ImportJobStatus.QUEUED, ImportJobStatus.PROCESSING, "due-retry"])("loads the real drain for a %s job, including recovery without queued jobs", async state => {
+        const status = state === "due-retry" ? ImportJobStatus.QUEUED : state;
         sqlite.run("INSERT INTO movies (id, api_id, name, image_cover, duration, release_date) VALUES (100, 100, 'Import test movie', 'test.jpg', 100, '2024-01-01')");
         sqlite.run("INSERT INTO import_jobs (id, user_id, source, status, total_count) VALUES (1, 1, 'mylists', ?, 1)", [status]);
+        if (state === "due-retry") sqlite.run("UPDATE import_jobs SET next_attempt_at = datetime('now', '-1 minute'), error = 'Provider paused' WHERE id = 1");
         sqlite.run(`INSERT INTO import_items (job_id, row_number, name, media_type, external_api_id, external_api_source, status, payload_json)
             VALUES (1, 2, 'Import test movie', 'movies', '100', 'tmdb', ?, ?)`,
             [status, JSON.stringify({ status: "Completed", redo: 0, total: 1, rating: 8, favorite: true, comment: "CLI test" })]);

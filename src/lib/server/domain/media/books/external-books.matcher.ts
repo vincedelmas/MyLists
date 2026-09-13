@@ -1,4 +1,5 @@
 import {logger} from "@/lib/server/core/logger";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
@@ -69,6 +70,10 @@ export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {
+                if (error instanceof ProviderRequestError && error.details.kind !== "item") {
+                    if (this._hasResults(batch)) yield batch;
+                    throw error;
+                }
                 this._logResolutionError(item, error);
                 batch.failed.push(this._createFailedOutcome(item));
             }

@@ -100,6 +100,23 @@ describe("ImportRepository", () => {
         });
     });
 
+    it("rolls back requeued rows if persisting the pause fails", async () => {
+        const job = ImportRepository.createJob(42, ImportSource.MYLISTS);
+        ImportRepository.insertParsedItems(job.id, [createItem(2)]);
+        ImportRepository.markJobQueued(job.id, 1, 0);
+        await ImportRepository.claimNextQueuedJob();
+        const [item] = db.select().from(importItems).all();
+        await ImportRepository.markItemsProcessing(job.id, [item.id]);
+        const beforeItems = db.select().from(importItems).all();
+        const beforeJobs = db.select().from(importJobs).all();
+        sqlite.exec(`CREATE TRIGGER fail_pause BEFORE UPDATE ON import_jobs
+            BEGIN SELECT RAISE(ABORT, 'pause failure'); END`);
+
+        expect(() => new ImportService(ImportRepository).pauseProcessingJob(job.id, "Provider paused", Date.now() + 60_000)).toThrow();
+        expect(db.select().from(importItems).all()).toEqual(beforeItems);
+        expect(db.select().from(importJobs).all()).toEqual(beforeJobs);
+    });
+
     it("atomically claims only the oldest queued job while no job is processing", async () => {
         const firstJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         const secondJob = await ImportRepository.createJob(43, ImportSource.MYLISTS);

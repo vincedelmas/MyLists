@@ -1,5 +1,7 @@
 import {RefreshCw, Trash2} from "lucide-react";
 import {ImportJobStatus} from "@/lib/utils/enums";
+import {formatDateTime} from "@/lib/utils/formatting/date";
+import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {useNavigate} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
@@ -82,10 +84,12 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                         </p>
                         <ImportStatusBadge
                             status={job.status}
+                            nextAttemptAt={job.nextAttemptAt}
                         />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        {job.status === ImportJobStatus.PROCESSING ? "Currently processing."
+                        {job.nextAttemptAt ? `Paused. Automatic retry after ${formatDateTime(job.nextAttemptAt)}.`
+                            : job.status === ImportJobStatus.PROCESSING ? "Currently processing."
                             : job.status === ImportJobStatus.QUEUED ? job.jobsAhead
                                     ? `${job.jobsAhead} job${job.jobsAhead > 1 ? "s" : ""} ahead.`
                                     : "Next in queue. Waiting for processing to start."
@@ -142,9 +146,9 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
             </div>
 
             {job.error &&
-                <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-                    {job.error}
-                </div>
+                <Alert variant={job.nextAttemptAt ? "default" : "destructive"}>
+                    <AlertDescription>{job.error}</AlertDescription>
+                </Alert>
             }
 
             {issueCount > 0 ?

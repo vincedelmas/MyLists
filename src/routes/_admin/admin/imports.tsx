@@ -106,7 +106,7 @@ function AdminImportsPage() {
                                         <TableRow key={job.id} data-state={selectedJobId === job.id ? "selected" : undefined}>
                                             <TableCell><div className="font-medium">#{job.id}</div><div className="text-muted-foreground capitalize">{job.source}</div></TableCell>
                                             <TableCell><Link to="/profile/$username" params={{ username: job.username }} className="hover:underline">{job.username}</Link></TableCell>
-                                            <TableCell><ImportStatusBadge status={job.status}/></TableCell>
+                                            <TableCell><ImportStatusBadge status={job.status} nextAttemptAt={job.nextAttemptAt}/></TableCell>
                                             <TableCell>
                                                 <div>{job.processedCount}/{job.totalCount} processed</div>
                                                 <div className="text-xs text-muted-foreground">{job.completedCount} completed · {job.failedCount} failed · {job.skippedCount} skipped</div>
@@ -137,7 +137,7 @@ function AdminImportsPage() {
                         </SheetHeader>
                         {selectedJob && <div className="flex flex-col gap-5 px-4 pb-6 min-w-0">
                             <div className="flex items-center justify-between gap-3">
-                                <ImportStatusBadge status={selectedJob.status}/>
+                                <ImportStatusBadge status={selectedJob.status} nextAttemptAt={selectedJob.nextAttemptAt}/>
                                 <Button size="sm" variant="outline" disabled={history.isFetching || issues.isFetching} onClick={refresh}>
                                     <RefreshCw data-icon="inline-start"/> Refresh
                                 </Button>
@@ -154,15 +154,16 @@ function AdminImportsPage() {
                                     ["Started", selectedJob.startedAt],
                                     ["Last progress", selectedJob.updatedAt],
                                     ["Finished", selectedJob.finishedAt],
+                                    ["Automatic retry after", selectedJob.nextAttemptAt],
                                 ].map(([label, value]) => <div key={label}>
                                     <dt className="text-sm text-muted-foreground">{label}</dt>
                                     <dd>{formatDateTime(value, { seconds: true })}</dd>
                                 </div>)}
                             </dl>
-                            {selectedJob.error && <Alert variant="destructive"><AlertDescription>{selectedJob.error}</AlertDescription></Alert>}
+                            {selectedJob.error && <Alert variant={selectedJob.nextAttemptAt ? "default" : "destructive"}><AlertDescription>{selectedJob.error}</AlertDescription></Alert>}
                             {selectedJob.failedCount + selectedJob.skippedCount > 0 ?
                                 <ImportJobIssuesTable issueQuery={issues} onPageChange={setIssuePage}/>
-                                : <p className="text-sm text-muted-foreground">{selectedJob.error ? "The file was rejected before rows could be imported." : "No row issues reported."}</p>
+                                : <p className="text-sm text-muted-foreground">{selectedJob.nextAttemptAt ? "Unfinished rows will be retried automatically." : selectedJob.error && !selectedJob.startedAt ? "The file was rejected before rows could be imported." : "No row issues reported."}</p>
                             }
                         </div>}
                     </SheetContent>

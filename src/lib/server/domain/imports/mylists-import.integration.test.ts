@@ -13,6 +13,9 @@ import {ImportRepository} from "./import.repository";
 import {drainImportJobs} from "./import-drain";
 import {MYLISTS_FORMAT_ERROR} from "./mylists-format";
 import {MediaMatcherRegistry} from "./matchers/media-matcher.registry";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
+import {ImportJobProcessor} from "./import-job.processor";
+import {ImportService} from "./import.service";
 
 
 const context = vi.hoisted(() => ({ db: undefined as unknown as BunSQLiteDatabase<typeof schema> }));
@@ -75,6 +78,72 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
     afterEach(() => {
         vi.restoreAllMocks();
         sqlite.close();
+    });
+
+    it("preserves local matches during a provider pause, processes other jobs, and resumes unfinished rows", async () => {
+        const error = new ProviderRequestError("Provider paused", {
+            provider: "test-provider", statusCode: 429, kind: "quota", retryAt: Date.now() + 86_400_000,
+        });
+        externalCall.mockRejectedValue(error);
+        const paused = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
+            convertToCsv([exported, { ...exported, externalApiId: "101" }]));
+        const other = await imports.imports.createImportJob(44, ImportSource.MYLISTS, convertToCsv([exported]));
+
+        await expect(drainImportJobs(imports.importProcessor)).resolves.toEqual({ processedJobs: 2, failedJobs: 0 });
+        expect(externalCall).toHaveBeenCalledOnce();
+        const pausedJob = (await imports.imports.getImportJob(43, paused.id)).job;
+        expect(pausedJob).toMatchObject({ status: ImportJobStatus.QUEUED, completedCount: 1, failedCount: 0, error: "Provider paused" });
+        expect(pausedJob.nextAttemptAt).toBeTruthy();
+        expect((await imports.imports.getImportJob(44, other.id)).job.status).toBe(ImportJobStatus.COMPLETED);
+        expect(context.db.select().from(schema.importItems).where(eq(schema.importItems.jobId, paused.id)).all().map(row => row.status))
+            .toEqual([ImportItemStatus.COMPLETED, ImportItemStatus.QUEUED]);
+
+        // A fresh processor must respect the persisted pause, including during crash recovery.
+        const resumedProcessor = new ImportJobProcessor(new ImportService(ImportRepository), MediaMatcherRegistry);
+        await resumedProcessor.requeueInterruptedJobs();
+        await expect(resumedProcessor.processNextJob()).resolves.toBeNull();
+        context.db.update(schema.importJobs).set({ nextAttemptAt: "2000-01-01 00:00:00" }).where(eq(schema.importJobs.id, paused.id)).run();
+        externalCall.mockResolvedValue(mediaType === MediaType.GAMES ? new Map([["101", 100]]) : 100);
+
+        await expect(resumedProcessor.processNextJob()).resolves.toMatchObject({
+            id: paused.id, status: ImportJobStatus.COMPLETED, completedCount: 2, error: null, nextAttemptAt: null,
+        });
+        expect(externalCall).toHaveBeenCalledTimes(2);
+        expect(context.db.select().from(listTable).where(eq(listTable.userId, 43)).all()).toHaveLength(1);
+    });
+
+    it("flushes successful external results before pausing on the next provider request", async () => {
+        const successfulCount = mediaType === MediaType.GAMES ? 500 : 1;
+        externalCall.mockImplementationOnce(async (ids: string | string[]) => Array.isArray(ids)
+            ? new Map(ids.map(id => [id, 100])) : 100);
+        externalCall.mockRejectedValue(new ProviderRequestError("Temporarily unavailable", {
+            provider: "test-provider", statusCode: 503, kind: "unavailable", retryAt: Date.now() + 300_000,
+        }));
+        const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS, convertToCsv(
+            Array.from({ length: successfulCount + 1 }, (_, index) => ({ ...exported, externalApiId: String(200 + index) })),
+        ));
+
+        await expect(imports.importProcessor.processNextJob()).resolves.toMatchObject({
+            id: job.id, status: ImportJobStatus.QUEUED, completedCount: successfulCount, processedCount: successfulCount, failedCount: 0,
+        });
+        expect(externalCall).toHaveBeenCalledTimes(2);
+        const items = context.db.select().from(schema.importItems).where(eq(schema.importItems.jobId, job.id)).all();
+        expect(items.filter(item => item.status === ImportItemStatus.COMPLETED)).toHaveLength(successfulCount);
+        expect(items.filter(item => item.status === ImportItemStatus.QUEUED)).toHaveLength(1);
+    });
+
+    it("stops the job on credential errors instead of trying every remaining row", async () => {
+        externalCall.mockRejectedValue(new ProviderRequestError("Check provider credentials", {
+            provider: "test-provider", statusCode: 401, kind: "access",
+        }));
+        const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
+            convertToCsv([exported, { ...exported, externalApiId: "101" }, { ...exported, externalApiId: "102" }]));
+
+        await expect(imports.importProcessor.processNextJob()).resolves.toMatchObject({
+            id: job.id, status: ImportJobStatus.FAILED, completedCount: 1, failedCount: 2,
+            error: "Check provider credentials", nextAttemptAt: null,
+        });
+        expect(externalCall).toHaveBeenCalledOnce();
     });
 
     it("exports, uploads, processes and re-exports list data without overwriting existing entries", async () => {

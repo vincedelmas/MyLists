@@ -19,6 +19,7 @@ interface ImportJobListItem {
     failedCount: number;
     skippedCount: number;
     finishedAt: string | null;
+    nextAttemptAt: string | null;
 }
 
 
@@ -26,7 +27,7 @@ const formatImportLabel = (job: ImportJobListItem) => {
     const issueCount = job.failedCount + job.skippedCount;
     const issueLabel = issueCount > 0 ? ` · ${issueCount} issue${issueCount > 1 ? "s" : ""}` : "";
 
-    return `#${job.id} · ${job.source} · ${job.status.replaceAll("_", " ")} · ${formatDate(job.finishedAt ?? job.updatedAt)}${issueLabel}`;
+    return `#${job.id} · ${job.source} · ${job.nextAttemptAt ? "paused" : job.status.replaceAll("_", " ")} · ${formatDate(job.finishedAt ?? job.updatedAt)}${issueLabel}`;
 };
 
 
@@ -62,7 +63,7 @@ export function ExistingImportsPanel() {
                     Imports
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                    Check queued, running, and completed imports.
+                    Check queued, paused, running, and completed imports.
                 </p>
             </div>
 

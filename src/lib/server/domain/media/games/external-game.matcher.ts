@@ -1,4 +1,5 @@
 import {logger} from "@/lib/server/core/logger";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
@@ -50,6 +51,10 @@ export class ExternalIGDBGamesMatcher implements ExternalMediaMatcher {
                 }
             }
             catch (error) {
+                if (error instanceof ProviderRequestError && error.details.kind !== "item") {
+                    if (this._hasResults(batch)) yield batch;
+                    throw error;
+                }
                 chunk.forEach((item) => {
                     this._logResolutionError(item, error);
                     batch.failed.push(this._createFailedOutcome(item));

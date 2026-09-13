@@ -11,7 +11,7 @@ export const drainImportJobs = async (processor: ImportJobProcessor) => {
         if (!job) break;
 
         if (job.status === ImportJobStatus.FAILED) failedJobs += 1;
-        else processedJobs += 1;
+        else processedJobs += 1; // Paused attempts can have added entries and also need statistics recomputed.
     }
 
     return { failedJobs, processedJobs };

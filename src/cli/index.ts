@@ -17,7 +17,7 @@ if (process.argv.length === 3 && process.argv[2] === "import-drain") {
         try {
             db.run("PRAGMA busy_timeout = 10000");
             pending = db
-                .query("SELECT 1 FROM import_jobs WHERE status IN ('queued', 'processing') LIMIT 1")
+                .query("SELECT 1 FROM import_jobs WHERE status = 'processing' OR (status = 'queued' AND (next_attempt_at IS NULL OR next_attempt_at <= datetime('now'))) LIMIT 1")
                 .get();
         }
         finally {

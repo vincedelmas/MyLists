@@ -4,7 +4,7 @@ import type {AdminImportsSearch} from "@/lib/schemas/admin.schema";
 import {importItems, importJobs, user} from "@/lib/server/database/schema";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 import {ImportItemOutcome, ImportJobCounterDelta, ParsedImportItem} from "@/lib/types/imports.types";
-import {and, asc, count, desc, eq, exists, getTableColumns, inArray, like, lt, notExists, or, sql} from "drizzle-orm";
+import {and, asc, count, desc, eq, exists, getTableColumns, inArray, isNull, like, lt, lte, notExists, or, sql} from "drizzle-orm";
 
 
 const INSERT_BATCH_SIZE = 300;
@@ -42,7 +42,7 @@ export class ImportRepository {
                     .select({
                         ...getTableColumns(importJobs),
                         username: user.name,
-                        processingDurationMs: sql<number | null>`(unixepoch(coalesce(${importJobs.finishedAt}, CURRENT_TIMESTAMP)) - unixepoch(${importJobs.startedAt})) * 1000`,
+                        processingDurationMs: sql<number | null>`(unixepoch(coalesce(${importJobs.finishedAt}, CASE WHEN ${importJobs.nextAttemptAt} IS NOT NULL THEN ${importJobs.updatedAt} END, CURRENT_TIMESTAMP)) - unixepoch(${importJobs.startedAt})) * 1000`,
                     })
                     .from(importJobs)
                     .innerJoin(user, eq(user.id, importJobs.userId))
@@ -89,6 +89,25 @@ export class ImportRepository {
             ))
             .returning()
             .all();
+    }
+
+    static pauseProcessingJob(jobId: number, error: string, retryAt: number) {
+        const db = getDbClient();
+        const activeJob = db.select({ id: importJobs.id }).from(importJobs)
+            .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)));
+
+        db.update(importItems)
+            .set({ status: ImportItemStatus.QUEUED, updatedAt: sql`datetime('now')` })
+            .where(and(exists(activeJob), eq(importItems.jobId, jobId), eq(importItems.status, ImportItemStatus.PROCESSING)))
+            .run();
+
+        return db.update(importJobs).set({
+            status: ImportJobStatus.QUEUED,
+            error: error.slice(0, 2_000),
+            nextAttemptAt: new Date(Math.ceil(retryAt / 1000) * 1000).toISOString().slice(0, 19).replace("T", " "),
+            updatedAt: sql`datetime('now')`,
+        }).where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)))
+            .returning().get() ?? null;
     }
 
     static markProcessingJobFailed(jobId: number, error: string) {
@@ -256,7 +275,10 @@ export class ImportRepository {
         const nextQueuedJob = db
             .select({ id: importJobs.id })
             .from(importJobs)
-            .where(eq(importJobs.status, ImportJobStatus.QUEUED))
+            .where(and(
+                eq(importJobs.status, ImportJobStatus.QUEUED),
+                or(isNull(importJobs.nextAttemptAt), lte(importJobs.nextAttemptAt, sql`datetime('now')`)),
+            ))
             .orderBy(asc(importJobs.createdAt), asc(importJobs.id))
             .limit(1);
 
@@ -271,6 +293,8 @@ export class ImportRepository {
                 startedAt: sql`datetime('now')`,
                 updatedAt: sql`datetime('now')`,
                 status: ImportJobStatus.PROCESSING,
+                nextAttemptAt: null,
+                error: null,
             })
             .where(and(
                 notExists(processingJob),
@@ -357,6 +381,7 @@ export class ImportRepository {
                 status: importJobs.status,
                 updatedAt: importJobs.updatedAt,
                 finishedAt: importJobs.finishedAt,
+                nextAttemptAt: importJobs.nextAttemptAt,
                 failedCount: importJobs.failedCount,
                 skippedCount: importJobs.skippedCount,
             })
@@ -373,6 +398,7 @@ export class ImportRepository {
                 eq(importJobs.status, ImportJobStatus.PROCESSING),
                 and(
                     eq(importJobs.status, ImportJobStatus.QUEUED),
+                    or(isNull(importJobs.nextAttemptAt), lte(importJobs.nextAttemptAt, sql`datetime('now')`)),
                     or(
                         lt(importJobs.createdAt, job.createdAt),
                         and(eq(importJobs.createdAt, job.createdAt), lt(importJobs.id, job.id)),

@@ -21,9 +21,11 @@ export const importJobs = sqliteTable("import_jobs", {
     updatedAt: text("updated_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
     startedAt: text("started_at"),
     finishedAt: text("finished_at"),
+    nextAttemptAt: text("next_attempt_at"),
 }, (table) => [
     index("ix_import_jobs_user_created_at").on(table.userId, table.createdAt),
     index("ix_import_jobs_status_created_at").on(table.status, table.createdAt),
+    index("ix_import_jobs_status_next_attempt_at").on(table.status, table.nextAttemptAt),
     uniqueIndex("ux_import_jobs_user_active").on(table.userId).where(sql`${table.status} IN ('parsing', 'queued', 'processing')`),
     check("import_jobs_counts_nonnegative_check", sql`
         ${table.totalCount} >= 0 AND ${table.failedCount} >= 0 AND ${table.skippedCount} >= 0

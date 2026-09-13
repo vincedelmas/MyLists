@@ -25,6 +25,7 @@ if (process.argv.length === 3 && process.argv[2] === "import-drain") {
         }
 
         if (!pending) {
+            console.log("No pending imports found.");
             process.exit(0);
         }
     }
@@ -34,7 +35,7 @@ if (process.argv.length === 3 && process.argv[2] === "import-drain") {
     }
 
     try {
-        const {runImportDrainCommand} = await import("./import-drain-command");
+        const { runImportDrainCommand } = await import("./import-drain-command");
         await runImportDrainCommand(process.env.DATABASE_URL!);
         process.exit(0);
     }

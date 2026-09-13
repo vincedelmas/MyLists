@@ -1,9 +1,7 @@
 import {randomUUID} from "node:crypto";
 import {afterAll, describe, expect, it, vi} from "vitest";
-import {providerRequestContext} from "./provider-request-context";
 import {getRedisConnection} from "./redis-client";
 import {createRateLimiter} from "./rate-limiter";
-import {consumeGoogleBooksQuota, getGoogleBooksQuotaWindow} from "../api-providers/api/gbooks-quota";
 import {checkProviderCooldown, setProviderCooldown} from "../api-providers/api/provider-cooldown";
 import {ProviderRequestError} from "../api-providers/api/provider-error";
 import {createApiHttpClient} from "../api-providers/api/http.base";
@@ -28,34 +26,6 @@ describe.skipIf(!process.env.MYLISTS_TEST_REDIS_URL)("shared Redis provider cont
             PATH: process.env.PATH, SKIP_ENV_VALIDATION: "true", LOG_LEVEL: "silent",
             REDIS_ENABLED: "true", REDIS_URL: process.env.MYLISTS_TEST_REDIS_URL,
         },
-    });
-
-    it("shares the daily budget atomically across processes while preserving interactive headroom", async () => {
-        const redis = await getRedisConnection();
-        const key = `gBooksAPI:daily:${getGoogleBooksQuotaWindow().day}`;
-        expect(await redis.exists(key), "Use an isolated Redis instance for this test").toBe(0);
-        const worker = startWorker(`
-            const { consumeGoogleBooksQuota } = await import("./src/lib/server/api-providers/api/gbooks-quota.ts");
-            const { providerRequestContext } = await import("./src/lib/server/core/provider-request-context.ts");
-            const results = await providerRequestContext.run({ isImport: true }, () =>
-                Promise.allSettled(Array.from({ length: 600 }, () => consumeGoogleBooksQuota())));
-            console.log(results.filter(result => result.status === "fulfilled").length);
-        `);
-        try {
-            const results = await providerRequestContext.run({ isImport: true }, () =>
-                Promise.allSettled(Array.from({ length: 600 }, () => consumeGoogleBooksQuota())));
-            const workerCount = Number(await new Response(worker.stdout).text());
-            expect(await worker.exited, await new Response(worker.stderr).text()).toBe(0);
-            expect(workerCount + results.filter(result => result.status === "fulfilled").length).toBe(900);
-            await Promise.all(Array.from({ length: 100 }, () => consumeGoogleBooksQuota()));
-            await expect(consumeGoogleBooksQuota()).rejects.toMatchObject({ details: { reason: "dailyLimitExceeded" } });
-            expect(await redis.get(key)).toBe("1000");
-            expect(await redis.pttl(key)).toBeGreaterThan(0);
-        }
-        finally {
-            worker.kill();
-            await redis.del(key);
-        }
     });
 
     it("shares the longest cooldown and rate allowance across independent clients", async () => {

@@ -16,8 +16,6 @@ export type ApiHttpClient = {
 export type ApiClientConfig = {
     consumeKey: string;
     resultsPerPage?: number;
-    getQuotaResetAt?: () => number;
-    beforeRequest?: () => Promise<void>;
     throttleOptions: Parameters<typeof createRateLimiter>[0][];
 };
 
@@ -50,7 +48,6 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
 
                     signal.throwIfAborted();
                     await checkProviderCooldown(config.consumeKey);
-                    await config.beforeRequest?.();
 
                     startedAt = Date.now();
                     response = await fetch(url, { ...options, method: method.toUpperCase(), signal });
@@ -116,7 +113,7 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
 
                 const retryAfterSeconds = getRetryAfterSeconds(response);
                 const retryAfterMs = retryAfterSeconds === null ? undefined : retryAfterSeconds * 1000;
-                const error = await readProviderError(config.consumeKey, response, retryAfterMs, config.getQuotaResetAt?.());
+                const error = await readProviderError(config.consumeKey, response, retryAfterMs);
 
                 logger.warn({ ...error.details }, "Provider API request rejected");
 

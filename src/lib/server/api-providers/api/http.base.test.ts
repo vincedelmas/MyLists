@@ -108,22 +108,6 @@ describe("createApiHttpClient", () => {
         expect(transportMocks.removeTokens).toHaveBeenCalledTimes(2);
     });
 
-    it("checks quota for every attempt and does not send a retry after the budget is exhausted", async () => {
-        vi.useFakeTimers();
-        const quotaError = new ProviderRequestError("Daily quota exhausted", {
-            provider: "test-api", kind: "quota", statusCode: 429, retryAt: Date.now() + 86_400_000,
-        });
-        const beforeRequest = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(quotaError);
-        const fetchMock = vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 }));
-        vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient({ ...config, beforeRequest });
-        const assertion = expect(client.call("https://example.com/items")).rejects.toBe(quotaError);
-        await vi.runAllTimersAsync();
-        await assertion;
-        expect(beforeRequest).toHaveBeenCalledTimes(2);
-        expect(fetchMock).toHaveBeenCalledOnce();
-    });
-
     it("does not retry non-retryable HTTP responses", async () => {
         const fetchMock = vi.fn().mockResolvedValue(new Response("bad request", { status: 400 }));
         vi.stubGlobal("fetch", fetchMock);
@@ -216,15 +200,16 @@ describe("createApiHttpClient", () => {
     });
 
     it("preserves Google daily quota reasons and metadata without retrying a 429", async () => {
-        const resetAt = Date.now() + 86_400_000;
+        vi.useFakeTimers();
+        const retryAt = Date.now() + 86_400_000;
         const fetchMock = vi.fn().mockResolvedValue(Response.json({ error: {
             errors: [{ reason: "rateLimitExceeded" }],
             details: [{ reason: "RATE_LIMIT_EXCEEDED", metadata: { quota_limit: "defaultPerDayPerProject" } }],
         } }, { status: 429 }));
         vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient({ ...config, getQuotaResetAt: () => resetAt });
+        const client = await createApiHttpClient(config);
         await expect(client.call("https://example.com/books")).rejects.toMatchObject({ details: {
-            kind: "quota", reason: "rateLimitExceeded", quotaLimit: "defaultPerDayPerProject", retryAt: resetAt,
+            kind: "quota", reason: "rateLimitExceeded", quotaLimit: "defaultPerDayPerProject", retryAt,
         } });
         expect(fetchMock).toHaveBeenCalledOnce();
         expect(transportMocks.setProviderCooldown).toHaveBeenCalledOnce();
@@ -272,18 +257,16 @@ describe("createApiHttpClient", () => {
         expect(times[2] - times[1]).toBeLessThan(2_500);
     });
 
-    it("rejects calls during an existing provider cooldown without spending rate or quota tokens", async () => {
+    it("rejects calls during an existing provider cooldown without spending rate tokens", async () => {
         const error = new ProviderRequestError("Provider paused", {
             provider: "test-api", kind: "rate_limit", statusCode: 429, retryAt: Date.now() + 60_000,
         });
         transportMocks.checkProviderCooldown.mockRejectedValue(error);
-        const beforeRequest = vi.fn();
         const fetchMock = vi.fn();
         vi.stubGlobal("fetch", fetchMock);
-        const client = await createApiHttpClient({ ...config, beforeRequest });
+        const client = await createApiHttpClient(config);
         await expect(client.call("https://example.com/items")).rejects.toBe(error);
         expect(transportMocks.removeTokens).not.toHaveBeenCalled();
-        expect(beforeRequest).not.toHaveBeenCalled();
         expect(fetchMock).not.toHaveBeenCalled();
     });
 

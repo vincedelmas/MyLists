@@ -35,7 +35,7 @@ const errorBodySchema = z.object({
 });
 
 
-export const readProviderError = async (provider: string, response: Response, retryAfterMs?: number, quotaResetAt?: number) => {
+export const readProviderError = async (provider: string, response: Response, retryAfterMs?: number) => {
     const parsed = errorBodySchema.safeParse(await response.json().catch(() => null));
 
     const error = (parsed.success && typeof parsed.data.error === "object")
@@ -54,8 +54,8 @@ export const readProviderError = async (provider: string, response: Response, re
 
     if (/dailyLimitExceeded/i.test(reason ?? "") || /perday/i.test(quotaLimit ?? "")) {
         kind = "quota";
-        retryAt = Math.max(quotaResetAt ?? now + 86_400_000, now + (retryAfterMs ?? 0));
-        message = "Provider daily quota reached. Requests will resume after the quota resets.";
+        retryAt = now + Math.max(86_400_000, retryAfterMs ?? 0);
+        message = "Provider daily quota reached. Requests are temporarily paused.";
     }
     else if (statusCode === 429 || /rate.?limit|quotaExceeded|RESOURCE_EXHAUSTED/i.test(reason ?? "")) {
         kind = "rate_limit";

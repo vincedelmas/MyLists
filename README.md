@@ -149,11 +149,11 @@ Redis caching is optional.
   REDIS_URL=redis://redis:6379
   ```
 
-- Redis is used for shared caching, rate limits, Google Books daily usage, provider cooldowns, IGDB concurrency, and API monitoring rollups.
-  The web app, import worker, and scheduled tasks must use the same Redis instance to share these controls. Keep Redis data persistent to retain daily usage across restarts.
+- Redis is used for shared caching, rate limits, provider cooldowns, and API monitoring rollups.
+  The web app, import worker, and scheduled tasks must use the same Redis instance to share these controls. Keep Redis data persistent to retain pending monitoring rollups across restarts.
   Redis commands have a five-second timeout. If provider controls are unavailable, imports pause with a saved retry time; Redis outages do not switch traffic to memory limits.
 - Without Redis, these controls use memory in each process and reset when that process exits. The web app and cron workers have independent allowances;
-  combined traffic can exceed provider limits, and the Google Books daily budget cannot be enforced across worker runs. Provider quota errors still pause imports.
+  combined traffic can exceed provider limits. Provider quota errors still pause imports.
 - Import progress and retry times are stored in SQLite in both modes and survive worker restarts.
 - The admin API monitoring page will not collect outbound API rollups without Redis.
 
@@ -171,8 +171,8 @@ Login and registration only show configured auth methods.
 - Without `MAL_CLIENT_ID`, manga external search/details are unavailable and anime uses TMDB genres without MyAnimeList enrichment. Register an API client at
   [MyAnimeList API Configuration](https://myanimelist.net/apiconfig).
 - Without `GOOGLE_BOOKS_API_KEY`, external book search/details are unavailable. Existing local books remain usable.
-  Requests are limited to one per second and 1,000 per Pacific calendar day. Imports stop at 900 total calls to leave 100 for regular use.
-  The budget covers this app's requests; other applications using the same Google project also consume its quota. See Redis Setup for the scope of the local counters.
+  Requests are limited to one per second, with no local daily quota. With Redis enabled, daily request counts are available in
+  Admin > API Monitoring > Daily Provider Calls (UTC days), including retries. Quota errors returned by Google still pause requests.
 - Without `LLM_API_KEY`, book genre enrichment is skipped with a task warning.
 
 For every optional credential pair, either set both values or leave both blank. 

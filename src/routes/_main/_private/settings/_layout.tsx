@@ -1,7 +1,7 @@
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {createFileRoute, Link, Outlet, useLocation} from "@tanstack/react-router";
-import {BookOpenCheck, Brush, CircleUserRound, KeyRound, LibraryBig, ListRestart, Settings2, ShieldAlert,} from "lucide-react";
+import {BookOpenCheck, Brush, CircleUserRound, KeyRound, LibraryBig, ListRestart, Settings2, ShieldAlert, Upload,} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout")({
@@ -24,11 +24,13 @@ const settingsItems = [
         to: "/settings/content-lists",
         description: "Media types, ratings and exports",
     },
-    // {
-    //     id: "imports",
-    //     label: "Imports",
-    //     to: "/settings/imports",
-    // },
+    {
+        id: "imports",
+        icon: Upload,
+        label: "Imports",
+        to: "/settings/imports",
+        description: "Import your lists from other services",
+    },
     {
         icon: Brush,
         id: "profile-customization",
@@ -69,7 +71,10 @@ const settingsItems = [
 
 function SettingsLayout() {
     const { pathname } = useLocation();
-    const activeItem = settingsItems.find((item) => pathname === item.to) ?? settingsItems[0];
+
+    const activeItem = settingsItems
+        .find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`)) ?? settingsItems[0];
+    
     const ActiveIcon = activeItem.icon;
 
     return (
@@ -99,7 +104,7 @@ function SettingsLayout() {
                                     <Link
                                         to={item.to}
                                         key={item.id}
-                                        activeOptions={{ exact: true }}
+                                        activeOptions={{ exact: false, includeSearch: false }}
                                         activeProps={{ className: "border-brand/30 bg-brand/5 text-foreground" }}
                                         className="group flex shrink-0 items-center gap-3 rounded-lg border border-transparent px-3 py-2.5
                                         text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground

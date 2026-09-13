@@ -51,7 +51,7 @@ export interface ExternalMediaProvider<TDetails> {
 
 
 export interface MediaIngestionService<_TDetails> {
-    storeFromExternal(apiId: number | string, checkInternalFirst?: boolean): Promise<number>;
+    storeFromExternal(apiId: number | string, checkInternalFirst?: boolean, isBulk?: boolean): Promise<number>;
 
     storeBatchFromExternal(apiIds: (number | string)[], checkInternalFirst?: boolean): Promise<Map<string, number>>;
 

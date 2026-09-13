@@ -1,14 +1,18 @@
-import {useQuery} from "@tanstack/react-query";
+import {RefreshCw, Trash2} from "lucide-react";
 import {ImportJobStatus} from "@/lib/utils/enums";
-import {Badge} from "@/lib/client/components/ui/badge";
+import {useNavigate} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {formatDateTime} from "@/lib/utils/formatting/date";
 import {Progress} from "@/lib/client/components/ui/progress";
-import {importJobOptions} from "@/lib/client/react-query/query-options";
-import {ImportJobIssuesTable} from "@/lib/client/components/user-settings/ImportJobIssuesTable";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
+import {ImportStatusBadge} from "@/lib/client/components/imports/ImportStatusBadge";
+import {ImportJobIssuesTable} from "@/lib/client/components/imports/ImportJobIssuesTable";
+import {importJobIssuesOptions, importJobOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
-import {AlertTriangle, CheckCircle2, Clock3, ListRestart, RefreshCw, Trash2} from "lucide-react";
+import {importJobIssuesQueryKey, importJobsQueryKey} from "@/lib/client/react-query/query-options/imports.options";
 
 
 interface SelectedImportJobProps {
@@ -28,8 +32,12 @@ const terminalStatuses = new Set<string>([
 
 export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobProps) {
     const confirm = useConfirm();
+    const queryClient = useQueryClient();
     const deleteMutation = useDeleteImportJobMutation(jobId);
+    const navigate = useNavigate();
     const { data: job, refetch, isFetching, isLoading, isError } = useQuery(importJobOptions(jobId));
+
+    const issueQuery = useQuery(importJobIssuesOptions(jobId, { page, perPage: 25 }, !!job && job.failedCount + job.skippedCount > 0));
 
     if (isLoading) {
         return (
@@ -51,12 +59,21 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
     const issueCount = job.failedCount + job.skippedCount;
     const progress = job.totalCount ? Math.round((job.processedCount / job.totalCount) * 100) : 0;
 
+    const onRefreshClick = () => {
+        void Promise.all([
+            refetch(),
+            queryClient.invalidateQueries({ queryKey: importJobsQueryKey }),
+            queryClient.invalidateQueries({ queryKey: importJobIssuesQueryKey(jobId) }),
+        ]);
+    };
+    
     const handleDelete = async () => {
         if (!await confirm({
             variant: "destructive",
             confirmLabel: "Delete Job",
             title: "Delete this import job?",
-            description: "This will remove the job and every row attached to it.",
+            description: "This removes the import and its row details. Entries already added to your lists will stay. " +
+                "Imports that are processing cannot be deleted.",
         })) return;
 
         deleteMutation.mutate({ data: { jobId } }, {
@@ -64,12 +81,6 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                 onDeleted();
             },
         });
-    };
-
-    const getQueueLabel = (jobsAhead?: number | null) => {
-        if (jobsAhead === null || jobsAhead === undefined) return "No queue position available.";
-        if (jobsAhead === 0) return "Currently processing.";
-        return `${jobsAhead} job${jobsAhead > 1 ? "s" : ""} ahead.`;
     };
 
     return (
@@ -82,21 +93,27 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                         </p>
                         <ImportStatusBadge
                             status={job.status}
+                            nextAttemptAt={job.nextAttemptAt}
                         />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        {getQueueLabel(job.jobsAhead)}
+                        {job.nextAttemptAt ? `Paused. Automatic retry after ${formatDateTime(job.nextAttemptAt)}.`
+                            : job.status === ImportJobStatus.PROCESSING ? "Currently processing."
+                                : job.status === ImportJobStatus.QUEUED ? job.jobsAhead
+                                        ? `${job.jobsAhead} job${job.jobsAhead > 1 ? "s" : ""} ahead.`
+                                        : "Next in queue. Waiting for processing to start."
+                                    : isTerminal ? "Import finished." : "Validating your file."}
                     </p>
                 </div>
 
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+                    <Button variant="outline" size="sm" onClick={onRefreshClick} disabled={isFetching}>
                         <RefreshCw className="size-4"/>
                         Refresh
                     </Button>
-                    {isTerminal &&
+                    {(isTerminal || job.status === ImportJobStatus.QUEUED) &&
                         <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleteMutation.isPending}>
-                            <Trash2 className="size-4"/>
+                            <Trash2 data-icon="inline-start"/>
                             Delete
                         </Button>
                     }
@@ -132,41 +149,26 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
             </div>
 
             {job.error &&
-                <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-                    {job.error}
-                </div>
+                <Alert variant={job.nextAttemptAt ? "default" : "destructive"}>
+                    <AlertDescription>{job.error}</AlertDescription>
+                </Alert>
             }
 
-            {issueCount === 0 ?
-                <div className="rounded-xl border bg-muted/20 p-5 text-sm text-muted-foreground">
-                    No skipped or failed rows for this import.
-                </div>
-                :
+            {issueCount > 0 ?
                 <ImportJobIssuesTable
-                    page={page}
-                    jobId={jobId}
+                    issueQuery={issueQuery}
+                    onPageChange={nextPage => {
+                        void navigate({ to: ".", search: prev => ({ ...prev, page: nextPage, jobId }), resetScroll: false });
+                    }}
                 />
+                : !job.error &&
+                <div className="rounded-xl border bg-muted/20 p-5 text-sm text-muted-foreground">
+                    {isTerminal ? "No skipped or failed rows for this import." : "No row issues reported so far."}
+                </div>
             }
         </div>
     );
 }
-
-
-const ImportStatusBadge = ({ status }: { status: string }) => {
-    if (status === ImportJobStatus.COMPLETED) {
-        return <Badge variant="success"><CheckCircle2 className="size-3"/>Completed</Badge>;
-    }
-
-    if (status === ImportJobStatus.COMPLETED_WITH_ERRORS) {
-        return <Badge variant="secondary"><ListRestart className="size-3"/>Completed with errors</Badge>;
-    }
-
-    if (status === ImportJobStatus.FAILED || status === ImportJobStatus.CANCELLED) {
-        return <Badge variant="destructive"><AlertTriangle className="size-3"/>{status}</Badge>;
-    }
-
-    return <Badge variant="outline"><Clock3 className="size-3"/>{status}</Badge>;
-};
 
 
 const ImportMetric = ({ label, value }: { label: string; value: number | string }) => (

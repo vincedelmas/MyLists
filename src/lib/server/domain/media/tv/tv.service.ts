@@ -8,6 +8,7 @@ import {withTransaction} from "@/lib/server/database/async-storage";
 import {saveImageFromUrl} from "@/lib/server/core/images/image-saver";
 import {TvRepository} from "@/lib/server/domain/media/tv/tv.repository";
 import {createMediaService} from "@/lib/server/domain/media/base/media.service";
+import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
 import {TvList, TvListUpdate, TvType} from "@/lib/server/domain/media/tv/tv.types";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
@@ -51,7 +52,7 @@ export function createTvService(repository: TvRepository, definition: TvDefiniti
 
         return rows.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, ...row }) => ({
             ...row,
-            formatVersion: "2",
+            formatVersion: MYLISTS_CSV_VERSION,
             mediaType: identity.mediaType,
             externalApiSource: definition.ingestion.externalApiSource,
         }));

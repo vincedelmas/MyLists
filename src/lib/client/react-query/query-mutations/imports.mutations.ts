@@ -7,6 +7,7 @@ export const useCreateImportJobMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ["imports", "create"],
         mutationFn: ({ data }: { data: FormData }) => postCreateImportJob({ data }),
         onSuccess: async (job) => {
             await queryClient.invalidateQueries({ queryKey: importJobsQueryKey });
@@ -24,6 +25,12 @@ export const useDeleteImportJobMutation = (jobId: number, meta?: MutationMeta) =
         meta: {
             successToastMessage: "Import job deleted.",
             ...meta,
+        },
+        onError: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: importJobQueryKey(jobId) }),
+                queryClient.invalidateQueries({ queryKey: importJobsQueryKey }),
+            ]);
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: importJobsQueryKey });

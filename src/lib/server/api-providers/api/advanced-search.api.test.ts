@@ -4,9 +4,11 @@ import {ApiProviderType} from "@/lib/utils/enums";
 
 const envMocks = vi.hoisted(() => ({
     serverEnv: {
-        GOOGLE_BOOKS_API_KEY: "books-key",
-        IGDB_CLIENT_ID: "igdb-client",
+        LOG_LEVEL: "silent",
+        GOOGLE_BOOKS_API_KEY: "books-key" as string | undefined,
+        IGDB_CLIENT_ID: "igdb-client" as string | undefined,
         IGDB_CLIENT_SECRET: "igdb-secret",
+        THEMOVIEDB_API_KEY: "tmdb-key" as string | undefined,
     },
 }));
 
@@ -34,10 +36,14 @@ vi.mock("@/lib/server/core/container", () => ({
 
 import {createGBooksApi} from "@/lib/server/api-providers/api/gbooks.api";
 import {createIgdbApi} from "@/lib/server/api-providers/api/igdb.api";
+import {createTmdbApi} from "@/lib/server/api-providers/api/tmdb.api";
 
 
 describe("advanced provider searches", () => {
     beforeEach(() => {
+        envMocks.serverEnv.GOOGLE_BOOKS_API_KEY = "books-key";
+        envMocks.serverEnv.IGDB_CLIENT_ID = "igdb-client";
+        envMocks.serverEnv.THEMOVIEDB_API_KEY = "tmdb-key";
         httpMocks.call.mockReset();
         httpMocks.createApiHttpClient.mockReset();
         httpMocks.createApiHttpClient.mockResolvedValue({ call: httpMocks.call });
@@ -74,6 +80,33 @@ describe("advanced provider searches", () => {
         expect(url.searchParams.get("printType")).toBe("books");
         expect(url.searchParams.get("filter")).toBe("ebooks");
         expect(url.searchParams.get("orderBy")).toBe("newest");
+        expect(url.searchParams.get("key")).toBe("books-key");
+    });
+
+    it("requires a Google Books key for searches and details without preventing application startup", async () => {
+        envMocks.serverEnv.GOOGLE_BOOKS_API_KEY = undefined;
+        const api = await createGBooksApi();
+        await expect(api.search("Dune")).rejects.toMatchObject({ details: { kind: "access", reason: "missingApiKey" } });
+        await expect(api.getBooksDetails("volume-id")).rejects.toMatchObject({ details: { kind: "access" } });
+        expect(httpMocks.call).not.toHaveBeenCalled();
+    });
+
+    it("reports missing TMDB credentials as a provider access failure before sending a request", async () => {
+        envMocks.serverEnv.THEMOVIEDB_API_KEY = undefined;
+        const api = await createTmdbApi();
+        await expect(api.getMovieDetails(1)).rejects.toMatchObject({
+            details: { provider: "tmdb-API", kind: "access", reason: "missingCredentials" },
+        });
+        expect(httpMocks.call).not.toHaveBeenCalled();
+    });
+
+    it("reports missing IGDB credentials as a provider access failure before requesting a token", async () => {
+        envMocks.serverEnv.IGDB_CLIENT_ID = undefined;
+        const api = await createIgdbApi();
+        await expect(api.search("Final Fantasy")).rejects.toMatchObject({
+            details: { provider: "igdb-API", kind: "access", reason: "missingCredentials" },
+        });
+        expect(httpMocks.call).not.toHaveBeenCalled();
     });
 
     it("uses IGDB array-membership filters for platform and genre", async () => {

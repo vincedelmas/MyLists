@@ -1,4 +1,5 @@
 import {logger} from "@/lib/server/core/logger";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {ApiProviderType, ImportItemStatus, TvMediaType} from "@/lib/utils/enums";
@@ -27,7 +28,7 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
         for (const item of items) {
             try {
                 if (this._hasTmdbExternalId(item)) {
-                    const mediaId = await this.tvIngestion.storeFromExternal(item.externalApiId, false);
+                    const mediaId = await this.tvIngestion.storeFromExternal(item.externalApiId, false, true);
                     batch.matched.push({ item, mediaId });
                     if (this._shouldFlush(batch)) {
                         yield batch;
@@ -66,10 +67,14 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const mediaId = await this.tvIngestion.storeFromExternal(candidates[0].id, false);
+                const mediaId = await this.tvIngestion.storeFromExternal(candidates[0].id, false, true);
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {
+                if (error instanceof ProviderRequestError && error.details.kind !== "item") {
+                    if (this._hasResults(batch)) yield batch;
+                    throw error;
+                }
                 this._logResolutionError(item, error);
                 batch.failed.push(this._createFailedOutcome(item));
             }

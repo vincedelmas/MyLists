@@ -81,20 +81,16 @@ describe.each(Object.values(MediaType))("%s import matching", (mediaType) => {
         expect(ingestion.storeBatchFromExternal).not.toHaveBeenCalled();
     });
 
-    it(mediaType === MediaType.BOOKS ? "preserves book title/date fallback with an external ID" : "fetches the supplied ID before accepting a different local title/date match", async () => {
-        const expectedMediaId = mediaType === MediaType.BOOKS ? 100 : 200;
-
-        expect(await processItem()).toEqual([{ itemId: 1, matchedMediaId: expectedMediaId, status: ImportItemStatus.COMPLETED }]);
-        expect(service.bulkInsertUserMedia).toHaveBeenCalledWith([expect.objectContaining({ userId: 42, mediaId: expectedMediaId })]);
+    it("fetches the supplied ID before accepting a different local title/date match", async () => {
+        expect(await processItem()).toEqual([{ itemId: 1, matchedMediaId: 200, status: ImportItemStatus.COMPLETED }]);
+        expect(service.bulkInsertUserMedia).toHaveBeenCalledWith([expect.objectContaining({ userId: 42, mediaId: 200 })]);
         expect(provider.search).not.toHaveBeenCalled();
-        if (mediaType === MediaType.BOOKS) {
-            expect(ingestion.storeFromExternal).not.toHaveBeenCalled();
+        expect(service.findByNames).not.toHaveBeenCalled();
+        if (mediaType === MediaType.GAMES) expect(ingestion.storeBatchFromExternal).toHaveBeenCalledWith(["200"], false);
+        else if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+            expect(ingestion.storeFromExternal).toHaveBeenCalledWith("200", false, true);
         }
-        else {
-            expect(service.findByNames).not.toHaveBeenCalled();
-            if (mediaType === MediaType.GAMES) expect(ingestion.storeBatchFromExternal).toHaveBeenCalledWith(["200"], false);
-            else expect(ingestion.storeFromExternal).toHaveBeenCalledWith("200", false);
-        }
+        else expect(ingestion.storeFromExternal).toHaveBeenCalledWith("200", false);
     });
 
     it.each([null, ApiProviderType.USERS])("retains local name/date matching without a supported provider ID (%s)", async (source) => {
@@ -128,6 +124,9 @@ describe.each(Object.values(MediaType))("%s import matching", (mediaType) => {
         ] });
 
         expect(await processItem()).toEqual([{ itemId: 1, matchedMediaId: 200, status: ImportItemStatus.COMPLETED }]);
-        expect(ingestion.storeFromExternal).toHaveBeenCalledWith(301, false);
+        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+            expect(ingestion.storeFromExternal).toHaveBeenCalledWith(301, false, true);
+        }
+        else expect(ingestion.storeFromExternal).toHaveBeenCalledWith(301, false);
     });
 });

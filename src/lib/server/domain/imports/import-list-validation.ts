@@ -1,5 +1,5 @@
 import * as z from "zod";
-import {MediaType, Status} from "@/lib/utils/enums";
+import {MediaType} from "@/lib/utils/enums";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {COMMENT_MAX_LENGTH, PLAYTIME_MAX_MINUTES, PROGRESS_MAX, REDO_MAX} from "@/lib/utils/constants";
 
@@ -22,8 +22,8 @@ export const emptyStringToNull = (value: unknown) => typeof value === "string" &
 export const importStatusSchema = (mediaType: MediaType) => {
     const allowedStatuses = getMediaDefinition(mediaType).statuses;
 
-    return z.enum(Status).refine((status) => allowedStatuses.includes(status), {
-        message: `Status is not valid for ${mediaType}. Allowed statuses: ${allowedStatuses.join(", ")}`,
+    return z.enum(allowedStatuses, {
+        error: `Status is not valid for ${mediaType}. Allowed statuses: ${allowedStatuses.join(", ")}`,
     });
 };
 

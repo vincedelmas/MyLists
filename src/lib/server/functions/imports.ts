@@ -1,6 +1,6 @@
+import {ImportSource} from "@/lib/utils/enums";
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
-import {FormattedError} from "@/lib/utils/error-classes";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {importJobIdSchema, importJobIssuesSchema, importUploadSchema} from "@/lib/schemas";
 
@@ -8,12 +8,15 @@ import {importJobIdSchema, importJobIssuesSchema, importUploadSchema} from "@/li
 export const postCreateImportJob = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator((data) => importUploadSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
-    .handler(async ({ data: { file, source }, context: { currentUser } }) => {
-        throw new FormattedError("You sneaky :p, not implemented yet.");
-
+    .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const importService = container.services.imports;
-        const job = await importService.createImportJob(currentUser.id, source, await file.text());
+
+        const fileType = data.source === ImportSource.LETTERBOXD
+            ? data.letterboxdFileType
+            : data.source === ImportSource.IMDB ? data.imdbFileType : undefined;
+
+        const job = await importService.createImportJob(currentUser.id, data.source, await data.file.text(), fileType);
 
         return {
             jobId: job.id,
@@ -32,8 +35,6 @@ export const postDeleteImportJob = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(importJobIdSchema)
     .handler(async ({ data: { jobId }, context: { currentUser } }) => {
-        throw new FormattedError("You sneaky :p, not implemented yet.");
-
         const container = await getContainer();
         const importService = container.services.imports
         return importService.deleteImportJob(currentUser.id, jobId);
@@ -44,8 +45,6 @@ export const getImportJob = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(importJobIdSchema)
     .handler(async ({ data: { jobId }, context: { currentUser } }) => {
-        throw new FormattedError("You sneaky :p, not implemented yet.");
-
         const container = await getContainer();
         const importService = container.services.imports;
         const { job, jobsAhead } = await importService.getImportJob(currentUser.id, jobId);
@@ -63,6 +62,7 @@ export const getImportJob = createServerFn({ method: "GET" })
             totalCount: job.totalCount,
             failedCount: job.failedCount,
             skippedCount: job.skippedCount,
+            nextAttemptAt: job.nextAttemptAt,
             completedCount: job.completedCount,
             processedCount: job.processedCount,
         };
@@ -72,8 +72,6 @@ export const getImportJob = createServerFn({ method: "GET" })
 export const getAllUserJobs = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .handler(async ({ context: { currentUser } }) => {
-        throw new FormattedError("You sneaky :p, not implemented yet.");
-
         const container = await getContainer();
         const importService = container.services.imports;
         return importService.getAllUserJobs(currentUser.id);
@@ -84,8 +82,6 @@ export const getImportJobIssues = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(importJobIssuesSchema)
     .handler(async ({ data: { jobId, page, perPage }, context: { currentUser } }) => {
-        throw new FormattedError("You sneaky :p, not implemented yet.");
-
         const container = await getContainer();
         const importService = container.services.imports;
         return importService.getImportIssues(currentUser.id, jobId, page, perPage);

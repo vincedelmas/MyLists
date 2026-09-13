@@ -41,8 +41,7 @@ describe("createMalApi", () => {
         expect(httpMocks.createApiHttpClient).toHaveBeenCalledWith(expect.objectContaining({
             consumeKey: "mal-API",
             throttleOptions: [
-                expect.objectContaining({ points: 1, duration: 1 }),
-                expect.objectContaining({ points: 30, duration: 60 }),
+                expect.objectContaining({ points: 1, duration: 2 }),
             ],
         }));
 
@@ -104,6 +103,9 @@ describe("createMalApi", () => {
         await expect(mal.searchManga("Berserk")).rejects.toThrow(
             "MyAnimeList is not configured",
         );
+        await expect(mal.getMangaDetails(2)).rejects.toMatchObject({
+            details: { provider: "mal-API", kind: "access", reason: "missingCredentials" },
+        });
         expect(httpMocks.call).not.toHaveBeenCalled();
     });
 });

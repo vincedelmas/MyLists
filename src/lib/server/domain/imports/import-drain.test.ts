@@ -13,20 +13,36 @@ describe("drainImportJobs", () => {
         });
 
         await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
-        expect(processor.requeueStaleProcessingJobs).toHaveBeenCalledTimes(1);
+        expect(processor.requeueInterruptedJobs).not.toHaveBeenCalled();
         expect(processor.processNextJob).toHaveBeenCalledTimes(3);
     });
 
-    it("continues draining after a processor error and counts failed jobs", async () => {
+    it("continues draining after a persisted job failure and counts failed jobs", async () => {
         const processor = createProcessor({
             processNextJob: vi.fn()
-                .mockRejectedValueOnce(new Error("matcher crashed"))
+                .mockResolvedValueOnce({ id: 1, status: ImportJobStatus.FAILED })
                 .mockResolvedValueOnce({ id: 2, status: ImportJobStatus.COMPLETED })
                 .mockResolvedValueOnce(null),
         });
 
         await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 1, processedJobs: 1 });
         expect(processor.processNextJob).toHaveBeenCalledTimes(3);
+    });
+
+    it("stops on infrastructure errors instead of retrying forever", async () => {
+        const error = new Error("Database unavailable");
+        const processor = createProcessor({ processNextJob: vi.fn().mockRejectedValue(error) });
+        await expect(drainImportJobs(processor as any)).rejects.toBe(error);
+        expect(processor.processNextJob).toHaveBeenCalledOnce();
+    });
+
+    it("counts paused attempts so completed rows still trigger statistics recomputation", async () => {
+        const processor = createProcessor({ processNextJob: vi.fn()
+            .mockResolvedValueOnce({ id: 1, status: ImportJobStatus.QUEUED })
+            .mockResolvedValueOnce({ id: 2, status: ImportJobStatus.COMPLETED })
+            .mockResolvedValueOnce(null),
+        });
+        await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
     });
 
     it("returns zero when there is no queued job", async () => {
@@ -41,6 +57,6 @@ describe("drainImportJobs", () => {
 
 
 const createProcessor = (overrides: { processNextJob: ReturnType<typeof vi.fn> }) => ({
-    requeueStaleProcessingJobs: vi.fn().mockReturnValue([]),
+    requeueInterruptedJobs: vi.fn().mockReturnValue([]),
     ...overrides,
 });

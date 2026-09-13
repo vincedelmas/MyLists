@@ -1,4 +1,6 @@
+import {logger} from "@/lib/server/core/logger";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
 
 
@@ -9,8 +11,8 @@ export class ImportJobProcessor {
     ) {
     }
 
-    requeueStaleProcessingJobs(staleAfterMinutes: number) {
-        return this.importService.requeueStaleProcessingJobs(staleAfterMinutes);
+    requeueInterruptedJobs() {
+        return this.importService.requeueInterruptedJobs();
     }
 
     async processNextJob() {
@@ -24,6 +26,7 @@ export class ImportJobProcessor {
             for (const [mediaType, queuedItems] of groups) {
                 const markedItems = await this.importService.markItemsProcessing(job.id, queuedItems.map(item => item.id));
                 const markedIds = new Set(markedItems.map(item => item.id));
+
                 const processingItems = queuedItems.filter(item => markedIds.has(item.id));
                 if (processingItems.length === 0) continue;
 
@@ -41,9 +44,25 @@ export class ImportJobProcessor {
             return finalizedJob;
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            await this.importService.markProcessingJobFailed(job.id, errorMessage);
-            throw error;
+            if (error instanceof ProviderRequestError && error.details.kind !== "item") {
+                logger.warn({ jobId: job.id, ...error.details }, "Import stopped for provider error");
+
+                const stoppedJob = error.details.kind === "access"
+                    ? await this.importService.markProcessingJobFailed(job.id, error.message)
+                    : this.importService.pauseProcessingJob(job.id, error.message, error.details.retryAt!);
+
+                if (!stoppedJob) throw error;
+
+                return stoppedJob;
+            }
+            logger.error({ err: error, jobId: job.id }, "Import processing failed");
+
+            const failedJob = await this.importService.markProcessingJobFailed(job.id,
+                "The import stopped unexpectedly. Entries already imported were kept. Please try importing the file again.");
+
+            if (!failedJob) throw error;
+
+            return failedJob;
         }
     }
 }

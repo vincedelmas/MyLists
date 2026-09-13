@@ -1,5 +1,6 @@
 import {serverEnv} from "@/env/server";
 import {BookAdvancedSearchFilters} from "@/lib/schemas";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {GBooksDetails, GBooksSearchResults, SearchData} from "@/lib/types/provider.types";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 
@@ -14,11 +15,21 @@ const createConfig = (): GBooksApiConfig => ({
     consumeKey: "gBooks-API",
     baseUrl: "https://www.googleapis.com/books/v1/volumes",
     throttleOptions: [{
-        points: 4,
+        points: 1,
         duration: 1,
         keyPrefix: "gBooksAPI",
     }],
 });
+
+
+const getApiKey = () => {
+    if (!serverEnv.GOOGLE_BOOKS_API_KEY) {
+        throw new ProviderRequestError("Google Books is not configured. Set GOOGLE_BOOKS_API_KEY to enable external book requests.", {
+            provider: "gBooks-API", statusCode: 403, kind: "access", reason: "missingApiKey",
+        });
+    }
+    return serverEnv.GOOGLE_BOOKS_API_KEY;
+};
 
 
 export const createGBooksApi = async () => {
@@ -49,8 +60,7 @@ export const createGBooksApi = async () => {
             if (advancedFilters?.language) params.set("langRestrict", advancedFilters.language);
             if (advancedFilters?.availability) params.set("filter", advancedFilters.availability);
 
-            const apiKey = serverEnv.GOOGLE_BOOKS_API_KEY;
-            if (apiKey) params.set("key", apiKey);
+            params.set("key", getApiKey());
 
             const response = await http.call(`${config.baseUrl}?${params.toString()}`);
             return {
@@ -63,8 +73,7 @@ export const createGBooksApi = async () => {
         async getBooksDetails(bookApiId: string): Promise<GBooksDetails> {
             const url = new URL(`${config.baseUrl}/${bookApiId}`);
 
-            const apiKey = serverEnv.GOOGLE_BOOKS_API_KEY;
-            if (apiKey) url.searchParams.set("key", apiKey);
+            url.searchParams.set("key", getApiKey());
 
             const response = await http.call(url.toString());
             return response.json();

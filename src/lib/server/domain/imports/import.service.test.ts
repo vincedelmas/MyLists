@@ -26,7 +26,7 @@ describe("ImportService.createImportJob", () => {
         findJobForUser: vi.fn(),
         countFailedItems: vi.fn(),
         insertParsedItems: vi.fn(),
-        deleteTerminalJob: vi.fn(),
+        deleteQueuedOrTerminalJob: vi.fn(),
         claimNextQueuedJob: vi.fn(),
         markItemsProcessing: vi.fn(),
         findActiveJobForUser: vi.fn(),
@@ -34,7 +34,7 @@ describe("ImportService.createImportJob", () => {
         settleProcessingItems: vi.fn(),
         finalizeProcessingJob: vi.fn(),
         markProcessingJobFailed: vi.fn(),
-        requeueStaleProcessingJobs: vi.fn(),
+        requeueInterruptedJobs: vi.fn(),
         getQueuedItemsForProcessingJob: vi.fn(),
     };
     const service = new ImportService(repository as any, {
@@ -44,7 +44,7 @@ describe("ImportService.createImportJob", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         transactionMocks.withTransaction.mockImplementation((action) => action());
-        repository.createJob.mockResolvedValue({
+        repository.createJob.mockReturnValue({
             id: 10,
             userId: 42,
             source: ImportSource.MYLISTS,
@@ -53,13 +53,13 @@ describe("ImportService.createImportJob", () => {
         repository.findActiveJobForUser.mockResolvedValue(null);
     });
 
-    it("re-queues stale processing jobs within a transaction", async () => {
+    it("requeues interrupted jobs within a transaction", () => {
         const jobs = [{ id: 10, status: ImportJobStatus.QUEUED }];
-        repository.requeueStaleProcessingJobs.mockReturnValue(jobs);
+        repository.requeueInterruptedJobs.mockReturnValue(jobs);
 
-        await expect(service.requeueStaleProcessingJobs(6 * 60)).toBe(jobs);
+        expect(service.requeueInterruptedJobs()).toBe(jobs);
         expect(transactionMocks.withTransaction).toHaveBeenCalledOnce();
-        expect(repository.requeueStaleProcessingJobs).toHaveBeenCalledWith(6 * 60);
+        expect(repository.requeueInterruptedJobs).toHaveBeenCalledWith();
     });
 
     it("groups queued items by media type for matcher dispatch", async () => {
@@ -135,7 +135,7 @@ describe("ImportService.createImportJob", () => {
 
         expect(repository.createJob).toHaveBeenCalledWith(42, ImportSource.MYLISTS);
         expect(repository.insertParsedItems).toHaveBeenCalledWith(10, parsed.items);
-        expect(repository.markJobQueued).toHaveBeenCalledWith(10, 1, 0);
+        expect(repository.markJobQueued).toHaveBeenCalledWith(10, 1, 0, 0);
         expect(repository.markJobFailed).not.toHaveBeenCalled();
     });
 
@@ -146,9 +146,9 @@ describe("ImportService.createImportJob", () => {
     });
 
     it("formats the database constraint error when concurrent requests race", async () => {
-        repository.createJob.mockRejectedValue(new Error("UNIQUE constraint failed: import_jobs.user_id"));
+        repository.createJob.mockImplementation(() => { throw new Error("UNIQUE constraint failed: import_jobs.user_id"); });
         await expect(service.createImportJob(42, ImportSource.MYLISTS, "csv")).rejects.toThrow(FormattedError);
-        expect(parser).not.toHaveBeenCalled();
+        expect(repository.insertParsedItems).not.toHaveBeenCalled();
     });
 
     it("marks file-level parsing errors failed and returns the failed job", async () => {
@@ -162,7 +162,7 @@ describe("ImportService.createImportJob", () => {
             throw new Error("Missing required CSV headers: status");
         });
 
-        repository.markJobFailed.mockResolvedValue(failedJob);
+        repository.markJobFailed.mockReturnValue(failedJob);
 
         await expect(service.createImportJob(42, ImportSource.MYLISTS, "invalid")).resolves.toBe(failedJob);
 
@@ -179,7 +179,7 @@ describe("ImportService.createImportJob", () => {
             error: 'Import source "letterboxd" is not supported yet',
         };
 
-        repository.markJobFailed.mockResolvedValue(failedJob);
+        repository.markJobFailed.mockReturnValue(failedJob);
 
         await expect(serviceWithoutParser.createImportJob(42, ImportSource.LETTERBOXD, "csv")).resolves.toBe(failedJob);
     });
@@ -188,10 +188,10 @@ describe("ImportService.createImportJob", () => {
         parser.mockReturnValue(createParsedImport());
 
         repository.markJobQueued.mockReturnValue(null);
-        repository.markJobFailed.mockResolvedValue(null);
+        repository.markJobFailed.mockReturnValue(null);
 
         await expect(service.createImportJob(42, ImportSource.MYLISTS, "csv"))
-            .rejects.toThrow("Import job 10 is no longer in parsing state");
+            .rejects.toThrow("The import could not be saved. Please try again.");
     });
 
     it("returns the number of jobs ahead of a queued job owned by the user", async () => {
@@ -225,18 +225,26 @@ describe("ImportService.createImportJob", () => {
         expect(repository.getIssueItems).toHaveBeenCalledWith(10, 2, 25);
     });
 
-    it("deletes an owned terminal import job", async () => {
-        repository.deleteTerminalJob.mockResolvedValue({ id: 10 });
+    it("deletes an owned queued or terminal import job", async () => {
+        repository.deleteQueuedOrTerminalJob.mockResolvedValue({ id: 10 });
 
         await expect(service.deleteImportJob(42, 10)).resolves.toEqual({ id: 10 });
+        expect(repository.deleteQueuedOrTerminalJob).toHaveBeenCalledWith(10, 42);
         expect(repository.findJobForUser).not.toHaveBeenCalled();
     });
 
-    it("rejects deletion of an active import job", async () => {
-        repository.deleteTerminalJob.mockResolvedValue(null);
-        repository.findJobForUser.mockResolvedValue({ id: 10, status: ImportJobStatus.QUEUED });
+    it("explains when processing started before a deletion could take place", async () => {
+        repository.deleteQueuedOrTerminalJob.mockResolvedValue(null);
+        repository.findJobForUser.mockResolvedValue({ id: 10, status: ImportJobStatus.PROCESSING });
 
-        await expect(service.deleteImportJob(42, 10)).rejects.toThrow(FormattedError);
+        await expect(service.deleteImportJob(42, 10)).rejects.toThrow("This import has already started processing and cannot be deleted.");
+    });
+
+    it("does not expose another user's job after deletion is refused", async () => {
+        repository.deleteQueuedOrTerminalJob.mockResolvedValue(null);
+        repository.findJobForUser.mockResolvedValue(undefined);
+
+        await expect(service.deleteImportJob(999, 10)).rejects.toMatchObject({ isNotFound: true });
     });
 });
 

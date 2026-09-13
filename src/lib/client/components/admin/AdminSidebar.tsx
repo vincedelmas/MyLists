@@ -26,6 +26,7 @@ import {
     Radio,
     RefreshCw,
     Settings,
+    Upload,
     UserRoundX,
     Users
 } from "lucide-react";
@@ -193,6 +194,16 @@ export function AdminSidebar() {
                     <SidebarGroupLabel>Monitoring</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    render={
+                                        <Link to="/admin/imports">
+                                            <Upload/>
+                                            <span>Imports</span>
+                                        </Link>
+                                    }
+                                />
+                            </SidebarMenuItem>
                             <SidebarMenuItem>
                                 <SidebarMenuButton
                                     render={

@@ -1,39 +1,31 @@
 import React from "react";
-import {useQuery} from "@tanstack/react-query";
+import type {UseQueryResult} from "@tanstack/react-query";
 import {ImportItemStatus} from "@/lib/utils/enums";
-import {useNavigate} from "@tanstack/react-router";
 import {AlertTriangle} from "lucide-react";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Pagination} from "@/lib/client/components/general/Pagination";
-import {importJobIssuesOptions} from "@/lib/client/react-query/query-options";
+import type {getImportJobIssues} from "@/lib/server/functions/imports";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/lib/client/components/ui/table";
 
 
 interface ImportJobIssuesTableProps {
-    page: number;
-    jobId: number;
+    issueQuery: Pick<UseQueryResult<Awaited<ReturnType<typeof getImportJobIssues>>>, "data" | "isLoading" | "isError">;
+    onPageChange: (page: number) => void;
 }
 
 
-export function ImportJobIssuesTable({ jobId, page }: ImportJobIssuesTableProps) {
-    const navigate = useNavigate({ from: "/settings/imports" });
-    const issueQuery = useQuery(importJobIssuesOptions(jobId, { page, perPage: 25 }));
-
-    const handlePageChange = (nextPage: number) => {
-        void navigate({ search: prev => ({ ...prev, page: nextPage, jobId }), resetScroll: false });
-    };
-
+export function ImportJobIssuesTable({ issueQuery, onPageChange }: ImportJobIssuesTableProps) {
     return (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
             <div>
                 <h3 className="flex items-center gap-2 text-base font-bold">
                     <AlertTriangle className="size-4 text-warning"/>
-                    Media to Add by Hand
+                    Rows needing attention
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                    These rows were not added automatically because they failed validation, were not found, or were ambiguous.
+                    Review the reason for each row. Correct invalid data, retry temporary errors, or add unmatched media manually.
                 </p>
             </div>
 
@@ -90,7 +82,7 @@ export function ImportJobIssuesTable({ jobId, page }: ImportJobIssuesTableProps)
                         </div>
 
                         <Pagination
-                            onChangePage={handlePageChange}
+                            onChangePage={onPageChange}
                             currentPage={issueQuery.data.page}
                             totalPages={issueQuery.data.pages}
                         />

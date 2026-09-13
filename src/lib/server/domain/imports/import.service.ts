@@ -1,17 +1,25 @@
 import {notFound} from "@tanstack/react-router";
+import {logger} from "@/lib/server/core/logger";
 import {FormattedError} from "@/lib/utils/error-classes";
+import {AdminImportsSearch} from "@/lib/schemas/admin.schema";
+import type {ImportCsvType} from "@/lib/schemas/imports.schema";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import {parseImdbCsv} from "@/lib/server/domain/imports/parsers/imdb.parser";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {parseLetterboxdCsv} from "@/lib/server/domain/imports/parsers/letterboxd.parser";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
-import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry} from "@/lib/types/imports.types";
+import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry, ParsedImport} from "@/lib/types/imports.types";
 
 
 const OUTCOME_BATCH_SIZE = 200;
 const ACTIVE_IMPORT_ERROR = "You already have an import in progress. Wait for it to finish before starting another.";
 
+
 const importParserRegistry: ImportParserRegistry = {
+    [ImportSource.IMDB]: parseImdbCsv,
     [ImportSource.MYLISTS]: parseMyListsCsv,
+    [ImportSource.LETTERBOXD]: parseLetterboxdCsv,
 };
 
 
@@ -26,8 +34,8 @@ export class ImportService {
         return this.repository.claimNextQueuedJob();
     }
 
-    requeueStaleProcessingJobs(staleAfterMinutes: number) {
-        return withTransaction(() => this.repository.requeueStaleProcessingJobs(staleAfterMinutes));
+    requeueInterruptedJobs() {
+        return withTransaction(() => this.repository.requeueInterruptedJobs());
     }
 
     async finalizeProcessingJob(jobId: number) {
@@ -35,7 +43,11 @@ export class ImportService {
     }
 
     async markProcessingJobFailed(jobId: number, error: string) {
-        return this.repository.markProcessingJobFailed(jobId, error);
+        return withTransaction(() => this.repository.markProcessingJobFailed(jobId, error));
+    }
+
+    pauseProcessingJob(jobId: number, error: string, retryAt: number) {
+        return withTransaction(() => this.repository.pauseProcessingJob(jobId, error, retryAt));
     }
 
     async markItemsProcessing(jobId: number, itemIds: number[]) {
@@ -99,7 +111,7 @@ export class ImportService {
         if (job.status === ImportJobStatus.PROCESSING) {
             jobsAhead = 0;
         }
-        else if (job.status === ImportJobStatus.QUEUED) {
+        else if (job.status === ImportJobStatus.QUEUED && !job.nextAttemptAt) {
             jobsAhead = await this.repository.countJobsAhead(job);
         }
 
@@ -110,25 +122,71 @@ export class ImportService {
         return this.repository.getAllUserJobs(userId);
     }
 
+    getJobsForAdmin(search: AdminImportsSearch) {
+        return this.repository.getJobsForAdmin(search);
+    }
+
+    getIssuesForAdmin(jobId: number, page?: number, perPage?: number) {
+        return this.repository.getIssueItems(jobId, page, perPage);
+    }
+
     async deleteImportJob(userId: number, jobId: number) {
-        const deletedJob = await this.repository.deleteTerminalJob(jobId, userId);
+        const deletedJob = await this.repository.deleteQueuedOrTerminalJob(jobId, userId);
         if (deletedJob) return deletedJob;
 
         const job = await this.repository.findJobForUser(jobId, userId);
         if (!job) throw notFound();
 
-        throw new FormattedError("Only finished import jobs can be deleted.");
+        if (job.status === ImportJobStatus.PROCESSING) {
+            throw new FormattedError("This import has already started processing and cannot be deleted. Please wait for it to finish.");
+        }
+
+        throw new FormattedError("Only queued or finished import jobs can be deleted.");
     }
 
-    async createImportJob(userId: number, source: ImportSource, contents: string) {
+    async createImportJob(userId: number, source: ImportSource, contents: string, fileType?: ImportCsvType) {
         const activeJob = await this.repository.findActiveJobForUser(userId);
         if (activeJob) {
             throw new FormattedError(ACTIVE_IMPORT_ERROR);
         }
 
-        let job: Awaited<ReturnType<typeof ImportRepository.createJob>>;
+        let parsed: ParsedImport | string;
         try {
-            job = await this.repository.createJob(userId, source);
+            const parser = this.parsers[source];
+            if (!parser) throw new Error(`Import source "${source}" is not supported yet`);
+            parsed = parser(contents, fileType);
+        }
+        catch (error) {
+            parsed = error instanceof Error ? error.message : "The import could not be parsed. Please re-export your list and try again.";
+        }
+
+        try {
+            // Commit a queued or failed job in one transaction. A stopped web
+            // process must never leave a user blocked by a half-created job.
+            return withTransaction(() => {
+                const job = this.repository.createJob(userId, source);
+                if (typeof parsed === "string") {
+                    const failedJob = this.repository.markJobFailed(job.id, parsed);
+                    if (!failedJob) throw new Error(`Import job ${job.id} could not be marked failed`);
+                    return failedJob;
+                }
+
+                this.repository.insertParsedItems(job.id, parsed.items);
+                if (parsed.failedCount === parsed.totalCount) {
+                    const failedJob = this.repository.markJobFailed(job.id,
+                        "All rows are invalid. Review the row errors below and upload a corrected file.", parsed.totalCount);
+                    if (!failedJob) throw new Error(`Import job ${job.id} could not be marked failed`);
+                    return failedJob;
+                }
+
+                const skippedCount = parsed.items.filter(item => item.status === ImportItemStatus.SKIPPED).length;
+                const queuedJob = this.repository.markJobQueued(job.id, parsed.totalCount, parsed.failedCount, skippedCount);
+                if (!queuedJob) {
+                    throw new Error(`Import job ${job.id} is no longer in parsing state`);
+                }
+
+                return queuedJob;
+            });
         }
         catch (error) {
             const message = String(error);
@@ -136,35 +194,8 @@ export class ImportService {
                 throw new FormattedError(ACTIVE_IMPORT_ERROR);
             }
 
-            throw error;
-        }
-
-        try {
-            const parser = this.parsers[source];
-            if (!parser) throw new Error(`Import source "${source}" is not supported yet`);
-
-            const parsed = parser(contents);
-            const queuedJob = withTransaction(() => {
-                this.repository.insertParsedItems(job.id, parsed.items);
-                const queuedJob = this.repository.markJobQueued(job.id, parsed.totalCount, parsed.failedCount);
-                if (!queuedJob) {
-                    throw new Error(`Import job ${job.id} is no longer in parsing state`);
-                }
-
-                return queuedJob;
-            });
-
-            return queuedJob;
-        }
-        catch (error) {
-            const errorMessage = error instanceof Error
-                ? String(error.message) :
-                "The import could not be parsed due to an internal error";
-
-            const failedJob = await this.repository.markJobFailed(job.id, errorMessage);
-            if (failedJob) return failedJob;
-
-            throw error;
+            logger.error({ err: error, userId }, "Could not save import job");
+            throw new FormattedError("The import could not be saved. Please try again.");
         }
     }
 

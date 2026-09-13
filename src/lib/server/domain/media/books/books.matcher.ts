@@ -16,7 +16,7 @@ export const createBooksMatcher = (
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.BOOKS, booksService),
-        internalNameDateMatcher(booksService),
+        internalNameDateMatcher(booksService, ApiProviderType.BOOKS),
     ],
     externalMatchers: [
         new ExternalGoogleBooksMatcher(booksProvider, booksIngestion),

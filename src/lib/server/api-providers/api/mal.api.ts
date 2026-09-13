@@ -1,5 +1,5 @@
 import {serverEnv} from "@/env/server";
-import {FormattedError} from "@/lib/utils/error-classes";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {MalAnimeSearchResponse, MalMangaDetails, MalMangaSearchResponse, SearchData} from "@/lib/types/provider.types";
 
@@ -16,26 +16,19 @@ const createConfig = (): MalApiConfig => ({
     resultsPerPage: 20,
     consumeKey: "mal-API",
     baseUrl: "https://api.myanimelist.net/v2",
-    throttleOptions: [
-        {
-            points: 1,
-            duration: 1,
-            keyPrefix: "malAPI-sec",
-        },
-        {
-            points: 30,
-            duration: 60,
-            keyPrefix: "malAPI-min",
-        }
-    ],
+    throttleOptions: [{
+        points: 1,
+        duration: 2,
+        keyPrefix: "malAPI-paced",
+    }],
 });
 
 
 const getRequestOptions = (): RequestInit => {
     if (!serverEnv.MAL_CLIENT_ID) {
-        throw new FormattedError(
+        throw new ProviderRequestError(
             "Manga search and MyAnimeList anime genres enrichment are not available: MyAnimeList is not configured.",
-            { statusCode: 503 },
+            { provider: "mal-API", statusCode: 503, kind: "access", reason: "missingCredentials" },
         );
     }
 

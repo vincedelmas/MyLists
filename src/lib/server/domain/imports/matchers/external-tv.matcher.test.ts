@@ -20,7 +20,7 @@ describe("ExternalTMDBTvMatcher", () => {
 
         const [result] = await collect(matcher.match([item]));
 
-        expect(tvIngestion.storeFromExternal).toHaveBeenCalledWith("136315", false);
+        expect(tvIngestion.storeFromExternal).toHaveBeenCalledWith("136315", false, true);
         expect(result).toEqual({
             failed: [],
             skipped: [],
@@ -52,7 +52,7 @@ describe("ExternalTMDBTvMatcher", () => {
 
         const [result] = await collect(matcher.match([item]));
 
-        expect(tvIngestion.storeFromExternal).toHaveBeenCalledWith(2, false);
+        expect(tvIngestion.storeFromExternal).toHaveBeenCalledWith(2, false, true);
         expect(result.matched).toEqual([{ item, mediaId: 200 }]);
     });
 });

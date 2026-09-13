@@ -18,7 +18,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
+    && apt-get install -y --no-install-recommends ca-certificates util-linux \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/node_modules /app/node_modules

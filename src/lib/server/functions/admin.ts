@@ -14,6 +14,8 @@ import {clearAdminCookie, isAdminAuthenticated, setAdminCookie, verifyAdminPassw
 import {requiredAuthAndAdminRoleMiddleware, requiredAuthAndAdminTokenMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     adminApiMonitoringSchema,
+    adminImportsSchema,
+    importJobIssuesSchema,
     adminDeleteArchivedTaskSchema,
     adminPostUpdateTiersSchema,
     adminPostUpdateUserSchema,
@@ -26,6 +28,24 @@ import {
 
 
 let adminAuthRateLimiter: ReturnType<typeof createRateLimiter> | undefined;
+
+
+export const getAdminImports = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(adminImportsSchema)
+    .handler(async ({ data }) => {
+        const { services } = await getContainer();
+        return services.imports.getJobsForAdmin(data);
+    });
+
+
+export const getAdminImportIssues = createServerFn({ method: "GET" })
+    .middleware([requiredAuthAndAdminTokenMiddleware])
+    .validator(importJobIssuesSchema)
+    .handler(async ({ data: { jobId, page, perPage } }) => {
+        const { services } = await getContainer();
+        return services.imports.getIssuesForAdmin(jobId, page, perPage);
+    });
 
 
 export const checkAdminAuth = createServerFn({ method: "GET" })

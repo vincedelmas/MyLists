@@ -33,6 +33,13 @@ PM2 runs the web app. The web app validates uploads and saves jobs to SQLite; it
 Run the built `import-drain` CLI from host cron every two minutes, as the same OS user and with the same working directory, environment,
 database, and uploads location as the PM2 app.
 
+An idle `import-drain` invocation opens SQLite read-only and checks the indexed job statuses before loading the application. If no queued
+or processing jobs exist, it exits successfully without output, service initialization, or a Redis connection. When work exists, it closes
+the check connection and loads the normal CLI to drain the queue. Processing jobs are included so interrupted-job recovery still runs.
+The check uses `DATABASE_URL`, with the same `./instance/site.db` default as the application. Missing or unreadable databases and missing
+tables produce a nonzero exit and an error on stderr; they are not treated as an empty queue.
+Deploy the complete generated `dist/cli` directory, including the command chunks loaded when work is found.
+
 Example crontab entry (replace all absolute paths for the deployment):
 
 ```cron
@@ -60,10 +67,13 @@ production. Do not configure PM2's `cron_restart` to restart the web app for thi
 Run without a production build:
 
 ```bash
-bun run test src/lib/server/domain/imports src/cli/import-drain-command.test.ts src/lib/server/domain/media/tv/tv-seasons.integration.test.ts src/lib/server/domain/media/base/media.queries.bulk.test.ts
+bun run test src/lib/server/domain/imports src/cli src/lib/server/domain/media/tv/tv-seasons.integration.test.ts src/lib/server/domain/media/base/media.queries.bulk.test.ts
 ```
 
 The import integration tests use disposable SQLite databases and actual media exporters for all six media types. They exercise successful
 round trips, duplicate handling, unsupported formats, nullable data, row errors, provider/ID validation, upload rollback, simultaneous uploads
 and drains, worker failures, ownership checks, the row limit, and interrupted-job recovery. External providers are stubbed; live provider
 availability is outside these tests.
+CLI tests also launch fresh Bun processes to verify the idle path without application configuration, database errors, help and argument
+handling, and real queue draining/recovery against temporary databases. The CLI entrypoint lazily imports its commands; keep heavy
+application imports out of that entrypoint so the idle check stays small.

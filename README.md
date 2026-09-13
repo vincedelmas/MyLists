@@ -75,6 +75,12 @@ Commit `bun.lock` alongside `package.json` when updating dependencies. Deploymen
 
 ### Imports with PM2 / cron
 
+Imports are processed by the `import-drain` CLI. Schedule it regularly (for example, every two minutes) using the same OS user,
+working directory, environment, and database as the web app. Linux `flock` from util-linux prevents overlapping drain workers.
+Provider limits pause unfinished rows in SQLite; a later drain resumes them once their retry time is due.
+For an existing database, apply migrations through `0051_import_retry_scheduling` with `bun run dk migrate` before starting the updated app or CLI.
+The Docker entrypoint runs migrations automatically.
+
 Queue processing, current CSV formats, and verification are documented in [docs/imports.md](./docs/imports.md).
 
 ### Docker Deployment
@@ -119,7 +125,7 @@ Below is an explanation for each key found in `.env.example`:
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth2 credentials                                   | ❌       |                                |
 | **API Keys**                                |                                                             |          |                                |
 | `THEMOVIEDB_API_KEY`                        | Enables movie, series, and anime external data through TMDB | ❌       |                                |
-| `GOOGLE_BOOKS_API_KEY`                      | API key for Google Books                                    | ❌       |                                |
+| `GOOGLE_BOOKS_API_KEY`                      | Enables external book search/details through Google Books   | ❌       |                                |
 | `MAL_CLIENT_ID`                             | Enables manga data and anime genres through MyAnimeList     | ❌       |                                |
 | `IGDB_CLIENT_ID` / `IGDB_CLIENT_SECRET`     | Enables game external data through IGDB                     | ❌       |                                |
 | **LLM Integration (Optional)**              |                                                             |          |                                |
@@ -143,8 +149,11 @@ Redis caching is optional.
   REDIS_URL=redis://redis:6379
   ```
 
-- Redis is used for shared caching, shared rate limiting, and API monitoring rollups.
-- Without Redis, the app falls back to in-memory cache/rate limiting.
+- Redis is used for shared caching, rate limits, Google Books daily usage, provider cooldowns, IGDB concurrency, and API monitoring rollups.
+  The web app, import worker, and scheduled tasks must use the same Redis instance to share these controls. Keep Redis data persistent to retain daily usage across restarts.
+- Without Redis, these controls use memory in each process and reset when that process exits. The web app and cron workers have independent allowances;
+  combined traffic can exceed provider limits, and the Google Books daily budget cannot be enforced across worker runs. Provider quota errors still pause imports.
+- Import progress and retry times are stored in SQLite in both modes and survive worker restarts.
 - The admin API monitoring page will not collect outbound API rollups without Redis.
 
 ---
@@ -160,7 +169,9 @@ Login and registration only show configured auth methods.
 - Without TMDB, movie, series, and anime external search/details are unavailable. Without IGDB, game external search/details are unavailable.
 - Without `MAL_CLIENT_ID`, manga external search/details are unavailable and anime uses TMDB genres without MyAnimeList enrichment. Register an API client at
   [MyAnimeList API Configuration](https://myanimelist.net/apiconfig).
-- Google Books remains available without credentials. `GOOGLE_BOOKS_API_KEY` is optional.
+- Without `GOOGLE_BOOKS_API_KEY`, external book search/details are unavailable. Existing local books remain usable.
+  Requests are limited to one per second and 1,000 per Pacific calendar day. Imports stop at 900 total calls to leave 100 for regular use.
+  The budget covers this app's requests; other applications using the same Google project also consume its quota. See Redis Setup for the scope of the local counters.
 - Without `LLM_API_KEY`, book genre enrichment is skipped with a task warning.
 
 For every optional credential pair, either set both values or leave both blank. 

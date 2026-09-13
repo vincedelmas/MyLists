@@ -102,6 +102,10 @@ const optionalIntegrations = [
         envVars: ["MAL_CLIENT_ID"],
     },
     {
+        feature: "Book provider (Google Books)",
+        envVars: ["GOOGLE_BOOKS_API_KEY"],
+    },
+    {
         feature: "LLM book genre enrichment",
         envVars: ["LLM_API_KEY"],
     },

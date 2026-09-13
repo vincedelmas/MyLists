@@ -28,6 +28,10 @@ describe("getDisabledOptionalIntegrations", () => {
                 missingEnvVars: ["MAL_CLIENT_ID"],
             },
             {
+                feature: "Book provider (Google Books)",
+                missingEnvVars: ["GOOGLE_BOOKS_API_KEY"],
+            },
+            {
                 feature: "LLM book genre enrichment",
                 missingEnvVars: ["LLM_API_KEY"],
             },
@@ -45,6 +49,7 @@ describe("getDisabledOptionalIntegrations", () => {
             ADMIN_MAIL_PASSWORD: "mail-password",
             THEMOVIEDB_API_KEY: "tmdb-key",
             GOOGLE_CLIENT_SECRET: "google-secret",
+            GOOGLE_BOOKS_API_KEY: "books-key",
             GITHUB_CLIENT_SECRET: "github-secret",
             ADMIN_MAIL_USERNAME: "admin@example.com",
         })).toEqual([]);

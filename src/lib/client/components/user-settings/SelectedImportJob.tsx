@@ -62,7 +62,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
             variant: "destructive",
             confirmLabel: "Delete Job",
             title: "Delete this import job?",
-            description: "This will remove the job and every row attached to it.",
+            description: "This removes the import and its row details. Entries already added to your lists will stay. Imports that are processing cannot be deleted.",
         })) return;
 
         deleteMutation.mutate({ data: { jobId } }, {
@@ -104,9 +104,9 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                         <RefreshCw className="size-4"/>
                         Refresh
                     </Button>
-                    {isTerminal &&
+                    {(isTerminal || job.status === ImportJobStatus.QUEUED) &&
                         <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleteMutation.isPending}>
-                            <Trash2 className="size-4"/>
+                            <Trash2 data-icon="inline-start"/>
                             Delete
                         </Button>
                     }

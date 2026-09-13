@@ -121,13 +121,17 @@ export class ImportService {
     }
 
     async deleteImportJob(userId: number, jobId: number) {
-        const deletedJob = await this.repository.deleteTerminalJob(jobId, userId);
+        const deletedJob = await this.repository.deleteQueuedOrTerminalJob(jobId, userId);
         if (deletedJob) return deletedJob;
 
         const job = await this.repository.findJobForUser(jobId, userId);
         if (!job) throw notFound();
 
-        throw new FormattedError("Only finished import jobs can be deleted.");
+        if (job.status === ImportJobStatus.PROCESSING) {
+            throw new FormattedError("This import has already started processing and cannot be deleted. Please wait for it to finish.");
+        }
+
+        throw new FormattedError("Only queued or finished import jobs can be deleted.");
     }
 
     async createImportJob(userId: number, source: ImportSource, contents: string) {
@@ -158,6 +162,13 @@ export class ImportService {
                 }
 
                 this.repository.insertParsedItems(job.id, parsed.items);
+                if (parsed.failedCount === parsed.totalCount) {
+                    const failedJob = this.repository.markJobFailed(job.id,
+                        "All rows are invalid. Review the row errors below and upload a corrected file.", parsed.totalCount);
+                    if (!failedJob) throw new Error(`Import job ${job.id} could not be marked failed`);
+                    return failedJob;
+                }
+
                 const queuedJob = this.repository.markJobQueued(job.id, parsed.totalCount, parsed.failedCount);
                 if (!queuedJob) {
                     throw new Error(`Import job ${job.id} is no longer in parsing state`);

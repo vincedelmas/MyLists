@@ -25,6 +25,12 @@ export const useDeleteImportJobMutation = (jobId: number, meta?: MutationMeta) =
             successToastMessage: "Import job deleted.",
             ...meta,
         },
+        onError: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: importJobQueryKey(jobId) }),
+                queryClient.invalidateQueries({ queryKey: importJobsQueryKey }),
+            ]);
+        },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: importJobsQueryKey });
             queryClient.removeQueries({ queryKey: importJobIssuesQueryKey(jobId) });

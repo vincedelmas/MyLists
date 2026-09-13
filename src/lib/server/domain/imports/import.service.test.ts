@@ -26,7 +26,7 @@ describe("ImportService.createImportJob", () => {
         findJobForUser: vi.fn(),
         countFailedItems: vi.fn(),
         insertParsedItems: vi.fn(),
-        deleteTerminalJob: vi.fn(),
+        deleteQueuedOrTerminalJob: vi.fn(),
         claimNextQueuedJob: vi.fn(),
         markItemsProcessing: vi.fn(),
         findActiveJobForUser: vi.fn(),
@@ -225,18 +225,26 @@ describe("ImportService.createImportJob", () => {
         expect(repository.getIssueItems).toHaveBeenCalledWith(10, 2, 25);
     });
 
-    it("deletes an owned terminal import job", async () => {
-        repository.deleteTerminalJob.mockResolvedValue({ id: 10 });
+    it("deletes an owned queued or terminal import job", async () => {
+        repository.deleteQueuedOrTerminalJob.mockResolvedValue({ id: 10 });
 
         await expect(service.deleteImportJob(42, 10)).resolves.toEqual({ id: 10 });
+        expect(repository.deleteQueuedOrTerminalJob).toHaveBeenCalledWith(10, 42);
         expect(repository.findJobForUser).not.toHaveBeenCalled();
     });
 
-    it("rejects deletion of an active import job", async () => {
-        repository.deleteTerminalJob.mockResolvedValue(null);
-        repository.findJobForUser.mockResolvedValue({ id: 10, status: ImportJobStatus.QUEUED });
+    it("explains when processing started before a deletion could take place", async () => {
+        repository.deleteQueuedOrTerminalJob.mockResolvedValue(null);
+        repository.findJobForUser.mockResolvedValue({ id: 10, status: ImportJobStatus.PROCESSING });
 
-        await expect(service.deleteImportJob(42, 10)).rejects.toThrow(FormattedError);
+        await expect(service.deleteImportJob(42, 10)).rejects.toThrow("This import has already started processing and cannot be deleted.");
+    });
+
+    it("does not expose another user's job after deletion is refused", async () => {
+        repository.deleteQueuedOrTerminalJob.mockResolvedValue(null);
+        repository.findJobForUser.mockResolvedValue(undefined);
+
+        await expect(service.deleteImportJob(999, 10)).rejects.toMatchObject({ isNotFound: true });
     });
 });
 

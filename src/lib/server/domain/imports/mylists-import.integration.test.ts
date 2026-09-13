@@ -181,16 +181,28 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
         });
     }
 
-    it("finishes an entirely invalid file and allows a corrected upload", async () => {
+    it("fails entirely invalid rows immediately, preserves their issues, and allows deletion and a corrected upload without a drain", async () => {
+        const invalidRating = mediaType === MediaType.SERIES || mediaType === MediaType.ANIME
+            ? { ...exported, seasons: JSON.stringify([{ season: 1, redo: 0, rating: 999 }]) }
+            : { ...exported, rating: 999 };
         const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
-            convertToCsv([{ ...exported, status: "invalid status" }]));
-        await drainImportJobs(imports.importProcessor);
-        expect((await imports.imports.getImportJob(43, job.id)).job).toMatchObject({
-            status: ImportJobStatus.COMPLETED_WITH_ERRORS, completedCount: 0, failedCount: 1, processedCount: 1,
+            convertToCsv([invalidRating, { ...exported, favorite: "invalid favorite" }]));
+        expect(job).toMatchObject({
+            status: ImportJobStatus.FAILED, totalCount: 2, completedCount: 0, failedCount: 2, processedCount: 2,
+            startedAt: null, finishedAt: expect.any(String), error: expect.stringContaining("All rows are invalid"),
         });
+        expect((await imports.imports.getImportJob(43, job.id)).job).toEqual(job);
+        expect((await imports.imports.getImportIssues(43, job.id)).items).toMatchObject([
+            { rowNumber: 2, status: ImportItemStatus.FAILED, statusReason: expect.stringContaining("rating") },
+            { rowNumber: 3, status: ImportItemStatus.FAILED, statusReason: expect.stringContaining("favorite") },
+        ]);
         expect(await mediaModule.services[mediaType].downloadMediaListAsCSV(43)).toEqual([]);
+        expect(externalCall).not.toHaveBeenCalled();
+        expect(await imports.imports.claimNextQueuedJob()).toBeNull();
         expect(await imports.imports.createImportJob(43, ImportSource.MYLISTS, convertToCsv([exported])))
             .toMatchObject({ status: ImportJobStatus.QUEUED });
+        await expect(imports.imports.deleteImportJob(43, job.id)).resolves.toEqual({ id: job.id });
+        expect(context.db.select().from(schema.importItems).where(eq(schema.importItems.jobId, job.id)).all()).toEqual([]);
     });
 
     it("does not substitute a same-title entry when the exported provider ID is missing locally", async () => {

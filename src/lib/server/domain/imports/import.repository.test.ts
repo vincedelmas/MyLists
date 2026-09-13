@@ -437,21 +437,43 @@ describe("ImportRepository", () => {
         ]);
     });
 
-    it("deletes only owned terminal jobs and cascades their items", async () => {
-        const finishedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        await ImportRepository.insertParsedItems(finishedJob.id, [createItem(2)]);
-        await ImportRepository.markJobFailed(finishedJob.id, "Invalid file");
+    it.each([ImportJobStatus.QUEUED, ImportJobStatus.FAILED])("deletes only owned %s jobs and cascades their items before a processor can claim them", async status => {
+        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await ImportRepository.insertParsedItems(job.id, [createItem(2)]);
+        if (status === ImportJobStatus.QUEUED) await ImportRepository.markJobQueued(job.id, 1, 0);
+        else await ImportRepository.markJobFailed(job.id, "Invalid file");
 
-        const queuedJob = await ImportRepository.createJob(42, ImportSource.MYLISTS);
-        await ImportRepository.markJobQueued(queuedJob.id, 0, 0);
+        await expect(ImportRepository.deleteQueuedOrTerminalJob(job.id, 999)).resolves.toBeNull();
+        expect(await db.select().from(importItems).where(eq(importItems.jobId, job.id))).toHaveLength(1);
+        await expect(ImportRepository.deleteQueuedOrTerminalJob(job.id, 42)).resolves.toEqual({ id: job.id });
 
-        await expect(ImportRepository.deleteTerminalJob(queuedJob.id, 42)).resolves.toBeNull();
-        await expect(ImportRepository.deleteTerminalJob(finishedJob.id, 999)).resolves.toBeNull();
-        await expect(ImportRepository.deleteTerminalJob(finishedJob.id, 42)).resolves.toEqual({ id: finishedJob.id });
+        expect(await db.select().from(importJobs).where(eq(importJobs.id, job.id))).toHaveLength(0);
+        expect(await db.select().from(importItems).where(eq(importItems.jobId, job.id))).toHaveLength(0);
+        await expect(ImportRepository.claimNextQueuedJob()).resolves.toBeNull();
+        await expect(ImportRepository.findActiveJobForUser(42)).resolves.toBeUndefined();
+        expect(ImportRepository.createJob(42, ImportSource.MYLISTS)).toMatchObject({ status: ImportJobStatus.PARSING });
+    });
 
-        expect(await db.select().from(importJobs).where(eq(importJobs.id, finishedJob.id))).toHaveLength(0);
-        expect(await db.select().from(importItems).where(eq(importItems.jobId, finishedJob.id))).toHaveLength(0);
-        expect(await db.select().from(importJobs).where(eq(importJobs.id, queuedJob.id))).toHaveLength(1);
+    it("preserves a job and its rows if processing starts after the user's last status check", async () => {
+        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await ImportRepository.insertParsedItems(job.id, [createItem(2)]);
+        await ImportRepository.markJobQueued(job.id, 1, 0);
+        await expect(ImportRepository.findJobForUser(job.id, 42)).resolves.toMatchObject({ status: ImportJobStatus.QUEUED });
+
+        await ImportRepository.claimNextQueuedJob();
+        const beforeJobs = await db.select().from(importJobs);
+        const beforeItems = await db.select().from(importItems);
+        await expect(ImportRepository.deleteQueuedOrTerminalJob(job.id, 42)).resolves.toBeNull();
+
+        expect(await db.select().from(importJobs)).toEqual(beforeJobs);
+        expect(await db.select().from(importItems)).toEqual(beforeItems);
+        await expect(ImportRepository.findJobForUser(job.id, 42)).resolves.toMatchObject({ status: ImportJobStatus.PROCESSING });
+    });
+
+    it("does not delete a job that is still being parsed", async () => {
+        const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
+        await expect(ImportRepository.deleteQueuedOrTerminalJob(job.id, 42)).resolves.toBeNull();
+        await expect(ImportRepository.findJobForUser(job.id, 42)).resolves.toEqual(job);
     });
 });
 

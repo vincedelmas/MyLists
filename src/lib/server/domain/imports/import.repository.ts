@@ -314,13 +314,14 @@ export class ImportRepository {
             .get();
     }
 
-    static async deleteTerminalJob(jobId: number, userId: number) {
+    static async deleteQueuedOrTerminalJob(jobId: number, userId: number) {
+        // Check status in the DELETE itself so a processor claiming the job wins safely.
         const [deletedJob] = await getDbClient()
             .delete(importJobs)
             .where(and(
                 eq(importJobs.id, jobId),
                 eq(importJobs.userId, userId),
-                inArray(importJobs.status, TERMINAL_JOB_STATUSES),
+                inArray(importJobs.status, [ImportJobStatus.QUEUED, ...TERMINAL_JOB_STATUSES]),
             ))
             .returning({ id: importJobs.id });
 
@@ -462,11 +463,14 @@ export class ImportRepository {
         return job ?? null;
     }
 
-    static markJobFailed(jobId: number, error: string) {
+    static markJobFailed(jobId: number, error: string, failedRowCount = 0) {
         const [job] = getDbClient()
             .update(importJobs)
             .set({
                 status: ImportJobStatus.FAILED,
+                totalCount: failedRowCount,
+                failedCount: failedRowCount,
+                processedCount: failedRowCount,
                 updatedAt: sql`datetime('now')`,
                 finishedAt: sql`datetime('now')`,
                 error: error.slice(0, 2_000),

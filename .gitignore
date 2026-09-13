@@ -37,5 +37,5 @@ dist
 .tanstack
 /tsconfig.tsbuildinfo
 **/routeTree.gen.ts
-how-errors-works.md
 /logs
+/docs/imports.md

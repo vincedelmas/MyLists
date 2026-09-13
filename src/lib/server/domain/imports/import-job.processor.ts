@@ -1,6 +1,6 @@
+import {logger} from "@/lib/server/core/logger";
 import {ImportService} from "@/lib/server/domain/imports/import.service";
 import {MediaMatcherRegistry} from "@/lib/server/domain/imports/matchers/media-matcher.registry";
-import {logger} from "@/lib/server/core/logger";
 
 
 export class ImportJobProcessor {

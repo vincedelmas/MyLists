@@ -2,16 +2,17 @@ import * as z from "zod";
 import {parse} from "csv-parse/sync";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType,} from "@/lib/utils/enums";
-import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
 import {booksMyListsCSVRowSchema} from "@/lib/server/domain/media/books/books.types";
 import {mangaMyListsCSVRowSchema} from "@/lib/server/domain/media/manga/manga.types";
 import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/movies.types";
-import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
+import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {MYLISTS_CSV_VERSION, MYLISTS_FORMAT_ERROR} from "@/lib/server/domain/imports/mylists-format";
+import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
 
 
 const MYLISTS_CSV_MAX_ROWS = 3000;
+
 
 const parseCsvRecords = (csv: string) => {
     try {
@@ -71,8 +72,8 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
     const mediaZodValidator = rowSchema.required().extend({
         externalApiSource: z.literal(getServerMediaDefinition(result.data).ingestion.externalApiSource),
         externalApiId: rowSchema.shape.externalApiId.refine(value => result.data === MediaType.BOOKS
-            || (/^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))),
-        "External media ID must be a positive whole number"),
+                || (/^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))),
+            "External media ID must be a positive whole number"),
     });
 
     // Even nullable fields have a column in a current export. Missing columns must

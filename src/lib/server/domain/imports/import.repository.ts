@@ -1,7 +1,7 @@
 import {paginate} from "@/lib/server/database/pagination";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {importItems, importJobs, user} from "@/lib/server/database/schema";
 import type {AdminImportsSearch} from "@/lib/schemas/admin.schema";
+import {importItems, importJobs, user} from "@/lib/server/database/schema";
 import {ImportItemStatus, ImportJobStatus, ImportSource} from "@/lib/utils/enums";
 import {ImportItemOutcome, ImportJobCounterDelta, ParsedImportItem} from "@/lib/types/imports.types";
 import {and, asc, count, desc, eq, exists, getTableColumns, inArray, like, lt, notExists, or, sql} from "drizzle-orm";
@@ -29,19 +29,27 @@ export class ImportRepository {
             page,
             perPage,
             maxPerPage: 50,
-            getTotal: () => db.select({ count: count() }).from(importJobs)
-                .innerJoin(user, eq(user.id, importJobs.userId)).where(condition).get()!.count,
-            getItems: ({ limit, offset }) => db.select({
-                ...getTableColumns(importJobs),
-                username: user.name,
-                processingDurationMs: sql<number | null>`
-                    (unixepoch(coalesce(${importJobs.finishedAt}, CURRENT_TIMESTAMP)) - unixepoch(${importJobs.startedAt})) * 1000
-                `,
-            }).from(importJobs)
-                .innerJoin(user, eq(user.id, importJobs.userId))
-                .where(condition)
-                .orderBy(desc(importJobs.createdAt), desc(importJobs.id))
-                .limit(limit).offset(offset),
+            getTotal: () => {
+                return db
+                    .select({ count: count() })
+                    .from(importJobs)
+                    .innerJoin(user, eq(user.id, importJobs.userId))
+                    .where(condition)
+                    .get()!.count
+            },
+            getItems: ({ limit, offset }) => {
+                return db
+                    .select({
+                        ...getTableColumns(importJobs),
+                        username: user.name,
+                        processingDurationMs: sql<number | null>`(unixepoch(coalesce(${importJobs.finishedAt}, CURRENT_TIMESTAMP)) - unixepoch(${importJobs.startedAt})) * 1000`,
+                    })
+                    .from(importJobs)
+                    .innerJoin(user, eq(user.id, importJobs.userId))
+                    .where(condition)
+                    .orderBy(desc(importJobs.createdAt), desc(importJobs.id))
+                    .limit(limit).offset(offset)
+            },
         });
     }
 
@@ -60,8 +68,7 @@ export class ImportRepository {
 
         const staleJobIds = staleJobs.map(job => job.id);
 
-        db
-            .update(importItems)
+        db.update(importItems)
             .set({
                 updatedAt: sql`datetime('now')`,
                 status: ImportItemStatus.QUEUED,
@@ -83,38 +90,51 @@ export class ImportRepository {
                 inArray(importJobs.id, staleJobIds),
                 eq(importJobs.status, ImportJobStatus.PROCESSING),
             ))
-            .returning().all();
+            .returning()
+            .all();
     }
 
     static markProcessingJobFailed(jobId: number, error: string) {
         const db = getDbClient();
-        const activeJob = db.select({ id: importJobs.id }).from(importJobs)
-            .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)));
+
+        const activeJob = db
+            .select({ id: importJobs.id })
+            .from(importJobs)
+            .where(and(
+                eq(importJobs.id, jobId),
+                eq(importJobs.status, ImportJobStatus.PROCESSING),
+            ));
+
         const unfinishedItems = db.update(importItems)
             .set({
                 status: ImportItemStatus.FAILED,
-                statusReason: error.slice(0, 500),
                 updatedAt: sql`datetime('now')`,
+                statusReason: error.slice(0, 500),
             })
             .where(and(
+                exists(activeJob),
                 eq(importItems.jobId, jobId),
                 inArray(importItems.status, [ImportItemStatus.QUEUED, ImportItemStatus.PROCESSING]),
-                exists(activeJob),
             ))
-            .returning({ id: importItems.id }).all();
+            .returning({ id: importItems.id })
+            .all();
 
         const [job] = db
             .update(importJobs)
             .set({
-                error: error.slice(0, 2_000),
-                failedCount: sql`${importJobs.failedCount} + ${unfinishedItems.length}`,
-                processedCount: sql`${importJobs.processedCount} + ${unfinishedItems.length}`,
                 status: ImportJobStatus.FAILED,
                 updatedAt: sql`datetime('now')`,
                 finishedAt: sql`datetime('now')`,
+                error: error.slice(0, 2_000),
+                failedCount: sql`${importJobs.failedCount} + ${unfinishedItems.length}`,
+                processedCount: sql`${importJobs.processedCount} + ${unfinishedItems.length}`,
             })
-            .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)))
-            .returning().all();
+            .where(and(
+                eq(importJobs.id, jobId),
+                eq(importJobs.status, ImportJobStatus.PROCESSING),
+            ))
+            .returning()
+            .all();
 
         return job ?? null;
     }
@@ -227,7 +247,8 @@ export class ImportRepository {
                 processedCount: sql`${importJobs.processedCount} + ${delta.processedCount}`,
             })
             .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PROCESSING)))
-            .returning().all();
+            .returning()
+            .all();
 
         return job ?? null;
     }
@@ -271,7 +292,8 @@ export class ImportRepository {
                 userId,
                 source,
                 status: ImportJobStatus.PARSING,
-            }).returning().all();
+            }).returning()
+            .all();
 
         return job;
     }
@@ -437,7 +459,8 @@ export class ImportRepository {
                 updatedAt: sql`datetime('now')`,
             })
             .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PARSING)))
-            .returning().all();
+            .returning()
+            .all();
 
         return job ?? null;
     }
@@ -452,7 +475,8 @@ export class ImportRepository {
                 error: error.slice(0, 2_000),
             })
             .where(and(eq(importJobs.id, jobId), eq(importJobs.status, ImportJobStatus.PARSING)))
-            .returning().all();
+            .returning()
+            .all();
 
         return job ?? null;
     }

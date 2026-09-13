@@ -1,16 +1,16 @@
-import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {RefreshCw, Trash2} from "lucide-react";
 import {ImportJobStatus} from "@/lib/utils/enums";
 import {useNavigate} from "@tanstack/react-router";
-import {ImportStatusBadge} from "@/lib/client/components/imports/ImportStatusBadge";
 import {Button} from "@/lib/client/components/ui/button";
-import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
+import {Spinner} from "@/lib/client/components/ui/spinner";
 import {Progress} from "@/lib/client/components/ui/progress";
-import {importJobIssuesOptions, importJobOptions} from "@/lib/client/react-query/query-options";
-import {importJobIssuesQueryKey, importJobsQueryKey} from "@/lib/client/react-query/query-options/imports.options";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {ImportStatusBadge} from "@/lib/client/components/imports/ImportStatusBadge";
 import {ImportJobIssuesTable} from "@/lib/client/components/imports/ImportJobIssuesTable";
+import {importJobIssuesOptions, importJobOptions} from "@/lib/client/react-query/query-options";
 import {useDeleteImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
-import {RefreshCw, Trash2} from "lucide-react";
+import {importJobIssuesQueryKey, importJobsQueryKey} from "@/lib/client/react-query/query-options/imports.options";
 
 
 interface SelectedImportJobProps {
@@ -29,10 +29,10 @@ const terminalStatuses = new Set<string>([
 
 
 export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobProps) {
-    const navigate = useNavigate({ from: "/settings/imports" });
     const confirm = useConfirm();
     const queryClient = useQueryClient();
     const deleteMutation = useDeleteImportJobMutation(jobId);
+    const navigate = useNavigate({ from: "/settings/imports" });
     const { data: job, refetch, isFetching, isLoading, isError } = useQuery(importJobOptions(jobId));
 
     const issueQuery = useQuery(importJobIssuesOptions(jobId, { page, perPage: 25 }, !!job && job.failedCount + job.skippedCount > 0));
@@ -87,9 +87,9 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                     <p className="text-xs text-muted-foreground">
                         {job.status === ImportJobStatus.PROCESSING ? "Currently processing."
                             : job.status === ImportJobStatus.QUEUED ? job.jobsAhead
-                                ? `${job.jobsAhead} job${job.jobsAhead > 1 ? "s" : ""} ahead.`
-                                : "Next in queue. Waiting for processing to start."
-                            : isTerminal ? "Import finished." : "Validating your file."}
+                                    ? `${job.jobsAhead} job${job.jobsAhead > 1 ? "s" : ""} ahead.`
+                                    : "Next in queue. Waiting for processing to start."
+                                : isTerminal ? "Import finished." : "Validating your file."}
                     </p>
                 </div>
 

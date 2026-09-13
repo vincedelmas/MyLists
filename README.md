@@ -9,7 +9,8 @@
 
 **The all-in-one media tracking platform.**
 
-MyLists is a comprehensive, web-app designed to help you organize and track your movies, TV series, anime, manga, books, and video games in one unified interface.
+MyLists is a comprehensive, web-app designed to help you organize and track your movies, TV series, anime, manga, books, and video games in
+one unified interface.
 
 ### Key Features
 
@@ -71,25 +72,21 @@ Ensure you have [Bun](https://bun.sh) installed on your machine.
    bun run dev
    ```
 
-Commit `bun.lock` alongside `package.json` when updating dependencies. Deployment uses the committed lockfile without resolving new versions.
+Commit `bun.lock` alongside `package.json` when updating dependencies. Deployment uses the committed lockfile without resolving new
+versions.
 
-### Imports with PM2 / cron
+### Imports with cron
 
-Imports are processed by the `import-drain` CLI. Schedule it regularly (for example, every two minutes) using the same OS user,
-working directory, environment, and database as the web app. Linux `flock` from util-linux prevents overlapping drain workers.
-Provider limits pause unfinished rows in SQLite; a later drain resumes them once their retry time is due.
-For an existing database, apply migrations through `0051_import_retry_scheduling` with `bun run dk migrate` before starting the updated app or CLI.
-The Docker entrypoint runs migrations automatically.
-
-Queue processing, current CSV formats, and verification are documented in [docs/imports.md](./docs/imports.md).
+Imports are processed using the `import-drain` CLI. Schedule it regularly (i.e., every 2 min). Linux `flock` from util-linux prevents
+overlapping drain workers.
 
 ### Docker Deployment
 
 Docker deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).
 
-The Docker Compose setup builds the app image and starts Redis. 
-It mounts persistent storage for SQLite, images, and Redis data. 
-Provide cron/maintenance scheduling and public HTTPS from your deployment platform when needed. 
+The Docker Compose setup builds the app image and starts Redis.
+It mounts persistent storage for SQLite, images, and Redis data.
+Provide cron/maintenance scheduling and public HTTPS from your deployment platform when needed.
 PostHog is optional and disabled when its public key is empty.
 
 ---
@@ -150,10 +147,9 @@ Redis caching is optional.
   ```
 
 - Redis is used for shared caching, rate limits, provider cooldowns, and API monitoring rollups.
-  The web app, import worker, and scheduled tasks must use the same Redis instance to share these controls. Keep Redis data persistent to retain pending monitoring rollups across restarts.
-  Redis commands have a five-second timeout. If provider controls are unavailable, imports pause with a saved retry time; Redis outages do not switch traffic to memory limits.
-- Without Redis, these controls use memory in each process and reset when that process exits. The web app and cron workers have independent allowances;
-  combined traffic can exceed provider limits. Provider quota errors still pause imports.
+- The web app, import worker, and scheduled tasks must use the same Redis instance.
+- Keep Redis data persistent to retain pending monitoring rollups across restarts.
+- Without Redis, these controls use memory in each process and reset when that process exits.
 - Import progress and retry times are stored in SQLite in both modes and survive worker restarts.
 - The admin API monitoring page will not collect outbound API rollups without Redis.
 
@@ -161,28 +157,31 @@ Redis caching is optional.
 
 ### Optional Feature Availability
 
-Missing optional config does not prevent MyLists from starting. 
+Missing optional config does not prevent MyLists from starting.
 Login and registration only show configured auth methods.
 
-- Without admin mail credentials, email registration, password reset, email changes, and mail-dependent maintenance are disabled. Email login still works for verified accounts
-  created with the `create-user` CLI.
+- Without admin mail credentials, email registration, password reset, email changes, and mail-dependent maintenance are disabled. Email
+  login still works for verified accounts created with the `create-user` CLI.
 - GitHub and Google OAuth are enabled when their complete client ID/secret pair is present.
-- Without TMDB, movie, series, and anime external search/details are unavailable. Without IGDB, game external search/details are unavailable.
-- Without `MAL_CLIENT_ID`, manga external search/details are unavailable and anime uses TMDB genres without MyAnimeList enrichment. Register an API client at
+- Without TMDB, movie, series, and anime external search/details are unavailable. Without IGDB, game external search/details are
+  unavailable.
+- Without `MAL_CLIENT_ID`, manga external search/details are unavailable and anime uses TMDB genres without MyAnimeList enrichment. Register
+  an API client at
   [MyAnimeList API Configuration](https://myanimelist.net/apiconfig).
 - Without `GOOGLE_BOOKS_API_KEY`, external book search/details are unavailable. Existing local books remain usable.
   Requests are limited to one per second, with no local daily quota. With Redis enabled, daily request counts are available in
   Admin > API Monitoring > Daily Provider Calls (UTC days), including retries. Quota errors returned by Google still pause requests.
 - Without `LLM_API_KEY`, book genre enrichment is skipped with a task warning.
 
-For every optional credential pair, either set both values or leave both blank. 
+For every optional credential pair, either set both values or leave both blank.
 A partial pair is treated as a config error.
 
 ---
 
 ### LLM Integration (Optional)
 
-The LLM is **exclusively used to generate genre data for books** since Google Books does not provide genre metadata. You can choose how this background task runs:
+The LLM is **exclusively used to generate genre data for books** since Google Books does not provide genre metadata. You can choose how this
+background task runs:
 
 1. **Manually**, by executing it with the CLI
 2. **Automatically**, using a scheduled cron job

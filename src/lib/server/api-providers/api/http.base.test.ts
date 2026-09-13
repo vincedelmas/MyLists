@@ -99,6 +99,20 @@ describe("createApiHttpClient", () => {
         expect(transportMocks.removeTokens).toHaveBeenCalledTimes(2);
     });
 
+    it("checks quota for every attempt and does not send a retry after the budget is exhausted", async () => {
+        vi.useFakeTimers();
+        const quotaError = new Error("Daily quota exhausted");
+        const beforeRequest = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(quotaError);
+        const fetchMock = vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 }));
+        vi.stubGlobal("fetch", fetchMock);
+        const client = await createApiHttpClient({ ...config, beforeRequest });
+        const assertion = expect(client.call("https://example.com/items")).rejects.toBe(quotaError);
+        await vi.runAllTimersAsync();
+        await assertion;
+        expect(beforeRequest).toHaveBeenCalledTimes(2);
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
     it("does not retry non-retryable HTTP responses", async () => {
         const fetchMock = vi.fn().mockResolvedValue(new Response("bad request", { status: 400 }));
         vi.stubGlobal("fetch", fetchMock);

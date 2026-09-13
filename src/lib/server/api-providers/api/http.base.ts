@@ -26,6 +26,7 @@ export type ApiHttpClient = {
 export type ApiClientConfig = {
     consumeKey: string;
     resultsPerPage?: number;
+    beforeRequest?: () => Promise<void>;
     throttleOptions: Parameters<typeof createRateLimiter>[0][];
 };
 
@@ -42,6 +43,7 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
             try {
                 for (let attempt = 1; attempt <= MAX_CALL_ATTEMPTS; attempt += 1) {
                     await Promise.all(queues.map(queue => queue.removeTokens(1, config.consumeKey)));
+                    await config.beforeRequest?.();
 
                     let response: Response;
                     const startedAt = Date.now();

@@ -1,10 +1,12 @@
+import {serverEnv} from "@/env/server";
 import {randomUUID} from "node:crypto";
 import {setTimeout as delay} from "node:timers/promises";
-import {serverEnv} from "@/env/server";
-import {getRedisConnection} from "./redis-client";
+import {getRedisConnection} from "@/lib/server/core/redis-client";
 
 
 const memorySlots = new Map<string, Map<string, number>>();
+
+
 const ACQUIRE_SLOT = `
     redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[1])
     if redis.call('ZCARD', KEYS[1]) >= tonumber(ARGV[2]) then return 0 end
@@ -14,11 +16,12 @@ const ACQUIRE_SLOT = `
 `;
 
 
-export async function acquireProviderSlot(provider: string, limit: number, signal: AbortSignal, requestTimeoutMs: number) {
+export const acquireProviderSlot = async (provider: string, limit: number, signal: AbortSignal, requestTimeoutMs: number) => {
     const token = randomUUID();
+    let slots = memorySlots.get(provider);
     const key = `provider:concurrency:${provider}`;
     const redis = serverEnv.REDIS_ENABLED ? await getRedisConnection() : undefined;
-    let slots = memorySlots.get(provider);
+
     if (!redis && !slots) {
         slots = new Map();
         memorySlots.set(provider, slots);
@@ -26,17 +29,23 @@ export async function acquireProviderSlot(provider: string, limit: number, signa
 
     while (true) {
         signal.throwIfAborted();
-        const now = Date.now();
-        // The HTTP timeout starts before acquisition; the lease outlives that deadline.
-        const expiresAt = now + requestTimeoutMs + 1_000;
+
         let acquired: boolean;
+        const now = Date.now();
+        const expiresAt = now + requestTimeoutMs + 1_000; // The HTTP timeout starts before acquisition; lease outlives deadline
+
         if (redis) {
             acquired = await redis.eval(ACQUIRE_SLOT, 1, key, now, limit, expiresAt, token) === 1;
         }
         else {
-            for (const [id, expiry] of slots!) if (expiry <= now) slots!.delete(id);
+            for (const [id, expiry] of slots!) {
+                if (expiry <= now) slots!.delete(id);
+            }
+
             acquired = slots!.size < limit;
-            if (acquired) slots!.set(token, expiresAt);
+            if (acquired) {
+                slots!.set(token, expiresAt);
+            }
         }
 
         if (acquired) {
@@ -47,4 +56,4 @@ export async function acquireProviderSlot(provider: string, limit: number, signa
         }
         await delay(100, undefined, { signal });
     }
-}
+};

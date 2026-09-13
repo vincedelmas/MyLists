@@ -1,13 +1,13 @@
 import {RefreshCw, Trash2} from "lucide-react";
 import {ImportJobStatus} from "@/lib/utils/enums";
-import {formatDateTime} from "@/lib/utils/formatting/date";
-import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {useNavigate} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
 import {Spinner} from "@/lib/client/components/ui/spinner";
+import {formatDateTime} from "@/lib/utils/formatting/date";
 import {Progress} from "@/lib/client/components/ui/progress";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
+import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {ImportStatusBadge} from "@/lib/client/components/imports/ImportStatusBadge";
 import {ImportJobIssuesTable} from "@/lib/client/components/imports/ImportJobIssuesTable";
 import {importJobIssuesOptions, importJobOptions} from "@/lib/client/react-query/query-options";
@@ -59,12 +59,21 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
     const issueCount = job.failedCount + job.skippedCount;
     const progress = job.totalCount ? Math.round((job.processedCount / job.totalCount) * 100) : 0;
 
+    const onRefreshClick = () => {
+        void Promise.all([
+            refetch(),
+            queryClient.invalidateQueries({ queryKey: importJobsQueryKey }),
+            queryClient.invalidateQueries({ queryKey: importJobIssuesQueryKey(jobId) }),
+        ]);
+    };
+    
     const handleDelete = async () => {
         if (!await confirm({
             variant: "destructive",
             confirmLabel: "Delete Job",
             title: "Delete this import job?",
-            description: "This removes the import and its row details. Entries already added to your lists will stay. Imports that are processing cannot be deleted.",
+            description: "This removes the import and its row details. Entries already added to your lists will stay. " +
+                "Imports that are processing cannot be deleted.",
         })) return;
 
         deleteMutation.mutate({ data: { jobId } }, {
@@ -90,21 +99,15 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                     <p className="text-xs text-muted-foreground">
                         {job.nextAttemptAt ? `Paused. Automatic retry after ${formatDateTime(job.nextAttemptAt)}.`
                             : job.status === ImportJobStatus.PROCESSING ? "Currently processing."
-                            : job.status === ImportJobStatus.QUEUED ? job.jobsAhead
-                                    ? `${job.jobsAhead} job${job.jobsAhead > 1 ? "s" : ""} ahead.`
-                                    : "Next in queue. Waiting for processing to start."
-                                : isTerminal ? "Import finished." : "Validating your file."}
+                                : job.status === ImportJobStatus.QUEUED ? job.jobsAhead
+                                        ? `${job.jobsAhead} job${job.jobsAhead > 1 ? "s" : ""} ahead.`
+                                        : "Next in queue. Waiting for processing to start."
+                                    : isTerminal ? "Import finished." : "Validating your file."}
                     </p>
                 </div>
 
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => {
-                        void Promise.all([
-                            refetch(),
-                            queryClient.invalidateQueries({ queryKey: importJobIssuesQueryKey(jobId) }),
-                            queryClient.invalidateQueries({ queryKey: importJobsQueryKey }),
-                        ]);
-                    }} disabled={isFetching}>
+                    <Button variant="outline" size="sm" onClick={onRefreshClick} disabled={isFetching}>
                         <RefreshCw className="size-4"/>
                         Refresh
                     </Button>

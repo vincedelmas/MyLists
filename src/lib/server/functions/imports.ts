@@ -53,10 +53,10 @@ export const getImportJob = createServerFn({ method: "GET" })
             updatedAt: job.updatedAt,
             startedAt: job.startedAt,
             finishedAt: job.finishedAt,
-            nextAttemptAt: job.nextAttemptAt,
             totalCount: job.totalCount,
             failedCount: job.failedCount,
             skippedCount: job.skippedCount,
+            nextAttemptAt: job.nextAttemptAt,
             completedCount: job.completedCount,
             processedCount: job.processedCount,
         };

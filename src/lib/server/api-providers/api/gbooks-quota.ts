@@ -1,15 +1,21 @@
 import {serverEnv} from "@/env/server";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
 import {providerRequestContext} from "@/lib/server/core/provider-request-context";
-import {ProviderRequestError} from "./provider-error";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 
 
-const DAILY_LIMIT = 1_000;
 const IMPORT_LIMIT = 900;
+const DAILY_LIMIT = 1_000;
 const pacificDate = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+    month: "2-digit",
+    timeZone: "America/Los_Angeles",
 });
+
+
 let memoryUsage = { day: "", count: 0 };
+
 
 const CONSUME_QUOTA = `
     local used = tonumber(redis.call('GET', KEYS[1]) or '0')
@@ -20,30 +26,39 @@ const CONSUME_QUOTA = `
 `;
 
 
-export function getGoogleBooksQuotaWindow(now = Date.now()) {
+export const getGoogleBooksQuotaWindow = (now = Date.now()) => {
     const day = pacificDate.format(now);
     const nextDayUtc = Date.parse(`${day}T00:00:00Z`) + 86_400_000;
+
     // Pacific midnight is 07:00 or 08:00 UTC, including on daylight-saving transition days.
     const daylightMidnight = nextDayUtc + 7 * 3_600_000;
     const resetAt = pacificDate.format(daylightMidnight) === day ? daylightMidnight + 3_600_000 : daylightMidnight;
+
     return { day, resetAt };
-}
+};
 
 
-export async function consumeGoogleBooksQuota() {
+export const consumeGoogleBooksQuota = async () => {
     const { day, resetAt } = getGoogleBooksQuotaWindow();
+
+    let allowed: boolean;
     const isImport = providerRequestContext.getStore()?.isImport === true;
     const limit = isImport ? IMPORT_LIMIT : DAILY_LIMIT;
-    let allowed: boolean;
 
     if (serverEnv.REDIS_ENABLED) {
         const redis = await getRedisConnection();
         allowed = await redis.eval(CONSUME_QUOTA, 1, `gBooksAPI:daily:${day}`, limit, resetAt) === 1;
     }
     else {
-        if (memoryUsage.day !== day) memoryUsage = { day, count: 0 };
+        if (memoryUsage.day !== day) {
+            memoryUsage = { day, count: 0 };
+        }
+        
         allowed = memoryUsage.count < limit;
-        if (allowed) memoryUsage.count += 1;
+
+        if (allowed) {
+            memoryUsage.count += 1;
+        }
     }
 
     if (!allowed) {
@@ -54,4 +69,4 @@ export async function consumeGoogleBooksQuota() {
             reason: isImport ? "importBudgetExceeded" : "dailyLimitExceeded",
         });
     }
-}
+};

@@ -10,7 +10,7 @@ import {
 } from "@/lib/server/api-providers/interfaces.types";
 
 
-export function createMediaIngestionService<TDetails>(params: {
+export const createMediaIngestionService = <TDetails>(params: {
     refreshPolicy?: RefreshPolicy;
     provider: ExternalMediaProvider<TDetails>;
     refreshCandidates?: RefreshCandidateSource;
@@ -19,7 +19,7 @@ export function createMediaIngestionService<TDetails>(params: {
         storeMediaWithDetails(details: NoInfer<TDetails>): number;
         updateMediaWithDetails(details: NoInfer<TDetails>): boolean;
     };
-}): MediaIngestionService<TDetails> {
+}): MediaIngestionService<TDetails> => {
     const { repository, provider, refreshCandidates, refreshPolicy, enrichers = [] } = params;
 
     async function applyEnrichers(details: TDetails, context: IngestionContext) {
@@ -174,4 +174,4 @@ export function createMediaIngestionService<TDetails>(params: {
             }
         },
     };
-}
+};

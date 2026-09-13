@@ -1,8 +1,8 @@
 import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
+import {addSeo, addSeoLinks} from "@/lib/client/seo";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {addSeo, addSeoLinks} from "@/lib/client/seo";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {Separator} from "@/lib/client/components/ui/separator";
 import {buttonVariants} from "@/lib/client/components/ui/button";
@@ -51,10 +51,13 @@ const faqs = [
         answer: "No. You can ignore all of that and just use MyLists to keep your own lists.",
     },
     {
-        question: "Will you add imports from Letterboxd, MAL, IMDb, and other sites?",
-        answer:
-            "They are in the works, but not available right now. I work on MyLists by myself, and imports from other sites take a lot " +
-            "of work to get right.",
+        question: "Can I import my existing lists?",
+        answer: (
+            <>
+                Yes. CSV imports support movies from Letterboxd and IMDb, and current MyLists exports for movies,
+                series, anime, games, books, and manga. Imports are in beta and available in Settings → Imports.
+            </>
+        ),
     },
     {
         question: "Is MyLists still actively developed?",
@@ -88,18 +91,18 @@ const trustPrinciples = [
     },
     {
         icon: Download,
-        badge: "CSV export",
         variant: "warning",
-        title: "You can download your lists.",
-        description: "Export any of your lists as a CSV file whenever you want a copy.",
+        badge: "CSV import & export",
+        title: "Import and export your lists.",
+        description: "Export any list as CSV. Beta imports support MyLists exports and movie lists from Letterboxd and IMDb.",
     },
     {
         icon: Code,
         badge: "Open source",
         variant: "achievement",
         title: "The code is public.",
-        description: "MyLists is made by one person, and its source code is available on GitHub.",
         href: "https://github.com/Crossoufire/MyLists",
+        description: "MyLists is made by one person, and its source code is available on GitHub.",
     },
 ] as const;
 
@@ -200,7 +203,7 @@ function HomePage() {
                             </CardTitle>
                             <CardDescription className="max-w-xl text-base leading-relaxed">
                                 Movies, series, anime, games, books, and manga each have their own list. They all show up
-                                on the same profile and in the same stats.
+                                on the same profile and in the same stats. You can also rate individual seasons of series and anime.
                             </CardDescription>
                             <span aria-hidden="true" className="absolute top-0 right-4 hidden text-5xl text-muted-foreground/20 sm:block">
                                 01

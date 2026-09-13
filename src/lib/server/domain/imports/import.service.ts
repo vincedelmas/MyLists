@@ -5,6 +5,8 @@ import {AdminImportsSearch} from "@/lib/schemas/admin.schema";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {ImportRepository} from "@/lib/server/domain/imports/import.repository";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
+import {parseLetterboxdCsv} from "@/lib/server/domain/imports/parsers/letterboxd.parser";
+import type {LetterboxdCsvType} from "@/lib/schemas/imports.schema";
 import {ImportItemStatus, ImportJobStatus, ImportSource, MediaType} from "@/lib/utils/enums";
 import {ImportItemOutcome, ImportItemsSelect, ImportParserRegistry, ParsedImport} from "@/lib/types/imports.types";
 
@@ -14,6 +16,7 @@ const ACTIVE_IMPORT_ERROR = "You already have an import in progress. Wait for it
 
 const importParserRegistry: ImportParserRegistry = {
     [ImportSource.MYLISTS]: parseMyListsCsv,
+    [ImportSource.LETTERBOXD]: parseLetterboxdCsv,
 };
 
 
@@ -138,7 +141,7 @@ export class ImportService {
         throw new FormattedError("Only queued or finished import jobs can be deleted.");
     }
 
-    async createImportJob(userId: number, source: ImportSource, contents: string) {
+    async createImportJob(userId: number, source: ImportSource, contents: string, fileType?: LetterboxdCsvType) {
         const activeJob = await this.repository.findActiveJobForUser(userId);
         if (activeJob) {
             throw new FormattedError(ACTIVE_IMPORT_ERROR);
@@ -148,7 +151,7 @@ export class ImportService {
         try {
             const parser = this.parsers[source];
             if (!parser) throw new Error(`Import source "${source}" is not supported yet`);
-            parsed = parser(contents);
+            parsed = parser(contents, fileType);
         }
         catch (error) {
             parsed = error instanceof Error ? error.message : "The import could not be parsed. Please re-export your list and try again.";

@@ -29,7 +29,7 @@ const settingsItems = [
         icon: Upload,
         label: "Imports",
         to: "/settings/imports",
-        description: "Import a current MyLists export",
+        description: "Import your lists from other services",
     },
     {
         icon: Brush,
@@ -71,7 +71,10 @@ const settingsItems = [
 
 function SettingsLayout() {
     const { pathname } = useLocation();
-    const activeItem = settingsItems.find((item) => pathname === item.to) ?? settingsItems[0];
+
+    const activeItem = settingsItems
+        .find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`)) ?? settingsItems[0];
+    
     const ActiveIcon = activeItem.icon;
 
     return (
@@ -101,7 +104,7 @@ function SettingsLayout() {
                                     <Link
                                         to={item.to}
                                         key={item.id}
-                                        activeOptions={{ exact: true, includeSearch: false }}
+                                        activeOptions={{ exact: false, includeSearch: false }}
                                         activeProps={{ className: "border-brand/30 bg-brand/5 text-foreground" }}
                                         className="group flex shrink-0 items-center gap-3 rounded-lg border border-transparent px-3 py-2.5
                                         text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground

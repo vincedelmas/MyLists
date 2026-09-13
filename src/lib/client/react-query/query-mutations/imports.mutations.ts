@@ -7,6 +7,7 @@ export const useCreateImportJobMutation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
+        mutationKey: ["imports", "create"],
         mutationFn: ({ data }: { data: FormData }) => postCreateImportJob({ data }),
         onSuccess: async (job) => {
             await queryClient.invalidateQueries({ queryKey: importJobsQueryKey });

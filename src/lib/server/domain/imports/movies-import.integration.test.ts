@@ -63,6 +63,80 @@ describe("movies import processing", () => {
         dbContext.db = undefined;
     });
 
+    it("imports Letterboxd ratings, watched films, and watchlist in order while preserving existing entries", async () => {
+        await db.insert(movies).values([
+            { id: 101, apiId: 680, duration: 154, name: "Pulp Fiction", imageCover: "pulp-fiction.jpg", releaseDate: "1994-09-10" },
+            { id: 102, apiId: 603, duration: 136, name: "The Matrix", imageCover: "matrix.jpg", releaseDate: "1999-03-31" },
+        ]);
+        const importService = new ImportService(ImportRepository);
+        const search = vi.fn();
+        MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+            createMoviesService(createMoviesRepository()),
+            { search } as any,
+            { storeFromExternal: vi.fn() } as any,
+        ));
+        const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+        const headers = "Date,Name,Year,Letterboxd URI";
+        const fightClub = "2024-01-01,Fight Club,1999,https://boxd.it/2a9q";
+
+        for (const [type, csv] of [
+            ["ratings", `${headers},Rating\n${fightClub},3.5`],
+            ["watched", `${headers}\n${fightClub}\n2024-01-01,Pulp Fiction,1994,https://boxd.it/29Pq`],
+            ["watchlist", `${headers}\n${fightClub}\n2024-01-01,The Matrix,1999,https://boxd.it/2a1m`],
+            ["ratings", `${headers},Rating\n${fightClub},5`],
+        ] as const) {
+            const job = await importService.createImportJob(42, ImportSource.LETTERBOXD, csv, type);
+            expect(job.status).toBe(ImportJobStatus.QUEUED);
+            await expect(processor.processNextJob()).resolves.toMatchObject({
+                id: job.id, status: ImportJobStatus.COMPLETED, failedCount: 0, skippedCount: 0,
+            });
+        }
+
+        expect(search).not.toHaveBeenCalled();
+        const list = await db.select().from(moviesList).where(eq(moviesList.userId, 42)).orderBy(moviesList.mediaId);
+        expect(list).toMatchObject([
+            { mediaId: 100, status: Status.COMPLETED, rating: 7, redo: 0, total: 1 },
+            { mediaId: 101, status: Status.COMPLETED, rating: null, redo: 0, total: 1 },
+            { mediaId: 102, status: Status.PLAN_TO_WATCH, rating: null, redo: 0, total: 0 },
+        ]);
+    });
+
+    it("resolves Letterboxd movies through TMDB and reports invalid or unmatched rows", async () => {
+        const importService = new ImportService(ImportRepository);
+        const search = vi.fn().mockImplementation(async (name: string) => ({
+            hasNextPage: false,
+            data: name === "Pulp Fiction"
+                ? [{ id: "680", name, date: "1994-09-10", itemType: MediaType.MOVIES }]
+                : [],
+        }));
+        const storeFromExternal = vi.fn(async () => {
+            await db.insert(movies).values({
+                id: 101, apiId: 680, duration: 154, name: "Pulp Fiction", imageCover: "pulp-fiction.jpg", releaseDate: "1994-09-10",
+            });
+            return 101;
+        });
+        MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+            createMoviesService(createMoviesRepository()), { search } as any, { storeFromExternal } as any,
+        ));
+        const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+        const job = await importService.createImportJob(42, ImportSource.LETTERBOXD, [
+            "Date,Name,Year,Letterboxd URI,Rating",
+            "2024-01-01,Pulp Fiction,1994,https://boxd.it/29Pq,4.5",
+            "2024-01-01,Unknown Movie,2024,https://boxd.it/missing,4",
+            "2024-01-01,Fight Club,1999,https://boxd.it/2a9q,99",
+        ].join("\n"), "ratings");
+
+        await expect(processor.processNextJob()).resolves.toMatchObject({
+            id: job.id, status: ImportJobStatus.COMPLETED_WITH_ERRORS,
+            failedCount: 1, skippedCount: 1, completedCount: 1, processedCount: 3,
+        });
+        expect(search).toHaveBeenCalledTimes(2);
+        expect(storeFromExternal).toHaveBeenCalledExactlyOnceWith("680", false);
+        expect(await db.select().from(moviesList).where(eq(moviesList.userId, 42))).toMatchObject([
+            { mediaId: 101, status: Status.COMPLETED, rating: 9, total: 1 },
+        ]);
+    });
+
     it("matches an internal movie, adds it to the user list, and completes the import job", async () => {
         const importService = new ImportService(ImportRepository);
         const moviesService = createMoviesService(createMoviesRepository());

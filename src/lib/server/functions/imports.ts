@@ -1,5 +1,6 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
+import {ImportSource} from "@/lib/utils/enums";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {importJobIdSchema, importJobIssuesSchema, importUploadSchema} from "@/lib/schemas";
 
@@ -7,10 +8,11 @@ import {importJobIdSchema, importJobIssuesSchema, importUploadSchema} from "@/li
 export const postCreateImportJob = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator((data) => importUploadSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data))
-    .handler(async ({ data: { file, source }, context: { currentUser } }) => {
+    .handler(async ({ data, context: { currentUser } }) => {
         const container = await getContainer();
         const importService = container.services.imports;
-        const job = await importService.createImportJob(currentUser.id, source, await file.text());
+        const job = await importService.createImportJob(currentUser.id, data.source, await data.file.text(),
+            data.source === ImportSource.LETTERBOXD ? data.letterboxdFileType : undefined);
 
         return {
             jobId: job.id,

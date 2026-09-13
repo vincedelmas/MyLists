@@ -1,6 +1,6 @@
 import {useState} from "react";
-import {useQuery} from "@tanstack/react-query";
 import {Grid2X2XIcon} from "lucide-react";
+import {useQuery} from "@tanstack/react-query";
 import {formatDate} from "@/lib/utils/formatting/date";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useNavigate, useSearch} from "@tanstack/react-router";
@@ -27,13 +27,15 @@ const formatImportLabel = (job: ImportJobListItem) => {
     const issueCount = job.failedCount + job.skippedCount;
     const issueLabel = issueCount > 0 ? ` · ${issueCount} issue${issueCount > 1 ? "s" : ""}` : "";
 
-    return `#${job.id} · ${job.source} · ${job.nextAttemptAt ? "paused" : job.status.replaceAll("_", " ")} · ${formatDate(job.finishedAt ?? job.updatedAt)}${issueLabel}`;
+    return `#${job.id} · ${job.source} · ${job.nextAttemptAt
+        ? "paused"
+        : job.status.replaceAll("_", " ")} · ${formatDate(job.finishedAt ?? job.updatedAt)}${issueLabel}`;
 };
 
 
 export function ExistingImportsPanel() {
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
-    const navigate = useNavigate({ from: "/settings/imports" });
     const search = useSearch({ from: "/_main/_private/settings/_layout/imports" });
     const { data: importJobs = [], isLoading, isError } = useQuery(allUserJobsOptions(isOpen));
 
@@ -48,12 +50,12 @@ export function ExistingImportsPanel() {
     };
 
     const handleJobDelete = () => {
-        void navigate({ search: prev => ({ ...prev, page: 1, jobId: undefined }), resetScroll: false });
+        void navigate({ to: ".", search: prev => ({ ...prev, page: 1, jobId: undefined }), resetScroll: false });
     };
 
     const handleJobChange = (jobId: string | null) => {
         if (jobId === null) return;
-        void navigate({ search: prev => ({ ...prev, page: 1, jobId: Number(jobId) }), resetScroll: false });
+        void navigate({ to: ".", search: prev => ({ ...prev, page: 1, jobId: Number(jobId) }), resetScroll: false });
     };
 
     return (

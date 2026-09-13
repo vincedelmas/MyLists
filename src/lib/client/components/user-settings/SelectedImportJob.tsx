@@ -34,7 +34,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
     const confirm = useConfirm();
     const queryClient = useQueryClient();
     const deleteMutation = useDeleteImportJobMutation(jobId);
-    const navigate = useNavigate({ from: "/settings/imports" });
+    const navigate = useNavigate();
     const { data: job, refetch, isFetching, isLoading, isError } = useQuery(importJobOptions(jobId));
 
     const issueQuery = useQuery(importJobIssuesOptions(jobId, { page, perPage: 25 }, !!job && job.failedCount + job.skippedCount > 0));
@@ -158,7 +158,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                 <ImportJobIssuesTable
                     issueQuery={issueQuery}
                     onPageChange={nextPage => {
-                        void navigate({ search: prev => ({ ...prev, page: nextPage, jobId }), resetScroll: false });
+                        void navigate({ to: ".", search: prev => ({ ...prev, page: nextPage, jobId }), resetScroll: false });
                     }}
                 />
                 : !job.error &&

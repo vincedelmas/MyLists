@@ -1,4 +1,5 @@
 import {JSX} from "react";
+import {clientEnv} from "@/env/client";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {addSeo, addSeoLinks} from "@/lib/client/seo";
 import {Button} from "@/lib/client/components/ui/button";
@@ -21,6 +22,7 @@ import {
     GraduationCap,
     Highlighter,
     ImageUp,
+    Import,
     LayoutList,
     ListOrdered,
     LucideIcon,
@@ -30,6 +32,7 @@ import {
     Search,
     Shield,
     SlidersHorizontal,
+    Star,
     Trophy,
     Users,
     Wrench,
@@ -195,53 +198,69 @@ const AREA_DESCRIPTIONS: Record<FeatureArea, string> = {
 
 
 const LATEST_RELEASE: ReleaseData = {
-    icon: Users,
+    icon: Star,
     type: "New",
-    date: "June 2026",
-    title: "Taste Matches",
+    date: "September 2026",
+    title: "Season Ratings & CSV Imports",
     summary: (
         <span>
-            Find users whose ratings line up with yours across the media types you use.
-            Matches are based on titles you have both rated, with stronger confidence when there is more shared history.
+            Rate each season of your series and anime, and bring your lists over with CSV imports.
+            The import system is in beta, so don’t hesitate to{" "}
+            <a href={`mailto:${clientEnv.VITE_CONTACT_MAIL}`} className="font-medium text-brand hover:text-brand/80">
+                contact me
+            </a>{" "}
+            if you have any problems with it.
         </span>
     ),
     items: [
         {
+            icon: Star,
             type: "New",
-            icon: BarChart3,
-            area: "Social & Notifications",
-            name: "Ratings-Based Matching",
-            description: <span>Compare rating patterns and rating differences on shared titles to find the closest matches</span>
-        },
-        {
-            type: "New",
-            icon: Highlighter,
-            name: "Why You Match",
-            area: "Social & Notifications",
+            area: "Lists & Tracking",
+            name: "Ratings per Season",
             description: (
                 <span>
-                    See the match percentage, shared-rating count, per-media scores,
-                    and a selection of titles you both rated highly.
+                    Give each season of a series or anime its own rating.
+                    Your overall rating is the average of the current seasons you have rated.
                 </span>
-            )
+            ),
         },
         {
+            icon: Import,
             type: "New",
-            icon: SlidersHorizontal,
-            area: "Social & Notifications",
-            name: "Useful Discovery Controls",
+            area: "Lists & Tracking",
+            name: "Letterboxd & IMDb Imports (Beta)",
             description: (
                 <span>
-                    Filter by an active media list, search by username, sort by match strength or overlap,
-                    and optionally hide people you already follow.
+                    Bring your movies from Letterboxd ratings, watched, and watchlist CSVs,
+                    or IMDb ratings and watchlist CSVs. Get started in{" "}
+                    <Link to="/settings/imports" className="font-medium text-brand hover:text-brand/80">
+                        Settings → Imports
+                    </Link>.
                 </span>
-            )
+            ),
+        },
+        {
+            icon: Import,
+            type: "New",
+            area: "Lists & Tracking",
+            name: "MyLists Imports (Beta)",
+            description: (
+                <span>
+                    Import current MyLists CSV exports for movies, series, anime, games, books, and manga.
+                    Get started in{" "}
+                    <Link to="/settings/imports/mylists" className="font-medium text-brand hover:text-brand/80">
+                        Settings → Imports
+                    </Link>.
+                </span>
+            ),
         },
     ]
 };
 
 
 const FEATURES_DATA: FeatureData[] = [
+    ...LATEST_RELEASE.items,
     {
         icon: Activity,
         type: "Existing",
@@ -383,6 +402,18 @@ const FEATURES_DATA: FeatureData[] = [
         area: "Customization",
         name: "Privacy Controls",
         description: "Choose what people can see on your profile, lists, stats, and updates."
+    },
+    {
+        icon: Users,
+        type: "Existing",
+        area: "Social & Notifications",
+        name: "Taste Matches",
+        description: (
+            <span>
+                Find users with similar ratings, see why you match through shared titles and per-media scores,
+                and filter or sort matches by media type, match strength, or overlap.
+            </span>
+        ),
     },
     {
         icon: Users,

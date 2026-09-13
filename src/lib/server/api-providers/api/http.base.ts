@@ -41,7 +41,7 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
 
                 try {
                     await checkProviderCooldown(config.consumeKey);
-                    // Acquire the pacing slot after longer-window waits.
+
                     for (const queue of queues) {
                         await queue.removeTokens(1, config.consumeKey, deadline);
                     }
@@ -52,13 +52,12 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     startedAt = Date.now();
                     response = await fetch(url, { ...options, method: method.toUpperCase(), signal });
 
-                    // Finish downloading inside the retry boundary.
-                    // Keep the original response readable for the provider's JSON/text parser.
+                    // Finish download inside retry boundary
+                    // Keep original response readable for provider's JSON/text parser
                     try {
                         await response.clone().arrayBuffer();
                     }
                     catch (error) {
-                        // An HTTP rejection still carries useful status/Retry-After when its body breaks.
                         if (response.ok) throw error;
                     }
                 }
@@ -69,6 +68,7 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     const errorName = err instanceof Error ? err.name : "UnknownError";
                     if (startedAt === undefined) {
                         logger.warn({ consumeKey: config.consumeKey, errorName }, "Provider request controls unavailable");
+
                         throw new ProviderRequestError("Provider request controls are busy or unavailable. Requests will resume later.", {
                             provider: config.consumeKey, kind: "unavailable", statusCode: 503,
                             reason: "requestControlsUnavailable", retryAt: Date.now() + 300_000,
@@ -76,7 +76,6 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     }
                     const { origin, pathname } = new URL(url);
 
-                    // Bun fetch errors include the full URL in `path`; messages and stacks can contain credentials too.
                     logger.error({
                         consumeKey: config.consumeKey,
                         errorCode: err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined,
@@ -117,7 +116,6 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
 
                 logger.warn({ ...error.details }, "Provider API request rejected");
 
-                // Long server-directed waits are persisted, freeing the import worker for other providers.
                 if (error.details.kind === "unavailable" && attempt < MAX_CALL_ATTEMPTS && (retryAfterMs ?? 0) <= 10_000) {
                     await waitBeforeRetry(attempt, retryAfterMs);
                     continue;

@@ -1,5 +1,6 @@
 import * as z from "zod";
 import {parse} from "csv-parse/sync";
+import {MAX_IMPORT_ROWS} from "@/lib/utils/constants";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {ApiProviderType, ImportItemStatus, MediaType,} from "@/lib/utils/enums";
 import {gamesMyListsCSVRowSchema} from "@/lib/server/domain/media/games/games.types";
@@ -9,9 +10,6 @@ import {moviesMyListsCSVRowSchema} from "@/lib/server/domain/media/movies/movies
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {MYLISTS_CSV_VERSION, MYLISTS_FORMAT_ERROR} from "@/lib/server/domain/imports/mylists-format";
 import {animeMyListsCSVRowSchema, seriesMyListsCSVRowSchema} from "@/lib/server/domain/media/tv/tv.types";
-
-
-const MYLISTS_CSV_MAX_ROWS = 3000;
 
 
 const parseCsvRecords = (csv: string) => {
@@ -60,8 +58,8 @@ export const parseMyListsCsv = (csv: string): ParsedImport => {
         throw new Error("The CSV file contains no rows");
     }
 
-    if (rows.length > MYLISTS_CSV_MAX_ROWS) {
-        throw new Error(`The CSV file contains too many rows. Maximum is ${MYLISTS_CSV_MAX_ROWS}.`);
+    if (rows.length > MAX_IMPORT_ROWS) {
+        throw new Error(`The CSV file contains too many rows. Maximum is ${MAX_IMPORT_ROWS}.`);
     }
 
     // MyLists exports one media list per file; mixed mediaType is wrong CSV

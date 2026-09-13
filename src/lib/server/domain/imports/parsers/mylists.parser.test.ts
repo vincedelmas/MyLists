@@ -431,10 +431,10 @@ describe("parseMyListsCsv", () => {
         expect(() => parseMyListsCsv(csv)).toThrow();
     });
 
-    it("accepts 3000 rows and rejects 3001", () => {
-        const rows = Array.from({ length: 3000 }, () => movieRow());
-        expect(parseMyListsCsv(toCsv(rows)).totalCount).toBe(3000);
-        expect(() => parseMyListsCsv(toCsv([...rows, movieRow()]))).toThrow("Maximum is 3000");
+    it("accepts 1500 rows and rejects 1501", () => {
+        const rows = Array.from({ length: 1500 }, () => movieRow());
+        expect(parseMyListsCsv(toCsv(rows)).totalCount).toBe(1500);
+        expect(() => parseMyListsCsv(toCsv([...rows, movieRow()]))).toThrow("Maximum is 1500");
     });
 });
 

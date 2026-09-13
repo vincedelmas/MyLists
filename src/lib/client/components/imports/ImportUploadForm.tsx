@@ -3,6 +3,7 @@ import {useNavigate} from "@tanstack/react-router";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {type ReactNode, useId, useState} from "react";
 import {Input} from "@/lib/client/components/ui/input";
+import {MAX_IMPORT_FILE_SIZE, MAX_IMPORT_ROWS} from "@/lib/utils/constants";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {ImportUploadFormValues, importUploadSchema} from "@/lib/schemas/imports.schema";
 import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
@@ -57,7 +58,7 @@ export function ImportUploadForm({ defaultValues, children }: ImportUploadFormPr
                         Upload CSV File
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                        Only CSV are allowed, 5MB max and 3000 rows max per file.
+                        CSV files only, up to {MAX_IMPORT_FILE_SIZE / 1048576} MB and {MAX_IMPORT_ROWS} rows per file.
                     </p>
                 </div>
 

@@ -15,3 +15,7 @@ export const PLAYTIME_MAX_MINUTES = 15000 * 60;
 export const MIN_ACTIVITY_DATE = "1900-01-01";
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+export const MAX_IMPORT_FILE_SIZE = 3 * 1024 * 1024;
+
+export const MAX_IMPORT_ROWS = 1500;

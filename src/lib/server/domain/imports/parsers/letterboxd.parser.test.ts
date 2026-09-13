@@ -96,9 +96,9 @@ describe("parseLetterboxdCsv", () => {
         expect(() => parseLetterboxdCsv(headers, "watched")).toThrow("contains no rows");
     });
 
-    it("accepts 3000 rows and rejects 3001", () => {
-        const csv = `${headers}\n${Array(3000).fill(movie).join("\n")}`;
-        expect(parseLetterboxdCsv(csv, "watched").totalCount).toBe(3000);
-        expect(() => parseLetterboxdCsv(`${csv}\n${movie}`, "watched")).toThrow("Maximum is 3000");
+    it("accepts 1500 rows and rejects 1501", () => {
+        const csv = `${headers}\n${Array(1500).fill(movie).join("\n")}`;
+        expect(parseLetterboxdCsv(csv, "watched").totalCount).toBe(1500);
+        expect(() => parseLetterboxdCsv(`${csv}\n${movie}`, "watched")).toThrow("Maximum is 1500");
     });
 });

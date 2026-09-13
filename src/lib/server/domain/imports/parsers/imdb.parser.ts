@@ -1,12 +1,12 @@
 import * as z from "zod";
 import {parse} from "csv-parse/sync";
+import {MAX_IMPORT_ROWS} from "@/lib/utils/constants";
 import type {ImportCsvType} from "@/lib/schemas/imports.schema";
 import {ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {emptyStringToNull} from "@/lib/server/domain/imports/import-list-validation";
 
 
-const IMDB_CSV_MAX_ROWS = 3000;
 const IMDB_FORMAT_ERROR = "Upload a current IMDb ratings or watchlist CSV export and select the matching file type.";
 
 const movieTitleTypes = new Set(["movie", "tvmovie", "short", "tvshort", "tvspecial", "video"]);
@@ -48,8 +48,8 @@ export const parseImdbCsv = (csv: string, fileType?: ImportCsvType): ParsedImpor
     }
 
     if (rows.length === 0) throw new Error("The CSV file contains no rows");
-    if (rows.length > IMDB_CSV_MAX_ROWS) {
-        throw new Error(`The CSV file contains too many rows. Maximum is ${IMDB_CSV_MAX_ROWS}.`);
+    if (rows.length > MAX_IMPORT_ROWS) {
+        throw new Error(`The CSV file contains too many rows. Maximum is ${MAX_IMPORT_ROWS}.`);
     }
 
     const items = rows.map((cells, idx): ParsedImportItem => {

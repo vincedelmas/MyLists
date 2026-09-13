@@ -383,12 +383,12 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
             expect(firstIssues.items[0].id).not.toBe(secondIssues.items[0].id);
         });
 
-        it("processes the maximum 3000 rows without duplicate entries or incorrect counters", async () => {
+        it("processes the maximum 1500 rows without duplicate entries or incorrect counters", async () => {
             const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
-                convertToCsv(Array.from({ length: 3000 }, () => exported)));
+                convertToCsv(Array.from({ length: 1500 }, () => exported)));
             await drainImportJobs(imports.importProcessor);
             expect((await imports.imports.getImportJob(43, job.id)).job).toMatchObject({
-                status: ImportJobStatus.COMPLETED, totalCount: 3000, processedCount: 3000, completedCount: 3000,
+                status: ImportJobStatus.COMPLETED, totalCount: 1500, processedCount: 1500, completedCount: 1500,
             });
             expect(await mediaModule.services.movies.downloadMediaListAsCSV(43)).toHaveLength(1);
         });

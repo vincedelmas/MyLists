@@ -1,12 +1,12 @@
 import * as z from "zod";
 import {parse} from "csv-parse/sync";
+import {MAX_IMPORT_ROWS} from "@/lib/utils/constants";
 import type {LetterboxdCsvType} from "@/lib/schemas/imports.schema";
 import {ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 import {ParsedImport, ParsedImportItem} from "@/lib/types/imports.types";
 import {emptyStringToNull} from "@/lib/server/domain/imports/import-list-validation";
 
 
-const LETTERBOXD_CSV_MAX_ROWS = 3000;
 const LETTERBOXD_FORMAT_ERROR = "Upload the original ratings.csv, watched.csv, or watchlist.csv " +
     "from your Letterboxd export and select the matching file type.";
 
@@ -40,8 +40,8 @@ export const parseLetterboxdCsv = (csv: string, fileType?: LetterboxdCsvType): P
     }
 
     if (rows.length === 0) throw new Error("The CSV file contains no rows");
-    if (rows.length > LETTERBOXD_CSV_MAX_ROWS) {
-        throw new Error(`The CSV file contains too many rows. Maximum is ${LETTERBOXD_CSV_MAX_ROWS}.`);
+    if (rows.length > MAX_IMPORT_ROWS) {
+        throw new Error(`The CSV file contains too many rows. Maximum is ${MAX_IMPORT_ROWS}.`);
     }
 
     const items = rows.map((cells, idx): ParsedImportItem => {

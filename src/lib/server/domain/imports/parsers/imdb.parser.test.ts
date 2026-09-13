@@ -106,9 +106,9 @@ describe("parseImdbCsv", () => {
         expect(() => parseImdbCsv(`${csv}\n"unfinished`, "ratings")).toThrow("CSV structure is invalid");
     });
 
-    it("accepts 3000 rows and rejects 3001, including unsupported title types", () => {
-        expect(parseImdbCsv(convertToCsv(Array(3000).fill(ratingRow)), "ratings").totalCount).toBe(3000);
-        expect(() => parseImdbCsv(convertToCsv(Array(3001).fill({ ...ratingRow, "Title Type": "TV Episode" })), "ratings"))
-            .toThrow("Maximum is 3000");
+    it("accepts 1500 rows and rejects 1501, including unsupported title types", () => {
+        expect(parseImdbCsv(convertToCsv(Array(1500).fill(ratingRow)), "ratings").totalCount).toBe(1500);
+        expect(() => parseImdbCsv(convertToCsv(Array(1501).fill({ ...ratingRow, "Title Type": "TV Episode" })), "ratings"))
+            .toThrow("Maximum is 1500");
     });
 });

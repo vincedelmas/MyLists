@@ -133,7 +133,10 @@ describe("createApiHttpClient", () => {
     it("bounds network retries, starts a cooldown, and logs only the URL origin and pathname", async () => {
         vi.useFakeTimers();
         const url = "https://example.com/items?api_key=test-secret&query=private-search#private-fragment";
-        const networkError = new TypeError("Connection reset");
+        const networkError = Object.assign(new TypeError(`Connection reset for ${url}`), {
+            code: "ECONNRESET",
+            path: url,
+        });
         const fetchMock = vi.fn().mockRejectedValue(networkError);
         vi.stubGlobal("fetch", fetchMock);
         const client = await createApiHttpClient(config);
@@ -147,11 +150,13 @@ describe("createApiHttpClient", () => {
         expect(transportMocks.logger.error).toHaveBeenCalledTimes(3);
         expect(transportMocks.logger.error).toHaveBeenCalledWith(
             expect.objectContaining({
-                err: networkError,
+                errorCode: "ECONNRESET",
                 data: expect.objectContaining({ url: "https://example.com/items" }),
             }),
             "Failed to fetch API",
         );
+        expect(JSON.stringify(transportMocks.logger.error.mock.calls)).not.toContain("test-secret");
+        expect(JSON.stringify(transportMocks.logger.error.mock.calls)).not.toContain("private-search");
     });
 
     it("maps fetch timeouts to a formatted gateway-timeout error", async () => {

@@ -86,8 +86,10 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                     const { origin, pathname } = new URL(url);
 
                     if (startedAt !== undefined) {
+                        // Bun fetch errors include the full URL in `path`; messages and stacks can contain credentials too.
                         logger.error({
-                            err, consumeKey: config.consumeKey,
+                            consumeKey: config.consumeKey,
+                            errorCode: err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined,
                             data: { url: `${origin}${pathname}`, method, startedAt, success: false, errorName },
                         }, "Failed to fetch API");
 

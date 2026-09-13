@@ -15,8 +15,9 @@ type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
 
 const createAnimeGenresEnricher = (mal: MalApi, maxGenres: number): MediaDetailsEnricher<UpsertTvWithDetails> => {
     return async (details, context) => {
-        // Bulk refreshes skip MAL enrichment and preserve existing anime-specific genres
         if (context.isBulk) {
+            // New imports keep TMDB genres; refreshes preserve the stored anime-specific genres.
+            if (context.mode === "store") return details;
             const enriched = { ...details };
             delete enriched.genresData;
             return enriched;

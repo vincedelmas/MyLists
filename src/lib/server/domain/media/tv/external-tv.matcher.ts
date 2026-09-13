@@ -27,7 +27,7 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
         for (const item of items) {
             try {
                 if (this._hasTmdbExternalId(item)) {
-                    const mediaId = await this.tvIngestion.storeFromExternal(item.externalApiId, false);
+                    const mediaId = await this.tvIngestion.storeFromExternal(item.externalApiId, false, true);
                     batch.matched.push({ item, mediaId });
                     if (this._shouldFlush(batch)) {
                         yield batch;
@@ -66,7 +66,7 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const mediaId = await this.tvIngestion.storeFromExternal(candidates[0].id, false);
+                const mediaId = await this.tvIngestion.storeFromExternal(candidates[0].id, false, true);
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {

@@ -105,13 +105,13 @@ export function createMediaIngestionService<TDetails>(params: {
     }
 
     return {
-        async storeFromExternal(apiId: number | string, checkInternalFirst: boolean = true) {
+        async storeFromExternal(apiId: number | string, checkInternalFirst: boolean = true, isBulk = false) {
             if (checkInternalFirst) {
                 const existingMedia = await repository.findByApiId(apiId);
                 if (existingMedia) return existingMedia.id;
             }
 
-            const details = await fetchAndPrepareDetails(apiId, { mode: "store", isBulk: false });
+            const details = await fetchAndPrepareDetails(apiId, { mode: "store", isBulk });
             return storeDetails(details);
         },
 

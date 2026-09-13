@@ -87,6 +87,9 @@ describe.each(Object.values(MediaType))("%s import matching", (mediaType) => {
         expect(provider.search).not.toHaveBeenCalled();
         expect(service.findByNames).not.toHaveBeenCalled();
         if (mediaType === MediaType.GAMES) expect(ingestion.storeBatchFromExternal).toHaveBeenCalledWith(["200"], false);
+        else if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+            expect(ingestion.storeFromExternal).toHaveBeenCalledWith("200", false, true);
+        }
         else expect(ingestion.storeFromExternal).toHaveBeenCalledWith("200", false);
     });
 
@@ -121,6 +124,9 @@ describe.each(Object.values(MediaType))("%s import matching", (mediaType) => {
         ] });
 
         expect(await processItem()).toEqual([{ itemId: 1, matchedMediaId: 200, status: ImportItemStatus.COMPLETED }]);
-        expect(ingestion.storeFromExternal).toHaveBeenCalledWith(301, false);
+        if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+            expect(ingestion.storeFromExternal).toHaveBeenCalledWith(301, false, true);
+        }
+        else expect(ingestion.storeFromExternal).toHaveBeenCalledWith(301, false);
     });
 });

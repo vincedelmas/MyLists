@@ -38,6 +38,7 @@ vi.mock("rate-limiter-flexible", () => ({
 
 
 import {FormattedError} from "@/lib/utils/error-classes";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 
 
@@ -109,7 +110,9 @@ describe("createApiHttpClient", () => {
 
     it("checks quota for every attempt and does not send a retry after the budget is exhausted", async () => {
         vi.useFakeTimers();
-        const quotaError = new Error("Daily quota exhausted");
+        const quotaError = new ProviderRequestError("Daily quota exhausted", {
+            provider: "test-api", kind: "quota", statusCode: 429, retryAt: Date.now() + 86_400_000,
+        });
         const beforeRequest = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(quotaError);
         const fetchMock = vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 }));
         vi.stubGlobal("fetch", fetchMock);
@@ -270,7 +273,9 @@ describe("createApiHttpClient", () => {
     });
 
     it("rejects calls during an existing provider cooldown without spending rate or quota tokens", async () => {
-        const error = new Error("Provider paused");
+        const error = new ProviderRequestError("Provider paused", {
+            provider: "test-api", kind: "rate_limit", statusCode: 429, retryAt: Date.now() + 60_000,
+        });
         transportMocks.checkProviderCooldown.mockRejectedValue(error);
         const beforeRequest = vi.fn();
         const fetchMock = vi.fn();
@@ -280,6 +285,20 @@ describe("createApiHttpClient", () => {
         expect(transportMocks.removeTokens).not.toHaveBeenCalled();
         expect(beforeRequest).not.toHaveBeenCalled();
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it.each(["cooldown", "limiter"])("pauses when the %s control fails without contacting the provider", async control => {
+        const unavailable = new Error("Redis command timed out");
+        if (control === "cooldown") transportMocks.checkProviderCooldown.mockRejectedValue(unavailable);
+        else transportMocks.removeTokens.mockRejectedValue(unavailable);
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        const client = await createApiHttpClient(config);
+        await expect(client.call("https://example.com/items")).rejects.toMatchObject({
+            details: { kind: "unavailable", reason: "requestControlsUnavailable" },
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(transportMocks.setProviderCooldown).not.toHaveBeenCalled();
     });
 
     it("maps a 404 response to the router not-found result", async () => {
@@ -316,7 +335,9 @@ describe("createApiHttpClient", () => {
     });
 
     it("releases concurrency when a pre-request quota check rejects", async () => {
-        const beforeRequest = vi.fn().mockRejectedValueOnce(new Error("Quota reached")).mockResolvedValue(undefined);
+        const beforeRequest = vi.fn().mockRejectedValueOnce(new ProviderRequestError("Quota reached", {
+            provider: "quota-slot", kind: "quota", statusCode: 429, retryAt: Date.now() + 86_400_000,
+        })).mockResolvedValue(undefined);
         const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(Response.json([])));
         vi.stubGlobal("fetch", fetchMock);
         const client = await createApiHttpClient({ consumeKey: "quota-slot", maxConcurrent: 1, throttleOptions: [], beforeRequest });

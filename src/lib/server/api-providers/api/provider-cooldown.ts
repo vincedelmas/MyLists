@@ -1,4 +1,5 @@
 import {serverEnv} from "@/env/server";
+import {logger} from "@/lib/server/core/logger";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
 import {type ProviderErrorDetails, ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 
@@ -53,8 +54,14 @@ export const setProviderCooldown = async (error: ProviderRequestError) => {
     };
 
     if (serverEnv.REDIS_ENABLED) {
-        const redis = await getRedisConnection();
-        await redis.eval(SET_COOLDOWN, 1, `provider:cooldown:${provider}`, JSON.stringify(cooldown), retryAt);
+        try {
+            const redis = await getRedisConnection();
+            await redis.eval(SET_COOLDOWN, 1, `provider:cooldown:${provider}`, JSON.stringify(cooldown), retryAt);
+        }
+        catch (err) {
+            // Preserve the provider error so imports can still persist their retry time in SQLite.
+            logger.warn({ provider, errorName: err instanceof Error ? err.name : "UnknownError" }, "Could not store provider cooldown");
+        }
     }
     else if ((memoryCooldowns.get(provider)?.details.retryAt ?? 0) < retryAt) {
         memoryCooldowns.set(provider, cooldown);

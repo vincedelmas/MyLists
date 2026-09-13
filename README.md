@@ -151,6 +151,7 @@ Redis caching is optional.
 
 - Redis is used for shared caching, rate limits, Google Books daily usage, provider cooldowns, IGDB concurrency, and API monitoring rollups.
   The web app, import worker, and scheduled tasks must use the same Redis instance to share these controls. Keep Redis data persistent to retain daily usage across restarts.
+  Redis commands have a five-second timeout. If provider controls are unavailable, imports pause with a saved retry time; Redis outages do not switch traffic to memory limits.
 - Without Redis, these controls use memory in each process and reset when that process exits. The web app and cron workers have independent allowances;
   combined traffic can exceed provider limits, and the Google Books daily budget cannot be enforced across worker runs. Provider quota errors still pause imports.
 - Import progress and retry times are stored in SQLite in both modes and survive worker restarts.

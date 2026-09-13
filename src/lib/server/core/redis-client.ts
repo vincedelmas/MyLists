@@ -15,7 +15,12 @@ const connectRedis = () => {
     if (!connectionPromise) {
         logger.info("Attempting to connect to Redis using ioredis");
 
-        redisInstance = new Redis(serverEnv.REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: null });
+        redisInstance = new Redis(serverEnv.REDIS_URL, {
+            lazyConnect: true,
+            maxRetriesPerRequest: 1,
+            connectTimeout: 5_000,
+            commandTimeout: 5_000,
+        });
 
         connectionPromise = new Promise((resolve, reject) => {
             redisInstance!.on("connect", () => logger.info("ioredis connecting"));

@@ -48,7 +48,6 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
     return {
         async call(url: string, method: ApiRequestMethod = "get", options: RequestInit = {}) {
             for (let attempt = 1; attempt <= MAX_CALL_ATTEMPTS; attempt += 1) {
-                await checkProviderCooldown(config.consumeKey);
                 const signal = AbortSignal.any([AbortSignal.timeout(REQUEST_TIMEOUT_MS), ...options.signal ? [options.signal] : []]);
 
                 let response: Response;
@@ -57,6 +56,7 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                 const deadline = Math.ceil((Date.now() + REQUEST_TIMEOUT_MS) / 1000);
 
                 try {
+                    await checkProviderCooldown(config.consumeKey);
                     if (config.maxConcurrent) {
                         release = await acquireProviderSlot(config.consumeKey, config.maxConcurrent, signal, REQUEST_TIMEOUT_MS);
                     }
@@ -84,22 +84,27 @@ export const createApiHttpClient = async (config: ApiClientConfig): Promise<ApiH
                 }
                 catch (err) {
                     if (options.signal?.aborted) throw options.signal.reason;
-                    if (startedAt === undefined && !signal.aborted) throw err;
+                    if (err instanceof ProviderRequestError) throw err;
 
                     const errorName = err instanceof Error ? err.name : "UnknownError";
+                    if (startedAt === undefined) {
+                        logger.warn({ consumeKey: config.consumeKey, errorName }, "Provider request controls unavailable");
+                        throw new ProviderRequestError("Provider request controls are busy or unavailable. Requests will resume later.", {
+                            provider: config.consumeKey, kind: "unavailable", statusCode: 503,
+                            reason: "requestControlsUnavailable", retryAt: Date.now() + 300_000,
+                        });
+                    }
                     const { origin, pathname } = new URL(url);
 
-                    if (startedAt !== undefined) {
-                        // Bun fetch errors include the full URL in `path`; messages and stacks can contain credentials too.
-                        logger.error({
-                            consumeKey: config.consumeKey,
-                            errorCode: err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined,
-                            data: { url: `${origin}${pathname}`, method, startedAt, success: false, errorName },
-                        }, "Failed to fetch API");
+                    // Bun fetch errors include the full URL in `path`; messages and stacks can contain credentials too.
+                    logger.error({
+                        consumeKey: config.consumeKey,
+                        errorCode: err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined,
+                        data: { url: `${origin}${pathname}`, method, startedAt, success: false, errorName },
+                    }, "Failed to fetch API");
 
-                        void recordCall(config.consumeKey, { url, method, startedAt, success: false, errorName })
-                            .catch(err => logger.warn({ err, consumeKey: config.consumeKey }, "Failed to record provider API call"));
-                    }
+                    void recordCall(config.consumeKey, { url, method, startedAt, success: false, errorName })
+                        .catch(err => logger.warn({ err, consumeKey: config.consumeKey }, "Failed to record provider API call"));
 
                     if (attempt < MAX_CALL_ATTEMPTS) {
                         await release?.();

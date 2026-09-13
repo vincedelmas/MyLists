@@ -7,6 +7,7 @@ import {acquireProviderSlot} from "./provider-concurrency";
 import {consumeGoogleBooksQuota, getGoogleBooksQuotaWindow} from "../api-providers/api/gbooks-quota";
 import {checkProviderCooldown, setProviderCooldown} from "../api-providers/api/provider-cooldown";
 import {ProviderRequestError} from "../api-providers/api/provider-error";
+import {createApiHttpClient} from "../api-providers/api/http.base";
 
 
 vi.mock("@/env/server", () => ({ serverEnv: {
@@ -141,6 +142,52 @@ describe.skipIf(!process.env.MYLISTS_TEST_REDIS_URL)("shared Redis provider cont
             worker.kill();
             reader.releaseLock();
             await (await getRedisConnection()).del(`provider:concurrency:${provider}`);
+        }
+    });
+
+    it("pauses provider requests within a bounded wait when Redis stops responding", async () => {
+        const redis = await getRedisConnection();
+        const client = await createApiHttpClient({ consumeKey: "redis-unresponsive", throttleOptions: [] });
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json([]));
+        await redis.call("CLIENT", "PAUSE", 10_000, "ALL");
+        const startedAt = Date.now();
+        try {
+            await expect(client.call("https://example.com/items")).rejects.toMatchObject({
+                details: { kind: "unavailable", reason: "requestControlsUnavailable" },
+            });
+            expect(Date.now() - startedAt).toBeLessThan(9_000);
+            expect(fetchMock).not.toHaveBeenCalled();
+        }
+        finally {
+            await redis.call("CLIENT", "UNPAUSE");
+            fetchMock.mockRestore();
+        }
+    }, 15_000);
+
+    it("preserves provider results when Redis cooldown writes or slot releases fail", async () => {
+        const provider = `redis-cleanup-${randomUUID()}`;
+        const redis = await getRedisConnection();
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("busy", { status: 429 }));
+        const evalMock = vi.spyOn(redis, "eval").mockRejectedValueOnce(new Error("Redis unavailable"));
+        try {
+            const client = await createApiHttpClient({ consumeKey: provider, throttleOptions: [] });
+            await expect(client.call("https://example.com/items")).rejects.toMatchObject({ details: { kind: "rate_limit" } });
+        }
+        finally {
+            evalMock.mockRestore();
+            fetchMock.mockRestore();
+        }
+
+        const releaseMock = vi.spyOn(redis, "zrem").mockRejectedValueOnce(new Error("Redis unavailable"));
+        const successMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json([]));
+        try {
+            const client = await createApiHttpClient({ consumeKey: provider, throttleOptions: [], maxConcurrent: 1 });
+            await expect(client.call("https://example.com/items").then(response => response.json())).resolves.toEqual([]);
+        }
+        finally {
+            releaseMock.mockRestore();
+            successMock.mockRestore();
+            await redis.del(`provider:concurrency:${provider}`, `provider:cooldown:${provider}`);
         }
     });
 });

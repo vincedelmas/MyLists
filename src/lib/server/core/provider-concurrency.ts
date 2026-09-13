@@ -1,5 +1,6 @@
 import {serverEnv} from "@/env/server";
 import {randomUUID} from "node:crypto";
+import {logger} from "@/lib/server/core/logger";
 import {setTimeout as delay} from "node:timers/promises";
 import {getRedisConnection} from "@/lib/server/core/redis-client";
 
@@ -50,7 +51,15 @@ export const acquireProviderSlot = async (provider: string, limit: number, signa
 
         if (acquired) {
             return async () => {
-                if (redis) await redis.zrem(key, token);
+                if (redis) {
+                    try {
+                        await redis.zrem(key, token);
+                    }
+                    catch (err) {
+                        // The lease expires on its own; cleanup must not replace the provider result.
+                        logger.warn({ provider, errorName: err instanceof Error ? err.name : "UnknownError" }, "Could not release provider slot");
+                    }
+                }
                 else slots!.delete(token);
             };
         }

@@ -101,7 +101,7 @@ function SettingsLayout() {
                                     <Link
                                         to={item.to}
                                         key={item.id}
-                                        activeOptions={{ exact: true }}
+                                        activeOptions={{ exact: true, includeSearch: false }}
                                         activeProps={{ className: "border-brand/30 bg-brand/5 text-foreground" }}
                                         className="group flex shrink-0 items-center gap-3 rounded-lg border border-transparent px-3 py-2.5
                                         text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground

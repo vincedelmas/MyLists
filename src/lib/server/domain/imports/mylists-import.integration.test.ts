@@ -1,5 +1,5 @@
 import Database from "bun:sqlite";
-import {eq, sql} from "drizzle-orm";
+import {eq} from "drizzle-orm";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -321,8 +321,7 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
             expect(await mediaModule.services.movies.downloadMediaListAsCSV(43)).toHaveLength(1);
             expect((await imports.imports.getImportJob(43, job.id)).job.status).toBe(ImportJobStatus.PROCESSING);
 
-            context.db.update(schema.importJobs).set({ updatedAt: sql`datetime('now', '-7 hours')` })
-                .where(eq(schema.importJobs.id, job.id)).run();
+            imports.importProcessor.requeueInterruptedJobs();
             await drainImportJobs(imports.importProcessor);
             expect((await imports.imports.getImportJob(43, job.id)).job).toMatchObject({
                 status: ImportJobStatus.COMPLETED, completedCount: 1, processedCount: 1,

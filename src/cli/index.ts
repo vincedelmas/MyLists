@@ -6,7 +6,12 @@ if (process.argv.length === 3 && process.argv[2] === "import-drain") {
     // Help, invalid arguments and other commands still go through Commander.
 
     try {
-        const db = new Database(process.env.DATABASE_URL, { readonly: true });
+        const databaseUrl = process.env.DATABASE_URL;
+        if (!databaseUrl) {
+            throw new Error("DATABASE_URL must be set to the same database used by the web app.");
+        }
+
+        const db = new Database(databaseUrl, { readonly: true });
         let pending;
 
         try {
@@ -25,6 +30,16 @@ if (process.argv.length === 3 && process.argv[2] === "import-drain") {
     }
     catch (error) {
         console.error("Could not check the import queue:", error);
+        process.exit(1);
+    }
+
+    try {
+        const {runImportDrainCommand} = await import("./import-drain-command");
+        await runImportDrainCommand(process.env.DATABASE_URL!);
+        process.exit(0);
+    }
+    catch (error) {
+        console.error("Failed to drain imports:", error);
         process.exit(1);
     }
 }

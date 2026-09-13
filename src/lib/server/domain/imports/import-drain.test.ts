@@ -13,7 +13,7 @@ describe("drainImportJobs", () => {
         });
 
         await expect(drainImportJobs(processor as any)).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
-        expect(processor.requeueStaleProcessingJobs).toHaveBeenCalledTimes(1);
+        expect(processor.requeueInterruptedJobs).not.toHaveBeenCalled();
         expect(processor.processNextJob).toHaveBeenCalledTimes(3);
     });
 
@@ -48,6 +48,6 @@ describe("drainImportJobs", () => {
 
 
 const createProcessor = (overrides: { processNextJob: ReturnType<typeof vi.fn> }) => ({
-    requeueStaleProcessingJobs: vi.fn().mockReturnValue([]),
+    requeueInterruptedJobs: vi.fn().mockReturnValue([]),
     ...overrides,
 });

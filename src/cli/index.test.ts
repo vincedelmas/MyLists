@@ -4,7 +4,7 @@ import {join, resolve} from "node:path";
 import {drizzle} from "drizzle-orm/bun-sqlite";
 import {ImportJobStatus} from "@/lib/utils/enums";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
-import {existsSync, mkdirSync, mkdtempSync, rmSync} from "node:fs";
+import {existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync} from "node:fs";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 
 
@@ -29,10 +29,11 @@ describe("CLI import queue preflight", () => {
         rmSync(directory, { recursive: true, force: true });
     });
 
-    const runCli = async (args = ["import-drain"], fullEnvironment = false, overrides: Record<string, string> = {}) => {
-        const child = Bun.spawn([process.execPath, "--no-env-file", resolve(import.meta.dirname, "index.ts"), ...args], {
+    const startCli = (args = ["import-drain"], fullEnvironment = false, overrides: Record<string, string | undefined> = {}, bunArgs: string[] = []) => {
+        return Bun.spawn([process.execPath, "--no-env-file", ...bunArgs, resolve(import.meta.dirname, "index.ts"), ...args], {
             cwd: directory,
             env: {
+                PATH: process.env.PATH,
                 NODE_ENV: "production",
                 LOG_LEVEL: "silent",
                 REDIS_ENABLED: "false",
@@ -49,6 +50,10 @@ describe("CLI import queue preflight", () => {
             stdout: "pipe",
             stderr: "pipe",
         });
+    };
+
+    const runCli = async (args = ["import-drain"], fullEnvironment = false, overrides: Record<string, string | undefined> = {}) => {
+        const child = startCli(args, fullEnvironment, overrides);
         const [exitCode, stdout, stderr] = await Promise.all([
             child.exited,
             new Response(child.stdout).text(),
@@ -69,6 +74,12 @@ describe("CLI import queue preflight", () => {
         expect(await runCli()).toEqual({ exitCode: 0, stdout: "", stderr: "" });
     });
 
+    it.each([undefined, ""])("reports an unconfigured DATABASE_URL (%j) clearly", async databaseUrl => {
+        const result = await runCli(["import-drain"], false, { DATABASE_URL: databaseUrl });
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain("DATABASE_URL must be set");
+    });
+
     it("reports a missing database without creating it", async () => {
         const missingDatabase = join(directory, "missing.db");
         const result = await runCli(["import-drain"], false, { DATABASE_URL: missingDatabase });
@@ -87,7 +98,7 @@ describe("CLI import queue preflight", () => {
 
     it.each([ImportJobStatus.QUEUED, ImportJobStatus.PROCESSING])("loads the real drain for a %s job, including recovery without queued jobs", async status => {
         sqlite.run("INSERT INTO movies (id, api_id, name, image_cover, duration, release_date) VALUES (100, 100, 'Import test movie', 'test.jpg', 100, '2024-01-01')");
-        sqlite.run("INSERT INTO import_jobs (id, user_id, source, status, total_count, updated_at) VALUES (1, 1, 'mylists', ?, 1, datetime('now', '-7 hours'))", [status]);
+        sqlite.run("INSERT INTO import_jobs (id, user_id, source, status, total_count) VALUES (1, 1, 'mylists', ?, 1)", [status]);
         sqlite.run(`INSERT INTO import_items (job_id, row_number, name, media_type, external_api_id, external_api_source, status, payload_json)
             VALUES (1, 2, 'Import test movie', 'movies', '100', 'tmdb', ?, ?)`,
             [status, JSON.stringify({ status: "Completed", redo: 0, total: 1, rating: 8, favorite: true, comment: "CLI test" })]);
@@ -99,6 +110,66 @@ describe("CLI import queue preflight", () => {
         expect(sqlite.query("SELECT user_id, media_id, rating, comment FROM movies_list").all())
             .toEqual([{ user_id: 1, media_id: 100, rating: 8, comment: "CLI test" }]);
     });
+
+    it("fails without flock instead of recovering jobs without exclusive ownership", async () => {
+        sqlite.run("INSERT INTO import_jobs (user_id, source, status) VALUES (1, 'mylists', 'processing')");
+        const result = await runCli(["import-drain"], false, { PATH: directory });
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain("Could not run flock");
+        expect(sqlite.query("SELECT status FROM import_jobs").get()).toEqual({ status: "processing" });
+    });
+
+    it("keeps a live owner exclusive and recovers immediately after SIGKILL without duplicating its insert", async () => {
+        sqlite.run("INSERT INTO movies (id, api_id, name, image_cover, duration) VALUES (100, 100, 'Crash test movie', 'test.jpg', 100)");
+        sqlite.run("INSERT INTO import_jobs (id, user_id, source, status, total_count) VALUES (1, 1, 'mylists', 'queued', 1)");
+        sqlite.run(`INSERT INTO import_items (job_id, row_number, name, media_type, external_api_id, external_api_source, status, payload_json)
+            VALUES (1, 2, 'Crash test movie', 'movies', '100', 'tmdb', 'queued', ?)`,
+        [JSON.stringify({ status: "Completed", redo: 0, total: 1, rating: 8, favorite: true, comment: "Preserve after crash" })]);
+
+        const preload = join(directory, "pause-after-insert.ts");
+        writeFileSync(preload, `
+            import {ImportService} from ${JSON.stringify(resolve(import.meta.dirname, "../lib/server/domain/imports/import.service.ts"))};
+            ImportService.prototype.applyItemOutcomes = async function() {
+                console.log("PAUSED_AFTER_INSERT");
+                setInterval(() => {}, 1000);
+                return await new Promise(() => {});
+            };
+        `);
+        const owner = startCli(["import-drain"], true, {}, ["--preload", preload]);
+        const timeout = setTimeout(() => owner.kill("SIGKILL"), 10_000);
+        let paused = false;
+
+        try {
+            for await (const chunk of owner.stdout) {
+                if (new TextDecoder().decode(chunk).includes("PAUSED_AFTER_INSERT")) {
+                    paused = true;
+                    break;
+                }
+            }
+            expect(paused).toBe(true);
+            const before = sqlite.query("SELECT status, processed_count FROM import_jobs WHERE id = 1").get();
+            expect(before).toEqual({ status: "processing", processed_count: 0 });
+            const alias = join(directory, "alias.db");
+            symlinkSync(databasePath, alias);
+            expect(await runCli(["import-drain"], false, { DATABASE_URL: alias }))
+                .toEqual({ exitCode: 0, stdout: "", stderr: "" });
+            expect(sqlite.query("SELECT status, processed_count FROM import_jobs WHERE id = 1").get()).toEqual(before);
+
+            owner.kill("SIGKILL");
+            await owner.exited;
+            const recovered = await runCli(["import-drain"], true);
+            expect(recovered, recovered.stderr).toMatchObject({ exitCode: 0 });
+            expect(sqlite.query("SELECT status, processed_count, completed_count FROM import_jobs WHERE id = 1").get())
+                .toEqual({ status: "completed", processed_count: 1, completed_count: 1 });
+            expect(sqlite.query("SELECT rating, comment FROM movies_list").all())
+                .toEqual([{ rating: 8, comment: "Preserve after crash" }]);
+        }
+        finally {
+            clearTimeout(timeout);
+            if (owner.exitCode === null) owner.kill("SIGKILL");
+            await owner.exited;
+        }
+    }, 15_000);
 
     it("preserves import help when the queue is empty", async () => {
         const result = await runCli(["import-drain", "--help"], true);

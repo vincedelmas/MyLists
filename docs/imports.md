@@ -34,33 +34,42 @@ Run the built `import-drain` CLI from host cron every two minutes, as the same O
 database, and uploads location as the PM2 app.
 
 An idle `import-drain` invocation opens SQLite read-only and checks the indexed job statuses before loading the application. If no queued
-or processing jobs exist, it exits successfully without output, service initialization, or a Redis connection. When work exists, it closes
-the check connection and loads the normal CLI to drain the queue. Processing jobs are included so interrupted-job recovery still runs.
-The check uses `DATABASE_URL`, with the same `./instance/site.db` default as the application. Missing or unreadable databases and missing
-tables produce a nonzero exit and an error on stderr; they are not treated as an empty queue.
+or processing jobs exist, it exits successfully without output, service initialization, a lock subprocess, or a Redis connection. When work
+exists, it closes the check connection and tries to lock the database's import queue before loading application services. A busy queue exits
+successfully without output. Processing jobs are included so interrupted-job recovery still runs.
+Set `DATABASE_URL` explicitly to the same database used by the web app. The lightweight check requires it and does not load application
+environment defaults. Missing configuration, missing or unreadable databases, and missing tables produce a nonzero exit and an error on
+stderr; they are not treated as an empty queue.
 Deploy the complete generated `dist/cli` directory, including the command chunks loaded when work is found.
+Install `util-linux` so `flock` is available on cron's `PATH` (`command -v flock` verifies this). The database directory must be writable by
+the app user: the CLI creates `<database path>.import.lock` beside the database. Database symlinks resolve to the same lock.
 
 Example crontab entry (replace all absolute paths for the deployment):
 
 ```cron
-*/2 * * * * cd /absolute/path/to/MyLists && /usr/bin/flock -n /tmp/mylists-import-drain.lock /absolute/path/to/bun --env-file=.env dist/cli/index.js import-drain >> /absolute/path/to/import-drain.log 2>&1
+*/2 * * * * cd /absolute/path/to/MyLists && /absolute/path/to/bun --env-file=.env dist/cli/index.js import-drain >> /absolute/path/to/import-drain.log 2>&1
 ```
 
-Use the same lock for manual drain runs. `flock -n` skips a scheduled run if the previous one is still running. The database also allows only
-one processing job at a time. A drain processes queued jobs one after another until the queue is empty; the two-minute interval is not a
-delay between jobs or rows. Users can leave the page, and different users can queue imports while another import runs. Each user can have
-one active import at a time.
+Manual runs use the same CLI command; locking is built in. The OS lock stays held through processing and statistics recomputation, and
+releases automatically if the process exits or is killed. The lock file remains on disk; its presence does not mean an import is active.
+Do not delete it while a drain is running. The database also allows only one processing job at a time.
+A drain processes queued jobs one after another until the queue is empty; the two-minute interval is not a delay between jobs or rows.
+Users can leave the page, and different users can queue imports while another import runs. Each user can have one active import at a time.
 
 After a nonempty drain, the CLI recomputes user statistics. Infrastructure failures stop the command with an error instead of retrying in a
 tight loop. A handled job failure records the unfinished rows as failed and allows the next job to run. Users can re-upload a corrected file
 or retry after a temporary provider error; already imported entries are preserved.
 
-The current interrupted-worker recovery waits for **six hours without recorded job progress** before requeuing unfinished rows. Until then,
-that processing job blocks the queue. Do not lower this timeout without accounting for slow provider batches or adding worker heartbeats.
+After acquiring exclusive ownership, the CLI immediately requeues any interrupted processing job and its unfinished rows. It preserves
+completed/failed rows and their counters. The next cron invocation can resume after a killed process without waiting for a stale timeout;
+a live processor retains the lock and cannot have its job taken over. Recovery is transactional.
 Creation of upload jobs is transactional, so an interrupted upload cannot leave a partially saved parsing job.
 
 The cron entry is an operational setup step; changing this repository does not install it. Configure it before making imports available in
 production. Do not configure PM2's `cron_restart` to restart the web app for this task.
+When upgrading from the old drain, pause its schedule and let any existing drain exit before using the new CLI: the old process does not
+hold the new database-side lock. Then run the new CLI once manually and enable the schedule. Check a small import and its admin history
+after deployment to verify the production environment and cron configuration.
 
 ## Verification
 
@@ -75,5 +84,6 @@ round trips, duplicate handling, unsupported formats, nullable data, row errors,
 and drains, worker failures, ownership checks, the row limit, and interrupted-job recovery. External providers are stubbed; live provider
 availability is outside these tests.
 CLI tests also launch fresh Bun processes to verify the idle path without application configuration, database errors, help and argument
-handling, and real queue draining/recovery against temporary databases. The CLI entrypoint lazily imports its commands; keep heavy
-application imports out of that entrypoint so the idle check stays small.
+handling, missing `flock`, and real queue draining/recovery against temporary databases. A `SIGKILL` test pauses after a list insert, verifies
+that a concurrent run cannot take over (including through a database symlink), then resumes immediately and checks for duplicate entries.
+The CLI entrypoint lazily imports its commands; keep heavy application imports out of that entrypoint so the idle check stays small.

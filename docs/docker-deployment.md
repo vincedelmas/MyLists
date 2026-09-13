@@ -109,18 +109,18 @@ drain on a schedule with the same image,
 env, and persistent mounts as the app:
 
 ```bash
-flock -n /tmp/mylists-import-drain.lock bun dist/cli/index.js import-drain
+bun dist/cli/index.js import-drain
 ```
 
 For Docker Compose:
 
 ```bash
-flock -n /tmp/mylists-import-drain.lock docker compose --env-file .env.docker run --rm mylists bun dist/cli/index.js import-drain
+docker compose --env-file .env.docker run --rm mylists bun dist/cli/index.js import-drain
 ```
 
-A typical schedule is every 2 minutes for example. The `flock` lock skips a new run when the previous drain is still active. The database
-also only allows one import job to be in
-`PROCESSING` at a time.
+A typical schedule is every 2 minutes. The CLI uses `flock` internally on a file beside the shared SQLite database, so a new run exits if
+another drain is still active. The image includes `util-linux` for this lock. Interrupted imports resume on the next run after the previous
+process exits. See [import processing](imports.md#processing-with-pm2-and-host-cron) for recovery and upgrade instructions.
 
 ## Maintenance
 

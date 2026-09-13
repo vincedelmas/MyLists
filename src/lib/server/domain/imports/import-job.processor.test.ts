@@ -98,7 +98,7 @@ describe("ImportJobProcessor", () => {
 const createImportServiceStub = () => ({
     applyItemOutcomes: vi.fn(),
     claimNextQueuedJob: vi.fn(),
-    requeueStaleProcessingJobs: vi.fn(),
+    requeueInterruptedJobs: vi.fn(),
     markProcessingJobFailed: vi.fn().mockResolvedValue({ id: 10, status: ImportJobStatus.FAILED }),
     markItemsProcessing: vi.fn(),
     finalizeProcessingJob: vi.fn(),

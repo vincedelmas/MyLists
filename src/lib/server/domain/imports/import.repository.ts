@@ -53,20 +53,17 @@ export class ImportRepository {
         });
     }
 
-    static requeueStaleProcessingJobs(staleAfterMinutes: number) {
+    static requeueInterruptedJobs() {
         const db = getDbClient();
 
-        const staleJobs = db
+        const interruptedJobs = db
             .select({ id: importJobs.id })
             .from(importJobs)
-            .where(and(
-                eq(importJobs.status, ImportJobStatus.PROCESSING),
-                lt(importJobs.updatedAt, sql`datetime('now', ${`-${staleAfterMinutes} minutes`})`),
-            )).all();
+            .where(eq(importJobs.status, ImportJobStatus.PROCESSING)).all();
 
-        if (staleJobs.length === 0) return [];
+        if (interruptedJobs.length === 0) return [];
 
-        const staleJobIds = staleJobs.map(job => job.id);
+        const interruptedJobIds = interruptedJobs.map(job => job.id);
 
         db.update(importItems)
             .set({
@@ -74,7 +71,7 @@ export class ImportRepository {
                 status: ImportItemStatus.QUEUED,
             })
             .where(and(
-                inArray(importItems.jobId, staleJobIds),
+                inArray(importItems.jobId, interruptedJobIds),
                 eq(importItems.status, ImportItemStatus.PROCESSING),
             )).run();
 
@@ -87,7 +84,7 @@ export class ImportRepository {
                 updatedAt: sql`datetime('now')`,
             })
             .where(and(
-                inArray(importJobs.id, staleJobIds),
+                inArray(importJobs.id, interruptedJobIds),
                 eq(importJobs.status, ImportJobStatus.PROCESSING),
             ))
             .returning()

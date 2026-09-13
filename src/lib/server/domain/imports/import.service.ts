@@ -28,8 +28,8 @@ export class ImportService {
         return this.repository.claimNextQueuedJob();
     }
 
-    requeueStaleProcessingJobs(staleAfterMinutes: number) {
-        return withTransaction(() => this.repository.requeueStaleProcessingJobs(staleAfterMinutes));
+    requeueInterruptedJobs() {
+        return withTransaction(() => this.repository.requeueInterruptedJobs());
     }
 
     async finalizeProcessingJob(jobId: number) {

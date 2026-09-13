@@ -222,7 +222,7 @@ describe("ImportRepository", () => {
         });
     });
 
-    it("requeues stale processing jobs and only resets unfinished processing items", async () => {
+    it("requeues interrupted jobs immediately and only resets unfinished processing items", async () => {
         const job = await ImportRepository.createJob(42, ImportSource.MYLISTS);
         await ImportRepository.insertParsedItems(job.id, [createItem(2), createItem(3), createItem(4)]);
         await ImportRepository.markJobQueued(job.id, 3, 0);
@@ -242,17 +242,15 @@ describe("ImportRepository", () => {
             processedCount: 1,
         });
 
-        await expect(ImportRepository.requeueStaleProcessingJobs(360)).toEqual([]);
-
         await db
             .update(importJobs)
             .set({
                 error: "Worker stopped",
-                updatedAt: sql`datetime('now', '-7 hours')`,
+                updatedAt: sql`datetime('now')`,
             })
             .where(eq(importJobs.id, job.id));
 
-        const requeuedJobs = await ImportRepository.requeueStaleProcessingJobs(360);
+        const requeuedJobs = ImportRepository.requeueInterruptedJobs();
 
         expect(requeuedJobs).toHaveLength(1);
         expect(requeuedJobs[0]).toMatchObject({

@@ -34,7 +34,7 @@ describe("ImportService.createImportJob", () => {
         settleProcessingItems: vi.fn(),
         finalizeProcessingJob: vi.fn(),
         markProcessingJobFailed: vi.fn(),
-        requeueStaleProcessingJobs: vi.fn(),
+        requeueInterruptedJobs: vi.fn(),
         getQueuedItemsForProcessingJob: vi.fn(),
     };
     const service = new ImportService(repository as any, {
@@ -53,13 +53,13 @@ describe("ImportService.createImportJob", () => {
         repository.findActiveJobForUser.mockResolvedValue(null);
     });
 
-    it("re-queues stale processing jobs within a transaction", async () => {
+    it("requeues interrupted jobs within a transaction", () => {
         const jobs = [{ id: 10, status: ImportJobStatus.QUEUED }];
-        repository.requeueStaleProcessingJobs.mockReturnValue(jobs);
+        repository.requeueInterruptedJobs.mockReturnValue(jobs);
 
-        await expect(service.requeueStaleProcessingJobs(6 * 60)).toBe(jobs);
+        expect(service.requeueInterruptedJobs()).toBe(jobs);
         expect(transactionMocks.withTransaction).toHaveBeenCalledOnce();
-        expect(repository.requeueStaleProcessingJobs).toHaveBeenCalledWith(6 * 60);
+        expect(repository.requeueInterruptedJobs).toHaveBeenCalledWith();
     });
 
     it("groups queued items by media type for matcher dispatch", async () => {

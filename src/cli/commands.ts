@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {Command} from "commander";
+import {serverEnv} from "@/env/server";
 import {logger} from "@/lib/server/core/logger";
 import {runTask} from "@/lib/server/tasks/task-runner";
 import {getAllTasks} from "@/lib/server/tasks/registry";
@@ -68,7 +69,7 @@ program
     .description("Drain queued import jobs sequentially")
     .action(async () => {
         try {
-            await runImportDrainCommand();
+            await runImportDrainCommand(serverEnv.DATABASE_URL);
             process.exit(0);
         }
         catch (error) {

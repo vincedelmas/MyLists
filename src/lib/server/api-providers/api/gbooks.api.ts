@@ -1,6 +1,6 @@
 import {serverEnv} from "@/env/server";
 import {ProviderRequestError} from "./provider-error";
-import {consumeGoogleBooksQuota} from "./gbooks-quota";
+import {consumeGoogleBooksQuota, getGoogleBooksQuotaWindow} from "./gbooks-quota";
 import {BookAdvancedSearchFilters} from "@/lib/schemas";
 import {GBooksDetails, GBooksSearchResults, SearchData} from "@/lib/types/provider.types";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
@@ -16,6 +16,7 @@ const createConfig = (): GBooksApiConfig => ({
     consumeKey: "gBooks-API",
     baseUrl: "https://www.googleapis.com/books/v1/volumes",
     beforeRequest: consumeGoogleBooksQuota,
+    getQuotaResetAt: () => getGoogleBooksQuotaWindow().resetAt,
     throttleOptions: [{
         points: 1,
         duration: 1,

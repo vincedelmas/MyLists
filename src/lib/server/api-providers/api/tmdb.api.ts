@@ -63,6 +63,15 @@ export const createTmdbApi = async () => {
             };
         },
 
+        async findMovieIdsByImdbId(imdbId: string): Promise<number[]> {
+            const apiKey = getApiKey();
+            const params = new URLSearchParams({ api_key: apiKey, external_source: "imdb_id" });
+            const response = await http.call(`${config.baseUrl}/find/${encodeURIComponent(imdbId)}?${params.toString()}`);
+            const data: { movie_results: { id: number }[] } = await response.json();
+
+            return data.movie_results.map(movie => movie.id);
+        },
+
         async getMovieDetails(movieId: number): Promise<TmdbMovieDetails> {
             const apiKey = getApiKey();
             const response = await http.call(`${config.baseUrl}/movie/${movieId}?api_key=${apiKey}&append_to_response=credits`);

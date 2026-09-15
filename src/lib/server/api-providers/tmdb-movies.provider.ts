@@ -9,7 +9,12 @@ import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.d
 import {TmdbMediaIdentities, tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 
 
-export const createTmdbMoviesProvider = (tmdb: TmdbApi): ExternalMediaProvider<UpsertMovieWithDetails> => {
+export interface TmdbMoviesProvider extends ExternalMediaProvider<UpsertMovieWithDetails> {
+    findMovieIdsByImdbId(imdbId: string): Promise<number[]>;
+}
+
+
+export const createTmdbMoviesProvider = (tmdb: TmdbApi): TmdbMoviesProvider => {
     const { identity, ingestion } = moviesServerDefinition;
 
     const tmdbIdentities: TmdbMediaIdentities = {
@@ -31,11 +36,15 @@ export const createTmdbMoviesProvider = (tmdb: TmdbApi): ExternalMediaProvider<U
             return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
         },
 
+        findMovieIdsByImdbId(imdbId) {
+            return tmdb.findMovieIdsByImdbId(imdbId);
+        },
+
         async getDetails(apiId) {
             const raw = await tmdb.getMovieDetails(Number(apiId));
             return tmdbTransformer.transformMoviesDetailsResults(raw, transformOptions);
         },
-        
+
         async getTrends() {
             const raw = await tmdb.getMoviesTrending();
             return tmdbTransformer.transformMoviesTrends(raw, identity);

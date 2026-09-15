@@ -5,6 +5,7 @@ import {importItems, importJobs, movies, moviesList, user} from "@/lib/server/da
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ApiProviderType, ImportItemStatus, ImportJobStatus, ImportSource, MediaType, Status} from "@/lib/utils/enums";
 
 
@@ -24,6 +25,7 @@ const { createMoviesMatcher } = await import("@/lib/server/domain/media/movies/m
 const { createMoviesRepository } = await import("@/lib/server/domain/media/movies/movies.repository");
 const { ImportJobProcessor } = await import("@/lib/server/domain/imports/import-job.processor");
 const { MediaMatcherRegistry } = await import("@/lib/server/domain/imports/matchers/media-matcher.registry");
+const { createMoviesIngestionService } = await import("@/lib/server/api-providers/tmdb-movies.provider");
 
 
 describe("movies import processing", () => {
@@ -63,14 +65,20 @@ describe("movies import processing", () => {
         dbContext.db = undefined;
     });
 
-    it("imports IMDb ratings before watchlist, counts skipped/invalid rows and preserves existing movies", async () => {
+    it("imports IMDb ratings before watchlist using local matches without API calls and preserves existing movies", async () => {
         await db.insert(movies).values({
             id: 101, apiId: 680, duration: 154, name: "Pulp Fiction", imageCover: "pulp-fiction.jpg", releaseDate: "1994-09-10",
         });
         const importService = new ImportService(ImportRepository);
         const search = vi.fn();
+        const provider = {
+            search,
+            getDetails: vi.fn(),
+            findMovieIdsByImdbId: vi.fn(),
+        };
+        const repository = createMoviesRepository();
         MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
-            createMoviesService(createMoviesRepository()), { search } as any, { storeFromExternal: vi.fn() } as any,
+            createMoviesService(repository), provider, createMoviesIngestionService(repository, provider),
         ));
         const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
         const ratings = await importService.createImportJob(42, ImportSource.IMDB, [
@@ -102,6 +110,127 @@ describe("movies import processing", () => {
             { mediaId: 101, rating: null, status: Status.PLAN_TO_WATCH, total: 0, redo: 0 },
         ]);
         expect(search).not.toHaveBeenCalled();
+        expect(provider.findMovieIdsByImdbId).not.toHaveBeenCalled();
+        expect(provider.getDetails).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { existing: false, ambiguous: false },
+        { existing: true, ambiguous: false },
+        { existing: true, ambiguous: true },
+    ])("uses IMDb IDs when local matching is missing or ambiguous (stored: $existing, ambiguous: $ambiguous)", async ({ existing, ambiguous }) => {
+        const mediaData = {
+            apiId: 680, duration: 154, name: "TMDB title", imageCover: "movie.jpg", releaseDate: "1995-09-10",
+        };
+        if (existing) await db.insert(movies).values(mediaData);
+        if (ambiguous) {
+            await db.insert(movies).values([701, 702].map(apiId => ({
+                apiId, duration: 90, name: "IMDb title", imageCover: "other.jpg", releaseDate: "1999-01-01",
+            })));
+        }
+
+        const provider = {
+            search: vi.fn(),
+            getDetails: vi.fn().mockResolvedValue({ mediaData }),
+            findMovieIdsByImdbId: vi.fn().mockResolvedValue([680]),
+        };
+        const repository = createMoviesRepository();
+        const importService = new ImportService(ImportRepository);
+        MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+            createMoviesService(repository), provider, createMoviesIngestionService(repository, provider),
+        ));
+        const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+        const job = await importService.createImportJob(42, ImportSource.IMDB, [
+            "Const,Title,Year,Title Type,Your Rating,Date Rated",
+            "tt0110912,IMDb title,1999,Movie,8,2024-01-01",
+        ].join("\n"), "ratings");
+
+        await expect(processor.processNextJob()).resolves.toMatchObject({
+            id: job.id, status: ImportJobStatus.COMPLETED, completedCount: 1, processedCount: 1,
+        });
+        const [movie] = await db.select().from(movies).where(eq(movies.apiId, 680));
+        expect(await db.select().from(moviesList)).toMatchObject([
+            { mediaId: movie.id, status: Status.COMPLETED, rating: 8 },
+        ]);
+        expect(await db.select().from(importItems).where(eq(importItems.jobId, job.id))).toMatchObject([
+            { matchedMediaId: movie.id, payload: { imdbId: "tt0110912" } },
+        ]);
+        expect(provider.findMovieIdsByImdbId).toHaveBeenCalledExactlyOnceWith("tt0110912");
+        expect(provider.search).not.toHaveBeenCalled();
+        expect(provider.getDetails).toHaveBeenCalledTimes(existing ? 0 : 1);
+        if (!existing) expect(provider.getDetails).toHaveBeenCalledWith(680);
+    });
+
+    it.each([
+        { ids: [], reason: "No TMDB movie found for IMDb ID tt0137523" },
+        { ids: [550, 680], reason: "Multiple TMDB movies found for IMDb ID tt0137523" },
+    ])("skips unresolved IMDb IDs without a local match: $reason", async ({ ids, reason }) => {
+        const provider = {
+            search: vi.fn(),
+            getDetails: vi.fn(),
+            findMovieIdsByImdbId: vi.fn().mockResolvedValue(ids),
+        };
+        const repository = createMoviesRepository();
+        const importService = new ImportService(ImportRepository);
+        MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+            createMoviesService(repository), provider, createMoviesIngestionService(repository, provider),
+        ));
+        const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+        const job = await importService.createImportJob(42, ImportSource.IMDB, [
+            "Const,Title,Year,Title Type,Your Rating,Date Rated",
+            "tt0137523,IMDb title,1999,Movie,7,2024-01-01",
+        ].join("\n"), "ratings");
+
+        await expect(processor.processNextJob()).resolves.toMatchObject({
+            id: job.id, status: ImportJobStatus.COMPLETED_WITH_ERRORS, skippedCount: 1, completedCount: 0,
+        });
+        expect(await db.select().from(importItems).where(eq(importItems.jobId, job.id))).toMatchObject([
+            { status: ImportItemStatus.SKIPPED, matchedMediaId: null, statusReason: reason },
+        ]);
+        expect(await db.select().from(moviesList)).toEqual([]);
+        expect(provider.search).not.toHaveBeenCalled();
+        expect(provider.getDetails).not.toHaveBeenCalled();
+    });
+
+    it.each(["rate_limit", "unavailable"] as const)("keeps completed IMDb rows and resumes after a provider %s", async kind => {
+        await db.insert(movies).values({
+            apiId: 680, duration: 154, name: "Pulp Fiction", imageCover: "pulp-fiction.jpg", releaseDate: "1994-09-10",
+        });
+        const error = new ProviderRequestError("TMDB temporarily paused", {
+            provider: "tmdb-API", statusCode: kind === "rate_limit" ? 429 : 503, kind, retryAt: Date.now() + 60_000,
+        });
+        const provider = {
+            search: vi.fn(),
+            getDetails: vi.fn(),
+            findMovieIdsByImdbId: vi.fn().mockResolvedValueOnce([550]).mockRejectedValueOnce(error).mockResolvedValueOnce([680]),
+        };
+        const repository = createMoviesRepository();
+        const importService = new ImportService(ImportRepository);
+        MediaMatcherRegistry.register(MediaType.MOVIES, createMoviesMatcher(
+            createMoviesService(repository), provider, createMoviesIngestionService(repository, provider),
+        ));
+        const processor = new ImportJobProcessor(importService, MediaMatcherRegistry);
+        const job = await importService.createImportJob(42, ImportSource.IMDB, [
+            "Const,Title,Year,Title Type,Your Rating,Date Rated",
+            "tt0137523,IMDb title,1999,Movie,7,2024-01-01",
+            "tt0110912,Pulp Fiction,,Movie,8,2024-01-01",
+        ].join("\n"), "ratings");
+
+        await expect(processor.processNextJob()).resolves.toMatchObject({
+            id: job.id, status: ImportJobStatus.QUEUED, completedCount: 1, processedCount: 1, failedCount: 0, skippedCount: 0,
+        });
+        expect(await db.select().from(importItems).where(eq(importItems.jobId, job.id)).orderBy(importItems.rowNumber)).toMatchObject([
+            { status: ImportItemStatus.COMPLETED },
+            { status: ImportItemStatus.QUEUED, payload: { imdbId: "tt0110912" } },
+        ]);
+        await expect(processor.processNextJob()).resolves.toBeNull();
+        await db.update(importJobs).set({ nextAttemptAt: "2024-01-01 00:00:00" }).where(eq(importJobs.id, job.id));
+        await expect(processor.processNextJob()).resolves.toMatchObject({
+            id: job.id, status: ImportJobStatus.COMPLETED, completedCount: 2, processedCount: 2, failedCount: 0, skippedCount: 0,
+        });
+        expect(provider.findMovieIdsByImdbId.mock.calls).toEqual([["tt0137523"], ["tt0110912"], ["tt0110912"]]);
+        expect(await db.select().from(moviesList)).toHaveLength(2);
+        expect(provider.search).not.toHaveBeenCalled();
     });
 
     it.each([false, true])("finishes an IMDb job with no importable movies (contains invalid row: %s)", async includeInvalid => {

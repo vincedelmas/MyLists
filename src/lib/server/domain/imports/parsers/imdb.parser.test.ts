@@ -24,22 +24,22 @@ const watchlistRow = { Position: "1", Created: "2024-01-01", Modified: "2024-01-
 
 
 describe("parseImdbCsv", () => {
-    it("imports the personal rating, ignores metadata and IMDb IDs, and handles BOM, CRLF and quoted titles", () => {
-        const csv = convertToCsv([{ ...ratingRow, Title: 'A film, with "quotes" and é' }]);
+    it("preserves the IMDb ID and personal rating, and handles BOM, CRLF and quoted titles", () => {
+        const csv = convertToCsv([{ ...ratingRow, Const: " tt0137523 ", Title: 'A film, with "quotes" and é' }]);
         const parsed = parseImdbCsv(`\uFEFF${csv}\r\n`, "ratings");
         expect(parsed).toMatchObject({
             totalCount: 1, failedCount: 0,
             items: [{
                 rowNumber: 2, name: 'A film, with "quotes" and é', releaseDate: "1999",
                 externalApiId: null, externalApiSource: null, mediaType: MediaType.MOVIES,
-                status: ImportItemStatus.QUEUED, payload: { status: Status.COMPLETED, rating: 7 },
+                status: ImportItemStatus.QUEUED, payload: { imdbId: "tt0137523", status: Status.COMPLETED, rating: 7 },
             }],
         });
     });
 
     it("imports watchlist entries without a rating even when Your Rating is present", () => {
         const parsed = parseImdbCsv(convertToCsv([watchlistRow]), "watchlist");
-        expect(parsed.items[0].payload).toEqual({ status: Status.PLAN_TO_WATCH, rating: null });
+        expect(parsed.items[0].payload).toEqual({ imdbId: "tt0137523", status: Status.PLAN_TO_WATCH, rating: null });
     });
 
     it.each(["Movie", "TV Movie", "Short", "TV Short", "TV Special", "Video", "movie", "tvMovie"])("accepts standalone title type %s", type => {
@@ -76,11 +76,26 @@ describe("parseImdbCsv", () => {
     });
 
     it.each([
-        { Title: "" }, { Year: "" }, { Year: "1999-01-01" }, { "Title Type": "" },
+        { Title: "" }, { Year: "1999-01-01" }, { "Title Type": "" },
     ])("reports invalid movie fields %j", fields => {
         const parsed = parseImdbCsv(convertToCsv([{ ...ratingRow, ...fields }]), "ratings");
         expect(parsed.failedCount).toBe(1);
         expect(parsed.items[0].status).toBe(ImportItemStatus.FAILED);
+    });
+
+    it.each(["", " ", "0137523", "nm0000001", "tt", "tt0137523x"])("rejects invalid IMDb title ID %j", Const => {
+        const parsed = parseImdbCsv(convertToCsv([{ ...ratingRow, Const }]), "ratings");
+        expect(parsed.failedCount).toBe(1);
+        expect(parsed.items[0].status).toBe(ImportItemStatus.FAILED);
+        expect(parsed.items[0].statusReason).toContain("Const:");
+    });
+
+    it.each(["", " "])("accepts an IMDb ID without a release year (%j)", Year => {
+        const parsed = parseImdbCsv(convertToCsv([{ ...ratingRow, Year }]), "ratings");
+        expect(parsed.failedCount).toBe(0);
+        expect(parsed.items[0]).toMatchObject({
+            releaseDate: null, status: ImportItemStatus.QUEUED, payload: { imdbId: "tt0137523" },
+        });
     });
 
     it("accepts reordered columns and additional metadata", () => {

@@ -1,11 +1,12 @@
 import {logger} from "@/lib/server/core/logger";
-import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
+import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
+import {TmdbMoviesProvider} from "@/lib/server/api-providers/tmdb-movies.provider";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
 
 
 const MOVIE_API_RES_FAILED_REASON = "API failed for this media";
@@ -15,7 +16,7 @@ const MOVIE_API_MATCH_AMBIGUOUS_REASON = "Movie API match is ambiguous";
 
 export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
     constructor(
-        private moviesProvider: ExternalMediaProvider<UpsertMovieWithDetails>,
+        private moviesProvider: TmdbMoviesProvider,
         private moviesIngestion: MediaIngestionService<UpsertMovieWithDetails>,
         private resultBatchSize = 50,
     ) {
@@ -36,7 +37,8 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                if (!item.name) {
+                const imdbId: string | undefined = item.payload.imdbId;
+                if (!imdbId && !item.name) {
                     batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_NOT_FOUND_REASON));
                     if (this._shouldFlush(batch)) {
                         yield batch;
@@ -45,11 +47,15 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const searchResults = await this.moviesProvider.search(item.name);
-                const candidates = this._filterCandidates(searchResults.data, item.name, item.releaseDate);
+                const candidateIds = imdbId
+                    ? await this.moviesProvider.findMovieIdsByImdbId(imdbId)
+                    : this._filterCandidates((await this.moviesProvider.search(item.name!)).data, item.name!, item.releaseDate)
+                        .map(candidate => candidate.id);
 
-                if (candidates.length === 0) {
-                    batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_NOT_FOUND_REASON));
+                if (candidateIds.length === 0) {
+                    batch.skipped.push(this._createSkippedOutcome(item, imdbId
+                        ? `No TMDB movie found for IMDb ID ${imdbId}`
+                        : MOVIE_API_MATCH_NOT_FOUND_REASON));
                     if (this._shouldFlush(batch)) {
                         yield batch;
                         batch = this._createEmptyBatch();
@@ -57,8 +63,10 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                if (candidates.length > 1) {
-                    batch.skipped.push(this._createSkippedOutcome(item, MOVIE_API_MATCH_AMBIGUOUS_REASON));
+                if (candidateIds.length > 1) {
+                    batch.skipped.push(this._createSkippedOutcome(item, imdbId
+                        ? `Multiple TMDB movies found for IMDb ID ${imdbId}`
+                        : MOVIE_API_MATCH_AMBIGUOUS_REASON));
                     if (this._shouldFlush(batch)) {
                         yield batch;
                         batch = this._createEmptyBatch();
@@ -66,7 +74,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const mediaId = await this.moviesIngestion.storeFromExternal(candidates[0].id, false);
+                const mediaId = await this.moviesIngestion.storeFromExternal(candidateIds[0], !!imdbId);
                 batch.matched.push({ item, mediaId });
             }
             catch (error) {
@@ -112,7 +120,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
 
     private _filterCandidates(candidates: ProviderSearchResult[], name: string, releaseDate: string | null) {
         const title = name.trim().toLowerCase();
-        const movieCandidates = candidates.filter((candidate) => candidate.itemType === MediaType.MOVIES && candidate.name.trim().toLowerCase() === title);
+        const movieCandidates = candidates.filter(c => c.itemType === MediaType.MOVIES && c.name.trim().toLowerCase() === title);
         if (!releaseDate) return movieCandidates;
 
         return movieCandidates.filter((candidate) => {
@@ -145,6 +153,7 @@ export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
             itemId: item.id,
             name: item.name,
             jobId: item.jobId,
+            imdbId: item.payload.imdbId,
             releaseDate: item.releaseDate,
             externalApiId: item.externalApiId,
             externalApiSource: item.externalApiSource,

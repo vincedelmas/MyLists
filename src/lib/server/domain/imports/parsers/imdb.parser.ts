@@ -14,8 +14,9 @@ const movieTitleTypes = new Set(["movie", "tvmovie", "short", "tvshort", "tvspec
 
 const imdbRowSchema = z.object({
     Title: z.string().trim().min(1, "Movie title is required"),
-    Year: z.string().trim().regex(/^[1-9]\d{3}$/, "Release year must have four digits"),
     "Title Type": z.string().trim().min(1, "Title type is required"),
+    Const: z.string().trim().regex(/^tt\d+$/, "IMDb title ID must start with tt followed by digits"),
+    Year: z.string().trim().regex(/^([1-9]\d{3})?$/, "Release year must have four digits or be empty"),
     "Your Rating": z.preprocess(emptyStringToNull, z.coerce.number().int().min(1).max(10).nullable().optional()),
 });
 
@@ -94,10 +95,11 @@ export const parseImdbCsv = (csv: string, fileType?: ImportCsvType): ParsedImpor
             ...item,
             name: row.Title,
             statusReason: null,
-            releaseDate: row.Year,
             mediaType: MediaType.MOVIES,
+            releaseDate: row.Year || null,
             status: ImportItemStatus.QUEUED,
             payload: {
+                imdbId: row.Const,
                 rating: row["Your Rating"] ?? null,
                 status: fileType === "ratings" ? Status.COMPLETED : Status.PLAN_TO_WATCH,
             },

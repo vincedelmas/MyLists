@@ -6,13 +6,14 @@ import {BooksImportListWriter} from "@/lib/server/domain/media/books/books-impor
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {ExternalGoogleBooksMatcher} from "@/lib/server/domain/media/books/external-books.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
-import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
+import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 
 
 export const createBooksMatcher = (
     booksService: BooksService,
     booksProvider: ExternalMediaProvider<UpsertBooksWithDetails>,
-    booksIngestion: MediaIngestionService<UpsertBooksWithDetails>,
+    booksIngestion: MediaIngestionService,
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.BOOKS, booksService),

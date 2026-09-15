@@ -1,13 +1,13 @@
 import {ImportItemStatus} from "@/lib/utils/enums";
-import {ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
-import {ExternalMediaMatcher, ImportListWriter, InternalMediaMatcher, MediaMatcher, MediaMatcherContext} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import {ImportItemOutcome, ImportItemsSelect, MatchedImportItem} from "@/lib/types/imports.types";
+import type {ExternalMediaMatcher, ImportListWriter, InternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
 export function createMediaMatcher(params: {
     internalMatchers: InternalMediaMatcher[];
     externalMatchers: ExternalMediaMatcher[];
     listWriter: ImportListWriter;
-}): MediaMatcher {
+}) {
     const { internalMatchers, externalMatchers, listWriter } = params;
 
     async function internalPipeline(items: ImportItemsSelect[]) {
@@ -65,7 +65,7 @@ export function createMediaMatcher(params: {
     }
 
     return {
-        async* match(context: MediaMatcherContext, items: ImportItemsSelect[]) {
+        async* match(context: { jobId: number; userId: number }, items: ImportItemsSelect[]) {
             if (items.length === 0) return;
 
             const { matched, unresolved } = await internalPipeline(items);
@@ -89,7 +89,7 @@ export function createMediaMatcher(params: {
                 }
 
                 if (externalResult.unresolved.length > 0) {
-                    yield externalResult.unresolved.map((item) => ({
+                    yield externalResult.unresolved.map((item): ImportItemOutcome => ({
                         itemId: item.id,
                         matchedMediaId: null,
                         statusReason: "No match found",
@@ -100,3 +100,6 @@ export function createMediaMatcher(params: {
         }
     };
 }
+
+
+export type MediaMatcher = ReturnType<typeof createMediaMatcher>;

@@ -4,7 +4,6 @@ import {
     ExternalMediaProvider,
     IngestionContext,
     MediaDetailsEnricher,
-    MediaIngestionService,
     RefreshCandidateSource,
     RefreshPolicy
 } from "@/lib/server/api-providers/interfaces.types";
@@ -19,7 +18,7 @@ export const createMediaIngestionService = <TDetails>(params: {
         storeMediaWithDetails(details: NoInfer<TDetails>): number;
         updateMediaWithDetails(details: NoInfer<TDetails>): boolean;
     };
-}): MediaIngestionService<TDetails> => {
+}) => {
     const { repository, provider, refreshCandidates, refreshPolicy, enrichers = [] } = params;
 
     async function applyEnrichers(details: TDetails, context: IngestionContext) {
@@ -175,3 +174,6 @@ export const createMediaIngestionService = <TDetails>(params: {
         },
     };
 };
+
+
+export type MediaIngestionService = ReturnType<typeof createMediaIngestionService>;

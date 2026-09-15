@@ -1,7 +1,6 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import {MoviesService} from "@/lib/server/domain/media/movies/movies.service";
-import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
+import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import type {TmdbMoviesProvider} from "@/lib/server/api-providers/tmdb-movies.provider";
 import {ExternalTMDBMovieMatcher} from "@/lib/server/domain/media/movies/external-movie.matcher";
@@ -12,8 +11,8 @@ import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/inte
 
 export const createMoviesMatcher = (
     moviesService: MoviesService,
-    moviesProvider: TmdbMoviesProvider,
-    moviesIngestion: MediaIngestionService<UpsertMovieWithDetails>,
+    moviesProvider: Pick<TmdbMoviesProvider, "search" | "findMovieIdsByImdbId">,
+    moviesIngestion: MediaIngestionService,
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.TMDB, moviesService),

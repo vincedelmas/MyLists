@@ -5,7 +5,8 @@ import {UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {ApiProviderType, ImportItemStatus, TvMediaType} from "@/lib/utils/enums";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
+import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 
 
 const TV_API_RES_FAILED_REASON = "API failed for this media";
@@ -17,7 +18,7 @@ export class ExternalTMDBTvMatcher implements ExternalMediaMatcher {
     constructor(
         private mediaType: TvMediaType,
         private tvProvider: ExternalMediaProvider<UpsertTvWithDetails>,
-        private tvIngestion: MediaIngestionService<UpsertTvWithDetails>,
+        private tvIngestion: MediaIngestionService,
         private resultBatchSize = 50,
     ) {
     }

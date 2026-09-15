@@ -1,7 +1,6 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import {GamesService} from "@/lib/server/domain/media/games/games.service";
-import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
-import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
+import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {ExternalIGDBGamesMatcher} from "@/lib/server/domain/media/games/external-game.matcher";
 import {GamesImportListWriter} from "@/lib/server/domain/media/games/games-import-list.writer";
@@ -11,7 +10,7 @@ import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/inte
 
 export const createGamesMatcher = (
     gamesService: GamesService,
-    gamesIngestion: MediaIngestionService<UpsertGameWithDetails>,
+    gamesIngestion: MediaIngestionService,
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.IGDB, gamesService),

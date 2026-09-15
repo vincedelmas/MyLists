@@ -9,12 +9,7 @@ import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.d
 import {TmdbMediaIdentities, tmdbTransformer} from "@/lib/server/api-providers/transformers/tmdb.transformer";
 
 
-export interface TmdbMoviesProvider extends ExternalMediaProvider<UpsertMovieWithDetails> {
-    findMovieIdsByImdbId(imdbId: string): Promise<number[]>;
-}
-
-
-export const createTmdbMoviesProvider = (tmdb: TmdbApi): TmdbMoviesProvider => {
+export const createTmdbMoviesProvider = (tmdb: TmdbApi) => {
     const { identity, ingestion } = moviesServerDefinition;
 
     const tmdbIdentities: TmdbMediaIdentities = {
@@ -31,16 +26,16 @@ export const createTmdbMoviesProvider = (tmdb: TmdbApi): TmdbMoviesProvider => {
     };
 
     return ({
-        async search(query, page = 1) {
+        async search(query: string, page = 1) {
             const raw = await tmdb.search(query, page);
             return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
         },
 
-        findMovieIdsByImdbId(imdbId) {
+        findMovieIdsByImdbId(imdbId: string) {
             return tmdb.findMovieIdsByImdbId(imdbId);
         },
 
-        async getDetails(apiId) {
+        async getDetails(apiId: number | string) {
             const raw = await tmdb.getMovieDetails(Number(apiId));
             return tmdbTransformer.transformMoviesDetailsResults(raw, transformOptions);
         },
@@ -51,6 +46,9 @@ export const createTmdbMoviesProvider = (tmdb: TmdbApi): TmdbMoviesProvider => {
         },
     });
 }
+
+
+export type TmdbMoviesProvider = ReturnType<typeof createTmdbMoviesProvider>;
 
 
 export const createMoviesIngestionService = (repository: MoviesRepository, provider: ExternalMediaProvider<UpsertMovieWithDetails>) => {

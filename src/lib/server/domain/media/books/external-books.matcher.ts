@@ -5,7 +5,8 @@ import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {UpsertBooksWithDetails} from "@/lib/server/domain/media/books/books.types";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
+import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 
 
 const BOOKS_API_RES_FAILED_REASON = "API failed for this media";
@@ -16,7 +17,7 @@ const BOOKS_API_MATCH_AMBIGUOUS_REASON = "Book API match is ambiguous";
 export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
     constructor(
         private booksProvider: ExternalMediaProvider<UpsertBooksWithDetails>,
-        private booksIngestion: MediaIngestionService<UpsertBooksWithDetails>,
+        private booksIngestion: MediaIngestionService,
         private resultBatchSize = 50,
     ) {
     }

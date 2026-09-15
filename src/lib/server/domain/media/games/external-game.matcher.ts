@@ -1,8 +1,7 @@
 import {logger} from "@/lib/server/core/logger";
 import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ApiProviderType, ImportItemStatus} from "@/lib/utils/enums";
-import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
-import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
@@ -13,7 +12,7 @@ const GAME_API_RES_FAILED_REASON = "API failed for this media";
 
 export class ExternalIGDBGamesMatcher implements ExternalMediaMatcher {
     constructor(
-        private gamesIngestion: MediaIngestionService<UpsertGameWithDetails>,
+        private gamesIngestion: MediaIngestionService,
         private resultBatchSize = 50,
     ) {
     }

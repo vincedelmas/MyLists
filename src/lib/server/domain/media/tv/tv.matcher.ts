@@ -6,14 +6,15 @@ import {createMediaMatcher} from "@/lib/server/domain/imports/matchers/media.mat
 import {ExternalTMDBTvMatcher} from "@/lib/server/domain/media/tv/external-tv.matcher";
 import {internalApiIdMatcher} from "@/lib/server/domain/imports/matchers/internal-api-id.matcher";
 import {internalNameDateMatcher} from "@/lib/server/domain/imports/matchers/internal-name-date.matcher";
-import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
+import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 
 
 export const createTvMatcher = (
     mediaType: TvMediaType,
     tvService: TvService,
     tvProvider: ExternalMediaProvider<UpsertTvWithDetails>,
-    tvIngestion: MediaIngestionService<UpsertTvWithDetails>,
+    tvIngestion: MediaIngestionService,
 ) => createMediaMatcher({
     internalMatchers: [
         internalApiIdMatcher(ApiProviderType.TMDB, tvService),

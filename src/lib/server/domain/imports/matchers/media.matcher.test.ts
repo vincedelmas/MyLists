@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {ApiProviderType, ImportItemStatus, MediaType, Status} from "@/lib/utils/enums";
 import {ImportItemOutcome, ImportItemsSelect} from "@/lib/types/imports.types";
-import {MediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
+import type {MediaMatcher} from "@/lib/server/domain/imports/matchers/media.matcher";
 import {createTvMatcher} from "@/lib/server/domain/media/tv/tv.matcher";
 import {createBooksMatcher} from "@/lib/server/domain/media/books/books.matcher";
 import {createGamesMatcher} from "@/lib/server/domain/media/games/games.matcher";

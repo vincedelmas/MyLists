@@ -2,17 +2,6 @@ import {AdvancedSearchFilters} from "@/lib/schemas";
 import {GameAdvancedSearchOptions, ProviderSearchResults, TrendsMedia} from "@/lib/types/provider.types";
 
 
-type BulkRefreshResult = {
-    reason: undefined;
-    state: "fulfilled";
-    apiId: number | string;
-} | {
-    reason: unknown;
-    state: "rejected";
-    apiId: number | string;
-};
-
-
 export type RefreshCandidateSource = {
     getCandidateApiIds(): Promise<(number | string)[]>;
 };
@@ -47,15 +36,4 @@ export interface ExternalMediaProvider<TDetails> {
     getAdvancedOptions?(): Promise<GameAdvancedSearchOptions>;
 
     getDetailsBatch?(apiIds: (number | string)[]): Promise<Map<string, TDetails>>;
-}
-
-
-export interface MediaIngestionService<_TDetails> {
-    storeFromExternal(apiId: number | string, checkInternalFirst?: boolean, isBulk?: boolean): Promise<number>;
-
-    storeBatchFromExternal(apiIds: (number | string)[], checkInternalFirst?: boolean): Promise<Map<string, number>>;
-
-    refreshFromExternal(apiId: number | string, isBulk?: boolean): Promise<boolean>;
-
-    bulkRefresh(limit?: number): AsyncGenerator<BulkRefreshResult, void, unknown>;
 }

@@ -1,11 +1,10 @@
 import {logger} from "@/lib/server/core/logger";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
 import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
-import {MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {TmdbMoviesProvider} from "@/lib/server/api-providers/tmdb-movies.provider";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
-import {UpsertMovieWithDetails} from "@/lib/server/domain/media/movies/movies.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
 
 
@@ -16,8 +15,8 @@ const MOVIE_API_MATCH_AMBIGUOUS_REASON = "Movie API match is ambiguous";
 
 export class ExternalTMDBMovieMatcher implements ExternalMediaMatcher {
     constructor(
-        private moviesProvider: TmdbMoviesProvider,
-        private moviesIngestion: MediaIngestionService<UpsertMovieWithDetails>,
+        private moviesProvider: Pick<TmdbMoviesProvider, "search" | "findMovieIdsByImdbId">,
+        private moviesIngestion: MediaIngestionService,
         private resultBatchSize = 50,
     ) {
     }

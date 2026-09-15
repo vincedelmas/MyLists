@@ -5,7 +5,8 @@ import {ApiProviderType, ImportItemStatus, MediaType} from "@/lib/utils/enums";
 import {UpsertMangaWithDetails} from "@/lib/server/domain/media/manga/manga.types";
 import {ExternalResolverResult, ImportItemsSelect} from "@/lib/types/imports.types";
 import {ExternalMediaMatcher} from "@/lib/server/domain/imports/matchers/media-matcher.interfaces";
-import {ExternalMediaProvider, MediaIngestionService} from "@/lib/server/api-providers/interfaces.types";
+import {ExternalMediaProvider} from "@/lib/server/api-providers/interfaces.types";
+import type {MediaIngestionService} from "@/lib/server/api-providers/media-ingestion.service";
 
 
 const MANGA_API_RES_FAILED_REASON = "API failed for this media";
@@ -16,7 +17,7 @@ const MANGA_API_MATCH_AMBIGUOUS_REASON = "Manga API match is ambiguous";
 export class ExternalMalMangaMatcher implements ExternalMediaMatcher {
     constructor(
         private mangaProvider: ExternalMediaProvider<UpsertMangaWithDetails>,
-        private mangaIngestion: MediaIngestionService<UpsertMangaWithDetails>,
+        private mangaIngestion: MediaIngestionService,
         private resultBatchSize = 50,
     ) {
     }

@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.7.1](https://github.com/vincedelmas/MyLists/compare/v3.7.0...v3.7.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **imports:** resolve IMDb movies by ID ([e955576](https://github.com/vincedelmas/MyLists/commit/e955576446a0ba2fbbb17b2c4ddcb526b60fd637))
+
+
+### Code Refactoring
+
+* **imports:** infer contracts from factory return types ([afa67c8](https://github.com/vincedelmas/MyLists/commit/afa67c8e1fe1b3df77de056557f4ae8994e1f454))
+
 ## [3.7.0](https://github.com/vincedelmas/MyLists/compare/v3.6.0...v3.7.0) (2026-09-13)
 
 

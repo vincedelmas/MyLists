@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
     branches: [ main ]
+    paths-ignore:
+      - CHANGELOG.md
+      - version.txt
+      - .release-please-manifest.json
 
 permissions:
   contents: read
@@ -15,6 +19,10 @@ concurrency:
 jobs:
   checks:
     name: Static checks
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.head_ref != 'release-please--branches--main' ||
+      github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -29,6 +37,10 @@ jobs:
 
   tests:
     name: Tests
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.head_ref != 'release-please--branches--main' ||
+      github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     services:
@@ -59,6 +71,10 @@ jobs:
 
   browser:
     name: Browser tests
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.head_ref != 'release-please--branches--main' ||
+      github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

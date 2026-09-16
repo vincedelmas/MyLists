@@ -1,4 +1,5 @@
 import {describe, expect, it, vi} from "vitest";
+import type {ImportSearch} from "@/lib/schemas/imports.schema";
 import {createMemoryHistory, createRootRoute, createRoute, createRouter, type AnyRoute} from "@tanstack/react-router";
 import {Route as importsRoute} from "./imports";
 import {Route as indexRoute} from "./imports/index";
@@ -45,15 +46,15 @@ describe("import page navigation", () => {
         expect(router.state.matches.at(-1)?.fullPath).toBe(path);
         expect(router.state.matches.at(-1)?.search).toMatchObject({ jobId: 42, page: 2 });
 
-        await router.navigate({ to: ".", search: prev => ({ ...prev, jobId: 43, page: 1 }) });
+        await router.navigate({ to: ".", search: (prev: ImportSearch) => ({ ...prev, jobId: 43, page: 1 }) });
         expect(router.state.location.pathname).toBe(path);
         expect(router.state.location.search).toMatchObject({ jobId: 43, page: 1 });
 
-        await router.navigate({ to: ".", search: prev => ({ ...prev, page: 3 }) });
+        await router.navigate({ to: ".", search: (prev: ImportSearch) => ({ ...prev, page: 3 }) });
         expect(router.state.location.pathname).toBe(path);
         expect(router.state.location.search).toMatchObject({ jobId: 43, page: 3 });
 
-        await router.navigate({ to: ".", search: prev => ({ ...prev, jobId: undefined, page: 1 }) });
+        await router.navigate({ to: ".", search: (prev: ImportSearch) => ({ ...prev, jobId: undefined, page: 1 }) });
         expect(router.state.location.pathname).toBe(path);
         expect(router.state.location.search.jobId).toBeUndefined();
     });

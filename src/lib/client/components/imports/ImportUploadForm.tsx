@@ -5,10 +5,10 @@ import {type ReactNode, useId, useState} from "react";
 import {Input} from "@/lib/client/components/ui/input";
 import {MAX_IMPORT_FILE_SIZE, MAX_IMPORT_ROWS} from "@/lib/utils/constants";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {ImportUploadFormValues, importUploadSchema} from "@/lib/schemas/imports.schema";
 import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {type Control, Controller, type DefaultValues, FormProvider, useForm} from "react-hook-form";
 import {useCreateImportJobMutation} from "@/lib/client/react-query/query-mutations/imports.mutations";
+import {type ImportSearch, ImportUploadFormValues, importUploadSchema} from "@/lib/schemas/imports.schema";
 
 
 interface ImportUploadFormProps {
@@ -38,7 +38,11 @@ export function ImportUploadForm({ defaultValues, children }: ImportUploadFormPr
             }
 
             const result = await createMutation.mutateAsync({ data: formData });
-            await navigate({ to: ".", search: prev => ({ ...prev, page: 1, jobId: result.jobId }), resetScroll: false });
+            await navigate({
+                to: ".",
+                resetScroll: false,
+                search: (prev: ImportSearch) => ({ ...prev, page: 1, jobId: result.jobId }),
+            });
 
             const { file: _file, ...options } = values;
             form.reset(options);

@@ -4,6 +4,7 @@ import {useQuery} from "@tanstack/react-query";
 import {formatDate} from "@/lib/utils/formatting/date";
 import {Spinner} from "@/lib/client/components/ui/spinner";
 import {useNavigate, useSearch} from "@tanstack/react-router";
+import type {ImportSearch} from "@/lib/schemas/imports.schema";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {allUserJobsOptions} from "@/lib/client/react-query/query-options";
 import {SelectedImportJob} from "@/lib/client/components/user-settings/SelectedImportJob";
@@ -50,12 +51,16 @@ export function ExistingImportsPanel() {
     };
 
     const handleJobDelete = () => {
-        void navigate({ to: ".", search: prev => ({ ...prev, page: 1, jobId: undefined }), resetScroll: false });
+        void navigate({ to: ".", search: (prev: ImportSearch) => ({ ...prev, page: 1, jobId: undefined }), resetScroll: false });
     };
 
     const handleJobChange = (jobId: string | null) => {
         if (jobId === null) return;
-        void navigate({ to: ".", search: prev => ({ ...prev, page: 1, jobId: Number(jobId) }), resetScroll: false });
+        void navigate({
+            to: ".",
+            resetScroll: false,
+            search: (prev: ImportSearch) => ({ ...prev, page: 1, jobId: Number(jobId) }),
+        });
     };
 
     return (

@@ -38,4 +38,6 @@ dist
 /tsconfig.tsbuildinfo
 **/routeTree.gen.ts
 /logs
+/playwright-report/
+/test-results/
 /docs/imports.md

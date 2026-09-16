@@ -25,7 +25,6 @@ if (process.argv.length === 3 && process.argv[2] === "import-drain") {
         }
 
         if (!pending) {
-            console.log("No pending imports found.");
             process.exit(0);
         }
     }

@@ -58,11 +58,13 @@ describe.skipIf(!process.env.MYLISTS_TEST_REDIS_URL)("shared Redis provider cont
 
     it("pauses provider requests within a bounded wait when Redis stops responding", async () => {
         const redis = await getRedisConnection();
+        const control = redis.duplicate({ lazyConnect: true, commandTimeout: 15_000 });
+        await control.connect();
         const client = await createApiHttpClient({ consumeKey: "redis-unresponsive", throttleOptions: [] });
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json([]));
-        await redis.call("CLIENT", "PAUSE", 10_000, "ALL");
-        const startedAt = Date.now();
         try {
+            await control.call("CLIENT", "PAUSE", 10_000, "ALL");
+            const startedAt = Date.now();
             await expect(client.call("https://example.com/items")).rejects.toMatchObject({
                 details: { kind: "unavailable", reason: "requestControlsUnavailable" },
             });
@@ -70,10 +72,17 @@ describe.skipIf(!process.env.MYLISTS_TEST_REDIS_URL)("shared Redis provider cont
             expect(fetchMock).not.toHaveBeenCalled();
         }
         finally {
-            await redis.call("CLIENT", "UNPAUSE");
             fetchMock.mockRestore();
+            // PAUSE ALL blocks UNPAUSE too. Wait for automatic resumption using
+            // a cleanup timeout longer than the pause, without changing the app's timeout.
+            try {
+                await control.ping();
+            }
+            finally {
+                control.disconnect();
+            }
         }
-    }, 15_000);
+    }, 20_000);
 
     it("preserves provider results when Redis cooldown writes fail", async () => {
         const provider = `redis-cleanup-${randomUUID()}`;

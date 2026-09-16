@@ -1,4 +1,5 @@
 import {RefreshCw, Trash2} from "lucide-react";
+import type {ImportSearch} from "@/lib/schemas/imports.schema";
 import {ImportJobStatus} from "@/lib/utils/enums";
 import {useNavigate} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
@@ -158,7 +159,7 @@ export function SelectedImportJob({ jobId, page, onDeleted }: SelectedImportJobP
                 <ImportJobIssuesTable
                     issueQuery={issueQuery}
                     onPageChange={nextPage => {
-                        void navigate({ to: ".", search: prev => ({ ...prev, page: nextPage, jobId }), resetScroll: false });
+                        void navigate({ to: ".", search: (prev: ImportSearch) => ({ ...prev, page: nextPage, jobId }), resetScroll: false });
                     }}
                 />
                 : !job.error &&

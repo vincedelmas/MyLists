@@ -4,6 +4,7 @@ import {MAX_IMPORT_FILE_SIZE} from "@/lib/utils/constants";
 import {coercedPositiveIntFieldSchema, paginationSchema} from "@/lib/schemas/common.schema";
 
 
+export type ImportSearch = z.infer<typeof importSearchSchema>;
 export type LetterboxdCsvType = z.infer<typeof letterboxdCsvTypeSchema>;
 export type ImportUploadFormValues = z.input<typeof importUploadSchema>;
 export type ImportCsvType = LetterboxdCsvType | z.infer<typeof imdbCsvTypeSchema>;

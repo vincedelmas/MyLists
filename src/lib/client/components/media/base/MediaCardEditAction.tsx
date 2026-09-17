@@ -10,7 +10,14 @@ interface MediaCardEditActionProps {
 
 export const MediaCardEditAction = ({ label, onClick }: MediaCardEditActionProps) => {
     return (
-        <Button size="bare" type="button" title={label} variant="ghost" onClick={onClick} aria-label={label}>
+        <Button
+            size="bare"
+            type="button"
+            title={label}
+            variant="ghost"
+            onClick={onClick}
+            aria-label={label}
+        >
             <Settings2 data-icon="inline-start"/>
         </Button>
     );

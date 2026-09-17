@@ -35,7 +35,7 @@ export const Payload = ({ update, username }: PayloadProps) => {
             return (
                 <PayloadLayout
                     username={username}
-                    oldVal={`S${zeroPad(newValue[0])}.E${zeroPad(oldValue[1])}`}
+                    oldVal={`S${zeroPad(oldValue[0])}.E${zeroPad(oldValue[1])}`}
                     newVal={`S${zeroPad(newValue[0])}.E${zeroPad(newValue[1])}`}
                 />
             );

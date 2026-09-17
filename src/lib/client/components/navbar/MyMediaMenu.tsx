@@ -6,7 +6,7 @@ import {capitalize} from "@/lib/utils/formatting/text";
 import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {getActiveMediaSettings} from "@/lib/utils/media/list-activation";
-import {Award, Calendar, ChartNoAxesColumn, ChevronDown, ListOrdered, Zap} from "lucide-react";
+import {Award, Calendar, ChartNoAxesColumn, ChevronDown, ListOrdered, Play, Zap} from "lucide-react";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 
 
@@ -113,6 +113,9 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                         }
                     >
                         <ChartNoAxesColumn className="size-4"/> My Stats
+                    </MenuEntry>
+                    <MenuEntry preview={preview} renderLink={(children) => <Link to="/continue">{children}</Link>}>
+                        <Play/> Continue
                     </MenuEntry>
                     {currentYear && currentMonth &&
                         <MenuEntry

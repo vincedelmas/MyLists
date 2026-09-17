@@ -88,7 +88,16 @@ export function createMangaService(repository: MangaRepository, definition: Mang
     }
 
     function updateChapterHandler(currentState: MangaList, payload: ChapterPayload, media: Manga): [MangaList, LogPayload] {
-        const newState = { ...currentState, currentChapter: payload.currentChapter };
+        if (media.chapters && payload.currentChapter > media.chapters) {
+            throw new FormattedError("Invalid chapter");
+        }
+
+        const newState = {
+            ...currentState,
+            currentChapter: payload.currentChapter,
+            status: media.chapters && payload.currentChapter === media.chapters ? Status.COMPLETED : currentState.status,
+        };
+
         const logPayload = { oldValue: currentState.currentChapter, newValue: payload.currentChapter };
 
         newState.total = payload.currentChapter + (currentState.redo * (media.chapters ?? 0));

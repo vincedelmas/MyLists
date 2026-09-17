@@ -9,6 +9,8 @@ import {
     mediaListOptions,
     profileHeaderOptions,
     profileOptions,
+    profileRecentFeedOptions,
+    profileSummaryOptions,
     tasteMatchesOptions,
     upcomingOptions,
 } from "@/lib/client/react-query/query-options";
@@ -16,6 +18,7 @@ import {
 
 // --- Inferred Query Options Types -----------------------------------------------------
 type ProfileOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof profileOptions>["queryFn"]>>>;
+type ProfileSummaryOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof profileSummaryOptions>["queryFn"]>>>;
 type MediaListOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaListOptions>["queryFn"]>>>;
 type MediaDetailsOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof mediaDetailsOptions>["queryFn"]>>>;
 export type HistoryOptionsType = Awaited<ReturnType<NonNullable<ReturnType<typeof historyOptions>["queryFn"]>>>;
@@ -82,6 +85,6 @@ export type ExtractListByType<T extends MediaType> =
 export type UserDataType = ProfileHeaderOptionsType["userData"];
 export type UserFollowsType = ProfileOptionsType["userFollows"];
 export type AchievementsType = ProfileOptionsType["achievements"];
-export type UserUpdateType = ProfileOptionsType["userUpdates"][number];
-export type PerMediaSummaryType = ProfileOptionsType["perMediaSummary"];
-export type MediaGlobalSummaryType = ProfileOptionsType["mediaGlobalSummary"];
+export type PerMediaSummaryType = ProfileSummaryOptionsType["perMediaSummary"];
+export type MediaGlobalSummaryType = ProfileSummaryOptionsType["mediaGlobalSummary"];
+export type UserUpdateType = Awaited<ReturnType<NonNullable<ReturnType<typeof profileRecentFeedOptions>["queryFn"]>>>[number];

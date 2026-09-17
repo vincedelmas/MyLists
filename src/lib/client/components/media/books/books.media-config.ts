@@ -12,6 +12,7 @@ import {BooksUnderTitle} from "@/lib/client/components/media/books/BooksUnderTit
 import {BooksUserDetails} from "@/lib/client/components/media/books/BookUserDetails";
 import {getBooksColumns} from "@/lib/client/components/media/books/BooksListColumns";
 import {getBooksActiveFilters} from "@/lib/client/components/media/books/BooksActiveFilters";
+import {getBooksContinueProgress} from "@/lib/client/components/media/books/continue-progress";
 import {bookSearchFilterDefinition} from "@/lib/client/components/media/books/BookSearchFilters";
 
 
@@ -25,6 +26,9 @@ export const booksMediaConfig = defineMediaConfig({
     mediaListColumns: getBooksColumns,
     mediaUserDetails: BooksUserDetails,
     sheetFilters: getBooksActiveFilters,
+    continue: {
+        getProgress: getBooksContinueProgress,
+    },
     communityActivity: {
         countLabel: "Read",
         extraLabel: "Rereads",

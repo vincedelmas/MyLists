@@ -1,9 +1,9 @@
 import {alias} from "drizzle-orm/sqlite-core";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {HighlightedMediaSettings} from "@/lib/types/profile-custom.types";
 import {ApiProviderType, MediaType, PrivacyType} from "@/lib/utils/enums";
 import {and, asc, count, eq, gte, isNotNull, like, sql, sum} from "drizzle-orm";
 import {ProviderSearchResult, ProviderSearchResults} from "@/lib/types/provider.types";
+import {ProfileCustomKey, ProfileCustomSettingsByKey} from "@/lib/types/profile-custom.types";
 import {followers, profileCustom, user, userMediaSettings} from "@/lib/server/database/schema";
 
 
@@ -98,20 +98,20 @@ export class ProfileRepository {
             .then((rows) => rows.map((row) => row.mediaType));
     }
 
-    static async getHighlightedMediaSettings(userId: number) {
+    static async getProfileCustomSetting<K extends ProfileCustomKey>(userId: number, key: K) {
         const settings = getDbClient()
             .select()
             .from(profileCustom)
-            .where(and(eq(profileCustom.userId, userId), eq(profileCustom.key, "highlightedMedia")))
+            .where(and(eq(profileCustom.userId, userId), eq(profileCustom.key, key)))
             .get();
 
-        return settings?.value as HighlightedMediaSettings | undefined;
+        return settings?.value as ProfileCustomSettingsByKey[K] | undefined;
     }
 
-    static upsertHighlightedMediaSettings(userId: number, value: HighlightedMediaSettings) {
+    static upsertProfileCustomSetting<K extends ProfileCustomKey>(userId: number, key: K, value: ProfileCustomSettingsByKey[K]) {
         getDbClient()
             .insert(profileCustom)
-            .values({ userId, key: "highlightedMedia", value })
+            .values({ userId, key, value })
             .onConflictDoUpdate({
                 target: [profileCustom.userId, profileCustom.key],
                 set: {

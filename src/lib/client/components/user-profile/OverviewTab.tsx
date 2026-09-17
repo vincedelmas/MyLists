@@ -1,26 +1,31 @@
-import {RatingSystemType} from "@/lib/utils/enums";
 import {getThemeColor} from "@/lib/client/theme";
+import {RatingSystemType} from "@/lib/utils/enums";
 import {getFeelingIcon} from "@/lib/client/ratings";
-import {ChartNoAxesColumn, Clock, ClockAlert, LibraryBig, Star} from "lucide-react";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {formatNumber, formatPercent} from "@/lib/utils/formatting/number";
+import {ContinuePreview} from "@/lib/client/components/continue/ContinuePreview";
 import {ResolvedHighlightedMediaTabConfig} from "@/lib/types/profile-custom.types";
+import {ChartNoAxesColumn, Clock, ClockAlert, LibraryBig, Star} from "lucide-react";
+import {ContinueItem} from "@/lib/client/react-query/query-options/continue.options";
+import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
 import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
 import {MediaGlobalSummaryType, PerMediaSummaryType} from "@/lib/types/query.options.types";
-import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStatsGrid";
 import {SegmentedDistributionBar} from "@/lib/client/components/general/SegmentedDistributionBar";
 
 
 interface OverviewTabProps {
+    isCurrent: boolean,
+    showContinue: boolean,
     perMedia: PerMediaSummaryType,
     ratingSystem: RatingSystemType,
+    inProgressMedia: ContinueItem[],
     globalStats: MediaGlobalSummaryType,
     highlightedMedia: ResolvedHighlightedMediaTabConfig,
 }
 
 
-export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMedia }: OverviewTabProps) => {
+export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMedia, inProgressMedia, isCurrent, showContinue }: OverviewTabProps) => {
     const rating = globalStats.avgRated;
     const distributionTotalDays = perMedia.reduce((total, media) => total + media.timeSpentDays, 0);
 
@@ -98,6 +103,13 @@ export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMe
                     </div>
                 </DistributionContainer>
             </section>
+
+            {showContinue &&
+                <ContinuePreview
+                    isCurrent={isCurrent}
+                    items={inProgressMedia}
+                />
+            }
 
             <HighlightedMedia
                 showMediaType={true}

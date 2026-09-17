@@ -4,6 +4,7 @@ import {ProviderSearchResults} from "@/lib/types/provider.types";
 import {postUpdateShowOnboarding} from "@/lib/server/functions/user-profile";
 import {MutationMeta, QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
 import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/notifications";
+import {invalidateUserProgressQueries} from "@/lib/client/react-query/invalidate-user-progress";
 import {postFollow, postRemoveFollower, postRespondToFollowRequest, postUnfollow} from "@/lib/server/functions/social";
 import {
     followersOptions,
@@ -135,6 +136,7 @@ export const useGeneralSettingsMutation = (meta?: MutationMeta) => {
 
 
 export const useListSettingsMutation = (meta?: MutationMeta) => {
+    const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -145,6 +147,8 @@ export const useListSettingsMutation = (meta?: MutationMeta) => {
         },
         onSuccess: async () => {
             await Promise.all([
+                queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
+                invalidateUserProgressQueries(queryClient, currentUser!.name),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
             ]);

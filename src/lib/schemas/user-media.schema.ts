@@ -91,9 +91,9 @@ export const updateUserMediaSchema = z.object({
         loggedAt: loggedAtSchema,
         favorite: z.boolean().optional(),
         status: z.enum(Status).optional(),
-        platform: z.enum(GamesPlatformsEnum).optional().nullable(),
         redo: z.number().int().min(0).max(REDO_MAX).optional(),
         rating: z.number().min(0).max(10).optional().nullable(),
+        platform: z.enum(GamesPlatformsEnum).optional().nullable(),
         seasonRating: tvSeasonStateSchema.pick({ season: true, rating: true }).optional(),
         actualPage: z.number().int().min(0).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
         currentSeason: z.number().int().min(1).max(PROGRESS_MAX, `Progress cannot exceed ${PROGRESS_MAX}!`).optional(),
@@ -105,10 +105,13 @@ export const updateUserMediaSchema = z.object({
             .refine(rows => new Set(rows.map(s => s.season)).size === rows.length, "Duplicate season numbers.").optional(),
     }).superRefine((data, ctx) => {
         const definedFields = Object.entries(data)
-            .filter(([key, value]) => key !== "type" && key !== "loggedAt" && value !== undefined)
+            .filter(([key, value]) => !["type", "loggedAt"].includes(key) && value !== undefined)
             .map(([key, _]) => key);
 
-        if (definedFields.length !== 1) {
+        const combinedTvPosition = data.type === UpdateType.TV && definedFields.length === 2
+            && definedFields.includes("currentSeason") && definedFields.includes("currentEpisode");
+
+        if (definedFields.length !== 1 && !combinedTvPosition) {
             ctx.addIssue({
                 code: "custom",
                 path: ["type"],

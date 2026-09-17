@@ -3,7 +3,6 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
-import {profileOptions} from "@/lib/client/react-query/query-options";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
 import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
 import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
@@ -12,29 +11,43 @@ import {ProfileFollows} from "@/lib/client/components/user-profile/ProfileFollow
 import {OnboardingModal} from "@/lib/client/components/user-profile/OnboardingModal";
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
+import {continueOptions} from "@/lib/client/react-query/query-options/continue.options";
 import {ProfilePortalGrid} from "@/lib/client/components/user-profile/ProfilePortalGrid";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
+import {profileOptions, profileRecentFeedOptions, profileSummaryOptions} from "@/lib/client/react-query/query-options";
 
 
 export const Route = createFileRoute("/_main/_viewer/profile/$username/_header/")({
     validateSearch: profileSearchSchema,
     context: ({ params: { username } }) => ({
         profileQueryOptions: profileOptions(username),
+        continueQueryOptions: continueOptions(username),
+        summaryQueryOptions: profileSummaryOptions(username),
+        recentFeedQueryOptions: profileRecentFeedOptions(username),
     }),
-    loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.profileQueryOptions);
+    loader: async ({ context }) => {
+        await Promise.all([
+            context.queryClient.fetchQuery(context.profileQueryOptions),
+            context.queryClient.fetchQuery(context.summaryQueryOptions),
+            context.queryClient.fetchQuery(context.continueQueryOptions),
+            context.queryClient.fetchQuery(context.recentFeedQueryOptions),
+        ]);
     },
     component: ProfileMain,
 });
 
 
 function ProfileMain() {
+    const { profileQueryOptions, recentFeedQueryOptions, summaryQueryOptions, continueQueryOptions } = Route.useRouteContext();
+
     const { currentUser } = useAuth();
     const { username } = Route.useParams();
     const { activeTab } = Route.useSearch();
-    const { profileQueryOptions } = Route.useRouteContext();
+    const summary = useSuspenseQuery(summaryQueryOptions).data;
     const apiData = useSuspenseQuery(profileQueryOptions).data;
-    const activeMediaTypes = getActiveMediaTypes(apiData.userData.userMediaSettings);
+    const inProgress = useSuspenseQuery(continueQueryOptions).data;
+    const recentFeed = useSuspenseQuery(recentFeedQueryOptions).data;
+    const activeMediaTypes = getActiveMediaTypes(summary.userMediaSettings);
 
     const mediaTabs = createMediaTabItems(activeMediaTypes, { leading: "overview", size: 15 });
     const currentTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "overview";
@@ -48,14 +61,14 @@ function ProfileMain() {
             <div className="space-y-4 max-lg:col-span-2 max-sm:space-y-6">
                 <MediaLevels
                     username={username}
-                    settings={apiData.userData.userMediaSettings}
+                    settings={summary.userMediaSettings}
                 />
                 <ProfilePortalGrid
                     username={username}
                 />
                 <UserUpdates
                     username={username}
-                    updates={apiData.userUpdates}
+                    updates={recentFeed}
                 />
                 <ProfileFollows
                     username={username}
@@ -81,9 +94,13 @@ function ProfileMain() {
                 <div className="animate-in fade-in duration-300">
                     {currentTab === "overview" ?
                         <OverviewTab
-                            perMedia={apiData.perMediaSummary}
-                            globalStats={apiData.mediaGlobalSummary}
+                            key={username}
+                            perMedia={summary.perMediaSummary}
+                            inProgressMedia={inProgress.items}
+                            showContinue={apiData.showContinue}
+                            globalStats={summary.mediaGlobalSummary}
                             ratingSystem={apiData.userData.ratingSystem}
+                            isCurrent={currentUser?.id === apiData.userData.id}
                             highlightedMedia={apiData.highlightedMedia.overview}
                         />
                         :
@@ -91,7 +108,7 @@ function ProfileMain() {
                             username={username}
                             ratingSystem={apiData.userData.ratingSystem}
                             highlightedMedia={apiData.highlightedMedia[currentTab]}
-                            mediaSummary={apiData.perMediaSummary.find((p) => p.mediaType === currentTab)!}
+                            mediaSummary={summary.perMediaSummary.find((p) => p.mediaType === currentTab)!}
                         />
                     }
                 </div>

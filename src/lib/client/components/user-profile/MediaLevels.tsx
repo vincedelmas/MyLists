@@ -77,6 +77,7 @@ const MediaLevelBar = ({ mediaType, username, level }: MediaLevelBarProps) => {
             <Progress
                 value={percent}
                 color={getThemeColor(mediaType)}
+                aria-label={`${mediaType} level progress`}
             />
         </div>
     );

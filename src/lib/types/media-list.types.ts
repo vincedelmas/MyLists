@@ -20,9 +20,9 @@ export type MediaListData<TList> = {
         pages?: number;
         common: boolean;
         mediaName: string;
-        chapters?: number;
         imageCover: string;
         tags: IdNamePair[];
+        chapters?: number | null;
         ratingSystem: RatingSystemType;
         epsPerSeason?: EpsPerSeasonType[];
     })[];

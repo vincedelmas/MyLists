@@ -49,6 +49,10 @@ vi.mock("@/lib/client/react-query/query-options", () => ({
     mediaDetailsOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["details", mediaType, mediaId] }),
     historyOptions: (mediaType: MediaType, mediaId: number) => ({ queryKey: ["onOpenHistory", mediaType, mediaId] }),
     profileOptions: (username: string) => ({ queryKey: ["profile", username] }),
+    profileHeaderOptions: (username: string) => ({ queryKey: ["profile", "header", username] }),
+    profileRecentFeedOptions: (username: string) => ({ queryKey: ["profile", "recent-feed", username] }),
+    profileSummaryOptions: (username: string) => ({ queryKey: ["profile", "summary", username] }),
+    continueOptions: (username: string) => ({ queryKey: ["continue", username] }),
 }));
 vi.mock("@/lib/client/components/media/base/UserMediaDetails", () => ({ UserMediaDetails: () => null }));
 vi.mock("@/lib/client/components/ui/dialog", () => ({
@@ -193,24 +197,83 @@ describe("profile activity deletion", () => {
         { name: "appends a new replacement to a full feed", initialIds: [1, 2, 3, 4, 5, 6], remainingIds: [2, 3, 4, 5, 6, 7], returnedUpdate: { id: 7 } },
         { name: "removes an entry when replacement data is not requested", initialIds: [1, 2, 3], remainingIds: [2, 3], returnedUpdate: undefined },
     ])("$name", async ({ initialIds, remainingIds, returnedUpdate }) => {
-        const profileKey = ["profile", "alice"] as const;
-        const profile = { userData: { name: "alice" }, userUpdates: initialIds.map(id => ({ id })) };
-        queryClient.setQueryData(profileKey, profile);
-        const expectedProfile = { ...profile, userUpdates: remainingIds.map(id => ({ id })) };
-        const fetchProfile = vi.fn().mockResolvedValue(expectedProfile);
-        const observer = new QueryObserver(queryClient, { queryKey: profileKey, queryFn: fetchProfile });
-        const unsubscribeProfile = observer.subscribe(() => {});
+        const feedKey = ["profile", "recent-feed", "alice"] as const;
+        queryClient.setQueryData(feedKey, initialIds.map(id => ({ id })));
+        const expectedFeed = remainingIds.map(id => ({ id }));
+        const fetchFeed = vi.fn().mockResolvedValue(expectedFeed);
+        const observer = new QueryObserver(queryClient, { queryKey: feedKey, queryFn: fetchFeed });
+        const unsubscribeFeed = observer.subscribe(() => {});
 
         try {
             server.deleteUpdates.mockResolvedValueOnce(returnedUpdate);
             await useDeleteProfileUpdateMutation("alice").mutateAsync({ data: { updateIds: [1], returnData: returnedUpdate !== undefined } });
 
-            expect(queryClient.getQueryData(profileKey)).toEqual(expectedProfile);
-            expect(fetchProfile).not.toHaveBeenCalled();
+            expect(queryClient.getQueryData(feedKey)).toEqual(expectedFeed);
+            expect(fetchFeed).not.toHaveBeenCalled();
+        }
+        finally { unsubscribeFeed(); }
+    });
+});
+
+describe("profile progress refresh", () => {
+    it.each([Status.WATCHING, Status.COMPLETED])("refreshes progress and totals without reloading highlights or another user's profile (%s)", async status => {
+        const progressKeys = [
+            ["continue", "alice"],
+            ["profile", "recent-feed", "alice"],
+            ["profile", "summary", "alice"],
+            ["profile", "header", "alice"],
+            ["allUpdates", "alice", {}],
+        ];
+        const stableKeys = [
+            ["profile", "alice"],
+            ["profile", "bob"],
+            ["profile", "recent-feed", "bob"],
+            ["profile", "summary", "bob"],
+            ["profile", "header", "bob"],
+            ["continue", "bob"],
+        ];
+        const queries = [...progressKeys, ...stableKeys].map(key => {
+            queryClient.setQueryData(key, { version: "before" });
+            const fetch = vi.fn().mockResolvedValue({ version: "after" });
+            const observer = new QueryObserver(queryClient, { queryKey: key, queryFn: fetch });
+            return { key, fetch, unsubscribe: observer.subscribe(() => {}) };
+        });
+
+        try {
+            server.update.mockResolvedValueOnce({ ...item, currentEpisode: 10, status });
+            await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
+                .mutateAsync({ payload: { type: UpdateType.TV, currentEpisode: 10 } });
+
+            for (const query of queries.slice(0, progressKeys.length)) {
+                expect(query.fetch).toHaveBeenCalledTimes(1);
+                expect(queryClient.getQueryData(query.key)).toEqual({ version: "after" });
+            }
+            for (const query of queries.slice(progressKeys.length)) {
+                expect(query.fetch).not.toHaveBeenCalled();
+                expect(queryClient.getQueryState(query.key)?.isInvalidated).toBe(false);
+                expect(queryClient.getQueryData(query.key)).toEqual({ version: "before" });
+            }
+        }
+        finally { queries.forEach(query => query.unsubscribe()); }
+    });
+
+    it("still refreshes highlighted media when a favorite changes", async () => {
+        const profileKey = ["profile", "alice"];
+        queryClient.setQueryData(profileKey, { highlightedMedia: [] });
+        const fetchProfile = vi.fn().mockResolvedValue({ highlightedMedia: [{ mediaId: 1 }] });
+        const observer = new QueryObserver(queryClient, { queryKey: profileKey, queryFn: fetchProfile });
+        const unsubscribeProfile = observer.subscribe(() => {});
+
+        try {
+            server.update.mockResolvedValueOnce({ ...item, favorite: true });
+            await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
+                .mutateAsync({ payload: { type: UpdateType.FAVORITE, favorite: true } });
+            expect(fetchProfile).toHaveBeenCalledTimes(1);
         }
         finally { unsubscribeProfile(); }
     });
 });
+
 
 describe("list editing refresh timing", () => {
     it.each([

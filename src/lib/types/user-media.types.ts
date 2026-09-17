@@ -98,6 +98,7 @@ export type UpdateUserMediaDetails<TMedia, TList> = {
     newState: TList;
     delta: DeltaStats;
     logPayload: LogPayload;
+    statusLogPayload: LogPayload;
 }
 
 export type UpdateHandlerFn<TState, TPayload, TMedia> = (currentState: TState, payload: TPayload, media: TMedia) => [TState, LogPayload];

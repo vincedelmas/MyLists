@@ -36,7 +36,7 @@ const settingsItems = [
         id: "profile-customization",
         label: "Profile Customization",
         to: "/settings/profile-customization",
-        description: "Highlighted media on your profile",
+        description: "Current media and profile highlights",
     },
     {
         icon: ListRestart,

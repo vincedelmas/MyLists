@@ -1,20 +1,22 @@
-import {useState} from "react";
+import {useId, useState} from "react";
 import {toItemKey} from "@/lib/utils/media/item-key";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {FieldSet} from "@/lib/client/components/ui/field";
-import {highlightedMediaSettingsSchema} from "@/lib/schemas";
+import {Switch} from "@/lib/client/components/ui/switch";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {profileCustomizationSettingsSchema} from "@/lib/schemas";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {profileCustomOptions} from "@/lib/client/react-query/query-options";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
-import {type FieldErrors, FormProvider, useForm, useWatch} from "react-hook-form";
 import {TabCustomContent} from "@/lib/client/components/user-settings/TabCustomContent";
+import {Card, CardContent, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
 import {ProfileSidebarTabs} from "@/lib/client/components/user-settings/ProfileSidebarTabs";
+import {Controller, type FieldErrors, FormProvider, useForm, useWatch} from "react-hook-form";
 import {useProfileCustomMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
-import {HIGHLIGHTED_MEDIA_TABS, HighlightedMediaSearchItem, HighlightedMediaSettings, HighlightedMediaTab,} from "@/lib/types/profile-custom.types";
+import {Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
+import {HIGHLIGHTED_MEDIA_TABS, HighlightedMediaSearchItem, HighlightedMediaTab, ProfileCustomizationSettings} from "@/lib/types/profile-custom.types";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/profile-customization")({
@@ -25,20 +27,21 @@ export const Route = createFileRoute("/_main/_private/settings/_layout/profile-c
 
 
 function ProfileCustomForm() {
+    const fieldId = useId();
     const { profileCustomQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(profileCustomQueryOptions).data;
     const mutation = useProfileCustomMutation({ noErrorToast: true });
     const [activeTab, setActiveTab] = useState<HighlightedMediaTab>("overview");
     const [localPreviewCache, setLocalPreviewCache] = useState<Record<string, HighlightedMediaSearchItem>>({});
-    const form = useForm<HighlightedMediaSettings, unknown, HighlightedMediaSettings>({
-        resolver: zodResolver<HighlightedMediaSettings, unknown, HighlightedMediaSettings>(highlightedMediaSettingsSchema),
+    const form = useForm<ProfileCustomizationSettings, unknown, ProfileCustomizationSettings>({
+        resolver: zodResolver<ProfileCustomizationSettings, unknown, ProfileCustomizationSettings>(profileCustomizationSettingsSchema),
         values: cloneSettings(apiData.settings),
     });
 
     const allFormValues = useWatch({ control: form.control });
     const combinedPreviewCache = { ...buildPreviewCache(apiData.previews), ...localPreviewCache };
 
-    const onSubmit = (formData: HighlightedMediaSettings) => {
+    const onSubmit = (formData: ProfileCustomizationSettings) => {
         mutation.mutate({ data: formData }, {
             onError: (error) => {
                 handleServerFormErrors(form, error);
@@ -50,7 +53,7 @@ function ProfileCustomForm() {
         });
     };
 
-    const onInvalid = (errors: FieldErrors<HighlightedMediaSettings>) => {
+    const onInvalid = (errors: FieldErrors<ProfileCustomizationSettings>) => {
         const invalidTab = HIGHLIGHTED_MEDIA_TABS.find((tab) => errors[tab]);
         if (invalidTab) {
             setActiveTab(invalidTab);
@@ -71,12 +74,54 @@ function ProfileCustomForm() {
                             allFormValues={allFormValues}
                         />
 
-                        <TabCustomContent
-                            key={activeTab}
-                            activeTab={activeTab}
-                            previewCache={combinedPreviewCache}
-                            setPreviewCache={setLocalPreviewCache}
-                        />
+                        <div className="flex flex-col gap-6">
+                            {activeTab === "overview" &&
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Continue preview</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <FieldGroup>
+                                            <Controller
+                                                name="showContinue"
+                                                control={form.control}
+                                                render={({ field, fieldState }) =>
+                                                    <Field orientation="horizontal" data-invalid={fieldState.invalid} data-disabled={mutation.isPending}>
+                                                        <FieldContent>
+                                                            <FieldLabel htmlFor={`${fieldId}-continue`}>
+                                                                Show Continue on my profile
+                                                            </FieldLabel>
+                                                            <FieldDescription id={`${fieldId}-continue-description`}>
+                                                                Show your current media in your profile overview, for you and your visitors.
+                                                                Continue is always available from MyMedia.
+                                                            </FieldDescription>
+                                                            <FieldError errors={[fieldState.error]}/>
+                                                        </FieldContent>
+                                                        <Switch
+                                                            ref={field.ref}
+                                                            name={field.name}
+                                                            checked={field.value}
+                                                            onBlur={field.onBlur}
+                                                            id={`${fieldId}-continue`}
+                                                            disabled={mutation.isPending}
+                                                            onCheckedChange={field.onChange}
+                                                            aria-invalid={fieldState.invalid}
+                                                            aria-describedby={`${fieldId}-continue-description`}
+                                                        />
+                                                    </Field>
+                                                }
+                                            />
+                                        </FieldGroup>
+                                    </CardContent>
+                                </Card>
+                            }
+                            <TabCustomContent
+                                key={activeTab}
+                                activeTab={activeTab}
+                                previewCache={combinedPreviewCache}
+                                setPreviewCache={setLocalPreviewCache}
+                            />
+                        </div>
                     </div>
                 </FieldSet>
                 <FormError/>
@@ -89,8 +134,8 @@ function ProfileCustomForm() {
 }
 
 
-const cloneSettings = (settings: HighlightedMediaSettings) => {
-    return JSON.parse(JSON.stringify(settings)) as HighlightedMediaSettings;
+const cloneSettings = (settings: ProfileCustomizationSettings) => {
+    return JSON.parse(JSON.stringify(settings)) as ProfileCustomizationSettings;
 };
 
 

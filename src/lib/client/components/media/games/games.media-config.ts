@@ -1,7 +1,7 @@
-import {MediaType} from "@/lib/utils/enums";
 import {XLineTop} from "lucide-react";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {MediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {GameListItem} from "@/lib/client/components/media/games/GameListItem";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {GamesInfoGrid} from "@/lib/client/components/media/games/GamesInfoGrid";
@@ -14,6 +14,7 @@ import {GamesUserDetails} from "@/lib/client/components/media/games/GamesUserDet
 import {GamesExtraSections} from "@/lib/client/components/media/games/GamesExtraSections";
 import {GamesUpComingAlert} from "@/lib/client/components/media/games/GamesUpComingAlert";
 import {getGamesActiveFilters} from "@/lib/client/components/media/games/GamesActiveFilters";
+import {getGamesContinueProgress} from "@/lib/client/components/media/games/continue-progress";
 import {gameSearchFilterDefinition} from "@/lib/client/components/media/games/GameSearchFilters";
 
 
@@ -29,6 +30,9 @@ export const gamesMediaConfig = defineMediaConfig({
     mediaListColumns: getGamesColumns,
     mediaUserDetails: GamesUserDetails,
     sheetFilters: getGamesActiveFilters,
+    continue: {
+        getProgress: getGamesContinueProgress,
+    },
     communityActivity: {
         countLabel: "Played",
         extraLabel: "Playtime",

@@ -1,4 +1,5 @@
 import {MediaType} from "@/lib/utils/enums";
+import {withTransaction} from "@/lib/server/database/async-storage";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {ProfileRepository} from "@/lib/server/domain/profile/profile.repository";
 import {
@@ -11,6 +12,7 @@ import {
     HighlightedMediaSettings,
     HighlightedMediaTab,
     PROFILE_MAX_HIGHLIGHTED_MEDIA,
+    ProfileCustomizationSettings,
 } from "@/lib/types/profile-custom.types";
 
 
@@ -48,15 +50,26 @@ export class ProfileService {
     }
 
     async getHighlightedMediaSettings(userId: number) {
-        const savedSettings = await this.repository.getHighlightedMediaSettings(userId);
+        const savedSettings = await this.repository.getProfileCustomSetting(userId, "highlightedMedia");
         return this._resolveSettingsDefaults(savedSettings);
     }
 
-    saveHighlightedMediaSettings(userId: number, settings: HighlightedMediaSettings) {
-        const normalizedSettings = this._resolveSettingsDefaults(settings);
-        this.repository.upsertHighlightedMediaSettings(userId, normalizedSettings);
+    async getContinueVisibility(userId: number) {
+        return await this.repository.getProfileCustomSetting(userId, "showContinue") ?? true;
+    }
 
-        return normalizedSettings;
+    saveProfileCustomSettings(userId: number, settings: ProfileCustomizationSettings) {
+        const normalizedSettings = this._resolveSettingsDefaults(settings);
+
+        return withTransaction(() => {
+            this.repository.upsertProfileCustomSetting(userId, "highlightedMedia", normalizedSettings);
+            this.repository.upsertProfileCustomSetting(userId, "showContinue", settings.showContinue);
+
+            return {
+                ...normalizedSettings,
+                showContinue: settings.showContinue,
+            };
+        });
     }
 
     async resolveHighlightedMedia(userId: number) {

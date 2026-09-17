@@ -1,11 +1,21 @@
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {MediaType, TagAction} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {UpdatePayload} from "@/lib/types/user-media.types";
+import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
-import {allUpdatesOptions, historyOptions, mediaDetailsOptions, mediaListOptions, profileOptions, tagNamesOptions} from "@/lib/client/react-query/query-options";
+import {invalidateUserProgressQueries} from "@/lib/client/react-query/invalidate-user-progress";
+import {
+    allUpdatesOptions,
+    continueOptions,
+    historyOptions,
+    mediaDetailsOptions,
+    mediaListOptions,
+    profileOptions,
+    profileRecentFeedOptions,
+    tagNamesOptions
+} from "@/lib/client/react-query/query-options";
 import {
     postAddMediaToList,
     postDeleteUserUpdates,
@@ -29,20 +39,18 @@ export const useDeleteProfileUpdateMutation = (username: string) => {
 
     return useMutation({
         mutationFn: postDeleteUserUpdates,
-        onSuccess: (data, variables) => {
-            queryClient.setQueryData(profileOptions(username).queryKey, (oldData) => {
+        onSuccess: async (data, variables) => {
+            queryClient.setQueryData(profileRecentFeedOptions(username).queryKey, (oldData) => {
                 if (!oldData) return;
 
-                const userUpdates = oldData.userUpdates.filter((up) => !variables.data.updateIds.includes(up.id));
+                const userUpdates = oldData.filter((up) => !variables.data.updateIds.includes(up.id));
                 if (data && !userUpdates.some((up) => up.id === data.id)) {
                     userUpdates.push(data);
                 }
 
-                return {
-                    ...oldData,
-                    userUpdates,
-                };
+                return userUpdates;
             });
+            await queryClient.invalidateQueries({ queryKey: ["allUpdates", username] });
         },
     });
 };
@@ -54,22 +62,30 @@ export const useDeleteAllUpdatesMutation = (username: string, filters: SimpleSea
     return useMutation({
         mutationFn: postDeleteUserUpdates,
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: allUpdatesOptions(username, filters).queryKey });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: profileRecentFeedOptions(username).queryKey }),
+                queryClient.invalidateQueries({ queryKey: allUpdatesOptions(username, filters).queryKey }),
+            ]);
         },
     });
 };
 
 
 export const useDeleteHistoryUpdatesMutation = (mediaType: MediaType, mediaId: number) => {
+    const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: postDeleteUserUpdates,
         onSuccess: async (_data, variables) => {
-            return queryClient.setQueryData(historyOptions(mediaType, mediaId).queryKey, (oldData) => {
+            queryClient.setQueryData(historyOptions(mediaType, mediaId).queryKey, (oldData) => {
                 if (!oldData) return;
                 return [...oldData.filter((history) => history.id !== variables.data.updateIds[0])];
             });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: profileRecentFeedOptions(currentUser!.name).queryKey }),
+                queryClient.invalidateQueries({ queryKey: ["allUpdates", currentUser!.name] }),
+            ]);
         },
     });
 };
@@ -106,6 +122,8 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
             }
 
             await Promise.all([
+                queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
+                invalidateUserProgressQueries(queryClient, currentUser!.name),
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 queryClient.invalidateQueries({ queryKey: ["listFilters", variables.data.mediaType, currentUser!.name] }),
@@ -145,6 +163,8 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
             }
 
             await Promise.all([
+                queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
+                invalidateUserProgressQueries(queryClient, currentUser!.name),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
                 queryClient.invalidateQueries({ queryKey: ["userList", variables.data.mediaType] }),
@@ -157,6 +177,7 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
 
 
 export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number, queryOption: UserMediaQueryOption, options: UpdateUserMediaMutationOptions = {}) => {
+    const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -185,10 +206,15 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
             const activityUpdate = loggedActivityUpdateTypes.has(variables.payload.type);
 
             const invalidations = [
+                invalidateUserProgressQueries(queryClient, currentUser!.name),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId] }),
                 queryClient.invalidateQueries({ queryKey: historyOptions(mediaType, mediaId).queryKey }),
             ];
+
+            if (variables.payload.type === UpdateType.FAVORITE) {
+                invalidations.push(queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }));
+            }
 
             if (activityUpdate) {
                 invalidations.push(queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }));
@@ -228,6 +254,7 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
 
 
 export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, meta?: MutationMeta) => {
+    const { currentUser } = useAuth();
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -253,6 +280,8 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, 
             }
 
             await Promise.all([
+                queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
+                queryClient.invalidateQueries({ queryKey: continueOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 ...(queryOption.queryKey[0] === "details"
                     ? [queryClient.invalidateQueries({ queryKey: queryOption.queryKey })]

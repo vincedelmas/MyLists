@@ -86,7 +86,7 @@ type SortDefinitions = Record<string, SQL | [SQL, ...SQL[]]>;
 type AffinityDefinitions = Record<string, TopAffinityDefinition>;
 
 
-type SpecificAffinityKey<TDefinition extends MediaDefinition> = Exclude<
+type SpecificAffinityKey<TDefinition extends Pick<MediaDefinition, "statistics">> = Exclude<
     TDefinition["statistics"]["affinities"][number]["key"],
     "genresStats"
 >;
@@ -251,7 +251,7 @@ export const defineServerMediaDefinition = <
 }
 
 
-export const defineAffinityDefinitions = <const TDefinition extends MediaDefinition>(
+export const defineAffinityDefinitions = <const TDefinition extends Pick<MediaDefinition, "statistics">>(
     _definition: TDefinition,
     affinities: Readonly<Record<SpecificAffinityKey<TDefinition>, TopAffinityDefinition>>,
 ) => affinities;

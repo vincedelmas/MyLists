@@ -17,6 +17,7 @@ interface MediaCardBaseProps {
     className?: string;
     mediaType: MediaType;
     children: React.ReactNode;
+    "aria-labelledby"?: string;
 }
 
 
@@ -73,7 +74,7 @@ export const MediaCard = (props: MediaCardProps) => {
 
     return (
         <MediaCardContext.Provider value={true}>
-            <MediaCardFrame className={className}>
+            <MediaCardFrame className={className} aria-labelledby={props["aria-labelledby"]}>
                 {props.external ?
                     <Link
                         to="/details/$mediaType/external/$apiId"

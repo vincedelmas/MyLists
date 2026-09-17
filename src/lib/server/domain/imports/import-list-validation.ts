@@ -46,6 +46,4 @@ export const importProgressSchema = z.preprocess(emptyStringToUndefined, z.coerc
 
 export const importPlaytimeSchema = z.preprocess(emptyStringToUndefined, z.coerce.number().int().min(0).max(PLAYTIME_MAX_MINUTES).optional());
 
-export const importPositiveProgressSchema = z.preprocess(emptyStringToUndefined, z.coerce.number().int().min(1).max(PROGRESS_MAX).optional());
-
 export const nullableImportProgressSchema = z.preprocess(emptyStringToNull, z.coerce.number().int().min(0).max(PROGRESS_MAX).nullable().optional());

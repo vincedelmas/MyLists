@@ -1,4 +1,5 @@
 import {SimpleSearch} from "@/lib/schemas";
+import {isDeepStrictEqual} from "node:util";
 import {alias} from "drizzle-orm/sqlite-core";
 import {paginate} from "@/lib/server/database/pagination";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
@@ -29,7 +30,7 @@ export class UpdateHistoryRepository {
                 eq(userMediaSettings.active, true),
             ))
             .where(eq(userMediaUpdate.userId, userId))
-            .orderBy(desc(userMediaUpdate.timestamp))
+            .orderBy(desc(userMediaUpdate.timestamp), desc(userMediaUpdate.id))
             .limit(limit);
     }
 
@@ -75,7 +76,7 @@ export class UpdateHistoryRepository {
             getItems: ({ limit, offset }) => {
                 return queryItems
                     .where(baseConditions.length > 0 ? and(...baseConditions) : undefined)
-                    .orderBy(desc(userMediaUpdate.timestamp))
+                    .orderBy(desc(userMediaUpdate.timestamp), desc(userMediaUpdate.id))
                     .offset(offset)
                     .limit(limit);
             },
@@ -93,7 +94,7 @@ export class UpdateHistoryRepository {
                 eq(userMediaUpdate.mediaType, mediaType),
                 eq(userMediaUpdate.mediaId, mediaId),
             ))
-            .orderBy(desc(userMediaUpdate.timestamp)).all();
+            .orderBy(desc(userMediaUpdate.timestamp), desc(userMediaUpdate.id)).all();
     }
 
     static async getFollowsUpdates(profileOwnerId: number, actor: Actor, limit = 10) {
@@ -120,7 +121,7 @@ export class UpdateHistoryRepository {
                 inArray(userMediaUpdate.userId, followedByB),
                 followFeedProfileVisibilityCondition(actor),
             ))
-            .orderBy(desc(userMediaUpdate.timestamp))
+            .orderBy(desc(userMediaUpdate.timestamp), desc(userMediaUpdate.id))
             .limit(limit);
     }
 
@@ -220,7 +221,7 @@ export class UpdateHistoryRepository {
                     eq(userMediaSettings.active, true),
                 ))
                 .where(eq(userMediaUpdate.userId, userId))
-                .orderBy(desc(userMediaUpdate.timestamp))
+                .orderBy(desc(userMediaUpdate.timestamp), desc(userMediaUpdate.id))
                 .limit(6)
                 .all();
 
@@ -258,6 +259,8 @@ export class UpdateHistoryRepository {
     }
 
     static logUpdate({ userId, mediaType, media, updateType, payload, timestamp }: LogUpdateParams) {
+        if (isDeepStrictEqual(payload.old_value, payload.new_value)) return;
+
         const newUpdate = {
             userId,
             payload,
@@ -274,23 +277,33 @@ export class UpdateHistoryRepository {
                 eq(userMediaUpdate.userId, userId),
                 eq(userMediaUpdate.mediaId, media.id),
                 eq(userMediaUpdate.mediaType, mediaType),
-                eq(userMediaUpdate.updateType, updateType),
             ))
-            .orderBy(desc(userMediaUpdate.timestamp))
+            .orderBy(desc(userMediaUpdate.timestamp), desc(userMediaUpdate.id))
             .get();
 
-        if (previousUpdate && !timestamp) {
+        if (previousUpdate?.updateType === updateType && !timestamp) {
             const elapsedSec = (Date.now() - dateFromUTCInput(previousUpdate.timestamp).getTime()) / 1000;
-            if (elapsedSec >= 0 && elapsedSec <= this.updateThresholdSec) {
+
+            const isProgress = [UpdateType.TV, UpdateType.PAGE, UpdateType.CHAPTER, UpdateType.PLAYTIME, UpdateType.REDO]
+                .some(type => type === updateType);
+
+            const continuous = previousUpdate.payload && isDeepStrictEqual(previousUpdate.payload.new_value, payload.old_value);
+
+            if (elapsedSec >= 0 && elapsedSec <= this.updateThresholdSec && (!isProgress || continuous)) {
+                if (isProgress) {
+                    newUpdate.payload = { ...payload, old_value: previousUpdate.payload!.old_value };
+                }
                 getDbClient()
                     .delete(userMediaUpdate)
                     .where(eq(userMediaUpdate.id, previousUpdate.id)).run();
             }
         }
 
-        getDbClient()
-            .insert(userMediaUpdate)
-            .values(newUpdate).run();
+        if (!isDeepStrictEqual(newUpdate.payload.old_value, newUpdate.payload.new_value)) {
+            getDbClient()
+                .insert(userMediaUpdate)
+                .values(newUpdate).run();
+        }
     }
 
     private static _likelyBulkImportUserMonths() {

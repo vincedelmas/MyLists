@@ -8,7 +8,6 @@ export type EditMediaDetailsPayload = EditMediaDetailsPayloadByType[MediaType];
 export type EditMediaDetailsInput = z.input<(typeof editMediaDetailsPayloadSchemas)[MediaType]>;
 export type MediaEditFieldByType = { [T in MediaType]: keyof EditMediaDetailsPayloadByType[T] & string };
 export type EditMediaDetailsPayloadByType = { [T in MediaType]: z.output<(typeof editMediaDetailsPayloadSchemas)[T]> };
-export type MediaEditFormFieldsByType = { [T in MediaType]: Omit<EditMediaDetailsPayloadByType[T], "imageCover" | "genres"> };
 
 
 export const mediaDetailsSchema = mediaTypeMediaIdSchema;

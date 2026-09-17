@@ -37,7 +37,7 @@ const highlightedMediaSettingsShape = HIGHLIGHTED_MEDIA_TABS.reduce((acc, tab) =
 }, {} as Record<(typeof HIGHLIGHTED_MEDIA_TABS)[number], z.ZodDefault<typeof highlightedMediaTabConfigSchema>>);
 
 
-export const highlightedMediaSettingsSchema = z.object(highlightedMediaSettingsShape)
+const highlightedMediaSettingsSchema = z.object(highlightedMediaSettingsShape)
     .default(createDefaultHighlightedMediaSettings())
     .superRefine((settings, ctx) => {
         for (const tab of HIGHLIGHTED_MEDIA_TABS) {
@@ -64,6 +64,10 @@ export const highlightedMediaSettingsSchema = z.object(highlightedMediaSettingsS
             }
         }
     }) as z.ZodType<HighlightedMediaSettings, HighlightedMediaSettings>;
+
+export const profileCustomizationSettingsSchema = highlightedMediaSettingsSchema.and(z.object({
+    showContinue: z.boolean(),
+}));
 
 export const generalSettingsSchema = z.object({
     privacy: z.enum(PrivacyType),

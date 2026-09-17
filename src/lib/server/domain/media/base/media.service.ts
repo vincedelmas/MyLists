@@ -185,7 +185,11 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         const newState = repository.updateUserMediaDetails(userId, mediaId, completeNewData);
         const delta = calculateDeltaStats(oldState, newState, media);
 
-        return { media, delta, newState, logPayload };
+        const statusLogPayload = payload.type !== UpdateType.STATUS && oldState.status !== newState.status
+            ? { oldValue: oldState.status, newValue: newState.status }
+            : null;
+
+        return { media, delta, newState, logPayload, statusLogPayload };
     }
 
     async function updateUserCustomCover(userId: number, payload: UpdateUserCustomCover) {

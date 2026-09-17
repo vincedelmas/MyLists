@@ -133,6 +133,20 @@ describe("TvService", () => {
         });
 
         describe("updateHandlers", () => {
+            it.each([
+                { currentSeason: 2, currentEpisode: 12, status: Status.WATCHING },
+                { currentSeason: 3, currentEpisode: 7, status: Status.WATCHING },
+                { currentSeason: 3, currentEpisode: 24, status: Status.COMPLETED },
+            ])("completes only the final listed season and episode: $currentSeason/$currentEpisode", ({ currentSeason, currentEpisode, status }) => {
+                const current = makeState({ status: Status.WATCHING, currentSeason: 1, currentEpisode: 4, total: 4 });
+                const [next, log] = tvService.updateEpsSeasonsHandler(current, { currentSeason, currentEpisode }, { ...baseTv, prodStatus: "Returning Series" });
+
+                expect(next).toMatchObject({ currentSeason, currentEpisode, status });
+                expect(log).toEqual({ oldValue: [1, 4], newValue: [currentSeason, currentEpisode] });
+                expect(next.total).toBe(epsPerSeasonMock.filter(s => s.season < currentSeason)
+                    .reduce((sum, s) => sum + s.episodes, 0) + currentEpisode);
+            });
+
             it.each([Status.PLAN_TO_WATCH, Status.RANDOM])("counts the first episode when moving from %s to Watching", (status) => {
                 const current = makeUserState({ status, currentSeason: 1, currentEpisode: 0, total: 0 });
                 const [next] = tvService.updateStatusHandler(current, { status: Status.WATCHING }, baseTv);

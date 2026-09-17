@@ -53,10 +53,9 @@ export const getUserProfile = createServerFn({ method: "GET" })
         const targetUserId = user.id;
         const container = await getContainer();
         const socialService = container.services.social;
-        const statsService = container.services.stats;
         const profileService = container.services.profile;
-        const updateHistoryService = container.services.updateHistory;
         const achievementsService = container.services.achievements;
+        const updateHistoryService = container.services.updateHistory;
 
         if (currentUser && currentUser.id !== targetUserId) {
             await profileService.incrementProfileView(targetUserId);
@@ -64,22 +63,18 @@ export const getUserProfile = createServerFn({ method: "GET" })
 
         const { followsCount } = await socialService.getFollowCount(targetUserId);
         const userFollows = await socialService.getUserFollows(undefined, targetUserId);
-        const userUpdates = await updateHistoryService.getUserUpdates(targetUserId);
         const followsUpdates = await updateHistoryService.getFollowsUpdates(targetUserId, toActor(currentUser));
-        const mediaGlobalSummary = await statsService.userPreComputedStatsSummary(targetUserId);
-        const perMediaSummary = await statsService.userPerMediaSummaryStats(targetUserId);
         const highlightedMedia = await profileService.resolveHighlightedMedia(targetUserId);
+        const showContinue = await profileService.getContinueVisibility(targetUserId);
         const achievements = await achievementsService.getAchievementsDetails(targetUserId);
 
         return {
-            userUpdates,
             userFollows,
             achievements,
             followsCount,
             followsUpdates,
-            perMediaSummary,
             highlightedMedia,
-            mediaGlobalSummary,
+            showContinue,
             userData: {
                 id: user.id,
                 name: user.name,
@@ -88,12 +83,37 @@ export const getUserProfile = createServerFn({ method: "GET" })
                 createdAt: user.createdAt,
                 ratingSystem: user.ratingSystem,
                 backgroundImage: user.backgroundImage,
-                userMediaSettings: getPublishedMediaSettings(user.userMediaSettings).map(({ mediaType, timeSpent, active }) => ({
+            },
+        };
+    });
+
+
+export const getUserRecentFeed = createServerFn({ method: "GET" })
+    .middleware([contentAuthorizationMiddleware])
+    .handler(async ({ context: { user } }) => {
+        const container = await getContainer();
+        return container.services.updateHistory.getUserUpdates(user.id);
+    });
+
+
+export const getUserProfileSummary = createServerFn({ method: "GET" })
+    .middleware([contentAuthorizationMiddleware])
+    .handler(async ({ context: { user } }) => {
+        const container = await getContainer();
+        const [mediaGlobalSummary, perMediaSummary] = await Promise.all([
+            container.services.stats.userPreComputedStatsSummary(user.id),
+            container.services.stats.userPerMediaSummaryStats(user.id),
+        ]);
+
+        return {
+            perMediaSummary,
+            mediaGlobalSummary,
+            userMediaSettings: getPublishedMediaSettings(user.userMediaSettings)
+                .map(({ active, mediaType, timeSpent }) => ({
                     active,
                     mediaType,
                     timeSpent,
                 })),
-            },
         };
     });
 

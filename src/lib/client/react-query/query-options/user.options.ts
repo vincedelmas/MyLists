@@ -6,7 +6,16 @@ import {getPlatformStats} from "@/lib/server/functions/platform-stats";
 import {getUserAchievements} from "@/lib/server/functions/user-achievements";
 import {getProfileCustomSearch, getProfileCustomSettings} from "@/lib/server/functions/user-settings";
 import {HallOfFameSearch, highlightedMediaSearchSchema, SimpleSearch, StatsActiveTab} from "@/lib/schemas";
-import {getAllUpdatesHistory, getRandomPublicProfile, getUserProfile, getUserProfileHeader, getUsersFollowers, getUsersFollows} from "@/lib/server/functions/user-profile";
+import {
+    getAllUpdatesHistory,
+    getRandomPublicProfile,
+    getUserProfile,
+    getUserProfileHeader,
+    getUserProfileSummary,
+    getUserRecentFeed,
+    getUsersFollowers,
+    getUsersFollows
+} from "@/lib/server/functions/user-profile";
 
 
 export const profileHeaderOptions = (username: string) => queryOptions({
@@ -18,6 +27,18 @@ export const profileHeaderOptions = (username: string) => queryOptions({
 export const profileOptions = (username: string) => queryOptions({
     queryKey: ["profile", username],
     queryFn: () => getUserProfile({ data: { username } }),
+});
+
+
+export const profileRecentFeedOptions = (username: string) => queryOptions({
+    queryKey: ["profile", "recent-feed", username],
+    queryFn: () => getUserRecentFeed({ data: { username } }),
+});
+
+
+export const profileSummaryOptions = (username: string) => queryOptions({
+    queryKey: ["profile", "summary", username],
+    queryFn: () => getUserProfileSummary({ data: { username } }),
 });
 
 

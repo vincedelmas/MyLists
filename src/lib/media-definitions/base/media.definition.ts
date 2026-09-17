@@ -1,4 +1,5 @@
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import type {ContinueDefinition} from "@/lib/media-definitions/base/continue.definition";
 
 
 type MediaProgressTiming =
@@ -60,6 +61,7 @@ export type MediaDefinition<TMediaType extends MediaType = MediaType> = Readonly
     statuses: readonly Status[];
     statistics: MediaStatsDefinition;
     progress: MediaProgressDefinition;
+    continue: ContinueDefinition<TMediaType> | (TMediaType extends typeof MediaType.MOVIES ? null : never);
     identity: Readonly<{
         mediaType: TMediaType;
     }>;
@@ -75,6 +77,6 @@ export type MediaDefinition<TMediaType extends MediaType = MediaType> = Readonly
 }>;
 
 
-export const defineMediaDefinition = <const TDefinition extends MediaDefinition>(definition: TDefinition) => {
+export const defineMediaDefinition = <const TDefinition extends { [T in MediaType]: MediaDefinition<T> }[MediaType]>(definition: TDefinition) => {
     return definition;
 };

@@ -6,6 +6,7 @@ export const MOVIES_FALLBACK_DURATION = 100;
 
 
 export const moviesDefinition = defineMediaDefinition({
+    continue: null,
     statuses: [Status.COMPLETED, Status.PLAN_TO_WATCH],
     identity: {
         mediaType: MediaType.MOVIES,

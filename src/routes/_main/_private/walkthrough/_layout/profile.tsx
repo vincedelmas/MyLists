@@ -3,13 +3,13 @@ import {MediaType} from "@/lib/utils/enums";
 import {createFileRoute} from "@tanstack/react-router";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
+import {Activity, ArrowUp10, Award, LayoutGrid, User} from "lucide-react";
 import {OverviewTab} from "@/lib/client/components/user-profile/OverviewTab";
 import {MediaLevels} from "@/lib/client/components/user-profile/MediaLevels";
 import {MediaStatsTab} from "@/lib/client/components/user-profile/MediaStatsTab";
 import {AchievementsCard} from "@/lib/client/components/user-profile/AchievementCard";
 import {createMediaTabItems} from "@/lib/client/components/general/media-type-options";
 import {FollowsUpdates, UserUpdates} from "@/lib/client/components/user-profile/UserUpdates";
-import {Activity, ArrowUp10, Award, LayoutGrid, User} from "lucide-react";
 import {ONBOARDING_PROFILE_NAME, onboardingProfileFixture} from "@/lib/client/components/onboarding/onboarding-fixtures";
 import {OnboardingContainer, OnboardingDemoBox, OnboardingNote, OnboardingSection, OnboardingSubSection} from "@/lib/client/components/onboarding/OnBoardingShared";
 
@@ -102,6 +102,9 @@ function ProfileOnboarding() {
                         <div className="min-h-113 animate-in fade-in duration-300">
                             {effectiveActiveTab === "overview" ?
                                 <OverviewTab
+                                    showContinue
+                                    isCurrent={false}
+                                    inProgressMedia={[]}
                                     perMedia={apiData.perMediaSummary}
                                     globalStats={apiData.mediaGlobalSummary}
                                     ratingSystem={apiData.userData.ratingSystem}

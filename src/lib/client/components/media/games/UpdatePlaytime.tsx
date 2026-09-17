@@ -65,6 +65,7 @@ export const UpdatePlaytime = ({ playtimeInMin, updatePlaytime }: UpdatePlaytime
                 value={currentValue}
                 max={maxPlaytimeHours}
                 onKeyDown={handleOnKeyDown}
+                aria-label="Playtime (hours)"
                 className="w-34 h-7 rounded-md"
                 disabled={updatePlaytime.isPending}
                 onBlur={() => validateAndMutate()}

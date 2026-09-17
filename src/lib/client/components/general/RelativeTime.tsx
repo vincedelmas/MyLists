@@ -8,13 +8,14 @@ interface RelativeTimeProps {
     prefix?: string;
     className?: string;
     date: string | number | null | undefined;
+    formatOptions?: Intl.RelativeTimeFormatOptions;
 }
 
 
-export function RelativeTime({ date, className, prefix }: RelativeTimeProps) {
+export function RelativeTime({ date, className, prefix, formatOptions }: RelativeTimeProps) {
     const dateTime = formatDateTime(date);
-    const relativeTime = formatRelativeTime(date);
     const dateTimeAttribute = toDateTimeAttribute(date);
+    const relativeTime = formatRelativeTime(date, formatOptions);
 
     return (
         <Popover>

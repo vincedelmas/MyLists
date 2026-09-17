@@ -29,6 +29,14 @@ describe.each([
 
 
 describe("user media schemas", () => {
+    it("accepts a complete TV position in one update while rejecting unrelated combined fields", () => {
+        const parse = (payload: unknown) => updateUserMediaSchema.safeParse({ mediaType: MediaType.ANIME, mediaId: 1, payload });
+        expect(parse({ type: UpdateType.TV, currentSeason: 2, currentEpisode: 12 }).success).toBe(true);
+        expect(parse({ type: UpdateType.TV, currentSeason: 2, currentEpisode: 12, rating: 8 }).success).toBe(false);
+        expect(parse({ type: UpdateType.TV, currentSeason: 2, actualPage: 12 }).success).toBe(false);
+        expect(parse({ type: UpdateType.TV }).success).toBe(false);
+    });
+
     it("rejects incompatible statuses when adding media to a list", () => {
         const result = addMediaToListSchema.safeParse({
             mediaId: 1,

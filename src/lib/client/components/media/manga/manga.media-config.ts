@@ -1,7 +1,7 @@
-import {MediaType} from "@/lib/utils/enums";
 import {XLineTop} from "lucide-react";
-import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {MediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {MangaListItem} from "@/lib/client/components/media/manga/MangaListItem";
 import {MangaInfoGrid} from "@/lib/client/components/media/manga/MangaInfoGrid";
 import {MangaOverTitle} from "@/lib/client/components/media/manga/MangaOverTitle";
@@ -11,6 +11,7 @@ import {MangaUnderTitle} from "@/lib/client/components/media/manga/MangaUnderTit
 import {getMangaColumns} from "@/lib/client/components/media/manga/MangaListColumns";
 import {MangaUserDetails} from "@/lib/client/components/media/manga/MangaUserDetails";
 import {getMangaActiveFilters} from "@/lib/client/components/media/manga/MangaActiveFilters";
+import {getMangaContinueProgress} from "@/lib/client/components/media/manga/continue-progress";
 
 
 export const mangaMediaConfig = defineMediaConfig({
@@ -23,6 +24,9 @@ export const mangaMediaConfig = defineMediaConfig({
     mediaListColumns: getMangaColumns,
     mediaUserDetails: MangaUserDetails,
     sheetFilters: getMangaActiveFilters,
+    continue: {
+        getProgress: getMangaContinueProgress,
+    },
     communityActivity: {
         countLabel: "Read",
         extraLabel: "Rereads",

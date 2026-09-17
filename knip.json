@@ -27,6 +27,9 @@
     "ignoreFiles": [
         "src/lib/client/components/user-profile/**"
     ],
+    "ignoreBinaries": [
+        "flock"
+    ],
     "ignoreIssues": {
         "src/lib/client/components/ui/**": [
             "exports"

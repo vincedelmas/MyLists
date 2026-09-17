@@ -6,6 +6,7 @@ import type {SheetFilterObject} from "@/lib/types/media-list.types";
 import type {ApiProviderType, MediaType, Status} from "@/lib/utils/enums";
 import type {mediaListOptions} from "@/lib/client/react-query/query-options";
 import type {MediaCommunityActivityStats} from "@/lib/types/user-media.types";
+import type {ContinueConfig} from "@/lib/client/components/continue/continue.types";
 import type {AdvancedSearchFilterDefinition} from "@/lib/types/advanced-search.types";
 import type {ColumnConfigProps} from "@/lib/client/components/media/base/BaseListTable";
 import type {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
@@ -72,6 +73,7 @@ export interface MediaClientConfig<T extends MediaType> {
     extraSections?: ComponentType<MediaDetailsProps<T>>;
     mediaFollowCard: ComponentType<MediaFollowCardProps<T>>;
     mediaUserDetails: ComponentType<MediaUserDetailsProps<T>>;
+    continue: ContinueConfig<T> | (T extends typeof MediaType.MOVIES ? null : never);
     mediaListColumns: (props: ColumnConfigProps) => ColumnDef<typeof mediaTableFeatures, ExtractListByType<T>>[];
     communityActivity: {
         countLabel: string;

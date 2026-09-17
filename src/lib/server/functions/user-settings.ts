@@ -5,20 +5,20 @@ import {createServerFn} from "@tanstack/react-start";
 import {user} from "@/lib/server/database/schema/index";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
+import {ValidationError} from "@/lib/utils/error-classes";
 import {clearAdminCookie} from "@/lib/server/core/admin-auth";
 import {getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {saveUploadedImage} from "@/lib/server/core/images/image-saver";
-import {ValidationError} from "@/lib/utils/error-classes";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     downloadListAsCsvSchema,
     generalSettingsSchema,
     highlightedMediaSearchSchema,
-    highlightedMediaSettingsSchema,
     mediaListSettingsSchema,
     PasswordSettingsForm,
-    passwordSettingsSchema
+    passwordSettingsSchema,
+    profileCustomizationSettingsSchema
 } from "@/lib/schemas/user-settings.schema";
 
 
@@ -93,12 +93,13 @@ export const getProfileCustomSettings = createServerFn({ method: "GET" })
     .handler(async ({ context: { currentUser } }) => {
         const profileService = await getContainer().then((c) => c.services.profile);
 
-        const [previews, settings] = await Promise.all([
+        const [previews, settings, showContinue] = await Promise.all([
             profileService.resolveHighlightedMedia(currentUser.id),
             profileService.getHighlightedMediaSettings(currentUser.id),
+            profileService.getContinueVisibility(currentUser.id),
         ]);
 
-        return { previews, settings };
+        return { previews, settings: { ...settings, showContinue } };
     });
 
 
@@ -113,10 +114,10 @@ export const getProfileCustomSearch = createServerFn({ method: "GET" })
 
 export const postProfileCustomSettings = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .validator(highlightedMediaSettingsSchema)
+    .validator(profileCustomizationSettingsSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const profileService = await getContainer().then((c) => c.services.profile);
-        return profileService.saveHighlightedMediaSettings(currentUser.id, data);
+        return profileService.saveProfileCustomSettings(currentUser.id, data);
     });
 
 

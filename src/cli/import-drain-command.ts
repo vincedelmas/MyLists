@@ -6,8 +6,8 @@ export const runImportDrainCommand = async (databaseUrl: string) => {
     const lockFd = openSync(`${realpathSync(databaseUrl)}.import.lock`, "a", 0o600);
 
     try {
-        // flock operates on a duplicate of our open file description. The lock
-        // stays held by lockFd after flock exits, until we close it or this process dies.
+        // flock operates on duplicate of open file desc.
+        // Lock held by lockFd after flock exits until we close it or process dies.
         const lock = spawnSync("flock", ["--exclusive", "--nonblock", "--conflict-exit-code", "75", "3"], {
             stdio: ["ignore", "ignore", "pipe", lockFd],
         });
@@ -20,8 +20,10 @@ export const runImportDrainCommand = async (databaseUrl: string) => {
             import("@/lib/server/domain/imports/import-drain"),
             import("@/lib/server/core/logger"),
         ]);
+
         const container = await getContainer();
-        // Exclusive ownership proves that no previous processor is still running.
+
+        // Exclusive ownership proves that no previous processor is still running
         container.services.importProcessor.requeueInterruptedJobs();
         const result = await drainImportJobs(container.services.importProcessor);
 

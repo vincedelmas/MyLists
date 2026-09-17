@@ -2,10 +2,12 @@ import {UpdateUserMedia} from "@/lib/schemas";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {StatsService} from "@/lib/server/domain/stats/stats.service";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {UpdateHistoryService} from "@/lib/server/domain/tracking/update-history.service";
 import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
 import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
+import {ContinueMediaType, getContinueItem} from "@/lib/server/domain/continue/continue.repository";
 
 
 type MediaAction = {
@@ -55,7 +57,7 @@ export class MediaTrackingService {
             }
 
             const mediaService = this.mediaServiceRegistry.get(mediaType);
-            const { newState, media, delta, logPayload } = mediaService.updateUserMediaDetails(userId, mediaId, mediaPayload);
+            const { newState, media, delta, logPayload, statusLogPayload } = mediaService.updateUserMediaDetails(userId, mediaId, mediaPayload);
 
             this.statsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
             this.activityService.logActivityFromDelta({
@@ -64,7 +66,7 @@ export class MediaTrackingService {
                 mediaId,
                 mediaType,
                 activityDate: timestamp,
-                updateType: mediaPayload.type,
+                updateType: statusLogPayload ? UpdateType.STATUS : mediaPayload.type,
             });
 
             if (logPayload) {
@@ -78,7 +80,38 @@ export class MediaTrackingService {
                 });
             }
 
+            if (statusLogPayload) {
+                this.updateHistoryService.logUpdate({
+                    media,
+                    userId,
+                    mediaType,
+                    timestamp,
+                    updateType: UpdateType.STATUS,
+                    payload: { old_value: statusLogPayload.oldValue, new_value: statusLogPayload.newValue },
+                });
+            }
+
             return newState;
+        });
+    }
+
+    continueUserMedia({ userId, mediaType, mediaId }: MediaAction & { mediaType: ContinueMediaType }) {
+        return withTransaction(() => {
+            const item = getContinueItem(userId, mediaType, mediaId);
+            const definition = getMediaDefinition(mediaType).continue;
+
+            // Stale card must not restart title that was completed, paused, or removed elsewhere
+            if (!item || item.status !== definition.status) {
+                return { item: null, completed: false };
+            }
+
+            const payload = definition.getUpdate(item);
+            if (!payload) return { item, completed: false };
+
+            const state = this.updateUserMedia({ userId, mediaType, mediaId, payload });
+            const completed = state.status === Status.COMPLETED;
+
+            return { item: completed ? null : getContinueItem(userId, mediaType, mediaId), completed };
         });
     }
 

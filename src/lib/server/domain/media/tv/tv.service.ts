@@ -177,7 +177,7 @@ export function createTvService(repository: TvRepository, definition: TvDefiniti
         const season = seasons.find(season => season.season === seasonNumber);
         if (!season) throw new FormattedError("Invalid season number");
 
-        const episode = payload.currentSeason !== undefined ? 1 : payload.currentEpisode!;
+        const episode = payload.currentEpisode ?? 1;
         if (episode > season.episodes) throw new FormattedError("Invalid episode");
 
         const watched = seasons
@@ -186,8 +186,17 @@ export function createTvService(repository: TvRepository, definition: TvDefiniti
 
         const { redoEpisodes } = getTvSeasonTotals(repository.getUserSeasons(currentState.userId, media.id));
 
+        const lastSeason = seasons.at(-1)!;
+        const completed = seasonNumber === lastSeason.season && episode > 0 && episode === lastSeason.episodes;
+
         return [
-            { ...currentState, currentEpisode: episode, currentSeason: seasonNumber, total: watched + redoEpisodes },
+            {
+                ...currentState,
+                currentEpisode: episode,
+                currentSeason: seasonNumber,
+                total: watched + redoEpisodes,
+                status: completed ? Status.COMPLETED : currentState.status,
+            },
             { oldValue: [currentState.currentSeason, currentState.currentEpisode], newValue: [seasonNumber, episode] },
         ];
     }

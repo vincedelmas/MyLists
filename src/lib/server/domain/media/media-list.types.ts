@@ -9,7 +9,7 @@ type TListByType = {
     [MediaType.MOVIES]: typeof moviesList.$inferSelect;
     [MediaType.GAMES]: typeof gamesList.$inferSelect;
     [MediaType.BOOKS]: typeof booksList.$inferSelect & { pages: number };
-    [MediaType.MANGA]: typeof mangaList.$inferSelect & { chapters: number };
+    [MediaType.MANGA]: typeof mangaList.$inferSelect & { chapters: number | null };
 };
 
 

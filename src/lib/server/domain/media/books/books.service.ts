@@ -1,21 +1,22 @@
-import {pick, uniqueBy} from "@/lib/utils/arrays-objects";
 import {notFound} from "@tanstack/react-router";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {LogPayload} from "@/lib/types/user-updates.types";
+import {pick, uniqueBy} from "@/lib/utils/arrays-objects";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {createMediaService} from "@/lib/server/domain/media/base/media.service";
 import {Book, BooksList} from "@/lib/server/domain/media/books/books.types";
-import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
+import {createMediaService} from "@/lib/server/domain/media/base/media.service";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {PagePayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
-import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
+import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
+import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
 
 
 export function createBooksService(repository: BooksRepository, definition: BookServerDefinition = booksServerDefinition) {
     const { identity, service: servicePolicy } = definition;
     const editPayloadSchema = createMediaEditPayloadSchema(identity.mediaType, servicePolicy.editableFields);
+
     const service = createMediaService(repository, definition, {
         [UpdateType.PAGE]: updatePageHandler,
         [UpdateType.REDO]: updateRedoHandler,
@@ -156,12 +157,17 @@ description: ${book.synopsis}
             throw new FormattedError("Invalid page");
         }
 
-        const newState = { ...currentState, actualPage: payload.actualPage };
-        const logPayload = { oldValue: currentState.actualPage, newValue: payload.actualPage };
+        const newState = {
+            ...currentState,
+            actualPage: payload.actualPage,
+            status: media.pages > 0 && payload.actualPage === media.pages
+                ? Status.COMPLETED
+                : currentState.status,
+        };
 
         newState.total = payload.actualPage + (currentState.redo * media.pages);
 
-        return [newState, logPayload];
+        return [newState, { oldValue: currentState.actualPage, newValue: payload.actualPage }];
     }
 
     return {

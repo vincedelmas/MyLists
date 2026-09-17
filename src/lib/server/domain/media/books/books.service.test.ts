@@ -109,6 +109,17 @@ describe("BooksService", () => {
     });
 
     describe("updateHandlers", () => {
+        it("completes the last page while counting a reread only once", () => {
+            const current = makeUserState({ status: Status.READING, actualPage: 95, total: 195, redo: 1 });
+            const [next, log] = booksService.updatePageHandler(current, { actualPage: 100 }, baseBook);
+            expect(next).toMatchObject({ status: Status.COMPLETED, actualPage: 100, total: 200, redo: 1 });
+            expect(log).toEqual({ oldValue: 95, newValue: 100 });
+            expect(booksService.calculateDeltaStats(current, next, baseBook)).toMatchObject({
+                totalSpecific: 5,
+                statusCounts: { [Status.READING]: -1, [Status.COMPLETED]: 1 },
+            });
+        });
+
         it("updateStatusHandler: PTR -> COMPLETED add total and actualPage", () => {
             const current = makeState({ status: Status.PLAN_TO_READ, total: 0, actualPage: 0 });
             const [next, log] = booksService.updateStatusHandler(current, { status: Status.COMPLETED }, baseBook);

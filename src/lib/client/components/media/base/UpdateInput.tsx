@@ -64,6 +64,7 @@ export const UpdateInput = ({ total, initValue, updateInput, payloadName, update
                 onKeyDown={handleOnKeyDown}
                 disabled={updateInput.isPending}
                 onChange={(ev) => setCurrentValue(ev.target.value)}
+                aria-label={payloadName === "actualPage" ? "Current page" : "Current chapter"}
             />
             <InputGroupAddon align="inline-end">
                 {" "}/{" "}{total ?? "?"}

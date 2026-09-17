@@ -18,16 +18,16 @@ export const ALL_MEDIA_TYPES = [
 ] as const satisfies readonly MediaType[];
 
 
-const mediaDefinitions = {
+const mediaDefinitions: { [T in MediaType]: MediaDefinition<T> } = {
     [MediaType.SERIES]: seriesDefinition,
     [MediaType.ANIME]: animeDefinition,
     [MediaType.MOVIES]: moviesDefinition,
     [MediaType.GAMES]: gamesDefinition,
     [MediaType.BOOKS]: booksDefinition,
     [MediaType.MANGA]: mangaDefinition,
-} as const satisfies Record<MediaType, MediaDefinition>;
+};
 
 
-export const getMediaDefinition = (mediaType: MediaType): MediaDefinition => {
+export const getMediaDefinition = <T extends MediaType>(mediaType: T): MediaDefinition<T> => {
     return mediaDefinitions[mediaType];
 };

@@ -1,11 +1,25 @@
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {defineMediaDefinition} from "@/lib/media-definitions/base/media.definition";
+import type {ContinueStateByType} from "@/lib/media-definitions/base/continue.definition";
+import {ApiProviderType, JobType, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 
 
 export const MANGA_FIXED_DURATION_MIN = 7;
 
 
 export const mangaDefinition = defineMediaDefinition({
+    continue: {
+        status: Status.READING,
+        getUpdate: (state: ContinueStateByType[typeof MediaType.MANGA]) => {
+            const nextChapter = Math.min(state.currentChapter + 1, state.chapters || PROGRESS_MAX, PROGRESS_MAX);
+            if (nextChapter > state.currentChapter) {
+                return { type: UpdateType.CHAPTER, currentChapter: nextChapter };
+            }
+            return state.chapters && state.currentChapter === state.chapters
+                ? { type: UpdateType.STATUS, status: Status.COMPLETED }
+                : null;
+        },
+    },
     statuses: [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ],
     identity: {
         mediaType: MediaType.MANGA,

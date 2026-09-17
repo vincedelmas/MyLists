@@ -16,6 +16,7 @@ import {TvExtraSections} from "@/lib/client/components/media/tv/TvExtraSections"
 import {TvUpComingAlert} from "@/lib/client/components/media/tv/TvUpComingAlert";
 import {getTvActiveFilters} from "@/lib/client/components/media/tv/TvActiveFilters";
 import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
+import {getTvContinueProgress} from "@/lib/client/components/media/tv/continue-progress";
 import {defineMediaConfig, MediaStatCardDefinition} from "@/lib/client/components/media/media-config.types";
 
 
@@ -46,6 +47,9 @@ const createTvMediaConfig = <T extends TvMediaType>(mediaType: T) => defineMedia
     extraSections: TvExtraSections,
     mediaUserDetails: TvUserDetails,
     sheetFilters: getTvActiveFilters,
+    continue: {
+        getProgress: getTvContinueProgress,
+    },
     mediaListColumns: (props) => getTvColumns(props) as ColumnDef<typeof mediaTableFeatures, ExtractListByType<T>>[],
     communityActivity: {
         countLabel: "Watched",

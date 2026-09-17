@@ -17,6 +17,7 @@ import {getMoviesActiveFilters} from "@/lib/client/components/media/movies/Movie
 
 export const moviesMediaConfig = defineMediaConfig({
     mediaType: MediaType.MOVIES,
+    continue: null,
     infoGrid: MoviesInfoGrid,
     overTitle: MoviesOverTitle,
     underTitle: MoviesUnderTitle,

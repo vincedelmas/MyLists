@@ -130,6 +130,17 @@ describe("MangaService", () => {
     });
 
     describe("updateHandlers", () => {
+        it.each([null, 0, 100])("completes the final chapter only when the total is known: %s", (chapters) => {
+            const current = makeState({ status: Status.READING, currentChapter: 99, total: 99 });
+            const [next, log] = mangaService.updateChapterHandler(current, { currentChapter: 100 }, { ...baseManga, chapters });
+            expect(next.status).toBe(chapters ? Status.COMPLETED : Status.READING);
+            expect(log).toEqual({ oldValue: 99, newValue: 100 });
+        });
+
+        it("rejects progress beyond a known final chapter", () => {
+            expect(() => mangaService.updateChapterHandler(makeState({}), { currentChapter: 101 }, baseManga)).toThrow("Invalid chapter");
+        });
+
         it("updateStatusHandler: READING -> PTR should reset currentChapter", () => {
             const current = makeState({ status: Status.READING, currentChapter: 50, total: 50 });
             const [next, log] = mangaService.updateStatusHandler(current, { status: Status.PLAN_TO_READ }, baseManga);

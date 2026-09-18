@@ -83,7 +83,7 @@ describe("historical activity repair", () => {
         db.run("UPDATE user_media_monthly_activity SET month_bucket = '2026-06', last_activity_at = '2026-06-28T20:59:35.613Z', had_completion = 1");
     };
     const runCli = async (args: string[]) => {
-        const child = Bun.spawn([process.execPath, "--no-env-file", resolve("src/cli/activity-repair-command.ts"), ...args], {
+        const child = Bun.spawn([process.execPath, "--no-env-file", resolve("src/cli/index.ts"), "activity-repair", ...args], {
             cwd: directory,
             env: { PATH: process.env.PATH, DATABASE_URL: databasePath },
             stdout: "pipe", stderr: "pipe",
@@ -955,6 +955,87 @@ describe("historical activity repair", () => {
         expect(activity()).toEqual(before);
         expect(existsSync(join(directory, "activity-repair-backups"))).toBe(false);
         expect((await runCli(["--output", output])).exitCode).toBe(1);
+    });
+
+    it("CLI directly applies all evidence-only repairs without a report or IDs, backs up, and can be rerun", async () => {
+        seedCase();
+        seedCase(MediaType.GAMES);
+        seedCase(MediaType.MANGA);
+        db.run("DELETE FROM games_list");
+        db.run("DELETE FROM user_media_update WHERE media_type = 'manga'");
+        db.run("DELETE FROM user_media_stats_history WHERE media_type = 'manga'");
+        const before = activity();
+        const snapshots = db.query("SELECT * FROM user_media_stats_history").all();
+        const result = await runCli(["--evidence-only", "--apply"]);
+        expect(result, result.stderr).toMatchObject({ exitCode: 0 });
+        expect(result.stdout).toContain("APPLIED: books:1:1");
+        expect(result.stdout).toContain("APPLIED: games:1:1");
+        expect(result.stdout).not.toContain("APPLIED: manga:1:1");
+        expect(result.stdout).toContain("Username: @reader");
+        expect(result.stdout).toContain("120 pages → 100 pages");
+        expect(result.stdout).toContain("Evidence-only selection: 1 other candidates excluded");
+        expect(activity()).toMatchObject([
+            { media_type: "books", progress_gained: 100 },
+            { media_type: "manga", progress_gained: 120 },
+        ]);
+        expect(db.query("SELECT * FROM user_media_stats_history").all()).toEqual(snapshots);
+        expect(readdirSync(directory).some(file => file.endsWith(".json"))).toBe(false);
+
+        const backupDirectory = join(directory, "activity-repair-backups");
+        const files = readdirSync(backupDirectory);
+        expect(files).toHaveLength(1);
+        const backup = new Database(join(backupDirectory, files[0]), { readonly: true });
+        try {
+            expect(backup.query("PRAGMA integrity_check").get()).toEqual({ integrity_check: "ok" });
+            expect(backup.query("SELECT * FROM user_media_monthly_activity ORDER BY id").all()).toEqual(before);
+        }
+        finally { backup.close(); }
+
+        const after = activity();
+        const repeated = await runCli(["--evidence-only", "--apply"]);
+        expect(repeated, repeated.stderr).toMatchObject({ exitCode: 0 });
+        expect(repeated.stdout).toContain("No evidence-only repairs to apply. Database unchanged.");
+        expect(activity()).toEqual(after);
+        expect(readdirSync(backupDirectory).filter(file => file.endsWith(".db"))).toEqual(files);
+    });
+
+    it("CLI direct repair respects username and media type filters", async () => {
+        seedCase();
+        seedCase(MediaType.GAMES);
+        db.run("INSERT INTO user_media_monthly_activity (user_id, media_id, media_type, month_bucket, progress_gained) VALUES (2, 1, 'books', '2026-05', 999)");
+        const unaffected = db.query("SELECT * FROM user_media_monthly_activity WHERE user_id = 2 OR media_type = 'games'").all();
+        const result = await runCli(["--evidence-only", "--apply", "--username", "reader", "--media-type", "books"]);
+        expect(result, result.stderr).toMatchObject({ exitCode: 0 });
+        expect(db.query("SELECT progress_gained FROM user_media_monthly_activity WHERE user_id = 1 AND media_type = 'books'").get()).toEqual({ progress_gained: 100 });
+        expect(db.query("SELECT * FROM user_media_monthly_activity WHERE user_id = 2 OR media_type = 'games'").all()).toEqual(unaffected);
+    });
+
+    it.each(["backup", "write"])("CLI direct repair leaves the whole batch unchanged on a %s failure", async failure => {
+        seedCase();
+        seedCase(MediaType.GAMES);
+        const before = activity();
+        if (failure === "backup") {
+            writeFileSync(join(directory, "activity-repair-backups"), "Block backup directory creation");
+        }
+        else {
+            db.run("CREATE TRIGGER fail_repair BEFORE UPDATE ON user_media_monthly_activity WHEN OLD.media_type = 'games' BEGIN SELECT RAISE(ABORT, 'write failed'); END");
+        }
+        const result = await runCli(["--evidence-only", "--apply"]);
+        expect(result).toMatchObject({ exitCode: 1 });
+        expect(activity()).toEqual(before);
+    });
+
+    it.each([
+        ["--apply"],
+        ["--select", "books:1:1"],
+        ["--evidence-only", "--apply", "--select", "books:1:1"],
+        ["--evidence-only", "--apply", "--output", "unused.json"],
+    ])("CLI rejects incompatible direct repair arguments %j", async (...args) => {
+        seedCase();
+        const before = activity();
+        expect((await runCli(args)).exitCode).toBe(1);
+        expect(activity()).toEqual(before);
+        expect(existsSync(join(directory, "activity-repair-backups"))).toBe(false);
     });
 
     it("CLI evidence-only reports preserve applicable history and orphan proposals while excluding estimated corrections", async () => {

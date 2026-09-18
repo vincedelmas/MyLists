@@ -5,6 +5,7 @@ import {logger} from "@/lib/server/core/logger";
 import {runTask} from "@/lib/server/tasks/task-runner";
 import {getAllTasks} from "@/lib/server/tasks/registry";
 import {runImportDrainCommand} from "@/cli/import-drain-command";
+import {createActivityRepairCommand} from "@/cli/activity-repair-command";
 import {installProcessErrorHandlers} from "@/lib/server/core/process-errors";
 
 
@@ -18,6 +19,8 @@ program
     .description("CLI for MyLists")
     .version("1.0.0");
 
+
+program.addCommand(createActivityRepairCommand());
 
 const tasks = getAllTasks();
 

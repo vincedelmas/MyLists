@@ -45,4 +45,17 @@ if (process.argv.length === 3 && process.argv[2] === "import-drain") {
 }
 
 
-await import("./commands");
+if (process.argv[2] === "activity-repair") {
+    // Keep repair audits independent of the application's writable DB and services.
+    try {
+        const { createActivityRepairCommand } = await import("./activity-repair-command");
+        await createActivityRepairCommand().parseAsync(process.argv.slice(3), { from: "user" });
+    }
+    catch (error) {
+        console.error(error instanceof Error ? error.message : error);
+        process.exitCode = 1;
+    }
+}
+else {
+    await import("./commands");
+}

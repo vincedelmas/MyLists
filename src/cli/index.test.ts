@@ -8,7 +8,7 @@ import {existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync} 
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 
 
-describe("CLI import queue preflight", () => {
+describe("CLI entry point", () => {
     let directory: string;
     let databasePath: string;
     let sqlite: Database;
@@ -61,6 +61,27 @@ describe("CLI import queue preflight", () => {
         ]);
         return { exitCode, stdout, stderr };
     };
+
+    it("shows activity repair help without an application environment or database", async () => {
+        const result = await runCli(["activity-repair", "--help"], false, { DATABASE_URL: undefined });
+        expect(result).toMatchObject({ exitCode: 0, stderr: "" });
+        expect(result.stdout).toContain("Usage: activity-repair");
+        expect(result.stdout).toContain("--evidence-only");
+        expect(result.stdout).toContain("--apply [file.json]");
+    });
+
+    it("lists activity repair in the main CLI help", async () => {
+        const result = await runCli(["--help"], true);
+        expect(result, result.stderr).toMatchObject({ exitCode: 0 });
+        expect(result.stdout).toContain("activity-repair [options]");
+    });
+
+    it("rejects unknown repair options without loading application services", async () => {
+        const result = await runCli(["activity-repair", "--unknown-option"], false, { DATABASE_URL: undefined });
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain("unknown option");
+        expect(result.stderr).not.toContain("Invalid environment variables");
+    });
 
     it("exits quietly on an empty queue without loading application environment validation", async () => {
         // No application secrets are provided. Loading the full CLI would fail.

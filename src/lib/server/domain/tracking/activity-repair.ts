@@ -14,7 +14,7 @@ const legacyRedoBefore = migrationJournal.entries.find(entry => entry.tag === "0
 const rapidCompletionUndoMs = 5 * 60 * 1000;
 
 
-type RepairFilters = { username?: string; mediaType?: MediaType };
+type RepairFilters = { username?: string; mediaType?: MediaType; evidenceOnly?: boolean };
 
 type Candidate = {
     userId: number;
@@ -91,6 +91,7 @@ export type ActivityRepairEntry = Candidate & {
 export type ActivityRepairAudit = {
     entries: ActivityRepairEntry[];
     scannedTitles: number;
+    excludedCandidates?: number;
 };
 
 
@@ -122,7 +123,7 @@ export function auditActivityRepair(db: Database, filters: RepairFilters = {}): 
     const candidates = totals.filter(row => row.currentProgress === null
         || row.recordedProgress > row.currentProgress || row.recordedRedo > row.currentRedo! || row.malformedMonths > 0
         || (row.currentProgress === 0 && row.currentStatus !== Status.COMPLETED && row.recordedCompletions > 0));
-    if (candidates.length === 0) return { scannedTitles: totals.length, entries: [] };
+    if (candidates.length === 0) return { scannedTitles: totals.length, entries: [], excludedCandidates: filters.evidenceOnly ? 0 : undefined };
 
     // LAG must see all titles for each user/type: snapshots contain LIST totals, not title totals.
     const snapshots = db.query<Snapshot, []>(`
@@ -532,7 +533,16 @@ export function auditActivityRepair(db: Database, filters: RepairFilters = {}): 
         };
     });
 
-    return { scannedTitles: totals.length, entries };
+    const included = filters.evidenceOnly ? entries.filter(entry => entry.disposition === "proposal" && (
+        entry.repairKind === "orphan"
+        || (entry.repairKind === "history" && entry.historyIssues.length === 0 && entry.allocations.length === 0)
+    )) : entries;
+
+    return {
+        scannedTitles: totals.length,
+        entries: included,
+        excludedCandidates: filters.evidenceOnly ? entries.length - included.length : undefined,
+    };
 }
 
 

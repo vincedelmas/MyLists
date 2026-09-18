@@ -41,14 +41,14 @@ function renderReport(audit: ActivityRepairAudit, databasePath: string, applied 
         applied ? "APPLIED ACTIVITY REPAIRS" : "ACTIVITY REPAIR — DRY RUN (database unchanged)",
         `Database: ${databasePath}`,
         `${audit.scannedTitles} titles checked; ${proposals.length} selectable proposals; ${review.length} review-only candidates.`,
-        ...(excludedCandidates === undefined ? [] : [`Evidence-only selection: ${excludedCandidates} other candidates excluded from this report and saved plan.`]),
+        ...(excludedCandidates === undefined ? [] : [`Evidence-only selection: ${excludedCandidates} other candidates excluded.`]),
         "All six media types are checked. Games use stored minutes; dates and month boundaries are UTC.",
         includesEstimates
             ? "Policy: this report includes estimated reductions to current list totals. These assume the list is authoritative; they do not establish past user intent."
             : "Policy: historical corrections supported by retained evidence and orphaned activity cleanup. No estimated list ceiling corrections are included.",
         includesEstimates
             ? "Use historical evidence where available, then remove remaining excess from the earliest recorded months. Estimated allocations are labeled."
-            : "Historical evidence includes exact completion undo sequences within five minutes. Review the proposed months and reductions before applying.",
+            : "Historical evidence includes exact completion undo sequences within five minutes.",
         "Only monthly activity changes. Visibility and dates on surviving rows, lists and update history are preserved.",
         includesEstimates
             ? "Orphaned and emptied rows are deleted. Zero totals on a non-Completed list entry clear completion flags; quick undos can also clear them."
@@ -118,24 +118,33 @@ function renderReport(audit: ActivityRepairAudit, databasePath: string, applied 
 }
 
 
-export async function runActivityRepairCommand(argv: string[]) {
-    const program = new Command()
-        .name("activity:repair")
-        .description("Audit historical activity overcounts; apply only explicitly selected, saved proposals.")
+export function createActivityRepairCommand() {
+    return new Command()
+        .name("activity-repair")
+        .description("Audit historical activity, or apply all evidence-only repairs with an automatic backup.")
         .option("--db <path>", "SQLite database path (defaults to DATABASE_URL)")
         .option("--username <name>", "Audit one exact username")
         .addOption(new Option("--media-type <type>", "Audit one media type").choices(Object.values(MediaType)))
         .option("--evidence-only", "Include only historical corrections without history limitations or estimates, and orphan cleanup")
         .option("--output <file.json>", "Save the review plan as JSON and a readable .txt report; refuses to overwrite files")
-        .option("--apply <file.json>", "Apply proposals from a previously saved report")
+        .option("--apply [file.json]", "Apply all evidence-only repairs directly, or selected proposals from a saved report")
         .option("--select <ids>", "Comma-separated proposal IDs to apply, e.g. books:131:3514")
         .action(options => {
-            if (Boolean(options.apply) !== Boolean(options.select)) {
+            const directApply = options.apply === true;
+            if (directApply && !options.evidenceOnly) {
+                throw new Error("Use --evidence-only --apply to apply qualifying repairs directly.");
+            }
+            if (directApply && options.select) {
+                throw new Error("Direct evidence-only repair automatically selects all qualifying entries; omit --select.");
+            }
+            if (!directApply && Boolean(options.apply) !== Boolean(options.select)) {
                 throw new Error("Applying requires both --apply <report.json> and --select <proposal IDs>.");
             }
-
-            if (options.apply && (options.username || options.mediaType || options.evidenceOnly || options.output)) {
-                throw new Error("Use --username, --media-type, --evidence-only and --output while auditing; apply only the IDs selected from that report.");
+            if (options.apply && options.output) {
+                throw new Error("Use --output for a dry run; applied changes are printed to the terminal.");
+            }
+            if (!directApply && options.apply && (options.username || options.mediaType || options.evidenceOnly)) {
+                throw new Error("Use audit filters when creating the saved report, or use --evidence-only --apply without a report.");
             }
 
             const configuredPath = options.db ?? process.env.DATABASE_URL;
@@ -149,33 +158,35 @@ export async function runActivityRepairCommand(argv: string[]) {
                 db.run("PRAGMA foreign_keys = ON");
 
                 if (options.apply) {
-                    const saved = savedReportSchema.parse(JSON.parse(readFileSync(resolve(options.apply), "utf8")));
-                    if (saved.databasePath !== databasePath) throw new Error("The report belongs to a different database. Generate a report for this database first.");
-                    const selectedIds = options.select.split(",").map((id: string) => id.trim());
+                    const saved = directApply ? null : savedReportSchema.parse(JSON.parse(readFileSync(resolve(options.apply), "utf8")));
+                    if (saved && saved.databasePath !== databasePath) throw new Error("The report belongs to a different database. Generate a report for this database first.");
                     const backupDirectory = join(dirname(databasePath), "activity-repair-backups");
                     const backupPath = join(backupDirectory, `${basename(databasePath)}.${Date.now()}.${randomUUID()}.db`);
-                    const selected = applyActivityRepairs(db, saved.entries, selectedIds, () => {
-                        mkdirSync(backupDirectory, { recursive: true, mode: 0o700 });
-                        // serialize includes committed WAL pages, unlike copying the main .db file.
-                        writeFileSync(backupPath, db.serialize(), { flag: "wx", mode: 0o600, flush: true });
-                    });
-                    console.log(`Backup: ${backupPath}`);
-                    console.log(renderReport({ entries: selected, scannedTitles: selected.length }, databasePath, true));
+                    let scannedTitles = 0;
+                    let excludedCandidates: number | undefined;
+                    // Keep automatic selection, backup and writes under the same write lock.
+                    const selected = db.transaction(() => {
+                        const audit = directApply ? auditActivityRepair(db, options) : null;
+                        const entries = audit?.entries ?? saved!.entries;
+                        const selectedIds = audit ? entries.map(entry => entry.id) : options.select.split(",").map((id: string) => id.trim());
+                        scannedTitles = audit?.scannedTitles ?? selectedIds.length;
+                        excludedCandidates = audit?.excludedCandidates;
+                        if (directApply && selectedIds.length === 0) return [];
+
+                        return applyActivityRepairs(db, entries, selectedIds, () => {
+                            mkdirSync(backupDirectory, { recursive: true, mode: 0o700 });
+                            // serialize includes committed WAL pages, unlike copying the main .db file.
+                            writeFileSync(backupPath, db.serialize(), { flag: "wx", mode: 0o600, flush: true });
+                        });
+                    }).immediate();
+                    console.log(selected.length > 0 ? `Backup: ${backupPath}` : "No evidence-only repairs to apply. Database unchanged.");
+                    console.log(renderReport({ entries: selected, scannedTitles }, databasePath, true, excludedCandidates));
                 }
                 else {
                     // All reads share one snapshot even if the app is writing meanwhile.
                     const audit = db.transaction(() => auditActivityRepair(db, options))();
-                    let excludedCandidates: number | undefined;
-                    if (options.evidenceOnly) {
-                        const candidates = audit.entries.length;
-                        audit.entries = audit.entries.filter(entry => entry.disposition === "proposal" && (
-                            entry.repairKind === "orphan"
-                            || (entry.repairKind === "history" && entry.historyIssues.length === 0 && entry.allocations.length === 0)
-                        ));
-                        excludedCandidates = candidates - audit.entries.length;
-                    }
-                    const report = { version: 1, databasePath, generatedAt: new Date().toISOString(), evidenceOnly: Boolean(options.evidenceOnly), excludedCandidates, ...audit };
-                    const readable = renderReport(audit, databasePath, false, excludedCandidates);
+                    const report = { version: 1, databasePath, generatedAt: new Date().toISOString(), evidenceOnly: Boolean(options.evidenceOnly), ...audit };
+                    const readable = renderReport(audit, databasePath, false, audit.excludedCandidates);
 
                     if (options.output) {
                         const jsonPath = resolve(options.output);
@@ -195,17 +206,4 @@ export async function runActivityRepairCommand(argv: string[]) {
                 db.close();
             }
         });
-
-    await program.parseAsync(argv);
-}
-
-
-if (import.meta.main) {
-    try {
-        await runActivityRepairCommand(process.argv);
-    }
-    catch (error) {
-        console.error(error instanceof Error ? error.message : error);
-        process.exitCode = 1;
-    }
 }

@@ -1,5 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {mediaTabSearchSchema} from "@/lib/schemas";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {formatNumber} from "@/lib/utils/formatting/number";
@@ -28,18 +29,38 @@ function ComingNextPage() {
     const { activeTab } = Route.useSearch();
     const { upcomingQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(upcomingQueryOptions).data;
+
     const mediaTypes = apiData.map((next) => next.mediaType);
-    const mediaTabs = createMediaTabItems(mediaTypes, { leading: "all" });
-
-    const currentTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "all";
     const allItems = apiData.flatMap(g => g.items.map(item => ({ ...item, mediaType: g.mediaType })));
-    const filteredByTab = currentTab === "all" ? allItems : allItems.filter((item) => item.mediaType === currentTab);
 
-    const processedData = filteredByTab.filter((item) => {
+    const upcomingItems = allItems.filter((item) => {
         if (!item.date) return true;
         const days = formatCalendarRelativeDate(item.date).diffDays;
         return days === null || days >= -7;
-    }).sort((a, b) => compareCalendarDates(a.date, b.date));
+    });
+
+    const mediaTabs = createMediaTabItems(mediaTypes, { leading: "all" }).map(tab => ({
+        ...tab,
+        label: (
+            <span className="flex items-center gap-2">
+                {tab.label}
+                <Badge variant="secondary">
+                    {tab.id === "all"
+                        ? upcomingItems.length
+                        : upcomingItems.filter(item => item.mediaType === tab.id).length
+                    }
+                </Badge>
+            </span>
+        ),
+    }));
+
+    const currentTab = mediaTabs.some((tab) => tab.id === activeTab) ? activeTab : "all";
+
+    const filteredByTab = currentTab === "all"
+        ? upcomingItems
+        : upcomingItems.filter((item) => item.mediaType === currentTab);
+
+    const processedData = filteredByTab.sort((a, b) => compareCalendarDates(a.date, b.date));
 
     const sections: Record<string, (ComingNextItem & { mediaType: MediaType })[]> = {
         tba: [],
@@ -68,7 +89,6 @@ function ComingNextPage() {
             sections.later.push(item);
         }
     });
-
 
     return (
         <PageTitle title="Coming Next" onlyHelmet>

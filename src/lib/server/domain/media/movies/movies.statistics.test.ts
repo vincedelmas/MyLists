@@ -61,6 +61,30 @@ describe("MoviesStatistics", () => {
         });
     });
 
+    it("recomputes only the requested user with the same totals as the full query", () => {
+        const statistics = createMoviesStatistics();
+        const allStats = statistics.computeAllUsersStats();
+        const otherUserBefore = db.select().from(userMediaSettings).where(eq(userMediaSettings.userId, 2)).get();
+        const userStats = statistics.computeAllUsersStats([1]);
+
+        expect(userStats).toEqual(allStats.filter(stats => stats.userId === 1));
+        StatsRepository.updateAllUsersPreComputedStats(MediaType.MOVIES, userStats);
+        expect(db.select().from(userMediaSettings).where(eq(userMediaSettings.userId, 1)).get())
+            .toMatchObject({ totalEntries: 3, timeSpent: 480 });
+        expect(db.select().from(userMediaSettings).where(eq(userMediaSettings.userId, 2)).get()).toEqual(otherUserBefore);
+        expect(statistics.computeAllUsersStats([999])).toEqual([]);
+        expect(statistics.computeAllUsersStats([])).toEqual([]);
+        expect(statistics.computeAllUsersStats([1, 2])).toEqual(allStats);
+    });
+
+    it("recomputes a requested user's empty inactive list", () => {
+        db.delete(moviesList).where(eq(moviesList.userId, 2)).run();
+        const statistics = createMoviesStatistics();
+
+        expect(statistics.computeAllUsersStats([2])).toEqual(statistics.computeAllUsersStats().filter(stats => stats.userId === 2));
+        expect(statistics.computeAllUsersStats([2])).toMatchObject([{ userId: 2, totalEntries: 0, timeSpent: 0 }]);
+    });
+
     it("recomputes empty lists while preserving preferences, views, and other media statistics", () => {
         db.delete(moviesList).where(eq(moviesList.userId, 2)).run();
         db.update(userMediaSettings).set({

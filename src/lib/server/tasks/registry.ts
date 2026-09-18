@@ -11,7 +11,7 @@ import {bulkMediaRefreshTask} from "@/lib/server/tasks/definitions/bulk-media-re
 import {flushApiMonitoringTask} from "@/lib/server/tasks/definitions/flush-api-monitoring.task";
 import {removeAllOrphansMediaTask} from "@/lib/server/tasks/definitions/remove-all-orphans-media";
 import {calculateAchievementsTask} from "@/lib/server/tasks/definitions/calculate-achievements.task";
-import {computeAllUsersStatsTask} from "@/lib/server/tasks/definitions/compute-all-users-stats.task";
+import {computeUsersStatsTask} from "@/lib/server/tasks/definitions/compute-users-stats.task";
 import {addGenresToBooksUsingLlmTask} from "@/lib/server/tasks/definitions/add-books-genres-llm.task";
 import {inactiveAccountDeletionTask} from "@/lib/server/tasks/definitions/inactive-account-deletion.task";
 import {precomputePlatformStatsTask} from "@/lib/server/tasks/definitions/precompute-platform-stats.task";
@@ -35,7 +35,7 @@ export const taskRegistry = {
     [bulkMediaRefreshTask.name]: bulkMediaRefreshTask,
     [seedAchievementsTask.name]: seedAchievementsTask,
     [flushApiMonitoringTask.name]: flushApiMonitoringTask,
-    [computeAllUsersStatsTask.name]: computeAllUsersStatsTask,
+    [computeUsersStatsTask.name]: computeUsersStatsTask,
     [calculateAchievementsTask.name]: calculateAchievementsTask,
     [removeAllOrphansMediaTask.name]: removeAllOrphansMediaTask,
     [deleteNonActivatedUsersTask.name]: deleteNonActivatedUsersTask,

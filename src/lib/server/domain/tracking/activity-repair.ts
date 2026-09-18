@@ -65,7 +65,7 @@ type Snapshot = {
     previousStatusCounts: string | null;
 };
 
-export type ActivityRepairEntry = Candidate & {
+type ActivityRepairEntry = Candidate & {
     id: string;
     fingerprint: string;
     repairKind: "history" | "ceiling" | "orphan";

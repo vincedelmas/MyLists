@@ -1,13 +1,13 @@
 import {logger} from "@/lib/server/core/logger";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {SQLiteColumn} from "drizzle-orm/sqlite-core";
-import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {toHistogramBins} from "@/lib/utils/stats/histogram";
 import {userMediaSettings} from "@/lib/server/database/schema";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {TopAffinity, TopAffinityDefinition} from "@/lib/types/stats.types";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {and, asc, count, countDistinct, desc, eq, exists, gte, isNotNull, notInArray, sql} from "drizzle-orm";
+import {and, asc, count, countDistinct, desc, eq, exists, gte, inArray, isNotNull, notInArray, sql} from "drizzle-orm";
 
 
 type AffinityResults<TDefinition extends AnyServerMediaDefinition> = {
@@ -61,7 +61,7 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
         return result?.count ?? 0;
     };
 
-    const computeAllUsersStats = () => {
+    const computeAllUsersStats = (userIds?: number[]) => {
         const { mediaType } = definition.identity;
         const { listTable, mediaTable } = definition.repository.tables;
         const { timeSpent, totalSpecific, totalRedo } = definition.statistics.allUsers;
@@ -105,7 +105,10 @@ const createMediaStatsQueries = <const TDefinition extends AnyServerMediaDefinit
             .from(userMediaSettings)
             .leftJoin(listTable, eq(listTable.userId, userMediaSettings.userId))
             .leftJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
-            .where(eq(userMediaSettings.mediaType, mediaType))
+            .where(and(
+                eq(userMediaSettings.mediaType, mediaType),
+                userIds === undefined ? undefined : inArray(userMediaSettings.userId, userIds),
+            ))
             .groupBy(userMediaSettings.userId).all();
 
         return results.map((row) => {

@@ -212,8 +212,9 @@ describe("CLI entry point", () => {
     });
 
     it("keeps other CLI commands available", async () => {
-        const result = await runCli(["compute-all-users-stats", "--help"], true);
+        const result = await runCli(["compute-users-stats", "--help"], true);
         expect(result.exitCode).toBe(0);
-        expect(result.stdout).toContain("Usage: mylists-cli compute-all-users-stats");
+        expect(result.stdout).toContain("Usage: mylists-cli compute-users-stats");
+        expect(result.stdout).toContain("--user-ids <values...>");
     });
 });

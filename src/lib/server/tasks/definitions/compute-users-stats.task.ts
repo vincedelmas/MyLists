@@ -5,12 +5,14 @@ import {defineTask} from "@/lib/server/tasks/define-task";
 import {withTransaction} from "@/lib/server/database/async-storage";
 
 
-export const computeAllUsersStatsTask = defineTask({
-    name: "compute-all-users-stats" as const,
+export const computeUsersStatsTask = defineTask({
+    name: "compute-users-stats" as const,
     visibility: "admin",
-    description: "Recompute pre-computed stats for all users",
-    inputSchema: z.object({}),
-    handler: async (ctx) => {
+    description: "Recompute pre-computed stats for all users or specific users",
+    inputSchema: z.object({
+        userIds: z.array(z.number().int().positive()).optional().describe("User IDs to recompute (all users if omitted)"),
+    }),
+    handler: async (ctx, { userIds }) => {
         const container = await getContainer();
         const mediaTypes = Object.values(MediaType);
         const statsService = container.services.stats;
@@ -21,7 +23,7 @@ export const computeAllUsersStatsTask = defineTask({
                 const mediaStatistics = mediaStatsRegistry.get(mediaType);
 
                 withTransaction(() => {
-                    const userMediaStats = mediaStatistics.computeAllUsersStats();
+                    const userMediaStats = mediaStatistics.computeAllUsersStats(userIds);
 
                     if (userMediaStats.length === 0) {
                         ctx.warn(`No users found with ${mediaType} data to compute.`);

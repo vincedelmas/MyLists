@@ -12,7 +12,7 @@ export const runImportDrainCommand = async (databaseUrl: string) => {
             stdio: ["ignore", "ignore", "pipe", lockFd],
         });
         if (lock.error) throw new Error("Could not run flock. Install util-linux to process imports.", { cause: lock.error });
-        if (lock.status === 75) return { processedJobs: 0, failedJobs: 0 };
+        if (lock.status === 75) return { processedJobs: 0, failedJobs: 0, userIds: [] };
         if (lock.status !== 0) throw new Error(`Could not lock the import queue: ${lock.stderr?.toString().trim()}`);
 
         const [{getContainer}, {drainImportJobs}, {logger}] = await Promise.all([
@@ -33,9 +33,9 @@ export const runImportDrainCommand = async (databaseUrl: string) => {
             logger.info("Recomputing user stats after import drain");
             const {runTask} = await import("@/lib/server/tasks/task-runner");
             await runTask({
-                input: {},
                 triggeredBy: "cron/cli",
-                taskName: "compute-all-users-stats",
+                taskName: "compute-users-stats",
+                input: { userIds: result.userIds },
             });
         }
 

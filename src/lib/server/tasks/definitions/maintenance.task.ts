@@ -5,7 +5,7 @@ import {flushApiMonitoringTask} from "@/lib/server/tasks/definitions/flush-api-m
 import {lockOldMoviesTask} from "@/lib/server/tasks/definitions/lock-old-movies.task";
 import {bulkMediaRefreshTask} from "@/lib/server/tasks/definitions/bulk-media-refresh.task";
 import {removeAllOrphansMediaTask} from "@/lib/server/tasks/definitions/remove-all-orphans-media";
-import {computeAllUsersStatsTask} from "@/lib/server/tasks/definitions/compute-all-users-stats.task";
+import {computeUsersStatsTask} from "@/lib/server/tasks/definitions/compute-users-stats.task";
 import {calculateAchievementsTask} from "@/lib/server/tasks/definitions/calculate-achievements.task";
 import {addGenresToBooksUsingLlmTask} from "@/lib/server/tasks/definitions/add-books-genres-llm.task";
 import {precomputePlatformStatsTask} from "@/lib/server/tasks/definitions/precompute-platform-stats.task";
@@ -32,7 +32,7 @@ export const maintenanceTask = defineTask({
         await ctx.step(curateWCFTask.name, () => curateWCFTask.handler(ctx, input));
         await ctx.step(createMediaNotificationsTask.name, () => createMediaNotificationsTask.handler(ctx, input));
         await ctx.step(lockOldMoviesTask.name, () => lockOldMoviesTask.handler(ctx, input));
-        await ctx.step(computeAllUsersStatsTask.name, () => computeAllUsersStatsTask.handler(ctx, input));
+        await ctx.step(computeUsersStatsTask.name, () => computeUsersStatsTask.handler(ctx, input));
         await ctx.step(precomputePlatformStatsTask.name, () => precomputePlatformStatsTask.handler(ctx, input));
         await ctx.step(calculateAchievementsTask.name, () => calculateAchievementsTask.handler(ctx, input));
         await ctx.step(dbMaintenanceTask.name, () => dbMaintenanceTask.handler(ctx, input));

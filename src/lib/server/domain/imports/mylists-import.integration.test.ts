@@ -89,7 +89,7 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
             convertToCsv([exported, { ...exported, externalApiId: "101" }]));
         const other = await imports.imports.createImportJob(44, ImportSource.MYLISTS, convertToCsv([exported]));
 
-        await expect(drainImportJobs(imports.importProcessor)).resolves.toEqual({ processedJobs: 2, failedJobs: 0 });
+        await expect(drainImportJobs(imports.importProcessor)).resolves.toEqual({ processedJobs: 2, failedJobs: 0, userIds: [43, 44] });
         expect(externalCall).toHaveBeenCalledOnce();
         const pausedJob = (await imports.imports.getImportJob(43, paused.id)).job;
         expect(pausedJob).toMatchObject({ status: ImportJobStatus.QUEUED, completedCount: 1, failedCount: 0, error: "Provider paused" });
@@ -152,7 +152,7 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
         const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS, csv);
         expect(job).toMatchObject({ status: ImportJobStatus.QUEUED, totalCount: 2, failedCount: 0 });
 
-        await expect(drainImportJobs(imports.importProcessor)).resolves.toEqual({ processedJobs: 1, failedJobs: 0 });
+        await expect(drainImportJobs(imports.importProcessor)).resolves.toEqual({ processedJobs: 1, failedJobs: 0, userIds: [43] });
         const { job: finished } = await imports.imports.getImportJob(43, job.id);
         expect(finished).toMatchObject({ status: ImportJobStatus.COMPLETED, completedCount: 2, processedCount: 2 });
 
@@ -313,7 +313,7 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
         const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS, convertToCsv([exported]));
         const nextJob = await imports.imports.createImportJob(44, ImportSource.MYLISTS, convertToCsv([exported]));
         vi.spyOn(imports.imports, "getQueuedItemsByMediaType").mockRejectedValueOnce(new Error("Simulated worker failure"));
-        await expect(drainImportJobs(imports.importProcessor)).resolves.toEqual({ failedJobs: 1, processedJobs: 1 });
+        await expect(drainImportJobs(imports.importProcessor)).resolves.toEqual({ failedJobs: 1, processedJobs: 1, userIds: [43, 44] });
         expect((await imports.imports.getImportJob(43, job.id)).job).toMatchObject({ status: ImportJobStatus.FAILED, failedCount: 1, processedCount: 1 });
         expect((await imports.imports.getImportIssues(43, job.id)).items[0]).toMatchObject({ status: ImportItemStatus.FAILED, statusReason: expect.stringContaining("Please try importing") });
         expect((await imports.imports.getImportJob(44, nextJob.id)).job.status).toBe(ImportJobStatus.COMPLETED);

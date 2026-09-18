@@ -48,38 +48,39 @@ describe("runImportDrainCommand", () => {
     afterEach(() => rmSync(directory, { recursive: true, force: true }));
 
     it("recovers interrupted imports before draining with the container import processor", async () => {
-        drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 2 });
+        drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 2, userIds: [10, 20] });
 
-        await expect(runImportDrainCommand(databasePath)).resolves.toEqual({ failedJobs: 0, processedJobs: 2 });
+        await expect(runImportDrainCommand(databasePath)).resolves.toEqual({ failedJobs: 0, processedJobs: 2, userIds: [10, 20] });
 
         expect(importProcessor.requeueInterruptedJobs).toHaveBeenCalledOnce();
         expect(importProcessor.requeueInterruptedJobs.mock.invocationCallOrder[0]).toBeLessThan(drainImportJobs.mock.invocationCallOrder[0]);
         expect(drainImportJobs).toHaveBeenCalledWith(importProcessor);
         expect(logger.info).toHaveBeenCalledWith({ processedJobs: 2, failedJobs: 0 }, "Import drain finished");
         expect(runTask).toHaveBeenCalledWith({
-            input: {},
+            input: { userIds: [10, 20] },
             triggeredBy: "cron/cli",
-            taskName: "compute-all-users-stats",
+            taskName: "compute-users-stats",
         });
+        expect(runTask).toHaveBeenCalledOnce();
     });
 
     it("does not recompute stats when no import job was processed", async () => {
-        drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 0 });
+        drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 0, userIds: [] });
 
-        await expect(runImportDrainCommand(databasePath)).resolves.toEqual({ failedJobs: 0, processedJobs: 0 });
+        await expect(runImportDrainCommand(databasePath)).resolves.toEqual({ failedJobs: 0, processedJobs: 0, userIds: [] });
 
         expect(runTask).not.toHaveBeenCalled();
     });
 
     it("recomputes stats when a job failed during processing", async () => {
-        drainImportJobs.mockResolvedValue({ failedJobs: 1, processedJobs: 0 });
+        drainImportJobs.mockResolvedValue({ failedJobs: 1, processedJobs: 0, userIds: [10] });
 
-        await expect(runImportDrainCommand(databasePath)).resolves.toEqual({ failedJobs: 1, processedJobs: 0 });
+        await expect(runImportDrainCommand(databasePath)).resolves.toEqual({ failedJobs: 1, processedJobs: 0, userIds: [10] });
 
         expect(runTask).toHaveBeenCalledWith({
-            input: {},
+            input: { userIds: [10] },
             triggeredBy: "cron/cli",
-            taskName: "compute-all-users-stats",
+            taskName: "compute-users-stats",
         });
     });
 
@@ -87,7 +88,7 @@ describe("runImportDrainCommand", () => {
         importProcessor.requeueInterruptedJobs.mockImplementationOnce(() => { throw new Error("Database unavailable"); });
         await expect(runImportDrainCommand(databasePath)).rejects.toThrow("Database unavailable");
         expect(drainImportJobs).not.toHaveBeenCalled();
-        drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 1 });
-        await expect(runImportDrainCommand(databasePath)).resolves.toEqual({ failedJobs: 0, processedJobs: 1 });
+        drainImportJobs.mockResolvedValue({ failedJobs: 0, processedJobs: 1, userIds: [10] });
+        await expect(runImportDrainCommand(databasePath)).resolves.toEqual({ failedJobs: 0, processedJobs: 1, userIds: [10] });
     });
 });

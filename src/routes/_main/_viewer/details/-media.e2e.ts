@@ -78,20 +78,19 @@ test("corrects book activity automatically and lets the reader review older mont
     await expect(correction.getByText("200 → 160 p.", { exact: true })).toBeVisible();
     await expect(correction.getByText("August 2025", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("listbox")).toHaveCount(0);
-    await page.screenshot({ path: test.info().outputPath("activity-correction-desktop.png") });
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath("activity-correction-mobile.png") });
     await correction.getByRole("button", { name: "Save correction", exact: true }).click();
     await expect(correction).toHaveCount(0);
     await expect(currentPage).toBeEnabled();
     await page.reload();
     await expect(currentPage).toHaveValue("290");
     await page.goto(`/list/books/${users.owner.name}/activity?year=2025&month=7`);
-    await expect(page.getByText("160 p.", { exact: true })).toBeVisible();
+    const bookActivity = page.getByRole("article").filter({ has: page.getByRole("link", { name: "View Correction book", exact: true }) });
+    await expect(bookActivity.getByText("160 p.", { exact: true })).toBeVisible();
 
     // The correction prompt must work over the list's edit dialog too.
-    await page.goto(`/list/books/${users.owner.name}`);
+    await page.getByRole("link", { name: "List", exact: true }).click();
     await page.getByRole("button", { name: "Edit Correction book", exact: true }).click();
     const editor = page.getByRole("dialog", { name: "Correction book", exact: true });
     await editor.getByLabel("Current page", { exact: true }).fill("240");
@@ -106,5 +105,5 @@ test("corrects book activity automatically and lets the reader review older mont
     await page.goto("/details/books/301");
     await expect(currentPage).toHaveValue("240");
     await page.goto(`/list/books/${users.owner.name}/activity?year=2025&month=8`);
-    await expect(page.getByText("120 p.", { exact: true })).toBeVisible();
+    await expect(bookActivity.getByText("120 p.", { exact: true })).toBeVisible();
 });

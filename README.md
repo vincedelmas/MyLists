@@ -214,13 +214,18 @@ bun run test:e2e
 ```
 
 Playwright runs on Node (CI uses Node 24), the app, database fixtures, and import worker run on Bun. The runner creates and removes a
-temp SQLite db, applies the migrations, and resets fixtures before every test. It starts a dev server on port 4173. Email, OAuth,
+temp workspace. Two parallel workers each have their own SQLite db, uploads and dev server (ports 4173 and 4174).
+Each worker applies the migrations and resets its fixtures before every test. Separate Vite caches in `node_modules/.vite-e2e/`
+are retained between runs. Use `--workers=1` for a sequential run. Email, OAuth,
 external media providers, and Redis are disabled for browser tests. Use `bun run test:e2e --headed` to watch, or
 `bun run test:e2e --grep 'signs in'` to run one journey. Failed runs keep traces and screenshots in `test-results/`, with an HTML report
 in `playwright-report/`.
 
 Browser tests live with the routes as `-*.e2e.ts`. The prefix keeps them out of the generated route tree. Vitest only discovers
 `src/**/*.test.{ts,tsx}`.
+
+Feature tests use `signIn(page, account)` from `scripts/e2e/fixtures.ts` to authenticate through the API, then navigate directly to
+the page under test. Keep form-based sign-in checks in the login journey to avoid repeating that setup in every browser test.
 
 Contributions are welcome!  
 If you’d like to improve MyLists, fork the repo, create a feature branch, and open a pull request.

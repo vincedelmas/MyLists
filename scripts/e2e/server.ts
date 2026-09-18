@@ -16,16 +16,24 @@ if (await seed.exited !== 0) {
 }
 
 
+const serverUrl = new URL(process.env.VITE_BASE_URL!);
 const server = await createServer({
+    logLevel: "error",
     // Vite reads dev .env even with Bun --no-env-file
     envDir: process.env.MYLISTS_E2E_DIR,
+    // Isolate workers' optimizer caches, retain them between runs, and keep them
+    // under node_modules so Babel does not recompile optimized dependencies.
+    cacheDir: `node_modules/.vite-e2e/${serverUrl.port}`,
     server: {
-        port: 4173,
         strictPort: true,
         host: "127.0.0.1",
+        port: Number(serverUrl.port),
     },
 });
+
+
 await server.listen();
+process.send?.("ready");
 
 
 process.on("SIGTERM", async () => {

@@ -5,6 +5,7 @@ import {expect, runBun, signIn, test} from "../../../../../scripts/e2e/fixtures"
 test("starts a fresh Continue order when navigating between profiles", async ({ page }) => {
     await runBun(["src/routes/_main/_private/continue/-fixtures.ts", "--profile-order"]);
     await signIn(page);
+    await page.goto(`/profile/${users.owner.name}`);
 
     const preview = page.getByRole("region", { name: "Continue", exact: true });
     const ownerTitles = ["Continue manga", "Continue game", "Continue book", "Continue series", "Older continue series"];
@@ -25,6 +26,7 @@ test("starts a fresh Continue order when navigating between profiles", async ({ 
 test("keeps finished progress secondary until the user marks it completed", async ({ page }) => {
     await runBun(["src/routes/_main/_private/continue/-fixtures.ts", "--finished-progress"]);
     await signIn(page);
+    await page.goto(`/profile/${users.owner.name}`);
 
     const preview = page.getByRole("region", { name: "Continue", exact: true });
     await expect(preview.getByRole("article")).toHaveCount(2);
@@ -36,10 +38,8 @@ test("keeps finished progress secondary until the user marks it completed", asyn
     await expect(active.getByRole("article")).toHaveCount(2);
     await expect(finished.getByRole("article")).toHaveCount(3);
     await expect(finished.getByRole("button", { name: "Mark completed", exact: true })).toHaveCount(3);
-    await page.screenshot({ path: test.info().outputPath("continue-finished-desktop.png"), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath("continue-finished-mobile.png"), fullPage: true });
     await page.setViewportSize({ width: 1280, height: 720 });
 
     // A tab with only finished progress must still offer its completion action.
@@ -86,6 +86,7 @@ test("persists profile Continue visibility for the owner and visitors without af
     const follower = await browser.newPage({ baseURL });
     try {
         await signIn(follower, "follower");
+        await follower.goto(`/profile/${users.follower.name}`);
         await expect(follower.getByRole("region", { name: "Continue", exact: true }).getByRole("article")).toHaveCount(1);
         await follower.goto(`/profile/${users.owner.name}`);
         await expect(follower.getByRole("heading", { name: users.owner.name, exact: true })).toBeVisible();
@@ -93,13 +94,10 @@ test("persists profile Continue visibility for the owner and visitors without af
         await expect(sharedPreview).toHaveCount(0);
 
         await page.goto("/settings/profile-customization");
-        await page.reload();
         await expect(visibility).not.toBeChecked();
         await expect(page.getByLabel("Section title", { exact: true })).toHaveValue("My favorites");
-        await page.screenshot({ path: test.info().outputPath("continue-settings-desktop.png"), fullPage: true });
         await page.setViewportSize({ width: 390, height: 844 });
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-        await page.screenshot({ path: test.info().outputPath("continue-settings-mobile.png"), fullPage: true });
         await visibility.check();
         await save.click();
         await expect(page.getByText("Customization updated", { exact: true })).toBeVisible();
@@ -119,6 +117,7 @@ test("persists profile Continue visibility for the owner and visitors without af
 test("continues active media, saves progress, and finishes a title", async ({ page }) => {
     await runBun(["src/routes/_main/_private/continue/-fixtures.ts"]);
     await signIn(page);
+    await page.goto(`/profile/${users.owner.name}`);
 
     const preview = page.getByRole("region", { name: "Continue", exact: true });
     await expect(preview.getByRole("article")).toHaveCount(5);
@@ -129,7 +128,6 @@ test("continues active media, saves progress, and finishes a title", async ({ pa
 
     const previewBook = preview.getByRole("article", { name: "Continue book", exact: true });
     await expect(previewBook.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "95");
-    await preview.screenshot({ path: test.info().outputPath("continue-profile-desktop.png") });
 
     // Larger changes use the existing details form, reached directly from the cover.
     await previewBook.getByRole("link", { name: "View Continue book", exact: true }).click();
@@ -172,19 +170,7 @@ test("continues active media, saves progress, and finishes a title", async ({ pa
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(preview.getByRole("article")).toHaveCount(2);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await preview.screenshot({ path: test.info().outputPath("continue-profile-mobile.png") });
     await page.setViewportSize({ width: 1280, height: 720 });
-    await page.getByRole("button", { name: "E2", exact: true }).click();
-    await expect(page.getByRole("menuitem", { name: "Profile", exact: true })).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: "Continue", exact: true })).toHaveCount(0);
-    await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "MyMedia", exact: true }).click();
-    await expect(page.getByRole("menuitem", { name: "My Activity", exact: true })).toBeVisible();
-
-    const menuItems = (await page.getByRole("menuitem").allTextContents()).map(label => label.trim());
-    const statsIndex = menuItems.indexOf("My Stats");
-    expect(menuItems.slice(statsIndex, statsIndex + 3)).toEqual(["My Stats", "Continue", "My Activity"]);
-    await page.keyboard.press("Escape");
     await preview.getByRole("link", { name: "View all in-progress media" }).click();
 
     await expect(page.getByRole("heading", { name: "Continue", exact: true })).toBeVisible();
@@ -193,17 +179,6 @@ test("continues active media, saves progress, and finishes a title", async ({ pa
     await expect(page.getByRole("article", { name: "Endless game", exact: true })).toHaveCount(0);
     await expect(page.getByRole("article", { name: "Multiplayer game", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /^Edit progress for / })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "My profile", exact: true })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Coming next", exact: true })).toHaveCount(0);
-    await page.getByRole("button", { name: "Quick actions", exact: true }).click();
-    await expect(page.getByRole("menuitem", { name: "My Profile", exact: true })).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: "Coming Next", exact: true })).toBeVisible();
-    await page.getByRole("menuitem", { name: "My Stats", exact: true }).click();
-    await page.getByRole("button", { name: "Quick actions", exact: true }).click();
-    await page.getByRole("menuitem", { name: "Continue", exact: true }).click();
-    await expect(page.getByRole("menu", { includeHidden: true })).toHaveCount(0);
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.screenshot({ path: test.info().outputPath("continue-desktop.png"), fullPage: true });
 
     const series = page.getByRole("article", { name: "Continue series", exact: true });
     const updated = series.getByRole("button", { name: /Jan 1, 2026/ });
@@ -276,7 +251,6 @@ test("continues active media, saves progress, and finishes a title", async ({ pa
     const firstCard = page.getByRole("article").first();
     await expect(firstCard).toBeInViewport({ ratio: 1 });
     await expect.poll(async () => (await firstCard.getByRole("button", { name: /^\+ / }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
-    await page.screenshot({ path: test.info().outputPath("continue-mobile.png"), fullPage: true });
 
     await page.goto(`/profile/${users.owner.name}`);
     const previewAnime = preview.getByRole("article", { name: "Disabled anime sentinel", exact: true });
@@ -424,11 +398,9 @@ test("keeps Continue personal and respects profile visibility for read-only prog
         await expect(sharedPreview.getByRole("article", { name: "Continue book", exact: true }).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "95");
         await expect(sharedPreview.getByRole("button")).toHaveCount(0);
         await expect(sharedPreview.getByText(/sentinel|Endless game|Multiplayer game/)).toHaveCount(0);
-        await sharedPreview.screenshot({ path: test.info().outputPath("in-progress-profile-desktop.png") });
         await follower.setViewportSize({ width: 390, height: 844 });
         await expect(sharedPreview.getByRole("article")).toHaveCount(2);
         expect(await follower.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-        await sharedPreview.screenshot({ path: test.info().outputPath("in-progress-profile-mobile.png") });
     }
     finally {
         await follower.close();

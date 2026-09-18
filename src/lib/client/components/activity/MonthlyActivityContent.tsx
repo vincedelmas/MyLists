@@ -17,6 +17,7 @@ import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {formatMonth, formatMonthYear} from "@/lib/utils/formatting/date";
 import {formatMinutes, formatNumber} from "@/lib/utils/formatting/number";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
@@ -28,7 +29,7 @@ import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/Month
 import {monthlyActivityOptions, monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options";
 import {YearlyActivityOccurrencesDialog} from "@/lib/client/components/activity/YearlyActivityOccurrencesDialog";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardMeta, MediaCardRightCorner, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardLeftCorner, MediaCardMeta, MediaCardRightCorner, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
 
 
 const activityKindFilters: { label: string, value: ActivityKind }[] = [
@@ -222,6 +223,11 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                     <div className="grid grid-cols-2 gap-4 pt-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                         {apiData.items.map((row) =>
                             <MediaCard key={row.id} mediaType={row.mediaType} item={{ ...row, mediaCover: row.mediaCover }}>
+                                {row.mediaType !== MediaType.MOVIES && row.mediaType !== MediaType.GAMES &&
+                                    <MediaCardLeftCorner>
+                                        {formatNumber(row.progressGained)} {getMediaDefinition(row.mediaType).progress.unit.short}
+                                    </MediaCardLeftCorner>
+                                }
                                 {view === "month" && canEdit &&
                                     <MediaCardRightCorner>
                                         <MediaCardEditAction

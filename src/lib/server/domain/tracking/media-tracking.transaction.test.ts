@@ -126,7 +126,7 @@ describe.each([MediaType.MOVIES, MediaType.SERIES])("%s tracking transactions", 
             tracking.updateUserMedia({ ...action, payload: { type: UpdateType.TV, currentEpisode: 4 } });
             const result = tracking.updateUserMedia({ ...action, payload: { type: UpdateType.TV, currentSeason: 1, currentEpisode: 8 } });
 
-            expect(result).toMatchObject({ status: Status.COMPLETED, currentEpisode: 8, total: 8 });
+            expect(result.userMedia).toMatchObject({ status: Status.COMPLETED, currentEpisode: 8, total: 8 });
             const saved = snapshot();
             expect(saved.settings[0]).toMatchObject({ totalSpecific: 8, timeSpent: 240, statusCounts: { [Status.WATCHING]: 0, [Status.COMPLETED]: 1 } });
             expect(saved.activity).toHaveLength(1);

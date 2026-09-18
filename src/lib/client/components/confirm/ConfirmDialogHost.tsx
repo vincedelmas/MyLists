@@ -49,6 +49,8 @@ export function ConfirmDialogHost() {
                     </AlertDialogDescription>
                 </AlertDialogHeader>
 
+                {options.content}
+
                 {requiresText &&
                     <Field>
                         <FieldLabel htmlFor={inputId}>

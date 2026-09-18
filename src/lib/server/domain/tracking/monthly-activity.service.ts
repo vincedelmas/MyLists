@@ -1,14 +1,30 @@
-import {MediaType} from "@/lib/utils/enums";
+import {createHash} from "node:crypto";
+import {MediaType, UpdateType} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {getActivityMonthRange} from "@/lib/utils/media/activity";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {fillMonthlyActivityTimeline} from "@/lib/server/domain/tracking/activity-timeline";
 import {MediaMonthlyActivityRegistry} from "@/lib/server/domain/media/media.registries";
-import {calendarDateRangeToISOString, compareDateInputs} from "@/lib/utils/formatting/date";
+import {fillMonthlyActivityTimeline} from "@/lib/server/domain/tracking/activity-timeline";
+import {allocateActivityCorrection, getActivityMonthRange} from "@/lib/utils/media/activity";
 import {resolveMonthlyActivityMedia} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {MonthlyActivityRepository} from "@/lib/server/domain/tracking/monthly-activity.repository";
+import {calendarDateRangeToISOString, compareDateInputs, monthBucketFromDateInput} from "@/lib/utils/formatting/date";
 import {AddMonthlyActivity, MonthlyActivityFilters, MonthlyActivityStatsFilters, UpdateMonthlyActivity} from "@/lib/schemas";
-import {LogMonthlyActivityFromDelta, MonthlyActivityChartDatum, MonthlyActivityEditor, MonthlyActivityOccurrence, WrappedMonthlyActivityResult} from "@/lib/types/activity.types";
+import {
+    ActivityCorrectionChoice,
+    ActivityCorrectionPreview,
+    LogMonthlyActivityFromDelta,
+    MonthlyActivityChartDatum,
+    MonthlyActivityEditor,
+    MonthlyActivityOccurrence,
+    WrappedMonthlyActivityResult
+} from "@/lib/types/activity.types";
+
+
+export class ActivityCorrectionRequired extends Error {
+    constructor(public readonly preview: ActivityCorrectionPreview) {
+        super("Review the monthly activity correction before saving.");
+    }
+}
 
 
 export class MonthlyActivityService {
@@ -21,6 +37,56 @@ export class MonthlyActivityService {
     logActivityFromDelta({ userId, mediaType, mediaId, delta, updateType, activityDate }: LogMonthlyActivityFromDelta) {
         const contribution = this.mediaMonthlyActivityRegistry.get(mediaType).createContribution(delta, updateType);
         this.repository.addContribution({ ...contribution, userId, mediaId, mediaType, activityDate });
+    }
+
+    correctActivityFromDelta({ userId, mediaType, mediaId, delta, updateType, activityDate }: LogMonthlyActivityFromDelta, choice?: ActivityCorrectionChoice) {
+        // Status resets change current position without undoing past consumption.
+        if (updateType === UpdateType.STATUS) return null;
+
+        const progressRemoved = Math.max(0, -this.mediaMonthlyActivityRegistry.get(mediaType).progressFromDelta(delta));
+        const redoRemoved = updateType === UpdateType.REDO ? Math.max(0, -(delta.totalRedo ?? 0)) : 0;
+
+        if (progressRemoved === 0 && redoRemoved === 0) {
+            if (choice) throw new FormattedError("Your progress changed while reviewing this correction. Please reload and try again.");
+            return null;
+        }
+
+        const currentMonth = monthBucketFromDateInput(new Date());
+        const activityMonth = activityDate ? monthBucketFromDateInput(activityDate) : currentMonth;
+        const months = this.repository.getCorrectionMonths(userId, mediaType, mediaId, activityMonth);
+
+        const version = createHash("sha256")
+            .update(JSON.stringify({ userId, mediaType, mediaId, activityMonth, progressRemoved, redoRemoved, months }))
+            .digest("hex");
+
+        const preview = { version, progressRemoved, redoRemoved, months };
+
+        // Recheck exact preview inside update transaction, including manual edits made meanwhile.
+        if (choice && choice.version !== version) {
+            throw new ActivityCorrectionRequired(preview);
+        }
+
+        if (choice?.startMonth && !months.some(month => month.monthBucket === choice.startMonth)) {
+            throw new FormattedError("The selected activity month is no longer available.");
+        }
+
+        if (choice?.keepHistory) {
+            return {
+                changes: [],
+                keptHistory: true,
+                unrecordedRedo: 0,
+                unrecordedProgress: 0,
+            };
+        }
+
+        const allocation = allocateActivityCorrection(preview, choice?.startMonth);
+        if (!choice && (allocation.unrecordedProgress > 0 || allocation.unrecordedRedo > 0 || allocation.changes.some(change => change.monthBucket !== currentMonth))) {
+            throw new ActivityCorrectionRequired(preview);
+        }
+
+        this.repository.applyCorrection(userId, allocation.changes);
+
+        return { ...allocation, keptHistory: false };
     }
 
     async getMonthlyActivityStats(userId: number, filters: MonthlyActivityStatsFilters) {

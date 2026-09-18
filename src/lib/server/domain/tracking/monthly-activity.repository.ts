@@ -5,8 +5,8 @@ import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
 import {dateFromUTCInput, monthBucketFromDateInput} from "@/lib/utils/formatting/date";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
-import {LogMonthlyActivity, PaginatedMonthlyActivityFilter} from "@/lib/types/activity.types";
 import {user, userMediaMonthlyActivity, userMediaSettings} from "@/lib/server/database/schema";
+import {ActivityCorrectionAllocation, LogMonthlyActivity, PaginatedMonthlyActivityFilter} from "@/lib/types/activity.types";
 import {and, asc, count, desc, eq, exists, getTableColumns, gt, gte, inArray, isNull, like, lte, max, ne, or, SQL, sql, sum} from "drizzle-orm";
 
 
@@ -92,6 +92,50 @@ const getFilteredActivityConditions = (userId: number, filters: PaginatedMonthly
 
 
 export class MonthlyActivityRepository {
+    static getCorrectionMonths(userId: number, mediaType: MediaType, mediaId: number, endMonth: string) {
+        return getDbClient()
+            .select({
+                id: userMediaMonthlyActivity.id,
+                monthBucket: userMediaMonthlyActivity.monthBucket,
+                progressGained: userMediaMonthlyActivity.progressGained,
+                redoGained: userMediaMonthlyActivity.redoGained,
+                hadCompletion: userMediaMonthlyActivity.hadCompletion,
+                hidden: userMediaMonthlyActivity.hidden,
+            })
+            .from(userMediaMonthlyActivity)
+            .where(and(
+                eq(userMediaMonthlyActivity.userId, userId),
+                eq(userMediaMonthlyActivity.mediaId, mediaId),
+                eq(userMediaMonthlyActivity.mediaType, mediaType),
+                lte(userMediaMonthlyActivity.monthBucket, endMonth),
+                or(gt(userMediaMonthlyActivity.progressGained, 0), gt(userMediaMonthlyActivity.redoGained, 0)),
+            ))
+            .orderBy(desc(userMediaMonthlyActivity.monthBucket))
+            .all();
+    }
+
+    static applyCorrection(userId: number, changes: ActivityCorrectionAllocation["changes"]) {
+        for (const change of changes) {
+            const redoGained = change.redoGained - change.redoRemoved;
+            const progressGained = change.progressGained - change.progressRemoved;
+            const condition = and(eq(userMediaMonthlyActivity.id, change.id), eq(userMediaMonthlyActivity.userId, userId));
+
+            if (progressGained === 0 && redoGained === 0 && !change.hadCompletion) {
+                getDbClient()
+                    .delete(userMediaMonthlyActivity)
+                    .where(condition)
+                    .run();
+            }
+            else {
+                getDbClient()
+                    .update(userMediaMonthlyActivity)
+                    .set({ progressGained, redoGained })
+                    .where(condition)
+                    .run();
+            }
+        }
+    }
+
     static addContribution(activity: LogMonthlyActivity) {
         const date = activity.activityDate ? dateFromUTCInput(activity.activityDate) : new Date();
 

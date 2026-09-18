@@ -17,6 +17,8 @@ const server = vi.hoisted(() => ({
     deleteUpdates: vi.fn(),
     activityStats: vi.fn(),
     listFilters: vi.fn(),
+    correction: vi.fn(),
+    toast: vi.fn(),
 }));
 
 let queryClient: QueryClient;
@@ -31,6 +33,10 @@ vi.mock("@tanstack/react-query", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/client/hooks/use-auth", () => ({ useAuth: () => ({ currentUser: { name: "alice" } }) }));
+vi.mock("@/lib/client/components/ui/toast", () => ({ toast: { add: server.toast } }));
+vi.mock("@/lib/client/components/activity/MonthlyActivityCorrection", () => ({
+    requestActivityCorrection: server.correction,
+}));
 vi.mock("@/lib/schemas", () => import("@/lib/schemas/user-media.schema"));
 vi.mock("@/lib/server/functions/user-media", () => ({
     postAddMediaToList: server.add,
@@ -240,7 +246,7 @@ describe("profile progress refresh", () => {
         });
 
         try {
-            server.update.mockResolvedValueOnce({ ...item, currentEpisode: 10, status });
+            server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, currentEpisode: 10, status } });
             await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
                 .mutateAsync({ payload: { type: UpdateType.TV, currentEpisode: 10 } });
 
@@ -265,12 +271,63 @@ describe("profile progress refresh", () => {
         const unsubscribeProfile = observer.subscribe(() => {});
 
         try {
-            server.update.mockResolvedValueOnce({ ...item, favorite: true });
+            server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, favorite: true } });
             await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
                 .mutateAsync({ payload: { type: UpdateType.FAVORITE, favorite: true } });
             expect(fetchProfile).toHaveBeenCalledTimes(1);
         }
         finally { unsubscribeProfile(); }
+    });
+});
+
+
+describe("activity correction choices", () => {
+    const preview = { version: "a".repeat(64), progressRemoved: 20, redoRemoved: 0, months: [] };
+    const payload = { type: UpdateType.TV, currentEpisode: 3 };
+
+    it("keeps the saved media and cached activity unchanged when the user cancels", async () => {
+        const activityKey = ["monthly-activity", "alice"];
+        queryClient.setQueryData(activityKey, { total: 120 });
+        server.update.mockResolvedValueOnce({ kind: "correction-required", preview });
+        server.correction.mockResolvedValueOnce(null);
+
+        const result = await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption).mutateAsync({ payload });
+
+        expect(result).toBeNull();
+        expect(server.update).toHaveBeenCalledTimes(1);
+        expect(queryClient.getQueryData(queryKey)).toEqual(initialList);
+        expect(queryClient.getQueryState(activityKey)?.isInvalidated).toBe(false);
+        expect(server.toast).not.toHaveBeenCalled();
+    });
+
+    it("submits the chosen month, refreshes activity, and reports the applied correction", async () => {
+        const activityKey = ["monthly-activity", "alice"];
+        queryClient.setQueryData(activityKey, { total: 120 });
+        const choice = { version: preview.version, startMonth: "2026-08" };
+        server.update.mockResolvedValueOnce({ kind: "correction-required", preview })
+            .mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, currentEpisode: 3 },
+                activityCorrection: { changes: [], unrecordedProgress: 0, unrecordedRedo: 0, keptHistory: false } });
+        server.correction.mockResolvedValueOnce(choice);
+
+        await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption).mutateAsync({ payload });
+
+        expect(server.update).toHaveBeenLastCalledWith({ data: { mediaType: MediaType.SERIES, mediaId: 1, payload, activityCorrection: choice } });
+        expect(queryClient.getQueryState(activityKey)?.isInvalidated).toBe(true);
+        expect(queryClient.getQueryData<typeof initialList>(queryKey)?.results.items[0]).toMatchObject({ currentEpisode: 3 });
+        expect(server.toast).toHaveBeenCalledWith(expect.objectContaining({ title: "Progress and activity corrected." }));
+    });
+
+    it("asks again when another edit changes the preview before confirmation", async () => {
+        const changedPreview = { ...preview, version: "b".repeat(64), progressRemoved: 30 };
+        server.update.mockResolvedValueOnce({ kind: "correction-required", preview })
+            .mockResolvedValueOnce({ kind: "correction-required", preview: changedPreview });
+        server.correction.mockResolvedValueOnce({ version: preview.version }).mockResolvedValueOnce(null);
+
+        await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption).mutateAsync({ payload });
+
+        expect(server.correction).toHaveBeenNthCalledWith(2, MediaType.SERIES, changedPreview);
+        expect(queryClient.getQueryData(queryKey)).toEqual(initialList);
+        expect(server.toast).not.toHaveBeenCalled();
     });
 });
 
@@ -286,7 +343,7 @@ describe("list editing refresh timing", () => {
         const observer = new QueryObserver(queryClient, { queryKey: seasonKey, queryFn: fetchSeasons });
         const unsubscribeSeasons = observer.subscribe(() => {});
         try {
-            server.update.mockResolvedValueOnce({ ...item, rating: 8, redo: 2 });
+            server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, rating: 8, redo: 2 } });
             await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption).mutateAsync({ payload });
             expect(server.update).toHaveBeenCalledWith({ data: { mediaType: MediaType.SERIES, mediaId: 1, payload } });
             expect(fetchSeasons).toHaveBeenCalledTimes(1);
@@ -298,9 +355,9 @@ describe("list editing refresh timing", () => {
 
     it("keeps a newly completed item in the Watching list for rating until the dialog closes", async () => {
         const mutation = useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption);
-        server.update.mockResolvedValueOnce({ ...item, status: Status.COMPLETED });
+        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, status: Status.COMPLETED } });
         await mutation.mutateAsync({ payload: { type: UpdateType.STATUS, status: Status.COMPLETED } });
-        server.update.mockResolvedValueOnce({ ...item, status: Status.COMPLETED, rating: 8 });
+        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, status: Status.COMPLETED, rating: 8 } });
         await mutation.mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } });
 
         expect(fetchList).not.toHaveBeenCalled();
@@ -314,7 +371,7 @@ describe("list editing refresh timing", () => {
     });
 
     it("defers comment and custom-cover refreshes until closing too", async () => {
-        server.update.mockResolvedValueOnce({ ...item, comment: null });
+        server.update.mockResolvedValueOnce({ kind: "saved", userMedia: { ...item, comment: null } });
         await useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
             .mutateAsync({ payload: { type: UpdateType.COMMENT, comment: null } });
         server.cover.mockResolvedValueOnce({ ...item, customCover: "/custom.jpg" });
@@ -332,7 +389,7 @@ describe("list editing refresh timing", () => {
     it.each([false, true])("waits for an in-flight save before refreshing (failure: %s)", async (fail) => {
         let finish!: () => void;
         server.update.mockImplementationOnce(() => new Promise((resolve, reject) => {
-            finish = () => fail ? reject(new Error("Save failed")) : resolve({ ...item, rating: 8 });
+            finish = () => fail ? reject(new Error("Save failed")) : resolve({ kind: "saved", userMedia: { ...item, rating: 8 } });
         }));
         const save = useUpdateUserMediaMutation(MediaType.SERIES, 1, queryOption)
             .mutateAsync({ payload: { type: UpdateType.RATING, rating: 8 } })

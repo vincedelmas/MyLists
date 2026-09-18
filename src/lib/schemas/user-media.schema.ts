@@ -86,6 +86,11 @@ export const addMediaToListSchema = z.object({
 export const updateUserMediaSchema = z.object({
     mediaType: mediaTypeFieldSchema,
     mediaId: coercedPositiveIntFieldSchema,
+    activityCorrection: z.object({
+        version: z.string().length(64),
+        startMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+        keepHistory: z.boolean().optional(),
+    }).optional(),
     payload: z.object({
         type: z.enum(UpdateType),
         loggedAt: loggedAtSchema,

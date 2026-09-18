@@ -1,6 +1,7 @@
 import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {ActivityCorrectionRequired} from "@/lib/server/domain/tracking/monthly-activity.service";
 import {
     addMediaToListSchema,
     deleteUserUpdatesSchema,
@@ -33,9 +34,25 @@ export const postAddMediaToList = createServerFn({ method: "POST" })
 export const postUpdateUserMedia = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(updateUserMediaSchema)
-    .handler(async ({ data: { mediaType, mediaId, payload }, context: { currentUser } }) => {
+    .handler(async ({ data, context: { currentUser } }) => {
         const mediaTrackingService = await getContainer().then(c => c.services.mediaTracking);
-        return mediaTrackingService.updateUserMedia({ mediaType, mediaId, payload, userId: currentUser.id });
+
+        try {
+            return {
+                kind: "saved" as const,
+                ...mediaTrackingService.updateUserMedia({ ...data, userId: currentUser.id }),
+            };
+        }
+        catch (error) {
+            if (error instanceof ActivityCorrectionRequired) {
+                return {
+                    preview: error.preview,
+                    kind: "correction-required" as const,
+                };
+            }
+
+            throw error;
+        }
     });
 
 

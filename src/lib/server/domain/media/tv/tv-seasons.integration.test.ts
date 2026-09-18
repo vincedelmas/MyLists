@@ -14,7 +14,7 @@ import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.defi
 import {MediaTrackingService} from "@/lib/server/domain/tracking/media-tracking.service";
 import {StatsService} from "@/lib/server/domain/stats/stats.service";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
-import {MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
+import {ActivityCorrectionRequired, MonthlyActivityService} from "@/lib/server/domain/tracking/monthly-activity.service";
 import {MonthlyActivityRepository} from "@/lib/server/domain/tracking/monthly-activity.repository";
 import {UpdateHistoryService} from "@/lib/server/domain/tracking/update-history.service";
 import {UpdateHistoryRepository} from "@/lib/server/domain/tracking/update-history.repository";
@@ -68,6 +68,27 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
         tracking.addMediaToList({ ...action, status: Status.COMPLETED });
     });
     afterEach(() => sqlite.close());
+
+    it("rolls back season changes while an older rewatch correction awaits confirmation", () => {
+        context.db.update(schema.userMediaMonthlyActivity).set({ monthBucket: "2025-08", lastActivityAt: "2025-08-01T12:00:00.000Z" }).run();
+        update({ type: UpdateType.REDO, seasonRedos: [{ season: 2, redo: 1 }], loggedAt: "2025-08-20" });
+        const before = snapshot();
+        const payload = { type: UpdateType.REDO, seasonRedos: [{ season: 2, redo: 0 }] };
+        let version: string | undefined;
+        try { update(payload); }
+        catch (error) {
+            if (!(error instanceof ActivityCorrectionRequired)) throw error;
+            version = error.preview.version;
+            expect(error.preview).toMatchObject({ progressRemoved: 8, redoRemoved: 1 });
+        }
+        expect(version).toBeDefined();
+        expect(snapshot()).toEqual(before);
+
+        tracking.updateUserMedia({ ...action, payload, activityCorrection: { version: version! } });
+        expect(seasons().find(season => season.season === 2)?.redo).toBe(0);
+        expect(snapshot().activities).toMatchObject([{ monthBucket: "2025-08", progressGained: 24, redoGained: 0, hadCompletion: true }]);
+        expect(stats()).toMatchObject({ totalRedo: 0, totalSpecific: 24 });
+    });
 
     it("sets all seasons, averages individual edits to tenths, and can overwrite the same average", () => {
         const before = snapshot();

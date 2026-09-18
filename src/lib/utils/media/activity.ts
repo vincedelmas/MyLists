@@ -3,6 +3,38 @@ import {zeroPad} from "@/lib/utils/formatting/number";
 import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/formatting/date";
+import type {ActivityCorrectionAllocation, ActivityCorrectionPreview} from "@/lib/types/activity.types";
+
+
+export const allocateActivityCorrection = (preview: ActivityCorrectionPreview, startMonth?: string): ActivityCorrectionAllocation => {
+    let unrecordedRedo = preview.redoRemoved;
+    let unrecordedProgress = preview.progressRemoved;
+    const changes: ActivityCorrectionAllocation["changes"] = [];
+
+    // Consume months in the supplied order (newest first for live corrections).
+    // A selected month excludes more recent activity.
+    for (const month of preview.months) {
+        if (startMonth && month.monthBucket > startMonth) continue;
+
+        const redoRemoved = Math.min(unrecordedRedo, month.redoGained);
+        const progressRemoved = Math.min(unrecordedProgress, month.progressGained);
+
+        if (progressRemoved === 0 && redoRemoved === 0) {
+            continue;
+        }
+
+        changes.push({ ...month, progressRemoved, redoRemoved });
+
+        unrecordedRedo -= redoRemoved;
+        unrecordedProgress -= progressRemoved;
+    }
+
+    return {
+        changes,
+        unrecordedRedo,
+        unrecordedProgress,
+    };
+};
 
 
 export const isValidActivityDate = (value: string) => {

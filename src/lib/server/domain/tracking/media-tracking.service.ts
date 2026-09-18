@@ -47,7 +47,7 @@ export class MediaTrackingService {
         });
     }
 
-    updateUserMedia({ userId, mediaType, mediaId, payload }: MediaAction & Pick<UpdateUserMedia, "payload">) {
+    updateUserMedia({ userId, mediaType, mediaId, payload, activityCorrection }: MediaAction & Pick<UpdateUserMedia, "payload" | "activityCorrection">) {
         return withTransaction(() => {
             const { loggedAt, ...mediaPayload } = payload;
 
@@ -59,15 +59,22 @@ export class MediaTrackingService {
             const mediaService = this.mediaServiceRegistry.get(mediaType);
             const { newState, media, delta, logPayload, statusLogPayload } = mediaService.updateUserMediaDetails(userId, mediaId, mediaPayload);
 
+            // A preview request throws before committing, rolling back list and season updates too.
+            const correction = this.activityService.correctActivityFromDelta({
+                delta, userId, mediaId, mediaType, activityDate: timestamp, updateType: mediaPayload.type,
+            }, activityCorrection);
+
             this.statsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
-            this.activityService.logActivityFromDelta({
-                delta,
-                userId,
-                mediaId,
-                mediaType,
-                activityDate: timestamp,
-                updateType: statusLogPayload ? UpdateType.STATUS : mediaPayload.type,
-            });
+            if (!correction?.keptHistory) {
+                this.activityService.logActivityFromDelta({
+                    delta,
+                    userId,
+                    mediaId,
+                    mediaType,
+                    activityDate: timestamp,
+                    updateType: statusLogPayload ? UpdateType.STATUS : mediaPayload.type,
+                });
+            }
 
             if (logPayload) {
                 this.updateHistoryService.logUpdate({
@@ -91,7 +98,7 @@ export class MediaTrackingService {
                 });
             }
 
-            return newState;
+            return { userMedia: newState, activityCorrection: correction };
         });
     }
 
@@ -108,7 +115,7 @@ export class MediaTrackingService {
             const payload = definition.getUpdate(item);
             if (!payload) return { item, completed: false };
 
-            const state = this.updateUserMedia({ userId, mediaType, mediaId, payload });
+            const { userMedia: state } = this.updateUserMedia({ userId, mediaType, mediaId, payload });
             const completed = state.status === Status.COMPLETED;
 
             return { item: completed ? null : getContinueItem(userId, mediaType, mediaId), completed };

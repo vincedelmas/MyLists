@@ -41,6 +41,28 @@ export type MonthlyActivityOccurrence = {
 }
 
 
+export type ActivityCorrectionPreview = {
+    version: string;
+    redoRemoved: number;
+    progressRemoved: number;
+    months: Omit<MonthlyActivityOccurrence, "timeGained" | "lastActivityAt">[];
+};
+
+
+export type ActivityCorrectionChoice = {
+    version: string;
+    startMonth?: string;
+    keepHistory?: boolean;
+};
+
+
+export type ActivityCorrectionAllocation = {
+    unrecordedRedo: number;
+    unrecordedProgress: number;
+    changes: (ActivityCorrectionPreview["months"][number] & { progressRemoved: number; redoRemoved: number })[];
+};
+
+
 export type PaginatedMonthlyActivityFilter = {
     page?: number;
     search?: string;

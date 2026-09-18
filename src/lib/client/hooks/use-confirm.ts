@@ -4,6 +4,7 @@ import {Store, useSelector} from "@tanstack/react-store";
 
 export interface ConfirmOptions {
     title: ReactNode;
+    content?: ReactNode;
     requireText?: string;
     cancelLabel?: ReactNode;
     description?: ReactNode;

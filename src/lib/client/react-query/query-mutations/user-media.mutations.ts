@@ -1,11 +1,16 @@
 import {Tag} from "@/lib/types/media-common.types";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {toast} from "@/lib/client/components/ui/toast";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {UpdatePayload} from "@/lib/types/user-media.types";
+import {formatMonthYear} from "@/lib/utils/formatting/date";
+import {toActivityDisplayValue} from "@/lib/utils/media/activity";
 import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
 import {invalidateUserProgressQueries} from "@/lib/client/react-query/invalidate-user-progress";
+import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
 import {
     allUpdatesOptions,
     continueOptions,
@@ -182,7 +187,7 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
 
     return useMutation({
         mutationKey: ["userMediaEdit", mediaType],
-        mutationFn: ({ payload }: UpdatePayload) => {
+        mutationFn: async ({ payload }: UpdatePayload) => {
             const activityUpdate = loggedActivityUpdateTypes.has(payload.type);
 
             if (options.backlogMode && !activityUpdate) {
@@ -200,9 +205,34 @@ export const useUpdateUserMediaMutation = (mediaType: MediaType, mediaId: number
                 throw new FormattedError(result.error.issues[0].message);
             }
 
-            return postUpdateUserMedia({ data: result.data });
+            let response = await postUpdateUserMedia({ data: result.data });
+            while (response.kind === "correction-required") {
+                const activityCorrection = await requestActivityCorrection(mediaType, response.preview);
+                if (!activityCorrection) return null;
+
+                response = await postUpdateUserMedia({ data: { ...result.data, activityCorrection } });
+            }
+
+            if (response.activityCorrection) {
+                const correction = response.activityCorrection;
+                const unit = getMediaDefinition(mediaType).progress.unit.short;
+                const description = correction.changes.map(change => {
+                    const amounts = [];
+                    if (change.progressRemoved > 0) amounts.push(`−${toActivityDisplayValue(mediaType, change.progressRemoved)} ${unit}`);
+                    if (change.redoRemoved > 0) amounts.push(`−${change.redoRemoved} re-experiences`);
+                    return `${formatMonthYear(change.monthBucket)}: ${amounts.join(", ")}`;
+                }).join("; ");
+                toast.add({
+                    type: "success",
+                    title: correction.keptHistory ? "Progress updated; activity unchanged." : "Progress and activity corrected.",
+                    description: correction.keptHistory ? undefined : description
+                        || "There was no matching recorded activity to reduce.",
+                });
+            }
+            return response.userMedia;
         },
         onSuccess: async (data, variables) => {
+            if (!data) return;
             const activityUpdate = loggedActivityUpdateTypes.has(variables.payload.type);
 
             const invalidations = [

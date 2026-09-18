@@ -35,10 +35,14 @@ export const UpdateInput = ({ total, initValue, updateInput, payloadName, update
             return;
         }
 
-        updateInput.mutate({
-            payload: {
-                type: updateType,
-                [payloadName]: parsed,
+        updateInput.mutate({ payload: { type: updateType, [payloadName]: parsed } }, {
+            onError: () => {
+                setCurrentValue(initValue?.toString() ?? "0");
+            },
+            onSuccess: (data) => {
+                if (!data) {
+                    setCurrentValue(initValue?.toString() ?? "0");
+                }
             },
         });
     };

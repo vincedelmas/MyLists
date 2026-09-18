@@ -22,9 +22,9 @@ type Contributions = {
 
 
 type CreateMonthlyActivityOptions = {
-    repository: Pick<MediaQueries, "findById" | "findUserMedia">;
     definition: AnyServerMediaDefinition;
     progressFromDelta?: (delta: DeltaStats) => number;
+    repository: Pick<MediaQueries, "findById" | "findUserMedia">;
     durationColumn?: AnySQLiteColumn<{ data: number, notNull: true }>;
 };
 
@@ -82,6 +82,8 @@ export const createMediaMonthlyActivity = ({ definition, repository, durationCol
         mediaType,
 
         progressToMinutes,
+
+        progressFromDelta,
 
         async getMediaByIds(mediaIds: number[], userId?: number): Promise<MonthlyActivityMedia[]> {
             const { listTable, mediaTable } = definition.repository.tables;

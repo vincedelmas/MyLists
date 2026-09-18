@@ -35,7 +35,8 @@ describe("createMediaMonthlyActivity", () => {
         });
     });
 
-    it("ignores negative corrections instead of rewriting monthly history", () => {
+    it("keeps new contributions nonnegative and exposes signed progress for corrections", () => {
+        expect(books.progressFromDelta({ totalSpecific: -20 })).toBe(-20);
         expect(books.createContribution({
             totalSpecific: -20,
             totalRedo: -1,
@@ -61,6 +62,7 @@ describe("createMediaMonthlyActivity", () => {
             totalSpecific: 999,
         }, UpdateType.PLAYTIME).progressGained).toBe(90);
         expect(games.progressToMinutes(90)).toBe(90);
+        expect(games.progressFromDelta({ timeSpent: -90, totalSpecific: 0 })).toBe(-90);
         expect(books.progressToMinutes(10)).toBe(17);
         expect(anime.progressToMinutes(3, 24)).toBe(72);
 

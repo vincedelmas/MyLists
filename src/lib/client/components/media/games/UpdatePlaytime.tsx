@@ -39,11 +39,15 @@ export const UpdatePlaytime = ({ playtimeInMin, updatePlaytime }: UpdatePlaytime
             return;
         }
 
-        updatePlaytime.mutate({
-            payload: {
-                type: UpdateType.PLAYTIME,
-                playtime: nextPlaytimeInMin,
-            }
+        updatePlaytime.mutate({ payload: { type: UpdateType.PLAYTIME, playtime: nextPlaytimeInMin } }, {
+            onError: () => {
+                setCurrentValue(playtimeInHours.toString());
+            },
+            onSuccess: (data) => {
+                if (!data) {
+                    setCurrentValue(playtimeInHours.toString());
+                }
+            },
         });
     };
 

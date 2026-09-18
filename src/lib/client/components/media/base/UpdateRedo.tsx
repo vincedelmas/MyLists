@@ -33,7 +33,16 @@ export const UpdateRedo = ({ name, redo, updateRedo }: RedoInputProps) => {
 
         if (parsedValue === savedRedo) return;
 
-        updateRedo.mutate({ payload: { redo: parsedValue, type: UpdateType.REDO } });
+        updateRedo.mutate({ payload: { redo: parsedValue, type: UpdateType.REDO } }, {
+            onError: () => {
+                setCurrentValue(savedRedo.toString());
+            },
+            onSuccess: (data) => {
+                if (!data) {
+                    setCurrentValue(savedRedo.toString());
+                }
+            },
+        });
     };
 
     const handleOnKeyDown = (ev: KeyboardEvent<HTMLInputElement>) => {

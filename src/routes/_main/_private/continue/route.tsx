@@ -61,7 +61,7 @@ function ContinuePage() {
                     asideLabel="In progress"
                     eyebrow="Right where you left off"
                     asideValue={`${data.items.length} ${data.items.length === 1 ? "title" : "titles"}`}
-                    description="Pick up where you left off. A little watching, reading, or playing — all in one place."
+                    description="Pick up where you left off. Your current watchings, readings, and playings, all in one place."
                     navigation={
                         <TabHeader
                             tabs={tabs}

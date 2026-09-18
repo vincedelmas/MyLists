@@ -32,7 +32,13 @@ const hashedPassword = await hashPassword(password);
 
 db.transaction(() => {
     db.delete(schema.user).run();
-    db.delete(schema.movies).run();
+
+    // Route fixtures also create media and season metadata; clear them between tests.
+    db.delete(schema.seriesEpisodesPerSeason).run();
+    db.delete(schema.animeEpisodesPerSeason).run();
+    for (const mediaType of Object.values(MediaType)) {
+        db.delete(schema[mediaType]).run();
+    }
 
     for (const user of Object.values(users)) {
         db.insert(schema.user)

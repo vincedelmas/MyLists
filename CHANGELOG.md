@@ -1,5 +1,31 @@
 # Changelog
 
+## [3.8.0](https://github.com/vincedelmas/MyLists/compare/v3.7.0...v3.8.0) (2026-09-18)
+
+
+### Features
+
+* **activity:** show progress counts on activity cards ([835ff42](https://github.com/vincedelmas/MyLists/commit/835ff42a2093aebf45058fa831ed26c8ec6c6cad))
+* add continue dashboard and profile preview ([8ba9c15](https://github.com/vincedelmas/MyLists/commit/8ba9c1553c20b3b1ba7ccebf061da0430fdbf0d8))
+* **coming-next:** add release counts to tab headers ([7565a2c](https://github.com/vincedelmas/MyLists/commit/7565a2c83664def226144c11b4e8ebeb2e3f5505))
+
+
+### Bug Fixes
+
+* **activity:** reconcile progress corrections with monthly activity ([affdf3f](https://github.com/vincedelmas/MyLists/commit/affdf3f88fc0f860b82cbe95b2b998c1deb69df7))
+* **imports:** resolve IMDb movies by ID ([e955576](https://github.com/vincedelmas/MyLists/commit/e955576446a0ba2fbbb17b2c4ddcb526b60fd637))
+* **test:** reset all media between e2e tests ([767a16d](https://github.com/vincedelmas/MyLists/commit/767a16d2d0f2ff0107ae744cdd302350319755d1))
+
+
+### Performance Improvements
+
+* **stats:** scope post-import recomputation to affected users ([d5864bd](https://github.com/vincedelmas/MyLists/commit/d5864bd26e59f84830908a9695f9d9af6afb9119))
+
+
+### Code Refactoring
+
+* **imports:** infer contracts from factory return types ([afa67c8](https://github.com/vincedelmas/MyLists/commit/afa67c8e1fe1b3df77de056557f4ae8994e1f454))
+
 ## [3.7.0](https://github.com/vincedelmas/MyLists/compare/v3.6.0...v3.7.0) (2026-09-13)
 
 

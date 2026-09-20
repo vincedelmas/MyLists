@@ -7,18 +7,24 @@ const seedBooks = async (separate: boolean) => runBun(["-e", `
     const {eq, and} = await import("drizzle-orm");
     db.update(userMediaSettings).set({active: true}).where(and(eq(userMediaSettings.userId, 1), eq(userMediaSettings.mediaType, "books"))).run();
     db.insert(books).values([
-        {id: 401, apiId: "edition-en", name: "A shared story", imageCover: "default.jpg"},
-        ...(${separate} ? [{id: 402, apiId: "edition-fr", name: "Une histoire", imageCover: "default.jpg"}] : []),
+        {id: 401, apiId: "edition-en", name: "A shared story", imageCover: "default.jpg", releaseDate: "1960-01-01"},
+        ...(${separate} ? [
+            {id: 402, apiId: "edition-fr", name: "Une histoire", imageCover: "default.jpg", releaseDate: "2000-01-01"},
+            {id: 403, apiId: "edition-de", name: "Eine Geschichte", imageCover: "default.jpg", releaseDate: "1990-01-01"},
+        ] : []),
     ]).run();
     db.insert(bookEditions).values([
-        {id: 411, mediaId: 401, apiId: "edition-en", name: "English edition", pages: 300, language: "en", publishers: "English Press", imageCover: "default.jpg"},
-        {id: 412, mediaId: ${separate ? 402 : 401}, apiId: "edition-fr", name: "French edition", pages: 420, language: "fr", publishers: "French Press", imageCover: "default.jpg"},
+        {id: 411, mediaId: 401, apiId: "edition-en", name: "English edition", pages: 300, language: "en", publishers: "English Press", imageCover: "default.jpg", releaseDate: "1960-01-01"},
+        {id: 412, mediaId: ${separate ? 402 : 401}, apiId: "edition-fr", name: "French edition", pages: 420, language: "fr", publishers: "French Press", imageCover: "default.jpg", releaseDate: "2000-01-01"},
+        ...(${separate} ? [{id: 413, mediaId: 403, apiId: "edition-de", name: "German edition", pages: 350, language: "de", publishers: "German Press", imageCover: "default.jpg", releaseDate: "1990-01-01"}] : []),
     ]).run();
     if (${separate}) {
         db.update(user).set({role: "manager"}).where(eq(user.id, 1)).run();
         db.insert(booksList).values([
             {userId: 1, mediaId: 401, editionId: 411, editionName: "English edition", status: "Completed", pages: 300, actualPage: 300, total: 300, rating: 8, comment: "Original note"},
             {userId: 1, mediaId: 402, editionId: 412, editionName: "French edition", status: "Completed", pages: 420, actualPage: 420, total: 420, rating: 9},
+            {userId: 1, mediaId: 403, editionId: 413, editionName: "German edition", status: "Completed", pages: 350, actualPage: 350, total: 350},
+            {userId: 2, mediaId: 402, editionId: 412, editionName: "French edition", status: "Reading", pages: 420, actualPage: 50, total: 50},
         ]).run();
     }
 `]);
@@ -51,26 +57,39 @@ test("selects an edition and preserves it through page tracking and reloads", as
     await expect(page.getByRole("heading", {name: "Books & editions"})).toHaveCount(0);
 });
 
-test("requires overlap choices before merging, then allows a mistaken edition to be separated", async ({page}, testInfo) => {
+test("preselects the most-read work, merges three works with overlap choices, and separates an edition", async ({page}, testInfo) => {
     await seedBooks(true);
     await signIn(page);
     await page.goto("/books/manage?workId=401");
-    await expect(page.getByText("1 edition · 1 reader", {exact: true})).toHaveCount(2);
-    await page.getByRole("button", {name: "Compare", exact: true}).click();
-    const merge = page.getByRole("button", {name: "Merge into surviving work"});
+    await page.getByRole("checkbox", {name: /^Une histoire/}).check();
+    await page.getByRole("checkbox", {name: /^Eine Geschichte/}).check();
+    await expect(page.getByRole("radio", {name: /^Une histoire/})).toBeChecked();
+    await page.getByRole("radio", {name: /^A shared story/}).check();
+    await expect(page.getByRole("radio", {name: /^A shared story/})).toBeChecked();
+    await page.getByRole("radio", {name: /^Une histoire/}).check();
+    const merge = page.getByRole("button", {name: "Merge 3 works"});
     await expect(merge).toBeDisabled();
+    await expect(page.getByText("First published: 1960 · oldest edition")).toBeVisible();
+    expect((await merge.boundingBox())!.y + (await merge.boundingBox())!.height).toBeLessThan(page.viewportSize()!.height);
+    await page.screenshot({path: testInfo.outputPath("book-manager-desktop.png"), fullPage: true});
+    await page.getByRole("button", {name: "Resolve 1 overlap", exact: true}).click();
+    await expect(page.getByText("1 reader has overlapping entries", {exact: true})).toBeInViewport();
     await page.getByRole("combobox", {name: "Active entry, rating and note"}).click();
-    await page.getByRole("option", {name: "Keep source entry"}).click();
+    await page.getByRole("option", {name: "A shared story · #401", exact: true}).click();
     await page.getByRole("combobox", {name: "Reading totals", exact: true}).click();
-    await page.getByRole("option", {name: "Separate readings: combine totals"}).click();
+    await page.getByRole("option", {name: "Separate readings: combine all totals"}).click();
     await expect(page.getByRole("listbox")).toHaveCount(0);
-    await page.screenshot({path: testInfo.outputPath("book-manager.png"), fullPage: true});
     await page.setViewportSize({width: 390, height: 844});
+    await page.getByRole("button", {name: "Review selection"}).click();
+    await expect(merge).toBeInViewport({ratio: 1});
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({path: testInfo.outputPath("book-manager-mobile.png"), fullPage: true});
     await merge.click();
     await expect(page).toHaveURL(/workId=402/);
-    await expect(page.getByText("2 editions attached to this work")).toBeVisible();
-    await page.getByRole("row").filter({hasText: "English edition"}).getByRole("button", {name: "Separate", exact: true}).click();
+    await page.getByRole("button", {name: "Editions & suggested matches"}).click();
+    await expect(page.getByText("3 editions attached to this work")).toBeVisible();
+    await expect(page.getByText("First published: Jan 1, 1960", {exact: false})).toBeVisible();
+    await page.getByRole("region", {name: "Edition English edition", exact: true}).getByRole("button", {name: "Separate", exact: true}).click();
     const dialog = page.getByRole("dialog", {name: "Give this edition its own work"});
     await dialog.getByLabel("Work title").fill("Separated story");
     await dialog.getByRole("button", {name: "Create separate work"}).click();
@@ -79,4 +98,72 @@ test("requires overlap choices before merging, then allows a mistaken edition to
     await expect(page.getByRole("heading", {name: "Separated story", exact: true})).toBeVisible();
     await expect(page.getByLabel("Current page", {exact: true})).toHaveValue("300");
     await expect(page.getByText("English edition", {exact: true})).toBeVisible();
+});
+
+test("keeps comparison controls visible and selections across catalogue searches and pages", async ({page}, testInfo) => {
+    await seedBooks(true);
+    await runBun(["-e", `
+        const {db} = await import("./src/lib/server/database/db");
+        const {books, bookEditions, booksAuthors} = await import("./src/lib/server/database/schema");
+        const works = Array.from({length: 34}, (_, index) => ({id: 500 + index, apiId: "volume-" + index, name: "Catalogue " + String(index).padStart(2, "0"), imageCover: "default.jpg"}));
+        db.insert(books).values(works).run();
+        db.insert(bookEditions).values(works.map(work => ({mediaId: work.id, apiId: work.apiId, name: work.name, imageCover: work.imageCover}))).run();
+        db.insert(booksAuthors).values({mediaId: 501, name: "Distinct Author"}).run();
+    `]);
+    await signIn(page);
+    await page.goto("/books/manage?workId=401");
+    const search = page.getByRole("textbox", {name: "Search catalogue"});
+    await search.fill("Distinct Author");
+    await page.getByRole("checkbox", {name: /^Catalogue 01/}).check();
+    await expect(page.getByText("Compare 2 works", {exact: true})).toBeVisible();
+    await search.fill("Catalogue");
+    await page.getByRole("button", {name: "Next", exact: true}).click();
+    await page.getByRole("checkbox", {name: /^Catalogue 33/}).check();
+    await expect(page.getByText("Compare 3 works", {exact: true})).toBeVisible();
+    await page.getByRole("button", {name: "Previous", exact: true}).click();
+    await expect(page.getByRole("checkbox", {name: /^Catalogue 01/})).toBeChecked();
+    await page.getByRole("checkbox", {name: "Select this page", exact: true}).check();
+    await expect(page.getByText("Compare 32 works", {exact: true})).toBeVisible();
+    const merge = page.getByRole("button", {name: "Merge 32 works"});
+    await expect(merge).toBeEnabled();
+    const before = (await merge.boundingBox())!;
+    expect(before.y + before.height).toBeLessThan(page.viewportSize()!.height);
+    expect((await page.getByTestId("book-comparison").boundingBox())!.y).toBeLessThan(250);
+    await page.getByRole("checkbox", {name: /^Catalogue 29/}).scrollIntoViewIfNeeded();
+    expect((await merge.boundingBox())!.y).toBe(before.y);
+    await page.screenshot({path: testInfo.outputPath("book-manager-bulk.png"), fullPage: true});
+    await search.fill("no matches");
+    await expect(page.getByText("No matching works", {exact: true})).toBeVisible();
+    await expect(merge).toBeEnabled();
+    await page.getByRole("button", {name: "Clear", exact: true}).click();
+    await expect(page.getByText("One book. All its editions.", {exact: true})).toBeVisible();
+});
+
+test("moves an individual edition from the inspector and keeps the remaining editions on their work", async ({page}) => {
+    await seedBooks(true);
+    await runBun(["-e", `
+        const {db} = await import("./src/lib/server/database/db");
+        const {bookEditions} = await import("./src/lib/server/database/schema");
+        db.insert(bookEditions).values({mediaId: 401, apiId: "other-edition", name: "Remaining edition", imageCover: "default.jpg", releaseDate: "1970-01-01"}).run();
+    `]);
+    await signIn(page);
+    await page.goto("/books/manage?workId=401");
+    await page.getByRole("checkbox", {name: /^Une histoire/}).check();
+    await expect(page.getByText("Compare 2 works", {exact: true})).toBeVisible();
+    await page.getByRole("button", {name: "Inspect A shared story", exact: true}).click();
+    await page.getByRole("region", {name: "Edition English edition", exact: true}).getByRole("button", {name: "Move", exact: true}).click();
+    const dialog = page.getByRole("dialog", {name: "Move edition", exact: true});
+    await expect(dialog.getByRole("combobox", {name: "Destination work"})).toContainText("Une histoire");
+    await expect(dialog.getByRole("button", {name: "Move edition", exact: true})).toBeDisabled();
+    await dialog.getByRole("combobox", {name: "Active entry, rating and note"}).click();
+    await page.getByRole("option", {name: "Une histoire · #402", exact: true}).click();
+    await dialog.getByRole("combobox", {name: "Reading totals", exact: true}).click();
+    await page.getByRole("option", {name: "Duplicates: keep chosen totals"}).click();
+    await dialog.getByRole("button", {name: "Move edition", exact: true}).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page).toHaveURL(/workId=402/);
+    await page.getByRole("button", {name: "Inspect A shared story", exact: true}).click();
+    await expect(page.getByRole("region", {name: "Edition Remaining edition", exact: true})).toBeVisible();
+    await expect(page.getByRole("region", {name: "Edition English edition", exact: true})).toHaveCount(0);
+    await expect(page.getByText("First published: Jan 1, 1970", {exact: false})).toBeVisible();
 });

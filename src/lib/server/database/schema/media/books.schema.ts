@@ -18,6 +18,7 @@ import {
 export const books = sqliteTable("books", {
     // Representative source for attribution; all volume lookups go through bookEditions.
     apiId: text().unique().notNull(),
+    releaseDateSource: text().$type<"edition" | "openLibrary" | "manual">().default("edition").notNull(),
     ...commonMediaCols(MediaType.BOOKS),
 });
 

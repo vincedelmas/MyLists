@@ -8,7 +8,9 @@ Each reading-list entry references a work and optionally an edition. Its page co
 
 Apply `0052_book_works_editions.sql` through the normal migration runner, after backing up the database. It creates one edition per existing book, keeps the existing work IDs and list entries, and copies edition metadata into their reading snapshots. Ratings, notes, progress and recorded totals are retained. It does not merge existing works automatically.
 
-Existing publication dates move to the editions; work publication dates start unknown because a volume date does not establish first publication. Books leave the “Which came first?” candidate pool until a work publication date is known and the pool is refreshed. Historical game rounds remain intact.
+Existing publication dates move to the editions. Apply `0053_book_publication_dates.sql` as well: it fills unknown work dates from the oldest attached edition and preserves previously supplied work dates. Historical game rounds remain intact; books with dates become eligible when the “Which came first?” pool is refreshed.
+
+An edition-derived first publication date is provisional. Imports, provider refreshes, merges and splits recalculate it from the attached editions. A work date supplied by Open Library takes precedence, and changing the date in **Edit work** marks it as a manual correction that future refreshes preserve. Saving other work fields without changing the date leaves it provisional. Undated editions do not contribute a date.
 
 ## Matching
 
@@ -18,9 +20,11 @@ Optional Open Library enrichment uses ISBNs to look up a work ID and first publi
 
 ## Catalogue management
 
-Managers can open **Books & editions** from a book's controls at `/books/manage`. They can search local works, review suggested matches, refresh individual editions, merge works, move an edition, split an edition into a new work, or mark two works as separate. Refresh existing editions to obtain ISBN evidence that was not stored before this migration.
+Managers can open **Books & editions** from a book's controls at `/books/manage`. The catalogue and comparison sit side by side with independent scrolling and visible merge controls. Search local titles, authors or identifiers; sort by readers, title or publication date. Select up to 50 works individually or a page at a time; the selection stays across searches and pages. The work with the most readers is preselected as the survivor, and managers can choose another to retain its title, cover and work information.
 
-Merge previews list overlapping readers. For each overlap, select the active entry (including its rating and note) and choose whether to combine distinct readings or retain only the selected duplicate's totals. Original entries and affected history are retained in the database audit; the management UI exposes only audit summaries, not private notes. Merges run in one transaction and reject stale previews. The audit is a recovery record, not an automatic undo button. Splitting moves readers currently using that edition; it does not reconstruct previous overlapping entries.
+Use the inspection button to open editions, suggested matches and grouping history in a side panel. From there, add suggested matches to the selection, refresh individual editions, move an edition to another selected work, or split an edition into a new work. With two works selected, **Keep separate** excludes them from matching suggestions. Refresh existing editions to obtain ISBN evidence that was not stored before the work/edition migration.
+
+Merge previews list overlapping readers across the entire selection. For each overlap, select one active entry (including its rating and note) and choose whether to combine all distinct readings or retain only the selected duplicate's totals. The counting rule can be applied to all overlaps at once. Original entries and affected history are retained in the database audit; the management UI exposes only audit summaries, not private notes. The whole batch merges in one transaction and rejects stale previews. The audit is a recovery record, not an automatic undo button. Splitting moves readers currently using that edition; it does not reconstruct previous overlapping entries.
 
 Full merges transfer collections, tags, activity, notifications, import references and game references to the surviving work. Removed work IDs have no redirects. Grouped and manually reviewed works are retained by orphan cleanup.
 

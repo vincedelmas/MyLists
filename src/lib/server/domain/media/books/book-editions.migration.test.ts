@@ -25,6 +25,22 @@ describe("Book work/edition migration", () => {
                 .toEqual({ media_id: 17, edition_id: 17, pages: 320, actual_page: 50, total: 688, redo: 2, reread_pages: "[320,320]", rating: 8.5, comment: "Keep my note" });
             expect(db.query("PRAGMA foreign_key_check").all()).toEqual([]);
             expect(db.query("PRAGMA table_info(books)").all().map((column: any) => column.name)).not.toContain("pages");
+
+            db.exec(`INSERT INTO book_editions (media_id, api_id, name, image_cover, release_date) VALUES (17, 'older-volume', 'Older edition', 'book.jpg', '1980-01-01');
+                INSERT INTO books (id, api_id, name, image_cover, release_date) VALUES (18, 'curated', 'Curated work', 'book.jpg', '1965-01-01');
+                INSERT INTO book_editions (media_id, api_id, name, image_cover, release_date) VALUES (18, 'curated', 'Recent reprint', 'book.jpg', '2000-01-01');
+                INSERT INTO books (id, api_id, name, image_cover) VALUES (19, 'unknown', 'Undated work', 'book.jpg');
+                INSERT INTO which_came_first_media (media_type, media_id, release_date) VALUES ('books', 17, '2020-06-01');`);
+            const publicationMigration = migrations.find(migration => migration.sql.some(statement => statement.includes("ADD `release_date_source`")))!;
+            db.transaction(() => {for (const statement of publicationMigration.sql) db.exec(statement);})();
+            expect(db.query("SELECT id, release_date, release_date_source FROM books ORDER BY id").all()).toEqual([
+                {id: 17, release_date: "1980-01-01", release_date_source: "edition"},
+                {id: 18, release_date: "1965-01-01", release_date_source: "manual"},
+                {id: 19, release_date: null, release_date_source: "edition"},
+            ]);
+            expect(db.query("SELECT release_date FROM which_came_first_media WHERE media_id = 17").get()).toEqual({release_date: "1980-01-01"});
+            expect(db.query("SELECT total, rating, comment FROM books_list").get()).toEqual({total: 688, rating: 8.5, comment: "Keep my note"});
+            expect(db.query("PRAGMA foreign_key_check").all()).toEqual([]);
         }
         finally { db.close(); }
     });

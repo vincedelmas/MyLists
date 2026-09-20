@@ -38,6 +38,8 @@ db.transaction(() => {
     db.delete(schema.animeEpisodesPerSeason).run();
     db.delete(schema.bookEditions).run();
     db.delete(schema.bookWorkAudit).run();
+    db.delete(schema.booksAuthors).run();
+    db.delete(schema.booksGenre).run();
     for (const mediaType of Object.values(MediaType)) {
         db.delete(schema[mediaType]).run();
     }

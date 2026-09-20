@@ -372,6 +372,13 @@
       "when": 1789903458768,
       "tag": "0052_book_works_editions",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1789907228534,
+      "tag": "0053_book_publication_dates",
+      "breakpoints": true
     }
   ]
 }

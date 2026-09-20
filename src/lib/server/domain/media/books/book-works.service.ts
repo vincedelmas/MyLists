@@ -1,11 +1,12 @@
 import type {AnySQLiteColumn} from "drizzle-orm/sqlite-core";
 import {createHash} from "node:crypto";
-import {and, asc, desc, eq, inArray, like, ne, or, sql} from "drizzle-orm";
+import {and, asc, count, desc, eq, inArray, like, ne, or, sql} from "drizzle-orm";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
-import type {BookMergeInput} from "@/lib/schemas/book-editions.schema";
+import type {BookGroupMergeInput, BookMergeInput} from "@/lib/schemas/book-editions.schema";
 import {bookMatchEvidence} from "@/lib/server/domain/media/books/book-matching";
+import {syncBookPublicationDate} from "@/lib/server/domain/media/books/book-publication-date";
 import {createBooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {createBooksStatistics} from "@/lib/server/domain/media/books/books.statistics";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
@@ -18,19 +19,23 @@ import {
 
 const repository = createBooksRepository();
 
-export const searchBookWorks = (query: string, page = 1) => {
-    const condition = or(like(books.name, `%${query}%`), sql`EXISTS (
+export const searchBookWorks = (query: string, page = 1, sort: "readers" | "title" | "oldest" = "readers") => {
+    const condition = or(like(books.name, `%${query}%`), sql`EXISTS (SELECT 1 FROM ${booksAuthors} WHERE ${booksAuthors.mediaId} = ${books.id} AND ${booksAuthors.name} LIKE ${`%${query}%`})`, sql`EXISTS (
         SELECT 1 FROM ${bookEditions} WHERE ${bookEditions.mediaId} = ${books.id}
         AND (${bookEditions.name} LIKE ${`%${query}%`} OR ${bookEditions.apiId} = ${query}
             OR EXISTS (SELECT 1 FROM json_each(${bookEditions.isbns}) WHERE value = ${query}))
     )`);
+    const readerCount = sql<number>`(SELECT count(*) FROM books_list WHERE media_id = books.id)`.as("reader_count");
+    const total = getDbClient().select({count: count()}).from(books).where(condition).get()!.count;
     const items = getDbClient().select({
         id: books.id, name: books.name, imageCover: books.imageCover, releaseDate: books.releaseDate,
         authors: sql<string>`COALESCE((SELECT group_concat(name, ', ') FROM books_authors WHERE media_id = books.id), '')`,
         editions: sql<number>`(SELECT count(*) FROM book_editions WHERE media_id = books.id)`,
-        readers: sql<number>`(SELECT count(*) FROM books_list WHERE media_id = books.id)`,
-    }).from(books).where(condition).orderBy(asc(books.name)).limit(31).offset((page - 1) * 30).all();
-    return { items: items.slice(0, 30), hasNextPage: items.length > 30 };
+        readers: readerCount,
+    }).from(books).where(condition).orderBy(...(sort === "readers" ? [desc(readerCount), asc(books.name), asc(books.id)]
+        : sort === "oldest" ? [asc(sql`${books.releaseDate} IS NULL`), asc(books.releaseDate), asc(books.name), asc(books.id)]
+            : [asc(books.name), asc(books.id)])).limit(30).offset((page - 1) * 30).all();
+    return { items, total, hasNextPage: page * 30 < total };
 };
 
 export const getBookWork = (mediaId: number) => {
@@ -92,6 +97,61 @@ export const previewBookMerge = (sourceId: number, targetId: number, editionId?:
         sourceEditions: state.sourceEditions, targetEditions: state.targetEditions,
         affectedReaders: state.sourceLists.length, conflicts, version: state.version };
 };
+
+export const previewBookWorkGroup = (workIds: number[]) => {
+    const tx = getDbClient();
+    const works = tx.select().from(books).where(inArray(books.id, workIds)).orderBy(asc(books.id)).all();
+    if (works.length !== workIds.length || works.length === 0) throw new FormattedError("The selected works changed. Reload your selection.");
+    const editions = tx.select().from(bookEditions).where(inArray(bookEditions.mediaId, workIds)).orderBy(asc(bookEditions.id)).all();
+    const lists = tx.select().from(booksList).where(inArray(booksList.mediaId, workIds)).orderBy(asc(booksList.id)).all();
+    const authors = tx.select().from(booksAuthors).where(inArray(booksAuthors.mediaId, workIds)).orderBy(asc(booksAuthors.id)).all();
+    const version = createHash("sha256").update(JSON.stringify({works, editions, lists, authors})).digest("hex");
+    const entriesByUser = new Map<number, typeof lists>();
+    for (const row of lists) {
+        const entries = entriesByUser.get(row.userId) ?? [];
+        entries.push(row); entriesByUser.set(row.userId, entries);
+    }
+    const overlappingUsers = [...entriesByUser].filter(([, entries]) => entries.length > 1);
+    const names = new Map(tx.select({id: user.id, name: user.name}).from(user)
+        .where(inArray(user.id, overlappingUsers.map(([userId]) => userId))).all().map(row => [row.id, row.name]));
+    const comparisons = works.map(work => ({
+        ...work,
+        readers: lists.filter(row => row.mediaId === work.id).length,
+        editions: editions.filter(row => row.mediaId === work.id),
+        authors: authors.filter(row => row.mediaId === work.id).map(row => row.name),
+    })).sort((a, b) => b.readers - a.readers || a.id - b.id);
+    const conflicts = overlappingUsers.map(([userId, entries]) => ({userId, name: names.get(userId)!, entries: entries.map(row => ({
+        workId: row.mediaId, status: row.status, total: row.total, redo: row.redo, rating: row.rating,
+        editionName: row.editionName, hasComment: !!row.comment,
+    }))}));
+    return {works: comparisons, recommendedTargetId: comparisons[0].id, readers: entriesByUser.size,
+        editionCount: editions.length, conflicts, version};
+};
+
+export const mergeBookWorkGroup = (actorId: number, input: BookGroupMergeInput) => withTransaction(() => {
+    const preview = previewBookWorkGroup(input.workIds);
+    if (preview.version !== input.version) throw new FormattedError("These books changed. Reload the comparison before applying it.");
+    if (input.workIds.length < 2 || !input.workIds.includes(input.targetId)) throw new FormattedError("Choose a selected work to keep.");
+    const resolutions = new Map(input.resolutions.map(row => [row.userId, row]));
+    if (input.resolutions.length !== preview.conflicts.length || resolutions.size !== preview.conflicts.length
+        || preview.conflicts.some(conflict => !conflict.entries.some(entry => entry.workId === resolutions.get(conflict.userId)?.keepWorkId))) {
+        throw new FormattedError("Resolve every overlapping reader before merging.");
+    }
+    const affectedUsers = new Set<number>();
+    // Reuse the audited merge path inside one outer transaction: the whole selection succeeds or rolls back.
+    for (const sourceId of input.workIds.filter(id => id !== input.targetId)) {
+        const pair = previewBookMerge(sourceId, input.targetId);
+        const result = mergeBookWorks(actorId, {
+            sourceId, targetId: input.targetId, version: pair.version, metadata: "target",
+            resolutions: pair.conflicts.map(conflict => {
+                const resolution = resolutions.get(conflict.userId)!;
+                return {userId: conflict.userId, keep: resolution.keepWorkId === sourceId ? "source" : "target", reading: resolution.reading};
+            }),
+        });
+        for (const userId of result.affectedUsers) affectedUsers.add(userId);
+    }
+    return {mediaId: input.targetId, affectedUsers: [...affectedUsers]};
+});
 
 export const keepBookWorksSeparate = (actorId: number, sourceId: number, targetId: number) => withTransaction(() => {
     const state = readMergeState(sourceId, targetId);
@@ -195,7 +255,7 @@ export const mergeBookWorks = (actorId: number, input: BookMergeInput) => withTr
         tx.update(importItems).set({ matchedMediaId: targetId }).where(and(eq(importItems.mediaType, MediaType.BOOKS), eq(importItems.matchedMediaId, sourceId))).run();
         tx.update(dailyMediadle).set({ mediaId: targetId }).where(and(eq(dailyMediadle.mediaType, MediaType.BOOKS), eq(dailyMediadle.mediaId, sourceId))).run();
         tx.delete(whichCameFirstMedia).where(and(eq(whichCameFirstMedia.mediaType, MediaType.BOOKS), inArray(whichCameFirstMedia.mediaId, [sourceId, targetId]))).run();
-        const releaseDate = input.metadata === "source" ? state.source.releaseDate : state.target.releaseDate;
+        const releaseDate = syncBookPublicationDate(targetId);
         if (releaseDate) tx.insert(whichCameFirstMedia).values({ mediaType: MediaType.BOOKS, mediaId: targetId, releaseDate }).run();
         tx.update(whichCameFirstRounds).set({ leftMediaId: targetId }).where(and(eq(whichCameFirstRounds.leftMediaType, MediaType.BOOKS), eq(whichCameFirstRounds.leftMediaId, sourceId))).run();
         tx.update(whichCameFirstRounds).set({ rightMediaId: targetId }).where(and(eq(whichCameFirstRounds.rightMediaType, MediaType.BOOKS), eq(whichCameFirstRounds.rightMediaId, sourceId))).run();
@@ -211,6 +271,8 @@ export const mergeBookWorks = (actorId: number, input: BookMergeInput) => withTr
         tx.delete(books).where(eq(books.id, sourceId)).run();
     }
     else {
+        syncBookPublicationDate(sourceId);
+        syncBookPublicationDate(targetId);
         const remaining = state.sourceEditions.find(edition => edition.id !== editionId)!;
         if (state.source.apiId === state.sourceEditions.find(edition => edition.id === editionId)!.apiId) {
             tx.update(books).set({ apiId: remaining.apiId }).where(eq(books.id, sourceId)).run();

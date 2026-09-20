@@ -24,7 +24,7 @@ describe("optional Open Library work matching", () => {
     it("adds compatible work evidence and caches by ISBN while preserving Google volume details", async () => {
         mocks.call.mockResolvedValue(Response.json({ docs: [work] }));
         expect(await enrich(details, context)).toMatchObject({
-            mediaData: { apiId: "google-volume", name: "Un livre", releaseDate: "1988-01-01" },
+            mediaData: { apiId: "google-volume", name: "Un livre", releaseDate: "1988-01-01", releaseDateSource: "openLibrary" },
             editionData: { apiId: "google-volume", openLibraryWorkId: "/works/OL123W" },
         });
         await enrich(details, context);

@@ -1,5 +1,6 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import {bookMatchEvidence} from "@/lib/server/domain/media/books/book-matching";
+import {syncBookPublicationDate} from "@/lib/server/domain/media/books/book-publication-date";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {asc, eq, getTableColumns, inArray, isNull, like, or, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -153,6 +154,7 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
             }
         }
         tx.insert(bookEditions).values({ ...editionData, mediaId, lastApiUpdate: sql`datetime('now')` }).run();
+        syncBookPublicationDate(mediaId, mediaData.releaseDateSource === "openLibrary" ? mediaData.releaseDate : undefined);
         return mediaId;
     }
 
@@ -169,8 +171,8 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
             }).where(eq(bookEditions.id, edition.id)).run();
             tx.update(books).set({
                 lastApiUpdate: sql`datetime('now')`,
-                releaseDate: mediaData.releaseDate ? sql`COALESCE(${books.releaseDate}, ${mediaData.releaseDate})` : undefined,
             }).where(eq(books.id, edition.mediaId)).run();
+            syncBookPublicationDate(edition.mediaId, mediaData.releaseDateSource === "openLibrary" ? mediaData.releaseDate : undefined);
             return true;
         }
 
@@ -178,6 +180,9 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
             .update(books)
             .set({
                 ...mediaData,
+                releaseDateSource: mediaData.releaseDate !== undefined
+                    ? sql`CASE WHEN ${books.releaseDate} IS ${mediaData.releaseDate} THEN ${books.releaseDateSource} ELSE 'manual' END`
+                    : undefined,
                 imageCover: mediaData.imageCover === "default.jpg" ? undefined : mediaData.imageCover,
                 lastApiUpdate: sql`datetime('now')`,
             })
@@ -185,6 +190,7 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
             .returning({ id: books.id }).all();
 
         const mediaId = media.id;
+        syncBookPublicationDate(mediaId);
 
         if (authorsData !== undefined) {
             tx

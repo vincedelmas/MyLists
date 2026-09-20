@@ -5,13 +5,15 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {ImportSource, MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
+import type {InsertBooksWithDetails} from "./books.types";
+import {bookGroupMergeSchema, bookGroupPreviewSchema} from "@/lib/schemas/book-editions.schema";
 
 const context = vi.hoisted(() => ({ db: undefined as any }));
 vi.mock("@/lib/server/database/db", () => ({ get db() { return context.db; } }));
 vi.mock("@/lib/server/core/images/image-saver", () => ({ saveImageFromUrl: vi.fn(), saveUploadedImage: vi.fn() }));
 const { createBooksRepository } = await import("./books.repository");
 const { createBooksService } = await import("./books.service");
-const { getBookWork, keepBookWorksSeparate, mergeBookWorks, previewBookMerge, searchBookWorks, splitBookEdition } = await import("./book-works.service");
+const { getBookWork, keepBookWorksSeparate, mergeBookWorkGroup, mergeBookWorks, previewBookMerge, previewBookWorkGroup, searchBookWorks, splitBookEdition } = await import("./book-works.service");
 const { withTransaction } = await import("@/lib/server/database/async-storage");
 const { MediaMaintenanceRepository } = await import("@/lib/server/domain/maintenance/media-maintenance.repository");
 
@@ -20,7 +22,7 @@ describe("Book editions and work grouping", () => {
     let db: ReturnType<typeof drizzle<typeof schema>>;
     let repository: ReturnType<typeof createBooksRepository>;
     let service: ReturnType<typeof createBooksService>;
-    const details = (apiId: string, name = "A Book", pages = 300) => ({
+    const details = (apiId: string, name = "A Book", pages = 300): InsertBooksWithDetails => ({
         mediaData: { apiId, name, imageCover: "work.jpg", releaseDate: null, synopsis: "Work description" },
         authorsData: [{ name: "An Author" }],
         editionData: { apiId, name, pages, language: "en", publishers: "Publisher", imageCover: "edition.jpg", authors: ["An Author"], isbns: [] as string[] },
@@ -72,6 +74,60 @@ describe("Book editions and work grouping", () => {
         db.insert(schema.booksAuthors).values({id: 10, mediaId: 100, name: "An Author"}).run();
         addReader(100, 1, 300);
         expect(searchBookWorks("Catalogue").items).toMatchObject([{id: 100, editions: 1, readers: 1, authors: "An Author"}]);
+    });
+
+    it("searches by author and sorts the catalogue by readers, title or oldest publication", () => {
+        const older = details("older", "A title"); older.editionData.releaseDate = "1900-01-01";
+        const first = withTransaction(() => repository.storeMediaWithDetails(older));
+        const second = addWork("popular", "Z title");
+        addReader(first, 1, 300); addReader(second, 1, 300); addReader(second, 2, 300);
+        expect(searchBookWorks("An Author").items.map(work => work.id)).toEqual([second, first]);
+        expect(searchBookWorks("", 1, "title").items.map(work => work.id)).toEqual([first, second]);
+        expect(searchBookWorks("", 1, "oldest").items.map(work => work.id)).toEqual([first, second]);
+        expect(searchBookWorks("unrelated").total).toBe(0);
+    });
+
+    it("uses the oldest edition provisionally and recalculates it when a provider corrects an edition", () => {
+        const first = details("newer"); Object.assign(first.editionData, {releaseDate: "2000-06-01", isbns: ["9780140328721"]});
+        const id = withTransaction(() => repository.storeMediaWithDetails(first));
+        expect(repository.findById(id)).toMatchObject({releaseDate: "2000-06-01", releaseDateSource: "edition"});
+        const older = details("older"); Object.assign(older.editionData, {releaseDate: "1990-03-01", isbns: ["9780140328721"]});
+        expect(withTransaction(() => repository.storeMediaWithDetails(older))).toBe(id);
+        expect(repository.findById(id)!.releaseDate).toBe("1990-03-01");
+        db.insert(schema.whichCameFirstMedia).values({mediaId: id, mediaType: MediaType.BOOKS, releaseDate: "1990-03-01"}).run();
+        older.editionData.releaseDate = "2010-01-01";
+        withTransaction(() => repository.updateMediaWithDetails(older));
+        expect(repository.findById(id)!.releaseDate).toBe("2000-06-01");
+        expect(db.select().from(schema.whichCameFirstMedia).get()!.releaseDate).toBe("2000-06-01");
+        // Saving unrelated work fields must not freeze a provisional date.
+        withTransaction(() => repository.updateMediaWithDetails({mediaData: {apiId: "newer", name: "Curated", releaseDate: "2000-06-01"}}));
+        expect(repository.findById(id)!.releaseDateSource).toBe("edition");
+        first.editionData.releaseDate = null; older.editionData.releaseDate = null;
+        withTransaction(() => {repository.updateMediaWithDetails(first); repository.updateMediaWithDetails(older);});
+        expect(repository.findById(id)!.releaseDate).toBeNull();
+        expect(db.select().from(schema.whichCameFirstMedia).all()).toHaveLength(0);
+    });
+
+    it("lets a work provider improve an edition date and protects manual corrections from refreshes", () => {
+        const volume = details("one"); volume.editionData.releaseDate = "2000-01-01";
+        const id = withTransaction(() => repository.storeMediaWithDetails(volume));
+        volume.mediaData.releaseDate = "1950-01-01"; volume.mediaData.releaseDateSource = "openLibrary";
+        withTransaction(() => repository.updateMediaWithDetails(volume));
+        expect(repository.findById(id)).toMatchObject({releaseDate: "1950-01-01", releaseDateSource: "openLibrary"});
+        withTransaction(() => repository.updateMediaWithDetails(details("one")));
+        expect(repository.findById(id)!.releaseDate).toBe("1950-01-01");
+        withTransaction(() => repository.updateMediaWithDetails({mediaData: {apiId: "one", releaseDate: "1948-03-01"}}));
+        withTransaction(() => repository.updateMediaWithDetails(volume));
+        expect(repository.findById(id)).toMatchObject({releaseDate: "1948-03-01", releaseDateSource: "manual"});
+    });
+
+    it("recalculates both work dates when an older edition is split off", () => {
+        const volume = details("newer"); volume.editionData.releaseDate = "2000-01-01";
+        const sourceId = withTransaction(() => repository.storeMediaWithDetails(volume));
+        const edition = db.insert(schema.bookEditions).values({...details("older").editionData, mediaId: sourceId, releaseDate: "1900-01-01"}).returning().get();
+        const result = splitBookEdition(3, edition.id, "Separate work");
+        expect(repository.findById(sourceId)!.releaseDate).toBe("2000-01-01");
+        expect(repository.findById(result.mediaId)).toMatchObject({releaseDate: "1900-01-01", releaseDateSource: "edition"});
     });
 
     it("leaves conflicting identifier matches for manual review", () => {
@@ -145,7 +201,7 @@ describe("Book editions and work grouping", () => {
 
     it("moves shared references and protects reviewed catalogue entries and archived covers from cleanup", async () => {
         const sourceId = addWork("source"); const targetId = addWork("target");
-        db.update(schema.books).set({releaseDate: "1900-01-01"}).where(eq(schema.books.id, targetId)).run();
+        db.update(schema.books).set({releaseDate: "1900-01-01", releaseDateSource: "manual"}).where(eq(schema.books.id, targetId)).run();
         db.insert(schema.collections).values({id: 1, ownerId: 1, title: "Reading", mediaType: MediaType.BOOKS}).run();
         db.insert(schema.collectionItems).values([sourceId, targetId].map((mediaId, orderIndex) => ({collectionId: 1, mediaId, mediaType: MediaType.BOOKS, orderIndex}))).run();
         db.insert(schema.mediaNotifications).values({userId: 1, mediaId: sourceId, mediaType: MediaType.BOOKS, name: "Book"}).run();
@@ -201,5 +257,71 @@ describe("Book editions and work grouping", () => {
         withTransaction(() => repository.updateMediaWithDetails(second));
         expect(repository.findEditionByApiId("third")!.mediaId).toBe(result.mediaId);
         expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);
+    });
+
+    it("preselects the work with the most readers and merges a whole group with one overlap decision per reader", () => {
+        const first = addWork("one", "Original"); const target = addWork("two", "Most popular", 420); const third = addWork("three", "Translation", 200);
+        const workIds = [first, target, third];
+        for (const [mediaId, total] of [[first, 300], [target, 420], [third, 200]]) addReader(mediaId, 1, total, `Note ${mediaId}`);
+        addReader(target, 2, 420);
+        db.update(schema.bookEditions).set({releaseDate: "1850-01-01"}).where(eq(schema.bookEditions.mediaId, first)).run();
+        db.update(schema.bookEditions).set({releaseDate: "2000-01-01"}).where(eq(schema.bookEditions.mediaId, target)).run();
+        const preview = previewBookWorkGroup(workIds);
+        expect(preview).toMatchObject({recommendedTargetId: target, readers: 2, editionCount: 3});
+        expect(preview.conflicts).toHaveLength(1);
+        expect(preview.conflicts[0].entries).toHaveLength(3);
+        expect(preview.conflicts[0].entries[0]).not.toHaveProperty("comment");
+        const input = {workIds, targetId: target, version: preview.version, resolutions: []};
+        expect(() => mergeBookWorkGroup(3, input)).toThrow("Resolve every");
+        // Choose the entry in the last work merged, after earlier readings have already been accumulated.
+        expect(mergeBookWorkGroup(3, {...input, resolutions: [{userId: 1, keepWorkId: third, reading: "combine"}]})).toMatchObject({mediaId: target, affectedUsers: [1, 2]});
+        expect(db.select().from(schema.books).all()).toMatchObject([{id: target, name: "Most popular", releaseDate: "1850-01-01"}]);
+        expect(repository.getEditions(target)).toHaveLength(3);
+        expect(db.select().from(schema.booksList).where(eq(schema.booksList.userId, 1)).get()).toMatchObject({mediaId: target, total: 920, redo: 2, pages: 200, comment: `Note ${third}`, rereadPages: [300, 420]});
+        expect(db.select().from(schema.userMediaSettings).where(eq(schema.userMediaSettings.userId, 1)).get()).toMatchObject({totalEntries: 1, totalSpecific: 920, totalRedo: 2});
+        expect(db.select().from(schema.bookWorkAudit).all()).toHaveLength(2);
+        expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);
+    });
+
+    it("preserves selected duplicate totals even when overlaps exist only between source works", () => {
+        const first = addWork("one"); const target = addWork("two"); const third = addWork("three");
+        addReader(first, 1, 300, "Keep earliest merged"); addReader(third, 1, 200, "Discard");
+        addReader(first, 2, 300, "Discard"); addReader(third, 2, 200, "Keep last merged");
+        const workIds = [first, target, third];
+        const preview = previewBookWorkGroup(workIds);
+        expect(preview.recommendedTargetId).toBe(first);
+        const result = mergeBookWorkGroup(3, {workIds, targetId: target, version: preview.version,
+            resolutions: [{userId: 1, keepWorkId: first, reading: "duplicate"}, {userId: 2, keepWorkId: third, reading: "duplicate"}]});
+        expect(result.mediaId).toBe(target);
+        expect(db.select().from(schema.booksList).all()).toEqual(expect.arrayContaining([
+            expect.objectContaining({userId: 1, mediaId: target, total: 300, redo: 0, comment: "Keep earliest merged"}),
+            expect.objectContaining({userId: 2, mediaId: target, total: 200, redo: 0, comment: "Keep last merged"}),
+        ]));
+    });
+
+    it("rejects stale group previews and rolls back earlier merges if a later merge fails", () => {
+        const first = addWork("one"); const target = addWork("two"); const third = addWork("three");
+        addReader(first, 1, 300); addReader(third, 2, 300);
+        const workIds = [first, target, third];
+        const preview = previewBookWorkGroup(workIds);
+        db.update(schema.booksList).set({comment: "Changed during review"}).where(eq(schema.booksList.mediaId, third)).run();
+        const input = {workIds, targetId: target, version: preview.version, resolutions: []};
+        expect(() => mergeBookWorkGroup(3, input)).toThrow("changed");
+        sqlite.exec(`CREATE TRIGGER fail_late_merge BEFORE DELETE ON books WHEN OLD.id = ${third} BEGIN SELECT RAISE(ABORT, 'later merge failure'); END`);
+        expect(() => mergeBookWorkGroup(3, {...input, version: previewBookWorkGroup(workIds).version})).toThrow();
+        expect(db.select().from(schema.books).all()).toHaveLength(3);
+        expect(repository.getEditions(first)).toHaveLength(1);
+        expect(repository.getEditions(target)).toHaveLength(1);
+        expect(db.select().from(schema.booksList).all().map(row => row.mediaId)).toEqual([first, third]);
+        expect(db.select().from(schema.bookWorkAudit).all()).toHaveLength(0);
+    });
+
+    it("bounds bulk selections and requires the surviving work to be selected", () => {
+        expect(bookGroupPreviewSchema.safeParse({workIds: []}).success).toBe(false);
+        expect(bookGroupPreviewSchema.safeParse({workIds: [1, 1]}).success).toBe(false);
+        expect(bookGroupPreviewSchema.safeParse({workIds: Array.from({length: 51}, (_, i) => i + 1)}).success).toBe(false);
+        const input = {workIds: [1, 2], targetId: 3, version: "a".repeat(64)};
+        expect(bookGroupMergeSchema.safeParse(input).success).toBe(false);
+        expect(bookGroupMergeSchema.safeParse({...input, targetId: 2}).success).toBe(true);
     });
 });

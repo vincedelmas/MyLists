@@ -22,6 +22,7 @@ describe("BooksService", () => {
         name: "Test Book",
         imageCover: "test.jpg",
         releaseDate: "2025-01-01",
+        releaseDateSource: "edition",
         synopsis: "A test book.",
         apiId: "123",
         lockStatus: true,

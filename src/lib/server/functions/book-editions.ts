@@ -4,8 +4,8 @@ import {getContainer} from "@/lib/server/core/container";
 import {logger} from "@/lib/server/core/logger";
 import {getPlatformStatsCacheKey, getUserStatsCacheKey} from "@/lib/server/core/cache-keys";
 import {publicAuthMiddleware, requiredAuthAndManagerRoleMiddleware} from "@/lib/server/middlewares/authentication";
-import {bookCatalogueSchema, bookEditionRefreshSchema, bookMergePreviewSchema, bookMergeSchema, bookSplitSchema, bookWorkPairSchema, bookWorkSchema} from "@/lib/schemas/book-editions.schema";
-import {getBookWork, keepBookWorksSeparate, mergeBookWorks, previewBookMerge, searchBookWorks, splitBookEdition} from "@/lib/server/domain/media/books/book-works.service";
+import {bookCatalogueSchema, bookEditionRefreshSchema, bookGroupMergeSchema, bookGroupPreviewSchema, bookMergePreviewSchema, bookMergeSchema, bookSplitSchema, bookWorkPairSchema, bookWorkSchema} from "@/lib/schemas/book-editions.schema";
+import {getBookWork, keepBookWorksSeparate, mergeBookWorkGroup, mergeBookWorks, previewBookMerge, previewBookWorkGroup, searchBookWorks, splitBookEdition} from "@/lib/server/domain/media/books/book-works.service";
 
 
 export const getBookEditions = createServerFn({ method: "GET" }).middleware([publicAuthMiddleware])
@@ -15,13 +15,16 @@ export const getBookEditions = createServerFn({ method: "GET" }).middleware([pub
     });
 
 export const getBookCatalogue = createServerFn({ method: "GET" }).middleware([requiredAuthAndManagerRoleMiddleware])
-    .validator(bookCatalogueSchema).handler(({ data }) => searchBookWorks(data.query, data.page));
+    .validator(bookCatalogueSchema).handler(({ data }) => searchBookWorks(data.query, data.page, data.sort));
 
 export const getBookWorkManagement = createServerFn({ method: "GET" }).middleware([requiredAuthAndManagerRoleMiddleware])
     .validator(bookWorkSchema).handler(({ data }) => getBookWork(data.mediaId));
 
 export const getBookMergePreview = createServerFn({ method: "GET" }).middleware([requiredAuthAndManagerRoleMiddleware])
     .validator(bookMergePreviewSchema).handler(({ data }) => previewBookMerge(data.sourceId, data.targetId, data.editionId));
+
+export const getBookGroupPreview = createServerFn({ method: "GET" }).middleware([requiredAuthAndManagerRoleMiddleware])
+    .validator(bookGroupPreviewSchema).handler(({ data }) => previewBookWorkGroup(data.workIds));
 
 const invalidateBookStats = async (userIds: number[]) => {
     const { cacheManager } = await getContainer();
@@ -46,6 +49,13 @@ export const postMergeBookWorks = createServerFn({ method: "POST" }).middleware(
         const result = mergeBookWorks(currentUser.id, data);
         await invalidateBookStats(result.affectedUsers);
         return { mediaId: result.mediaId };
+    });
+
+export const postMergeBookWorkGroup = createServerFn({ method: "POST" }).middleware([requiredAuthAndManagerRoleMiddleware])
+    .validator(bookGroupMergeSchema).handler(async ({ data, context: { currentUser } }) => {
+        const result = mergeBookWorkGroup(currentUser.id, data);
+        await invalidateBookStats(result.affectedUsers);
+        return {mediaId: result.mediaId};
     });
 
 export const postSplitBookEdition = createServerFn({ method: "POST" }).middleware([requiredAuthAndManagerRoleMiddleware])

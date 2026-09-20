@@ -33,13 +33,14 @@ export const createOpenLibraryBookEnricher = (cache: Pick<CacheManager, "wrap">)
             if (!work || !/^\/works\/OL\d+W$/.test(work.key)
                 || !work.author_name?.some(author => authors.has(normalizeBookName(author)))) return details;
 
+            const publicationDate = work.first_publish_year && work.first_publish_year > 0 && work.first_publish_year < 10000
+                ? `${String(work.first_publish_year).padStart(4, "0")}-01-01` : null;
             return {
                 ...details,
                 editionData: { ...details.editionData, openLibraryWorkId: work.key },
                 mediaData: {
                     ...details.mediaData,
-                    releaseDate: work.first_publish_year && work.first_publish_year > 0 && work.first_publish_year < 10000
-                        ? `${String(work.first_publish_year).padStart(4, "0")}-01-01` : null,
+                    ...(publicationDate ? { releaseDate: publicationDate, releaseDateSource: "openLibrary" as const } : {}),
                 },
             };
         }

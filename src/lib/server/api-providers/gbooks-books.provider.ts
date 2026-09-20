@@ -38,6 +38,7 @@ export const createBooksIngestionService = (repository: BooksRepository, provide
     return createMediaIngestionService({
         provider,
         repository,
+        getDetailsSelection: apiId => ({editionId: repository.findEditionByApiId(String(apiId))!.id}),
         enrichers: serverEnv.OPEN_LIBRARY_BOOK_MATCHING ? [createOpenLibraryBookEnricher(cacheManager)] : [],
     });
 }

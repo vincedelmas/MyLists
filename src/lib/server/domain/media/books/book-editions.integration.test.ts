@@ -17,7 +17,7 @@ const { getBookWork, keepBookWorksSeparate, mergeBookWorkGroup, mergeBookWorks, 
 const { withTransaction } = await import("@/lib/server/database/async-storage");
 const { MediaMaintenanceRepository } = await import("@/lib/server/domain/maintenance/media-maintenance.repository");
 const {createBookIsbnService} = await import("./book-isbn.service");
-const {getBookReviewQueue, recordBookCandidate, scanBookWorkCandidates} = await import("./book-review.service");
+const {getBookAuthorReviewQueue, getBookReviewQueue, recordBookCandidate, scanBookWorkCandidates} = await import("./book-review.service");
 const {createMediaListQueries} = await import("../base/media-list.queries");
 const {mediaListSchema} = await import("@/lib/schemas/media-lists.schema");
 const {booksServerDefinition} = await import("@/lib/media-definitions/books/book.definition.server");
@@ -56,6 +56,40 @@ describe("Book editions and work grouping", () => {
         isbnService = createBookIsbnService(api, provider, {wrap: async <T>(_key: string, fn: () => Promise<T>) => fn()});
     });
     afterEach(() => { sqlite.close(); context.db = undefined; });
+
+    it("groups translated titles by a shared author despite additional translators, without promoting them to strong matches", () => {
+        const english = addWork("english", "The Fellowship of the Ring");
+        const french = addWork("french", "La Communauté de l’anneau");
+        const other = addWork("other", "The Hobbit");
+        db.update(schema.bookEditions).set({authors: ["An Author", "French Translator"]}).where(eq(schema.bookEditions.mediaId, french)).run();
+        addReader(french, 1, 300); addReader(french, 2, 300);
+        scanBookWorkCandidates();
+        expect(getBookReviewQueue().total).toBe(0);
+        const queue = getBookAuthorReviewQueue();
+        expect(queue.total).toBe(1);
+        expect(queue.groups[0]).toMatchObject({confidence: "author", evidence: ["Shared author: An Author"]});
+        expect(queue.groups[0].works.map(work => work.id)).toEqual([french, english, other]);
+        expect(previewBookWorkGroup(queue.groups[0].workIds).recommendedTargetId).toBe(french);
+        expect(api.search).not.toHaveBeenCalled(); expect(provider.getDetails).not.toHaveBeenCalled();
+        keepBookWorksSeparate(3, english, french); keepBookWorksSeparate(3, english, other); keepBookWorksSeparate(3, french, other);
+        scanBookWorkCandidates();
+        expect(getBookAuthorReviewQueue().total).toBe(0);
+    });
+
+    it("does not chain different shared authors into one review group", () => {
+        const first = addWork("first", "First title"), middle = addWork("middle", "Second title"), last = addWork("last", "Third title");
+        db.delete(schema.booksAuthors).run();
+        db.update(schema.bookEditions).set({authors: ["Alice Adams"]}).where(eq(schema.bookEditions.mediaId, first)).run();
+        db.update(schema.bookEditions).set({authors: ["Alice Adams", "Bob Brown"]}).where(eq(schema.bookEditions.mediaId, middle)).run();
+        db.update(schema.bookEditions).set({authors: ["Bob Brown"]}).where(eq(schema.bookEditions.mediaId, last)).run();
+        expect(getBookAuthorReviewQueue().groups.map(group => group.workIds)).toEqual([[first, middle], [middle, last]]);
+    });
+
+    it("retains reviewed books during cleanup without retaining unrelated orphaned works", () => {
+        const first = addWork("reviewed-one"), second = addWork("reviewed-two"), orphan = addWork("orphan");
+        keepBookWorksSeparate(3, first, second);
+        expect(MediaMaintenanceRepository.getOrphanedMediaIds(MediaType.BOOKS)).toEqual([orphan]);
+    });
 
     it("scans offline, groups three matches, ranks by readership and persists keep-separate decisions", () => {
         const ids = [addWork("one"), addWork("two"), addWork("three")];

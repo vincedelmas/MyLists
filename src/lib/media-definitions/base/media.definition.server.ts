@@ -3,7 +3,7 @@ import type {CoverType} from "@/lib/types/media-common.types";
 import type {TopAffinityDefinition} from "@/lib/types/stats.types";
 import type {MediaEditFieldByType} from "@/lib/schemas/media-details.schema";
 import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
-import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import type {ApiProviderType, JobType, MediaType, RoleType, Status} from "@/lib/utils/enums";
 import type {AnySQLiteColumn, AnySQLiteTable, SelectedFieldsFlat} from "drizzle-orm/sqlite-core";
 import {FilterDefinitions, FilterOptionLoaders} from "@/lib/server/domain/media/base/media-list.queries";
 
@@ -107,12 +107,18 @@ type JobDefinition = {
     postProcess?: (results: { name: string | null }[]) => { name: string | null }[];
 };
 
+type MediaMaintenancePolicy = {
+    readonly additionalCoverReferences?: SQL;
+    readonly retainOrphan?: SQL;
+};
+
 
 interface MediaRepositoryDefinition<
     TTables extends BaseMediaTables = BaseMediaTables,
     TSortDefinitions extends SortDefinitions = SortDefinitions,
 > {
     readonly tables: TTables;
+    readonly maintenance?: MediaMaintenancePolicy;
     readonly jobs: Partial<Record<JobType, JobDefinition>>;
     readonly popularity?: {
         readonly eligibility: SQL;
@@ -167,6 +173,7 @@ export type MediaIngestionPolicy = {
         readonly networks?: number;
     };
     readonly refresh?: {
+        readonly minimumRole?: RoleType;
         readonly chunkSize?: number;
         readonly staleAfterDays?: number;
         readonly lockAfterMonths?: number;
@@ -200,6 +207,7 @@ export interface ServerMediaDefinition<
 
 export type AnyMediaRepositoryDefinition = {
     readonly tables: BaseMediaTables;
+    readonly maintenance?: MediaMaintenancePolicy;
     readonly popularity?: { readonly eligibility: SQL };
     readonly jobs: Partial<Record<JobType, JobDefinition>>;
     readonly communityActivity: {

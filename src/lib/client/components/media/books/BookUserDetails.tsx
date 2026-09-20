@@ -1,5 +1,4 @@
 import React from "react";
-import {BookEditionDialog} from "@/lib/client/components/media/books/BookEditionPicker";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {UpdateRedo} from "@/lib/client/components/media/base/UpdateRedo";
 import {UpdateInput} from "@/lib/client/components/media/base/UpdateInput";
@@ -16,7 +15,6 @@ export const BooksUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, mutationOptions);
     return (
         <>
-            <BookEditionDialog userMedia={userMedia} queryOption={queryOption} mutationOptions={mutationOptions}/>
             <UpdateStatus
                 mediaType={mediaType}
                 status={userMedia.status}

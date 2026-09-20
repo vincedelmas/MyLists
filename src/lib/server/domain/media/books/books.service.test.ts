@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
 import type {Book, BooksList} from "./books.types";
-import {RatingSystemType, Status} from "@/lib/utils/enums";
+import {RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
 import {createBooksService} from "@/lib/server/domain/media/books/books.service";
 import type {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
@@ -14,6 +14,13 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 describe("BooksService", () => {
     const booksRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as BooksRepository;
     const booksService = createBooksService(booksRepository);
+
+    it("keeps book metadata refresh restricted to catalogue editors", () => {
+        expect(booksService.canRefreshMetadata({kind: "anonymous"})).toBe(false);
+        expect(booksService.canRefreshMetadata({kind: "user", id: 1, role: RoleType.USER})).toBe(false);
+        expect(booksService.canRefreshMetadata({kind: "user", id: 1, role: RoleType.MANAGER})).toBe(true);
+        expect(booksService.canRefreshMetadata({kind: "user", id: 1, role: RoleType.ADMIN})).toBe(true);
+    });
 
     const TIME_PER_PAGE = 1.7;
 

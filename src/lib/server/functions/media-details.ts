@@ -33,10 +33,7 @@ export const getMediaDetails = createServerFn({ method: "GET" })
             similarMedia,
         } = await mediaService.getMediaAndUserDetails(currentUser?.id, mediaId);
 
-        const bookEdition = mediaType === MediaType.BOOKS && userMedia && "editionId" in userMedia && userMedia.editionId
-            ? container.registries.mediaService.get(MediaType.BOOKS).getEditions(mediaId).find(edition => edition.id === userMedia.editionId) ?? null
-            : null;
-        return { media, userMedia, followsData, similarMedia, bookEdition };
+        return {media, userMedia, followsData, similarMedia, canRefresh: mediaService.canRefreshMetadata(toActor(currentUser))};
     });
 
 
@@ -57,10 +54,7 @@ export const resolveExternalMedia = createServerFn({ method: "POST" })
         const container = await getContainer();
         const ingestionService = container.registries.ingestionServices.get(mediaType);
         const mediaId = await ingestionService.storeFromExternal(apiId);
-        const editionId = mediaType === MediaType.BOOKS
-            ? container.registries.mediaService.get(MediaType.BOOKS).findEditionByApiId(apiId)?.id
-            : undefined;
-        return { mediaId, editionId };
+        return {mediaId, ...ingestionService.getDetailsSelection(apiId)};
     });
 
 
@@ -84,8 +78,8 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
         const ingestionService = container.registries.ingestionServices.get(mediaType);
         const isManagerOrAbove = hasRequiredRole(toActor(currentUser), RoleType.MANAGER);
 
-        if (!isManagerOrAbove && mediaType === MediaType.BOOKS) {
-            throw new FormattedError("Unauthorized to refresh book metadata.");
+        if (!mediaService.canRefreshMetadata(toActor(currentUser))) {
+            throw new FormattedError("Unauthorized to refresh this media's metadata.");
         }
 
         const media = mediaService.findById(mediaId);

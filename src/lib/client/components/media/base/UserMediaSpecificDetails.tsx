@@ -9,11 +9,13 @@ interface UserMediaSpecificDetailsProps<T extends MediaType> {
     queryOption: UserMediaQueryOption;
     userMedia: ExtractUserMediaByType<T>;
     mutationOptions?: UpdateUserMediaMutationOptions;
+    name?: "mediaUserDetails" | "mediaUserSetup";
 }
 
 
-export const UserMediaSpecificDetails = <T extends MediaType>({ mediaType, userMedia, queryOption, mutationOptions }: UserMediaSpecificDetailsProps<T>) => {
-    const SpecificDetailsComponent = mediaConfig[mediaType].mediaUserDetails;
+export const UserMediaSpecificDetails = <T extends MediaType>({ mediaType, userMedia, queryOption, mutationOptions, name = "mediaUserDetails" }: UserMediaSpecificDetailsProps<T>) => {
+    const SpecificDetailsComponent = mediaConfig[mediaType][name];
+    if (!SpecificDetailsComponent) return null;
 
     return (
         <SpecificDetailsComponent

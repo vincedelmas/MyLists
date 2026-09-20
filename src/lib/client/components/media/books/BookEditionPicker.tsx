@@ -1,6 +1,7 @@
 import {useId, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {BookOpen, Plus} from "lucide-react";
+import {BookOpen, Pencil, Plus} from "lucide-react";
+import {Separator} from "@/lib/client/components/ui/separator";
 import {MediaType, UpdateType} from "@/lib/utils/enums";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {formatLocaleName} from "@/lib/utils/formatting/text";
@@ -72,24 +73,27 @@ export function BookAddToList({ mediaId, initialEditionId, queryOption, onEditio
 
 export function BookEditionDialog({ userMedia, queryOption, mutationOptions }: Omit<MediaUserDetailsProps<typeof MediaType.BOOKS>, "mediaType">) {
     const [open, setOpen] = useState(false);
-    return <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-muted-foreground">Your edition</span>
+    return <section aria-label="Reading edition" className="mb-3 flex flex-col gap-3" data-testid="reading-edition-summary">
+        <div className="flex items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted"><BookOpen className="size-4 text-muted-foreground"/></div>
+            <div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">Your edition</p>
+                <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug">{userMedia.editionName ?? "Choose your reading copy"}</p>
+            </div>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger render={<Button variant="outline" size="sm"/>}><BookOpen data-icon="inline-start"/> Change edition</DialogTrigger>
+                <DialogTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Change edition" title="Change edition" disabled={mutationOptions?.backlogMode}/> }><Pencil/></DialogTrigger>
                 <DialogContent>
                     <DialogHeader><DialogTitle>Your reading edition</DialogTitle><DialogDescription>Choose the edition you are reading and its page count. Previous reread totals stay recorded.</DialogDescription></DialogHeader>
                     {open && <BookEditionForm userMedia={userMedia} queryOption={queryOption} mutationOptions={mutationOptions} onSaved={() => setOpen(false)}/>}
                 </DialogContent>
             </Dialog>
         </div>
-        <p className="text-sm">{userMedia.editionName ?? "No edition selected"}</p>
         <p className="text-xs text-muted-foreground">{[
             userMedia.publishers,
             userMedia.language ? formatLocaleName(userMedia.language, "language") : null,
             userMedia.pages === null ? "Page count unknown" : `${userMedia.pages} pages`,
         ].filter(Boolean).join(" · ")}</p>
-    </div>;
+        <Separator/>
+    </section>;
 }
 
 function BookEditionForm({ userMedia, queryOption, mutationOptions, onSaved }: Omit<MediaUserDetailsProps<typeof MediaType.BOOKS>, "mediaType"> & { onSaved: () => void }) {

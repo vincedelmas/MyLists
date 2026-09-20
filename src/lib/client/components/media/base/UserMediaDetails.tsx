@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {cn} from "@/lib/utils/classnames";
 import {MediaType} from "@/lib/utils/enums";
 import {Card} from "@/lib/client/components/ui/card";
 import {Button} from "@/lib/client/components/ui/button";
@@ -92,7 +93,9 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
             />
 
             {activeTab === "progress" ?
-                <div className="space-y-2 px-4 mt-1">
+                <div className="flex flex-col gap-2 px-4 mt-1">
+                    <UserMediaSpecificDetails name="mediaUserSetup" mediaType={mediaType} userMedia={userMedia} queryOption={queryOption}
+                        mutationOptions={{backlogMode}}/>
                     <BacklogModeSystem
                         date={backlogDate}
                         enabled={backlogMode}
@@ -101,7 +104,7 @@ export const UserMediaDetails = ({ userMedia, mediaType, queryOption, preview = 
                         disabled={updateUserMediaMutation.isPending}
                     />
 
-                    <div className={(backlogMode && !backlogDate) ? "pointer-events-none opacity-40 space-y-2" : "space-y-2"}>
+                    <div className={cn("flex flex-col gap-2", backlogMode && !backlogDate && "pointer-events-none opacity-40")}>
                         <UserMediaSpecificDetails
                             mediaType={mediaType}
                             userMedia={userMedia}

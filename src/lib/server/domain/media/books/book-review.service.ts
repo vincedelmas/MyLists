@@ -97,3 +97,47 @@ export const getBookReviewQueue = (page = 1, confidence: "all" | "high" | "possi
     return {groups: filtered.slice((page - 1) * 20, page * 20), total: filtered.length, highConfidence: groups.filter(group => group.confidence === "high").length,
         possible: groups.filter(group => group.confidence === "possible").length, hasNextPage: page * 20 < filtered.length};
 };
+
+// Author review is a live catalogue grouping, not a quadratic table of speculative work matches.
+export const getBookAuthorReviewQueue = (page = 1) => {
+    const tx = getDbClient();
+    const readers = new Map(tx.select({id: booksList.mediaId, readers: count()}).from(booksList).groupBy(booksList.mediaId).all().map(row => [row.id, row.readers]));
+    const works = new Map(tx.select({id: books.id, name: books.name, imageCover: books.imageCover}).from(books).all()
+        .map(work => [work.id, {...work, readers: readers.get(work.id) ?? 0}]));
+    const authors = tx.select({mediaId: booksAuthors.mediaId, name: booksAuthors.name}).from(booksAuthors).all();
+    const editions = tx.select({mediaId: bookEditions.mediaId, authors: bookEditions.authors}).from(bookEditions).all();
+    for (const edition of editions) for (const name of edition.authors) authors.push({mediaId: edition.mediaId, name});
+    const byAuthor = new Map<string, {name: string; workIds: Set<number>}>();
+    for (const author of authors) {
+        const key = bookAuthorReviewKey(author.name);
+        if (!key) continue;
+        const group = byAuthor.get(key) ?? {name: author.name, workIds: new Set<number>()};
+        group.workIds.add(author.mediaId);
+        byAuthor.set(key, group);
+    }
+    const exclusions = new Set(tx.select().from(bookWorkExclusions).all().map(pair => `${pair.firstWorkId}:${pair.secondWorkId}`));
+    const groups = new Map<string, {key: string; workIds: number[]; works: NonNullable<ReturnType<typeof works.get>>[]; confidence: "author"; evidence: string[]; readers: number}>();
+    for (const author of byAuthor.values()) {
+        const pending = [...author.workIds].sort((a, b) => works.get(b)!.readers - works.get(a)!.readers || a - b);
+        while (pending.length > 1) {
+            const ids = [pending.shift()!];
+            for (let i = 0; i < pending.length && ids.length < BOOK_WORK_SELECTION_LIMIT;) {
+                const id = pending[i];
+                if (ids.every(other => !exclusions.has([id, other].sort((a, b) => a - b).join(":")))) {
+                    ids.push(id); pending.splice(i, 1);
+                }
+                else i++;
+            }
+            if (ids.length < 2) continue;
+            const key = [...ids].sort((a, b) => a - b).join(":");
+            const groupWorks = ids.map(id => works.get(id)!);
+            const existing = groups.get(key);
+            const evidence = `Shared author: ${author.name}`;
+            if (existing) existing.evidence.push(evidence);
+            else groups.set(key, {key, workIds: ids, works: groupWorks, confidence: "author", evidence: [evidence],
+                readers: groupWorks.reduce((total, work) => total + work.readers, 0)});
+        }
+    }
+    const sorted = [...groups.values()].sort((a, b) => b.readers - a.readers || a.key.localeCompare(b.key));
+    return {groups: sorted.slice((page - 1) * 20, page * 20), total: sorted.length, hasNextPage: page * 20 < sorted.length};
+};

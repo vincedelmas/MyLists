@@ -14,6 +14,8 @@ import {getBooksColumns} from "@/lib/client/components/media/books/BooksListColu
 import {getBooksActiveFilters} from "@/lib/client/components/media/books/BooksActiveFilters";
 import {getBooksContinueProgress} from "@/lib/client/components/media/books/continue-progress";
 import {bookSearchFilterDefinition} from "@/lib/client/components/media/books/BookSearchFilters";
+import {BookEditionDialog} from "./BookEditionPicker";
+import {BookCatalogueActions, BookCoverAction, BookDetailsPresentation} from "./BookDetailsPresentation";
 
 
 export const booksMediaConfig = defineMediaConfig({
@@ -25,6 +27,10 @@ export const booksMediaConfig = defineMediaConfig({
     mediaFollowCard: BookFollowCard,
     mediaListColumns: getBooksColumns,
     mediaUserDetails: BooksUserDetails,
+    mediaUserSetup: BookEditionDialog,
+    detailsPresentation: BookDetailsPresentation,
+    catalogueActions: BookCatalogueActions,
+    coverAction: BookCoverAction,
     sheetFilters: getBooksActiveFilters,
     continue: {
         getProgress: getBooksContinueProgress,

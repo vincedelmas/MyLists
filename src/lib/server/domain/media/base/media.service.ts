@@ -1,12 +1,12 @@
 import {notFound} from "@tanstack/react-router";
-import {Actor} from "@/lib/server/authorization";
+import {Actor, hasRequiredRole} from "@/lib/server/authorization";
 import {DeltaStats} from "@/lib/types/stats.types";
 import type {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
-import {JobType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import {JobType, RoleType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
@@ -312,6 +312,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
     }
 
     return {
+        canRefreshMetadata: (actor: Actor) => hasRequiredRole(actor, ingestion.refresh?.minimumRole ?? RoleType.USER),
         findById,
         editUserTag,
         getTagsView,

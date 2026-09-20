@@ -132,8 +132,8 @@ export const useAddMediaToListMutation = (queryOption: UserMediaQueryOption) => 
                 queryClient.invalidateQueries({ queryKey: ["monthly-activity"] }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 queryClient.invalidateQueries({ queryKey: ["listFilters", variables.data.mediaType, currentUser!.name] }),
-                ...(variables.data.mediaType === MediaType.BOOKS && data
-                    ? [queryClient.invalidateQueries({queryKey: mediaDetailsOptions(MediaType.BOOKS, data.mediaId).queryKey})]
+                ...(data
+                    ? [queryClient.invalidateQueries({queryKey: mediaDetailsOptions(variables.data.mediaType, data.mediaId).queryKey})]
                     : []),
             ]);
         }
@@ -155,7 +155,7 @@ export const useRemoveMediaFromListMutation = (queryOption: UserMediaQueryOption
             if (queryOption.queryKey[0] === "details") {
                 queryClient.setQueryData(queryOption.queryKey, (oldData) => {
                     if (!oldData) return;
-                    return { ...oldData, userMedia: null, bookEdition: null };
+                    return { ...oldData, userMedia: null };
                 });
             }
             else if (queryOption.queryKey[0] === "userList") {

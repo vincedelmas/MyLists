@@ -14,6 +14,7 @@ export const createMediaIngestionService = <TDetails>(params: {
     provider: ExternalMediaProvider<TDetails>;
     refreshCandidates?: RefreshCandidateSource;
     enrichers?: MediaDetailsEnricher<TDetails>[];
+    getDetailsSelection?: (apiId: number | string) => {editionId?: number};
     repository: Pick<MediaQueries, "findByApiId" | "findByApiIds"> & {
         storeMediaWithDetails(details: NoInfer<TDetails>): number;
         updateMediaWithDetails(details: NoInfer<TDetails>): boolean;
@@ -104,6 +105,7 @@ export const createMediaIngestionService = <TDetails>(params: {
     }
 
     return {
+        getDetailsSelection: params.getDetailsSelection ?? ((): {editionId?: number} => ({})),
         async storeFromExternal(apiId: number | string, checkInternalFirst: boolean = true, isBulk = false) {
             if (checkInternalFirst) {
                 const existingMedia = await repository.findByApiId(apiId);

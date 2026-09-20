@@ -1,7 +1,6 @@
 import {MediaType} from "@/lib/utils/enums";
 import {MediaDetails} from "@/lib/types/query.options.types";
 import {MediaComponent} from "@/lib/client/components/media/base/MediaComponent";
-import {BookCoverEditDialog} from "@/lib/client/components/media/base/BookCoverEditDialog";
 
 
 interface MediaHeroProps {
@@ -33,12 +32,7 @@ export function MediaHero({ media, mediaType }: MediaHeroProps) {
                             src={media.imageCover}
                             className="w-full h-full object-cover"
                         />
-                        {mediaType === MediaType.BOOKS && media.imageCover.endsWith("default.jpg") &&
-                            <BookCoverEditDialog
-                                mediaId={media.id}
-                                mediaName={media.name}
-                            />
-                        }
+                        <MediaComponent media={media} mediaType={mediaType} name="coverAction"/>
                     </div>
                     <div className="flex-1 w-full space-y-4">
                         <div className="flex flex-wrap gap-2 mb-2">

@@ -27,6 +27,14 @@ export interface MediaUserDetailsProps<T extends MediaType> {
     mutationOptions?: UpdateUserMediaMutationOptions;
 }
 
+export interface MediaDetailsPresentationProps<T extends MediaType> extends MediaDetailsProps<T> {
+    userMedia: ExtractUserMediaByType<T> | null;
+    queryOption: UserMediaQueryOption;
+    search: {editionId?: number};
+    onSearchChange: (search: {editionId?: number}) => void;
+    children: (presentation: {media: ExtractMediaDetailsByType<T>; notice?: ReactNode; addToList?: ReactNode}) => ReactNode;
+}
+
 
 export interface MediaFollowCardProps<T extends MediaType> {
     mediaType: T;
@@ -71,8 +79,12 @@ export interface MediaClientConfig<T extends MediaType> {
     mediaListCard: ComponentType<MediaListCardProps<T>>;
     upComingAlert?: ComponentType<MediaDetailsProps<T>>;
     extraSections?: ComponentType<MediaDetailsProps<T>>;
+    coverAction?: ComponentType<MediaDetailsProps<T>>;
+    catalogueActions?: ComponentType<{mediaId: number}>;
+    detailsPresentation?: ComponentType<MediaDetailsPresentationProps<T>>;
     mediaFollowCard: ComponentType<MediaFollowCardProps<T>>;
     mediaUserDetails: ComponentType<MediaUserDetailsProps<T>>;
+    mediaUserSetup?: ComponentType<MediaUserDetailsProps<T>>;
     continue: ContinueConfig<T> | (T extends typeof MediaType.MOVIES ? null : never);
     mediaListColumns: (props: ColumnConfigProps) => ColumnDef<typeof mediaTableFeatures, ExtractListByType<T>>[];
     communityActivity: {

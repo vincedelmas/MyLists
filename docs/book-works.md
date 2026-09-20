@@ -6,6 +6,8 @@ Each reading-list entry references a work and optionally an edition. Its page co
 
 The details page presents the reader's selected edition title and available synopsis. Covers use the reader's custom cover, then the edition cover, then the work cover. Without a selected edition, the curated work presentation is used. A search result's edition is previewed before adding it to the list. Lists, favorites and list search use the selected edition title; community activity, ratings and first publication remain attached to the shared work.
 
+The reading-edition summary sits above the logging date controls. Its edit action is disabled in backlog mode because changing the current edition is not a dated progress update.
+
 ## Migration
 
 Apply `0052_book_works_editions.sql` through the normal migration runner, after backing up the database. It creates one edition per existing book, keeps the existing work IDs and list entries, and copies edition metadata into their reading snapshots. Ratings, notes, progress and recorded totals are retained. It does not merge existing works automatically.
@@ -32,8 +34,16 @@ Use the inspection button to open editions, suggested matches and grouping histo
 
 The **Review queue** supports **Scan books** and **Review next**. The `review-book-works` maintenance task runs the same scan using only stored data, with no provider requests. Daily maintenance runs it before orphan cleanup. Matching uses normalized titles, compatible author names, ISBNs, stored Open Library work IDs, page counts and publishers. Confidence is a ranking heuristic, not a probability. High-confidence groups come first, then readership; possible matches remain available in a separate filter. Groups require evidence between every pair, so a chain of weak similarities cannot become one large proposed merge. Reader requests and keep-separate decisions persist across scans. Pending suggestions protect their works from orphan cleanup.
 
+**By author** is a separate review pass over the current local catalogue. It groups works with an overlapping author from either the work or its editions, including compatible initial/name variants. Extra authors or translators do not prevent a match. Completely different titles can appear together, so these groups are not treated as strong evidence of one work. Every group shares one author key; authorship chains are not combined. Keep-separate decisions also apply here. Groups are capped at 50 works and ranked by readership. This view computes author groups directly instead of storing every possible pair of an author's books.
+
 Merge previews list overlapping readers across the entire selection. For each overlap, select one active entry (including its rating and note) and choose whether to combine all distinct readings or retain only the selected duplicate's totals. The counting rule can be applied to all overlaps at once. Original entries and affected history are retained in the database audit; the management UI exposes only audit summaries, not private notes. The whole batch merges in one transaction and rejects stale previews. The audit is a recovery record, not an automatic undo button. Splitting moves readers currently using that edition; it does not reconstruct previous overlapping entries.
 
 Full merges transfer collections, tags, activity, notifications, import references and game references to the surviving work. Removed work IDs have no redirects. Grouped and manually reviewed works are retained by orphan cleanup.
 
 CSV exports now use format version 3 and include edition identity, reading snapshots and reread lengths. Older exports must be regenerated. Importing another edition of an already listed work is reported as skipped for review instead of overwriting the existing reading.
+
+## Architecture
+
+Book presentation, the edition summary above logging, cover contributions and catalogue actions are registered in `books.media-config.ts`. The shared details route and progress components render those slots without selecting behavior by media type. Edition presentation reads the same cached editions query as the picker, rather than adding book-only fields to every media-details response.
+
+Server definitions own refresh permissions and maintenance policy. `book-maintenance.ts` supplies the extra cover references and catalogue-retention rules; shared cleanup applies the registered policy. The Google Books ingestion adapter supplies the selected edition for external-result navigation. Search deduplicates stored work identities using both media type and work ID.

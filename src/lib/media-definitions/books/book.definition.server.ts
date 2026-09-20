@@ -1,10 +1,11 @@
 import {asc, desc, getTableColumns, like, ne, or, sql} from "drizzle-orm";
-import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, JobType, MediaType, RoleType, Status} from "@/lib/utils/enums";
 import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {bookEditions, books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createArrayFilter, createListColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 import {bookListCover, bookListTitle} from "@/lib/server/domain/media/books/book-list-presentation";
+import {bookMaintenancePolicy} from "@/lib/server/domain/media/books/book-maintenance";
 
 
 export const booksServerDefinition = defineServerMediaDefinition({
@@ -13,6 +14,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
         coverDirectory: "books-covers",
     },
     repository: {
+        maintenance: bookMaintenancePolicy,
         tables: {
             mediaTable: books,
             listTable: booksList,
@@ -123,6 +125,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
     },
     ingestion: {
         externalApiSource: ApiProviderType.BOOKS,
+        refresh: {minimumRole: RoleType.MANAGER},
     },
     attribution: {
         name: "GoogleBooks",

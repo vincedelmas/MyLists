@@ -6,7 +6,7 @@ import {getPlatformStatsCacheKey, getUserStatsCacheKey} from "@/lib/server/core/
 import {publicAuthMiddleware, requiredAuthAndAdminRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {createBookIsbnService} from "@/lib/server/domain/media/books/book-isbn.service";
-import {getBookReviewQueue, scanBookWorkCandidates} from "@/lib/server/domain/media/books/book-review.service";
+import {getBookAuthorReviewQueue, getBookReviewQueue, scanBookWorkCandidates} from "@/lib/server/domain/media/books/book-review.service";
 import {bookGroupSeparateSchema, bookIsbnLookupSchema, bookIsbnSelectSchema, bookReviewQueueSchema} from "@/lib/schemas/book-editions.schema";
 import {bookCatalogueSchema, bookEditionRefreshSchema, bookGroupMergeSchema, bookGroupPreviewSchema, bookMergePreviewSchema, bookMergeSchema, bookSplitSchema, bookWorkPairSchema, bookWorkSchema} from "@/lib/schemas/book-editions.schema";
 import {getBookWork, keepBookWorksSeparate, mergeBookWorkGroup, mergeBookWorks, previewBookMerge, previewBookWorkGroup, searchBookWorks, splitBookEdition} from "@/lib/server/domain/media/books/book-works.service";
@@ -31,7 +31,7 @@ export const postSelectBookIsbnEdition = createServerFn({method: "POST"}).middle
     });
 
 export const getBookMergeSuggestions = createServerFn({method: "GET"}).middleware([requiredAuthAndAdminRoleMiddleware])
-    .validator(bookReviewQueueSchema).handler(({data}) => getBookReviewQueue(data.page, data.confidence));
+    .validator(bookReviewQueueSchema).handler(({data}) => data.confidence === "author" ? getBookAuthorReviewQueue(data.page) : getBookReviewQueue(data.page, data.confidence));
 
 export const postScanBookWorks = createServerFn({method: "POST"}).middleware([requiredAuthAndAdminRoleMiddleware])
     .handler(() => scanBookWorkCandidates());

@@ -29,16 +29,26 @@ const seedBooks = async (separate: boolean) => runBun(["-e", `
     }
 `]);
 
-test("selects an edition and preserves it through page tracking and reloads", async ({page}) => {
+test("selects an edition and preserves it through page tracking and reloads", async ({page}, testInfo) => {
     await seedBooks(false);
     await signIn(page);
-    await page.goto("/details/books/401");
+    await page.goto("/details/books/external/edition-fr");
+    await expect(page).toHaveURL(/\/details\/books\/401\?editionId=412$/, {timeout: 30_000});
     await page.getByRole("combobox", {name: "Your edition"}).click();
     await page.getByRole("option", {name: /French edition/}).click();
     await expect(page.getByRole("heading", {name: "French edition", exact: true})).toBeVisible();
     await expect(page.getByText("Une histoire racontée en français.", {exact: true})).toBeVisible();
     await page.getByRole("button", {name: "Add to List", exact: true}).click();
     await expect(page.getByText("French Press · French · 420 pages", {exact: true})).toBeVisible();
+    const editionSummary = page.getByTestId("reading-edition-summary");
+    const logging = page.getByRole("button", {name: "Today", exact: true});
+    expect((await editionSummary.boundingBox())!.y + (await editionSummary.boundingBox())!.height).toBeLessThan((await logging.boundingBox())!.y);
+    await editionSummary.scrollIntoViewIfNeeded();
+    await page.screenshot({path: testInfo.outputPath("edition-above-logging.png"), fullPage: true});
+    await page.getByRole("button", {name: "-2d", exact: true}).click();
+    await expect(editionSummary.getByRole("button", {name: "Change edition"})).toBeDisabled();
+    await logging.click();
+    await expect(editionSummary.getByRole("button", {name: "Change edition"})).toBeEnabled();
     await page.getByRole("combobox").filter({hasText: "Plan to Read"}).click();
     await page.getByRole("option", {name: "Reading", exact: true}).click();
     const currentPage = page.getByLabel("Current page", {exact: true});
@@ -236,4 +246,30 @@ test("keeps books management out of the manager account menu and rejects its rou
     await expect(page.getByRole("menuitem", {name: "Admin Panel"})).toHaveCount(0);
     await page.goto("/books/manage");
     await expect(page.getByRole("heading", {name: "Books & editions"})).toHaveCount(0);
+});
+
+test("reviews translated titles by author even when translators are included", async ({page}, testInfo) => {
+    await seedBooks(true);
+    await runBun(["-e", `
+        const {db} = await import("./src/lib/server/database/db");
+        const {bookEditions, booksAuthors} = await import("./src/lib/server/database/schema");
+        const {eq} = await import("drizzle-orm");
+        db.insert(booksAuthors).values([401, 402, 403].map(mediaId => ({mediaId, name: "Original Author"}))).run();
+        db.update(bookEditions).set({authors: ["French Translator", "Original Author"]}).where(eq(bookEditions.id, 412)).run();
+    `]);
+    await signIn(page);
+    await page.goto("/books/manage");
+    await page.getByRole("button", {name: "Review queue", exact: true}).click();
+    await page.getByRole("button", {name: "By author", exact: true}).click();
+    await expect(page.getByText("Shared author: Original Author", {exact: true})).toBeVisible();
+    await page.getByRole("button", {name: "Review 3 works"}).click();
+    await expect(page.getByRole("radio", {name: /^Une histoire/})).toBeChecked();
+    await expect(page.getByText("Compare 3 works", {exact: true})).toBeVisible();
+    await page.setViewportSize({width: 390, height: 844});
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({path: testInfo.outputPath("author-review-mobile.png"), fullPage: true});
+    await page.getByRole("button", {name: "Keep separate", exact: true}).click();
+    await expect(page.getByText("No pending matches", {exact: true})).toBeVisible();
+    await page.getByRole("button", {name: "Scan books", exact: true}).click();
+    await expect(page.getByText("No pending matches", {exact: true})).toBeVisible();
 });

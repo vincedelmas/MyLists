@@ -6,7 +6,7 @@ export const bookWorkSchema = z.object({ mediaId: positiveIntFieldSchema });
 export const bookEditionRefreshSchema = bookWorkSchema.extend({ editionId: positiveIntFieldSchema });
 export const bookIsbnLookupSchema = bookWorkSchema.extend({isbn: z.string().trim().min(10).max(32)});
 export const bookIsbnSelectSchema = bookIsbnLookupSchema.extend({apiId: z.string().trim().min(1).max(200)});
-export const bookReviewQueueSchema = z.object({page: positiveIntFieldSchema.default(1), confidence: z.enum(["all", "high", "possible"]).default("all")});
+export const bookReviewQueueSchema = z.object({page: positiveIntFieldSchema.default(1), confidence: z.enum(["all", "high", "possible", "author"]).default("all")});
 export const bookWorkPairSchema = z.object({ sourceId: positiveIntFieldSchema, targetId: positiveIntFieldSchema })
     .refine(data => data.sourceId !== data.targetId, "Choose two different works.");
 export const bookMergePreviewSchema = bookWorkPairSchema.safeExtend({ editionId: positiveIntFieldSchema.optional() });

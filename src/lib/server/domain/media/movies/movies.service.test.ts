@@ -4,7 +4,7 @@ import {convertToCsv} from "@/lib/utils/csv";
 import type {UserMediaWithTags} from "@/lib/types/user-media.types";
 import {createMoviesService} from "@/lib/server/domain/media/movies/movies.service";
 import {parseMyListsCsv} from "@/lib/server/domain/imports/parsers/mylists.parser";
-import {ApiProviderType, MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
+import {ApiProviderType, MediaType, RatingSystemType, RoleType, Status} from "@/lib/utils/enums";
 import type {MoviesRepository} from "@/lib/server/domain/media/movies/movies.repository";
 import {createListTableStub, createRepoStub} from "@/lib/server/domain/media/service-test-utils";
 
@@ -16,6 +16,11 @@ vi.mock("@/lib/server/database/async-storage", () => ({
 describe("MoviesService", () => {
     const moviesRepository = createRepoStub({ listTable: createListTableStub() }) as unknown as MoviesRepository;
     const moviesService = createMoviesService(moviesRepository);
+
+    it("allows signed-in readers to refresh metadata under the default policy", () => {
+        expect(moviesService.canRefreshMetadata({kind: "anonymous"})).toBe(false);
+        expect(moviesService.canRefreshMetadata({kind: "user", id: 1, role: RoleType.USER})).toBe(true);
+    });
 
     const baseMovie: Movie = {
         id: 1,

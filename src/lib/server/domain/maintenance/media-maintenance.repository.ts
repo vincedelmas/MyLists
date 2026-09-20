@@ -1,25 +1,21 @@
 import {MediaType} from "@/lib/utils/enums";
 import {toDateInputValue} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {and, eq, gte, inArray, isNotNull, notExists, or, sql} from "drizzle-orm";
-import {bookEditions, bookWorkAudit, bookWorkCandidates, collectionItems, dailyMediadle} from "@/lib/server/database/schema";
+import {and, eq, gte, inArray, isNotNull, notExists, sql} from "drizzle-orm";
+import {collectionItems, dailyMediadle} from "@/lib/server/database/schema";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
 
 export class MediaMaintenanceRepository {
     static async getCoverFilenames(mediaType: MediaType) {
-        const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
+        const {tables: {mediaTable}, maintenance} = getServerMediaDefinition(mediaType).repository;
 
         const coverFilenames = await getDbClient()
             .select({ imageCover: mediaTable.imageCover })
             .from(mediaTable);
 
-        if (mediaType === MediaType.BOOKS) {
-            coverFilenames.push(...getDbClient().select({ imageCover: bookEditions.imageCover }).from(bookEditions).all());
-            coverFilenames.push(...getDbClient().all<{imageCover: string}>(sql`
-                SELECT DISTINCT value AS imageCover FROM ${bookWorkAudit}, json_tree(${bookWorkAudit.snapshot})
-                WHERE key IN ('imageCover', 'customCover') AND type = 'text'
-            `));
+        if (maintenance?.additionalCoverReferences) {
+            coverFilenames.push(...getDbClient().all<{imageCover: string}>(maintenance.additionalCoverReferences));
         }
         return coverFilenames.map(({ imageCover }) => imageCover.split("/").pop() as string);
     }
@@ -38,7 +34,7 @@ export class MediaMaintenanceRepository {
     }
 
     static getOrphanedMediaIds(mediaType: MediaType) {
-        const { mediaTable, listTable } = getServerMediaDefinition(mediaType).repository.tables;
+        const {tables: {mediaTable, listTable}, maintenance} = getServerMediaDefinition(mediaType).repository;
 
         const tx = getDbClient();
         const today = toDateInputValue(new Date(), { timeZone: "utc" });
@@ -47,12 +43,7 @@ export class MediaMaintenanceRepository {
             .select({ id: mediaTable.id })
             .from(mediaTable)
             .where(and(
-                // Keep catalogue grouping decisions even when nobody currently tracks the work.
-                mediaType === MediaType.BOOKS ? and(
-                    notExists(tx.select().from(bookWorkCandidates).where(or(eq(bookWorkCandidates.firstWorkId, mediaTable.id), eq(bookWorkCandidates.secondWorkId, mediaTable.id)))),
-                    notExists(tx.select().from(bookWorkAudit).where(or(eq(bookWorkAudit.sourceWorkId, mediaTable.id), eq(bookWorkAudit.targetWorkId, mediaTable.id)))),
-                    sql`(SELECT count(*) FROM ${bookEditions} WHERE ${bookEditions.mediaId} = ${mediaTable.id}) <= 1`,
-                ) : undefined,
+                maintenance?.retainOrphan ? sql`NOT (${maintenance.retainOrphan})` : undefined,
                 notExists(tx.select()
                     .from(listTable)
                     .where(eq(listTable.mediaId, mediaTable.id))

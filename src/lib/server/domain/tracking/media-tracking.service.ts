@@ -27,11 +27,11 @@ export class MediaTrackingService {
     ) {
     }
 
-    addMediaToList({ userId, mediaType, mediaId, status }: MediaAction & { status?: Status; silent?: boolean }) {
+    addMediaToList({ userId, mediaType, mediaId, status, editionId }: MediaAction & { status?: Status; silent?: boolean; editionId?: number | null }) {
         return withTransaction(() => {
             const mediaService = this.mediaServiceRegistry.get(mediaType);
 
-            const { newState, media, delta, logPayload } = mediaService.addMediaToUserList(userId, mediaId, status);
+            const { newState, media, delta, logPayload } = mediaService.addMediaToUserList(userId, mediaId, status, editionId);
             this.statsService.updateUserPreComputedStatsWithDelta(userId, mediaType, mediaId, delta);
 
             this.activityService.logActivityFromDelta({ userId, mediaType, mediaId, delta, updateType: UpdateType.STATUS });

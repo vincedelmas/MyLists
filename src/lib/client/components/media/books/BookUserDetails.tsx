@@ -1,5 +1,5 @@
 import React from "react";
-import {useQueryClient} from "@tanstack/react-query";
+import {BookEditionDialog} from "@/lib/client/components/media/books/BookEditionPicker";
 import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {UpdateRedo} from "@/lib/client/components/media/base/UpdateRedo";
 import {UpdateInput} from "@/lib/client/components/media/base/UpdateInput";
@@ -13,25 +13,10 @@ type BooksUserDetailsProps<T extends MediaType> = MediaUserDetailsProps<T>;
 
 
 export const BooksUserDetails = ({ userMedia, mediaType, queryOption, mutationOptions }: BooksUserDetailsProps<typeof MediaType.BOOKS>) => {
-    const queryClient = useQueryClient();
     const updateUserMediaMutation = useUpdateUserMediaMutation(mediaType, userMedia.mediaId, queryOption, mutationOptions);
-    const mediaData = getMediaData()!;
-
-    function getMediaData() {
-        if (queryOption.queryKey[0] === "details") {
-            const apiData = queryClient.getQueryData(queryOption.queryKey);
-            if (apiData && "pages" in apiData.media) {
-                return apiData.media;
-            }
-        }
-        else if (queryOption.queryKey[0] === "userList") {
-            const apiData = queryClient.getQueryData(queryOption.queryKey);
-            return apiData?.results.items.find((m) => "pages" in m && m.mediaId === userMedia.mediaId);
-        }
-    }
-
     return (
         <>
+            <BookEditionDialog userMedia={userMedia} queryOption={queryOption} mutationOptions={mutationOptions}/>
             <UpdateStatus
                 mediaType={mediaType}
                 status={userMedia.status}
@@ -42,7 +27,7 @@ export const BooksUserDetails = ({ userMedia, mediaType, queryOption, mutationOp
                     <div className="flex justify-between items-center">
                         <div>Pages</div>
                         <UpdateInput
-                            total={mediaData.pages}
+                            total={userMedia.pages}
                             payloadName={"actualPage"}
                             updateType={UpdateType.PAGE}
                             initValue={userMedia.actualPage}

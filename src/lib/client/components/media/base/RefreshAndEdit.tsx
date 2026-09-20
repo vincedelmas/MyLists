@@ -1,7 +1,7 @@
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
-import {Pencil, RefreshCw} from "lucide-react";
+import {GitMerge, Pencil, RefreshCw} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useNow} from "@/lib/client/hooks/use-dates";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
@@ -71,6 +71,9 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
                 <div className="h-6 border-l border border-muted-foreground/50"/>
             }
 
+            {isBook && isManagerOrAbove && <Link to="/books/manage" search={{ workId: mediaId }} className={buttonVariants({ size: "sm", variant: "hover" })}>
+                <GitMerge/> Editions
+            </Link>}
             <RelativeTime
                 prefix="Updated "
                 date={lastUpdate}

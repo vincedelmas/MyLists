@@ -6,8 +6,9 @@ import {MediaType, Status, UpdateType} from "@/lib/utils/enums";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {Book, BooksList} from "@/lib/server/domain/media/books/books.types";
 import {createMediaService} from "@/lib/server/domain/media/base/media.service";
+import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
 import {BooksRepository} from "@/lib/server/domain/media/books/books.repository";
-import {PagePayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
+import {BookEditionPayload, PagePayload, RedoPayload, StatusPayload} from "@/lib/types/user-media.types";
 import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {BookServerDefinition, booksServerDefinition} from "@/lib/media-definitions/books/book.definition.server";
 import {createMediaEditPayloadSchema, type EditMediaDetailsPayloadByType} from "@/lib/schemas/media-details.schema";
@@ -19,9 +20,19 @@ export function createBooksService(repository: BooksRepository, definition: Book
 
     const service = createMediaService(repository, definition, {
         [UpdateType.PAGE]: updatePageHandler,
+        [UpdateType.EDITION]: updateEditionHandler,
         [UpdateType.REDO]: updateRedoHandler,
         [UpdateType.STATUS]: updateStatusHandler,
     });
+
+    async function downloadMediaListAsCSV(userId: number) {
+        const rows = await repository.downloadMediaListAsCSV(userId);
+        return rows.map(({ addedAt: _addedAt, lastUpdated: _lastUpdated, ...row }) => ({
+            ...row, rereadPages: JSON.stringify(row.rereadPages),
+            formatVersion: MYLISTS_CSV_VERSION, mediaType: identity.mediaType,
+            externalApiSource: definition.ingestion.externalApiSource,
+        }));
+    }
 
     async function getMediaEditableFields(mediaId: number) {
         const { editableFields } = servicePolicy;
@@ -126,25 +137,34 @@ description: ${book.synopsis}
         ];
     }
 
-    function updateRedoHandler(currentState: BooksList, payload: RedoPayload, media: Book): [BooksList, LogPayload] {
+    function updateRedoHandler(currentState: BooksList, payload: RedoPayload, _media: Book): [BooksList, LogPayload] {
         const newState = { ...currentState, redo: payload.redo };
         const logPayload = { oldValue: currentState.redo, newValue: payload.redo };
 
-        newState.total = (currentState.actualPage ?? 0) + (payload.redo * media.pages);
+        if (payload.redo > currentState.redo && currentState.pages === null) {
+            throw new FormattedError("Enter your edition's page count before adding rereads.");
+        }
+        newState.rereadPages = currentState.rereadPages.slice(0, payload.redo);
+        while (newState.rereadPages.length < payload.redo) newState.rereadPages.push(currentState.pages!);
+        newState.total = currentState.total
+            + newState.rereadPages.reduce((sum, pages) => sum + pages, 0)
+            - currentState.rereadPages.reduce((sum, pages) => sum + pages, 0);
 
         return [newState, logPayload];
     }
 
-    function updateStatusHandler(currentState: BooksList, payload: StatusPayload, media: Book): [BooksList, LogPayload] {
+    function updateStatusHandler(currentState: BooksList, payload: StatusPayload, _media: Book): [BooksList, LogPayload] {
         const newState = { ...currentState, status: payload.status };
         const logPayload = { oldValue: currentState.status, newValue: payload.status };
 
         if (payload.status === Status.COMPLETED) {
-            newState.total = media.pages + (currentState.redo * media.pages);
-            newState.actualPage = media.pages;
+            if (currentState.pages === null) throw new FormattedError("Enter your edition's page count before completing this book.");
+            newState.total = currentState.total + currentState.pages - (currentState.actualPage ?? 0);
+            newState.actualPage = currentState.pages;
         }
         else if (payload.status === Status.PLAN_TO_READ) {
             newState.redo = 0;
+            newState.rereadPages = [];
             newState.total = 0;
             newState.actualPage = 0;
         }
@@ -152,32 +172,53 @@ description: ${book.synopsis}
         return [newState, logPayload];
     }
 
-    function updatePageHandler(currentState: BooksList, payload: PagePayload, media: Book): [BooksList, LogPayload] {
-        if (payload.actualPage > media.pages) {
+    function updatePageHandler(currentState: BooksList, payload: PagePayload, _media: Book): [BooksList, LogPayload] {
+        if (currentState.pages !== null && payload.actualPage > currentState.pages) {
             throw new FormattedError("Invalid page");
         }
 
         const newState = {
             ...currentState,
             actualPage: payload.actualPage,
-            status: media.pages > 0 && payload.actualPage === media.pages
+            status: currentState.pages !== null && currentState.pages > 0 && payload.actualPage === currentState.pages
                 ? Status.COMPLETED
                 : currentState.status,
         };
 
-        newState.total = payload.actualPage + (currentState.redo * media.pages);
+        newState.total = currentState.total + payload.actualPage - (currentState.actualPage ?? 0);
 
         return [newState, { oldValue: currentState.actualPage, newValue: payload.actualPage }];
     }
 
+    function updateEditionHandler(currentState: BooksList, payload: BookEditionPayload): [BooksList, LogPayload] {
+        const snapshot = repository.getEditionSnapshot(currentState.mediaId, payload.edition.editionId);
+        const pages = payload.edition.pages;
+        if (currentState.status === Status.COMPLETED && pages === null) {
+            throw new FormattedError("A completed book needs its recorded page count.");
+        }
+        const actualPage = currentState.status === Status.COMPLETED ? pages : currentState.actualPage;
+        if (pages !== null && (actualPage ?? 0) > pages) {
+            throw new FormattedError("Update your current page before choosing an edition with fewer pages.");
+        }
+        return [{
+            ...currentState, ...snapshot, pages, actualPage,
+            total: currentState.total + (actualPage ?? 0) - (currentState.actualPage ?? 0),
+        }, { oldValue: currentState.editionName, newValue: snapshot.editionName ?? "Custom edition" }];
+    }
+
     return {
         ...service,
+        downloadMediaListAsCSV,
         getMediaEditableFields,
         updateMediaEditableFields,
         updateDefaultCover,
         batchBooksWithoutGenres,
         addGenresToBook,
         getAvailableGenres,
+        getEditions: repository.getEditions,
+        getEditionSnapshot: repository.getEditionSnapshot,
+        findEditionByApiId: repository.findEditionByApiId,
+        updateEditionHandler,
         updateRedoHandler,
         updateStatusHandler,
         updatePageHandler,

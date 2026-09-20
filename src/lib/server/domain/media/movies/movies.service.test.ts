@@ -105,7 +105,7 @@ describe("MoviesService", () => {
                 releaseDate: "1999-10-15",
                 externalApiId: "550",
                 externalApiSource: ApiProviderType.TMDB,
-                formatVersion: "2",
+                formatVersion: "3",
             })]);
             expect(parsed).toMatchObject({
                 failedCount: 0,

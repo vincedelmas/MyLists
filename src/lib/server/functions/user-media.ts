@@ -25,9 +25,9 @@ export const getUserMediaHistory = createServerFn({ method: "GET" })
 export const postAddMediaToList = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
     .validator(addMediaToListSchema)
-    .handler(async ({ data: { mediaType, mediaId, status }, context: { currentUser } }) => {
+    .handler(async ({ data: { mediaType, mediaId, status, editionId }, context: { currentUser } }) => {
         const mediaTrackingService = await getContainer().then(c => c.services.mediaTracking);
-        return mediaTrackingService.addMediaToList({ mediaType, mediaId, status, userId: currentUser.id });
+        return mediaTrackingService.addMediaToList({ mediaType, mediaId, status, editionId, userId: currentUser.id });
     });
 
 

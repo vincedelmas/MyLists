@@ -28,8 +28,8 @@ export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
         for (const item of items) {
             try {
                 if (this._hasBooksExternalId(item)) {
-                    const mediaId = await this.booksIngestion.storeFromExternal(item.externalApiId, false);
-                    batch.matched.push({ item, mediaId });
+                    const mediaId = await this.booksIngestion.storeFromExternal(item.externalApiId, false, true);
+                    batch.matched.push({ item, mediaId, editionApiId: item.externalApiId });
                     if (this._shouldFlush(batch)) {
                         yield batch;
                         batch = this._createEmptyBatch();
@@ -67,8 +67,8 @@ export class ExternalGoogleBooksMatcher implements ExternalMediaMatcher {
                     continue;
                 }
 
-                const mediaId = await this.booksIngestion.storeFromExternal(candidates[0].id, false);
-                batch.matched.push({ item, mediaId });
+                const mediaId = await this.booksIngestion.storeFromExternal(candidates[0].id, false, true);
+                batch.matched.push({ item, mediaId, editionApiId: String(candidates[0].id) });
             }
             catch (error) {
                 if (error instanceof ProviderRequestError && error.details.kind !== "item") {

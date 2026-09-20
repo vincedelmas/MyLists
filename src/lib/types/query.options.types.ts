@@ -50,7 +50,7 @@ export type MediaFollowsDetails = MediaDetailsOptionsType["followsData"];
 export type ExtractMediaDetailsByType<T extends MediaType> =
     T extends typeof MediaType.GAMES ? Extract<MediaDetails, { gameEngine: any }> :
         T extends TvMediaType ? Extract<MediaDetails, { totalEpisodes: any }> :
-            T extends typeof MediaType.BOOKS ? Extract<MediaDetails, { pages: any }> :
+            T extends typeof MediaType.BOOKS ? Extract<MediaDetails, { apiId: string }> :
                 T extends typeof MediaType.MANGA ? Extract<MediaDetails, { chapters: any }> :
                     T extends typeof MediaType.MOVIES ? Extract<MediaDetails, { tagline: any }> :
                         never;

@@ -10,7 +10,7 @@ export type UpdatePayload = {
         loggedAt?: string;
     } & (CommentPayload | PlatformPayload | RatingPayload | FavoritePayload |
         PlaytimePayload | StatusPayload | PagePayload | ChapterPayload | RedoPayload |
-        RedoTvPayload | EpsSeasonPayload);
+        RedoTvPayload | EpsSeasonPayload | BookEditionPayload);
 }
 
 type CommentPayload = {
@@ -102,3 +102,5 @@ export type UpdateUserMediaDetails<TMedia, TList> = {
 }
 
 export type UpdateHandlerFn<TState, TPayload, TMedia> = (currentState: TState, payload: TPayload, media: TMedia) => [TState, LogPayload];
+
+export type BookEditionPayload = { edition: { editionId: number | null; pages: number | null } };

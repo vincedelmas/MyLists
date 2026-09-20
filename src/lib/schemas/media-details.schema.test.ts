@@ -19,8 +19,8 @@ describe("metadata edit validation", () => {
         });
         expect(editMediaDetailsPayloadSchemas[MediaType.GAMES].parse({ hltbMainTime: "2.5", hltbMainAndExtraTime: "" }))
             .toEqual({ hltbMainTime: 2.5, hltbMainAndExtraTime: null });
-        expect(editMediaDetailsPayloadSchemas[MediaType.BOOKS].parse({ pages: "250", authors: "" }))
-            .toEqual({ pages: 250, authors: "" });
+        expect(editMediaDetailsPayloadSchemas[MediaType.BOOKS].parse({ authors: "" }))
+            .toEqual({ authors: "" });
         expect(editMediaDetailsPayloadSchemas[MediaType.MANGA].parse({ chapters: null, genres: [] }))
             .toEqual({ chapters: null, genres: [] });
     });

@@ -43,13 +43,17 @@ db.insert(schema.anime).values({
 db.insert(schema.animeEpisodesPerSeason).values({ mediaId: 202, season: 1, episodes: 3 }).onConflictDoNothing().run();
 
 db.insert(schema.books).values([
-    { id: 301, apiId: "301", name: "Continue book", pages: 100, imageCover: "default.jpg" },
-    { id: 302, apiId: "302", name: "Planned book sentinel", pages: 100, imageCover: "default.jpg" },
-    { id: 303, apiId: "303", name: "Completed book sentinel", pages: 100, imageCover: "default.jpg" },
-    { id: 304, apiId: "304", name: "Dropped book sentinel", pages: 100, imageCover: "default.jpg" },
-    { id: 305, apiId: "305", name: "Paused book sentinel", pages: 100, imageCover: "default.jpg" },
-    { id: 306, apiId: "306", name: "Another reader sentinel", pages: 100, imageCover: "default.jpg" },
+    { id: 301, apiId: "301", name: "Continue book", imageCover: "default.jpg" },
+    { id: 302, apiId: "302", name: "Planned book sentinel", imageCover: "default.jpg" },
+    { id: 303, apiId: "303", name: "Completed book sentinel", imageCover: "default.jpg" },
+    { id: 304, apiId: "304", name: "Dropped book sentinel", imageCover: "default.jpg" },
+    { id: 305, apiId: "305", name: "Paused book sentinel", imageCover: "default.jpg" },
+    { id: 306, apiId: "306", name: "Another reader sentinel", imageCover: "default.jpg" },
 ]).onConflictDoNothing().run();
+
+db.insert(schema.bookEditions).values([301, 302, 303, 304, 305, 306].map(id => ({
+    id, mediaId: id, apiId: String(id), name: "Book edition", pages: 100, imageCover: "default.jpg",
+}))).onConflictDoNothing().run();
 
 db.insert(schema.games).values([
     { id: 401, apiId: 401, name: "Continue game", imageCover: "default.jpg" },

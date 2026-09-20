@@ -30,7 +30,7 @@ async function initContainer(): Promise<AppContainer> {
     const accountModule = setupAccountModule(mediaModule);
     const featureModule = setupFeatureModule(mediaModule, accountModule);
     const trackingModule = setupTrackingModule(mediaModule, featureModule);
-    const providerModule = setupProviderModule(mediaModule, clientsModule);
+    const providerModule = setupProviderModule(mediaModule, clientsModule, cacheManager);
 
     const importModule = setupImportModule(mediaModule, providerModule);
 

@@ -131,7 +131,6 @@ describe("provider relation deduplication", () => {
         const result = await gBooksTransformer.transformDetailsResults(details, {
             mediaType: MediaType.BOOKS,
             coverDirectory: "books-covers",
-            defaultPages: 1,
         });
 
         expect(result.authorsData).toEqual([

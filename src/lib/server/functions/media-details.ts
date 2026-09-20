@@ -54,7 +54,10 @@ export const resolveExternalMedia = createServerFn({ method: "POST" })
         const container = await getContainer();
         const ingestionService = container.registries.ingestionServices.get(mediaType);
         const mediaId = await ingestionService.storeFromExternal(apiId);
-        return { mediaId };
+        const editionId = mediaType === MediaType.BOOKS
+            ? container.registries.mediaService.get(MediaType.BOOKS).findEditionByApiId(apiId)?.id
+            : undefined;
+        return { mediaId, editionId };
     });
 
 

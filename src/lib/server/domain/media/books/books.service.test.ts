@@ -27,9 +27,6 @@ describe("BooksService", () => {
         lockStatus: true,
         addedAt: new Date().toISOString(),
         lastApiUpdate: new Date().toISOString(),
-        pages: 100,
-        language: "en",
-        publishers: "Test Publisher",
     };
 
     const makeState = (overrides: Partial<BooksList>): BooksList => ({
@@ -46,6 +43,8 @@ describe("BooksService", () => {
         redo: 0,
         total: 100,
         actualPage: 100,
+        pages: 100, language: "en", publishers: "Test Publisher", editionId: 1, editionName: "Test Book",
+        rereadPages: Array.from({ length: overrides.redo ?? 0 }, () => 100),
         ...overrides,
     });
 

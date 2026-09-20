@@ -19,6 +19,7 @@ const loggedAtSchema = z.string().trim().pipe(z.iso.date())
 export const loggedActivityUpdateTypes = new Set<UpdateType>([
     UpdateType.TV,
     UpdateType.PAGE,
+    UpdateType.EDITION,
     UpdateType.REDO,
     UpdateType.STATUS,
     UpdateType.CHAPTER,
@@ -28,6 +29,7 @@ export const loggedActivityUpdateTypes = new Set<UpdateType>([
 const allowedPayloadFieldsByUpdateType = {
     [UpdateType.STATUS]: ["status"],
     [UpdateType.PAGE]: ["actualPage"],
+    [UpdateType.EDITION]: ["edition"],
     [UpdateType.COMMENT]: ["comment"],
     [UpdateType.PLAYTIME]: ["playtime"],
     [UpdateType.FAVORITE]: ["favorite"],
@@ -75,10 +77,14 @@ export const updateUserCustomCoverSchema = z.object({
 });
 
 export const addMediaToListSchema = z.object({
+    editionId: positiveIntFieldSchema.nullable().optional(),
     mediaType: mediaTypeFieldSchema,
     status: z.enum(Status).optional(),
     mediaId: coercedPositiveIntFieldSchema,
 }).superRefine((data, ctx) => {
+    if (data.editionId !== undefined && data.mediaType !== MediaType.BOOKS) {
+        ctx.addIssue({ code: "custom", path: ["editionId"], message: "Editions are only available for books." });
+    }
     if (!data.status) return;
     validateStatusForMediaType(data.mediaType, data.status, ctx, ["status"]);
 });
@@ -93,6 +99,10 @@ export const updateUserMediaSchema = z.object({
     }).optional(),
     payload: z.object({
         type: z.enum(UpdateType),
+        edition: z.object({
+            editionId: positiveIntFieldSchema.nullable(),
+            pages: z.number().int().min(1).max(PROGRESS_MAX).nullable(),
+        }).optional(),
         loggedAt: loggedAtSchema,
         favorite: z.boolean().optional(),
         status: z.enum(Status).optional(),
@@ -137,6 +147,9 @@ export const updateUserMediaSchema = z.object({
         message: "Only progress changes can be backdated.", path: ["loggedAt"],
     })
 }).superRefine((data, ctx) => {
+    if (data.payload.edition && data.mediaType !== MediaType.BOOKS) {
+        ctx.addIssue({ code: "custom", path: ["payload", "edition"], message: "Editions are only available for books." });
+    }
     const isTv = data.mediaType === MediaType.SERIES || data.mediaType === MediaType.ANIME;
 
     if ((data.payload.seasonRating || data.payload.seasonRedos) && !isTv) {

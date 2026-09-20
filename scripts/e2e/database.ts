@@ -36,6 +36,8 @@ db.transaction(() => {
     // Route fixtures also create media and season metadata; clear them between tests.
     db.delete(schema.seriesEpisodesPerSeason).run();
     db.delete(schema.animeEpisodesPerSeason).run();
+    db.delete(schema.bookEditions).run();
+    db.delete(schema.bookWorkAudit).run();
     for (const mediaType of Object.values(MediaType)) {
         db.delete(schema[mediaType]).run();
     }

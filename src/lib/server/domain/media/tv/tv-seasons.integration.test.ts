@@ -255,7 +255,7 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
         update({ type: UpdateType.REDO, seasonRedos: [{ season: 1, redo: 100 }, { season: 3, redo: 2 }] });
         const original = seasons();
         const exported = (await service.downloadMediaListAsCSV(1))!;
-        expect(exported[0].formatVersion).toBe("2");
+        expect(exported[0].formatVersion).toBe("3");
         expect(exported[0].firstWatchProgress).toBe(24);
         const parsed = parseMyListsCsv(convertToCsv(exported));
         expect(parsed.failedCount).toBe(0);

@@ -57,7 +57,7 @@ describe("collection media references", () => {
         }))).run();
         db.insert(schema.series).values({ ...media, duration: 30, totalSeasons: 1, totalEpisodes: 10 }).run();
         db.insert(schema.anime).values({ ...media, duration: 24, totalSeasons: 1, totalEpisodes: 12 }).run();
-        db.insert(schema.books).values({ ...media, apiId: "book-101", pages: 200 }).run();
+        db.insert(schema.books).values({ ...media, apiId: "book-101" }).run();
         db.insert(schema.manga).values({ ...media, chapters: 10 }).run();
         db.insert(schema.games).values([media, { ...media, id: 77, apiId: 177 }]).run();
 

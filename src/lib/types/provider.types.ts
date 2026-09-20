@@ -469,6 +469,7 @@ interface GBooksSearchDetails {
     volumeInfo: {
         title?: string;
         subtitle?: string;
+        industryIdentifiers?: { type: string; identifier: string }[];
         authors?: string[];
         publisher?: string;
         publishedDate?: string;

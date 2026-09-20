@@ -13,17 +13,17 @@ export const createBooksStatistics = (definition: BookServerDefinition = booksSe
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const result = getDbClient()
-            .select({ average: sql<number | null>`avg(${mediaTable.pages})` })
+            .select({ average: sql<number | null>`avg(${listTable.pages})` })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(mediaTable.pages)))
+            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(listTable.pages)))
             .get();
 
         return result?.average ?? null;
     };
 
     const computeDurationDistribution = async (userId?: number) => {
-        const durationBucket = sql<number>`floor(${mediaTable.pages} / 100.0) * 100`;
+        const durationBucket = sql<number>`floor(${listTable.pages} / 100.0) * 100`;
         const forUser = getMediaStatsUserScope(listTable.userId, definition.identity.mediaType, userId);
 
         const rows = await getDbClient()
@@ -33,7 +33,7 @@ export const createBooksStatistics = (definition: BookServerDefinition = booksSe
             })
             .from(mediaTable)
             .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
-            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(mediaTable.pages)))
+            .where(and(forUser, ne(listTable.status, Status.PLAN_TO_READ), isNotNull(listTable.pages)))
             .groupBy(durationBucket)
             .orderBy(asc(durationBucket));
 

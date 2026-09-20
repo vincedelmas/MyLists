@@ -3,9 +3,6 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {extractYear} from "@/lib/utils/formatting/date";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {formatMinutes} from "@/lib/utils/formatting/number";
-import {capitalize, formatLocaleName} from "@/lib/utils/formatting/text";
-import {booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
 import type {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 
@@ -14,8 +11,6 @@ type BooksDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
 
 
 export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps<typeof MediaType.BOOKS>) => {
-    const booksProgressUnit = booksDefinition.progress.unit;
-    const booksProgressTiming = booksDefinition.progress.timing;
 
     return (
         <>
@@ -29,20 +24,8 @@ export const BooksInfoGrid = ({ mediaType, media }: BooksDetailsProps<typeof Med
                     : DEFAULT_DASH_FALLBACK
                 }
             </MediaInfoGridItem>
-            <MediaInfoGridItem label="Published By">
-                {media.publishers ?? DEFAULT_DASH_FALLBACK}
-            </MediaInfoGridItem>
-            <MediaInfoGridItem label="Release Date">
+            <MediaInfoGridItem label="First Published">
                 {extractYear(media.releaseDate)}
-            </MediaInfoGridItem>
-            <MediaInfoGridItem label="Language">
-                {formatLocaleName(media.language, "language")}
-            </MediaInfoGridItem>
-            <MediaInfoGridItem label={`Total ${capitalize(booksProgressUnit.plural)}`}>
-                {media.pages ?? DEFAULT_DASH_FALLBACK} {booksProgressUnit.short}
-            </MediaInfoGridItem>
-            <MediaInfoGridItem label="Completion">
-                {formatMinutes(media.pages * booksProgressTiming.minutesPerUnit)}
             </MediaInfoGridItem>
         </>
     );

@@ -28,6 +28,7 @@ export interface ImportJobCounterDelta {
 
 
 export interface MatchedImportItem {
+    editionApiId?: string;
     mediaId: number;
     item: ImportItemsSelect;
 }

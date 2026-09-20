@@ -120,6 +120,7 @@ export function AdminSidebar() {
                     <SidebarGroupLabel>Content</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
+                            <SidebarMenuItem><SidebarMenuButton render={<Link to="/books/manage"><GitCompareArrows/><span>Books & Editions</span></Link>}/></SidebarMenuItem>
                             <SidebarMenuItem>
                                 <SidebarMenuButton
                                     render={

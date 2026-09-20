@@ -89,10 +89,7 @@ const gameEditPayloadSchema = z.strictObject({
 
 const bookEditPayloadSchema = z.strictObject({
     ...commonEditableFields,
-    language: metadataTextSchema,
-    publishers: metadataTextSchema,
     authors: z.string().optional(),
-    pages: metadataIntegerSchema.optional(),
 });
 
 

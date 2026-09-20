@@ -33,13 +33,14 @@ test("corrects book activity automatically and lets the reader review older mont
     await runBun(["-e", `
         if (!process.env.MYLISTS_E2E_DIR) throw new Error("An isolated test database is required");
         const {db} = await import("./src/lib/server/database/db");
-        const {books, userMediaSettings} = await import("./src/lib/server/database/schema");
+        const {books, bookEditions, userMediaSettings} = await import("./src/lib/server/database/schema");
         const {getContainer} = await import("./src/lib/server/core/container");
         const {MediaType, Status, UpdateType} = await import("./src/lib/utils/enums");
         const {and, eq} = await import("drizzle-orm");
         db.update(userMediaSettings).set({active: true}).where(and(eq(userMediaSettings.userId, 1), eq(userMediaSettings.mediaType, MediaType.BOOKS))).run();
-        db.insert(books).values({id: 301, apiId: "correction-book", name: "Correction book", pages: 500, imageCover: "default.jpg"}).run();
+        db.insert(books).values({id: 301, apiId: "correction-book", name: "Correction book", imageCover: "default.jpg"}).run();
         const {services: {mediaTracking}} = await getContainer();
+        db.insert(bookEditions).values({id: 301, mediaId: 301, apiId: "correction-book", name: "Correction edition", pages: 500, imageCover: "default.jpg"}).run();
         const action = {userId: 1, mediaId: 301, mediaType: MediaType.BOOKS};
         mediaTracking.addMediaToList({...action, status: Status.READING});
         mediaTracking.updateUserMedia({...action, payload: {type: UpdateType.PAGE, actualPage: 200, loggedAt: "2025-07-20"}});

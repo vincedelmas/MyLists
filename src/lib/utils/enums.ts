@@ -175,6 +175,7 @@ export type SocialNotifType = (typeof SocialNotifType)[keyof typeof SocialNotifT
 export const UpdateType = {
     TV: "tv",
     PAGE: "page",
+    EDITION: "edition",
     REDO: "redo",
     RATING: "rating",
     STATUS: "status",

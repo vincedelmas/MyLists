@@ -1,3 +1,6 @@
+import {serverEnv} from "@/env/server";
+import type {CacheManager} from "@/lib/server/core/cache-manager";
+import {createOpenLibraryBookEnricher} from "@/lib/server/api-providers/open-library-books.enricher";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {GBooksApi} from "@/lib/server/api-providers/api";
 import {BooksRepository} from "@/lib/server/domain/media/books";
@@ -11,7 +14,6 @@ import {createMediaIngestionService} from "@/lib/server/api-providers/media-inge
 export const createGBooksBooksProvider = (gBooks: GBooksApi): ExternalMediaProvider<UpsertBooksWithDetails> => {
     const transformOptions = {
         ...booksServerDefinition.identity,
-        defaultPages: booksServerDefinition.ingestion.defaultPages,
     };
 
     return {
@@ -32,9 +34,10 @@ export const createGBooksBooksProvider = (gBooks: GBooksApi): ExternalMediaProvi
 };
 
 
-export const createBooksIngestionService = (repository: BooksRepository, provider: ExternalMediaProvider<UpsertBooksWithDetails>) => {
+export const createBooksIngestionService = (repository: BooksRepository, provider: ExternalMediaProvider<UpsertBooksWithDetails>, cacheManager: CacheManager) => {
     return createMediaIngestionService({
         provider,
         repository,
+        enrichers: serverEnv.OPEN_LIBRARY_BOOK_MATCHING ? [createOpenLibraryBookEnricher(cacheManager)] : [],
     });
 }

@@ -17,6 +17,7 @@ const updatesLabels: Record<UpdateType, string> = {
     [UpdateType.COMMENT]: "Comments",
     [UpdateType.FAVORITE]: "Favorites",
     [UpdateType.PAGE]: "Page progress",
+    [UpdateType.EDITION]: "Edition changes",
     [UpdateType.TV]: "Episode progress",
     [UpdateType.STATUS]: "Status changes",
     [UpdateType.CHAPTER]: "Chapter progress",

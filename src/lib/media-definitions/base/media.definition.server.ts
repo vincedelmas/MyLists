@@ -158,7 +158,6 @@ type MediaIdentity<TMediaType extends MediaType = MediaType> = {
 
 export type MediaIngestionPolicy = {
     readonly externalApiSource: ApiProviderType;
-    readonly defaultPages?: number;
     readonly defaultDuration?: number;
     readonly limits?: {
         readonly genres?: number;

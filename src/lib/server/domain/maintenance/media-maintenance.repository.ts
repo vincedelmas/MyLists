@@ -1,8 +1,8 @@
 import {MediaType} from "@/lib/utils/enums";
 import {toDateInputValue} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
-import {and, eq, gte, inArray, isNotNull, notExists} from "drizzle-orm";
-import {collectionItems, dailyMediadle} from "@/lib/server/database/schema";
+import {and, eq, gte, inArray, isNotNull, notExists, or, sql} from "drizzle-orm";
+import {bookEditions, bookWorkAudit, collectionItems, dailyMediadle} from "@/lib/server/database/schema";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
 
@@ -14,6 +14,13 @@ export class MediaMaintenanceRepository {
             .select({ imageCover: mediaTable.imageCover })
             .from(mediaTable);
 
+        if (mediaType === MediaType.BOOKS) {
+            coverFilenames.push(...getDbClient().select({ imageCover: bookEditions.imageCover }).from(bookEditions).all());
+            coverFilenames.push(...getDbClient().all<{imageCover: string}>(sql`
+                SELECT DISTINCT value AS imageCover FROM ${bookWorkAudit}, json_tree(${bookWorkAudit.snapshot})
+                WHERE key IN ('imageCover', 'customCover') AND type = 'text'
+            `));
+        }
         return coverFilenames.map(({ imageCover }) => imageCover.split("/").pop() as string);
     }
 
@@ -40,6 +47,11 @@ export class MediaMaintenanceRepository {
             .select({ id: mediaTable.id })
             .from(mediaTable)
             .where(and(
+                // Keep catalogue grouping decisions even when nobody currently tracks the work.
+                mediaType === MediaType.BOOKS ? and(
+                    notExists(tx.select().from(bookWorkAudit).where(or(eq(bookWorkAudit.sourceWorkId, mediaTable.id), eq(bookWorkAudit.targetWorkId, mediaTable.id)))),
+                    sql`(SELECT count(*) FROM ${bookEditions} WHERE ${bookEditions.mediaId} = ${mediaTable.id}) <= 1`,
+                ) : undefined,
                 notExists(tx.select()
                     .from(listTable)
                     .where(eq(listTable.mediaId, mediaTable.id))

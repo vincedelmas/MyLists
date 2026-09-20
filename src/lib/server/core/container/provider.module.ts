@@ -1,3 +1,4 @@
+import type {CacheManager} from "@/lib/server/core/cache-manager";
 import {MediaModule} from "@/lib/server/core/container/media.module";
 import {ApiClientModule} from "@/lib/server/core/container/api-client.module";
 import {createMediaRegistry} from "@/lib/server/domain/media/media.registries";
@@ -8,7 +9,7 @@ import {createBooksIngestionService, createGBooksBooksProvider} from "@/lib/serv
 import {createAnimeIngestionService, createSeriesIngestionService, createTmdbAnimeProvider, createTmdbSeriesProvider} from "@/lib/server/api-providers/tmdb-tv.provider";
 
 
-export function setupProviderModule(mediaModule: MediaModule, apiClientModule: ApiClientModule) {
+export function setupProviderModule(mediaModule: MediaModule, apiClientModule: ApiClientModule, cacheManager: CacheManager) {
     const apiClients = apiClientModule;
 
     const externalProviders = {
@@ -26,7 +27,7 @@ export function setupProviderModule(mediaModule: MediaModule, apiClientModule: A
         anime: createAnimeIngestionService(apiClients.mal, mediaModule.repositories.anime, externalProviders.anime),
         movies: createMoviesIngestionService(mediaModule.repositories.movies, externalProviders.movies),
         games: createGamesIngestionService(apiClients.hltb, mediaModule.repositories.games, externalProviders.games),
-        books: createBooksIngestionService(mediaModule.repositories.books, externalProviders.books),
+        books: createBooksIngestionService(mediaModule.repositories.books, externalProviders.books, cacheManager),
         manga: createMangaIngestionService(mediaModule.repositories.manga, externalProviders.manga),
     };
     const ingestionServiceRegistry = createMediaRegistry(ingestionServices);

@@ -51,6 +51,7 @@ const UPDATE_TYPE_COLOR_MAP: Record<UpdateType, string> = {
     [UpdateType.TV]: "var(--series)",
     [UpdateType.PLAYTIME]: "var(--games)",
     [UpdateType.PAGE]: "var(--books)",
+    [UpdateType.EDITION]: "var(--books)",
     [UpdateType.CHAPTER]: "var(--manga)",
     [UpdateType.REDO]: "var(--favorite)",
     [UpdateType.RATING]: "var(--rating)",

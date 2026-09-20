@@ -19,7 +19,7 @@ import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCov
 
 
 type MediaServiceRepository<TDef extends AnyServerMediaDefinition> = MediaQueries<TDef> & {
-    addMediaToUserList(userId: number, media: TDef["repository"]["tables"]["mediaTable"]["$inferSelect"], status: Status): TDef["repository"]["tables"]["listTable"]["$inferSelect"];
+    addMediaToUserList(userId: number, media: TDef["repository"]["tables"]["mediaTable"]["$inferSelect"], status: Status, editionId?: number | null): TDef["repository"]["tables"]["listTable"]["$inferSelect"];
     findAllAssociatedDetails(mediaId: number): Promise<(TDef["repository"]["tables"]["mediaTable"]["$inferSelect"] & AddedMediaDetails) | undefined>;
 };
 
@@ -149,7 +149,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         return tagQueries.getTagsView(userId, search);
     }
 
-    function addMediaToUserList(userId: number, mediaId: number, status?: Status) {
+    function addMediaToUserList(userId: number, mediaId: number, status?: Status, editionId?: number | null) {
         const newStatus = status ?? servicePolicy.defaultStatus;
 
         const media = repository.findById(mediaId);
@@ -158,7 +158,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         const oldState = repository.findUserMedia(userId, mediaId);
         if (oldState) throw new FormattedError("Media already in your list");
 
-        const newState = repository.addMediaToUserList(userId, media, newStatus);
+        const newState = repository.addMediaToUserList(userId, media, newStatus, editionId);
         const delta = calculateDeltaStats(null, newState, media);
 
         const logPayload = { oldValue: null, newValue: newState.status };

@@ -50,11 +50,18 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
             duration: 100, totalSeasons: 1, totalEpisodes: 8, pages: 200, chapters: 40,
         } as any).run();
 
+        if (mediaType === MediaType.BOOKS) context.db.insert(schema.bookEditions).values({
+            id: 100, mediaId: 100, apiId: "book-100", name: 'A title, with "quotes" and é', pages: 200,
+            imageCover: "test.jpg", releaseDate: "2024-01-01", language: "fr", publishers: "Publisher",
+        }).run();
+
         context.db.insert(listTable).values({
             id: 10, userId: 42, mediaId: 100, status: Status.COMPLETED,
             rating: 8, favorite: true, comment: 'First line, "quoted"\nSecond line: 日本語',
             redo: 1, total: mediaType === MediaType.BOOKS ? 400 : mediaType === MediaType.MANGA ? 80
                 : mediaType === MediaType.MOVIES ? 2 : 16,
+            ...(mediaType === MediaType.BOOKS ? { editionId: 100, editionName: 'A title, with "quotes" and é', pages: 200,
+                language: "fr", publishers: "Publisher", rereadPages: [200] } : {}),
             currentSeason: 1, currentEpisode: 8, actualPage: 200, currentChapter: 40,
             playtime: 120, platform: "PC",
         } as any).run();
@@ -106,7 +113,7 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
         externalCall.mockResolvedValue(mediaType === MediaType.GAMES ? new Map([["101", 100]]) : 100);
 
         await expect(resumedProcessor.processNextJob()).resolves.toMatchObject({
-            id: paused.id, status: ImportJobStatus.COMPLETED, completedCount: 2, error: null, nextAttemptAt: null,
+            id: paused.id, status: mediaType === MediaType.BOOKS ? ImportJobStatus.COMPLETED_WITH_ERRORS : ImportJobStatus.COMPLETED, completedCount: mediaType === MediaType.BOOKS ? 1 : 2, error: null, nextAttemptAt: null,
         });
         expect(externalCall).toHaveBeenCalledTimes(2);
         expect(context.db.select().from(listTable).where(eq(listTable.userId, 43)).all()).toHaveLength(1);
@@ -147,14 +154,14 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
     });
 
     it("exports, uploads, processes and re-exports list data without overwriting existing entries", async () => {
-        expect(exported.formatVersion).toBe("2");
+        expect(exported.formatVersion).toBe("3");
         const csv = convertToCsv([exported, exported]);
         const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS, csv);
         expect(job).toMatchObject({ status: ImportJobStatus.QUEUED, totalCount: 2, failedCount: 0 });
 
         await expect(drainImportJobs(imports.importProcessor)).resolves.toEqual({ processedJobs: 1, failedJobs: 0, userIds: [43] });
         const { job: finished } = await imports.imports.getImportJob(43, job.id);
-        expect(finished).toMatchObject({ status: ImportJobStatus.COMPLETED, completedCount: 2, processedCount: 2 });
+        expect(finished).toMatchObject({ status: mediaType === MediaType.BOOKS ? ImportJobStatus.COMPLETED_WITH_ERRORS : ImportJobStatus.COMPLETED, completedCount: mediaType === MediaType.BOOKS ? 1 : 2, skippedCount: mediaType === MediaType.BOOKS ? 1 : 0, processedCount: 2 });
 
         const restored = (await mediaModule.services[mediaType].downloadMediaListAsCSV(43))!;
         expect(restored).toHaveLength(1);
@@ -168,8 +175,20 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
         expect((await mediaModule.services[mediaType].downloadMediaListAsCSV(42))![0]).toEqual(exported);
     });
 
+    if (mediaType === MediaType.BOOKS) it("round-trips a custom reading with unknown current length and known previous reread lengths", async () => {
+        context.db.update(schema.booksList).set({
+            editionId: null, pages: null, language: null, publishers: null, editionName: "My copy",
+            status: Status.READING, actualPage: 100, total: 300, redo: 1, rereadPages: [200],
+        }).run();
+        const [row] = (await mediaModule.services.books.downloadMediaListAsCSV(42))!;
+        const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS, convertToCsv([row]));
+        await drainImportJobs(imports.importProcessor);
+        expect((await imports.imports.getImportJob(43, job.id)).job).toMatchObject({status: ImportJobStatus.COMPLETED, completedCount: 1});
+        expect((await mediaModule.services.books.downloadMediaListAsCSV(43))![0]).toEqual({...row, id: expect.any(Number), userId: 43});
+    });
+
     it("rejects old, missing and mixed versions without queuing rows or blocking the next upload", async () => {
-        for (const formatVersion of ["", "0", "1", "3", "99"]) {
+        for (const formatVersion of ["", "0", "1", "2", "99"]) {
             const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS,
                 convertToCsv([exported, { ...exported, formatVersion }]));
             expect(job).toMatchObject({ status: ImportJobStatus.FAILED, error: MYLISTS_FORMAT_ERROR, totalCount: 0 });
@@ -197,7 +216,7 @@ describe.each(Object.values(MediaType))("current MyLists %s export/import", medi
         for (let attempt = 0; attempt < 2; attempt++) {
             const job = await imports.imports.createImportJob(43, ImportSource.MYLISTS, convertToCsv([exported]));
             await drainImportJobs(imports.importProcessor);
-            expect((await imports.imports.getImportJob(43, job.id)).job.status).toBe(ImportJobStatus.COMPLETED);
+            expect((await imports.imports.getImportJob(43, job.id)).job.status).toBe(mediaType === MediaType.BOOKS && attempt > 0 ? ImportJobStatus.COMPLETED_WITH_ERRORS : ImportJobStatus.COMPLETED);
             expect((await mediaModule.services[mediaType].downloadMediaListAsCSV(43))!).toHaveLength(1);
             expect(context.db.select().from(schema.userMediaMonthlyActivity).all()).toEqual(activitiesBefore);
             expect(context.db.select().from(schema.userMediaUpdate).all()).toEqual(feedBefore);

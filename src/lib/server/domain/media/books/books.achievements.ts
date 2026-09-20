@@ -15,7 +15,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
     const duration: AchievementCalculation = (achievement) => {
         const value = Number(achievement.value);
         const isLong = achievement.codeName.includes("long");
-        const condition = isLong ? gte(books.pages, value) : lte(books.pages, value);
+        const condition = isLong ? gte(booksList.pages, value) : lte(booksList.pages, value);
 
         const query = getDbClient()
             .select({
@@ -54,7 +54,7 @@ export const createBooksAchievementCatalog = (definition: BookServerDefinition) 
         const query = getDbClient()
             .select({
                 userId: booksList.userId,
-                value: countDistinct(books.language).as("value"),
+                value: countDistinct(booksList.language).as("value"),
             })
             .from(booksList)
             .innerJoin(books, eq(booksList.mediaId, books.id));

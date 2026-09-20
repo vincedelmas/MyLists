@@ -115,11 +115,11 @@ describe("MonthlyActivityRepository", () => {
                 { userId: 2, mediaType: MediaType.BOOKS, active: true },
             ]).run();
             db.insert(schema.books).values([
-                { id: 1, apiId: "1", name: "Unrelated book", pages: 100, imageCover: "default.jpg" },
-                { id: 2, apiId: "2", name: "Star book", pages: 100, imageCover: "default.jpg" },
-                { id: 3, apiId: "3", name: "Star hidden", pages: 100, imageCover: "default.jpg" },
-                { id: 4, apiId: "4", name: "Star previous year", pages: 100, imageCover: "default.jpg" },
-                { id: 5, apiId: "5", name: "Star other user", pages: 100, imageCover: "default.jpg" },
+                { id: 1, apiId: "1", name: "Unrelated book", imageCover: "default.jpg" },
+                { id: 2, apiId: "2", name: "Star book", imageCover: "default.jpg" },
+                { id: 3, apiId: "3", name: "Star hidden", imageCover: "default.jpg" },
+                { id: 4, apiId: "4", name: "Star previous year", imageCover: "default.jpg" },
+                { id: 5, apiId: "5", name: "Star other user", imageCover: "default.jpg" },
             ]).run();
             db.insert(schema.movies).values({
                 id: 1, apiId: 1, name: "Translated title", originalName: "Star original", duration: 120, imageCover: "default.jpg",

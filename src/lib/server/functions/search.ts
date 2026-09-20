@@ -105,11 +105,13 @@ export const getSearchResults = createServerFn({ method: "GET" })
             });
         }));
 
-        return {
-            ...searchResults,
-            data: searchResults.data.map((item) => ({
-                ...item,
-                ...membershipByItem.get(`${item.itemType}:${item.id}`),
-            })),
-        };
+        const seenWorks = new Set<number>();
+        const data = searchResults.data.map(item => ({ ...item, ...membershipByItem.get(`${item.itemType}:${item.id}`) }))
+            .filter(item => {
+                if (item.itemType !== MediaType.BOOKS || !item.mediaId || advancedFilters) return true;
+                if (seenWorks.has(item.mediaId)) return false;
+                seenWorks.add(item.mediaId);
+                return true;
+            });
+        return { ...searchResults, data };
     });

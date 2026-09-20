@@ -61,7 +61,8 @@ describe("progress corrections", () => {
         sqlite.run("PRAGMA foreign_keys = ON");
         context.db.insert(schema.user).values({ id: 1, name: "reader", email: "reader@example.com", emailVerified: true, createdAt: "2025-01-01", updatedAt: "2025-01-01" }).run();
         context.db.insert(schema.userMediaSettings).values([MediaType.BOOKS, MediaType.GAMES].map(mediaType => ({ userId: 1, mediaType, active: true }))).run();
-        context.db.insert(schema.books).values({ id: 1, apiId: "book", name: "Book", pages: 500, imageCover: "book.jpg" }).run();
+        context.db.insert(schema.books).values({ id: 1, apiId: "book", name: "Book", imageCover: "book.jpg" }).run();
+        context.db.insert(schema.bookEditions).values({ id: 1, mediaId: 1, apiId: "book", name: "Book", pages: 500, imageCover: "book.jpg" }).run();
         context.db.insert(schema.games).values({ id: 1, apiId: 1, name: "Game", imageCover: "game.jpg" }).run();
         const booksRepository = createBooksRepository();
         const gamesRepository = createGamesRepository();

@@ -53,7 +53,7 @@ describe("validated metadata edits", () => {
         const media = { id: 1, apiId: 100, name: "Original", imageCover: "original.jpg" };
         await db.insert(schema.movies).values({ ...media, duration: 120 });
         await db.insert(schema.games).values(media);
-        await db.insert(schema.books).values({ ...media, apiId: "book-100", pages: 250 });
+        await db.insert(schema.books).values({ ...media, apiId: "book-100" });
         await db.insert(schema.manga).values({ ...media, chapters: 50 });
         await db.insert(schema.series).values({ ...media, duration: 45, totalSeasons: 1, totalEpisodes: 10 });
         await db.insert(schema.anime).values({ ...media, duration: 24, totalSeasons: 1, totalEpisodes: 12 });
@@ -78,7 +78,7 @@ describe("validated metadata edits", () => {
     it.each([
         [MediaType.MOVIES, ["originalName", "name", "directorName", "releaseDate", "duration", "synopsis", "budget", "revenue", "tagline", "originalLanguage", "lockStatus", "homepage"]],
         [MediaType.GAMES, ["name", "gameEngine", "gameModes", "playerPerspective", "releaseDate", "synopsis", "hltbMainTime", "hltbMainAndExtraTime", "hltbTotalCompleteTime", "lockStatus"]],
-        [MediaType.BOOKS, ["name", "releaseDate", "pages", "language", "publishers", "synopsis", "lockStatus", "authors"]],
+        [MediaType.BOOKS, ["name", "releaseDate", "synopsis", "lockStatus", "authors"]],
         [MediaType.MANGA, ["name", "releaseDate", "chapters", "publishers", "synopsis", "lockStatus"]],
         [MediaType.SERIES, ["name", "originalName", "releaseDate", "lastAirDate", "homepage", "createdBy", "duration", "originCountry", "prodStatus", "synopsis", "lockStatus"]],
         [MediaType.ANIME, ["name", "originalName", "releaseDate", "lastAirDate", "homepage", "createdBy", "duration", "originCountry", "prodStatus", "synopsis", "lockStatus"]],
@@ -200,7 +200,7 @@ describe("validated metadata edits", () => {
     it("preserves omitted book authors and replaces or clears explicit authors", async () => {
         await db.insert(schema.booksAuthors).values({ mediaId: 1, name: "Original author" });
         const service = services[MediaType.BOOKS];
-        await service.updateMediaEditableFields(1, { pages: 300 });
+        await service.updateMediaEditableFields(1, { name: "Updated book" });
         expect(db.select().from(schema.booksAuthors).all()).toMatchObject([{ name: "Original author" }]);
 
         await service.updateMediaEditableFields(1, { authors: " Author A,Author A,Author B " });
@@ -208,7 +208,7 @@ describe("validated metadata edits", () => {
 
         await service.updateMediaEditableFields(1, { authors: "" });
         expect(db.select().from(schema.booksAuthors).all()).toEqual([]);
-        expect(service.findById(1)?.pages).toBe(300);
+        expect(service.findById(1)?.name).toBe("Updated book");
     });
 
     it("preserves omitted manga genres and deduplicates or clears explicit genres", async () => {

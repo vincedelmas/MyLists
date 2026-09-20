@@ -21,8 +21,10 @@ describe.each(Object.values(MediaType))("%s import matching", (mediaType) => {
             findByApiIds: vi.fn().mockResolvedValue([]),
             findByNames: vi.fn().mockResolvedValue([{ id: 100, name: "Requested Title", releaseDate: "2024-01-01" }]),
             findById: vi.fn().mockImplementation((id) => ({ id, pages: 100, chapters: 100 })),
+            findEditionByApiId: vi.fn().mockReturnValue({ id: 1 }),
+            getEditionSnapshot: vi.fn().mockReturnValue({ editionId: 1, pages: 100, language: "en", publishers: null, editionName: "Requested Title" }),
             getMediaEpsPerSeason: vi.fn().mockReturnValue([{ season: 1, episodes: 10 }]),
-            bulkInsertUserMedia: vi.fn().mockResolvedValue([]),
+            bulkInsertUserMedia: vi.fn().mockResolvedValue([{ id: 1 }]),
         };
         provider = { search: vi.fn().mockResolvedValue({ data: [], hasNextPage: false }) };
         ingestion = {
@@ -87,7 +89,7 @@ describe.each(Object.values(MediaType))("%s import matching", (mediaType) => {
         expect(provider.search).not.toHaveBeenCalled();
         expect(service.findByNames).not.toHaveBeenCalled();
         if (mediaType === MediaType.GAMES) expect(ingestion.storeBatchFromExternal).toHaveBeenCalledWith(["200"], false);
-        else if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME) {
+        else if (mediaType === MediaType.SERIES || mediaType === MediaType.ANIME || mediaType === MediaType.BOOKS) {
             expect(ingestion.storeFromExternal).toHaveBeenCalledWith("200", false, true);
         }
         else expect(ingestion.storeFromExternal).toHaveBeenCalledWith("200", false);

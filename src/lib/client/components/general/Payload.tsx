@@ -23,6 +23,7 @@ export const Payload = ({ update, username }: PayloadProps) => {
     const progressUnit = getMediaDefinition(mediaType).progress.unit;
 
     switch (updateType) {
+        case UpdateType.EDITION:
         case UpdateType.STATUS:
             return (
                 <PayloadLayout

@@ -1,3 +1,4 @@
+import {normalizeIsbn} from "@/lib/server/domain/media/books/book-matching";
 import {MediaType} from "@/lib/utils/enums";
 import {uniqueBy} from "@/lib/utils/arrays-objects";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
@@ -9,7 +10,6 @@ import {GBooksDetails, GBooksSearchResults, ProviderSearchResult, SearchData} fr
 
 
 type GBooksTransformOptions = {
-    defaultPages: number;
     coverDirectory: CoverType;
     mediaType: typeof MediaType.BOOKS;
 };
@@ -34,18 +34,21 @@ const transformSearchResults = (searchData: SearchData<GBooksSearchResults>, opt
 
 
 const transformBooksDetailsResults = async (rawData: GBooksDetails, options: GBooksTransformOptions) => {
-    const mediaData = {
+    const editionData = {
         apiId: rawData.id,
         language: rawData.volumeInfo.language,
         publishers: rawData.volumeInfo.publisher,
-        name: rawData.volumeInfo.title ?? "No Title Found",
-        pages: rawData.volumeInfo.pageCount ?? options.defaultPages,
+        name: [rawData.volumeInfo.title ?? "No Title Found", rawData.volumeInfo.subtitle].filter(Boolean).join(": "),
+        pages: rawData.volumeInfo.pageCount && rawData.volumeInfo.pageCount > 0 ? rawData.volumeInfo.pageCount : null,
+        isbns: [...new Set((rawData.volumeInfo.industryIdentifiers ?? [])
+            .filter(id => id.type === "ISBN_10" || id.type === "ISBN_13")
+            .map(id => normalizeIsbn(id.identifier)).filter((isbn): isbn is string => isbn !== null))],
+        authors: rawData.volumeInfo.authors ?? [],
         releaseDate: formatDateForDb(rawData.volumeInfo.publishedDate),
-        synopsis: formatHtmlText(rawData.volumeInfo.description ?? "No Description Found"),
         imageCover: await saveImageFromUrl({
             dirSaveName: options.coverDirectory,
             imageUrl: rawData.volumeInfo.imageLinks?.extraLarge ??
-                rawData.volumeInfo.imageLinks?.large ?? rawData.volumeInfo.imageLinks?.medium,
+                rawData.volumeInfo.imageLinks?.large ?? rawData.volumeInfo.imageLinks?.medium ?? rawData.volumeInfo.imageLinks?.thumbnail,
         }),
     }
 
@@ -54,7 +57,17 @@ const transformBooksDetailsResults = async (rawData: GBooksDetails, options: GBo
         ? uniqueBy(authors, (author) => author.name)
         : undefined;
 
-    return { mediaData, authorsData };
+    return {
+        mediaData: {
+            apiId: editionData.apiId,
+            name: rawData.volumeInfo.title ?? "No Title Found",
+            imageCover: editionData.imageCover,
+            releaseDate: null,
+            synopsis: formatHtmlText(rawData.volumeInfo.description ?? "No Description Found"),
+        },
+        editionData,
+        authorsData,
+    };
 };
 
 

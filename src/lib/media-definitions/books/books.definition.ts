@@ -11,6 +11,7 @@ export const booksDefinition = defineMediaDefinition({
     continue: {
         status: Status.READING,
         getUpdate: (state: ContinueStateByType[typeof MediaType.BOOKS]) => {
+            if (state.pages === null) return null;
             const value = state.actualPage ?? 0;
             const nextPage = Math.min(value + 10, state.pages, PROGRESS_MAX);
             if (nextPage > value) {

@@ -1,3 +1,6 @@
+import * as z from "zod";
+import {MediaType} from "@/lib/utils/enums";
+import {BookAddToList} from "@/lib/client/components/media/books/BookEditionPicker";
 import {Suspense} from "react";
 import {cn} from "@/lib/utils/classnames";
 import {ExternalLink, Plus} from "lucide-react";
@@ -26,6 +29,7 @@ import {mediaCommunityActivityOptions, mediaCommunityCollectionsOptions, mediaDe
 
 
 export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId/")({
+    validateSearch: z.object({ editionId: z.coerce.number().int().positive().optional().catch(undefined) }),
     params: {
         parse: (params) => {
             const result = mediaTypeMediaIdSchema.safeParse(params);
@@ -49,6 +53,7 @@ export const Route = createFileRoute("/_main/_viewer/details/$mediaType/$mediaId
 function MediaDetailsPage() {
     const { currentUser, isAnonymous } = useAuth();
     const { mediaType, mediaId } = Route.useParams();
+    const { editionId } = Route.useSearch();
     const { mediaDetailsQueryOptions, communityCollectionsQueryOptions, communityActivityQueryOptions } = Route.useRouteContext();
 
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
@@ -152,6 +157,9 @@ function MediaDetailsPage() {
                                             mediaType={mediaType}
                                         />
                                         :
+                                        mediaType === MediaType.BOOKS ?
+                                            <BookAddToList key={`${mediaId}:${editionId ?? "none"}`} mediaId={mediaId} initialEditionId={editionId} queryOption={mediaDetailsQueryOptions}/>
+                                            :
                                         <Card>
                                             <CardContent className="text-center space-y-4">
                                                 <div className="space-y-3">

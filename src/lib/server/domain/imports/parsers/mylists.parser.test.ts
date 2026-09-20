@@ -24,7 +24,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Berserk",
-            formatVersion: "2",
+            formatVersion: "3",
             mediaType: MediaType.MANGA,
             externalApiId: "2",
             externalApiSource: ApiProviderType.MANGA,
@@ -67,13 +67,14 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Dune",
-            formatVersion: "2",
+            formatVersion: "3",
             mediaType: MediaType.BOOKS,
             externalApiId: "book-123",
             externalApiSource: ApiProviderType.BOOKS,
             releaseDate: "1965-08-01",
             status: Status.COMPLETED,
-            actualPage: "412",
+            actualPage: "412", pages: "412", language: "en", publishers: "Publisher",
+            editionName: "Dune", editionApiId: "book-123", rereadPages: "[412]",
             redo: "1",
             total: "824",
             rating: "10",
@@ -110,7 +111,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "The Bear",
-            formatVersion: "2",
+            formatVersion: "3",
             mediaType: MediaType.SERIES,
             externalApiId: "136315",
             externalApiSource: ApiProviderType.TMDB,
@@ -165,7 +166,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Frieren",
-            formatVersion: "2",
+            formatVersion: "3",
             mediaType: MediaType.ANIME,
             externalApiId: "209867",
             externalApiSource: ApiProviderType.TMDB,
@@ -221,7 +222,7 @@ describe("parseMyListsCsv", () => {
     it.each([MediaType.SERIES, MediaType.ANIME])("requires first-watch progress when importing %s", mediaType => {
         expect(() => parseMyListsCsv(toCsv([{
             mediaName: "Show",
-            formatVersion: "2",
+            formatVersion: "3",
             mediaType,
             externalApiId: "100",
             externalApiSource: ApiProviderType.TMDB,
@@ -238,7 +239,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Hades",
-            formatVersion: "2",
+            formatVersion: "3",
             mediaType: MediaType.GAMES,
             externalApiId: "114795",
             externalApiSource: ApiProviderType.IGDB,
@@ -288,7 +289,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Fight Club",
-            formatVersion: "2",
+            formatVersion: "3",
             mediaType: MediaType.MOVIES,
             externalApiId: "550",
             externalApiSource: ApiProviderType.TMDB,
@@ -320,7 +321,7 @@ describe("parseMyListsCsv", () => {
             userId: "42",
             mediaId: "100",
             mediaName: "Fight Club",
-            formatVersion: "2",
+            formatVersion: "3",
             mediaType: MediaType.MOVIES,
             externalApiId: "550",
             externalApiSource: ApiProviderType.TMDB,
@@ -353,7 +354,7 @@ describe("parseMyListsCsv", () => {
                 userId: "42",
                 mediaId: "100",
                 mediaName: "Hades",
-                formatVersion: "2",
+                formatVersion: "3",
                 mediaType: MediaType.GAMES,
                 externalApiId: "114795",
                 externalApiSource: ApiProviderType.IGDB,
@@ -373,7 +374,7 @@ describe("parseMyListsCsv", () => {
                 userId: "42",
                 mediaId: "101",
                 mediaName: "Fight Club",
-                formatVersion: "2",
+                formatVersion: "3",
                 mediaType: MediaType.MOVIES,
                 externalApiId: "550",
                 externalApiSource: ApiProviderType.TMDB,
@@ -391,7 +392,7 @@ describe("parseMyListsCsv", () => {
         ]))).toThrow(MYLISTS_FORMAT_ERROR);
     });
 
-    it.each(["", "0", "1", "3", "99"])("rejects unsupported movie format version %j for the whole file", formatVersion => {
+    it.each(["", "0", "1", "2", "99"])("rejects unsupported movie format version %j for the whole file", formatVersion => {
         expect(() => parseMyListsCsv(toCsv([movieRow(), movieRow({ formatVersion })])))
             .toThrow(MYLISTS_FORMAT_ERROR);
     });
@@ -440,7 +441,7 @@ describe("parseMyListsCsv", () => {
 
 
 const movieRow = (overrides: Record<string, string> = {}): Record<string, string> => ({
-    mediaName: "Fight Club", mediaType: MediaType.MOVIES, formatVersion: "2",
+    mediaName: "Fight Club", mediaType: MediaType.MOVIES, formatVersion: "3",
     externalApiId: "550", externalApiSource: ApiProviderType.TMDB, releaseDate: "1999-10-15",
     status: Status.COMPLETED, redo: "0", total: "1", rating: "9", favorite: "false", comment: "",
     ...overrides,

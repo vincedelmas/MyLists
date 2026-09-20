@@ -1,9 +1,9 @@
-import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
+import {asc, desc, getTableColumns, like, ne, or, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
-import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
+import {bookEditions, books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
+import {createArrayFilter, createListColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 
 
 export const booksServerDefinition = defineServerMediaDefinition({
@@ -17,20 +17,25 @@ export const booksServerDefinition = defineServerMediaDefinition({
             listTable: booksList,
             genreTable: booksGenre,
             tagTable: booksTags,
-            deleteDependents: [booksAuthors, booksGenre, booksTags],
+            deleteDependents: [booksAuthors, booksGenre, booksTags, bookEditions],
         },
         listQuery: {
             selection: {
-                pages: books.pages,
                 mediaName: books.name,
                 imageCover: books.imageCover,
                 ...getTableColumns(booksList),
             },
             filters: {
+                search: {
+                    isActive: args => !!args.search,
+                    getCondition: args => or(like(books.name, `%${args.search}%`), sql`EXISTS (
+                        SELECT 1 FROM ${bookEditions} WHERE ${bookEditions.mediaId} = ${books.id} AND ${bookEditions.name} LIKE ${`%${args.search}%`}
+                    )`),
+                },
                 langs: createArrayFilter({
                     argName: "langs",
                     mediaTable: books,
-                    filterColumn: books.language,
+                    filterColumn: booksList.language,
                 }),
                 authors: createArrayFilter({
                     argName: "authors",
@@ -40,10 +45,9 @@ export const booksServerDefinition = defineServerMediaDefinition({
                 }),
             },
             filterOptions: {
-                langs: createMediaColOptionsLoader({
-                    mediaTable: books,
+                langs: createListColOptionsLoader({
                     listTable: booksList,
-                    nameColumn: books.language,
+                    nameColumn: booksList.language,
                 }),
             },
             defaultSort: "Title A-Z",
@@ -57,8 +61,8 @@ export const booksServerDefinition = defineServerMediaDefinition({
                 "Recently Added": [desc(booksList.addedAt), asc(books.name)],
                 "Recently Modified": [desc(booksList.lastUpdated), asc(books.name)],
                 "Re-Read": [desc(booksList.redo), asc(books.name)],
-                "Pages +": [desc(books.pages), asc(books.name)],
-                "Pages -": [asc(books.pages), asc(books.name)],
+                "Pages +": [desc(booksList.pages), asc(books.name)],
+                "Pages -": [asc(booksList.pages), asc(books.name)],
             },
         },
         communityActivity: {
@@ -82,17 +86,17 @@ export const booksServerDefinition = defineServerMediaDefinition({
         },
         affinity: defineAffinityDefinitions(booksDefinition, {
             langsStats: {
-                metricTable: books,
-                metricIdCol: books.id,
-                metricNameCol: books.language,
-                mediaLinkCol: booksList.mediaId,
+                metricTable: booksList,
+                metricIdCol: booksList.id,
+                metricNameCol: booksList.language,
+                mediaLinkCol: booksList.id,
                 filters: [ne(booksList.status, Status.PLAN_TO_READ)],
             },
             publishersStats: {
-                metricTable: books,
-                metricIdCol: books.id,
-                metricNameCol: books.publishers,
-                mediaLinkCol: booksList.mediaId,
+                metricTable: booksList,
+                metricIdCol: booksList.id,
+                metricNameCol: booksList.publishers,
+                mediaLinkCol: booksList.id,
                 filters: [ne(booksList.status, Status.PLAN_TO_READ)],
             },
             authorsStats: {
@@ -107,7 +111,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
     service: {
         defaultStatus: Status.PLAN_TO_READ,
         editableFields: [
-            "name", "releaseDate", "pages", "language", "publishers", "synopsis",
+            "name", "releaseDate", "synopsis",
             "lockStatus", "authors", "imageCover",
         ],
         progressTotals: (state) => ({
@@ -117,7 +121,6 @@ export const booksServerDefinition = defineServerMediaDefinition({
         }),
     },
     ingestion: {
-        defaultPages: 250,
         externalApiSource: ApiProviderType.BOOKS,
     },
     attribution: {

@@ -84,6 +84,8 @@ overlapping drain workers.
 
 Docker deployment is documented in [docs/docker-deployment.md](./docs/docker-deployment.md).
 
+Book work grouping, edition tracking and migration notes are in [docs/book-works.md](./docs/book-works.md).
+
 The Docker Compose setup builds the app image and starts Redis.
 It mounts persistent storage for SQLite, images, and Redis data.
 Provide cron/maintenance scheduling and public HTTPS from your deployment platform when needed.
@@ -123,6 +125,8 @@ Below is an explanation for each key found in `.env.example`:
 | **API Keys**                                |                                                             |          |                                |
 | `THEMOVIEDB_API_KEY`                        | Enables movie, series, and anime external data through TMDB | ❌       |                                |
 | `GOOGLE_BOOKS_API_KEY`                      | Enables external book search/details through Google Books   | ❌       |                                |
+| `OPEN_LIBRARY_BOOK_MATCHING`                | Enables optional ISBN-to-work matching through Open Library | ❌       | `false`                        |
+| `OPEN_LIBRARY_CONTACT_EMAIL`                | Contact email used to identify Open Library requests        | ❌       |                                |
 | `MAL_CLIENT_ID`                             | Enables manga data and anime genres through MyAnimeList     | ❌       |                                |
 | `IGDB_CLIENT_ID` / `IGDB_CLIENT_SECRET`     | Enables game external data through IGDB                     | ❌       |                                |
 | **LLM Integration (Optional)**              |                                                             |          |                                |

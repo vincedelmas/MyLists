@@ -14,7 +14,7 @@ export type ContinueStateByType = {
     [T in TvMediaType]: TvProgress;
 } & {
     [MediaType.MOVIES]: never;
-    [MediaType.BOOKS]: { actualPage: number | null; pages: number };
+    [MediaType.BOOKS]: { actualPage: number | null; pages: number | null };
     [MediaType.MANGA]: { currentChapter: number; chapters: number | null };
     [MediaType.GAMES]: { playtime: number | null };
 };

@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {reviewBookWorksTask} from "@/lib/server/tasks/definitions/review-book-works.task";
 import {defineTask} from "@/lib/server/tasks/define-task";
 import {dbMaintenanceTask} from "@/lib/server/tasks/definitions/db-maintenance.task";
 import {flushApiMonitoringTask} from "@/lib/server/tasks/definitions/flush-api-monitoring.task";
@@ -25,6 +26,7 @@ export const maintenanceTask = defineTask({
     handler: async (ctx, input) => {
         await ctx.step(deleteNonActivatedUsersTask.name, () => deleteNonActivatedUsersTask.handler(ctx, input));
         await ctx.step(inactiveAccountDeletionTask.name, () => inactiveAccountDeletionTask.handler(ctx, input));
+        await ctx.step(reviewBookWorksTask.name, () => reviewBookWorksTask.handler(ctx, input));
         await ctx.step(removeAllOrphansMediaTask.name, () => removeAllOrphansMediaTask.handler(ctx, input));
         await ctx.step(removeUnusedMediaCoversTask.name, () => removeUnusedMediaCoversTask.handler(ctx, input));
         await ctx.step(removeUnusedProfileImagesTask.name, () => removeUnusedProfileImagesTask.handler(ctx, input));

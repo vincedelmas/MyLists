@@ -7,11 +7,12 @@ import {getDbClient, withTransaction} from "@/lib/server/database/async-storage"
 import type {BookGroupMergeInput, BookMergeInput} from "@/lib/schemas/book-editions.schema";
 import {bookMatchEvidence} from "@/lib/server/domain/media/books/book-matching";
 import {syncBookPublicationDate} from "@/lib/server/domain/media/books/book-publication-date";
+import {recordBookCandidate} from "./book-review.service";
 import {createBooksRepository} from "@/lib/server/domain/media/books/books.repository";
 import {createBooksStatistics} from "@/lib/server/domain/media/books/books.statistics";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
 import {
-    bookEditions, books, booksAuthors, booksGenre, booksList, booksTags, bookWorkAudit, bookWorkExclusions,
+    bookEditions, books, booksAuthors, booksGenre, booksList, booksTags, bookWorkAudit, bookWorkExclusions, bookWorkCandidates,
     collectionItems, dailyMediadle, importItems, mediaNotifications, user, userMediaMonthlyActivity,
     userMediaStatsHistory, userMediaUpdate, whichCameFirstMedia, whichCameFirstRounds,
 } from "@/lib/server/database/schema";
@@ -157,6 +158,7 @@ export const keepBookWorksSeparate = (actorId: number, sourceId: number, targetI
     const state = readMergeState(sourceId, targetId);
     const [firstWorkId, secondWorkId] = [sourceId, targetId].sort((a, b) => a - b);
     getDbClient().insert(bookWorkExclusions).values({ firstWorkId, secondWorkId }).onConflictDoNothing().run();
+    getDbClient().delete(bookWorkCandidates).where(and(eq(bookWorkCandidates.firstWorkId, firstWorkId), eq(bookWorkCandidates.secondWorkId, secondWorkId))).run();
     getDbClient().insert(bookWorkAudit).values({ actorId, sourceWorkId: sourceId, targetWorkId: targetId, action: "separate",
         snapshot: { source: state.source, target: state.target } }).run();
 });
@@ -266,6 +268,13 @@ export const mergeBookWorks = (actorId: number, input: BookMergeInput) => withTr
             const [firstWorkId, secondWorkId] = [other, targetId].sort((a, b) => a - b);
             tx.insert(bookWorkExclusions).values({ firstWorkId, secondWorkId }).onConflictDoNothing().run();
         }
+        const candidates = tx.select().from(bookWorkCandidates).where(or(eq(bookWorkCandidates.firstWorkId, sourceId), eq(bookWorkCandidates.secondWorkId, sourceId))).all();
+        for (const candidate of candidates) {
+            const other = candidate.firstWorkId === sourceId ? candidate.secondWorkId : candidate.firstWorkId;
+            recordBookCandidate(targetId, other, candidate.score, candidate.evidence, candidate.source);
+        }
+        // Transferred exclusions may also invalidate an earlier suggestion on the survivor.
+        tx.delete(bookWorkCandidates).where(sql`EXISTS (SELECT 1 FROM ${bookWorkExclusions} WHERE ${bookWorkExclusions.firstWorkId} = ${bookWorkCandidates.firstWorkId} AND ${bookWorkExclusions.secondWorkId} = ${bookWorkCandidates.secondWorkId})`).run();
         tx.delete(booksAuthors).where(eq(booksAuthors.mediaId, sourceId)).run();
         tx.delete(booksGenre).where(eq(booksGenre.mediaId, sourceId)).run();
         tx.delete(books).where(eq(books.id, sourceId)).run();
@@ -293,7 +302,7 @@ export const splitBookEdition = (actorId: number, editionId: number, name: strin
     if (editions.length < 2) throw new FormattedError("This edition already has its own work.");
     const source = repository.findById(edition.mediaId)!;
     if (source.apiId === edition.apiId) tx.update(books).set({ apiId: editions.find(row => row.id !== editionId)!.apiId }).where(eq(books.id, source.id)).run();
-    const target = tx.insert(books).values({ name, apiId: edition.apiId, imageCover: edition.imageCover, synopsis: source.synopsis }).returning().get();
+    const target = tx.insert(books).values({ name, apiId: edition.apiId, imageCover: edition.imageCover, synopsis: edition.synopsis ?? source.synopsis }).returning().get();
     if (edition.authors.length) tx.insert(booksAuthors).values(edition.authors.map(name => ({ mediaId: target.id, name }))).onConflictDoNothing().run();
     const preview = previewBookMerge(source.id, target.id, editionId);
     const result = mergeBookWorks(actorId, { sourceId: source.id, targetId: target.id, editionId, version: preview.version, metadata: "target", resolutions: [] });

@@ -15,11 +15,11 @@ const seedBooks = async (separate: boolean) => runBun(["-e", `
     ]).run();
     db.insert(bookEditions).values([
         {id: 411, mediaId: 401, apiId: "edition-en", name: "English edition", pages: 300, language: "en", publishers: "English Press", imageCover: "default.jpg", releaseDate: "1960-01-01"},
-        {id: 412, mediaId: ${separate ? 402 : 401}, apiId: "edition-fr", name: "French edition", pages: 420, language: "fr", publishers: "French Press", imageCover: "default.jpg", releaseDate: "2000-01-01"},
+        {id: 412, mediaId: ${separate ? 402 : 401}, apiId: "edition-fr", name: "French edition", pages: 420, language: "fr", publishers: "French Press", imageCover: "default.jpg", releaseDate: "2000-01-01", isbns: ["9780140328721"], synopsis: "Une histoire racontée en français."},
         ...(${separate} ? [{id: 413, mediaId: 403, apiId: "edition-de", name: "German edition", pages: 350, language: "de", publishers: "German Press", imageCover: "default.jpg", releaseDate: "1990-01-01"}] : []),
     ]).run();
     if (${separate}) {
-        db.update(user).set({role: "manager"}).where(eq(user.id, 1)).run();
+        db.update(user).set({role: "admin"}).where(eq(user.id, 1)).run();
         db.insert(booksList).values([
             {userId: 1, mediaId: 401, editionId: 411, editionName: "English edition", status: "Completed", pages: 300, actualPage: 300, total: 300, rating: 8, comment: "Original note"},
             {userId: 1, mediaId: 402, editionId: 412, editionName: "French edition", status: "Completed", pages: 420, actualPage: 420, total: 420, rating: 9},
@@ -35,6 +35,8 @@ test("selects an edition and preserves it through page tracking and reloads", as
     await page.goto("/details/books/401");
     await page.getByRole("combobox", {name: "Your edition"}).click();
     await page.getByRole("option", {name: /French edition/}).click();
+    await expect(page.getByRole("heading", {name: "French edition", exact: true})).toBeVisible();
+    await expect(page.getByText("Une histoire racontée en français.", {exact: true})).toBeVisible();
     await page.getByRole("button", {name: "Add to List", exact: true}).click();
     await expect(page.getByText("French Press · French · 420 pages", {exact: true})).toBeVisible();
     await page.getByRole("combobox").filter({hasText: "Plan to Read"}).click();
@@ -53,6 +55,7 @@ test("selects an edition and preserves it through page tracking and reloads", as
     await page.reload();
     await expect(currentPage).toHaveValue("120");
     await expect(page.getByText("English Press · English · 310 pages", {exact: true})).toBeVisible();
+    await expect(page.getByRole("heading", {name: "English edition", exact: true})).toBeVisible();
     await page.goto("/books/manage");
     await expect(page.getByRole("heading", {name: "Books & editions"})).toHaveCount(0);
 });
@@ -85,7 +88,9 @@ test("preselects the most-read work, merges three works with overlap choices, an
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({path: testInfo.outputPath("book-manager-mobile.png"), fullPage: true});
     await merge.click();
-    await expect(page).toHaveURL(/workId=402/);
+    await expect(page).toHaveURL(/\/books\/manage$/);
+    await expect(page.getByText("One book. All its editions.", {exact: true})).toBeVisible();
+    await page.getByRole("checkbox", {name: /^Une histoire/}).check();
     await page.getByRole("button", {name: "Editions & suggested matches"}).click();
     await expect(page.getByText("3 editions attached to this work")).toBeVisible();
     await expect(page.getByText("First published: Jan 1, 1960", {exact: false})).toBeVisible();
@@ -95,9 +100,9 @@ test("preselects the most-read work, merges three works with overlap choices, an
     await dialog.getByRole("button", {name: "Create separate work"}).click();
     await expect(dialog).toHaveCount(0);
     await page.getByRole("link", {name: "View book page"}).click();
-    await expect(page.getByRole("heading", {name: "Separated story", exact: true})).toBeVisible();
+    await expect(page.getByRole("heading", {name: "English edition", exact: true})).toBeVisible();
     await expect(page.getByLabel("Current page", {exact: true})).toHaveValue("300");
-    await expect(page.getByText("English edition", {exact: true})).toBeVisible();
+    await expect(page.getByTestId("book-edition-presentation")).toContainText("Shared book: Separated story");
 });
 
 test("keeps comparison controls visible and selections across catalogue searches and pages", async ({page}, testInfo) => {
@@ -166,4 +171,69 @@ test("moves an individual edition from the inspector and keeps the remaining edi
     await expect(page.getByRole("region", {name: "Edition Remaining edition", exact: true})).toBeVisible();
     await expect(page.getByRole("region", {name: "Edition English edition", exact: true})).toHaveCount(0);
     await expect(page.getByText("First published: Jan 1, 1970", {exact: false})).toBeVisible();
+});
+
+test("finds a stored ISBN from the edition dialog and keeps page corrections and progress", async ({page}) => {
+    await seedBooks(false);
+    await signIn(page);
+    await page.goto("/details/books/401");
+    await page.getByRole("button", {name: "Add to List", exact: true}).click();
+    await page.getByRole("button", {name: "Change edition"}).click();
+    const editor = page.getByRole("dialog", {name: "Your reading edition"});
+    await editor.getByRole("button", {name: "Find edition by ISBN"}).click();
+    const search = page.getByRole("dialog", {name: "Find your edition", exact: true});
+    await search.getByRole("textbox", {name: "ISBN", exact: true}).fill("0-14-032872-6");
+    await search.getByRole("button", {name: "Search", exact: true}).click();
+    await expect(search.getByText("French edition", {exact: true})).toBeVisible();
+    await search.getByRole("button", {name: "Use this edition"}).click();
+    await expect(search).toHaveCount(0);
+    await expect(editor.getByLabel("Pages in your copy")).toHaveValue("420");
+    await editor.getByLabel("Pages in your copy").fill("430");
+    await editor.getByRole("button", {name: "Save edition"}).click();
+    await expect(editor).toHaveCount(0);
+    await expect(page.getByRole("heading", {name: "French edition", exact: true})).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("French Press · French · 430 pages", {exact: true})).toBeVisible();
+});
+
+test("scans a group of works for review and remembers keep-separate decisions", async ({page}, testInfo) => {
+    await seedBooks(true);
+    await runBun(["-e", `
+        const {db} = await import("./src/lib/server/database/db");
+        const {bookEditions, booksAuthors} = await import("./src/lib/server/database/schema");
+        db.update(bookEditions).set({authors: ["An Author"], openLibraryWorkId: "/works/OL1W"}).run();
+        db.insert(booksAuthors).values([401, 402, 403].map(mediaId => ({mediaId, name: "An Author"}))).run();
+    `]);
+    await signIn(page);
+    await page.goto("/books/manage");
+    await page.getByRole("button", {name: "Account menu"}).click();
+    await expect(page.getByRole("menuitem", {name: "Books & editions"})).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", {name: "Review queue", exact: true}).click();
+    await page.getByRole("button", {name: "Scan books", exact: true}).click();
+    await expect(page.getByRole("button", {name: "Review 3 works"})).toBeVisible();
+    await page.getByRole("button", {name: "Review next"}).click();
+    await expect(page.getByRole("radio", {name: /^Une histoire/})).toBeChecked();
+    await page.screenshot({path: testInfo.outputPath("book-review-queue.png"), fullPage: true});
+    await page.getByRole("button", {name: "Keep separate", exact: true}).click();
+    await expect(page.getByText("One book. All its editions.", {exact: true})).toBeVisible();
+    await page.getByRole("button", {name: "Scan books", exact: true}).click();
+    await expect(page.getByText("No pending matches", {exact: true})).toBeVisible();
+});
+
+test("keeps books management out of the manager account menu and rejects its route", async ({page}) => {
+    await seedBooks(false);
+    await runBun(["-e", `
+        const {db} = await import("./src/lib/server/database/db");
+        const {user} = await import("./src/lib/server/database/schema");
+        const {eq} = await import("drizzle-orm");
+        db.update(user).set({role: "manager"}).where(eq(user.id, 1)).run();
+    `]);
+    await signIn(page);
+    await page.goto("/details/books/401");
+    await page.getByRole("button", {name: "Account menu"}).click();
+    await expect(page.getByRole("menuitem", {name: "Books & editions"})).toHaveCount(0);
+    await expect(page.getByRole("menuitem", {name: "Admin Panel"})).toHaveCount(0);
+    await page.goto("/books/manage");
+    await expect(page.getByRole("heading", {name: "Books & editions"})).toHaveCount(0);
 });

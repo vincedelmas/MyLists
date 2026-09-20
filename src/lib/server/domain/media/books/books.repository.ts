@@ -1,6 +1,7 @@
 import {FormattedError} from "@/lib/utils/error-classes";
 import {bookMatchEvidence} from "@/lib/server/domain/media/books/book-matching";
 import {syncBookPublicationDate} from "@/lib/server/domain/media/books/book-publication-date";
+import {bookListTitle} from "./book-list-presentation";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {asc, eq, getTableColumns, inArray, isNull, like, or, sql} from "drizzle-orm";
 import {getDbClient} from "@/lib/server/database/async-storage";
@@ -90,7 +91,7 @@ export function createBooksRepository(definition: BookServerDefinition = booksSe
 
     async function downloadMediaListAsCSV(userId: number) {
         return getDbClient().select({
-            ...getTableColumns(booksList), mediaName: books.name,
+            ...getTableColumns(booksList), mediaName: bookListTitle,
             externalApiId: sql<string>`COALESCE(${bookEditions.apiId}, ${books.apiId})`,
             editionApiId: bookEditions.apiId,
             releaseDate: bookEditions.releaseDate,

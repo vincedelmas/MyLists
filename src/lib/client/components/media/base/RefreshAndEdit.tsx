@@ -71,7 +71,7 @@ export const RefreshAndEdit = ({ mediaType, mediaId, lastUpdate }: RefreshAndEdi
                 <div className="h-6 border-l border border-muted-foreground/50"/>
             }
 
-            {isBook && isManagerOrAbove && <Link to="/books/manage" search={{ workId: mediaId }} className={buttonVariants({ size: "sm", variant: "hover" })}>
+            {isBook && currentUser?.capabilities.enterAdminDashboard && <Link to="/books/manage" search={{ workId: mediaId }} className={buttonVariants({ size: "sm", variant: "hover" })}>
                 <GitMerge/> Editions
             </Link>}
             <RelativeTime

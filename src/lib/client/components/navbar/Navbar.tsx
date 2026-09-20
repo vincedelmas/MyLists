@@ -28,6 +28,7 @@ import {
     Clapperboard,
     GitCompareArrows,
     ListOrdered,
+    Library,
     LogOut,
     Menu,
     Settings,
@@ -163,6 +164,7 @@ export const Navbar = () => {
                                             render={
                                                 <Button
                                                     variant="ghost"
+                                                    aria-label="Account menu"
                                                     className="flex items-center gap-2 text-lg font-semibold px-1"
                                                 />
                                             }
@@ -209,6 +211,11 @@ export const Navbar = () => {
                                                     <span className="text-warning">
                                                         Admin Panel
                                                     </span>
+                                                </DropdownMenuItem>
+                                            }
+                                            {currentUser.capabilities.enterAdminDashboard &&
+                                                <DropdownMenuItem render={<Link to="/books/manage"/>}>
+                                                    <Library/> Books & editions
                                                 </DropdownMenuItem>
                                             }
                                             <DropdownMenuItem render={<Link to="/features" onClick={onFeaturesClick}/>}>

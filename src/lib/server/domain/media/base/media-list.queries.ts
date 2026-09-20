@@ -41,7 +41,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
 
     const mediaNameSearchCondition = (query: string) => {
         const pattern = `%${query}%`;
-        const nameCondition = like(mediaTable.name, pattern);
+        const nameCondition = or(like(mediaTable.name, pattern), like(listQuery.selection.mediaName, pattern));
 
         return mediaTable.originalName
             ? or(nameCondition, like(mediaTable.originalName, pattern))
@@ -125,8 +125,8 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
             return getDbClient()
                 .select({
                     mediaId: mediaTable.id,
-                    mediaName: mediaTable.name,
-                    mediaCover: mediaTable.imageCover,
+                    mediaName: listQuery.selection.mediaName,
+                    mediaCover: listQuery.selection.imageCover,
                     customCover: listTable.customCover,
                     releaseDate: mediaTable.releaseDate,
                 })
@@ -140,15 +140,15 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
             return getDbClient()
                 .selectDistinct({
                     mediaId: mediaTable.id,
-                    mediaName: mediaTable.name,
-                    mediaCover: mediaTable.imageCover,
+                    mediaName: listQuery.selection.mediaName,
+                    mediaCover: listQuery.selection.imageCover,
                     customCover: listTable.customCover,
                     releaseDate: mediaTable.releaseDate,
                 })
                 .from(listTable)
                 .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
                 .where(and(eq(listTable.userId, userId), mediaNameSearchCondition(query)))
-                .orderBy(asc(mediaTable.name))
+                .orderBy(asc(listQuery.selection.mediaName))
                 .limit(limit);
         },
 

@@ -4,6 +4,7 @@ import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions
 import {bookEditions, books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createArrayFilter, createListColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
+import {bookListCover, bookListTitle} from "@/lib/server/domain/media/books/book-list-presentation";
 
 
 export const booksServerDefinition = defineServerMediaDefinition({
@@ -21,8 +22,8 @@ export const booksServerDefinition = defineServerMediaDefinition({
         },
         listQuery: {
             selection: {
-                mediaName: books.name,
-                imageCover: books.imageCover,
+                mediaName: bookListTitle,
+                imageCover: bookListCover,
                 ...getTableColumns(booksList),
             },
             filters: {
@@ -52,17 +53,17 @@ export const booksServerDefinition = defineServerMediaDefinition({
             },
             defaultSort: "Title A-Z",
             sorts: {
-                "Title A-Z": asc(books.name),
-                "Title Z-A": desc(books.name),
-                "Rating +": [desc(booksList.rating), asc(books.name)],
-                "Rating -": [asc(booksList.rating), asc(books.name)],
-                "Published Date +": [desc(books.releaseDate), asc(books.name)],
-                "Published Date -": [sql`${books.releaseDate} ASC NULLS LAST`, asc(books.name)],
-                "Recently Added": [desc(booksList.addedAt), asc(books.name)],
-                "Recently Modified": [desc(booksList.lastUpdated), asc(books.name)],
-                "Re-Read": [desc(booksList.redo), asc(books.name)],
-                "Pages +": [desc(booksList.pages), asc(books.name)],
-                "Pages -": [asc(booksList.pages), asc(books.name)],
+                "Title A-Z": asc(bookListTitle),
+                "Title Z-A": desc(bookListTitle),
+                "Rating +": [desc(booksList.rating), asc(bookListTitle)],
+                "Rating -": [asc(booksList.rating), asc(bookListTitle)],
+                "Published Date +": [desc(books.releaseDate), asc(bookListTitle)],
+                "Published Date -": [sql`${books.releaseDate} ASC NULLS LAST`, asc(bookListTitle)],
+                "Recently Added": [desc(booksList.addedAt), asc(bookListTitle)],
+                "Recently Modified": [desc(booksList.lastUpdated), asc(bookListTitle)],
+                "Re-Read": [desc(booksList.redo), asc(bookListTitle)],
+                "Pages +": [desc(booksList.pages), asc(bookListTitle)],
+                "Pages -": [asc(booksList.pages), asc(bookListTitle)],
             },
         },
         communityActivity: {

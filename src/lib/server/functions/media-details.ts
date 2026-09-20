@@ -33,7 +33,10 @@ export const getMediaDetails = createServerFn({ method: "GET" })
             similarMedia,
         } = await mediaService.getMediaAndUserDetails(currentUser?.id, mediaId);
 
-        return { media, userMedia, followsData, similarMedia };
+        const bookEdition = mediaType === MediaType.BOOKS && userMedia && "editionId" in userMedia && userMedia.editionId
+            ? container.registries.mediaService.get(MediaType.BOOKS).getEditions(mediaId).find(edition => edition.id === userMedia.editionId) ?? null
+            : null;
+        return { media, userMedia, followsData, similarMedia, bookEdition };
     });
 
 

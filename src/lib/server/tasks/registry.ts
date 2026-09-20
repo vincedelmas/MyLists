@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {reviewBookWorksTask} from "@/lib/server/tasks/definitions/review-book-works.task";
 import {TaskMetadata} from "@/lib/types/tasks.types";
 import {curateWCFTask} from "@/lib/server/tasks/definitions/curate-wcf.task";
 import {createUserTask} from "@/lib/server/tasks/definitions/create-user.task";
@@ -26,6 +27,7 @@ export type TaskName = keyof typeof taskRegistry;
 
 
 export const taskRegistry = {
+    [reviewBookWorksTask.name]: reviewBookWorksTask,
     [curateWCFTask.name]: curateWCFTask,
     [createUserTask.name]: createUserTask,
     [maintenanceTask.name]: maintenanceTask,

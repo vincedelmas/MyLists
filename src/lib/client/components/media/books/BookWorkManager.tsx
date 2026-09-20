@@ -19,7 +19,9 @@ import {Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/li
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
 import {BookMergeConflicts, type BookReaderChoices} from "./BookMergeConflicts";
 import {BookWorkInspector} from "./BookWorkInspector";
-import {getBookCatalogue, getBookGroupPreview, postKeepBookWorksSeparate, postMergeBookWorkGroup} from "@/lib/server/functions/book-editions";
+import {BookReviewQueue} from "./BookReviewQueue";
+import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
+import {getBookCatalogue, getBookGroupPreview, postKeepBookGroupSeparate, postMergeBookWorkGroup} from "@/lib/server/functions/book-editions";
 
 type GroupPreview = Awaited<ReturnType<typeof getBookGroupPreview>>;
 const sortNames = {readers: "Most readers", title: "Title A–Z", oldest: "Oldest publication"};
@@ -30,6 +32,7 @@ export function BookWorkManager({initialWorkId}: {initialWorkId?: number}) {
     const grouping = useIsMutating({mutationKey: ["bookGrouping"]}) > 0;
     const comparisonRef = useRef<HTMLDivElement>(null);
     const [search, setSearch] = useState("");
+    const [view, setView] = useState("catalogue");
     const query = useDebounce(search.trim(), 250);
     const [page, setPage] = useState(1);
     const [sort, setSort] = useState<keyof typeof sortNames>("readers");
@@ -52,7 +55,12 @@ export function BookWorkManager({initialWorkId}: {initialWorkId?: number}) {
     };
     const clearSelection = () => {
         chooseWorks([]);
+        setPreferredTarget(null);
         void navigate({to: "/books/manage", search: {}, replace: true});
+    };
+    const afterMerge = async () => {
+        clearSelection(); setInspectedId(null);
+        await queryClient.invalidateQueries();
     };
     const pageIds = catalogue.data?.items.map(work => work.id) ?? [];
     const allPageSelected = pageIds.length > 0 && pageIds.every(id => selected.includes(id));
@@ -63,14 +71,16 @@ export function BookWorkManager({initialWorkId}: {initialWorkId?: number}) {
             <div className="flex flex-col gap-2"><div className="flex items-center gap-3"><Library className="size-6 text-primary"/>
                 <h1 className="text-3xl font-semibold tracking-tight">Books & editions</h1></div>
                 <p className="text-sm text-muted-foreground">Select works that belong to the same book, compare them, and keep one shared page.</p>
-            </div><Badge variant="outline">{selected.length} selected</Badge>
+            </div><div className="flex items-center gap-3"><ToggleGroup aria-label="Find works" value={[view]} variant="outline" size="sm" spacing={0} onValueChange={values => {if (values[0]) setView(values[0]);}}>
+                <ToggleGroupItem value="catalogue">Catalogue</ToggleGroupItem><ToggleGroupItem value="review">Review queue</ToggleGroupItem>
+            </ToggleGroup><Badge variant="outline">{selected.length} selected</Badge></div>
         </header>
         <div className="sticky top-16 z-10 flex items-center justify-between gap-3 rounded-lg border bg-background p-3 lg:hidden">
             <span className="text-sm">{selected.length} works in your selection</span>
             <Button size="sm" variant="secondary" disabled={!selected.length} onClick={() => comparisonRef.current?.scrollIntoView({behavior: "smooth", block: "start"})}>Review selection <ArrowUp data-icon="inline-end"/></Button>
         </div>
         <div className="grid min-w-0 gap-5 lg:h-[calc(100dvh-13rem)] lg:min-h-[32rem] lg:grid-cols-2">
-            <Card className="min-h-0 min-w-0">
+            {view === "review" ? <BookReviewQueue selectedIds={selected} busy={grouping} onReview={ids => {chooseWorks(ids); setPreferredTarget(null);}}/> : <Card className="min-h-0 min-w-0">
                 <CardHeader><CardTitle>Catalogue</CardTitle><CardDescription>Search titles, authors, Google Books IDs or ISBNs.</CardDescription>
                     <FieldGroup className="mt-3 flex-row items-end gap-2"><Field className="min-w-0"><FieldLabel htmlFor="book-catalogue-search" className="sr-only">Search catalogue</FieldLabel>
                         <Input id="book-catalogue-search" value={search} onChange={event => {setSearch(event.target.value); setPage(1);}} placeholder="Try Harry Potter, Tolkien, or an ISBN…"/>
@@ -112,11 +122,11 @@ export function BookWorkManager({initialWorkId}: {initialWorkId?: number}) {
                     <span className="text-xs tabular-nums text-muted-foreground">{page} / {Math.max(1, Math.ceil((catalogue.data?.total ?? 0) / 30))}</span>
                     <Button size="sm" variant="ghost" disabled={!catalogue.data?.hasNextPage} onClick={() => setPage(page + 1)}>Next <ChevronRight data-icon="inline-end"/></Button>
                 </CardFooter>
-            </Card>
+            </Card>}
             <div ref={comparisonRef} className="order-first flex min-h-0 min-w-0 scroll-mt-36 flex-col lg:order-last lg:scroll-mt-20" data-testid="book-comparison">
                 {preview.data && selected.length > 0 && targetId ? <BookGroupComparison key={preview.data.version} preview={preview.data} targetId={targetId}
                     onTargetChange={setPreferredTarget} onInspect={setInspectedId} onRemove={id => chooseWorks(selected.filter(item => item !== id))}
-                    onClear={clearSelection} onSaved={afterChange} refreshing={preview.isFetching} onReload={() => preview.refetch()}/>
+                    onClear={clearSelection} onSaved={afterMerge} refreshing={preview.isFetching} onReload={() => preview.refetch()}/>
                     : <Card className="min-h-0 flex-1"><CardHeader><CardTitle>Compare your selection</CardTitle><CardDescription>Your selection stays here as you browse and search.</CardDescription></CardHeader>
                         <CardContent className="flex flex-1 items-center">
                             {preview.isError && selected.length > 0 ? <Alert variant="destructive"><AlertTitle>Could not load your selection</AlertTitle><AlertDescription>{preview.error.message} <Button variant="ghost" onClick={clearSelection}>Clear selection</Button></AlertDescription></Alert>
@@ -134,14 +144,14 @@ export function BookWorkManager({initialWorkId}: {initialWorkId?: number}) {
 
 function BookGroupComparison({preview, targetId, onTargetChange, onInspect, onRemove, onClear, onSaved, refreshing, onReload}: {
     preview: GroupPreview; targetId: number; onTargetChange: (id: number) => void; onInspect: (id: number) => void;
-    onRemove: (id: number) => void; onClear: () => void; onSaved: (id: number) => Promise<void>; refreshing: boolean; onReload: () => void;
+    onRemove: (id: number) => void; onClear: () => void; onSaved: () => Promise<void>; refreshing: boolean; onReload: () => void;
 }) {
     const [choices, setChoices] = useState<BookReaderChoices>({});
     const comparisonBody = useRef<HTMLDivElement>(null);
     const conflictsSection = useRef<HTMLDivElement>(null);
     const target = preview.works.find(work => work.id === targetId)!;
-    const merge = useMutation({mutationKey: ["bookGrouping"], mutationFn: postMergeBookWorkGroup, onSuccess: result => onSaved(result.mediaId), meta: {successToastMessage: "Works merged. All editions now share one book page."}});
-    const separate = useMutation({mutationKey: ["bookGrouping"], mutationFn: postKeepBookWorksSeparate, onSuccess: () => onSaved(targetId), meta: {successToastMessage: "These works will be kept separate."}});
+    const merge = useMutation({mutationKey: ["bookGrouping"], mutationFn: postMergeBookWorkGroup, onSuccess: onSaved, meta: {successToastMessage: "Works merged. All editions now share one book page."}});
+    const separate = useMutation({mutationKey: ["bookGrouping"], mutationFn: postKeepBookGroupSeparate, onSuccess: onSaved, meta: {successToastMessage: "These works will be kept separate."}});
     const busy = merge.isPending || separate.isPending;
     const ready = preview.works.length > 1 && preview.conflicts.every(row => choices[row.userId]?.keepWorkId && choices[row.userId]?.reading);
     const workNames = new Map(preview.works.map(work => [work.id, `${work.name} · #${work.id}`]));
@@ -191,7 +201,7 @@ function BookGroupComparison({preview, targetId, onTargetChange, onInspect, onRe
                     <p className="min-w-0">Keep <span className="font-medium">{target.name}</span><span className="block text-xs text-muted-foreground">First published: {publicationDate?.slice(0, 4) ?? "Unknown"}{target.releaseDateSource === "edition" && publicationDate ? " · oldest edition" : ""}</span></p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    {preview.works.length === 2 && <Button variant="outline" disabled={busy} onClick={() => separate.mutate({data: {sourceId: preview.works.find(work => work.id !== targetId)!.id, targetId}})}>Keep separate</Button>}
+                    <Button variant="outline" disabled={busy || refreshing} onClick={() => separate.mutate({data: {workIds: preview.works.map(work => work.id)}})}>Keep separate</Button>
                     <Button className="flex-1" disabled={!ready || busy || refreshing} onClick={() => merge.mutate({data: {workIds: preview.works.map(work => work.id), targetId,
                         version: preview.version, resolutions: preview.conflicts.map(row => choices[row.userId] as BookGroupMergeInput["resolutions"][number])}})}>
                         <GitMerge data-icon="inline-start"/>{merge.isPending ? "Merging…" : `Merge ${preview.works.length} works`}

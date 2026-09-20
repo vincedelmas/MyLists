@@ -5,6 +5,7 @@ import {MediaType, UpdateType} from "@/lib/utils/enums";
 import {PROGRESS_MAX} from "@/lib/utils/constants";
 import {formatLocaleName} from "@/lib/utils/formatting/text";
 import {getBookEditions} from "@/lib/server/functions/book-editions";
+import {BookIsbnLookup} from "./BookIsbnLookup";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {Field, FieldDescription, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
@@ -38,6 +39,7 @@ function BookEditionSelect({ mediaId, editionId, onChange }: {
                     {editions.data?.map(edition => <SelectItem key={edition.id} value={String(edition.id)}>{label(edition)}</SelectItem>)}
                 </SelectGroup></SelectContent>
             </Select>
+            <BookIsbnLookup mediaId={mediaId} onSelect={onChange}/>
             {editions.isError && <FieldDescription>Could not load editions. <Button variant="ghost" size="sm" onClick={() => editions.refetch()}>Retry</Button></FieldDescription>}
             {selected && <div className="flex items-start gap-3 pt-2">
                 <img src={selected.imageCover} alt={selected.name} className="w-12 rounded-sm aspect-2/3 object-cover"/>
@@ -52,15 +54,15 @@ function BookEditionSelect({ mediaId, editionId, onChange }: {
     );
 }
 
-export function BookAddToList({ mediaId, initialEditionId, queryOption }: {
-    mediaId: number; initialEditionId?: number; queryOption: UserMediaQueryOption;
+export function BookAddToList({ mediaId, initialEditionId, queryOption, onEditionChange }: {
+    mediaId: number; initialEditionId?: number; queryOption: UserMediaQueryOption; onEditionChange: (id: number | null) => void;
 }) {
     const [editionId, setEditionId] = useState<number | null>(initialEditionId ?? null);
     const mutation = useAddMediaToListMutation(queryOption);
     return <Card>
         <CardHeader><CardTitle>Add to your reading list</CardTitle><CardDescription>Choose your edition, or save this work for later.</CardDescription></CardHeader>
         <CardContent className="flex flex-col gap-4">
-            <FieldGroup><BookEditionSelect mediaId={mediaId} editionId={editionId} onChange={setEditionId}/></FieldGroup>
+            <FieldGroup><BookEditionSelect mediaId={mediaId} editionId={editionId} onChange={id => {setEditionId(id); onEditionChange(id);}}/></FieldGroup>
             <Button disabled={mutation.isPending} onClick={() => mutation.mutate({ data: { mediaType: MediaType.BOOKS, mediaId, editionId } })}>
                 <Plus data-icon="inline-start"/> Add to List
             </Button>

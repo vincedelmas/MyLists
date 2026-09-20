@@ -6,7 +6,7 @@ import {BookWorkManager} from "@/lib/client/components/media/books/BookWorkManag
 export const Route = createFileRoute("/_main/_private/books/manage")({
     validateSearch: z.object({ workId: z.coerce.number().int().positive().optional().catch(undefined) }),
     beforeLoad: ({ context: { queryClient } }) => {
-        if (!queryClient.getQueryData(authOptions.queryKey)?.capabilities.editCatalog) throw notFound();
+        if (!queryClient.getQueryData(authOptions.queryKey)?.capabilities.enterAdminDashboard) throw notFound();
     },
     head: () => ({ meta: [{ title: "Books & editions | MyLists" }, { name: "robots", content: "noindex, nofollow" }] }),
     component: ManageBooksPage,

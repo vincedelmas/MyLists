@@ -2,7 +2,7 @@ import {MediaType} from "@/lib/utils/enums";
 import {toDateInputValue} from "@/lib/utils/formatting/date";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {and, eq, gte, inArray, isNotNull, notExists, or, sql} from "drizzle-orm";
-import {bookEditions, bookWorkAudit, collectionItems, dailyMediadle} from "@/lib/server/database/schema";
+import {bookEditions, bookWorkAudit, bookWorkCandidates, collectionItems, dailyMediadle} from "@/lib/server/database/schema";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 
 
@@ -49,6 +49,7 @@ export class MediaMaintenanceRepository {
             .where(and(
                 // Keep catalogue grouping decisions even when nobody currently tracks the work.
                 mediaType === MediaType.BOOKS ? and(
+                    notExists(tx.select().from(bookWorkCandidates).where(or(eq(bookWorkCandidates.firstWorkId, mediaTable.id), eq(bookWorkCandidates.secondWorkId, mediaTable.id)))),
                     notExists(tx.select().from(bookWorkAudit).where(or(eq(bookWorkAudit.sourceWorkId, mediaTable.id), eq(bookWorkAudit.targetWorkId, mediaTable.id)))),
                     sql`(SELECT count(*) FROM ${bookEditions} WHERE ${bookEditions.mediaId} = ${mediaTable.id}) <= 1`,
                 ) : undefined,

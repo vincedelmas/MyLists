@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {bookMatchEvidence, normalizeIsbn} from "./book-matching";
+import {bookMatchEvidence, normalizeIsbn, reviewBookMatch} from "./book-matching";
 
 describe("conservative book identity evidence", () => {
     it("normalizes equivalent ISBNs and rejects invalid checksums and identifiers", () => {
@@ -21,5 +21,14 @@ describe("conservative book identity evidence", () => {
             expect(bookMatchEvidence(original, {...original, name})).toBeNull();
         }
         expect(bookMatchEvidence({...original, name: "The Story, Volume 1"}, {...original, name: "The Story, Volume 2"})).toBeNull();
+    });
+    it("offers approximate author/title evidence only for review, without conflating numbered volumes", () => {
+        const first = {name: "The Fellowship of the Ring", authors: ["John Ronald Reuel Tolkien"], isbns: [], pages: 400, publishers: "Publisher"};
+        const second = {...first, name: "Fellowship of the Ring (Illustrated)", authors: ["J. R. R. Tolkien"], pages: 410};
+        expect(bookMatchEvidence(first, second)).toBeNull();
+        expect(reviewBookMatch(first, second)).toMatchObject({evidence: ["Compatible author names", "Similar title wording", "Similar page counts", "Same publisher"]});
+        expect(reviewBookMatch(first, second)!.score).toBeLessThan(90);
+        expect(reviewBookMatch({...first, name: "A long story, Book I"}, {...second, name: "A long story, Book 2"})).toBeNull();
+        expect(reviewBookMatch(first, {...second, authors: ["James Joyce"]})).toBeNull();
     });
 });

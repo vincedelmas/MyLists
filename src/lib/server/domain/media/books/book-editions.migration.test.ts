@@ -3,6 +3,34 @@ import {readMigrationFiles} from "drizzle-orm/migrator";
 import {describe, expect, it} from "vitest";
 
 describe("Book work/edition migration", () => {
+    it("preserves old covers only for readers 9 and 166 and backfills only the original edition synopsis", () => {
+        const db = new Database(":memory:");
+        const migrations = readMigrationFiles({migrationsFolder: "./drizzle"});
+        const index = migrations.findIndex(migration => migration.sql.some(statement => statement.includes("CREATE TABLE `book_work_candidates`")));
+        try {
+            db.transaction(() => {for (const migration of migrations.slice(0, index)) for (const statement of migration.sql) db.exec(statement);})();
+            for (const id of [1, 9, 166]) db.run("INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, '2025-01-01', '2025-01-01')", [id, `Reader ${id}`, `${id}@example.com`]);
+            db.exec(`INSERT INTO books (id, api_id, name, image_cover, synopsis) VALUES
+                (1, 'original', 'A book', 'old-cover.jpg', 'Old description'), (2, 'another', 'Other book', 'other-cover.jpg', NULL), (3, 'unknown', 'No cover', 'default.jpg', NULL);
+                INSERT INTO book_editions (media_id, api_id, name, image_cover) VALUES (1, 'original', 'Original edition', 'edition.jpg'), (1, 'translation', 'Translation', 'edition-fr.jpg');
+                INSERT INTO books_list (user_id, media_id, status, custom_cover) VALUES
+                (1, 1, 'Reading', NULL), (9, 1, 'Reading', NULL), (166, 1, 'Reading', NULL),
+                (9, 2, 'Completed', 'chosen.jpg'), (166, 3, 'Reading', NULL);`);
+            db.exec("PRAGMA foreign_keys=ON");
+            db.transaction(() => {for (const statement of migrations[index].sql) db.exec(statement);})();
+            expect(db.query("SELECT user_id, media_id, custom_cover FROM books_list ORDER BY user_id, media_id").all()).toEqual([
+                {user_id: 1, media_id: 1, custom_cover: null}, {user_id: 9, media_id: 1, custom_cover: "old-cover.jpg"},
+                {user_id: 9, media_id: 2, custom_cover: "chosen.jpg"}, {user_id: 166, media_id: 1, custom_cover: "old-cover.jpg"},
+                {user_id: 166, media_id: 3, custom_cover: null},
+            ]);
+            expect(db.query("SELECT api_id, synopsis FROM book_editions ORDER BY id").all()).toEqual([
+                {api_id: "original", synopsis: "Old description"}, {api_id: "translation", synopsis: null},
+            ]);
+            expect(db.query("PRAGMA foreign_key_check").all()).toEqual([]);
+        }
+        finally {db.close();}
+    });
+
     it("preserves IDs, edition metadata and recorded totals while removing edition fields from works", () => {
         const db = new Database(":memory:");
         const migrations = readMigrationFiles({ migrationsFolder: "./drizzle" });

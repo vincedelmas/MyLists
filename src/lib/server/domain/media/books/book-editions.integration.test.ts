@@ -16,12 +16,20 @@ const { createBooksService } = await import("./books.service");
 const { getBookWork, keepBookWorksSeparate, mergeBookWorkGroup, mergeBookWorks, previewBookMerge, previewBookWorkGroup, searchBookWorks, splitBookEdition } = await import("./book-works.service");
 const { withTransaction } = await import("@/lib/server/database/async-storage");
 const { MediaMaintenanceRepository } = await import("@/lib/server/domain/maintenance/media-maintenance.repository");
+const {createBookIsbnService} = await import("./book-isbn.service");
+const {getBookReviewQueue, recordBookCandidate, scanBookWorkCandidates} = await import("./book-review.service");
+const {createMediaListQueries} = await import("../base/media-list.queries");
+const {mediaListSchema} = await import("@/lib/schemas/media-lists.schema");
+const {booksServerDefinition} = await import("@/lib/media-definitions/books/book.definition.server");
 
 describe("Book editions and work grouping", () => {
     let sqlite: Database;
     let db: ReturnType<typeof drizzle<typeof schema>>;
     let repository: ReturnType<typeof createBooksRepository>;
     let service: ReturnType<typeof createBooksService>;
+    let isbnService: ReturnType<typeof createBookIsbnService>;
+    const api = {search: vi.fn(), getBooksDetails: vi.fn()};
+    const provider = {search: vi.fn(), getDetails: vi.fn()};
     const details = (apiId: string, name = "A Book", pages = 300): InsertBooksWithDetails => ({
         mediaData: { apiId, name, imageCover: "work.jpg", releaseDate: null, synopsis: "Work description" },
         authorsData: [{ name: "An Author" }],
@@ -44,8 +52,120 @@ describe("Book editions and work grouping", () => {
         db.insert(schema.user).values([1, 2, 3].map(id => ({ id, name: `reader-${id}`, email: `reader-${id}@example.com`, emailVerified: true, createdAt: "2025-01-01", updatedAt: "2025-01-01" }))).run();
         db.insert(schema.userMediaSettings).values([1, 2, 3].map(userId => ({ userId, mediaType: MediaType.BOOKS, active: true }))).run();
         repository = createBooksRepository(); service = createBooksService(repository);
+        vi.resetAllMocks();
+        isbnService = createBookIsbnService(api, provider, {wrap: async <T>(_key: string, fn: () => Promise<T>) => fn()});
     });
     afterEach(() => { sqlite.close(); context.db = undefined; });
+
+    it("scans offline, groups three matches, ranks by readership and persists keep-separate decisions", () => {
+        const ids = [addWork("one"), addWork("two"), addWork("three")];
+        addReader(ids[1], 1, 300); addReader(ids[1], 2, 300);
+        const otherIds = [addWork("four", "Another book"), addWork("five", "Another book")];
+        expect(scanBookWorkCandidates()).toMatchObject({works: 5, candidates: 4});
+        const queue = getBookReviewQueue();
+        expect(queue.highConfidence).toBe(2);
+        expect(queue.groups[0].works.map(work => work.id)).toEqual([ids[1], ids[0], ids[2]]);
+        expect(previewBookWorkGroup(queue.groups[0].workIds).recommendedTargetId).toBe(ids[1]);
+        expect(MediaMaintenanceRepository.getOrphanedMediaIds(MediaType.BOOKS)).toEqual([]);
+        keepBookWorksSeparate(3, otherIds[0], otherIds[1]);
+        scanBookWorkCandidates();
+        expect(getBookReviewQueue().groups).toHaveLength(1);
+        expect(api.search).not.toHaveBeenCalled(); expect(provider.getDetails).not.toHaveBeenCalled();
+    });
+
+    it("does not build a group across missing evidence or bypass volume conflicts using work aliases", () => {
+        const ids = [addWork("one"), addWork("two"), addWork("three")];
+        recordBookCandidate(ids[0], ids[1], 90, ["Title and author"]);
+        recordBookCandidate(ids[1], ids[2], 90, ["Title and author"]);
+        expect(getBookReviewQueue().groups[0].workIds).toHaveLength(2);
+        db.update(schema.bookEditions).set({name: "A long story, Volume 1"}).where(eq(schema.bookEditions.mediaId, ids[0])).run();
+        db.update(schema.bookEditions).set({name: "A long story, Volume 2"}).where(eq(schema.bookEditions.mediaId, ids[1])).run();
+        keepBookWorksSeparate(3, ids[0], ids[2]); keepBookWorksSeparate(3, ids[1], ids[2]);
+        scanBookWorkCandidates();
+        expect(getBookReviewQueue().total).toBe(0);
+    });
+
+    it("carries remaining review candidates to the surviving work after a merge", () => {
+        const source = addWork("one"), target = addWork("two"), other = addWork("three");
+        recordBookCandidate(source, target, 90, ["Title and author"]);
+        recordBookCandidate(source, other, 50, ["Reader request"], "reader");
+        mergeBookWorks(3, {sourceId: source, targetId: target, version: previewBookMerge(source, target).version, metadata: "target", resolutions: []});
+        expect(getBookReviewQueue().groups[0].workIds.sort()).toEqual([target, other].sort());
+        expect(db.select().from(schema.bookWorkCandidates).all()).toHaveLength(1);
+        scanBookWorkCandidates();
+        expect(db.select().from(schema.bookWorkCandidates).get()!.source).toBe("reader");
+        expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);
+    });
+
+    it("reuses stored ISBN editions without network calls or altering progress", async () => {
+        const id = addWork("local");
+        db.update(schema.bookEditions).set({isbns: ["9780140328721"]}).run();
+        const reader = addReader(id, 1, 300, "Keep my note");
+        expect(await isbnService.search(id, "0-14-032872-6")).toMatchObject({isbn: "9780140328721", editions: [{apiId: "local", mediaId: id}]});
+        expect(await isbnService.select(id, "9780140328721", "local")).toMatchObject({mediaId: id, editionId: reader.editionId, reviewQueued: false});
+        expect(db.select().from(schema.booksList).get()).toEqual(reader);
+        await expect(isbnService.search(id, "9780140328722")).rejects.toThrow("valid ISBN");
+        expect(api.search).not.toHaveBeenCalled(); expect(provider.getDetails).not.toHaveBeenCalled();
+    });
+
+    it("filters Google ISBN results and attaches a confirmed matching edition without changing the shared presentation", async () => {
+        const id = addWork("original");
+        api.search.mockResolvedValue({rawData: {items: [
+            {id: "new", volumeInfo: {title: "A Book", authors: ["An Author"], industryIdentifiers: [{type: "ISBN_13", identifier: "9780140328721"}]}},
+            {id: "wrong", volumeInfo: {title: "Wrong book", industryIdentifiers: [{type: "ISBN_13", identifier: "9780306406157"}]}},
+        ]}});
+        const found = await isbnService.search(id, "9780140328721");
+        expect(api.search).toHaveBeenCalledWith("isbn:9780140328721");
+        expect(found.editions.map(edition => edition.apiId)).toEqual(["new"]);
+        const incoming = details("new");
+        Object.assign(incoming.editionData, {isbns: ["9780140328721"], synopsis: "Edition description", releaseDate: "1920-01-01"});
+        provider.getDetails.mockResolvedValue(incoming);
+        expect(await isbnService.select(id, found.isbn, "new")).toMatchObject({mediaId: id, reviewQueued: false});
+        expect(repository.findById(id)).toMatchObject({name: "A Book", synopsis: "Work description", releaseDate: "1920-01-01"});
+        expect(repository.getEditions(id)).toHaveLength(2);
+        expect(repository.findEditionByApiId("new")!.synopsis).toBe("Edition description");
+        await expect(isbnService.select(id, "9780306406157", "new")).rejects.toThrow("does not match");
+        expect(repository.getEditions(id)).toHaveLength(2);
+    });
+
+    it("keeps uncertain translations provisional and never moves an existing edition through ISBN selection", async () => {
+        const id = addWork("original");
+        const incoming = details("french", "Un livre", 420);
+        Object.assign(incoming.editionData, {isbns: ["9780140328721"], language: "fr", synopsis: "Une histoire en français"});
+        provider.getDetails.mockResolvedValue(incoming);
+        const selected = await isbnService.select(id, "9780140328721", "french");
+        expect(selected.mediaId).not.toBe(id); expect(selected.reviewQueued).toBe(true);
+        expect(getBookReviewQueue(1, "possible").total).toBe(1);
+        expect(repository.getEditions(id)).toHaveLength(1);
+        provider.getDetails.mockClear();
+        expect(await isbnService.select(id, "9780140328721", "french")).toEqual(selected);
+        expect(provider.getDetails).not.toHaveBeenCalled();
+        keepBookWorksSeparate(3, id, selected.mediaId);
+        expect((await isbnService.select(id, "9780140328721", "french")).reviewQueued).toBe(false);
+        scanBookWorkCandidates();
+        expect(getBookReviewQueue().total).toBe(0);
+    });
+
+    it("uses selected edition titles in lists, search and favorites, with custom covers taking precedence", async () => {
+        const id = addWork("original", "Canonical title");
+        db.insert(schema.bookEditions).values({...details("french", "Un livre").editionData, mediaId: id, synopsis: "En français", imageCover: "french.jpg"}).run();
+        const edition = repository.findEditionByApiId("french")!;
+        repository.addMediaToUserList(1, repository.findById(id)!, Status.READING, edition.id);
+        repository.addMediaToUserList(2, repository.findById(id)!, Status.READING, null);
+        db.update(schema.booksList).set({favorite: true, customCover: "chosen.jpg"}).where(eq(schema.booksList.userId, 1)).run();
+        const lists = createMediaListQueries(booksServerDefinition.repository);
+        const args = mediaListSchema.shape.args.parse({});
+        expect((await lists.getMediaList(1, 1, args)).items).toMatchObject([{mediaId: id, mediaName: "Un livre", imageCover: expect.stringContaining("/chosen.jpg")}]);
+        expect(await lists.getUserFavorites(1)).toMatchObject([{mediaName: "Un livre", mediaCover: expect.stringContaining("/french.jpg"), customCover: expect.stringContaining("/chosen.jpg")}]);
+        expect(await lists.searchUserListByName(1, "livre")).toHaveLength(1);
+        expect(await lists.searchUserListByName(1, "Canonical")).toHaveLength(1);
+        expect(await repository.getMediaDetailsByIds([id], 1)).toMatchObject([{name: "Un livre", imageCover: expect.stringContaining("/french.jpg")}]);
+        expect((await lists.getMediaList(2, 2, args)).items).toMatchObject([{mediaName: "Canonical title", imageCover: expect.stringContaining("/work.jpg")}]);
+        db.update(schema.booksList).set({customCover: null}).where(eq(schema.booksList.userId, 1)).run();
+        expect((await lists.getMediaList(1, 1, args)).items[0].imageCover).toContain("/french.jpg");
+        db.update(schema.bookEditions).set({imageCover: "default.jpg"}).where(eq(schema.bookEditions.id, edition.id)).run();
+        expect((await lists.getMediaList(1, 1, args)).items[0].imageCover).toContain("/work.jpg");
+    });
 
     it("maps multiple volumes with compatible ISBN evidence to one work, but keeps title-only matches separate", async () => {
         const first = details("one"); first.editionData.isbns = ["9780140328721"];
@@ -264,6 +384,7 @@ describe("Book editions and work grouping", () => {
         const workIds = [first, target, third];
         for (const [mediaId, total] of [[first, 300], [target, 420], [third, 200]]) addReader(mediaId, 1, total, `Note ${mediaId}`);
         addReader(target, 2, 420);
+        db.update(schema.booksList).set({customCover: "chosen-translation.jpg"}).where(eq(schema.booksList.mediaId, third)).run();
         db.update(schema.bookEditions).set({releaseDate: "1850-01-01"}).where(eq(schema.bookEditions.mediaId, first)).run();
         db.update(schema.bookEditions).set({releaseDate: "2000-01-01"}).where(eq(schema.bookEditions.mediaId, target)).run();
         const preview = previewBookWorkGroup(workIds);
@@ -277,7 +398,7 @@ describe("Book editions and work grouping", () => {
         expect(mergeBookWorkGroup(3, {...input, resolutions: [{userId: 1, keepWorkId: third, reading: "combine"}]})).toMatchObject({mediaId: target, affectedUsers: [1, 2]});
         expect(db.select().from(schema.books).all()).toMatchObject([{id: target, name: "Most popular", releaseDate: "1850-01-01"}]);
         expect(repository.getEditions(target)).toHaveLength(3);
-        expect(db.select().from(schema.booksList).where(eq(schema.booksList.userId, 1)).get()).toMatchObject({mediaId: target, total: 920, redo: 2, pages: 200, comment: `Note ${third}`, rereadPages: [300, 420]});
+        expect(db.select().from(schema.booksList).where(eq(schema.booksList.userId, 1)).get()).toMatchObject({mediaId: target, total: 920, redo: 2, pages: 200, comment: `Note ${third}`, rereadPages: [300, 420], customCover: expect.stringContaining("/chosen-translation.jpg")});
         expect(db.select().from(schema.userMediaSettings).where(eq(schema.userMediaSettings.userId, 1)).get()).toMatchObject({totalEntries: 1, totalSpecific: 920, totalRedo: 2});
         expect(db.select().from(schema.bookWorkAudit).all()).toHaveLength(2);
         expect(sqlite.query("PRAGMA foreign_key_check").all()).toEqual([]);

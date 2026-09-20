@@ -39,6 +39,7 @@ const transformBooksDetailsResults = async (rawData: GBooksDetails, options: GBo
         language: rawData.volumeInfo.language,
         publishers: rawData.volumeInfo.publisher,
         name: [rawData.volumeInfo.title ?? "No Title Found", rawData.volumeInfo.subtitle].filter(Boolean).join(": "),
+        synopsis: rawData.volumeInfo.description ? formatHtmlText(rawData.volumeInfo.description) : null,
         pages: rawData.volumeInfo.pageCount && rawData.volumeInfo.pageCount > 0 ? rawData.volumeInfo.pageCount : null,
         isbns: [...new Set((rawData.volumeInfo.industryIdentifiers ?? [])
             .filter(id => id.type === "ISBN_10" || id.type === "ISBN_13")

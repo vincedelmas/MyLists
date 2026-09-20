@@ -153,6 +153,8 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         const mediaInfo = await getDbClient()
             .select({
                 ...getTableColumns(mediaTable),
+                name: repoDefinition.listQuery.selection.mediaName,
+                imageCover: repoDefinition.listQuery.selection.imageCover,
                 customCover: listTable.customCover,
                 inUserList: isNotNull(listTable.userId).mapWith(Boolean).as("inUserList"),
             })

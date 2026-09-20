@@ -28,6 +28,7 @@ export const bookEditions = sqliteTable("book_editions", {
     mediaId: integer().notNull().references(() => books.id),
     apiId: text().unique().notNull(),
     name: text().notNull(),
+    synopsis: text(),
     pages: integer(),
     language: text(),
     publishers: text(),
@@ -64,6 +65,15 @@ export const bookWorkExclusions = sqliteTable("book_work_exclusions", {
     firstWorkId: integer().notNull().references(() => books.id, { onDelete: "cascade" }),
     secondWorkId: integer().notNull().references(() => books.id, { onDelete: "cascade" }),
 }, table => [primaryKey({ columns: [table.firstWorkId, table.secondWorkId] })]);
+
+export const bookWorkCandidates = sqliteTable("book_work_candidates", {
+    firstWorkId: integer().notNull().references(() => books.id, {onDelete: "cascade"}),
+    secondWorkId: integer().notNull().references(() => books.id, {onDelete: "cascade"}),
+    score: integer().notNull(),
+    evidence: customJson<string[]>("evidence").notNull(),
+    source: text().$type<"scan" | "reader">().default("scan").notNull(),
+    updatedAt: text().default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, table => [primaryKey({columns: [table.firstWorkId, table.secondWorkId]})]);
 
 
 export const bookWorkAudit = sqliteTable("book_work_audit", {

@@ -1,5 +1,7 @@
 import * as z from "zod";
 import {MediaType} from "@/lib/utils/enums";
+import {formatLocaleName} from "@/lib/utils/formatting/text";
+import {getBookEditions} from "@/lib/server/functions/book-editions";
 import {BookAddToList} from "@/lib/client/components/media/books/BookEditionPicker";
 import {Suspense} from "react";
 import {cn} from "@/lib/utils/classnames";
@@ -7,7 +9,7 @@ import {ExternalLink, Plus} from "lucide-react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas";
 import {createFileRoute} from "@tanstack/react-router";
-import {useSuspenseQuery} from "@tanstack/react-query";
+import {useQuery, useSuspenseQuery} from "@tanstack/react-query";
 import {Card, CardContent} from "@/lib/client/components/ui/card";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {MediaHero} from "@/lib/client/components/media/base/MediaHero";
@@ -54,24 +56,39 @@ function MediaDetailsPage() {
     const { currentUser, isAnonymous } = useAuth();
     const { mediaType, mediaId } = Route.useParams();
     const { editionId } = Route.useSearch();
+    const navigate = Route.useNavigate();
     const { mediaDetailsQueryOptions, communityCollectionsQueryOptions, communityActivityQueryOptions } = Route.useRouteContext();
 
     const isMediaTypeActive = resolveMediaTypeActive(currentUser?.settings, mediaType);
     const addMediaToListMutation = useAddMediaToListMutation(mediaDetailsQueryOptions);
-    const { media, userMedia, followsData, similarMedia } = useSuspenseQuery(mediaDetailsQueryOptions).data;
+    const { media, userMedia, followsData, similarMedia, bookEdition } = useSuspenseQuery(mediaDetailsQueryOptions).data;
+    const editions = useQuery({queryKey: ["bookEditions", mediaId], queryFn: () => getBookEditions({data: {mediaId}}),
+        enabled: mediaType === MediaType.BOOKS && !userMedia && !!editionId});
+    const selectedEdition = bookEdition ?? (!userMedia ? editions.data?.find(edition => edition.id === editionId) : null);
+    const displayMedia = mediaType === MediaType.BOOKS ? {...media,
+        name: selectedEdition?.name ?? media.name,
+        synopsis: selectedEdition?.synopsis ?? media.synopsis,
+        imageCover: userMedia?.customCover ?? (selectedEdition && !selectedEdition.imageCover.endsWith("/default.jpg") ? selectedEdition.imageCover : media.imageCover),
+        providerData: {...media.providerData, url: selectedEdition ? `https://books.google.com/books?id=${encodeURIComponent(selectedEdition.apiId)}` : media.providerData.url},
+    } : media;
 
     const handleAddMediaToUser = () => {
         addMediaToListMutation.mutate({ data: { mediaType, mediaId: media.id } });
     };
 
     return (
-        <PageTitle title={media.name} onlyHelmet>
+        <PageTitle title={displayMedia.name} onlyHelmet>
             <MediaHero
-                media={media}
+                media={displayMedia}
                 mediaType={mediaType}
             />
             <div className="grid grid-cols-12 gap-8 mx-auto px-4 py-2 max-sm:py-0 max-lg:grid-cols-1">
                 <div className="col-span-8 space-y-8 max-lg:col-span-1 max-lg:order-2">
+                    {mediaType === MediaType.BOOKS && selectedEdition && <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm" data-testid="book-edition-presentation">
+                        <p className="font-medium">{userMedia ? "Your edition" : "Selected edition"}{selectedEdition.language ? ` · ${formatLocaleName(selectedEdition.language, "language")}` : ""}</p>
+                        <p className="mt-1 text-muted-foreground">{[selectedEdition.publishers, selectedEdition.releaseDate ? `Edition published ${selectedEdition.releaseDate.slice(0, 4)}` : null].filter(Boolean).join(" · ")}</p>
+                        <p className="mt-1 text-muted-foreground">Shared book: {media.name}. Readers and ratings include all editions.</p>
+                    </div>}
                     <section className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-6 border-y border-brand/30">
                         <MediaComponent
                             media={media}
@@ -81,7 +98,7 @@ function MediaDetailsPage() {
                     </section>
 
                     <MediaSynopsis
-                        media={media}
+                        media={displayMedia}
                     />
 
                     <MediaComponent
@@ -129,7 +146,7 @@ function MediaDetailsPage() {
                             <a
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                href={media.providerData.url}
+                                href={displayMedia.providerData.url}
                                 className={cn(buttonVariants({ size: "lg", variant: "tame", className: "w-full" }))}
                             >
                                 View on {media.providerData.name} <ExternalLink/>
@@ -158,7 +175,8 @@ function MediaDetailsPage() {
                                         />
                                         :
                                         mediaType === MediaType.BOOKS ?
-                                            <BookAddToList key={`${mediaId}:${editionId ?? "none"}`} mediaId={mediaId} initialEditionId={editionId} queryOption={mediaDetailsQueryOptions}/>
+                                            <BookAddToList key={`${mediaId}:${editionId ?? "none"}`} mediaId={mediaId} initialEditionId={editionId} queryOption={mediaDetailsQueryOptions}
+                                                onEditionChange={id => {void navigate({search: {editionId: id ?? undefined}, replace: true});}}/>
                                             :
                                         <Card>
                                             <CardContent className="text-center space-y-4">

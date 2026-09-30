@@ -15,7 +15,7 @@ export interface AdvancedSearchFilterDefinition {
     label: string;
     FilterPanel: ComponentType<ProviderSearchFilterProps>;
     AppliedFilters: ComponentType<AppliedSearchFilterChipsProps>;
-    createFilters: (applied?: AdvancedSearchFilters) => AdvancedSearchFilters;
     cleanFilters: (filters: AdvancedSearchFilters) => AdvancedSearchFilters;
+    createFilters: (applied?: AdvancedSearchFilters) => AdvancedSearchFilters;
     validate: (query: string, filters: AdvancedSearchFilters) => string | undefined;
 }

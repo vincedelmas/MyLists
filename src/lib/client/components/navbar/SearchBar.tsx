@@ -100,8 +100,27 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                         if (search.trim()) setIsOpen(true);
                     }}
                 />
-                <InputGroupAddon align="inline-start">
-                    <Search aria-hidden="true"/>
+                <InputGroupAddon align="inline-start" className="h-full p-0">
+                    <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        title="Open Search"
+                        nativeButton={false}
+                        aria-label="Open Search"
+                        render={
+                            <Link
+                                to="/search"
+                                search={{ page: 1, query: search.trim(), apiProvider: selectDrop, advancedFilters: undefined }}
+                                onClick={(ev) => {
+                                    ev.stopPropagation();
+                                    setIsOpen(false);
+                                    setMobileMenu?.(false);
+                                }}
+                            />
+                        }
+                    >
+                        <Search aria-hidden="true"/>
+                    </Button>
                 </InputGroupAddon>
                 <InputGroupAddon align="inline-end" className="h-full p-0 has-[>button]:mr-0">
                     {getAdvancedSearchConfig(selectDrop) &&

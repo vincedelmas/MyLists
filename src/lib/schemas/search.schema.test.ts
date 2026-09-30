@@ -12,6 +12,15 @@ const getValidationMessages = (value: unknown) => {
 
 
 describe("globalSearchSchema", () => {
+    it("preserves TMDB type and year in URLs, and discards invalid combinations", () => {
+        const filters = { provider: ApiProviderType.TMDB, mediaType: MediaType.SERIES, releaseYear: 2005 };
+        expect(globalSearchSchema.parse({ advancedFilters: filters }).advancedFilters).toEqual(filters);
+        expect(globalSearchSchema.parse({ advancedFilters: { ...filters, releaseYear: 1200 } }).advancedFilters)
+            .toEqual({ provider: ApiProviderType.TMDB, mediaType: MediaType.SERIES });
+        expect(globalSearchSchema.parse({ advancedFilters: { ...filters, mediaType: undefined } }).advancedFilters)
+            .toBeUndefined();
+    });
+
     it("accepts and normalizes any two-letter book language code", () => {
         const result = globalSearchSchema.parse({
             apiProvider: ApiProviderType.BOOKS,
@@ -57,6 +66,20 @@ describe("navbarSearchSchema advanced-search validation", () => {
         query: "",
         apiProvider: ApiProviderType.BOOKS,
     };
+
+
+    it("requires a title and a specific TMDB media type when filtering by year", () => {
+        const input = { page: 1, query: "Dune", apiProvider: ApiProviderType.TMDB };
+        expect(navbarSearchSchema.safeParse({
+            ...input,
+            advancedFilters: { provider: ApiProviderType.TMDB, mediaType: MediaType.MOVIES, releaseYear: 2021 },
+        }).success).toBe(true);
+        expect(getValidationMessages({
+            ...input,
+            advancedFilters: { provider: ApiProviderType.TMDB, releaseYear: 2021 },
+        })).toContain("Choose Movies or TV shows to filter by year.");
+        expect(getValidationMessages({ ...input, query: "" })).toContain("Enter at least two characters to search.");
+    });
 
 
     it("normalizes valid book filters at the server boundary", () => {

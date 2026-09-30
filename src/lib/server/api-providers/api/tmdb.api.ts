@@ -1,5 +1,7 @@
 import {serverEnv} from "@/env/server";
+import {MediaType} from "@/lib/utils/enums";
 import {getContainer} from "@/lib/server/core/container";
+import type {TmdbAdvancedSearchFilters} from "@/lib/schemas/search.schema";
 import {ProviderRequestError} from "@/lib/server/api-providers/api/provider-error";
 import {ApiClientConfig, createApiHttpClient} from "@/lib/server/api-providers/api/http.base";
 import {
@@ -51,15 +53,36 @@ export const createTmdbApi = async () => {
     const resultsPerPage = config.resultsPerPage ?? 20;
 
     return {
-        async search(query: string, page = 1): Promise<SearchData<TmdbMultiSearchResponse>> {
+        async search(query: string, page = 1, filters?: TmdbAdvancedSearchFilters): Promise<SearchData<TmdbMultiSearchResponse>> {
             const apiKey = getApiKey();
             const params = new URLSearchParams({ query, api_key: apiKey, page: page.toString() });
-            const response = await http.call(`${config.baseUrl}/search/multi?${params.toString()}`);
+
+            const searchType = filters?.mediaType === MediaType.MOVIES ? "movie"
+                : filters?.mediaType === MediaType.SERIES ? "tv" : "multi";
+
+            if (filters?.releaseYear !== undefined) {
+                params.set(searchType === "movie" ? "primary_release_year" : "first_air_date_year", filters.releaseYear.toString());
+            }
+
+            const response = await http.call(`${config.baseUrl}/search/${searchType}?${params.toString()}`);
+
+            let rawData: TmdbMultiSearchResponse;
+            if (searchType === "movie") {
+                const data: TmdbTrendingMoviesResponse = await response.json();
+                rawData = { ...data, results: data.results.map(item => ({ ...item, media_type: "movie" as const })) };
+            }
+            else if (searchType === "tv") {
+                const data: TmdbTrendingTvResponse = await response.json();
+                rawData = { ...data, results: data.results.map(item => ({ ...item, media_type: "tv" as const })) };
+            }
+            else {
+                rawData = await response.json();
+            }
 
             return {
                 page,
+                rawData,
                 resultsPerPage,
-                rawData: await response.json(),
             };
         },
 

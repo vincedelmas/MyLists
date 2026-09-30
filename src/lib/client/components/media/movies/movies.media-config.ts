@@ -1,6 +1,6 @@
-import {MediaType} from "@/lib/utils/enums";
 import {DollarSign, XLineTop} from "lucide-react";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {formatCurrency, formatNumber} from "@/lib/utils/formatting/number";
 import {MovieListItem} from "@/lib/client/components/media/movies/MovieListItem";
 import {MoviesInfoGrid} from "@/lib/client/components/media/movies/MoviesInfoGrid";
@@ -10,6 +10,7 @@ import {MovieFollowCard} from "@/lib/client/components/media/movies/MovieFollowC
 import {MoviesUnderTitle} from "@/lib/client/components/media/movies/MoviesUnderTitle";
 import {getMoviesColumns} from "@/lib/client/components/media/movies/MoviesListColumns";
 import {MoviesUserDetails} from "@/lib/client/components/media/movies/MoviesUserDetails";
+import {tmdbSearchFilterDefinition} from "@/lib/client/components/search/TmdbSearchFilters";
 import {MoviesExtraSections} from "@/lib/client/components/media/movies/MoviesExtraSections";
 import {MoviesUpComingAlert} from "@/lib/client/components/media/movies/MoviesUpComingAlert";
 import {getMoviesActiveFilters} from "@/lib/client/components/media/movies/MoviesActiveFilters";
@@ -18,6 +19,10 @@ import {getMoviesActiveFilters} from "@/lib/client/components/media/movies/Movie
 export const moviesMediaConfig = defineMediaConfig({
     mediaType: MediaType.MOVIES,
     continue: null,
+    advancedSearch: {
+        provider: ApiProviderType.TMDB,
+        ...tmdbSearchFilterDefinition,
+    },
     infoGrid: MoviesInfoGrid,
     overTitle: MoviesOverTitle,
     underTitle: MoviesUnderTitle,

@@ -6,6 +6,7 @@ import {coercedPositiveIntFieldSchema, optionalTrimmedSearchFieldSchema} from "@
 export type AdvancedSearchFilters = z.infer<typeof advancedSearchFiltersSchema>;
 export type BookAdvancedSearchFilters = z.infer<typeof bookAdvancedSearchFiltersSchema>;
 export type GameAdvancedSearchFilters = z.infer<typeof gameAdvancedSearchFiltersSchema>;
+export type TmdbAdvancedSearchFilters = z.infer<typeof tmdbAdvancedSearchFiltersSchema>;
 
 
 export const TREND_MEDIA_TYPES = [
@@ -79,7 +80,18 @@ const gameAdvancedSearchFiltersSchema = z.object({
 });
 
 
+const tmdbAdvancedSearchFiltersSchema = z.object({
+    releaseYear: optionalAdvancedYearSchema,
+    provider: z.literal(ApiProviderType.TMDB),
+    mediaType: z.enum([MediaType.MOVIES, MediaType.SERIES]).optional(),
+}).refine(filters => filters.releaseYear === undefined || filters.mediaType !== undefined, {
+    path: ["mediaType"],
+    message: "Choose Movies or TV shows to filter by year.",
+});
+
+
 const advancedSearchFiltersSchema = z.discriminatedUnion("provider", [
+    tmdbAdvancedSearchFiltersSchema,
     bookAdvancedSearchFiltersSchema,
     gameAdvancedSearchFiltersSchema,
 ]);
@@ -142,6 +154,22 @@ const getAdvancedSearchValidationError = (result: z.ZodSafeParseResult<unknown>)
 };
 
 
+const tmdbAdvancedSearchSchema = z.object({
+    advancedFilters: tmdbAdvancedSearchFiltersSchema.optional(),
+    query: z.string().trim().min(2, "Enter at least two characters to search."),
+});
+
+
+export const validateTmdbAdvancedSearch = (query: string, filters?: AdvancedSearchFilters) => {
+    return getAdvancedSearchValidationError(tmdbAdvancedSearchSchema.safeParse({ query, advancedFilters: filters }));
+};
+
+
+export const cleanTmdbAdvancedSearchFilters = (filters: AdvancedSearchFilters) => {
+    return tmdbAdvancedSearchFiltersSchema.parse(filters);
+};
+
+
 export const validateBookAdvancedSearch = (query: string, filters?: AdvancedSearchFilters) => {
     return getAdvancedSearchValidationError(bookAdvancedSearchSchema.safeParse({ query, advancedFilters: filters }));
 };
@@ -188,6 +216,9 @@ const urlGameAdvancedSearchFiltersSchema = z.object({
 const urlAdvancedSearchFiltersSchema = z.discriminatedUnion("provider", [
     urlBookAdvancedSearchFiltersSchema,
     urlGameAdvancedSearchFiltersSchema,
+    tmdbAdvancedSearchFiltersSchema.safeExtend({
+        releaseYear: optionalAdvancedYearSchema.catch(undefined),
+    }),
 ]);
 
 
@@ -221,17 +252,19 @@ export const globalSearchSchema = z.object({
 
 export const navbarSearchSchema = z.object({
     query: z.string().trim(),
-    apiProvider: z.enum(ApiProviderType),
     page: coercedPositiveIntFieldSchema,
+    apiProvider: z.enum(ApiProviderType),
     advancedFilters: advancedSearchFiltersSchema.optional(),
 }).superRefine(({ query, apiProvider, advancedFilters }, ctx) => {
     if (advancedFilters && advancedFilters.provider !== apiProvider) return;
 
-    const result = apiProvider === ApiProviderType.BOOKS
-        ? bookAdvancedSearchSchema.safeParse({ query, advancedFilters })
-        : apiProvider === ApiProviderType.IGDB
-            ? gameAdvancedSearchSchema.safeParse({ query, advancedFilters })
-            : undefined;
+    const result = apiProvider === ApiProviderType.TMDB
+        ? tmdbAdvancedSearchSchema.safeParse({ query, advancedFilters })
+        : apiProvider === ApiProviderType.BOOKS
+            ? bookAdvancedSearchSchema.safeParse({ query, advancedFilters })
+            : apiProvider === ApiProviderType.IGDB
+                ? gameAdvancedSearchSchema.safeParse({ query, advancedFilters })
+                : undefined;
 
     if (!result || result.success) return;
 

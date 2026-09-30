@@ -217,7 +217,10 @@ function SearchPage() {
                                                 aria-invalid={fieldState.invalid}
                                                 aria-label={"Search title or name"}
                                                 inputClassName="placeholder:text-xs sm:placeholder:text-sm"
-                                                placeholder={definition ? "Title (optional when filters are selected)" : "Title or Name"}
+                                                placeholder={selectedProvider === ApiProviderType.TMDB
+                                                    ? "Title" : definition
+                                                        ? "Title (optional when filters are selected)" : "Title or Name"
+                                                }
                                                 onChange={(ev) => {
                                                     field.onChange(ev);
                                                     form.clearErrors();

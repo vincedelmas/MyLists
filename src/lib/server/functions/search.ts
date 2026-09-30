@@ -53,7 +53,7 @@ export const getSearchResults = createServerFn({ method: "GET" })
         let searchResults: ProviderSearchResults;
 
         if (apiProvider === ApiProviderType.TMDB) {
-            searchResults = await providers.get(MediaType.SERIES).search(query, page);
+            searchResults = await providers.get(MediaType.SERIES).search(query, page, advancedFilters);
         }
         else if (apiProvider === ApiProviderType.IGDB) {
             searchResults = await providers.get(MediaType.GAMES).search(query, page, advancedFilters);

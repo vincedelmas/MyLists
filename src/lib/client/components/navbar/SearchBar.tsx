@@ -40,7 +40,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     }
 
     const searchProviderItems = [
-        { label: "Media", value: ApiProviderType.TMDB },
+        { label: "Movies & TV", value: ApiProviderType.TMDB },
         ...(resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS)
             ? [{ label: "Books", value: ApiProviderType.BOOKS }]
             : []),

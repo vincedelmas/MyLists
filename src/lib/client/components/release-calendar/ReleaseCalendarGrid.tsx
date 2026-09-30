@@ -82,21 +82,24 @@ export function ReleaseCalendarGrid({ days, date, today, items, view, onWeekSele
                                     )}
                                 >
                                     <div className="flex items-center justify-between gap-1">
-                                        <button
+                                        <Button
                                             type="button"
+                                            size="icon-sm"
+                                            variant="hover"
+                                            className="rounded-full"
                                             onClick={() => setSelectedDay(day)}
-                                            aria-label={`View releases for ${formatDate(day)}`}
-                                            className={cn("flex size-7 shrink-0 items-center justify-center rounded-full text-xs " +
-                                                "font-semibold tabular-nums transition-colors hover:bg-muted focus-visible:outline-none " +
-                                                "focus-visible:ring-2 focus-visible:ring-brand/40",
-                                                outsideMonth && "text-muted-foreground",
-                                                isToday && "bg-brand/15 text-brand ring-1 ring-brand/30 hover:bg-brand/25",
-                                            )}
                                         >
-                                            <time dateTime={day} aria-current={isToday ? "date" : undefined}>
+                                            <time
+                                                dateTime={day}
+                                                aria-current={isToday ? "date" : undefined}
+                                                className={cn("flex size-full items-center justify-center rounded-full text-xs " +
+                                                    "font-semibold tabular-nums", outsideMonth && "text-muted-foreground",
+                                                    isToday && "bg-brand/15 text-brand ring-1 ring-brand/30",
+                                                )}
+                                            >
                                                 {Number(day.slice(-2))}
                                             </time>
-                                        </button>
+                                        </Button>
 
                                         {!isMonth &&
                                             <span className="text-xs text-muted-foreground md:hidden">
@@ -111,20 +114,18 @@ export function ReleaseCalendarGrid({ days, date, today, items, view, onWeekSele
                                         }
                                     </div>
                                     {isMonth && releases.length > 0 &&
-                                        <button
+                                        <Button
+                                            size="bare"
                                             type="button"
+                                            variant="hover"
                                             onClick={() => setSelectedDay(day)}
-                                            aria-label={`${releases.length} ${releases.length === 1 ? "release" : "releases"} on ${formatDate(day)}`}
-                                            className="flex min-h-8 flex-col items-center gap-1 rounded-md text-xs font-semibold
-                                            text-brand transition-colors hover:bg-brand/10 focus-visible:outline-none focus-visible:ring-2
-                                            focus-visible:ring-brand/40 md:hidden"
+                                            className="min-h-8 flex-col gap-1 rounded-md md:hidden"
                                         >
-                                            <span>{releases.length}</span>
-                                            <span
-                                                aria-hidden="true"
-                                                className="size-1 rounded-full bg-brand"
-                                            />
-                                        </button>
+                                            <span className="text-xs font-semibold text-brand">
+                                                {releases.length}
+                                            </span>
+                                            <span aria-hidden="true" className="size-1 rounded-full bg-brand"/>
+                                        </Button>
                                     }
                                     <div className={cn("flex flex-col gap-1.5", isMonth && "max-md:hidden")}>
                                         {(isMonth ? releases.slice(0, 3) : releases).map(item =>

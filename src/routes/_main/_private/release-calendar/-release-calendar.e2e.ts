@@ -51,7 +51,15 @@ test("browses dated releases by month and week, preserving filters and supportin
 
     await page.getByRole("button", { name: "Choose month", exact: true }).click();
     const previousMonth = shiftDateInputValue(`${today.slice(0, 7)}-01`, { months: -1 }).slice(0, 7);
+    const monthInput = page.getByLabel("Jump to a month");
+    await monthInput.focus();
+    await monthInput.press("ArrowRight");
+    await monthInput.press("Backspace");
+    await monthInput.pressSequentially(previousMonth.slice(0, 4));
+    await expect(monthInput).toBeVisible();
+    await expect(monthInput).toHaveValue(`${previousMonth.slice(0, 4)}-${today.slice(5, 7)}`);
     await page.getByLabel("Jump to a month").fill(previousMonth);
+    await page.getByRole("button", { name: "Go to month", exact: true }).click();
     await expect(month.getByRole("link", { name: "Past calendar movie, Movie release", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Today", exact: true }).click();
     await page.screenshot({ path: testInfo.outputPath("month-desktop.png"), fullPage: true });
@@ -68,9 +76,18 @@ test("browses dated releases by month and week, preserving filters and supportin
 });
 
 
-test("redirects existing Coming Next bookmarks with their media filter", async ({ page }) => {
+test("restores a bookmarked calendar period, view and media filter", async ({ page }) => {
+    await runBun(["src/routes/_main/_private/release-calendar/-fixtures.ts"]);
     await signIn(page);
-    await page.goto("/coming-next?activeTab=movies");
-    await expect(page).toHaveURL(url => url.pathname === "/release-calendar" && url.searchParams.get("mediaType") === "movies");
-    await expect(page.getByRole("table", { name: "Monthly release calendar" })).toBeVisible();
+    const today = toDateInputValue(new Date(), { timeZone: "utc" });
+    const date = shiftDateInputValue(`${today.slice(0, 7)}-01`, { months: -1, days: 14 });
+    await page.goto(`/release-calendar?date=${date}&view=week&mediaType=movies`);
+    const week = page.getByRole("table", { name: "Weekly release calendar" });
+    await expect(week.getByRole("link", { name: "Past calendar movie, Movie release", exact: true })).toBeVisible();
+    await expect(week.getByRole("link", { name: /Past calendar game|Calendar series|Calendar anime/ })).toHaveCount(0);
+    await expect(page.getByRole("combobox", { name: "Filter by media type" })).toContainText("movies");
+    await page.reload();
+    await expect(week.getByRole("link", { name: "Past calendar movie, Movie release", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(url => url.searchParams.get("date") === date
+        && url.searchParams.get("view") === "week" && url.searchParams.get("mediaType") === "movies");
 });

@@ -4,10 +4,10 @@ import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
-import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {InfoPopover} from "@/lib/client/components/general/InfoPopover";
+import {Field, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {authOptions} from "@/lib/client/react-query/query-options/auth.options";
 import {CalendarClock, CalendarDays, ChevronLeft, ChevronRight} from "lucide-react";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
@@ -110,23 +110,32 @@ function ReleaseCalendarPage() {
                                 </PopoverTrigger>
 
                                 <PopoverContent align="start" className="w-64">
-                                    <Field>
-                                        <FieldLabel htmlFor="release-month">
-                                            Jump to a month
-                                        </FieldLabel>
-                                        <Input
-                                            type="month"
-                                            id="release-month"
-                                            value={date.slice(0, 7)}
-                                            onChange={ev => {
-                                                const nextDate = `${ev.target.value}-01`;
-                                                if (ev.target.value && ev.target.validity.valid) {
-                                                    updateCalendar({ date: nextDate });
-                                                    setPickerOpen(false);
-                                                }
-                                            }}
-                                        />
-                                    </Field>
+                                    <form
+                                        onSubmit={ev => {
+                                            ev.preventDefault();
+                                            const month = new FormData(ev.currentTarget).get("month") as string;
+                                            updateCalendar({ date: `${month}-01` });
+                                            setPickerOpen(false);
+                                        }}
+                                    >
+                                        <FieldGroup className="gap-3">
+                                            <Field>
+                                                <FieldLabel htmlFor="release-month">
+                                                    Jump to a month
+                                                </FieldLabel>
+                                                <Input
+                                                    required
+                                                    name="month"
+                                                    type="month"
+                                                    id="release-month"
+                                                    defaultValue={date.slice(0, 7)}
+                                                />
+                                            </Field>
+                                            <Button type="submit" variant="outline">
+                                                Go to month
+                                            </Button>
+                                        </FieldGroup>
+                                    </form>
                                 </PopoverContent>
                             </Popover>
                         </div>
@@ -160,7 +169,7 @@ function ReleaseCalendarPage() {
                                 variant="outline"
                                 aria-label="Calendar view"
                                 onValueChange={value => {
-                                    if (value[0]) updateCalendar({ view: value[0] as "month" | "week" });
+                                    if (value[0]) updateCalendar({ view: value[0] as NonNullable<ReleaseCalendarSearch["view"]> });
                                 }}
                             >
                                 <ToggleGroupItem value="month" aria-label="Month view">

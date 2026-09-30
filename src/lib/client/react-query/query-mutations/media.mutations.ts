@@ -31,7 +31,7 @@ export const useEditMediaMutation = (meta?: MutationMeta) => {
         mutationFn: postEditMediaDetails,
         meta: { ...meta },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["release-calendar"] })
+            await queryClient.invalidateQueries({ queryKey: ["release-calendar"] });
         },
     });
 };

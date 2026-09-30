@@ -1,15 +1,16 @@
-import {eq, getTableName, sql} from "drizzle-orm";
 import Database from "bun:sqlite";
+import {eq, getTableName, sql} from "drizzle-orm";
 import {MediaType, Status} from "@/lib/utils/enums";
-import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import * as schema from "@/lib/server/database/schema";
 import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {BunSQLiteDatabase, drizzle} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {shiftDateInputValue, toDateInputValue} from "@/lib/utils/formatting/date";
 import {NotificationsService} from "@/lib/server/domain/notifications/notifications.service";
-import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {animeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {seriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
+import {NotificationsRepository} from "@/lib/server/domain/notifications/notifications.repository";
 import {
     series,
     seriesEpisodesPerSeason,
@@ -25,12 +26,14 @@ const dbContext = vi.hoisted(() => ({ db: undefined as any }));
 
 
 vi.mock("@/lib/server/database/db", () => ({
-    get db() { return dbContext.db; },
+    get db() {
+        return dbContext.db;
+    },
 }));
 
 
-const { createTvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { createTvService } = await import("@/lib/server/domain/media/tv/tv.service");
+const { createTvRepository } = await import("@/lib/server/domain/media/tv/tv.repository");
 const { createMediaIngestionService } = await import("@/lib/server/api-providers/media-ingestion.service");
 
 
@@ -39,11 +42,12 @@ const completedSeriesStatusCounts = () => Object.fromEntries(
 ) as Record<Status, number>;
 
 
-describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaType finale notifications", definition => {
+describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaType repository", definition => {
     let sqlite: Database;
     let db: BunSQLiteDatabase<typeof schema>;
-    const { mediaTable, listTable, epsPerSeasonTable } = definition.repository.tables;
     const repository = createTvRepository(definition);
+    const { mediaTable, listTable, epsPerSeasonTable } = definition.repository.tables;
+
     const notifications = new NotificationsService(NotificationsRepository);
 
     beforeEach(() => {
@@ -57,14 +61,17 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
             id: 1, name: "finale-user", email: "finale@example.com", emailVerified: true,
             createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00",
         }).run();
+
         db.insert(mediaTable).values({
             id: 1, apiId: 1, name: "Uneven seasons", duration: 30, imageCover: "show.jpg",
             totalSeasons: 2, totalEpisodes: 18, nextEpisodeToAir: sql`date('now')`,
         }).run();
+
         db.insert(epsPerSeasonTable).values([
             { mediaId: 1, season: 1, episodes: 10 },
             { mediaId: 1, season: 2, episodes: 8 },
         ]).run();
+        
         db.insert(listTable).values({
             userId: 1, mediaId: 1, status: Status.WATCHING, currentSeason: 1, currentEpisode: 1,
         }).run();
@@ -91,6 +98,37 @@ describe.each([seriesServerDefinition, animeServerDefinition])("$identity.mediaT
         expect(db.select().from(schema.mediaNotifications).all()).toEqual([
             expect.objectContaining({ mediaId: 1, season, episode, isSeasonFinale }),
         ]);
+    });
+
+    it("filters next calendar episodes by range, owner and eligible status", async () => {
+        const today = toDateInputValue(new Date(), { timeZone: "utc" });
+        const yesterday = shiftDateInputValue(today, { days: -1 });
+        const endDate = shiftDateInputValue(today, { days: 7 });
+        const dates = [today, endDate, yesterday, shiftDateInputValue(endDate, { days: 1 }), null, today, today, today, today];
+        db.insert(user).values({
+            id: 2, name: "other-user", email: "other@example.com", emailVerified: true,
+            createdAt: "2026-01-01 00:00:00", updatedAt: "2026-01-01 00:00:00",
+        }).run();
+        db.update(mediaTable).set({ nextEpisodeToAir: today, seasonToAir: 1, episodeToAir: 2 }).where(eq(mediaTable.id, 1)).run();
+        db.insert(mediaTable).values(dates.slice(1).map((date, index) => ({
+            id: index + 2, apiId: index + 2, name: `Calendar show ${index + 2}`, duration: 30,
+            totalSeasons: 1, totalEpisodes: 12, imageCover: "show.jpg", nextEpisodeToAir: date, seasonToAir: 1, episodeToAir: 2,
+        }))).run();
+        db.insert(listTable).values([2, 3, 4, 5, 6, 7, 8].map(mediaId => ({
+            mediaId, userId: mediaId === 8 ? 2 : 1, currentSeason: 1, currentEpisode: 1,
+            status: mediaId === 6 ? Status.DROPPED : mediaId === 7 ? Status.RANDOM : Status.COMPLETED,
+        }))).run();
+
+        const items = await repository.getReleaseCalendarMedia(1, { startDate: yesterday, endDate });
+        expect(items.map(item => item.mediaId)).toEqual([1, 2]);
+        expect(items.every(item => item.mediaType === definition.identity.mediaType)).toBe(true);
+        expect(items[0]).toMatchObject({ date: today, seasonToAir: 1, episodeToAir: 2 });
+    });
+
+    it("leaves past episode history empty", async () => {
+        const yesterday = shiftDateInputValue(toDateInputValue(new Date(), { timeZone: "utc" }), { days: -1 });
+        db.update(mediaTable).set({ nextEpisodeToAir: yesterday }).where(eq(mediaTable.id, 1)).run();
+        await expect(repository.getReleaseCalendarMedia(1, { startDate: yesterday, endDate: yesterday })).resolves.toEqual([]);
     });
 });
 

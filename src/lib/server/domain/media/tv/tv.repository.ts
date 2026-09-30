@@ -3,14 +3,16 @@ import {user} from "@/lib/server/database/schema";
 import {EpsPerSeasonType} from "@/lib/types/media-list.types";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
 import type {TvSeasonState} from "@/lib/schemas/tv-seasons.schema";
+import {ReleaseCalendarItem} from "@/lib/types/release-calendar.types";
 import {StatsRepository} from "@/lib/server/domain/stats/stats.repository";
+import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
 import {AnimeServerDefinition} from "@/lib/media-definitions/tv/anime/anime.definition.server";
 import {SeriesServerDefinition} from "@/lib/media-definitions/tv/series/series.definition.server";
 import {attachTvSeasonEpisodes, getTvSeasonPosition, getTvSeasonTotals} from "@/lib/utils/media/tv-seasons";
-import {TvListUpdate, TvType, UpdateTvWithDetails, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 import {and, asc, eq, getTableColumns, gte, inArray, isNotNull, lte, notInArray, or, sql} from "drizzle-orm";
+import {TvListUpdate, TvType, UpdateTvWithDetails, UpsertTvWithDetails} from "@/lib/server/domain/media/tv/tv.types";
 
 
 type TvDefinition = AnimeServerDefinition | SeriesServerDefinition;
@@ -195,6 +197,32 @@ export function createTvRepository(definition: TvDefinition) {
                 maxAWeek ? lte(mediaTable.nextEpisodeToAir, sql`date('now', '+7 days')`) : undefined,
             ))
             .orderBy(asc(mediaTable.nextEpisodeToAir));
+    }
+
+    async function getReleaseCalendarMedia(userId: number, { startDate, endDate }: ReleaseCalendarRange): Promise<ReleaseCalendarItem[]> {
+        const { mediaTable, listTable } = repoDefinition.tables;
+
+        return getDbClient()
+            .select({
+                mediaId: mediaTable.id,
+                status: listTable.status,
+                mediaName: mediaTable.name,
+                imageCover: mediaTable.imageCover,
+                seasonToAir: mediaTable.seasonToAir,
+                episodeToAir: mediaTable.episodeToAir,
+                date: sql<string>`${mediaTable.nextEpisodeToAir}`,
+                mediaType: sql<TvDefinition["identity"]["mediaType"]>`${identity.mediaType}`,
+            })
+            .from(mediaTable)
+            .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
+            .where(and(
+                eq(listTable.userId, userId),
+                lte(mediaTable.nextEpisodeToAir, endDate),
+                gte(mediaTable.nextEpisodeToAir, startDate),
+                gte(mediaTable.nextEpisodeToAir, sql`date('now')`),
+                notInArray(listTable.status, [Status.DROPPED, Status.RANDOM]),
+            ))
+            .orderBy(asc(mediaTable.nextEpisodeToAir), asc(mediaTable.name));
     }
 
     function addMediaToUserList(userId: number, media: TvType, newStatus: Status) {
@@ -489,6 +517,7 @@ export function createTvRepository(definition: TvDefinition) {
         ...queries,
         getUserSeasons,
         getUpcomingMedia,
+        getReleaseCalendarMedia,
         addMediaToUserList,
         bulkInsertUserMedia,
         getMediaEpsPerSeason,

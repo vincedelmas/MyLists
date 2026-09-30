@@ -21,12 +21,12 @@ interface MyMediaMenuProps {
     username: string;
     preview?: boolean;
     triggerClassName?: string;
-    highlightComingNext?: boolean;
+    highlightReleaseCalendar?: boolean;
     settings: { active: boolean; mediaType: MediaType }[];
 }
 
 
-export const MyMediaMenu = ({ username, settings, preview = false, triggerClassName, highlightComingNext = false }: MyMediaMenuProps) => {
+export const MyMediaMenu = ({ username, settings, preview = false, triggerClassName, highlightReleaseCalendar = false }: MyMediaMenuProps) => {
     const currentDate = useCurrentDate();
     const [currentYear, currentMonth] = currentDate?.split("-") ?? [];
 
@@ -37,7 +37,7 @@ export const MyMediaMenu = ({ username, settings, preview = false, triggerClassN
             settings={settings}
             currentYear={currentYear}
             currentMonth={currentMonth}
-            highlightComingNext={highlightComingNext}
+            highlightReleaseCalendar={highlightReleaseCalendar}
         />
     );
 
@@ -67,14 +67,14 @@ export const MyMediaMenu = ({ username, settings, preview = false, triggerClassN
 };
 
 
-interface MyMediaMenuContentProps extends Pick<MyMediaMenuProps, "username" | "settings" | "highlightComingNext"> {
+interface MyMediaMenuContentProps extends Pick<MyMediaMenuProps, "username" | "settings" | "highlightReleaseCalendar"> {
     preview: boolean;
     currentYear?: string;
     currentMonth?: string;
 }
 
 
-const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentMonth, highlightComingNext, }: MyMediaMenuContentProps) => {
+const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentMonth, highlightReleaseCalendar, }: MyMediaMenuContentProps) => {
     return (
         <div className="grid grid-cols-2">
             <div className="bg-muted/30 px-3 pt-1 pb-2">
@@ -135,12 +135,12 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                     }
                     <MenuEntry
                         preview={preview}
-                        className={highlightComingNext
+                        className={highlightReleaseCalendar
                             ? "bg-brand/20 font-bold text-brand ring-1 ring-brand/30"
                             : undefined}
-                        renderLink={(children) => <Link to="/coming-next">{children}</Link>}
+                        renderLink={(children) => <Link to="/release-calendar">{children}</Link>}
                     >
-                        <Calendar className="size-4"/> Coming Next
+                        <Calendar className="size-4"/> Release Calendar
                     </MenuEntry>
                     <MenuEntry
                         preview={preview}

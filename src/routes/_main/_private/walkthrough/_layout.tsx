@@ -35,8 +35,8 @@ const sidebarItems: LinkSidebarItem[] = [
     },
     {
         id: "comingNext",
-        label: "Coming next",
-        to: "/walkthrough/coming-next",
+        label: "Release calendar",
+        to: "/walkthrough/release-calendar",
     },
     {
         id: "profile",

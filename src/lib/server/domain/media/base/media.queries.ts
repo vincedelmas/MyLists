@@ -6,6 +6,8 @@ import {JobType, MediaType, Status} from "@/lib/utils/enums";
 import {UpComingMedia} from "@/lib/types/notifications.types";
 import {UserMediaWithTags} from "@/lib/types/user-media.types";
 import {ProviderSearchResult} from "@/lib/types/provider.types";
+import {ReleaseCalendarItem} from "@/lib/types/release-calendar.types";
+import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {and, asc, count, countDistinct, desc, eq, getTableColumns, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, SQL, sql} from "drizzle-orm";
@@ -367,6 +369,29 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
             )).orderBy(asc(mediaTable.releaseDate));
     }
 
+    async function getReleaseCalendarMedia(userId: number, { startDate, endDate }: ReleaseCalendarRange): Promise<ReleaseCalendarItem[]> {
+        const { listTable, mediaTable } = repoDefinition.tables;
+
+        return getDbClient()
+            .select({
+                mediaId: mediaTable.id,
+                status: listTable.status,
+                mediaName: mediaTable.name,
+                imageCover: mediaTable.imageCover,
+                date: sql<string>`${mediaTable.releaseDate}`,
+                mediaType: sql<MediaType>`${identity.mediaType}`,
+            })
+            .from(mediaTable)
+            .innerJoin(listTable, eq(listTable.mediaId, mediaTable.id))
+            .where(and(
+                eq(listTable.userId, userId),
+                ne(listTable.status, Status.DROPPED),
+                lte(mediaTable.releaseDate, endDate),
+                gte(mediaTable.releaseDate, startDate),
+            ))
+            .orderBy(asc(mediaTable.releaseDate), asc(mediaTable.name));
+    }
+
     // TODO: use the paginate function?
     async function getMediaJobDetails(job: JobType, name: string, offset: number, limit = 25, userId?: number) {
         const { tables: { mediaTable, listTable }, jobs } = repoDefinition;
@@ -470,6 +495,7 @@ export function createMediaQueries<TDef extends AnyServerMediaDefinition>(defini
         updateUserMediaDetails,
         downloadMediaListAsCSV,
         removeMediaFromUserList,
+        getReleaseCalendarMedia,
         searchMediadleSuggestion,
     };
 }

@@ -12,7 +12,6 @@ import {
     profileRecentFeedOptions,
     profileSummaryOptions,
     tasteMatchesOptions,
-    upcomingOptions,
 } from "@/lib/client/react-query/query-options";
 
 
@@ -29,7 +28,6 @@ export type AchSummary = Awaited<ReturnType<NonNullable<ReturnType<typeof achiev
 export type HofUserData = Awaited<ReturnType<NonNullable<ReturnType<typeof hallOfFameOptions>["queryFn"]>>>["items"][number];
 export type HofUserRank = Awaited<ReturnType<NonNullable<ReturnType<typeof hallOfFameOptions>["queryFn"]>>>["userRanks"];
 export type TasteMatch = NonNullable<Awaited<ReturnType<NonNullable<ReturnType<typeof tasteMatchesOptions>["queryFn"]>>>["featuredMatch"]>;
-export type ComingNextItem = Awaited<ReturnType<NonNullable<typeof upcomingOptions.queryFn>>>[number]["items"][number];
 export type AdminUserOverview = Awaited<ReturnType<NonNullable<typeof adminOverviewOptions.queryFn>>>["recentUsers"];
 
 

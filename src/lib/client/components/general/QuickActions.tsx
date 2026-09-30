@@ -29,10 +29,10 @@ export const QuickActions = ({ username, mediaType }: { username: string, mediaT
                 search: { activeTab: mediaType },
             },
             {
-                to: "/coming-next",
+                to: "/release-calendar",
                 icon: CalendarDays,
-                label: "Coming Next",
-                match: "/coming-next",
+                label: "Release Calendar",
+                match: "/release-calendar",
             },
         ] : []),
         {

@@ -14,6 +14,7 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) =
         },
         onSuccess: async () => {
             await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["release-calendar"] }),
                 queryClient.invalidateQueries({ queryKey: ["userList", mediaType] }),
                 queryClient.invalidateQueries({ queryKey: ["tvSeasons", mediaType, mediaId] }),
                 queryClient.invalidateQueries({ queryKey: mediaDetailsOptions(mediaType, mediaId).queryKey }),
@@ -24,9 +25,14 @@ export const useRefreshMediaMutation = (mediaType: MediaType, mediaId: number) =
 
 
 export const useEditMediaMutation = (meta?: MutationMeta) => {
+    const queryClient = useQueryClient();
+
     return useMutation({
         mutationFn: postEditMediaDetails,
         meta: { ...meta },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["release-calendar"] })
+        },
     });
 };
 

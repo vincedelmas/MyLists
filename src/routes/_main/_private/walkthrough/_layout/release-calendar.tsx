@@ -13,21 +13,21 @@ import {
 } from "@/lib/client/components/onboarding/OnBoardingShared";
 
 
-export const Route = createFileRoute("/_main/_private/walkthrough/_layout/coming-next")({
-    component: ComingNextOnboarding,
+export const Route = createFileRoute("/_main/_private/walkthrough/_layout/release-calendar")({
+    component: ReleaseCalendarOnboarding,
 });
 
 
-function ComingNextOnboarding() {
+function ReleaseCalendarOnboarding() {
     return (
         <OnboardingContainer>
             <OnboardingSection
-                title="Coming Next"
                 icon={CalendarDays}
+                title="Release Calendar"
                 description={
                     <>
-                        Stay ahead of the curve. The <span className="text-foreground font-semibold">Coming Next</span> page
-                        aggregates all upcoming releases for the media types you track, so you never miss a premiere.
+                        Stay ahead of the curve. The <span className="text-foreground font-semibold">Release Calendar</span> page
+                        shows dated releases from your lists in a month or week view, so you can look ahead or revisit past releases.
                     </>
                 }
             />
@@ -40,7 +40,7 @@ function ComingNextOnboarding() {
                 <OnboardingDemoBox>
                     <MyMediaMenu
                         preview
-                        highlightComingNext
+                        highlightReleaseCalendar
                         username={ONBOARDING_PROFILE_NAME}
                         settings={onboardingProfileFixture.userData.userMediaSettings}
                     />
@@ -49,23 +49,23 @@ function ComingNextOnboarding() {
 
             <OnboardingSubSection
                 title="What's inside?"
-                description="The page provides a chronological view of upcoming air dates and releases."
+                description="Browse months or weeks, jump to today, and filter by media type. Your selected period and filter stay in the URL."
             >
                 <OnboardingNote title="Note: Contextual Viewing">
                     The releases shown are filtered based on the <strong>Media Types</strong> you have enabled in your settings.
-                    If you enable "Games" in your settings, game releases will automatically start appearing in your Coming Next feed!
+                    If you enable "Games" in your settings, game releases will automatically start appearing in your Release Calendar!
                 </OnboardingNote>
 
                 <OnboardingGrid>
                     <OnboardingFeatureCard
                         icon={Calendar}
                         title="Release Dates"
-                        description="View exact dates for movie theater releases, game launches, and series airing dates."
+                        description="See past and future movie and game releases. Items without a release date are not shown."
                     />
                     <OnboardingFeatureCard
                         icon={Clock}
-                        title="Episode Countdowns"
-                        description="For Series and Anime, see how many days or hours remain until the next episode airs."
+                        title="Next Episodes"
+                        description="Series and Anime show only the next known episode. Past episodes and full schedules are not available yet."
                     />
                     <OnboardingFeatureCard
                         icon={Gamepad2}

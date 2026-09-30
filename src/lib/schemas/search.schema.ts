@@ -149,24 +149,19 @@ const gameAdvancedSearchSchema = z.object({
 });
 
 
-const getAdvancedSearchValidationError = (result: z.ZodSafeParseResult<unknown>) => {
-    return result.success ? undefined : result.error.issues[0]?.message;
-};
-
-
 const tmdbAdvancedSearchSchema = z.object({
     advancedFilters: tmdbAdvancedSearchFiltersSchema.optional(),
     query: z.string().trim().min(2, "Enter at least two characters to search."),
 });
 
 
-export const validateTmdbAdvancedSearch = (query: string, filters?: AdvancedSearchFilters) => {
-    return getAdvancedSearchValidationError(tmdbAdvancedSearchSchema.safeParse({ query, advancedFilters: filters }));
+const getAdvancedSearchValidationError = (result: z.ZodSafeParseResult<unknown>) => {
+    return result.success ? undefined : result.error.issues[0]?.message;
 };
 
 
-export const cleanTmdbAdvancedSearchFilters = (filters: AdvancedSearchFilters) => {
-    return tmdbAdvancedSearchFiltersSchema.parse(filters);
+export const validateTmdbAdvancedSearch = (query: string, filters?: AdvancedSearchFilters) => {
+    return getAdvancedSearchValidationError(tmdbAdvancedSearchSchema.safeParse({ query, advancedFilters: filters }));
 };
 
 
@@ -187,6 +182,11 @@ export const cleanBookAdvancedSearchFilters = (filters: AdvancedSearchFilters) =
 
 export const cleanGameAdvancedSearchFilters = (filters: AdvancedSearchFilters) => {
     return gameAdvancedSearchFiltersSchema.parse(filters);
+};
+
+
+export const cleanTmdbAdvancedSearchFilters = (filters: AdvancedSearchFilters) => {
+    return tmdbAdvancedSearchFiltersSchema.parse(filters);
 };
 
 

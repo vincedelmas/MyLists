@@ -9,10 +9,12 @@ import {
     TMDB_APPENDED_TV_SEASONS,
     TmdbChangesResponse,
     TmdbMovieDetails,
+    TmdbMovieSearchResponse,
     TmdbMultiSearchResponse,
     TmdbTrendingMoviesResponse,
     TmdbTrendingTvResponse,
-    TmdbTvDetails
+    TmdbTvDetails,
+    TmdbTvSearchResponse
 } from "@/lib/types/provider.types";
 
 
@@ -68,11 +70,11 @@ export const createTmdbApi = async () => {
 
             let rawData: TmdbMultiSearchResponse;
             if (searchType === "movie") {
-                const data: TmdbTrendingMoviesResponse = await response.json();
+                const data: TmdbMovieSearchResponse = await response.json();
                 rawData = { ...data, results: data.results.map(item => ({ ...item, media_type: "movie" as const })) };
             }
             else if (searchType === "tv") {
-                const data: TmdbTrendingTvResponse = await response.json();
+                const data: TmdbTvSearchResponse = await response.json();
                 rawData = { ...data, results: data.results.map(item => ({ ...item, media_type: "tv" as const })) };
             }
             else {

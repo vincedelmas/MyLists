@@ -90,14 +90,17 @@ describe("TMDB filtered search", () => {
                 total_results: 45,
                 results: [{
                     id: 123,
-                    title: "Dune",
-                    original_title: "Dune",
-                    name: "Dune",
-                    original_name: "Dune",
-                    release_date: "2021-10-22",
-                    first_air_date: "2021-10-22",
+                    ...(mediaType === MediaType.MOVIES ? {
+                        title: "Dune",
+                        original_title: "Dune",
+                        release_date: "2021-10-22",
+                    } : {
+                        name: "Dune",
+                        original_name: "Dune",
+                        first_air_date: "2021-10-22",
+                        origin_country: ["US"],
+                    }),
                     original_language: "en",
-                    origin_country: ["US"],
                     genre_ids: [878],
                     poster_path: "/dune.jpg",
                 }],
@@ -121,9 +124,10 @@ describe("TMDB filtered search", () => {
             image: "https://image.tmdb.org/t/p/w300/dune.jpg",
         }]);
 
-        await provider.search("Dune", 3, { provider: ApiProviderType.TMDB, mediaType });
+        const lastPage = await provider.search("Dune", 3, { provider: ApiProviderType.TMDB, mediaType });
         const unfilteredYearUrl = new URL(httpMocks.call.mock.calls[1][0]);
         expect(unfilteredYearUrl.pathname).toBe(`/3/search/${endpoint}`);
         expect(unfilteredYearUrl.searchParams.has(yearParam)).toBe(false);
+        expect(lastPage.hasNextPage).toBe(false);
     });
 });

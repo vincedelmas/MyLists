@@ -70,7 +70,11 @@ const createTmdbTvProvider = (tmdb: TmdbApi, definition: TvDefinition): External
 
     return {
         async search(query, page = 1, advancedFilters) {
-            const raw = await tmdb.search(query, page, advancedFilters?.provider === ApiProviderType.TMDB ? advancedFilters : undefined);
+            const tmdbFilters = advancedFilters?.provider === ApiProviderType.TMDB
+                ? advancedFilters
+                : undefined;
+
+            const raw = await tmdb.search(query, page, tmdbFilters);
             return tmdbTransformer.transformSearchResults(raw, tmdbIdentities);
         },
 

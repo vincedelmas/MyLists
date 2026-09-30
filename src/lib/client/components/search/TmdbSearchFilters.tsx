@@ -7,6 +7,7 @@ import {AppliedSearchFilterChip} from "@/lib/client/components/search/AppliedSea
 import {Field, FieldDescription, FieldGroup, FieldLabel, FieldTitle} from "@/lib/client/components/ui/field";
 import {AdvancedSearchFilterDefinition, AppliedSearchFilterChipsProps, ProviderSearchFilterProps} from "@/lib/types/advanced-search.types";
 import {AdvancedSearchFilters, TmdbAdvancedSearchFilters, cleanTmdbAdvancedSearchFilters, validateTmdbAdvancedSearch} from "@/lib/schemas";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 
 
 const createTmdbFilters = (applied?: AdvancedSearchFilters): TmdbAdvancedSearchFilters => {
@@ -21,7 +22,9 @@ const TmdbFilterPanel = ({ filters, onChange }: ProviderSearchFilterProps) => {
     return (
         <FieldGroup className="grid gap-5 sm:grid-cols-2">
             <Field>
-                <FieldTitle id="search-media-type-label">Media type</FieldTitle>
+                <FieldTitle id="search-media-type-label">
+                    Media Type
+                </FieldTitle>
                 <ToggleGroup
                     variant="outline"
                     value={[tmdbFilters.mediaType ?? "all"]}
@@ -34,18 +37,21 @@ const TmdbFilterPanel = ({ filters, onChange }: ProviderSearchFilterProps) => {
                     }}
                 >
                     <ToggleGroupItem value="all">
-                        All media
+                        All Media
                     </ToggleGroupItem>
                     <ToggleGroupItem value={MediaType.MOVIES}>
-                        <Film data-icon="inline-start"/>Movies
+                        <MainThemeIcon type={MediaType.MOVIES}/>
+                        Movies
                     </ToggleGroupItem>
                     <ToggleGroupItem value={MediaType.SERIES}>
-                        <Tv data-icon="inline-start"/>TV shows
+                        <MainThemeIcon type={MediaType.SERIES}/>
+                        <MainThemeIcon type={MediaType.ANIME}/>
+                        TV Shows
                     </ToggleGroupItem>
                 </ToggleGroup>
                 {!tmdbFilters.mediaType &&
                     <FieldDescription>
-                        Choose Movies or TV shows to filter by year.
+                        Choose Movies or TV Shows to filter by year.
                     </FieldDescription>
                 }
             </Field>
@@ -58,7 +64,7 @@ const TmdbFilterPanel = ({ filters, onChange }: ProviderSearchFilterProps) => {
                     <Input
                         step={1}
                         min={1870}
-                        max={8000}
+                        max={2200}
                         type="number"
                         id="search-media-year"
                         placeholder="Any year"

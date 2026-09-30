@@ -1,8 +1,9 @@
+import {MediaType} from "@/lib/utils/enums";
 import {DollarSign, XLineTop} from "lucide-react";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
-import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {formatCurrency, formatNumber} from "@/lib/utils/formatting/number";
 import {MovieListItem} from "@/lib/client/components/media/movies/MovieListItem";
+import {moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
 import {MoviesInfoGrid} from "@/lib/client/components/media/movies/MoviesInfoGrid";
 import {defineMediaConfig} from "@/lib/client/components/media/media-config.types";
 import {MoviesOverTitle} from "@/lib/client/components/media/movies/MoviesOverTitle";
@@ -19,10 +20,6 @@ import {getMoviesActiveFilters} from "@/lib/client/components/media/movies/Movie
 export const moviesMediaConfig = defineMediaConfig({
     mediaType: MediaType.MOVIES,
     continue: null,
-    advancedSearch: {
-        provider: ApiProviderType.TMDB,
-        ...tmdbSearchFilterDefinition,
-    },
     infoGrid: MoviesInfoGrid,
     overTitle: MoviesOverTitle,
     underTitle: MoviesUnderTitle,
@@ -58,5 +55,9 @@ export const moviesMediaConfig = defineMediaConfig({
                 value: formatCurrency(stats.specificMediaStats.totalRevenue),
             },
         ],
+    },
+    advancedSearch: {
+        provider: moviesDefinition.externalSearch.provider,
+        ...tmdbSearchFilterDefinition,
     },
 });

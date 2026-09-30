@@ -64,6 +64,12 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
         setSelectDrop(value);
     };
 
+    const handleSearchLinkClick = (ev: React.MouseEvent<HTMLAnchorElement>) => {
+        ev.stopPropagation();
+        setIsOpen(false);
+        setMobileMenu?.(false);
+    };
+
     const handleSearchSubmit = (ev: React.KeyboardEvent<HTMLInputElement>) => {
         if (ev.key !== "Enter" || ev.nativeEvent.isComposing) return;
         if (!currentUser) {
@@ -110,12 +116,8 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                         render={
                             <Link
                                 to="/search"
+                                onClick={handleSearchLinkClick}
                                 search={{ page: 1, query: search.trim(), apiProvider: selectDrop, advancedFilters: undefined }}
-                                onClick={(ev) => {
-                                    ev.stopPropagation();
-                                    setIsOpen(false);
-                                    setMobileMenu?.(false);
-                                }}
                             />
                         }
                     >
@@ -133,12 +135,8 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                             render={
                                 <Link
                                     to="/search"
+                                    onClick={handleSearchLinkClick}
                                     search={{ page: 1, query: search.trim(), apiProvider: selectDrop, advancedFilters: undefined }}
-                                    onClick={(ev) => {
-                                        ev.stopPropagation();
-                                        setIsOpen(false);
-                                        setMobileMenu?.(false);
-                                    }}
                                 />
                             }
                         >

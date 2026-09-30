@@ -1,6 +1,6 @@
 import {ApiProviderType} from "@/lib/utils/enums";
 import type {AdvancedSearchFilters} from "@/lib/schemas/search.schema";
-import {validateBookAdvancedSearch, validateGameAdvancedSearch} from "@/lib/schemas/search.schema";
+import {validateBookAdvancedSearch, validateGameAdvancedSearch, validateTmdbAdvancedSearch} from "@/lib/schemas/search.schema";
 
 
 export const toOptionalNumber = (value: string) => {
@@ -20,6 +20,10 @@ export const countAdvancedSearchFilters = (filters?: AdvancedSearchFilters) => {
 
 export const hasSearchCriteria = (query: string, apiProvider: ApiProviderType, filters?: AdvancedSearchFilters) => {
     if (filters && filters.provider !== apiProvider) return false;
+
+    if (apiProvider === ApiProviderType.TMDB) {
+        return validateTmdbAdvancedSearch(query, filters) === undefined;
+    }
 
     if (apiProvider === ApiProviderType.BOOKS) {
         return validateBookAdvancedSearch(query, filters) === undefined;

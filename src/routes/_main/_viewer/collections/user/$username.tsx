@@ -106,12 +106,9 @@ function UserCollectionsPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-4 pb-4 pt-6">
-                    <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        {hasFilters ? "Filtered collections" : isOwner ? "Your collection shelf" : `${username}'s collection shelf`}
-                    </h2>
+                <div className="flex items-center justify-end gap-4 pb-4 pt-6">
                     {apiData.pages > 1 &&
-                        <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                             Page {page} / {apiData.pages}
                         </span>
                     }

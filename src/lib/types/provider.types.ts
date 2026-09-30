@@ -265,6 +265,8 @@ export interface TmdbTvSearchResult extends TmdbBaseSearchResult {
 
 export type TmdbTrendingTvResponse = TmdbPaginatedResponse<TmdbTvSearchResult>;
 export type TmdbTrendingMoviesResponse = TmdbPaginatedResponse<TmdbMovieSearchResult>;
+export type TmdbTvSearchResponse = TmdbPaginatedResponse<Omit<TmdbTvSearchResult, "media_type">>;
+export type TmdbMovieSearchResponse = TmdbPaginatedResponse<Omit<TmdbMovieSearchResult, "media_type">>;
 export type TmdbMultiSearchResponse = TmdbPaginatedResponse<TmdbMovieSearchResult | TmdbTvSearchResult | { media_type: "person" }>;
 
 

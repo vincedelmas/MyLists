@@ -82,7 +82,7 @@ function SearchPage() {
     const hasSubmittedSearch = isViewingAppliedProvider && hasSearchCriteria(query, apiProvider, advancedFilters);
 
     const searchProviderItems = [
-        { label: "Media", value: ApiProviderType.TMDB },
+        { label: "Movies & TV", value: ApiProviderType.TMDB },
         ...(resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS)
             ? [{ label: "Books", value: ApiProviderType.BOOKS }]
             : []),
@@ -94,7 +94,7 @@ function SearchPage() {
             : []),
         { label: "Users", value: ApiProviderType.USERS },
     ];
-    const selectedProviderLabel = searchProviderItems.find((item) => item.value === selectedProvider)?.label ?? "Media";
+    const selectedProviderLabel = searchProviderItems.find((item) => item.value === selectedProvider)?.label ?? "Movies & TV";
 
     const commitSearch = async (submitted: SearchFormValues) => {
         const trimmedQuery = submitted.query.trim();
@@ -176,7 +176,7 @@ function SearchPage() {
                     eyebrow="Find something"
                     asideLabel="Searching in"
                     asideValue={selectedProviderLabel}
-                    description="Look for media and people across the sources available to you."
+                    description="Find movies, TV shows, books, games, manga, and people."
                 />
 
                 <FormProvider {...form}>
@@ -217,7 +217,10 @@ function SearchPage() {
                                                 aria-invalid={fieldState.invalid}
                                                 aria-label={"Search title or name"}
                                                 inputClassName="placeholder:text-xs sm:placeholder:text-sm"
-                                                placeholder={definition ? "Title (optional when filters are selected)" : "Title or Name"}
+                                                placeholder={selectedProvider === ApiProviderType.TMDB
+                                                    ? "Title" : definition
+                                                        ? "Title (optional when filters are selected)" : "Title or Name"
+                                                }
                                                 onChange={(ev) => {
                                                     field.onChange(ev);
                                                     form.clearErrors();

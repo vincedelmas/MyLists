@@ -40,7 +40,7 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
     }
 
     const searchProviderItems = [
-        { label: "Media", value: ApiProviderType.TMDB },
+        { label: "Movies & TV", value: ApiProviderType.TMDB },
         ...(resolveMediaTypeActive(currentUser?.settings, MediaType.BOOKS)
             ? [{ label: "Books", value: ApiProviderType.BOOKS }]
             : []),
@@ -62,6 +62,12 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
         if (value === null) return;
         reset();
         setSelectDrop(value);
+    };
+
+    const handleSearchLinkClick = (ev: React.MouseEvent<HTMLAnchorElement>) => {
+        ev.stopPropagation();
+        setIsOpen(false);
+        setMobileMenu?.(false);
     };
 
     const handleSearchSubmit = (ev: React.KeyboardEvent<HTMLInputElement>) => {
@@ -100,8 +106,23 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                         if (search.trim()) setIsOpen(true);
                     }}
                 />
-                <InputGroupAddon align="inline-start">
-                    <Search aria-hidden="true"/>
+                <InputGroupAddon align="inline-start" className="h-full p-0">
+                    <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        title="Open Search"
+                        nativeButton={false}
+                        aria-label="Open Search"
+                        render={
+                            <Link
+                                to="/search"
+                                onClick={handleSearchLinkClick}
+                                search={{ page: 1, query: search.trim(), apiProvider: selectDrop, advancedFilters: undefined }}
+                            />
+                        }
+                    >
+                        <Search aria-hidden="true"/>
+                    </Button>
                 </InputGroupAddon>
                 <InputGroupAddon align="inline-end" className="h-full p-0 has-[>button]:mr-0">
                     {getAdvancedSearchConfig(selectDrop) &&
@@ -114,12 +135,8 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
                             render={
                                 <Link
                                     to="/search"
+                                    onClick={handleSearchLinkClick}
                                     search={{ page: 1, query: search.trim(), apiProvider: selectDrop, advancedFilters: undefined }}
-                                    onClick={(ev) => {
-                                        ev.stopPropagation();
-                                        setIsOpen(false);
-                                        setMobileMenu?.(false);
-                                    }}
                                 />
                             }
                         >

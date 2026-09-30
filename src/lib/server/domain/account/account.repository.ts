@@ -4,7 +4,7 @@ import {PrivacyType, RatingSystemType} from "@/lib/utils/enums";
 import {paginate, resolveSorting} from "@/lib/server/database/pagination";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
 import {and, asc, count, desc, eq, inArray, like, sql, type SQL} from "drizzle-orm";
-import {collectionLikes, collections, user, userMediaSettings} from "@/lib/server/database/schema";
+import {account, collectionLikes, collections, user, userMediaSettings} from "@/lib/server/database/schema";
 
 
 const orderByMediaType = sql`
@@ -143,6 +143,22 @@ export class AccountRepository {
             .from(user)
             .where(eq(user.name, name))
             .get();
+    }
+
+    static getAccountSecurity(userId: number) {
+        const accounts = getDbClient()
+            .select({
+                password: account.password,
+                provider: account.providerId,
+            })
+            .from(account)
+            .where(eq(account.userId, userId))
+            .all();
+
+        return {
+            hasPassword: accounts.some(({ provider, password }) => provider === "credential" && !!password),
+            providers: accounts.flatMap(({ provider }) => provider === "google" || provider === "github" ? [provider] : []),
+        };
     }
 
     static async getMinimalUserSettings(userId: number) {

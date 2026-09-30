@@ -1,20 +1,27 @@
 import {Trash2} from "lucide-react";
 import {useId, useState} from "react";
-import {zodResolver} from "@hookform/resolvers/zod";
+import {DeleteAccountForm} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
+import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
 import {handleServerFormErrors} from "@/lib/client/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
 import {Controller, FormProvider, useForm} from "react-hook-form";
-import {type PasswordSettingsForm, passwordSettingsSchema} from "@/lib/schemas";
+import {accountSecurityOptions} from "@/lib/client/react-query/query-options";
 import {Field, FieldError, FieldGroup, FieldLabel} from "@/lib/client/components/ui/field";
 import {useDeleteAccountMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@/lib/client/components/ui/dialog";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/danger")({
+    context: () => ({
+        accountSecurityOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.accountSecurityOptions);
+    },
     component: DangerForm,
 });
 
@@ -23,10 +30,14 @@ function DangerForm() {
     const passwordId = useId();
     const { clearSession, signOut } = useAuth();
     const [open, setOpen] = useState(false);
+    const { accountSecurityOptions } = Route.useRouteContext();
+    const { hasPassword } = useSuspenseQuery(accountSecurityOptions).data;
     const deleteAccountMutation = useDeleteAccountMutation({ noErrorToast: true });
-    const form = useForm<Pick<PasswordSettingsForm, "currentPassword">>({
-        resolver: zodResolver(passwordSettingsSchema.pick({ currentPassword: true })),
-        defaultValues: { currentPassword: "" },
+    const form = useForm<DeleteAccountForm>({
+        defaultValues: {
+            confirmation: "",
+            currentPassword: "",
+        },
     });
 
     const onOpenChange = (nextOpen: boolean) => {
@@ -35,10 +46,14 @@ function DangerForm() {
         form.reset();
     }
 
-    const onSubmit = (values: Pick<PasswordSettingsForm, "currentPassword">) => {
+    const onSubmit = (values: DeleteAccountForm) => {
         if (deleteAccountMutation.isPending) return;
 
-        deleteAccountMutation.mutate({ data: values }, {
+        deleteAccountMutation.mutate({
+            data: hasPassword
+                ? { currentPassword: values.currentPassword }
+                : { confirmation: values.confirmation }
+        }, {
             onError: (error) => {
                 handleServerFormErrors(form, error);
             },
@@ -81,31 +96,64 @@ function DangerForm() {
                                 <DialogDescription>
                                     All your data will be permanently deleted.
                                     This action cannot be undone.
-                                    Enter your current password to confirm.
+                                    {hasPassword
+                                        ? " Enter your current password to confirm."
+                                        : " Type DELETE to confirm."
+                                    }
                                 </DialogDescription>
                             </DialogHeader>
-                            <FieldGroup>
-                                <Controller
-                                    name="currentPassword"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <Field data-invalid={fieldState.invalid} data-disabled={deleteAccountMutation.isPending}>
-                                            <FieldLabel htmlFor={passwordId}>
-                                                Current password
-                                            </FieldLabel>
-                                            <Input
-                                                {...field}
-                                                id={passwordId}
-                                                type="password"
-                                                autoComplete="current-password"
-                                                aria-invalid={fieldState.invalid}
-                                                disabled={deleteAccountMutation.isPending}
-                                            />
-                                            <FieldError errors={[fieldState.error]}/>
-                                        </Field>
-                                    )}
-                                />
-                            </FieldGroup>
+
+                            {hasPassword ?
+                                <FieldGroup>
+                                    <Controller
+                                        name="currentPassword"
+                                        rules={{ required: "Current password is required." }}
+                                        control={form.control}
+                                        render={({ field, fieldState }) =>
+                                            <Field data-invalid={fieldState.invalid} data-disabled={deleteAccountMutation.isPending}>
+                                                <FieldLabel htmlFor={passwordId}>
+                                                    Current password
+                                                </FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    id={passwordId}
+                                                    type={"password"}
+                                                    autoComplete="current-password"
+                                                    aria-invalid={fieldState.invalid}
+                                                    disabled={deleteAccountMutation.isPending}
+                                                />
+                                                <FieldError errors={[fieldState.error]}/>
+                                            </Field>
+                                        }
+                                    />
+                                </FieldGroup>
+                                :
+                                <FieldGroup>
+                                    <Controller
+                                        name="confirmation"
+                                        control={form.control}
+                                        rules={{
+                                            validate: (value) =>
+                                                value === "DELETE" || "Type DELETE to confirm account deletion."
+                                        }}
+                                        render={({ field, fieldState }) =>
+                                            <Field data-invalid={fieldState.invalid} data-disabled={deleteAccountMutation.isPending}>
+                                                <FieldLabel htmlFor={passwordId}>Type DELETE</FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    id={passwordId}
+                                                    autoComplete="off"
+                                                    spellCheck={false}
+                                                    aria-invalid={fieldState.invalid}
+                                                    disabled={deleteAccountMutation.isPending}
+                                                />
+                                                <FieldError errors={[fieldState.error]}/>
+                                            </Field>
+                                        }
+                                    />
+                                </FieldGroup>
+                            }
+
                             <FormError/>
                             <DialogFooter>
                                 <Button

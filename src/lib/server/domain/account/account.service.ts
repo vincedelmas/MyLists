@@ -23,7 +23,9 @@ export class AccountService {
     ) {
     }
 
-    // --- Admin functions --------------------------------------------
+    getAccountSecurity(userId: number) {
+        return this.repository.getAccountSecurity(userId);
+    }
 
     async getUserOverviewForAdmin() {
         const userStats = await this.repository.getUserStatsForAdmin();

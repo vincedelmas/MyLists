@@ -1,26 +1,36 @@
 import {useId, useState} from "react";
-import {Controller, FormProvider, useForm} from "react-hook-form";
 import authClient from "@/lib/client/auth-client";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
+import {useSuspenseQuery} from "@tanstack/react-query";
+import {handleServerFormErrors} from "@/lib/client/forms";
 import {FormError} from "@/lib/client/components/forms/FormError";
+import {Controller, FormProvider, useForm} from "react-hook-form";
+import {accountSecurityOptions} from "@/lib/client/react-query/query-options";
 import {PasswordSettingsForm, passwordSettingsFormSchema} from "@/lib/schemas";
 import {FormSubmitButton} from "@/lib/client/components/forms/FormSubmitButton";
 import {usePasswordSettingsMutation} from "@/lib/client/react-query/query-mutations/user.mutations";
 import {Field, FieldError, FieldGroup, FieldLabel, FieldSet} from "@/lib/client/components/ui/field";
-import {handleServerFormErrors} from "@/lib/client/forms";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout/email-password")({
+    context: () => ({
+        accountSecurityOptions,
+    }),
+    loader: ({ context }) => {
+        return context.queryClient.ensureQueryData(context.accountSecurityOptions);
+    },
     component: EmailAndPasswordPage,
 });
 
 
 function EmailAndPasswordPage() {
     const fieldId = useId();
+    const { accountSecurityOptions } = Route.useRouteContext();
     const passwordMutation = usePasswordSettingsMutation({ noErrorToast: true });
     const [changeEmailSuccess, setChangeEmailSuccess] = useState(false);
+    const { hasPassword, providers } = useSuspenseQuery(accountSecurityOptions).data;
     const passwordForm = useForm<PasswordSettingsForm>({
         resolver: zodResolver(passwordSettingsFormSchema),
         defaultValues: {
@@ -110,75 +120,94 @@ function EmailAndPasswordPage() {
                 </form>
             </FormProvider>
 
-            <FormProvider {...passwordForm}>
-                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="flex min-w-0 flex-col gap-4">
-                    <div>
-                        <h3 className="text-sm font-semibold text-foreground">Password</h3>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                            Confirm your current password before choosing a new one.
-                        </p>
-                    </div>
-                    <FieldSet disabled={passwordMutation.isPending}>
-                        <FieldGroup>
-                            <Controller
-                                name="currentPassword"
-                                control={passwordForm.control}
-                                render={({ field, fieldState }) =>
-                                    <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
-                                        <FieldLabel htmlFor={`${fieldId}-current-password`}>Current password</FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={`${fieldId}-current-password`}
-                                            type="password"
-                                            placeholder="********"
-                                            aria-invalid={fieldState.invalid}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                }
-                            />
-                            <Controller
-                                name="newPassword"
-                                control={passwordForm.control}
-                                render={({ field, fieldState }) =>
-                                    <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
-                                        <FieldLabel htmlFor={`${fieldId}-new-password`}>New password</FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={`${fieldId}-new-password`}
-                                            type="password"
-                                            placeholder="********"
-                                            aria-invalid={fieldState.invalid}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                }
-                            />
-                            <Controller
-                                name="confirmNewPassword"
-                                control={passwordForm.control}
-                                render={({ field, fieldState }) =>
-                                    <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
-                                        <FieldLabel htmlFor={`${fieldId}-confirm-new-password`}>Confirm new password</FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={`${fieldId}-confirm-new-password`}
-                                            type="password"
-                                            placeholder="********"
-                                            aria-invalid={fieldState.invalid}
-                                        />
-                                        <FieldError errors={[fieldState.error]}/>
-                                    </Field>
-                                }
-                            />
-                        </FieldGroup>
-                    </FieldSet>
-                    <FormError/>
-                    <FormSubmitButton isLoading={passwordMutation.isPending}>
-                        Update Password
-                    </FormSubmitButton>
-                </form>
-            </FormProvider>
+            {hasPassword ?
+                <FormProvider {...passwordForm}>
+                    <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="flex min-w-0 flex-col gap-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-foreground">
+                                Password
+                            </h3>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Confirm your current password before choosing a new one.
+                            </p>
+                        </div>
+                        <FieldSet disabled={passwordMutation.isPending}>
+                            <FieldGroup>
+                                <Controller
+                                    name="currentPassword"
+                                    control={passwordForm.control}
+                                    render={({ field, fieldState }) =>
+                                        <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
+                                            <FieldLabel htmlFor={`${fieldId}-current-password`}>Current password</FieldLabel>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                placeholder="********"
+                                                aria-invalid={fieldState.invalid}
+                                                id={`${fieldId}-current-password`}
+                                            />
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    }
+                                />
+                                <Controller
+                                    name="newPassword"
+                                    control={passwordForm.control}
+                                    render={({ field, fieldState }) =>
+                                        <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
+                                            <FieldLabel htmlFor={`${fieldId}-new-password`}>
+                                                New password
+                                            </FieldLabel>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                placeholder="********"
+                                                id={`${fieldId}-new-password`}
+                                                aria-invalid={fieldState.invalid}
+                                            />
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    }
+                                />
+                                <Controller
+                                    name="confirmNewPassword"
+                                    control={passwordForm.control}
+                                    render={({ field, fieldState }) =>
+                                        <Field data-invalid={fieldState.invalid} data-disabled={passwordMutation.isPending}>
+                                            <FieldLabel htmlFor={`${fieldId}-confirm-new-password`}>
+                                                Confirm new password
+                                            </FieldLabel>
+                                            <Input
+                                                {...field}
+                                                type="password"
+                                                placeholder="********"
+                                                aria-invalid={fieldState.invalid}
+                                                id={`${fieldId}-confirm-new-password`}
+                                            />
+                                            <FieldError errors={[fieldState.error]}/>
+                                        </Field>
+                                    }
+                                />
+                            </FieldGroup>
+                        </FieldSet>
+                        <FormError/>
+                        <FormSubmitButton isLoading={passwordMutation.isPending}>
+                            Update Password
+                        </FormSubmitButton>
+                    </form>
+                </FormProvider>
+                :
+                <div className="flex min-w-0 flex-col gap-2">
+                    <h3 className="text-sm font-semibold text-foreground">
+                        Password
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                        Your account has no password because you sign in with{" "}
+                        {providers.map((provider) => provider === "google" ? "Google" : "GitHub").join(" or ")}.
+                        Manage your password with your sign-in provider.
+                    </p>
+                </div>
+            }
         </div>
     );
 }

@@ -1,8 +1,8 @@
 import {APIError} from "better-auth/api";
 import {auth} from "@/lib/server/core/auth";
 import {MediaType} from "@/lib/utils/enums";
+import {user} from "@/lib/server/database/schema";
 import {createServerFn} from "@tanstack/react-start";
-import {user} from "@/lib/server/database/schema/index";
 import {getRequest} from "@tanstack/react-start/server";
 import {getContainer} from "@/lib/server/core/container";
 import {ValidationError} from "@/lib/utils/error-classes";
@@ -12,6 +12,8 @@ import {withTransaction} from "@/lib/server/database/async-storage";
 import {saveUploadedImage} from "@/lib/server/core/images/image-saver";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
+    deleteAccountSchema,
+    DeleteAccountForm,
     downloadListAsCsvSchema,
     generalSettingsSchema,
     highlightedMediaSearchSchema,
@@ -151,27 +153,44 @@ export const postPasswordSettings = createServerFn({ method: "POST" })
     });
 
 
+export const getAccountSecurity = createServerFn({ method: "GET" })
+    .middleware([requiredAuthMiddleware])
+    .handler(async ({ context: { currentUser } }) => {
+        const accountService = await getContainer().then((c) => c.services.account);
+        return accountService.getAccountSecurity(currentUser.id);
+    });
+
+
 export const postDeleteUserAccount = createServerFn({ method: "POST" })
     .middleware([requiredAuthMiddleware])
-    .validator(passwordSettingsSchema.pick({ currentPassword: true }))
-    .handler(async ({ data: { currentPassword }, context: { currentUser } }) => {
-        try {
-            await auth.api.verifyPassword({
-                headers: getRequest().headers,
-                body: {
-                    password: currentPassword,
-                },
-            });
-        }
-        catch (error) {
-            if (!(error instanceof APIError) || error.body?.code !== "INVALID_PASSWORD") {
-                throw error;
-            }
-
-            throw new ValidationError<Pick<PasswordSettingsForm, "currentPassword">>("currentPassword", "Current password incorrect");
-        }
-
+    .validator(deleteAccountSchema)
+    .handler(async ({ data: { currentPassword, confirmation }, context: { currentUser } }) => {
         const accountService = await getContainer().then((c) => c.services.account);
+        const { hasPassword, providers } = accountService.getAccountSecurity(currentUser.id);
+
+        if (hasPassword || providers.length === 0) {
+            if (!currentPassword) {
+                throw new ValidationError<Pick<PasswordSettingsForm, "currentPassword">>("currentPassword", "Current password is required");
+            }
+            try {
+                await auth.api.verifyPassword({
+                    headers: getRequest().headers,
+                    body: { password: currentPassword },
+                });
+            }
+            catch (error) {
+                if (!(error instanceof APIError) || error.body?.code !== "INVALID_PASSWORD") {
+                    throw error;
+                }
+
+                throw new ValidationError<Pick<PasswordSettingsForm, "currentPassword">>("currentPassword", "Current password incorrect");
+            }
+        }
+
+        if (!hasPassword && providers.length > 0 && confirmation !== "DELETE") {
+            throw new ValidationError<DeleteAccountForm>("confirmation", 'Type DELETE to confirm account deletion.');
+        }
+
         const result = accountService.deleteUserAccount({ userId: currentUser.id, type: "manual" });
 
         clearAdminCookie();

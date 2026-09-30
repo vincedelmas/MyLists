@@ -4,8 +4,8 @@ import {getHallOfFame} from "@/lib/server/functions/hall-of-fame";
 import {HighlightedMediaTab} from "@/lib/types/profile-custom.types";
 import {getPlatformStats} from "@/lib/server/functions/platform-stats";
 import {getUserAchievements} from "@/lib/server/functions/user-achievements";
-import {getProfileCustomSearch, getProfileCustomSettings} from "@/lib/server/functions/user-settings";
 import {HallOfFameSearch, highlightedMediaSearchSchema, SimpleSearch, StatsActiveTab} from "@/lib/schemas";
+import {getAccountSecurity, getProfileCustomSearch, getProfileCustomSettings} from "@/lib/server/functions/user-settings";
 import {
     getAllUpdatesHistory,
     getRandomPublicProfile,
@@ -45,6 +45,12 @@ export const profileSummaryOptions = (username: string) => queryOptions({
 export const profileCustomOptions = queryOptions({
     queryKey: ["settings", "profile-custom"],
     queryFn: getProfileCustomSettings,
+});
+
+
+export const accountSecurityOptions = queryOptions({
+    queryKey: ["account", "security"],
+    queryFn: getAccountSecurity,
 });
 
 

@@ -1,6 +1,6 @@
 import * as z from "zod";
-import {mediaTypeFieldSchema, mediaTypeMediaIdSchema, usernameSchema} from "@/lib/schemas/common.schema";
 import {ApiProviderType, MediaType, PrivacyType, RatingSystemType} from "@/lib/utils/enums";
+import {mediaTypeFieldSchema, mediaTypeMediaIdSchema, usernameSchema} from "@/lib/schemas/common.schema";
 import {
     createDefaultHighlightedMediaSettings,
     HIGHLIGHTED_MEDIA_DEFAULT_TITLE,
@@ -14,6 +14,7 @@ import {
 
 export type ListSettings = z.infer<typeof mediaListSettingsSchema>;
 export type GeneralSettings = z.infer<typeof generalSettingsSchema>;
+export type DeleteAccountForm = z.infer<typeof deleteAccountSchema>;
 export type PasswordSettingsForm = z.infer<typeof passwordSettingsFormSchema>;
 
 
@@ -100,6 +101,11 @@ export const passwordSettingsSchema = z.object({
         .min(8, "The Password is too short (8 min.)")
         .max(50, "The Password is too long (50 max)."),
 });
+
+export const deleteAccountSchema = passwordSettingsSchema
+    .pick({ currentPassword: true })
+    .partial()
+    .extend({ confirmation: z.string().optional() });
 
 export const passwordSettingsFormSchema = passwordSettingsSchema.extend({
     confirmNewPassword: z.string().min(1, "Please confirm your password."),

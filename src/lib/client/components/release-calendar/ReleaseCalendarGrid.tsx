@@ -87,6 +87,7 @@ export function ReleaseCalendarGrid({ days, date, today, items, view, onWeekSele
                                             size="icon-sm"
                                             variant="hover"
                                             className="rounded-full"
+                                            aria-label={`View releases for ${formatDate(day)}`}
                                             onClick={() => setSelectedDay(day)}
                                         >
                                             <time
@@ -118,6 +119,7 @@ export function ReleaseCalendarGrid({ days, date, today, items, view, onWeekSele
                                             size="bare"
                                             type="button"
                                             variant="hover"
+                                            aria-label={`${releases.length} releases on ${formatDate(day)}`}
                                             onClick={() => setSelectedDay(day)}
                                             className="min-h-8 flex-col gap-1 rounded-md md:hidden"
                                         >

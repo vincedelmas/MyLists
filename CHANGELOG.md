@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.9.0](https://github.com/vincedelmas/MyLists/compare/v3.8.0...v3.9.0) (2026-09-30)
+
+
+### Features
+
+* replace coming next with release calendar ([6b4fb2b](https://github.com/vincedelmas/MyLists/commit/6b4fb2ba006ac5bc53cf8490847f35a10d880915))
+* **search:** add movie and TV 'advanced' search ([e119d87](https://github.com/vincedelmas/MyLists/commit/e119d87d4eed193348eb371b5d5a9742cd75ec34))
+
+
+### Bug Fixes
+
+* **auth:** OAuth account deletion ([4de4fbe](https://github.com/vincedelmas/MyLists/commit/4de4fbe7e9b0807abefb7523fc19164545d6e464))
+* **calendar:** restore accessible labels for day buttons ([351e91c](https://github.com/vincedelmas/MyLists/commit/351e91ce98fb1c35cd2d580cd70c389e4bddde64))
+
 ## [3.8.0](https://github.com/vincedelmas/MyLists/compare/v3.7.0...v3.8.0) (2026-09-18)
 
 

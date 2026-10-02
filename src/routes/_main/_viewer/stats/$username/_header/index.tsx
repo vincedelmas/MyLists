@@ -162,7 +162,7 @@ function RecapStatsPage({ releases, queryOptions }: {
                     title={`${username}'s ${year} recap`}
                     asideValue={formatHours(recap.totals.hours)}
                     asideLabel={recap.scope === "all" ? "Time tracked this year" : `${capitalize(recap.scope)} time tracked`}
-                    description={`A look back at what ${username} finished, revisited and added to My Activity.`}
+                    description={`A summary of ${username}'s time tracked, titles completed, and repeats in ${year}.`}
                     navigation={
                         <StatsNavigation
                             releases={releases}

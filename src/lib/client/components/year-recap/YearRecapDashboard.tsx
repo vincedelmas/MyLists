@@ -40,10 +40,10 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                 <div>
                     <CalendarRange className="mx-auto size-9 text-muted-foreground"/>
                     <h2 className="mt-4 text-xl font-bold">
-                        No activity to include
+                        No activity recorded
                     </h2>
                     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                        This year or media selection has no visible activity. Hidden activity is not included.
+                        No activity was recorded for this selection in {recap.year}. Hidden activity is excluded.
                     </p>
                 </div>
             </div>
@@ -61,7 +61,7 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                     title={<>{recap.user.name}&apos;s {recap.year}</>}
                     context={recap.scope === "all" ? "All media" : recap.scope}
                     metricNote={`across ${formatNumber(recap.totals.titleCount)} titles`}
-                    description="A record of the progress, completions, repeats, and titles preserved in MyActivity."
+                    description="A summary of time tracked, titles completed, and repeats during the year."
                     decoration={
                         <>
                             <div className="pointer-events-none absolute right-0 top-1/2 -z-10 -translate-y-1/2
@@ -92,7 +92,7 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                         },
                         {
                             label: "Active titles",
-                            note: "with visible activity",
+                            note: "with activity this year",
                             icon: <LibraryBig className="size-4"/>,
                             value: formatNumber(recap.totals.titleCount),
                         },
@@ -116,8 +116,8 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                 <StatsSectionHeader
                     index="01"
                     color={color}
-                    title="The year in motion"
-                    description="Monthly activity from January to December. Every value comes from visible MyActivity records."
+                    title="Monthly activity"
+                    description="Time tracked each month, from January to December. Hidden activity is excluded."
                 />
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.55fr)]">
                     <YearRecapTimeline months={recap.months} color={color}/>
@@ -134,7 +134,7 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                                 label: "Active months",
                                 icon: <CalendarCheck2 className="size-4"/>,
                                 value: `${recap.totals.activeMonths} / 12`,
-                                note: "months containing visible activity",
+                                note: "months with recorded activity",
                             },
                             {
                                 label: "Longest active streak",
@@ -157,10 +157,10 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                 <StatsSectionHeader
                     index="02"
                     color={color}
-                    title={recap.scope === "all" ? "Media mix" : `${capitalize(recap.scope)} by the numbers`}
+                    title={recap.scope === "all" ? "Media breakdown" : `${capitalize(recap.scope)} summary`}
                     description={recap.scope === "all"
-                        ? "How each media type contributed to the year, measured using tracked time."
-                        : `Progress and comparisons calculated only from ${recap.scope} activity.`
+                        ? "Time tracked across each media type."
+                        : `Total ${recap.scope} progress and time comparisons for the year.`
                     }
                 />
 
@@ -216,14 +216,14 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                                 }),
                             },
                             {
-                                label: "Famous title comparison",
+                                label: "Time equivalent",
                                 note: recap.comparison?.referenceLabel,
                                 value: `${formatNumber(recap.comparison?.referenceCount, {
                                     fractionDigits: (recap.comparison?.referenceCount ?? 0) < 10 ? 1 : 0,
                                 })}×`,
                             },
                             {
-                                label: "Another way to count it",
+                                label: "Estimated total",
                                 note: recap.comparison?.secondaryLabel,
                                 value: formatNumber(recap.comparison?.secondaryCount, {
                                     notation: (recap.comparison?.secondaryCount ?? 0) >= 10_000 ? "compact" : "standard",
@@ -239,8 +239,8 @@ export function YearRecapDashboard({ recap, canGenerateImage = false, showHero =
                 <StatsSectionHeader
                     index="03"
                     color={color}
-                    title="Titles that defined the year"
-                    description="First-time titles are shown before repeat-only titles, then ordered by favorites, rating, and tracked time."
+                    title="Top titles"
+                    description="New titles appear before repeats, with favorites, higher ratings, and more time tracked listed first."
                     aside={recap.mostRepeatedTitle &&
                         <div className="text-left sm:text-right">
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">

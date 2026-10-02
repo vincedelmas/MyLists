@@ -52,7 +52,7 @@ export function YearRecapShareCard({ recap, color }: YearRecapShareCardProps) {
                     <img
                         className="h-auto w-full"
                         src={generatedImage.dataUrl}
-                        alt={`${recap.year} recap social card`}
+                        alt={`${recap.year} recap`}
                     />
                     :
                     <div className="grid min-h-96 place-items-center p-8 text-center">
@@ -61,10 +61,10 @@ export function YearRecapShareCard({ recap, color }: YearRecapShareCardProps) {
                                 <ImageDown className="size-6"/>
                             </div>
                             <div className="mt-4 font-bold">
-                                No image generated yet
+                                Recap image
                             </div>
                             <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                                Generation reloads the latest visible MyActivity data and creates a private downloadable image.
+                                Create an image of your year to download or share.
                             </p>
                         </div>
                     </div>
@@ -73,14 +73,13 @@ export function YearRecapShareCard({ recap, color }: YearRecapShareCardProps) {
 
             <div className="lg:sticky lg:top-24">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    Social image
+                    Share recap
                 </div>
                 <h3 className="mt-2 text-2xl font-black">
-                    Generate your recap
+                    Create a recap image
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    This creates a fresh 1080 × 1350 image using your current recap data and top covers.
-                    It is only available to the profile owner.
+                    Include your stats and top titles in an image you can share.
                 </p>
                 <Button className="mt-5" size="lg" onClick={generate} disabled={generating}>
                     <ImageDown data-icon="inline-start"/>
@@ -112,7 +111,7 @@ export function YearRecapShareCard({ recap, color }: YearRecapShareCardProps) {
                         </div>
                         {!canShareImage &&
                             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                                Direct image sharing requires HTTPS and a browser that supports file sharing.
+                                Download the image to share it from your device.
                             </p>
                         }
                     </div>

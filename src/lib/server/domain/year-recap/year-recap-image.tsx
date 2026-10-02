@@ -176,7 +176,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
 
             <div className="mt-6.5 flex items-center">
                 <span className="text-[16px] font-bold tracking-[2.5px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
-                    TITLES THAT DEFINED THE YEAR
+                    TOP TITLES
                 </span>
             </div>
             <div className="mt-3.5 flex gap-3">
@@ -266,7 +266,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
 
             <div className="mt-8 flex flex-col">
                 <span className="text-[18px] font-bold tracking-[3px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
-                    THE YEAR IN MOTION
+                    MONTHLY ACTIVITY
                 </span>
                 <div
                     className="mt-3.5 flex h-48.5 items-end gap-3.5 rounded-[20px] border px-5 pb-3 pt-4.5"
@@ -297,7 +297,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
             {recap.scope === "all"
                 ? <div className="mt-7 flex flex-col">
                     <span className="text-[18px] font-bold tracking-[3px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
-                        MEDIA MIX
+                        MEDIA BREAKDOWN
                     </span>
                     <div className="mt-4.25 flex gap-3">
                         {recap.media.map((media) =>
@@ -328,7 +328,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                         style={{ backgroundColor: `${accent}18`, border: `1px solid ${accent}55` }}
                     >
                         <span className="text-[15px] tracking-[2px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
-                            FAMOUS TITLE EQUIVALENT
+                            TIME EQUIVALENT
                         </span>
                         <span className="mt-2.5 text-[34px] font-bold" style={{ color: accent }}>
                             {formatNumber(recap.comparison?.referenceCount, { fractionDigits: 1 })}×
@@ -342,7 +342,7 @@ export const renderYearRecapImage = async (recap: YearRecap) => {
                         style={{ borderColor: YEAR_RECAP_PALETTE.panelBorder, backgroundColor: YEAR_RECAP_PALETTE.panel }}
                     >
                         <span className="text-[15px] tracking-[2px]" style={{ color: YEAR_RECAP_PALETTE.mutedForeground }}>
-                            ANOTHER WAY TO COUNT IT
+                            ESTIMATED TOTAL
                         </span>
                         <span className="mt-2.5 text-[34px] font-bold" style={{ color: YEAR_RECAP_PALETTE.metrics.activeMonths }}>
                             {formatNumber(recap.comparison?.secondaryCount, { fractionDigits: 1 })}

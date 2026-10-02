@@ -16,10 +16,10 @@ export const createMyListsMcpServer = (access: McpAccess) => {
 
     const server = new McpServer(serverName, {
         instructions: "Manage the connected user's own media lists using the website's server functions. " +
-            "Use getMediaListFilters and getMediaListSearchFilters for list filter values. Search before choosing a title; ask when titles or seasons are ambiguous. " +
-            "Search result id is a provider apiId; use resolveExternalMedia to get a MyLists mediaId before postAddMediaToList. Ratings are 0–10; progress, " +
+            "Use my_list_filters and search_my_list_filters for list filter values. Search before choosing a title; ask when titles or seasons are ambiguous. " +
+            "Search result id is a provider apiId; use resolve_catalog_media to get a MyLists mediaId before add_media. Ratings are 0–10; progress, " +
             "playtime (minutes), and repeats are absolute totals. Read current state before changing repeat counts. " +
-            "Only report updates as saved when postUpdateUserMedia returns kind=saved. Account settings, entry deletion and collection operations are unavailable.",
+            "Only report updates as saved when update_media returns kind=saved. Account settings, entry deletion and collection operations are unavailable.",
     });
 
     const context = createToolContext(server, access);

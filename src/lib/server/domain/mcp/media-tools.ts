@@ -20,81 +20,81 @@ import {
 
 
 export const registerMediaTools = ({ register, userId, username }: ToolContext) => {
-    register("getMediaDetails", {
+    register("media_details", {
         inputSchema: mediaDetailsSchema.strict(),
         description: "Read catalog details, the connected user's list entry, follow information and similar media. " +
             "userMedia is null when the media is absent from the user's list. mediaId is a MyLists ID, not a provider ID.",
     }, data => getMediaDetails({ data }));
 
-    register("getTvSeasons", {
+    register("tv_seasons", {
         inputSchema: tvSeasonsInputSchema,
         description: "Read the connected user's series/anime seasons, including episode counts, season ratings and rewatches.",
     }, data => getTvSeasons({ data: { ...data, userId } }));
 
-    register("getGameCompatiblePlatforms", {
+    register("game_platforms", {
         inputSchema: mediaTypeMediaIdSchema.strict(),
         description: "Read compatible platforms for a game. mediaType must be games.",
     }, data => getGameCompatiblePlatforms({ data }));
 
-    register("getUserMediaHistory", {
+    register("media_history", {
         inputSchema: mediaTypeMediaIdSchema.strict(),
         description: "Read the connected user's tracking history for one media entry.",
     }, data => getUserMediaHistory({ data }));
 
-    register("getSearchResults", {
+    register("search_catalog", {
         inputSchema: mediaSearchInputSchema,
         annotations: { openWorldHint: true },
         description: "Search the same catalogs as the website using query, page and apiProvider. " +
             "Advanced filters must match that provider. TMDB supports movies/TV; results distinguish series and anime. " +
             "Result id is the external provider ID (books use strings); mediaId is a MyLists ID when already stored. " +
-            "Use resolveExternalMedia to obtain a MyLists ID before adding. Ask when titles are ambiguous.",
+            "Use resolve_catalog_media to obtain a MyLists ID before adding. Ask when titles are ambiguous.",
     }, data => getSearchResults({ data }));
 
-    register("getGameAdvancedSearchOptions", {
+    register("game_search_options", {
         inputSchema: z.object({}).strict(),
         annotations: { openWorldHint: true },
         description: "Read available game genre and platform IDs for advanced catalog searches.",
     }, () => getGameAdvancedSearchOptions());
 
-    register("getMediaListSF", {
+    register("search_my_list", {
         inputSchema: mediaListInputSchema,
         description: "Browse the connected user's list using the website's args: pagination, sorting, search, tags, " +
-            "status, favorite, comment and media-specific filters. Read getMediaListFilters and " +
-            "getMediaListSearchFilters for selectable values. Returns results, mediaType and userData.",
+            "status, favorite, comment and media-specific filters. Read my_list_filters and " +
+            "search_my_list_filters for selectable values. Returns results, mediaType and userData.",
     }, data => getMediaListSF({ data: { ...data, username } }));
 
-    register("getMediaListFilters", {
+    register("my_list_filters", {
         inputSchema: mediaListFiltersInputSchema,
         description: "Read available filter values, including tags, for the connected user's media list.",
     }, data => getMediaListFilters({ data: { ...data, username } }));
 
-    register("getMediaListSearchFilters", {
+    register("search_my_list_filters", {
         inputSchema: mediaListSearchFiltersInputSchema,
         description: "Search people or companies selectable as filters in the connected user's list, using job and query.",
     }, data => getMediaListSearchFilters({ data: { ...data, username } }));
 
-    register("getUserTagNames", {
+    register("my_tags", {
         inputSchema: userTagNamesSchema.strict(),
         description: "Read the connected user's existing tag names for a media type.",
     }, data => getUserTagNames({ data }));
 
-    register("resolveExternalMedia", {
+    register("resolve_catalog_media", {
         write: true,
         inputSchema: externalMediaResolveSchema.strict(),
         annotations: { openWorldHint: true },
         description: "Resolve a provider apiId and mediaType to a MyLists mediaId, importing catalog details if needed. " +
-            "This does not add the media to the user's list; call postAddMediaToList separately.",
+            "This does not add the media to the user's list; call add_media separately.",
     }, data => resolveExternalMedia({ data }));
 
-    register("postAddMediaToList", {
+    register("add_media", {
         write: true,
         inputSchema: addMediaToListSchema.strict(),
         annotations: { idempotentHint: false },
         description: "Add a MyLists mediaId to the connected user's list with an optional status. " +
-            "Uses the media type's default status when omitted. Set a rating separately with postUpdateUserMedia.",
+            "Uses the media type's default status when omitted. Set a rating separately with update_media.",
     }, data => postAddMediaToList({ data }));
 
-    register("postUpdateUserMedia", {
+    register("update_media", {
         write: true,
         inputSchema: updateUserMediaSchema.strict(),
         annotations: { destructiveHint: true },
@@ -106,7 +106,7 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
             "returns an activity preview without saving. Review that preview before supplying activityCorrection.",
     }, data => postUpdateUserMedia({ data }));
 
-    register("postEditUserTag", {
+    register("edit_media_tag", {
         write: true,
         inputSchema: editMediaTagInputSchema,
         annotations: { idempotentHint: false },
@@ -114,7 +114,7 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
             "Pass mediaId and tag.name. Global tag renaming/deletion are unavailable.",
     }, data => postEditUserTag({ data }));
 
-    register("postUpdateUserCustomCover", {
+    register("update_media_cover", {
         write: true,
         inputSchema: mediaCoverInputSchema,
         annotations: { openWorldHint: true },

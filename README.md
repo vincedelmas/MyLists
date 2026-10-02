@@ -229,25 +229,23 @@ to ChatGPT as an OAuth MCP server.
 The integration supports all the mylists media types.
 Assistants cannot change account settings, delete entries, access collections, or inherit admin privileges.
 
-Available tools:
+Each tool calls one existing website server function and returns its result:
 
-Tools correspond to the existing website server functions and return their results:
-
-- `getSearchResults` — search external catalogs using the website's provider and advanced filters
-- `getGameAdvancedSearchOptions` — get game genre/platform options for catalog searches
-- `getMediaListSF` — browse the connected user's list with the website's list arguments
-- `getMediaListFilters`, `getMediaListSearchFilters` — read or search list filter values
-- `getMediaDetails` — read catalog details and the user's tracking state
-- `getTvSeasons`, `getGameCompatiblePlatforms` — read seasons or compatible game platforms
-- `getUserMediaHistory`, `getUserTagNames` — read tracking history or existing tags
-- `resolveExternalMedia` — obtain a MyLists `mediaId` from a provider `apiId`
-- `postAddMediaToList` — add a MyLists media item with an optional status
-- `postUpdateUserMedia` — apply one tracking update using the website's payload
-- `postEditUserTag` — attach or detach a tag on one entry
-- `postUpdateUserCustomCover` — set a cover URL or restore the catalog cover
+- `search_catalog` — search external catalogs using the website's provider and advanced filters
+- `game_search_options` — get game genre/platform options for catalog searches
+- `search_my_list` — browse the connected user's list with the website's list arguments
+- `my_list_filters`, `search_my_list_filters` — read or search list filter values
+- `media_details` — read catalog details and the user's tracking state
+- `tv_seasons`, `game_platforms` — read seasons or compatible game platforms
+- `media_history`, `my_tags` — read tracking history or existing tags
+- `resolve_catalog_media` — obtain a MyLists `mediaId` from a provider `apiId`
+- `add_media` — add a MyLists media item with an optional status
+- `update_media` — apply one tracking update using the website's payload
+- `edit_media_tag` — attach or detach a tag on one entry
+- `update_media_cover` — set a cover URL or restore the catalog cover
 
 User identity is supplied by the connection. Adding, rating, and editing tags are separate operations,
-just like on the website. `postUpdateUserMedia` returns `kind: "saved"` after saving, or
+just like on the website. `update_media` returns `kind: "saved"` after saving, or
 `kind: "correction-required"` with an activity preview before a correction can be confirmed.
 
 

@@ -5,13 +5,13 @@ import {movies, password, users} from "../../../../../scripts/e2e/data";
 
 
 const readToolNames = [
-    "getMediaDetails", "getTvSeasons", "getGameCompatiblePlatforms", "getUserMediaHistory",
-    "getSearchResults", "getGameAdvancedSearchOptions", "getMediaListSF", "getMediaListFilters",
-    "getMediaListSearchFilters", "getUserTagNames",
+    "media_details", "tv_seasons", "game_platforms", "media_history",
+    "search_catalog", "game_search_options", "search_my_list", "my_list_filters",
+    "search_my_list_filters", "my_tags",
 ];
 
 const writeToolNames = [
-    "resolveExternalMedia", "postAddMediaToList", "postUpdateUserMedia", "postEditUserTag", "postUpdateUserCustomCover",
+    "resolve_catalog_media", "add_media", "update_media", "edit_media_tag", "update_media_cover",
 ];
 
 
@@ -94,14 +94,14 @@ test("discovers OAuth, signs in, and tracks only the connected user's movies and
     expect((await initialize.json()).result.serverInfo.name).toBe("MyLists");
     const list = await rpc(request, connection.access_token, "tools/list");
     await expect(list).toBeOK();
-    expect((await list.json()).result.tools.map((tool: { name: string }) => tool.name)).toContain("postUpdateUserMedia");
+    expect((await list.json()).result.tools.map((tool: { name: string }) => tool.name)).toContain("update_media");
 
     const movie = { mediaType: "movies", mediaId: movies.editable.id };
-    await callTool(request, connection.access_token, "postAddMediaToList", { ...movie, status: "Completed" });
-    await callTool(request, connection.access_token, "postUpdateUserMedia", { ...movie, payload: { type: "rating", rating: 8 } });
-    await callTool(request, connection.access_token, "postUpdateUserMedia", { ...movie, payload: { type: "redo", redo: 1 } });
-    await callTool(request, connection.access_token, "postUpdateUserMedia", { ...movie, payload: { type: "redo", redo: 1 } });
-    const entry = await callTool(request, connection.access_token, "getMediaDetails", movie);
+    await callTool(request, connection.access_token, "add_media", { ...movie, status: "Completed" });
+    await callTool(request, connection.access_token, "update_media", { ...movie, payload: { type: "rating", rating: 8 } });
+    await callTool(request, connection.access_token, "update_media", { ...movie, payload: { type: "redo", redo: 1 } });
+    await callTool(request, connection.access_token, "update_media", { ...movie, payload: { type: "redo", redo: 1 } });
+    const entry = await callTool(request, connection.access_token, "media_details", movie);
     expect(entry.userMedia).toMatchObject({ userId: users.owner.id, rating: 8, redo: 1, total: 2 });
     await page.goto(`/details/movies/${movies.editable.id}`);
     const browserUpdate = await page.evaluate(async mediaId => {
@@ -110,21 +110,21 @@ test("discovers OAuth, signs in, and tracks only the connected user's movies and
         return postUpdateUserMedia({ data: { mediaType: "movies", mediaId, payload: { type: "comment", comment: "Updated from the website" } } });
     }, movies.editable.id);
     expect(browserUpdate.userMedia.comment).toBe("Updated from the website");
-    expect((await callTool(request, connection.access_token, "getMediaDetails", movie)).userMedia.comment).toBe("Updated from the website");
+    expect((await callTool(request, connection.access_token, "media_details", movie)).userMedia.comment).toBe("Updated from the website");
 
     const dbState = await runBun(["src/routes/_main/_private/oauth/-fixtures.ts", "movie-state"]);
     expect(JSON.parse(dbState.stdout)).toMatchObject({ otherUserEntries: 0, totalEntries: 2, timeSpent: 200 });
 
     await runBun(["src/routes/_main/_private/oauth/-fixtures.ts", "seed-series"]);
     const series = { mediaType: "series", mediaId: 901 };
-    await callTool(request, connection.access_token, "postAddMediaToList", { ...series, status: "Completed" });
-    await callTool(request, connection.access_token, "postUpdateUserMedia", { ...series, payload: { type: "redo", seasonRedos: [{ season: 1, redo: 1 }] } });
-    await callTool(request, connection.access_token, "postUpdateUserMedia", { ...series, payload: { type: "redo", seasonRedos: [{ season: 1, redo: 1 }] } });
-    await callTool(request, connection.access_token, "postUpdateUserMedia", { ...series, payload: { type: "rating", seasonRating: { season: 1, rating: 9 } } });
-    const seasons = await callTool(request, connection.access_token, "getTvSeasons", series);
+    await callTool(request, connection.access_token, "add_media", { ...series, status: "Completed" });
+    await callTool(request, connection.access_token, "update_media", { ...series, payload: { type: "redo", seasonRedos: [{ season: 1, redo: 1 }] } });
+    await callTool(request, connection.access_token, "update_media", { ...series, payload: { type: "redo", seasonRedos: [{ season: 1, redo: 1 }] } });
+    await callTool(request, connection.access_token, "update_media", { ...series, payload: { type: "rating", seasonRating: { season: 1, rating: 9 } } });
+    const seasons = await callTool(request, connection.access_token, "tv_seasons", series);
     expect(seasons).toEqual(expect.arrayContaining([expect.objectContaining({ season: 1, redo: 1, rating: 9 }), expect.objectContaining({ season: 2, redo: 0 })]));
 
-    const forged = await rpc(request, connection.access_token, "tools/call", { name: "postUpdateUserMedia", arguments: { ...movie, payload: { type: "rating", rating: 2 }, userId: users.stranger.id } });
+    const forged = await rpc(request, connection.access_token, "tools/call", { name: "update_media", arguments: { ...movie, payload: { type: "rating", rating: 2 }, userId: users.stranger.id } });
     expect((await forged.json()).result.isError).toBe(true);
 });
 
@@ -137,9 +137,9 @@ test("read-only consent exposes read tools and rejects write calls", async ({ pa
     expect(toolList.error, JSON.stringify(toolList)).toBeUndefined();
     expect(toolList.result, JSON.stringify(toolList)).toBeDefined();
     expect(toolList.result.tools.map((tool: { name: string }) => tool.name).sort()).toEqual([...readToolNames].sort());
-    const write = await rpc(request, connection.access_token, "tools/call", { name: "postAddMediaToList", arguments: { mediaType: "movies", mediaId: movies.editable.id } });
+    const write = await rpc(request, connection.access_token, "tools/call", { name: "add_media", arguments: { mediaType: "movies", mediaId: movies.editable.id } });
     expect((await write.json()).result.isError).toBe(true);
-    const result = await callTool(request, connection.access_token, "getMediaDetails", { mediaType: "movies", mediaId: movies.editable.id });
+    const result = await callTool(request, connection.access_token, "media_details", { mediaType: "movies", mediaId: movies.editable.id });
     expect(result.userMedia).toBeNull();
 });
 
@@ -168,18 +168,18 @@ test("exposes individual website operations, full list filters and entry tags", 
     const connection = await connectAssistant(page, request, baseURL!);
     const token = connection.access_token;
     const book = { mediaType: "books", mediaId: 902 };
-    const added = await callTool(request, token, "postAddMediaToList", book);
+    const added = await callTool(request, token, "add_media", book);
     expect(added).toMatchObject({ mediaId: 902, userId: users.owner.id });
     for (const payload of [
         { type: "status", status: "Reading" }, { type: "page", actualPage: 50 },
         { type: "rating", rating: 9 }, { type: "favorite", favorite: true },
         { type: "comment", comment: "Recommended" },
     ]) {
-        const result = await callTool(request, token, "postUpdateUserMedia", { ...book, payload });
+        const result = await callTool(request, token, "update_media", { ...book, payload });
         expect(result.kind).toBe("saved");
     }
-    await callTool(request, token, "postEditUserTag", { ...book, action: "add", tag: { name: "summer" } });
-    const found = await callTool(request, token, "getMediaListSF", { mediaType: "books", args: {
+    await callTool(request, token, "edit_media_tag", { ...book, action: "add", tag: { name: "summer" } });
+    const found = await callTool(request, token, "search_my_list", { mediaType: "books", args: {
         search: "MCP", tags: ["summer"], genres: ["Fantasy"], authors: ["MCP Author"], langs: ["en"],
         status: ["Reading"], favorite: true, comment: true, perPage: 1,
     } });
@@ -187,31 +187,31 @@ test("exposes individual website operations, full list filters and entry tags", 
     expect(found.results.items[0]).toMatchObject({ mediaId: 902, rating: 9, actualPage: 50 });
     expect(found.results.pagination).toMatchObject({ totalItems: 1, perPage: 1 });
     expect(found.userData.id).toBe(users.owner.id);
-    const filters = await callTool(request, token, "getMediaListFilters", { mediaType: "books" });
-    const authorFilters = await callTool(request, token, "getMediaListSearchFilters", { mediaType: "books", job: "creator", query: "MCP" });
+    const filters = await callTool(request, token, "my_list_filters", { mediaType: "books" });
+    const authorFilters = await callTool(request, token, "search_my_list_filters", { mediaType: "books", job: "creator", query: "MCP" });
     expect(authorFilters).toEqual([{ name: "MCP Author" }]);
     expect(filters.tags).toEqual(expect.arrayContaining([{ name: "summer" }]));
-    expect(await callTool(request, token, "getUserTagNames", { mediaType: "books" })).toEqual(expect.arrayContaining([{ name: "summer" }]));
+    expect(await callTool(request, token, "my_tags", { mediaType: "books" })).toEqual(expect.arrayContaining([{ name: "summer" }]));
 
-    const failed = await rpc(request, token, "tools/call", { name: "postUpdateUserMedia", arguments: { ...book, payload: { type: "page", actualPage: 201 } } });
+    const failed = await rpc(request, token, "tools/call", { name: "update_media", arguments: { ...book, payload: { type: "page", actualPage: 201 } } });
     expect((await failed.json()).result.isError).toBe(true);
-    const bookState = await callTool(request, token, "getMediaDetails", book);
+    const bookState = await callTool(request, token, "media_details", book);
     expect(bookState.userMedia).toMatchObject({ rating: 9, actualPage: 50, tags: [{ name: "summer" }] });
-    expect((await callTool(request, token, "getUserMediaHistory", book)).length).toBeGreaterThan(0);
-    const wrongType = await rpc(request, token, "tools/call", { name: "postUpdateUserMedia", arguments: { ...book, payload: { type: "chapter", currentChapter: 1 } } });
+    expect((await callTool(request, token, "media_history", book)).length).toBeGreaterThan(0);
+    const wrongType = await rpc(request, token, "tools/call", { name: "update_media", arguments: { ...book, payload: { type: "chapter", currentChapter: 1 } } });
     expect((await wrongType.json()).result.isError).toBe(true);
     for (const payload of [{ type: "rating", rating: null }, { type: "comment", comment: null }]) {
-        await callTool(request, token, "postUpdateUserMedia", { ...book, payload });
+        await callTool(request, token, "update_media", { ...book, payload });
     }
-    await callTool(request, token, "postEditUserTag", { ...book, action: "deleteOne", tag: { name: "summer" } });
-    expect((await callTool(request, token, "getMediaDetails", book)).userMedia).toMatchObject({ rating: null, comment: null, tags: [] });
+    await callTool(request, token, "edit_media_tag", { ...book, action: "deleteOne", tag: { name: "summer" } });
+    expect((await callTool(request, token, "media_details", book)).userMedia).toMatchObject({ rating: null, comment: null, tags: [] });
 
     for (const arguments_ of [
         { ...book, action: "rename", tag: { name: "new", oldName: "summer" } },
         { ...book, action: "deleteAll", tag: { name: "summer" } },
         { mediaType: "books", action: "add", tag: { name: "summer" } },
     ]) {
-        const denied = await rpc(request, token, "tools/call", { name: "postEditUserTag", arguments: arguments_ });
+        const denied = await rpc(request, token, "tools/call", { name: "edit_media_tag", arguments: arguments_ });
         expect((await denied.json()).result.isError).toBe(true);
     }
     for (const arguments_ of [
@@ -219,7 +219,7 @@ test("exposes individual website operations, full list filters and entry tags", 
         { mediaType: "books", args: { userId: users.stranger.id } },
         { mediaType: "books", args: { currentUserId: users.stranger.id } },
     ]) {
-        const denied = await rpc(request, token, "tools/call", { name: "getMediaListSF", arguments: arguments_ });
+        const denied = await rpc(request, token, "tools/call", { name: "search_my_list", arguments: arguments_ });
         expect((await denied.json()).result.isError).toBe(true);
     }
 
@@ -230,9 +230,9 @@ test("exposes individual website operations, full list filters and entry tags", 
     ];
     for (const { mediaType, mediaId, payloads, state } of cases) {
         const ref = { mediaType, mediaId };
-        await callTool(request, token, "postAddMediaToList", ref);
-        for (const payload of payloads) await callTool(request, token, "postUpdateUserMedia", { ...ref, payload });
-        expect((await callTool(request, token, "getMediaDetails", ref)).userMedia).toMatchObject(state);
+        await callTool(request, token, "add_media", ref);
+        for (const payload of payloads) await callTool(request, token, "update_media", { ...ref, payload });
+        expect((await callTool(request, token, "media_details", ref)).userMedia).toMatchObject(state);
     }
     const tools = (await (await rpc(request, token, "tools/list")).json()).result.tools;
     expect(tools.map((tool: { name: string }) => tool.name).sort()).toEqual([...readToolNames, ...writeToolNames].sort());
@@ -245,7 +245,7 @@ test("keeps collection operations outside MCP", async ({ page, request, baseURL 
     const list = await rpc(request, token, "tools/list");
     const tools = (await list.json()).result.tools;
     expect(tools.map((tool: { name: string }) => tool.name).sort()).toEqual([...readToolNames, ...writeToolNames].sort());
-    expect(tools.find((tool: { name: string }) => tool.name === "postUpdateUserMedia").inputSchema.properties).not.toHaveProperty("addToCollections");
+    expect(tools.find((tool: { name: string }) => tool.name === "update_media").inputSchema.properties).not.toHaveProperty("addToCollections");
 
     for (const name of ["search_collections", "get_collection", "create_collection", "update_collection"]) {
         const response = await rpc(request, token, "tools/call", { name, arguments: {} });
@@ -253,13 +253,13 @@ test("keeps collection operations outside MCP", async ({ page, request, baseURL 
     }
 
     const movie = { mediaType: "movies", mediaId: movies.editable.id };
-    await callTool(request, token, "postAddMediaToList", movie);
-    await callTool(request, token, "postUpdateUserMedia", { ...movie, payload: { type: "rating", rating: 8 } });
+    await callTool(request, token, "add_media", movie);
+    await callTool(request, token, "update_media", { ...movie, payload: { type: "rating", rating: 8 } });
     const rejected = await rpc(request, token, "tools/call", {
-        name: "postUpdateUserMedia", arguments: { ...movie, payload: { type: "rating", rating: 2 }, addToCollections: [1] },
+        name: "update_media", arguments: { ...movie, payload: { type: "rating", rating: 2 }, addToCollections: [1] },
     });
     expect((await rejected.json()).result.isError).toBe(true);
-    const details = await callTool(request, token, "getMediaDetails", movie);
+    const details = await callTool(request, token, "media_details", movie);
     expect(details).not.toHaveProperty("collections");
     expect(details.userMedia.rating).toBe(8);
 });

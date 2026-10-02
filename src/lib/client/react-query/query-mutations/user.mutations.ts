@@ -4,7 +4,7 @@ import {ProviderSearchResults} from "@/lib/types/provider.types";
 import {postUpdateShowOnboarding} from "@/lib/server/functions/user-profile";
 import {MutationMeta, QueryClient, useMutation, useQueryClient} from "@tanstack/react-query";
 import {markAllNotifAsRead, postDeleteSocialNotif} from "@/lib/server/functions/notifications";
-import {invalidateUserProgressQueries} from "@/lib/client/react-query/invalidate-user-progress";
+import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
 import {postFollow, postRemoveFollower, postRespondToFollowRequest, postUnfollow} from "@/lib/server/functions/social";
 import {
     followersOptions,

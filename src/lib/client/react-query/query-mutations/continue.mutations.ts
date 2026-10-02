@@ -4,8 +4,8 @@ import {toast} from "@/lib/client/components/ui/toast";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {postContinueMedia} from "@/lib/server/functions/continue";
 import {historyOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
-import {invalidateUserProgressQueries} from "@/lib/client/react-query/invalidate-user-progress";
 import {ContinueItem, continueOptions} from "@/lib/client/react-query/query-options/continue.options";
+import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
 
 
 export const useContinueMediaMutation = ({ mediaType, mediaId, mediaName }: ContinueItem) => {

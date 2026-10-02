@@ -365,6 +365,13 @@
       "when": 1789303302581,
       "tag": "0051_import_retry_scheduling",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1790942371747,
+      "tag": "0052_game_hltb_last_checked",
+      "breakpoints": true
     }
   ]
 }

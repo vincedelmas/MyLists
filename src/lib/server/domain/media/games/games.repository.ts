@@ -1,10 +1,11 @@
 import {Status} from "@/lib/utils/enums";
+import {GameHltbData} from "@/lib/utils/media/hltb";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {AddedMediaDetails} from "@/lib/types/media-common.types";
-import {normalizeGamePlatforms} from "@/lib/server/domain/media/games/platforms";
 import {createMediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {and, eq, getTableColumns, gte, isNull, lte, or, sql} from "drizzle-orm";
+import {normalizeGamePlatforms} from "@/lib/server/domain/media/games/platforms";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms} from "@/lib/server/database/schema";
 import {Game, UpdateGameWithDetails, UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {gamesServerDefinition, GamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
@@ -26,6 +27,13 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
                 or(isNull(games.releaseDate), gte(games.releaseDate, sql`date('now')`)),
             ))
             .then((res) => res.map((r) => r.apiId));
+    }
+
+    function updateHltbData(mediaId: number, data: GameHltbData) {
+        getDbClient()
+            .update(games)
+            .set(data)
+            .where(eq(games.id, mediaId)).run();
     }
 
     function addMediaToUserList(userId: number, media: Game, newStatus: Status) {
@@ -203,12 +211,13 @@ export function createGamesRepository(definition: GamesServerDefinition = gamesS
 
     return {
         ...queries,
-        getMediaIdsToBeRefreshed,
+        updateHltbData,
         addMediaToUserList,
-        getCompatiblePlatforms,
-        findAllAssociatedDetails,
         storeMediaWithDetails,
+        getCompatiblePlatforms,
         updateMediaWithDetails,
+        getMediaIdsToBeRefreshed,
+        findAllAssociatedDetails,
     };
 }
 

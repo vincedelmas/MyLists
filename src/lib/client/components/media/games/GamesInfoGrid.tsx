@@ -1,12 +1,16 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {formatDate} from "@/lib/utils/formatting/date";
+import {Spinner} from "@/lib/client/components/ui/spinner";
+import {shouldCheckGameHltb} from "@/lib/utils/media/hltb";
 import {formatMinutes} from "@/lib/utils/formatting/number";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
 import {MediaDetailsProps} from "@/lib/client/components/media/media-config.types";
 import {MediaInfoGridItem} from "@/lib/client/components/media/base/MediaDetailsComps";
+import {gameHltbOptions, mediaDetailsOptions} from "@/lib/client/react-query/query-options";
 
 
 type GamesDetailsProps<T extends MediaType> = MediaDetailsProps<T>;
@@ -16,6 +20,23 @@ const gamesProgressTiming = gamesDefinition.progress.timing;
 
 
 export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps<typeof MediaType.GAMES>) => {
+    const queryClient = useQueryClient();
+    const { data, isFetching } = useQuery(gameHltbOptions(media.id, media.hltbLastCheckedAt, shouldCheckGameHltb(media)));
+
+    useEffect(() => {
+        if (!data) return;
+
+        queryClient.setQueryData(mediaDetailsOptions(mediaType, media.id).queryKey, (oldData) => {
+            if (!oldData) return;
+
+            return {
+                ...oldData,
+                media: { ...oldData.media, ...data },
+            }
+        });
+
+    }, [data, mediaType, media.id, queryClient]);
+
     const publishers = media.companies ? media.companies.filter((c) => c.publisher) : [];
     const developers = media.companies ? media.companies.filter((c) => c.developer) : [];
 
@@ -51,13 +72,22 @@ export const GamesInfoGrid = ({ mediaType, media }: GamesDetailsProps<typeof Med
                 {media.gameEngine ?? DEFAULT_DASH_FALLBACK}
             </MediaInfoGridItem>
             <MediaInfoGridItem label="HLTB Main">
-                {formatMinutes(media.hltbMainTime ? media.hltbMainTime * gamesProgressTiming.minutesPerInputUnit : null, { onlyHours: true })}
+                {isFetching
+                    ? <Spinner aria-label="Loading HLTB times"/>
+                    : formatMinutes(media.hltbMainTime ? media.hltbMainTime * gamesProgressTiming.minutesPerInputUnit : null, { onlyHours: true })
+                }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="HLTB Main & Extra">
-                {formatMinutes(media.hltbMainAndExtraTime ? media.hltbMainAndExtraTime * gamesProgressTiming.minutesPerInputUnit : null, { onlyHours: true })}
+                {isFetching
+                    ? <Spinner aria-label="Loading HLTB times"/>
+                    : formatMinutes(media.hltbMainAndExtraTime ? media.hltbMainAndExtraTime * gamesProgressTiming.minutesPerInputUnit : null, { onlyHours: true })
+                }
             </MediaInfoGridItem>
             <MediaInfoGridItem label="HLTB 100%">
-                {formatMinutes(media.hltbTotalCompleteTime ? media.hltbTotalCompleteTime * gamesProgressTiming.minutesPerInputUnit : null, { onlyHours: true })}
+                {isFetching
+                    ? <Spinner aria-label="Loading HLTB times"/>
+                    : formatMinutes(media.hltbTotalCompleteTime ? media.hltbTotalCompleteTime * gamesProgressTiming.minutesPerInputUnit : null, { onlyHours: true })
+                }
             </MediaInfoGridItem>
         </>
     );

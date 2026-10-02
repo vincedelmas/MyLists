@@ -1,6 +1,9 @@
+import {notFound} from "@tanstack/react-router";
+import {pick} from "@/lib/utils/arrays-objects";
 import {ApiProviderType} from "@/lib/utils/enums";
 import {GamesRepository} from "@/lib/server/domain/media/games";
 import {HltbApi, IgdbApi} from "@/lib/server/api-providers/api";
+import {GameHltbData, shouldCheckGameHltb} from "@/lib/utils/media/hltb";
 import {UpsertGameWithDetails} from "@/lib/server/domain/media/games/games.types";
 import {igdbTransformer} from "@/lib/server/api-providers/transformers/igdb.transformer";
 import {gamesServerDefinition} from "@/lib/media-definitions/games/games.definition.server";
@@ -10,7 +13,7 @@ import {ExternalMediaProvider, MediaDetailsEnricher} from "@/lib/server/api-prov
 
 const createHltbEnricher = (hltbClient: HltbApi): MediaDetailsEnricher<UpsertGameWithDetails> => {
     return async (details, context) => {
-        if (context.isBulk) return details;
+        if (context.isBulk || context.mode === "store") return details;
 
         const hltbData = await hltbClient.search(details.mediaData.name);
 
@@ -64,7 +67,7 @@ export const createIgdbGamesProvider = (igdb: IgdbApi): ExternalMediaProvider<Up
 export const createGamesIngestionService = (hltbClient: HltbApi, repository: GamesRepository, provider: ExternalMediaProvider<UpsertGameWithDetails>) => {
     const { chunkSize } = gamesServerDefinition.ingestion.refresh;
 
-    return createMediaIngestionService({
+    const ingestion = createMediaIngestionService({
         provider,
         repository,
         refreshCandidates: {
@@ -79,4 +82,27 @@ export const createGamesIngestionService = (hltbClient: HltbApi, repository: Gam
             createHltbEnricher(hltbClient),
         ],
     });
+
+    return {
+        ...ingestion,
+
+        async checkMissingHltb(mediaId: number): Promise<GameHltbData> {
+            const game = repository.findById(mediaId);
+            if (!game) throw notFound();
+
+            const current = pick(game, ["hltbMainTime", "hltbMainAndExtraTime", "hltbTotalCompleteTime", "hltbLastCheckedAt"]);
+            if (!shouldCheckGameHltb(current)) return current;
+
+            const hltbData = await hltbClient.search(game.name);
+            const latestGame = repository.findById(mediaId)!;
+            if (!shouldCheckGameHltb(latestGame)) {
+                return pick(latestGame, ["hltbMainTime", "hltbMainAndExtraTime", "hltbTotalCompleteTime", "hltbLastCheckedAt"]);
+            }
+
+            igdbTransformer.addHLTBDataToMainDetails(hltbData, current);
+            repository.updateHltbData(mediaId, current);
+
+            return current;
+        },
+    };
 }

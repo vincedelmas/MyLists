@@ -107,3 +107,51 @@ test("corrects book activity automatically and lets the reader review older mont
     await page.goto(`/list/books/${users.owner.name}/activity?year=2025&month=8`);
     await expect(bookActivity.getByText("120 p.", { exact: true })).toBeVisible();
 });
+
+
+test("shows game details while HLTB loads and updates the cached times", async ({ page }) => {
+    await runBun(["-e", `
+        if (!process.env.MYLISTS_E2E_DIR) throw new Error("An isolated test database is required");
+        const {db} = await import("./src/lib/server/database/db");
+        const {games} = await import("./src/lib/server/database/schema");
+        db.insert(games).values({id: 401, apiId: 401, name: "HLTB test game", imageCover: "default.jpg"}).run();
+    `]);
+    await signIn(page);
+
+    let releaseLookup!: () => void;
+    const lookupReady = new Promise<void>(resolve => { releaseLookup = resolve; });
+    let lookupCount = 0;
+    await page.route("**/_serverFn/**", async route => {
+        if (route.request().method() === "POST") {
+            lookupCount++;
+            await lookupReady;
+        }
+        await route.continue();
+    });
+
+    await page.goto("/details/games/401");
+    await expect(page.getByRole("heading", { name: "HLTB test game", exact: true })).toBeVisible();
+    await expect(page.getByRole("status", { name: "Loading HLTB times" })).toHaveCount(3);
+
+    // Supply the lookup result in the isolated database without calling HLTB.
+    await runBun(["-e", `
+        if (!process.env.MYLISTS_E2E_DIR) throw new Error("An isolated test database is required");
+        const {db} = await import("./src/lib/server/database/db");
+        const {games} = await import("./src/lib/server/database/schema");
+        const {eq} = await import("drizzle-orm");
+        db.update(games).set({hltbMainTime: 12, hltbMainAndExtraTime: 24, hltbTotalCompleteTime: 36,
+            hltbLastCheckedAt: new Date().toISOString()}).where(eq(games.id, 401)).run();
+    `]);
+    releaseLookup();
+
+    await expect(page.getByRole("status", { name: "Loading HLTB times" })).toHaveCount(0);
+    const mainTime = page.getByText("HLTB Main", { exact: true }).locator("..");
+    await expect(mainTime).toContainText("12 h");
+    await expect(page.getByText("HLTB Main & Extra", { exact: true }).locator("..")).toContainText("24 h");
+    await expect(page.getByText("HLTB 100%", { exact: true }).locator("..")).toContainText("36 h");
+    expect(lookupCount).toBe(1);
+
+    await page.reload();
+    await expect(mainTime).toContainText("12 h");
+    expect(lookupCount).toBe(1);
+});

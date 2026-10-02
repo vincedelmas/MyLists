@@ -33,6 +33,7 @@ describe("GamesService", () => {
         gameEngine: "Unity",
         gameModes: "multiplayer",
         playerPerspective: "First Person",
+        hltbLastCheckedAt: null,
         hltbMainTime: 20,
         hltbMainAndExtraTime: 50,
         hltbTotalCompleteTime: 80,

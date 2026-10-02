@@ -21,6 +21,7 @@ export const games = sqliteTable("games", {
     voteCount: real(),
     igdbUrl: text(),
     hltbMainTime: real(),
+    hltbLastCheckedAt: text(),
     hltbMainAndExtraTime: real(),
     hltbTotalCompleteTime: real(),
     steamApiId: text(),

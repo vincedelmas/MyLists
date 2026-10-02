@@ -102,6 +102,19 @@ export const refreshMediaDetails = createServerFn({ method: "POST" })
     });
 
 
+export const checkGameHltb = createServerFn({ method: "POST" })
+    .middleware([publicAuthMiddleware])
+    .validator(mediaTypeMediaIdSchema)
+    .handler(async ({ data: { mediaType, mediaId } }) => {
+        if (mediaType !== MediaType.GAMES) {
+            throw new FormattedError("HLTB lookup is only available for games.");
+        }
+
+        const container = await getContainer();
+        return container.registries.ingestionServices.get(MediaType.GAMES).checkMissingHltb(mediaId);
+    });
+
+
 export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
     .middleware([requiredAuthMiddleware])
     .validator(mediaTypeMediaIdSchema)

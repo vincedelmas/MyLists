@@ -9,8 +9,8 @@ import {MediaType, TagAction, UpdateType} from "@/lib/utils/enums";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {MutationMeta, useMutation, useQueryClient} from "@tanstack/react-query";
 import {loggedActivityUpdateTypes, SimpleSearch, updateUserMediaSchema} from "@/lib/schemas";
-import {invalidateUserProgressQueries} from "@/lib/client/react-query/invalidate-user-progress";
 import {requestActivityCorrection} from "@/lib/client/components/activity/MonthlyActivityCorrection";
+import {invalidateUserProgressQueries} from "@/lib/client/react-query/query-mutations/invalidate-user-progress";
 import {
     allUpdatesOptions,
     continueOptions,

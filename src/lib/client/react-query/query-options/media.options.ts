@@ -6,6 +6,7 @@ import {getAdminAllUpdatesHistory} from "@/lib/server/functions/admin";
 import {ReleaseCalendarRange} from "@/lib/schemas/release-calendar.schema";
 import {getReleaseCalendarMedia} from "@/lib/server/functions/release-calendar";
 import {
+    checkGameHltb,
     getGameCompatiblePlatforms,
     getJobDetails,
     getMediaCommunityActivity,
@@ -45,6 +46,14 @@ export const mediaDetailsOptions = (mediaType: MediaType, mediaId: number) => qu
 export const mediaCommunityActivityOptions = (mediaId: number, mediaType: MediaType, search: Pagination = { page: 1, perPage: 8 }) => queryOptions({
     queryKey: ["details", "activity", "community", mediaType, mediaId, search] as const,
     queryFn: () => getMediaCommunityActivity({ data: { mediaId, mediaType, search } }),
+});
+
+
+export const gameHltbOptions = (mediaId: number, lastCheckedAt: string | null, enabled: boolean) => queryOptions({
+    queryKey: ["gameHltb", mediaId, lastCheckedAt] as const,
+    queryFn: () => checkGameHltb({ data: { mediaType: MediaType.GAMES, mediaId } }),
+    staleTime: Infinity,
+    enabled: typeof window !== "undefined" && enabled,
 });
 
 

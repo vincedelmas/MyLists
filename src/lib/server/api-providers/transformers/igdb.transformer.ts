@@ -96,15 +96,17 @@ const transformGamesDetailsResults = async (rawData: IgdbGameDetails, options: I
 };
 
 
-const addHLTBDataToMainDetails = (hltbData: HltbGameEntry, mediaData: UpsertGameWithDetails["mediaData"]) => {
+const addHLTBDataToMainDetails = <T extends Partial<UpsertGameWithDetails["mediaData"]>>(hltbData: HltbGameEntry, mediaData: T) => {
     const mainTime = Number(hltbData.mainStory);
-    mediaData.hltbMainTime = isNaN(mainTime) ? null : mainTime;
+    mediaData.hltbMainTime = hltbData.mainStory == null || isNaN(mainTime) ? null : mainTime;
 
     const mainExtraTime = Number(hltbData.mainExtra);
-    mediaData.hltbMainAndExtraTime = isNaN(mainExtraTime) ? null : mainExtraTime;
+    mediaData.hltbMainAndExtraTime = hltbData.mainExtra == null || isNaN(mainExtraTime) ? null : mainExtraTime;
 
     const completionistTime = Number(hltbData.completionist);
-    mediaData.hltbTotalCompleteTime = isNaN(completionistTime) ? null : completionistTime;
+    mediaData.hltbTotalCompleteTime = hltbData.completionist == null || isNaN(completionistTime) ? null : completionistTime;
+
+    mediaData.hltbLastCheckedAt = new Date().toISOString();
 
     return mediaData;
 };

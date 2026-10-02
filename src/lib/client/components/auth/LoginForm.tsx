@@ -52,7 +52,11 @@ export const LoginForm = ({ redirectTarget, passwordResetEnabled }: LoginFormPro
 
                 handleServerFormErrors(form, error);
             },
-            onSuccess: async () => {
+            onSuccess: async (oauthRedirect) => {
+                if (oauthRedirect) {
+                    window.location.assign(oauthRedirect);
+                    return;
+                }
                 await completeSignIn(redirectTarget);
             },
         });

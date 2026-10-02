@@ -1,7 +1,7 @@
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {createFileRoute, Link, Outlet, useLocation} from "@tanstack/react-router";
-import {BookOpenCheck, Brush, CircleUserRound, KeyRound, LibraryBig, ListRestart, Settings2, ShieldAlert, Upload,} from "lucide-react";
+import {BookOpenCheck, Brush, CircleUserRound, KeyRound, LibraryBig, ListRestart, Plug, Settings2, ShieldAlert, Upload,} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_private/settings/_layout")({
@@ -51,6 +51,13 @@ const settingsItems = [
         label: "Email & Password",
         to: "/settings/email-password",
         description: "Sign-in details and security",
+    },
+    {
+        icon: Plug,
+        id: "connected-apps",
+        label: "Connected Apps",
+        to: "/settings/connected-apps",
+        description: "Assistant access and permissions",
     },
     {
         icon: BookOpenCheck,

@@ -339,6 +339,7 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         removeMediaFromUserList,
         searchMediadleSuggestion,
         getMediaCommunityActivity,
+        findUserMedia: repository.findUserMedia,
         getReleaseCalendarMedia: repository.getReleaseCalendarMedia,
     };
 }

@@ -372,6 +372,13 @@
       "when": 1790942371747,
       "tag": "0052_game_hltb_last_checked",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1790947257959,
+      "tag": "0053_authenticated_mcp",
+      "breakpoints": true
     }
   ]
 }

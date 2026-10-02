@@ -1,5 +1,5 @@
 import path from "path";
-import {defineConfig} from "vite";
+import {defineConfig, loadEnv} from "vite";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import {tanstackStart} from "@tanstack/react-start/plugin/vite";
@@ -7,7 +7,12 @@ import react, {reactCompilerPreset} from "@vitejs/plugin-react";
 import {reactClickToComponent} from "vite-plugin-react-click-to-component";
 
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+    server: {
+        allowedHosts: [
+            new URL(loadEnv(mode, import.meta.dirname, "VITE_BASE_URL").VITE_BASE_URL ?? "http://localhost:3000").hostname,
+        ],
+    },
     ssr: {
         external: ["takumi-js", "@takumi-rs/core"],
     },
@@ -106,4 +111,4 @@ export default defineConfig({
         babel({ presets: [reactCompilerPreset()] }),
         tailwindcss(),
     ],
-})
+}));

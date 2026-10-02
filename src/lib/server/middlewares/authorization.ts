@@ -6,7 +6,7 @@ import {getContainer} from "@/lib/server/core/container";
 import {DenialReason, MediaType} from "@/lib/utils/enums";
 import {UnauthorizedError} from "@/lib/utils/error-classes";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
-import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {optionalMediaAuthMiddleware} from "@/lib/server/middlewares/media-authentication";
 
 
 type MediaListRequest = {
@@ -20,7 +20,7 @@ type MediaListRequest = {
  * This middleware does not grant access to profile or list content.
  */
 export const publicPreviewMiddleware = createMiddleware({ type: "function" })
-    .middleware([publicAuthMiddleware])
+    .middleware([optionalMediaAuthMiddleware])
     .validator((data) => {
         const result = baseUsernameSchema.safeParse(data);
         if (!result.success) throw notFound();

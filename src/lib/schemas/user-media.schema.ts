@@ -88,8 +88,8 @@ export const updateUserMediaSchema = z.object({
     mediaId: coercedPositiveIntFieldSchema,
     activityCorrection: z.object({
         version: z.string().length(64),
-        startMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
         keepHistory: z.boolean().optional(),
+        startMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
     }).optional(),
     payload: z.object({
         type: z.enum(UpdateType),
@@ -151,14 +151,17 @@ export const updateUserMediaSchema = z.object({
     validateStatusForMediaType(data.mediaType, data.payload.status, ctx, ["payload", "status"]);
 });
 
+
 export const deleteUserUpdatesSchema = z.object({
     updateIds: z.array(positiveIntFieldSchema),
     returnData: z.coerce.boolean().default(false),
 });
 
+
 export const userTagNamesSchema = z.object({
     mediaType: mediaTypeFieldSchema,
 });
+
 
 export const editUserTagSchema = z.object({
     action: z.enum(TagAction),

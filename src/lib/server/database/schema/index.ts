@@ -1,4 +1,5 @@
 export * from "./auth.schema";
+export * from "./oauth.schema";
 export * from "./user.schema";
 export * from "./api-tokens.schema";
 export * from "./media/series.schema";

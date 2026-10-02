@@ -5,6 +5,7 @@ import {getContainer} from "@/lib/server/core/container";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {dateFromUTCInput} from "@/lib/utils/formatting/date";
 import {hasRequiredRole, toActor} from "@/lib/server/authorization";
+import {requiredMediaReadMiddleware, requiredMediaWriteMiddleware, optionalMediaAuthMiddleware} from "@/lib/server/middlewares/media-authentication";
 import {publicAuthMiddleware, requiredAuthAndManagerRoleMiddleware, requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {
     editMediaDetailsSchema,
@@ -20,7 +21,7 @@ import {
 
 
 export const getMediaDetails = createServerFn({ method: "GET" })
-    .middleware([publicAuthMiddleware])
+    .middleware([optionalMediaAuthMiddleware])
     .validator(mediaDetailsSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const container = await getContainer();
@@ -48,7 +49,7 @@ export const getMediaCommunityActivity = createServerFn({ method: "GET" })
 
 
 export const resolveExternalMedia = createServerFn({ method: "POST" })
-    .middleware([publicAuthMiddleware])
+    .middleware([requiredMediaWriteMiddleware])
     .validator(externalMediaResolveSchema)
     .handler(async ({ data: { mediaType, apiId } }) => {
         const container = await getContainer();
@@ -116,7 +117,7 @@ export const checkGameHltb = createServerFn({ method: "POST" })
 
 
 export const getGameCompatiblePlatforms = createServerFn({ method: "GET" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([requiredMediaReadMiddleware])
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId } }) => {
         const container = await getContainer();

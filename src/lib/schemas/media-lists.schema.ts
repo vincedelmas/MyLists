@@ -1,12 +1,12 @@
 import * as z from "zod";
 import {GamesPlatformsEnum, JobType, Status} from "@/lib/utils/enums";
 import {
-    mediaTypeFieldSchema,
-    optionalCoercedBooleanFieldSchema,
-    optionalSearchFieldSchema,
     paginationSchema,
     sortingFieldSchema,
-    usernameFieldSchema
+    usernameFieldSchema,
+    mediaTypeFieldSchema,
+    optionalSearchFieldSchema,
+    optionalCoercedBooleanFieldSchema,
 } from "@/lib/schemas/common.schema";
 
 

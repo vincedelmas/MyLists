@@ -4,11 +4,11 @@ import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {tvSeasonsQuerySchema} from "@/lib/schemas/tv-seasons.schema";
 import {resolveMediaTypeActive} from "@/lib/utils/media/list-activation";
-import {publicAuthMiddleware} from "@/lib/server/middlewares/authentication";
+import {optionalMediaAuthMiddleware} from "@/lib/server/middlewares/media-authentication";
 
 
 export const getTvSeasons = createServerFn({ method: "GET" })
-    .middleware([publicAuthMiddleware])
+    .middleware([optionalMediaAuthMiddleware])
     .validator(tvSeasonsQuerySchema)
     .handler(async ({ data: { userId, mediaId, mediaType }, context: { currentUser } }) => {
         const container = await getContainer();

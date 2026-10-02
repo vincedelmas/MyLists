@@ -190,6 +190,89 @@ When `LLM_API_KEY` is absent, direct and scheduled enrichment runs are skipped w
 
 ---
 
+## Assistant connections (MCP)
+
+MyLists supports assistants that use **OAuth + MCP Streamable HTTP**.
+To connect one, open **Settings → Connected Apps**, copy the `/api/mcp` URL, and add it as a remote MCP server.
+Users can grant read-only or write access and disconnect it at any time.
+
+### Setup
+
+Set `VITE_BASE_URL` to your public HTTPS origin in production.
+For an existing database:
+
+```bash
+bun run dk migrate
+```
+
+New databases created with `bun run new:db` already include the OAuth tables.
+No separate MCP server or shared API key is required.
+
+### Local ChatGPT testing
+
+Expose port `3000` through an HTTPS tunnel and set:
+
+```env
+VITE_BASE_URL=https://your-tunnel.example
+```
+
+Restart `bun run dev`, sign in through the tunnel's `/login` page, then add:
+
+```text
+https://your-tunnel.example/api/mcp
+```
+
+to ChatGPT as an OAuth MCP server.
+
+### Tools
+
+The integration supports all the mylists media types.
+Assistants cannot change account settings, delete entries, access collections, or inherit admin privileges.
+
+Available tools:
+
+Tools correspond to the existing website server functions and return their results:
+
+- `getSearchResults` — search external catalogs using the website's provider and advanced filters
+- `getGameAdvancedSearchOptions` — get game genre/platform options for catalog searches
+- `getMediaListSF` — browse the connected user's list with the website's list arguments
+- `getMediaListFilters`, `getMediaListSearchFilters` — read or search list filter values
+- `getMediaDetails` — read catalog details and the user's tracking state
+- `getTvSeasons`, `getGameCompatiblePlatforms` — read seasons or compatible game platforms
+- `getUserMediaHistory`, `getUserTagNames` — read tracking history or existing tags
+- `resolveExternalMedia` — obtain a MyLists `mediaId` from a provider `apiId`
+- `postAddMediaToList` — add a MyLists media item with an optional status
+- `postUpdateUserMedia` — apply one tracking update using the website's payload
+- `postEditUserTag` — attach or detach a tag on one entry
+- `postUpdateUserCustomCover` — set a cover URL or restore the catalog cover
+
+User identity is supplied by the connection. Adding, rating, and editing tags are separate operations,
+just like on the website. `postUpdateUserMedia` returns `kind: "saved"` after saving, or
+`kind: "correction-required"` with an activity preview before a correction can be confirmed.
+
+
+### OAuth
+
+Scopes:
+
+```text
+mylists:read
+mylists:write
+offline_access
+```
+
+Access tokens expire after 15 minutes.
+Disconnecting an assistant invalidates its tokens and refresh tokens.
+
+OAuth discovery:
+
+```text
+/.well-known/oauth-protected-resource
+/.well-known/oauth-authorization-server/api/auth
+```
+
+After updating the server, refresh the assistant's tool list so it discovers any MCP tool changes.
+
 ### Contributing
 
 Run the same checks as CI after new deps install:
@@ -216,7 +299,7 @@ bun run test:e2e
 Playwright runs on Node (CI uses Node 24), the app, database fixtures, and import worker run on Bun. The runner creates and removes a
 temp workspace. Two parallel workers each have their own SQLite db, uploads and dev server (ports 4173 and 4174).
 Each worker applies the migrations and resets its fixtures before every test. Separate Vite caches in `node_modules/.vite-e2e/`
-are retained between runs. Use `--workers=1` for a sequential run. Email, OAuth,
+are retained between runs. Use `--workers=1` for a sequential run. Email, social OAuth,
 external media providers, and Redis are disabled for browser tests. Use `bun run test:e2e --headed` to watch, or
 `bun run test:e2e --grep 'signs in'` to run one journey. Failed runs keep traces and screenshots in `test-results/`, with an HTML report
 in `playwright-report/`.

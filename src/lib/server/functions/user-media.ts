@@ -2,6 +2,7 @@ import {createServerFn} from "@tanstack/react-start";
 import {getContainer} from "@/lib/server/core/container";
 import {requiredAuthMiddleware} from "@/lib/server/middlewares/authentication";
 import {ActivityCorrectionRequired} from "@/lib/server/domain/tracking/monthly-activity.service";
+import {requiredMediaReadMiddleware, requiredMediaWriteMiddleware} from "@/lib/server/middlewares/media-authentication";
 import {
     addMediaToListSchema,
     deleteUserUpdatesSchema,
@@ -14,7 +15,7 @@ import {
 
 
 export const getUserMediaHistory = createServerFn({ method: "GET" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([requiredMediaReadMiddleware])
     .validator(mediaTypeMediaIdSchema)
     .handler(async ({ data: { mediaType, mediaId }, context: { currentUser } }) => {
         const updateHistoryService = await getContainer().then(c => c.services.updateHistory);
@@ -23,7 +24,7 @@ export const getUserMediaHistory = createServerFn({ method: "GET" })
 
 
 export const postAddMediaToList = createServerFn({ method: "POST" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([requiredMediaWriteMiddleware])
     .validator(addMediaToListSchema)
     .handler(async ({ data: { mediaType, mediaId, status }, context: { currentUser } }) => {
         const mediaTrackingService = await getContainer().then(c => c.services.mediaTracking);
@@ -32,7 +33,7 @@ export const postAddMediaToList = createServerFn({ method: "POST" })
 
 
 export const postUpdateUserMedia = createServerFn({ method: "POST" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([requiredMediaWriteMiddleware])
     .validator(updateUserMediaSchema)
     .handler(async ({ data, context: { currentUser } }) => {
         const mediaTrackingService = await getContainer().then(c => c.services.mediaTracking);
@@ -57,7 +58,7 @@ export const postUpdateUserMedia = createServerFn({ method: "POST" })
 
 
 export const postUpdateUserCustomCover = createServerFn({ method: "POST" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([requiredMediaWriteMiddleware])
     .validator((data) => {
         return updateUserCustomCoverSchema.parse(data instanceof FormData ? Object.fromEntries(data.entries()) : data);
     })
@@ -90,7 +91,7 @@ export const postDeleteUserUpdates = createServerFn({ method: "POST" })
 
 
 export const getUserTagNames = createServerFn({ method: "GET" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([requiredMediaReadMiddleware])
     .validator(userTagNamesSchema)
     .handler(async ({ data: { mediaType }, context: { currentUser } }) => {
         const container = await getContainer();
@@ -100,7 +101,7 @@ export const getUserTagNames = createServerFn({ method: "GET" })
 
 
 export const postEditUserTag = createServerFn({ method: "POST" })
-    .middleware([requiredAuthMiddleware])
+    .middleware([requiredMediaWriteMiddleware])
     .validator(editUserTagSchema)
     .handler(async ({ data: { mediaType, mediaId, tag, action }, context: { currentUser } }) => {
         const container = await getContainer();

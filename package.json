@@ -32,10 +32,13 @@
     },
     "dependencies": {
         "@base-ui/react": "^1.6.0",
+        "@better-auth/mcp": "1.7.2",
+        "@better-auth/oauth-provider": "1.7.2",
         "@fontsource-variable/noto-emoji": "5.2.12",
         "@fontsource-variable/noto-sans-jp": "5.3.0",
         "@fontsource/open-sans": "5.2.7",
         "@hookform/resolvers": "^5.4.0",
+        "@modelcontextprotocol/sdk": "1.31.0",
         "@react-email/components": "1.0.12",
         "@react-email/render": "^2.1.0",
         "@t3-oss/env-core": "^0.13.11",

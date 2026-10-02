@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.10.0](https://github.com/vincedelmas/MyLists/compare/v3.9.0...v3.10.0) (2026-10-02)
+
+
+### Features
+
+* **games:** load HLTB times asynchronously ([d020c7e](https://github.com/vincedelmas/MyLists/commit/d020c7e2428c7197331655cf1b587a2b02cc3f14))
+
+
+### Bug Fixes
+
+* **auth:** prevent logout redirect races on private pages ([bed90e7](https://github.com/vincedelmas/MyLists/commit/bed90e7636ed14b749b34b4e957cb1632e013dee))
+* **collections:** clear items when changing media type ([6de6201](https://github.com/vincedelmas/MyLists/commit/6de6201c75500338fefd18ac0085b02214bb42d5))
+* preserve nav search query when changing provider ([0f58bad](https://github.com/vincedelmas/MyLists/commit/0f58bad6c89eb05143ab9d7790fa55b78d212adf))
+* **year-recap:** make recap copy more natural ([911d304](https://github.com/vincedelmas/MyLists/commit/911d304cace744a9e377ba21c5ae8b4d8e66307f))
+
 ## [3.9.0](https://github.com/vincedelmas/MyLists/compare/v3.8.0...v3.9.0) (2026-09-30)
 
 

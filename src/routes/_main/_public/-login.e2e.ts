@@ -1,5 +1,5 @@
 import {password, users} from "../../../../scripts/e2e/data";
-import {expect, test} from "../../../../scripts/e2e/fixtures";
+import {expect, signIn, test} from "../../../../scripts/e2e/fixtures";
 
 
 test("signs in, returns to the protected page, and keeps the session after reload", async ({ page }) => {
@@ -24,3 +24,26 @@ test("signs in, returns to the protected page, and keeps the session after reloa
     await expect(page).toHaveURL("/settings/imports/mylists");
     await expect(page.getByRole("heading", { name: "Upload CSV File" })).toBeVisible();
 });
+
+for (const section of ["general", "danger", "profile-customization"]) {
+    test(`logs out cleanly from settings/${section}`, async ({ page }) => {
+        const errors: string[] = [];
+        page.on("pageerror", error => errors.push(error.message));
+        page.on("console", message => {
+            if (message.type() === "error") errors.push(message.text());
+        });
+
+        await signIn(page);
+        await page.goto(`/settings/${section}`);
+        await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+        await page.locator('nav button[aria-haspopup="menu"]').last().click();
+        await page.getByRole("menuitem", { name: "Logout" }).click();
+
+        await expect(page).toHaveURL("/");
+        await expect(page.getByRole("link", { name: "Login", exact: true })).toBeVisible();
+        expect(errors).toEqual([]);
+
+        await page.goto(`/settings/${section}`);
+        await expect(page).toHaveURL(/\/login\?/);
+    });
+}

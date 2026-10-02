@@ -1,6 +1,7 @@
-import {createFileRoute, redirect} from "@tanstack/react-router";
+import {useAuth} from "@/lib/client/hooks/use-auth";
 import {authOptions} from "@/lib/client/react-query/query-options";
 import {getAuthState, isAuthenticatedAuthState} from "@/lib/utils/auth";
+import {createFileRoute, Outlet, redirect} from "@tanstack/react-router";
 
 
 export const Route = createFileRoute("/_main/_private")({
@@ -16,4 +17,11 @@ export const Route = createFileRoute("/_main/_private")({
             });
         }
     },
+    component: PrivateLayout,
 });
+
+
+function PrivateLayout() {
+    const { isAnonymous } = useAuth();
+    return isAnonymous ? null : <Outlet/>;
+}

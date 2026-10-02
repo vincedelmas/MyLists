@@ -60,8 +60,9 @@ export const SearchBar = ({ setMobileMenu }: SearchBarProps) => {
 
     const handleValueChange = (value: ApiProviderType | null) => {
         if (value === null) return;
-        reset();
+        setPage(1);
         setSelectDrop(value);
+        setIsOpen(search.trim().length > 0);
     };
 
     const handleSearchLinkClick = (ev: React.MouseEvent<HTMLAnchorElement>) => {

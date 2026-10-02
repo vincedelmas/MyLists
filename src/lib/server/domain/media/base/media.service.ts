@@ -137,6 +137,10 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
 
     function editUserTag(userId: number, tag: Tag, action: TagAction, mediaId?: number) {
         return withTransaction(() => {
+            if (mediaId && !repository.findUserMedia(userId, mediaId)) {
+                throw new FormattedError("Media not in your list");
+            }
+
             return tagQueries.editUserTag(userId, tag, action, mediaId);
         });
     }

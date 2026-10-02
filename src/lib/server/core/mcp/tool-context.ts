@@ -82,7 +82,7 @@ export const createToolContext = (server: McpServer, access: McpAccess) => {
                     }
 
                     const data = {
-                        result: await action(input as z.output<T>),
+                        result: (await action(input as z.output<T>)) ?? null,
                     };
 
                     return {

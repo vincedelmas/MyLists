@@ -1,4 +1,5 @@
 import z from "zod";
+import {MIN_ACTIVITY_DATE} from "@/lib/utils/constants";
 import {getTvSeasons} from "@/lib/server/functions/tv-seasons";
 import {mediaTypeMediaIdSchema} from "@/lib/schemas/common.schema";
 import type {ToolContext} from "@/lib/server/core/mcp/tool-context";
@@ -38,7 +39,8 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
 
     register("media_history", {
         inputSchema: mediaTypeMediaIdSchema.strict(),
-        description: "Read the connected user's tracking history for one media entry.",
+        description: "Read the connected user's tracking history for one media entry, newest first. " +
+            "Use completion/rewatch events for watching dates; rating, comment and tag edits do not mean the media was watched.",
     }, data => getUserMediaHistory({ data }));
 
     register("search_catalog", {
@@ -60,7 +62,9 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
         inputSchema: mediaListInputSchema,
         description: "Browse the connected user's list using the website's args: pagination, sorting, search, tags, " +
             "status, favorite, comment and media-specific filters. Read my_list_filters and " +
-            "search_my_list_filters for selectable values. Returns results, mediaType and userData.",
+            "search_my_list_filters for selectable values. Returns results, mediaType and userData. " +
+            "results.pagination.availableSorting lists valid sorting keys; pagination.sorting is the sort actually applied. " +
+            "Recently Modified includes edits to ratings/notes and is not a watching date. Use media_history for recorded watching events.",
     }, data => getMediaListSF({ data: { ...data, username } }));
 
     register("my_list_filters", {
@@ -70,7 +74,9 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
 
     register("search_my_list_filters", {
         inputSchema: mediaListSearchFiltersInputSchema,
-        description: "Search people or companies selectable as filters in the connected user's list, using job and query.",
+        description: "Search people or companies selectable as filters in the connected user's list, using job and query. " +
+            "creator means movie directors, TV creators, book/manga authors, or game developers. " +
+            "actor applies to movies/TV, platform to TV networks, and publisher to manga/games.",
     }, data => getMediaListSearchFilters({ data: { ...data, username } }));
 
     register("my_tags", {
@@ -102,14 +108,15 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
             "Ratings are 0–10; progress, playtime (minutes) and repeats are absolute totals. " +
             "TV position uses currentSeason/currentEpisode; TV rewatches use explicit seasonRedos. " +
             "Status changes can reset progress/repeats. Read the current entry and seasons first. " +
-            "loggedAt applies only to activity commands. kind=saved confirms success; kind=correction-required " +
+            `loggedAt uses YYYY-MM-DD from ${MIN_ACTIVITY_DATE} through today, only for activity commands. ` +
+            "kind=saved confirms success; kind=correction-required " +
             "returns an activity preview without saving. Review that preview before supplying activityCorrection.",
     }, data => postUpdateUserMedia({ data }));
 
     register("edit_media_tag", {
         write: true,
         inputSchema: editMediaTagInputSchema,
-        annotations: { idempotentHint: false },
+        annotations: { idempotentHint: false, destructiveHint: true },
         description: "Add a tag to one own-list entry (action=add) or detach it (action=deleteOne). " +
             "Pass mediaId and tag.name. Global tag renaming/deletion are unavailable.",
     }, data => postEditUserTag({ data }));
@@ -117,7 +124,7 @@ export const registerMediaTools = ({ register, userId, username }: ToolContext) 
     register("update_media_cover", {
         write: true,
         inputSchema: mediaCoverInputSchema,
-        annotations: { openWorldHint: true },
+        annotations: { openWorldHint: true, destructiveHint: true },
         description: "Set a list entry's custom cover with imageUrl, or restore the catalog cover with remove=true. " +
             "Provide one option; image uploads are available on the website.",
     }, data => postUpdateUserCustomCover({ data }));

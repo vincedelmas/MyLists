@@ -168,6 +168,13 @@ test("exposes individual website operations, full list filters and entry tags", 
     const connection = await connectAssistant(page, request, baseURL!);
     const token = connection.access_token;
     const book = { mediaType: "books", mediaId: 902 };
+    const unlistedTag = await rpc(request, token, "tools/call", {
+        name: "edit_media_tag", arguments: { ...book, action: "add", tag: { name: "phantom" } },
+    });
+    const unlistedResult = (await unlistedTag.json()).result;
+    expect(unlistedResult.isError).toBe(true);
+    expect(unlistedResult.content[0].text).toContain("not in your list");
+    expect(await callTool(request, token, "my_tags", { mediaType: "books" })).not.toContainEqual({ name: "phantom" });
     const added = await callTool(request, token, "add_media", book);
     expect(added).toMatchObject({ mediaId: 902, userId: users.owner.id });
     for (const payload of [
@@ -187,6 +194,7 @@ test("exposes individual website operations, full list filters and entry tags", 
     expect(found.results.items[0]).toMatchObject({ mediaId: 902, rating: 9, actualPage: 50 });
     expect(found.results.pagination).toMatchObject({ totalItems: 1, perPage: 1 });
     expect(found.userData.id).toBe(users.owner.id);
+    expect(found.results.pagination.availableSorting).toContain("Recently Modified");
     const filters = await callTool(request, token, "my_list_filters", { mediaType: "books" });
     const authorFilters = await callTool(request, token, "search_my_list_filters", { mediaType: "books", job: "creator", query: "MCP" });
     expect(authorFilters).toEqual([{ name: "MCP Author" }]);
@@ -203,7 +211,7 @@ test("exposes individual website operations, full list filters and entry tags", 
     for (const payload of [{ type: "rating", rating: null }, { type: "comment", comment: null }]) {
         await callTool(request, token, "update_media", { ...book, payload });
     }
-    await callTool(request, token, "edit_media_tag", { ...book, action: "deleteOne", tag: { name: "summer" } });
+    expect(await callTool(request, token, "edit_media_tag", { ...book, action: "deleteOne", tag: { name: "summer" } })).toBeNull();
     expect((await callTool(request, token, "media_details", book)).userMedia).toMatchObject({ rating: null, comment: null, tags: [] });
 
     for (const arguments_ of [

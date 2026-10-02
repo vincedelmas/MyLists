@@ -38,6 +38,9 @@ function CollectionCreatePage() {
     });
 
     const selectMediaType = (mediaType: MediaType) => {
+        if (form.getValues("mediaType") !== mediaType) {
+            form.resetField("items");
+        }
         setMediaType(mediaType);
         setStep("editor");
         form.setValue("mediaType", mediaType);

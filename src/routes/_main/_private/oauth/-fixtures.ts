@@ -1,7 +1,7 @@
 import {and, eq, ne} from "drizzle-orm";
 import {db} from "@/lib/server/database/db";
 import {movies, users} from "../../../../../scripts/e2e/data";
-import {moviesList, series, seriesEpisodesPerSeason, userMediaSettings, books, booksAuthors, booksGenre, manga, games, anime, animeEpisodesPerSeason} from "@/lib/server/database/schema";
+import {moviesList, series, seriesEpisodesPerSeason, userMediaSettings, books, booksAuthors, booksGenre, manga, games, anime, animeEpisodesPerSeason, followers, user} from "@/lib/server/database/schema";
 
 
 if (!process.env.MYLISTS_E2E_DIR) throw new Error("Use bun run test:e2e.");
@@ -25,4 +25,19 @@ else if (process.argv[2] === "seed-media") {
     db.insert(games).values({ id: 904, apiId: 904, name: "MCP test game", imageCover: "default.jpg" }).run();
     db.insert(anime).values({ id: 905, apiId: 905, name: "MCP test anime", duration: 24, imageCover: "default.jpg", totalSeasons: 1, totalEpisodes: 4 }).run();
     db.insert(animeEpisodesPerSeason).values({ mediaId: 905, season: 1, episodes: 4 }).run();
+}
+
+else if (process.argv[2] === "seed-query") {
+    db.update(user).set({ privacy: "private" }).where(eq(user.id, users.restricted.id)).run();
+    db.insert(followers).values([
+        { followerId: users.owner.id, followedId: users.restricted.id, status: "accepted" },
+        { followerId: users.owner.id, followedId: users.stranger.id, status: "requested" },
+    ]).run();
+    db.update(moviesList).set({ rating: 9 }).where(eq(moviesList.userId, users.owner.id)).run();
+    db.update(moviesList).set({ rating: 10 }).where(eq(moviesList.userId, users.restricted.id)).run();
+    db.insert(moviesList).values([
+        { userId: users.owner.id, mediaId: movies.editable.id, status: "Completed", rating: 6 },
+        { userId: users.stranger.id, mediaId: movies.imported.id, status: "Completed", rating: 8 },
+        { userId: users.follower.id, mediaId: movies.editable.id, status: "Completed", rating: 7 },
+    ]).run();
 }

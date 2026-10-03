@@ -3,6 +3,7 @@ import {requireMcpAuth} from "@better-auth/mcp";
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {getMcpAccess} from "@/lib/server/domain/mcp/mcp.repository";
 import {registerMediaTools} from "@/lib/server/domain/mcp/media-tools";
+import {registerQueryTools} from "@/lib/server/domain/mcp/query-tools";
 import {MCP_READ_SCOPE, MCP_RESOURCE, MCP_SCOPES} from "@/lib/server/core/mcp/config";
 import {createToolContext, mcpRequestContext, McpAccess} from "@/lib/server/core/mcp/tool-context";
 import {WebStandardStreamableHTTPServerTransport} from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
@@ -15,15 +16,18 @@ export const createMyListsMcpServer = (access: McpAccess) => {
     }
 
     const server = new McpServer(serverName, {
-        instructions: "Manage the connected user's own media lists using the website's server functions. " +
-            "Use my_list_filters and search_my_list_filters for list filter values. Search before choosing a title; ask when titles or seasons are ambiguous. " +
-            "Search result id is a provider apiId; use resolve_catalog_media to get a MyLists mediaId before add_media. Ratings are 0–10; progress, " +
-            "playtime (minutes), and repeats are absolute totals. Read current state before changing repeat counts. " +
-            "Only report updates as saved when update_media returns kind=saved. Account settings, entry deletion and collection operations are unavailable.",
+        instructions: [
+            "Read and update the connected user's own media lists.",
+            "Use query_mylists for SQL analysis.",
+            "Search before selecting a title, ask the user to resolve ambiguous titles or seasons.",
+            "Read the current entry before updating it.",
+        ].join(", "),
     });
 
     const context = createToolContext(server, access);
+
     registerMediaTools(context);
+    registerQueryTools(context);
 
     return server;
 };

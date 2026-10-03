@@ -56,6 +56,7 @@ function McpConsentPage() {
                                         </p>
                                         <p className="text-sm text-muted-foreground">
                                             Search titles and tags, and see your ratings, progress and notes.
+                                            {" "}Analyze your own lists with read-only queries.
                                         </p>
                                     </div>
                                 </div>
@@ -93,7 +94,7 @@ function McpConsentPage() {
                         <Alert>
                             <ShieldCheck aria-hidden="true"/>
                             <AlertDescription>
-                                Access is limited to your own account. Disconnect at any time in{" "}
+                                Access is limited to your own media data. Disconnect at any time in{" "}
                                 <Link to="/settings/connected-apps" className="underline">
                                     Connected apps
                                 </Link>.

@@ -1,8 +1,8 @@
 import type {JWTPayload} from "jose";
-import {and, eq, gt} from "drizzle-orm";
+import {and, eq, gt, sql} from "drizzle-orm";
 import {MCP_RESOURCE} from "@/lib/server/core/mcp/config";
 import {getDbClient, withTransaction} from "@/lib/server/database/async-storage";
-import {mcpRevocation, oauthAccessToken, oauthClient, oauthConsent, oauthRefreshToken, session, user} from "@/lib/server/database/schema";
+import {mcpRevocation, oauthAccessToken, oauthClient, oauthConsent, oauthRefreshToken, session, user, verification} from "@/lib/server/database/schema";
 
 
 // Signature, issuer, audience and expiry are checked by requireMcpAuth first.
@@ -106,6 +106,14 @@ export const revokeMcpConnection = (userId: number, clientId: string) => {
         db.delete(oauthRefreshToken)
             .where(and(eq(oauthRefreshToken.userId, userId), eq(oauthRefreshToken.clientId, clientId)))
             .run();
+
+        const authorization = sql`CASE WHEN json_valid(${verification.value}) THEN ${verification.value} ELSE '{}' END`;
+        db.delete(verification)
+            .where(and(
+                sql`json_extract(${authorization}, '$.type') = 'authorization_code'`,
+                sql`CAST(json_extract(${authorization}, '$.userId') AS TEXT) = ${String(userId)}`,
+                sql`json_extract(${authorization}, '$.query.client_id') = ${clientId}`,
+            )).run();
 
         db.delete(oauthConsent)
             .where(and(eq(oauthConsent.userId, userId), eq(oauthConsent.clientId, clientId)))

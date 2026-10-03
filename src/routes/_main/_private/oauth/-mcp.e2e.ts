@@ -212,8 +212,20 @@ test("queries scoped media snapshots with read-only consent", async ({ page, req
 });
 
 
-test("disconnect revokes access and refresh tokens; reconnect does not revive the old token", async ({ page, request, baseURL }) => {
+test("disconnect revokes tokens and pending codes; reconnect does not revive old authorization", async ({ page, request, baseURL }) => {
     const connection = await connectAssistant(page, request, baseURL!);
+    const pendingVerifier = randomBytes(32).toString("base64url");
+    const pendingQuery = new URLSearchParams({
+        client_id: connection.clientId, redirect_uri: "https://assistant.example.invalid/callback",
+        response_type: "code", scope: "mylists:read mylists:write offline_access", resource: `${baseURL}/api/mcp`,
+        code_challenge: createHash("sha256").update(pendingVerifier).digest("base64url"), code_challenge_method: "S256",
+        state: randomBytes(16).toString("hex"),
+    });
+    const pendingAuthorization = await page.request.get(`/api/auth/oauth2/authorize?${pendingQuery}`, { maxRedirects: 0 });
+    expect(pendingAuthorization.status()).toBe(302);
+    const pendingCode = new URL(pendingAuthorization.headers()["location"]).searchParams.get("code");
+    expect(pendingCode).toBeTruthy();
+
     const refresh = await request.post("/api/auth/oauth2/token", { form: { grant_type: "refresh_token", client_id: connection.clientId, refresh_token: connection.refresh_token, resource: `${baseURL}/api/mcp` } });
     await expect(refresh).toBeOK();
     const refreshed = await refresh.json();
@@ -228,6 +240,11 @@ test("disconnect revokes access and refresh tokens; reconnect does not revive th
     const reconnected = await connectAssistant(page, request, baseURL!, { clientId: connection.clientId, signedIn: true });
     await expect(await rpc(request, reconnected.access_token, "tools/list")).toBeOK();
     expect((await rpc(request, connection.access_token, "tools/list")).status()).toBe(401);
+    const deniedCode = await request.post("/api/auth/oauth2/token", { form: {
+        grant_type: "authorization_code", client_id: connection.clientId, code: pendingCode!,
+        redirect_uri: "https://assistant.example.invalid/callback", code_verifier: pendingVerifier, resource: `${baseURL}/api/mcp`,
+    } });
+    expect(deniedCode.status()).toBe(400);
 });
 
 

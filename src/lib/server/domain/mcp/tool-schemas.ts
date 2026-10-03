@@ -1,9 +1,8 @@
 import z from "zod";
 import {TagAction} from "@/lib/utils/enums";
 import {navbarSearchSchema} from "@/lib/schemas/search.schema";
-import {QUERY_LIMITS} from "@/lib/server/domain/mcp/query-limits";
 import {tvSeasonsQuerySchema} from "@/lib/schemas/tv-seasons.schema";
-import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/domain/mcp/query-validation";
+import {MAX_QUERY_SQL_LENGTH, QUERY_LIMITS} from "@/lib/server/core/mcp/config";
 import {editUserTagSchema, updateUserCustomCoverSchema} from "@/lib/schemas/user-media.schema";
 import {mediaListSchema, mediaListFiltersSchema, mediaListSearchFiltersSchema} from "@/lib/schemas/media-lists.schema";
 

@@ -2,7 +2,8 @@ import Database from "bun:sqlite";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {createQueryTestSource} from "@/lib/server/domain/mcp/query-snapshot.fixture";
-import {buildQuerySnapshot, QUERY_SCHEMA, QUERY_SNAPSHOT_LIMITS} from "@/lib/server/domain/mcp/query-snapshot";
+import {QUERY_SNAPSHOT_LIMITS} from "@/lib/server/core/mcp/config";
+import {buildQuerySnapshot, QUERY_SCHEMA} from "@/lib/server/domain/mcp/query-snapshot";
 
 
 const mediaTypes = ["movies", "series", "anime", "games", "books", "manga"];
@@ -101,6 +102,18 @@ describe("MCP query snapshots", () => {
         expect(snapshot.query("SELECT DISTINCT media_id FROM media_genres ORDER BY media_id").all()).toEqual([{ media_id: 10 }, { media_id: 80 }]);
         expect(snapshot.query("SELECT name FROM media_people WHERE name LIKE '%Secret%'").all()).toEqual([]);
         expect(snapshot.query("SELECT name FROM media_attributes WHERE name LIKE '%Secret%'").all()).toEqual([]);
+    });
+
+    it("orders the documented recent-edits query chronologically across stored timestamp formats", () => {
+        source.exec("UPDATE movies_list SET last_updated = '2026-01-02T01:00:00.000Z' WHERE user_id = 1 AND media_id = 10");
+        source.exec("INSERT INTO movies_list (user_id, media_id, status, rating, last_updated) VALUES (1, 80, 'Completed', 9, '2026-01-02 02:00:00')");
+
+        const { snapshot } = openSnapshot();
+        const example = QUERY_SCHEMA.slice(QUERY_SCHEMA.lastIndexOf("SELECT title, rating"));
+        expect(snapshot.query(example).all()).toEqual([
+            { title: "movies historical", rating: 9 },
+            { title: "movies shared", rating: 9 },
+        ]);
     });
 
     it("scopes labels and seasons by their own profile, including shared-media labels", () => {

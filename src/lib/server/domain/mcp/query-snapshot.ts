@@ -151,12 +151,14 @@ export const QUERY_SCHEMA = [
     }]) => `${name} (${Object.entries(columns).map(([column, type]) => `${column} ${type}`).join(", ")}); PRIMARY KEY (${key}).`),
     "my_entries is an alias of entries. profiles contains only the connected user; rating_system is score/feeling. Media types: movies, series, anime, games, books, manga. Inapplicable fields are NULL.",
     "Join media on (media_type, media_id); include profile_id for labels, seasons and activity. Use EXISTS or DISTINCT when combining multiple facets to avoid double counting.",
-    "rating: 0–10, NULL = unrated. favorite: 0/1, NULL = unset. had_completion: 0/1. added_at/last_updated are UTC; last_updated records edits, not consumption. month_bucket is YYYY-MM, not an exact completion date.",
-    "progress_total includes repeats: movie viewings, TV episodes, book pages or manga chapters. Games use playtime_minutes. progress_gained uses those units, or minutes for games; do not sum mixed units. redo/redo_gained count repeats. duration_minutes is movie or episode runtime; HLTB values are hours.",
+    "rating: 0–10, NULL = unrated. catalog_rating: games use IGDB's 0–100 scale; movies, series, anime and manga use 0–10. Books have no catalog rating. A catalog rating of 0 can mean no votes; check catalog_vote_count. favorite: 0/1, NULL = unset.",
+    "added_at/last_updated/last_activity_at are UTC; use JULIANDAY for timestamp ordering/comparisons because stored formats can differ. last_updated records edits, not consumption. month_bucket is YYYY-MM, not an exact completion date. had_completion is 0/1 for at least one completion in that month, not a completion count.",
+    "progress_total includes repeats: movie viewings, TV episodes, book pages or manga chapters. Games use playtime_minutes. progress_gained uses those units, or minutes for games; do not sum mixed units. redo/redo_gained count repeats; for series/anime these are season rewatches, not complete-series rewatches. duration_minutes is movie or episode runtime; HLTB values are hours.",
+    "For series/anime, entry rating is the mean of rated available seasons. seasons retains ratings/rewatches for unavailable seasons with episode_count = NULL; exclude those seasons when recomputing current totals.",
     "Activity can reference media removed from entries; title is NULL if its catalog metadata was deleted.",
     "media_people.role: actor, director, composer, creator, author, developer, publisher. media_attributes.kind: network, country, production_status, publisher, available_platform, game_engine, game_mode, player_perspective. Catalog string fields can contain combined values.",
     "Movie/TV actors and genres are limited to five stored names per title; actor names are not person IDs.",
-    "Example, five recently edited movies rated above 8: SELECT title, rating FROM my_entries WHERE media_type = 'movies' AND rating > 8 AND last_updated IS NOT NULL ORDER BY last_updated DESC LIMIT 5;",
+    "Example, five recently edited movies rated above 8: SELECT title, rating FROM my_entries WHERE media_type = 'movies' AND rating > 8 AND last_updated IS NOT NULL ORDER BY JULIANDAY(last_updated) DESC LIMIT 5;",
 ].join("\n");
 
 

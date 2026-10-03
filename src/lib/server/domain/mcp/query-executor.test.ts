@@ -1,6 +1,6 @@
 import Database from "bun:sqlite";
 import {describe, expect, it} from "vitest";
-import {QUERY_LIMITS} from "./query-limits";
+import {QUERY_LIMITS} from "@/lib/server/core/mcp/config";
 import {validateQuerySql} from "./query-validation";
 import {executeSnapshotQuery} from "./query-executor";
 

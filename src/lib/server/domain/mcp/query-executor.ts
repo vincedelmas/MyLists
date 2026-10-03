@@ -22,7 +22,7 @@ export type QueryResult = {
 
 
 // SQL already validated, this process never receives DB path
-export const executeSnapshotQuery = async (snapshot: Uint8Array, input: SnapshotInput, timeoutMs = QUERY_LIMITS.timeoutMs): Promise<QueryResult> => {
+export const executeSnapshotQuery = async (snapshot: Uint8Array, input: SnapshotInput, timeoutMs: number = QUERY_LIMITS.timeoutMs): Promise<QueryResult> => {
     const parameters = input.parameters ?? {};
     if (Buffer.byteLength(JSON.stringify(parameters)) > QUERY_LIMITS.maxParameterBytes) {
         throw new FormattedError("Query parameters exceed 64 KiB. Use smaller parameter values.");

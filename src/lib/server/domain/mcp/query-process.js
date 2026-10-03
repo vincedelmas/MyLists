@@ -48,7 +48,11 @@ try {
             throw new Error("Return text or finite numbers; binary results are unavailable.");
         });
 
-        const rowBytes = Buffer.byteLength(JSON.stringify(row)) + 1;
+        // Reject large text before JSON escaping can allocate much larger string
+        let rowBytes = row.reduce((bytes, value) => bytes + (typeof value === "string" ? Buffer.byteLength(value) : 0), 0);
+        if (responseBytes + rowBytes <= maxResponseBytes) {
+            rowBytes = Buffer.byteLength(JSON.stringify(row)) + 1;
+        }
 
         if (responseBytes + rowBytes > maxResponseBytes) {
             if (rows.length === 0) throw new Error("A result row exceeds the response limit. Select smaller values or fewer columns.");

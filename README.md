@@ -229,7 +229,7 @@ to ChatGPT as an OAuth MCP server.
 The integration supports all the mylists media types.
 Assistants cannot change account settings, delete entries, access collections, or inherit admin privileges.
 
-Each tool calls one existing website server function and returns its result:
+Media tools call existing website server functions and return their results:
 
 - `search_catalog` — search external catalogs using the website's provider and advanced filters
 - `game_search_options` — get game genre/platform options for catalog searches
@@ -243,11 +243,21 @@ Each tool calls one existing website server function and returns its result:
 - `update_media` — apply one tracking update using the website's payload
 - `edit_media_tag` — attach or detach a tag on one entry
 - `update_media_cover` — set a cover URL or restore the catalog cover
+- `query_mylists` — inspect the analysis schema or run read-only SQL on the connected user's data
 
 User identity is supplied by the connection. Adding, rating, and editing tags are separate operations,
 just like on the website. `update_media` returns `kind: "saved"` after saving, or
 `kind: "correction-required"` with an activity preview before a correction can be confirmed.
 
+For SQL analysis, call `query_mylists` with `action: "schema"` first, then use `action: "sql"`
+with one SQLite `SELECT` statement (CTEs are supported). Bind `$name` placeholders with
+`parameters: { name: value }`. Queries run in a separate process against an in-memory snapshot
+of the user's active lists, visible monthly activity, attached tags, seasons, and related catalog metadata.
+Account credentials, other users' data, and collections are excluded.
+
+Results include `columns`, rows as arrays in column order, snapshot timestamps, and timings.
+`maxRows` defaults to 200 and cannot exceed 1,000; check `truncated` before treating results as complete.
+Query execution is limited to five seconds and SQL results to 256 KiB.
 
 ### OAuth
 

@@ -3,8 +3,8 @@ import {join} from "node:path";
 import {mkdtemp, rm} from "node:fs/promises";
 import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 import {runMyListsQuery} from "./query.service";
-import {QUERY_LIMITS} from "./query-limits";
-import {executeSnapshotQuery, type SnapshotQueryResult} from "./query-executor";
+import {QUERY_LIMITS} from "@/lib/server/core/mcp/config";
+import {executeSnapshotQuery, type QueryResult} from "./query-executor";
 import {createQueryTestSource} from "./query-snapshot.fixture";
 
 
@@ -13,7 +13,7 @@ vi.mock("@/env/server", () => ({ serverEnv: env }));
 vi.mock("./query-executor", () => ({ executeSnapshotQuery: vi.fn() }));
 
 
-const result: SnapshotQueryResult = { columns: ["count"], rows: [[0]], truncated: false, queryMs: 1 };
+const result: QueryResult = { columns: ["count"], rows: [[0]], truncated: false, queryMs: 1 };
 const input = { userId: 1, sql: "SELECT count(*) AS count FROM entries", maxRows: 200 };
 
 
@@ -48,7 +48,7 @@ describe("MCP insight query service", () => {
     });
 
     it("prevents overlapping queries for one user and releases the slot afterward", async () => {
-        let finish!: (value: SnapshotQueryResult) => void;
+        let finish!: (value: QueryResult) => void;
         vi.mocked(executeSnapshotQuery).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
         const pending = runMyListsQuery(input);
         try {

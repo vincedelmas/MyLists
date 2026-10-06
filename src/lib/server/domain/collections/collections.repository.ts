@@ -4,8 +4,10 @@ import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {paginate} from "@/lib/server/database/pagination";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
+import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {Actor, profileCollectionVisibilityCondition} from "@/lib/server/authorization";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
+import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
 import {and, asc, count, desc, eq, getTableColumns, inArray, like, max, or, sql} from "drizzle-orm";
 
@@ -80,28 +82,49 @@ export class CollectionsRepository {
             .orderBy(asc(collectionItems.orderIndex)).all();
     }
 
-    static async getPaginatedCollectionItems(collectionId: number, page?: number) {
-        return paginate({
-            page,
+    static async getPaginatedCollectionItems(collectionId: number, mediaType: MediaType, filters: MediaBrowseFilters, viewerId?: number) {
+        const definition = getServerMediaDefinition(mediaType);
+        const { mediaTable, listTable } = definition.repository.tables;
+
+        const browse = createMediaBrowseQueryParts(definition, filters, viewerId);
+        const condition = and(eq(collectionItems.collectionId, collectionId), ...browse.conditions);
+
+        const result = await paginate({
+            page: filters.page,
             perPage: 24,
             maxPerPage: 24,
             getTotal: () => {
                 return getDbClient()
                     .select({ count: count() })
                     .from(collectionItems)
-                    .where(eq(collectionItems.collectionId, collectionId))
+                    .innerJoin(mediaTable, eq(mediaTable.id, collectionItems.mediaId))
+                    .leftJoin(listTable, browse.viewerJoin)
+                    .where(condition)
                     .get()?.count ?? 0;
             },
             getItems: ({ limit, offset }) => {
                 return getDbClient()
-                    .select()
+                    .select({
+                        ...getTableColumns(collectionItems),
+                        ...browse.selection,
+                    })
                     .from(collectionItems)
-                    .where(eq(collectionItems.collectionId, collectionId))
-                    .orderBy(asc(collectionItems.orderIndex))
+                    .innerJoin(mediaTable, eq(mediaTable.id, collectionItems.mediaId))
+                    .leftJoin(listTable, browse.viewerJoin)
+                    .where(condition)
+                    .orderBy(...browse.orderBy([asc(collectionItems.orderIndex)]))
                     .limit(limit)
                     .offset(offset);
             },
         });
+
+        return {
+            ...result,
+            items: result.items.map(({ imageCover, ...item }) => ({
+                ...item,
+                mediaCover: imageCover,
+            })),
+        };
     }
 
     static async getUserCollectionMemberships(ownerId: number, mediaId: number, mediaType: MediaType) {

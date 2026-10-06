@@ -1,10 +1,9 @@
 import {ColumnDef} from "@tanstack/react-table";
-import {SquareStack, XLineTop} from "lucide-react";
 import {MediaStatsFor} from "@/lib/types/stats.types";
-import {MediaType, TvMediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {ExtractListByType} from "@/lib/types/query.options.types";
+import {JobType, MediaType, TvMediaType} from "@/lib/utils/enums";
 import {TvListItem} from "@/lib/client/components/media/tv/TvListItem";
 import {TvInfoGrid} from "@/lib/client/components/media/tv/TvInfoGrid";
 import {TvOverTitle} from "@/lib/client/components/media/tv/TvOverTitle";
@@ -16,6 +15,7 @@ import {TvExtraSections} from "@/lib/client/components/media/tv/TvExtraSections"
 import {TvUpComingAlert} from "@/lib/client/components/media/tv/TvUpComingAlert";
 import {getTvActiveFilters} from "@/lib/client/components/media/tv/TvActiveFilters";
 import {mediaTableFeatures} from "@/lib/client/components/media/media-table-features";
+import {Clapperboard, RadioTower, SquareStack, UserRound, XLineTop} from "lucide-react";
 import {getTvContinueProgress} from "@/lib/client/components/media/tv/continue-progress";
 import {defineMediaConfig, MediaStatCardDefinition} from "@/lib/client/components/media/media-config.types";
 
@@ -50,14 +50,39 @@ const createTvMediaConfig = <T extends TvMediaType>(mediaType: T) => defineMedia
     continue: {
         getProgress: getTvContinueProgress,
     },
-    mediaListColumns: (props) => getTvColumns(props) as ColumnDef<typeof mediaTableFeatures, ExtractListByType<T>>[],
+    statistics: {
+        getStatCards: getTvStatCards,
+    },
+    mediaListColumns: (props) => {
+        return getTvColumns(props) as ColumnDef<typeof mediaTableFeatures, ExtractListByType<T>>[];
+    },
     communityActivity: {
         countLabel: "Watched",
         extraMetric: "totalRedo",
         extraLabel: "Rewatched seasons",
     },
-    statistics: {
-        getStatCards: getTvStatCards,
+    jobs: {
+        [JobType.ACTOR]: {
+            label: "Actor",
+            icon: UserRound,
+            sectionTitle: "Filmography",
+            descriptionVerb: "featuring",
+            descriptionSuffix: " in the cast",
+        },
+        [JobType.CREATOR]: {
+            label: "Creator",
+            icon: Clapperboard,
+            descriptionSuffix: "",
+            sectionTitle: "Catalogue",
+            descriptionVerb: "created by",
+        },
+        [JobType.PLATFORM]: {
+            label: "Network",
+            icon: RadioTower,
+            descriptionSuffix: "",
+            sectionTitle: "Catalogue",
+            descriptionVerb: "aired on",
+        },
     },
 });
 

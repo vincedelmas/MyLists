@@ -4,12 +4,13 @@ import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {getMcpAccess} from "@/lib/server/domain/mcp/mcp.repository";
 import {registerMediaTools} from "@/lib/server/domain/mcp/media-tools";
 import {registerQueryTools} from "@/lib/server/domain/mcp/query-tools";
+import {registerSmartViewTools} from "@/lib/server/domain/mcp/smart-view-tools";
 import {MCP_READ_SCOPE, MCP_RESOURCE, MCP_SCOPES} from "@/lib/server/core/mcp/config";
 import {createToolContext, mcpRequestContext, McpAccess} from "@/lib/server/core/mcp/tool-context";
 import {WebStandardStreamableHTTPServerTransport} from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 
 
-export const createMyListsMcpServer = (access: McpAccess) => {
+const createMyListsMcpServer = (access: McpAccess) => {
     const serverName = {
         name: "MyLists",
         version: "1.0.0",
@@ -19,6 +20,7 @@ export const createMyListsMcpServer = (access: McpAccess) => {
         instructions: [
             "Read and update the connected user's own media lists.",
             "Use query_mylists for SQL analysis.",
+            "Use smart_view_schema and preview_smart_view to design smart lists; create_smart_view saves their rules.",
             "Search before selecting a title, ask the user to resolve ambiguous titles or seasons.",
             "Read the current entry before updating it.",
         ].join(", "),
@@ -28,6 +30,7 @@ export const createMyListsMcpServer = (access: McpAccess) => {
 
     registerMediaTools(context);
     registerQueryTools(context);
+    registerSmartViewTools(context);
 
     return server;
 };

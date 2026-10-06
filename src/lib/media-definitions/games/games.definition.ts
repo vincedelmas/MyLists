@@ -14,6 +14,19 @@ export const gamesDefinition = defineMediaDefinition({
         },
     },
     statuses: [Status.PLAYING, Status.COMPLETED, Status.ENDLESS, Status.MULTIPLAYER, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_PLAY],
+    sorting: {
+        default: "playtime_highest",
+        options: [
+            "title_asc", "title_desc", "release_newest", "release_oldest",
+            "provider_rating_highest", "provider_rating_lowest", "added_newest", "added_oldest",
+            "modified_newest", "modified_oldest", "rating_highest", "rating_lowest", "playtime_highest",
+            "playtime_lowest",
+        ],
+        labels: {
+            provider_rating_lowest: "IGDB Rating -",
+            provider_rating_highest: "IGDB Rating +",
+        },
+    },
     identity: {
         mediaType: MediaType.GAMES,
     },

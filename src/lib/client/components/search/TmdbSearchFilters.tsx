@@ -1,13 +1,12 @@
-import {Film, Tv} from "lucide-react";
 import {Input} from "@/lib/client/components/ui/input";
 import {ApiProviderType, MediaType} from "@/lib/utils/enums";
 import {toOptionalNumber} from "@/lib/utils/media/advanced-search";
+import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
 import {AppliedSearchFilterChip} from "@/lib/client/components/search/AppliedSearchFilterChip";
 import {Field, FieldDescription, FieldGroup, FieldLabel, FieldTitle} from "@/lib/client/components/ui/field";
 import {AdvancedSearchFilterDefinition, AppliedSearchFilterChipsProps, ProviderSearchFilterProps} from "@/lib/types/advanced-search.types";
 import {AdvancedSearchFilters, TmdbAdvancedSearchFilters, cleanTmdbAdvancedSearchFilters, validateTmdbAdvancedSearch} from "@/lib/schemas";
-import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 
 
 const createTmdbFilters = (applied?: AdvancedSearchFilters): TmdbAdvancedSearchFilters => {

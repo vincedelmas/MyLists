@@ -127,7 +127,7 @@ function ListHeader() {
                     }
                 />
 
-                <div className={hasFlushContent ? undefined : "pt-6"}>
+                <div className={hasFlushContent ? undefined : "pt-4"}>
                     <Outlet/>
                 </div>
             </div>

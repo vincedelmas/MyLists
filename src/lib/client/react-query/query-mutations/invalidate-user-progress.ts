@@ -3,6 +3,7 @@ import {continueOptions, profileHeaderOptions, profileRecentFeedOptions, profile
 
 
 export const invalidateUserProgressQueries = (queryClient: QueryClient, username: string, { refetchContinue = true, refetchSecondary = true } = {}) => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["smart-views"], refetchType: "none" }),
     queryClient.invalidateQueries({ queryKey: ["release-calendar", username], refetchType: refetchSecondary ? "active" : "none" }),
 
     // Public header has its own level, including when profile content is hidden

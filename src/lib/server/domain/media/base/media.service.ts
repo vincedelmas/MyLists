@@ -1,12 +1,13 @@
 import {notFound} from "@tanstack/react-router";
 import {Actor} from "@/lib/server/authorization";
 import {DeltaStats} from "@/lib/types/stats.types";
-import type {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {Tag} from "@/lib/types/media-common.types";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MyListsCSVImport} from "@/lib/types/imports.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
+import type {AddedMediaDetails} from "@/lib/types/media-common.types";
 import {JobType, Status, TagAction, UpdateType} from "@/lib/utils/enums";
+import type {MediaCatalogBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import type {MediaQueries} from "@/lib/server/domain/media/base/media.queries";
 import {MYLISTS_CSV_VERSION} from "@/lib/server/domain/imports/mylists-format";
 import {createMediaTagQueries} from "@/lib/server/domain/media/base/media-tag.queries";
@@ -15,7 +16,7 @@ import {saveImageFromUrl, saveUploadedImage} from "@/lib/server/core/images/imag
 import {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {createMediaCommunityQueries} from "@/lib/server/domain/media/base/media-community.queries";
 import {UpdateHandlerFn, UpdateUserMediaDetails, UserMediaWithTags} from "@/lib/types/user-media.types";
-import {MediaListArgs, Pagination, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
+import {MediaListArgs, SearchType, SimpleSearch, UpdateUserCustomCover, UpdateUserMedia} from "@/lib/schemas";
 
 
 type MediaServiceRepository<TDef extends AnyServerMediaDefinition> = MediaQueries<TDef> & {
@@ -120,12 +121,8 @@ export function createMediaService<TDef extends AnyServerMediaDefinition>(
         return repository.getSearchListFilters(userId, query, job);
     }
 
-    async function getMediaJobDetails(job: JobType, name: string, pagination: Pagination, userId?: number) {
-        const page = pagination.page ?? 1;
-        const perPage = pagination.perPage ?? 24;
-        const offset = (page - 1) * perPage;
-
-        return repository.getMediaJobDetails(job, name, offset, perPage, userId);
+    async function getMediaJobDetails(job: JobType, name: string, filters: MediaCatalogBrowseFilters, userId?: number) {
+        return repository.getMediaJobDetails(job, name, filters, userId);
     }
 
     async function getMediaCommunityActivity(actor: Actor, mediaId: number, search: SearchType) {

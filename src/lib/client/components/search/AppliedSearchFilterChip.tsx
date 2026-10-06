@@ -6,15 +6,16 @@ import {Button} from "@/lib/client/components/ui/button";
 interface AppliedSearchFilterChipProps {
     label: string;
     onRemove: () => void;
+    disabled?: boolean;
 }
 
 
-export const AppliedSearchFilterChip = ({ label, onRemove }: AppliedSearchFilterChipProps) => (
+export const AppliedSearchFilterChip = ({ label, onRemove, disabled }: AppliedSearchFilterChipProps) => (
     <Badge variant="outline">
         <span className="max-w-52 truncate">
             {label}
         </span>
-        <Button size="bare" type="button" variant="ghost" onClick={onRemove} aria-label={`Remove ${label} filter`}>
+        <Button size="bare" type="button" variant="ghost" disabled={disabled} onClick={onRemove} aria-label={`Remove ${label} filter`}>
             <X/>
         </Button>
     </Badge>

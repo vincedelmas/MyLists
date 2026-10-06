@@ -1,15 +1,15 @@
 import {useEffect, useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Header} from "@/lib/client/components/media/base/Header";
 import {MediaListArgs, mediaListSearchSchema} from "@/lib/schemas";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {MediaGrid} from "@/lib/client/components/media/base/MediaGrid";
-import {mediaListOptions} from "@/lib/client/react-query/query-options";
 import MediaTable from "@/lib/client/components/media/base/MediaTable";
-import {AppliedFilters} from "@/lib/client/components/media/base/AppliedFilters";
+import {mediaListOptions} from "@/lib/client/react-query/query-options";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {ListAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {FiltersSideSheet} from "@/lib/client/components/media/base/FiltersSideSheet";
 
 
@@ -31,7 +31,6 @@ function MediaList() {
     const { currentUser } = useAuth();
     const navigate = Route.useNavigate();
     const { username, mediaType } = Route.useParams();
-    const allStatuses = getMediaDefinition(mediaType).statuses;
     const { mediaListQueryOptions } = Route.useRouteContext();
     const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
     const { userData, ...apiData } = useSuspenseQuery(mediaListQueryOptions).data;
@@ -92,17 +91,18 @@ function MediaList() {
             <Header
                 isGrid={isGrid}
                 filters={filters}
-                allStatuses={allStatuses}
                 onGridClick={handleGridToggle}
                 pagination={apiData.results.pagination}
+                allStatuses={getMediaDefinition(mediaType).statuses}
                 onFilterClick={() => setFiltersPanelOpen(true)}
                 onSortChange={({ sorting }) => handleFilterChange({ sorting })}
                 onStatusChange={({ status }) => handleFilterChange({ status })}
             />
-            <AppliedFilters
+            <ListAppliedFilters
                 filters={filters}
                 mediaType={mediaType}
                 totalItems={apiData.results.pagination.totalItems}
+                totalPages={apiData.results.pagination.totalPages}
                 onFilterRemove={(filters) => handleFilterChange(filters)}
             />
             <div className="animate-in fade-in duration-500 mt-2">
@@ -142,7 +142,10 @@ function MediaList() {
                 isCurrent={isCurrent}
                 open={filtersPanelOpen}
                 onOpenChange={setFiltersPanelOpen}
-                onFilterApply={(filters) => handleFilterChange(filters)}
+                onFilterApply={advancedFilters => void navigate({
+                    resetScroll: false,
+                    search: prev => ({ ...prev, ...advancedFilters, page: 1 }),
+                })}
             />
         </>
     );

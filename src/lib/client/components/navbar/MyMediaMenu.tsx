@@ -6,7 +6,7 @@ import {capitalize} from "@/lib/utils/formatting/text";
 import {useCurrentDate} from "@/lib/client/hooks/use-dates";
 import {MainThemeIcon} from "@/lib/client/components/general/MainIcons";
 import {getActiveMediaSettings} from "@/lib/utils/media/list-activation";
-import {Award, Calendar, ChartNoAxesColumn, ChevronDown, ListOrdered, Play, Zap} from "lucide-react";
+import {Award, Calendar, ChartNoAxesColumn, ChevronDown, Layers3, ListOrdered, Play, Zap} from "lucide-react";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger} from "@/lib/client/components/ui/dropdown-menu";
 
 
@@ -97,6 +97,9 @@ const MyMediaMenuContent = ({ preview, username, settings, currentYear, currentM
                                 {capitalize(setting.mediaType)} List
                             </MenuEntry>
                         )}
+                    <MenuEntry preview={preview} renderLink={(children) => <Link to="/smart-views">{children}</Link>}>
+                        <Layers3/> Smart Lists
+                    </MenuEntry>
                 </MenuGroup>
             </div>
             <div className="border-l px-3 pt-1 pb-2">

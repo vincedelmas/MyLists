@@ -1,5 +1,6 @@
 import * as z from "zod";
 import {JobType, MediaType} from "@/lib/utils/enums";
+import {mediaCatalogBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
 import {coercedPositiveIntFieldSchema, imageFileSchema, imageUrlSchema, mediaTypeFieldSchema, mediaTypeMediaIdSchema, paginationSchema} from "@/lib/schemas/common.schema";
 
 
@@ -154,7 +155,7 @@ export const mediaDetailsJobSchema = z.object({
 
 
 export const jobDetailsSchema = mediaDetailsJobSchema.extend({
-    pagination: paginationSchema,
+    filters: mediaCatalogBrowseFiltersSchema.strict(),
 });
 
 

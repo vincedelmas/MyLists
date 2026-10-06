@@ -1,9 +1,11 @@
-import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
+import {getTableColumns, ne, sql} from "drizzle-orm";
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {MANGA_FIXED_DURATION_MIN, mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
-import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
 import {createArrayFilter} from "@/lib/server/domain/media/base/media-list.queries";
+import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
+import {MANGA_FIXED_DURATION_MIN, mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
+import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 
 
 export const mangaServerDefinition = defineServerMediaDefinition({
@@ -43,20 +45,8 @@ export const mangaServerDefinition = defineServerMediaDefinition({
                 }),
             },
             filterOptions: {},
-            defaultSort: "Title A-Z",
-            sorts: {
-                "Title A-Z": asc(manga.name),
-                "Title Z-A": desc(manga.name),
-                "Rating +": [desc(mangaList.rating), asc(manga.name)],
-                "Rating -": [asc(mangaList.rating), asc(manga.name)],
-                "Published Date +": [desc(manga.releaseDate), asc(manga.name)],
-                "Published Date -": [sql`${manga.releaseDate} ASC NULLS LAST`, asc(manga.name)],
-                "Recently Added": [desc(mangaList.addedAt), asc(manga.name)],
-                "Recently Modified": [desc(mangaList.lastUpdated), asc(manga.name)],
-                "Re-Read": [desc(mangaList.redo), asc(manga.name)],
-                "Chapters +": [desc(manga.chapters), asc(manga.name)],
-                "Chapters -": [asc(manga.chapters), asc(manga.name)],
-            },
+            defaultSort: getMediaSortLabel(mangaDefinition, mangaDefinition.sorting.default),
+            sorts: createMediaListSorts(mangaDefinition, { mediaTable: manga, listTable: mangaList }),
         },
         communityActivity: {
             aggregates: {

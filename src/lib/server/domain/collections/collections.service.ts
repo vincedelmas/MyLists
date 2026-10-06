@@ -4,6 +4,7 @@ import {CollectionItemInput} from "@/lib/types/collections.types";
 import {withTransaction} from "@/lib/server/database/async-storage";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import {DenialReason, MediaType, PrivacyType} from "@/lib/utils/enums";
+import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {FormattedError, UnauthorizedError} from "@/lib/utils/error-classes";
 import {MediaServiceRegistry} from "@/lib/server/domain/media/media.registries";
 import {CollectionsRepository} from "@/lib/server/domain/collections/collections.repository";
@@ -18,7 +19,7 @@ export class CollectionsService {
     ) {
     }
 
-    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor, page?: number) {
+    async getCollectionDetails(collectionId: number, mode: "read" | "edit", actor: Actor, filters: MediaBrowseFilters = { page: 1 }) {
         const collection = this.repository.getCollectionById(collectionId);
         if (!collection) throw notFound();
 
@@ -27,30 +28,38 @@ export class CollectionsService {
             throw new UnauthorizedError(decision.reason === DenialReason.PROFILE_RESTRICTED ? "restricted" : "private");
         }
 
-        const editableItems = mode === "edit" ? this.repository.getCollectionItems(collectionId) : [];
-        const [itemResults, isLiked] = await Promise.all([
-            mode === "read"
-                ? this.repository.getPaginatedCollectionItems(collectionId, page)
-                : {
-                    items: editableItems,
-                    page: 1,
-                    total: editableItems.length,
-                    pages: editableItems.length > 0 ? 1 : 0,
-                    perPage: Math.max(editableItems.length, 1),
-                },
+        const viewerId = actor.kind === "user" ? actor.id : undefined;
+        const [isLiked, capabilities] = await Promise.all([
             actor.kind === "user" ? this.repository.findLikedCollection(actor.id, collectionId) : Promise.resolve(null),
+            this.authorizationService.getCollectionCapabilities(actor, collection),
             this.repository.incrementViewCount(collectionId),
         ]);
 
-        const { items } = itemResults;
+        if (mode === "read") {
+            const results = await this.repository.getPaginatedCollectionItems(collectionId, collection.mediaType, filters, viewerId);
+            return {
+                ...results,
+                collection,
+                capabilities,
+                isLiked: !!isLiked,
+            };
+        }
+
+        const items = this.repository.getCollectionItems(collectionId);
         const mediaService = this.mediaRegistry.get(collection.mediaType);
-        const mediaRows = await mediaService.getMediaDetailsByIds(items.map(i => i.mediaId), actor.kind === "user" ? actor.id : undefined);
+
+        const mediaRows = await mediaService.getMediaDetailsByIds(items.map(i => i.mediaId), viewerId);
         const mediaMap = new Map(mediaRows.map((m) => [m.id, m]));
-        const capabilities = await this.authorizationService.getCollectionCapabilities(actor, collection);
 
         const detailedItems = items.map((item) => {
             const media = mediaMap.get(item.mediaId)!;
+
             return {
+                status: null,
+                rating: null,
+                addedAt: null,
+                favorite: null,
+                lastUpdated: null,
                 mediaId: item.mediaId,
                 mediaName: media.name,
                 orderIndex: item.orderIndex,
@@ -62,11 +71,15 @@ export class CollectionsService {
         });
 
         return {
-            ...itemResults,
+            page: 1,
             collection,
             capabilities,
             isLiked: !!isLiked,
+            total: items.length,
             items: detailedItems,
+            pages: items.length > 0 ? 1 : 0,
+            perPage: Math.max(items.length, 1),
+            filterOptions: { genres: [], tags: [] },
         };
     }
 

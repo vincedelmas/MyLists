@@ -6,6 +6,7 @@ import {calendarDateRangeToISOString} from "@/lib/utils/formatting/date";
 import {coercedPositiveIntFieldSchema, mediaTypeFieldSchema, optionalSearchFieldSchema, usernameFieldSchema} from "@/lib/schemas/common.schema";
 
 
+export type ActivitySort = z.infer<typeof activitySortSchema>;
 export type ActivityPeriod = z.infer<typeof activityPeriodSchema>;
 export type BulkHideActivity = z.infer<typeof bulkHideActivitySchema>;
 export type AddMonthlyActivity = z.infer<typeof addMonthlyActivitySchema>;
@@ -20,6 +21,7 @@ export type UpdateMonthlyActivity = z.infer<typeof updateMonthlyActivityPayloadS
 
 
 const activityPeriodSchema = z.enum(["month", "year"]);
+const activitySortSchema = z.enum(["latest", "oldest", "title_asc", "title_desc", "time_desc", "time_asc"]);
 
 
 export const monthlyActivitySearchSchema = z.object({
@@ -34,6 +36,8 @@ export const monthlyActivitySearchSchema = z.object({
     search: optionalSearchFieldSchema,
     page: coercedPositiveIntFieldSchema.optional().default(1),
     view: activityPeriodSchema.optional().default("month").catch("month"),
+    sort: activitySortSchema.optional().default("latest").catch("latest"),
+    display: z.enum(["grid", "table"]).optional().default("grid").catch("grid"),
     activityKind: z.enum(ActivityKind).optional().default(ActivityKind.ALL).catch(ActivityKind.ALL),
     activeTab: z.union([mediaTypeFieldSchema, z.literal("all")]).optional().default("all").catch("all"),
     hiddenOnly: z.preprocess((value) => value === true || value === "true", z.boolean()).default(false),
@@ -43,10 +47,11 @@ export const monthlyActivitySchema = z.object({
     username: usernameFieldSchema,
     search: optionalSearchFieldSchema,
     year: coercedPositiveIntFieldSchema,
-    month: coercedPositiveIntFieldSchema.min(1).max(12),
+    sort: activitySortSchema.optional().default("latest"),
     view: activityPeriodSchema.optional().default("month"),
     hiddenOnly: z.coerce.boolean().optional().default(false),
     page: coercedPositiveIntFieldSchema.optional().default(1),
+    month: coercedPositiveIntFieldSchema.min(1).max(12),
     activityKind: z.enum(ActivityKind).optional().default(ActivityKind.ALL),
     activeTab: z.union([mediaTypeFieldSchema, z.literal("all")]).optional().default("all"),
 });

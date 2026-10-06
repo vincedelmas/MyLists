@@ -56,7 +56,7 @@ function McpConsentPage() {
                                         </p>
                                         <p className="text-sm text-muted-foreground">
                                             Search titles and tags, and see your ratings, progress and notes.
-                                            {" "}Analyze your own lists with read-only queries.
+                                            {" "}Analyze your own lists with read-only queries and preview smart lists.
                                         </p>
                                     </div>
                                 </div>
@@ -70,7 +70,7 @@ function McpConsentPage() {
                                             Update your media
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            Add titles and update your ratings, progress, notes and tags.
+                                            Add titles, update your ratings, progress, notes and tags, and save smart lists.
                                         </p>
                                     </div>
                                 </div>

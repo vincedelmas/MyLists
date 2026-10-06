@@ -37,14 +37,20 @@ export type MediaListData<TList> = {
 }
 
 
+export type MediaListFilterKey = keyof Pick<MediaListArgs,
+    "genres" | "tags" | "langs" | "directors" | "publishers" | "actors"
+    | "authors" | "companies" | "networks" | "creators" | "platforms"
+>;
+
+
 export type SheetFilterObject = {
-    job?: JobType;
     title: string;
-    key: keyof MediaListArgs;
-    type: "checkbox" | "search";
+    key: MediaListFilterKey;
     render?: (name: string, mediaType: MediaType) => string;
-    getItems?: (data: ListFiltersOptionsType) => { name: string }[] | undefined;
-};
+} & ({
+    type: "checkbox";
+    getItems: (data: ListFiltersOptionsType) => { name: string }[] | undefined
+} | { type: "search"; job: JobType });
 
 
 export type UserTag = {

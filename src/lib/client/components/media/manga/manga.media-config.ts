@@ -1,5 +1,5 @@
-import {XLineTop} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
+import {JobType, MediaType} from "@/lib/utils/enums";
+import {Building2, PenLine, XLineTop} from "lucide-react";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {MangaListItem} from "@/lib/client/components/media/manga/MangaListItem";
@@ -31,6 +31,22 @@ export const mangaMediaConfig = defineMediaConfig({
         countLabel: "Read",
         extraLabel: "Rereads",
         extraMetric: "totalRedo",
+    },
+    jobs: {
+        [JobType.CREATOR]: {
+            icon: PenLine,
+            label: "Author",
+            descriptionSuffix: "",
+            sectionTitle: "Bibliography",
+            descriptionVerb: "authored by",
+        },
+        [JobType.PUBLISHER]: {
+            icon: Building2,
+            label: "Publisher",
+            descriptionSuffix: "",
+            sectionTitle: "Catalogue",
+            descriptionVerb: "published by",
+        },
     },
     statistics: {
         getStatCards: (stats) => [

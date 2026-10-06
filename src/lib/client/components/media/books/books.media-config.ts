@@ -1,5 +1,5 @@
-import {XLineTop} from "lucide-react";
-import {MediaType} from "@/lib/utils/enums";
+import {PenLine, XLineTop} from "lucide-react";
+import {JobType, MediaType} from "@/lib/utils/enums";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {BookListItem} from "@/lib/client/components/media/books/BookListItem";
@@ -33,6 +33,15 @@ export const booksMediaConfig = defineMediaConfig({
         countLabel: "Read",
         extraLabel: "Rereads",
         extraMetric: "totalRedo",
+    },
+    jobs: {
+        [JobType.CREATOR]: {
+            icon: PenLine,
+            label: "Author",
+            descriptionSuffix: "",
+            sectionTitle: "Bibliography",
+            descriptionVerb: "written by",
+        },
     },
     statistics: {
         getStatCards: (stats) => [

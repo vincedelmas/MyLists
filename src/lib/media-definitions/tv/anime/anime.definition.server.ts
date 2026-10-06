@@ -1,5 +1,7 @@
-import {asc, desc, getTableColumns, notInArray, sql} from "drizzle-orm";
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
+import {getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {ANIME_FALLBACK_DURATION, animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
@@ -72,20 +74,8 @@ export const animeServerDefinition = defineServerMediaDefinition({
                     nameColumn: anime.originCountry,
                 }),
             },
-            defaultSort: "Title A-Z",
-            sorts: {
-                "Title A-Z": asc(anime.name),
-                "Title Z-A": desc(anime.name),
-                "Release Date +": [desc(anime.releaseDate), asc(anime.name)],
-                "Release Date -": [sql`${anime.releaseDate} ASC NULLS LAST`, asc(anime.name)],
-                "TMDB Rating +": [desc(anime.voteAverage), asc(anime.name)],
-                "TMDB Rating -": [asc(anime.voteAverage), asc(anime.name)],
-                "Recently Added": [desc(animeList.addedAt), asc(anime.name)],
-                "Recently Modified": [desc(animeList.lastUpdated), asc(anime.name)],
-                "Rating +": [desc(animeList.rating), asc(anime.name)],
-                "Rating -": [asc(animeList.rating), asc(anime.name)],
-                "Re-watched": [desc(animeList.redo), asc(anime.name)],
-            },
+            defaultSort: getMediaSortLabel(animeDefinition, animeDefinition.sorting.default),
+            sorts: createMediaListSorts(animeDefinition, { mediaTable: anime, listTable: animeList }),
         },
         communityActivity: {
             aggregates: {

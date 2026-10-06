@@ -61,6 +61,7 @@
         "drizzle-zod": "^0.8.3",
         "ioredis": "^5.11.1",
         "ipaddr.js": "^2.5.0",
+        "jose": "6.2.3",
         "lucide-react": "^1.25.0",
         "nodemailer": "^9.0.3",
         "nprogress": "^0.2.0",

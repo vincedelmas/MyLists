@@ -22,6 +22,19 @@ export const booksDefinition = defineMediaDefinition({
         },
     },
     statuses: [Status.READING, Status.COMPLETED, Status.ON_HOLD, Status.DROPPED, Status.PLAN_TO_READ],
+    sorting: {
+        default: "title_asc",
+        options: [
+            "title_asc", "title_desc", "rating_highest", "rating_lowest",
+            "release_newest", "release_oldest", "added_newest", "added_oldest",
+            "modified_newest", "modified_oldest", "redo_highest", "pages_highest", "pages_lowest",
+        ],
+        labels: {
+            redo_highest: "Re-Read",
+            release_newest: "Published Date +",
+            release_oldest: "Published Date -",
+        },
+    },
     identity: {
         mediaType: MediaType.BOOKS,
     },

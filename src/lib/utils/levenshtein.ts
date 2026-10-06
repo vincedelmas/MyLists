@@ -22,7 +22,7 @@ export const closest = (target: string, candidates: string[]) => {
 };
 
 
-const levenshteinDistance = (a: string, b: string) => {
+export const levenshteinDistance = (a: string, b: string) => {
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
 

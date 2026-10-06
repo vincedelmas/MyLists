@@ -1,13 +1,14 @@
 import {alias} from "drizzle-orm/sqlite-core";
-import {UpdateMonthlyActivity} from "@/lib/schemas";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {resolvePagination} from "@/lib/server/database/pagination";
+import type {ActivitySort, UpdateMonthlyActivity} from "@/lib/schemas";
+import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {dateFromUTCInput, monthBucketFromDateInput} from "@/lib/utils/formatting/date";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {user, userMediaMonthlyActivity, userMediaSettings} from "@/lib/server/database/schema";
-import {ActivityCorrectionAllocation, LogMonthlyActivity, PaginatedMonthlyActivityFilter} from "@/lib/types/activity.types";
-import {and, asc, count, desc, eq, exists, getTableColumns, gt, gte, inArray, isNull, like, lte, max, ne, or, SQL, sql, sum} from "drizzle-orm";
+import type {ActivityCorrectionAllocation, LogMonthlyActivity, PaginatedMonthlyActivityFilter} from "@/lib/types/activity.types";
+import {and, asc, count, desc, eq, exists, getTableColumns, gt, gte, inArray, isNull, like, lte, ne, or, SQL, sql, sum} from "drizzle-orm";
 
 
 const BULK_IMPORT_GRACE_MONTHS = 2;
@@ -88,6 +89,61 @@ const getFilteredActivityConditions = (userId: number, filters: PaginatedMonthly
     }
 
     return conditions;
+};
+
+
+const getActivitySort = (sort: ActivitySort, grouped = false): { value: SQL; direction: SQL } => {
+    let value: SQL;
+
+    if (sort === "title_asc" || sort === "title_desc") {
+        const names = Object.values(MediaType).map(mediaType => {
+            const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
+
+            return sql`WHEN ${mediaType}
+                THEN (SELECT ${mediaTable.name}
+                FROM ${mediaTable}
+                WHERE ${mediaTable.id} = ${userMediaMonthlyActivity.mediaId}) COLLATE NOCASE`;
+        });
+
+        value = sql`CASE ${userMediaMonthlyActivity.mediaType} ${sql.join(names, sql` `)} END COLLATE NOCASE`;
+    }
+    else if (sort === "time_asc" || sort === "time_desc") {
+        const progress = grouped ? sum(userMediaMonthlyActivity.progressGained) : userMediaMonthlyActivity.progressGained;
+
+        const minutes = Object.values(MediaType).map(mediaType => {
+            let perUnit: SQL;
+            const timing = getMediaDefinition(mediaType).progress.timing;
+
+            if (timing.kind === "fixed") {
+                perUnit = sql`${timing.minutesPerUnit}`;
+            }
+            else if (timing.kind === "stored-minutes") {
+                perUnit = sql`1`;
+            }
+            else {
+                const { mediaTable } = getServerMediaDefinition(mediaType).repository.tables;
+                const duration = getTableColumns(mediaTable).duration;
+
+                perUnit = sql`COALESCE((SELECT ${duration}
+                    FROM ${mediaTable}
+                    WHERE ${mediaTable.id} = ${userMediaMonthlyActivity.mediaId}), ${timing.fallbackMinutes})`;
+            }
+
+            return sql`WHEN ${mediaType} THEN ${perUnit}`;
+        });
+
+        value = sql`${progress} * CASE ${userMediaMonthlyActivity.mediaType} ${sql.join(minutes, sql` `)} END`;
+    }
+    else {
+        value = grouped
+            ? sql`MAX(JULIANDAY(${userMediaMonthlyActivity.lastActivityAt}))`
+            : sql`JULIANDAY(${userMediaMonthlyActivity.lastActivityAt})`;
+    }
+
+    return {
+        value,
+        direction: sort === "oldest" || sort.endsWith("_asc") ? sql`ASC` : sql`DESC`,
+    };
 };
 
 
@@ -276,8 +332,10 @@ export class MonthlyActivityRepository {
     }
 
     static async getPaginatedMonthlyActivities(userId: number, filters: PaginatedMonthlyActivityFilter) {
-        const pagination = resolvePagination({ page: filters.page, perPage: filters.perPage, defaultPerPage: 48, maxPerPage: 48 });
+        const sort = getActivitySort(filters.sort ?? "latest");
+
         const conditions = getFilteredActivityConditions(userId, filters);
+        const pagination = resolvePagination({ page: filters.page, perPage: filters.perPage, defaultPerPage: 48, maxPerPage: 48 });
 
         const total = getDbClient()
             .select({ count: count() })
@@ -291,7 +349,12 @@ export class MonthlyActivityRepository {
             .from(userMediaMonthlyActivity)
             .innerJoin(userMediaSettings, activeMediaSettingsJoin)
             .where(and(...conditions))
-            .orderBy(desc(userMediaMonthlyActivity.lastActivityAt))
+            .orderBy(
+                sql`${sort.value} ${sort.direction} NULLS LAST`,
+                asc(userMediaMonthlyActivity.mediaType),
+                asc(userMediaMonthlyActivity.mediaId),
+                asc(userMediaMonthlyActivity.id),
+            )
             .limit(pagination.limit)
             .offset(pagination.offset);
 
@@ -313,12 +376,13 @@ export class MonthlyActivityRepository {
         });
 
         const conditions = getFilteredActivityConditions(userId, filters);
+        const sort = getActivitySort(filters.sort ?? "latest", true);
 
         const groupedActivities = getDbClient()
             .select({
                 mediaId: userMediaMonthlyActivity.mediaId,
                 mediaType: userMediaMonthlyActivity.mediaType,
-                lastActivityAt: max(userMediaMonthlyActivity.lastActivityAt).as("last_activity_at"),
+                sortValue: sort.value.as("sort_value"),
             })
             .from(userMediaMonthlyActivity)
             .innerJoin(userMediaSettings, activeMediaSettingsJoin)
@@ -334,7 +398,11 @@ export class MonthlyActivityRepository {
         const groups = await getDbClient()
             .select()
             .from(groupedActivities)
-            .orderBy(desc(groupedActivities.lastActivityAt), asc(groupedActivities.mediaType), asc(groupedActivities.mediaId))
+            .orderBy(
+                sql`${groupedActivities.sortValue} ${sort.direction} NULLS LAST`,
+                asc(groupedActivities.mediaType),
+                asc(groupedActivities.mediaId),
+            )
             .limit(pagination.limit)
             .offset(pagination.offset);
 
@@ -358,7 +426,7 @@ export class MonthlyActivityRepository {
             .from(userMediaMonthlyActivity)
             .innerJoin(userMediaSettings, activeMediaSettingsJoin)
             .where(and(...conditions, or(...groupConditions)))
-            .orderBy(desc(userMediaMonthlyActivity.lastActivityAt));
+            .orderBy(sql`JULIANDAY(${userMediaMonthlyActivity.lastActivityAt}) DESC`, desc(userMediaMonthlyActivity.id));
 
         const items = groups.flatMap((group) => {
             const groupedOccurrences = occurrences.filter((occurrence) =>

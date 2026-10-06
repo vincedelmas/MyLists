@@ -11,6 +11,7 @@ import {DisplayFavorite} from "@/lib/client/components/media/base/DisplayFavorit
 import {UserMediaEditDialog} from "@/lib/client/components/media/base/UserMediaEditDialog";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
 import {DisplayInUserListCheck} from "@/lib/client/components/media/base/DisplayInUserListCheck";
+import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {
     MediaCard,
     MediaCardDetails,
@@ -24,6 +25,9 @@ import {
 
 
 interface BaseMediaListItemProps {
+    showMediaType?: boolean;
+    loadEditDetails?: boolean;
+    onEdited?: () => Promise<void>;
     isCurrent: boolean;
     isConnected: boolean;
     mediaType: MediaType;
@@ -42,6 +46,9 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const {
         rating,
+        showMediaType,
+        onEdited,
+        loadEditDetails,
         isCurrent,
         mediaType,
         userMedia,
@@ -104,6 +111,7 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
                     <MediaCardMeta>
                         <MediaCardDetails>
                             <Badge variant="overlay" className="shrink-0">
+                                {showMediaType && <MediaTypeIcon mediaType={mediaType}/>}
                                 {userMedia.status}
                             </Badge>
                         </MediaCardDetails>
@@ -126,6 +134,8 @@ export const BaseMediaListItem = (props: BaseMediaListItemProps) => {
 
             <UserMediaEditDialog
                 mediaType={mediaType}
+                onEdited={onEdited}
+                loadDetails={loadEditDetails}
                 userMedia={userMedia}
                 dialogOpen={dialogOpen}
                 queryOption={queryOption}

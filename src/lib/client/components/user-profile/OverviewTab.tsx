@@ -11,12 +11,15 @@ import {CompactStatsGrid} from "@/lib/client/components/media-stats/CompactStats
 import {HighlightedMedia} from "@/lib/client/components/user-profile/HighlightedMedia";
 import {DistributionContainer} from "@/lib/client/components/general/DistributionContainer";
 import {MediaGlobalSummaryType, PerMediaSummaryType} from "@/lib/types/query.options.types";
+import type {ProfileSmartViewRecord} from "@/lib/client/react-query/query-options/smart-views.options";
 import {SegmentedDistributionBar} from "@/lib/client/components/general/SegmentedDistributionBar";
+import {ProfileSmartViewShortcuts} from "@/lib/client/components/smart-views/ProfileSmartViewShortcuts";
 
 
 interface OverviewTabProps {
     isCurrent: boolean,
     showContinue: boolean,
+    smartViews: ProfileSmartViewRecord[],
     perMedia: PerMediaSummaryType,
     ratingSystem: RatingSystemType,
     inProgressMedia: ContinueItem[],
@@ -25,7 +28,9 @@ interface OverviewTabProps {
 }
 
 
-export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMedia, inProgressMedia, isCurrent, showContinue }: OverviewTabProps) => {
+export const OverviewTab = (props: OverviewTabProps) => {
+    const { smartViews, globalStats, perMedia, ratingSystem, highlightedMedia, inProgressMedia, isCurrent, showContinue } = props;
+
     const rating = globalStats.avgRated;
     const distributionTotalDays = perMedia.reduce((total, media) => total + media.timeSpentDays, 0);
 
@@ -110,6 +115,11 @@ export const OverviewTab = ({ globalStats, perMedia, ratingSystem, highlightedMe
                     items={inProgressMedia}
                 />
             }
+
+            <ProfileSmartViewShortcuts
+                views={smartViews}
+                isCurrent={isCurrent}
+            />
 
             <HighlightedMedia
                 showMediaType={true}

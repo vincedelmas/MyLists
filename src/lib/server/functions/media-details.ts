@@ -62,10 +62,10 @@ export const resolveExternalMedia = createServerFn({ method: "POST" })
 export const getJobDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
     .validator(jobDetailsSchema)
-    .handler(async ({ data: { mediaType, job, name, pagination }, context: { currentUser } }) => {
+    .handler(async ({ data: { mediaType, job, name, filters }, context: { currentUser } }) => {
         const container = await getContainer();
         const mediaService = container.registries.mediaService.get(mediaType);
-        return mediaService.getMediaJobDetails(job, name, pagination, currentUser?.id);
+        return mediaService.getMediaJobDetails(job, name, filters, currentUser?.id);
     });
 
 

@@ -1,9 +1,11 @@
-import {asc, desc, getTableColumns, ne, sql} from "drizzle-orm";
+import {getTableColumns, ne, sql} from "drizzle-orm";
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
+import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
-import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 
 
 export const booksServerDefinition = defineServerMediaDefinition({
@@ -46,20 +48,8 @@ export const booksServerDefinition = defineServerMediaDefinition({
                     nameColumn: books.language,
                 }),
             },
-            defaultSort: "Title A-Z",
-            sorts: {
-                "Title A-Z": asc(books.name),
-                "Title Z-A": desc(books.name),
-                "Rating +": [desc(booksList.rating), asc(books.name)],
-                "Rating -": [asc(booksList.rating), asc(books.name)],
-                "Published Date +": [desc(books.releaseDate), asc(books.name)],
-                "Published Date -": [sql`${books.releaseDate} ASC NULLS LAST`, asc(books.name)],
-                "Recently Added": [desc(booksList.addedAt), asc(books.name)],
-                "Recently Modified": [desc(booksList.lastUpdated), asc(books.name)],
-                "Re-Read": [desc(booksList.redo), asc(books.name)],
-                "Pages +": [desc(books.pages), asc(books.name)],
-                "Pages -": [asc(books.pages), asc(books.name)],
-            },
+            defaultSort: getMediaSortLabel(booksDefinition, booksDefinition.sorting.default),
+            sorts: createMediaListSorts(booksDefinition, { mediaTable: books, listTable: booksList }),
         },
         communityActivity: {
             aggregates: {
@@ -106,10 +96,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
     },
     service: {
         defaultStatus: Status.PLAN_TO_READ,
-        editableFields: [
-            "name", "releaseDate", "pages", "language", "publishers", "synopsis",
-            "lockStatus", "authors", "imageCover",
-        ],
+        editableFields: ["name", "releaseDate", "pages", "language", "publishers", "synopsis", "lockStatus", "authors", "imageCover"],
         progressTotals: (state) => ({
             totalRedo: state?.redo ?? 0,
             totalSpecific: state?.total ?? 0,

@@ -3,7 +3,7 @@ import {MAX_QUERY_SQL_LENGTH} from "@/lib/server/core/mcp/config";
 import {parseStmt, traverse, type ParseStmtResult} from "sqlite3-parser";
 
 
-export const QUERY_BLOCKED_FUNCTIONS = ["load_extension", "readfile", "writefile"] as const;
+const QUERY_BLOCKED_FUNCTIONS = ["load_extension", "readfile", "writefile"] as const;
 
 
 const blockedFunctions = new Set<string>(QUERY_BLOCKED_FUNCTIONS);

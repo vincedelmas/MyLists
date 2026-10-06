@@ -1,6 +1,6 @@
-import {MediaType} from "@/lib/utils/enums";
+import type {MediaType} from "@/lib/utils/enums";
 import {queryOptions} from "@tanstack/react-query";
-import {MonthlyActivitySearch} from "@/lib/schemas";
+import type {MonthlyActivitySearch} from "@/lib/schemas";
 import {getMonthlyActivity, getMonthlyActivityMediaSearch, getMonthlyActivityStats} from "@/lib/server/functions/user-monthly-activity";
 
 
@@ -17,9 +17,11 @@ export const monthlyActivityStatsOptions = (username: string, search: MonthlyAct
 
 
 export const monthlyActivityOptions = (username: string, search: MonthlyActivitySearch) => {
+    const { display: _display, ...filters } = search;
+
     return queryOptions({
-        queryKey: ["monthly-activity", username, "rows", search],
-        queryFn: () => getMonthlyActivity({ data: { username, ...search } }),
+        queryKey: ["monthly-activity", username, "rows", filters],
+        queryFn: () => getMonthlyActivity({ data: { username, ...filters } }),
     });
 }
 

@@ -161,9 +161,9 @@ describe("CollectionsService authorization", () => {
             perPage: 24,
         });
 
-        const result = await service.getCollectionDetails(7, "read", actor, 2);
+        const result = await service.getCollectionDetails(7, "read", actor, { page: 2 });
 
-        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, 2);
+        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, MediaType.MOVIES, { page: 2 }, undefined);
         expect(repository.getCollectionItems).not.toHaveBeenCalled();
         expect(result).toMatchObject({ page: 2, pages: 3, total: 50, perPage: 24 });
     });

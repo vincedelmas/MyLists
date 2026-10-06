@@ -1,6 +1,7 @@
 import {MediaType} from "@/lib/utils/enums";
 import {queryOptions} from "@tanstack/react-query";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
+import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {
     getCommunityCollections,
     getEditCollectionDetails,
@@ -25,9 +26,9 @@ export const paginatedUserCollectionsOptions = (search: UserCollectionsSearch) =
 });
 
 
-export const collectionDetailsReadOptions = (collectionId: number, page = 1) => queryOptions({
-    queryKey: [...collectionDetailsReadQueryKey(collectionId), page] as const,
-    queryFn: () => getReadCollectionDetails({data: {collectionId, page}}),
+export const collectionDetailsReadOptions = (collectionId: number, filters: MediaBrowseFilters) => queryOptions({
+    queryKey: [...collectionDetailsReadQueryKey(collectionId), filters] as const,
+    queryFn: () => getReadCollectionDetails({ data: { collectionId, ...filters } }),
 });
 
 

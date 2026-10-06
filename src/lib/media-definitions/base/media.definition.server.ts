@@ -15,28 +15,32 @@ type NullableColumn<T> = AnySQLiteColumn<{ data: T; notNull: false }>;
 type MediaTableColumns = {
     id: NotNullColumn<number>;
     name: NotNullColumn<string>;
-    originalName?: NullableColumn<string>;
-    imageCover: NotNullColumn<string>;
-    apiId: NotNullColumn<string | number>;
     addedAt: NullableColumn<string>;
     synopsis: NullableColumn<string>;
+    imageCover: NotNullColumn<string>;
+    chapters?: NullableColumn<number>;
     releaseDate: NullableColumn<string>;
+    voteAverage?: NullableColumn<number>;
+    originalName?: NullableColumn<string>;
+    apiId: NotNullColumn<string | number>;
     lastApiUpdate: NullableColumn<string>;
+    pages?: NullableColumn<number> | NotNullColumn<number>;
 };
 
 
 type ListTableColumns = {
     id: NotNullColumn<number>;
+    redo?: NotNullColumn<number>;
     userId: NotNullColumn<number>;
     status: NotNullColumn<Status>;
     rating: NullableColumn<number>;
     mediaId: NotNullColumn<number>;
     comment: NullableColumn<string>;
     addedAt: NullableColumn<string>;
+    playtime?: NullableColumn<number>;
     favorite: NullableColumn<boolean>;
     lastUpdated: NullableColumn<string>;
     customCover: NullableColumn<string | null>;
-    redo?: NotNullColumn<number>;
 };
 
 
@@ -93,16 +97,16 @@ type SpecificAffinityKey<TDefinition extends Pick<MediaDefinition, "statistics">
 
 
 type BaseSelection = Omit<ListTableColumns, "redo"> & SelectedFieldsFlat & {
+    redo?: NotNullColumn<number>;
     mediaName: NotNullColumn<string>;
     imageCover: NotNullColumn<string>;
-    redo?: NotNullColumn<number>;
 };
 
 
 type JobDefinition = {
     sourceTable: AnySQLiteTable;
+    getFilter?: (name: string) => SQL;
     mediaIdColumn: NotNullColumn<number>;
-    getFilter?: (name: string) => SQL | undefined;
     nameColumn: NullableColumn<string> | NotNullColumn<string>;
     postProcess?: (results: { name: string | null }[]) => { name: string | null }[];
 };

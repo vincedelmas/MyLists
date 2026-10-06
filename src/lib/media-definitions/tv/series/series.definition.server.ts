@@ -1,5 +1,7 @@
-import {asc, desc, getTableColumns, notInArray, sql} from "drizzle-orm";
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
+import {getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {SERIES_FALLBACK_DURATION, seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
@@ -81,20 +83,8 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                     nameColumn: series.originCountry,
                 }),
             },
-            defaultSort: "Title A-Z",
-            sorts: {
-                "Title A-Z": asc(series.name),
-                "Title Z-A": desc(series.name),
-                "Release Date +": [desc(series.releaseDate), asc(series.name)],
-                "Release Date -": [sql`${series.releaseDate} ASC NULLS LAST`, asc(series.name)],
-                "TMDB Rating +": [desc(series.voteAverage), asc(series.name)],
-                "TMDB Rating -": [asc(series.voteAverage), asc(series.name)],
-                "Recently Added": [desc(seriesList.addedAt), asc(series.name)],
-                "Recently Modified": [desc(seriesList.lastUpdated), asc(series.name)],
-                "Rating +": [desc(seriesList.rating), asc(series.name)],
-                "Rating -": [asc(seriesList.rating), asc(series.name)],
-                "Re-watched": [desc(seriesList.redo), asc(series.name)],
-            },
+            defaultSort: getMediaSortLabel(seriesDefinition, seriesDefinition.sorting.default),
+            sorts: createMediaListSorts(seriesDefinition, { mediaTable: series, listTable: seriesList }),
         },
         communityActivity: {
             aggregates: {

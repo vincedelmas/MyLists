@@ -1,5 +1,4 @@
 import {useState} from "react";
-import {MonthlyActivitySearch} from "@/lib/schemas";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Label} from "@/lib/client/components/ui/label";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -7,29 +6,41 @@ import {Switch} from "@/lib/client/components/ui/switch";
 import {Button} from "@/lib/client/components/ui/button";
 import {ActivityKind, MediaType} from "@/lib/utils/enums";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
-import {CalendarDays, History, LayoutGrid, Plus} from "lucide-react";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
-import {SearchInput} from "@/lib/client/components/general/SearchInput";
+import type {ActivitySort, MonthlyActivitySearch} from "@/lib/schemas";
+import {CalendarDays, History, LayoutGrid, Plus} from "lucide-react";
 import {CalendarNav} from "@/lib/client/components/activity/CalendarNav";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {formatMonth, formatMonthYear} from "@/lib/utils/formatting/date";
 import {formatMinutes, formatNumber} from "@/lib/utils/formatting/number";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
+import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import {MediaTypeIcon} from "@/lib/client/components/media/base/MediaTypeIndicator";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaCardEditAction} from "@/lib/client/components/media/base/MediaCardEditAction";
 import {MonthlyActivityStats} from "@/lib/client/components/activity/MonthlyActivityStats";
-import {MonthlyActivityEditor, MonthlyActivityOccurrence} from "@/lib/types/activity.types";
+import {MonthlyActivityTable} from "@/lib/client/components/activity/MonthlyActivityTable";
+import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
+import type {MonthlyActivityEditor, MonthlyActivityOccurrence} from "@/lib/types/activity.types";
 import {MonthlyActivityAddDialog} from "@/lib/client/components/activity/MonthlyActivityAddDialog";
+import {BrowseAppliedFilters} from "@/lib/client/components/media/browse/AppliedFilters";
 import {MonthlyActivityEditDialog} from "@/lib/client/components/activity/MonthlyActivityEditDialog";
 import {MonthlyActivityStatusIcons} from "@/lib/client/components/activity/MonthlyActivityStatusIcons";
 import {monthlyActivityOptions, monthlyActivityStatsOptions} from "@/lib/client/react-query/query-options";
 import {YearlyActivityOccurrencesDialog} from "@/lib/client/components/activity/YearlyActivityOccurrencesDialog";
-import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
-import {MediaCard, MediaCardDetails, MediaCardFooter, MediaCardLeftCorner, MediaCardMeta, MediaCardRightCorner, MediaCardSignals, MediaCardTitle} from "@/lib/client/components/media/base/MediaCard";
+import {
+    MediaCard,
+    MediaCardDetails,
+    MediaCardFooter,
+    MediaCardLeftCorner,
+    MediaCardMeta,
+    MediaCardRightCorner,
+    MediaCardSignals,
+    MediaCardTitle
+} from "@/lib/client/components/media/base/MediaCard";
 
 
 const activityKindFilters: { label: string, value: ActivityKind }[] = [
@@ -37,6 +48,16 @@ const activityKindFilters: { label: string, value: ActivityKind }[] = [
     { label: "Completed", value: ActivityKind.COMPLETED },
     { label: "Progressed", value: ActivityKind.PROGRESSED },
     { label: "Re-experienced", value: ActivityKind.REDO },
+];
+
+
+const activitySortItems: { label: string, value: ActivitySort }[] = [
+    { label: "Latest activity", value: "latest" },
+    { label: "Oldest activity", value: "oldest" },
+    { label: MEDIA_SORT_DEFINITIONS.title_asc.label, value: "title_asc" },
+    { label: MEDIA_SORT_DEFINITIONS.title_desc.label, value: "title_desc" },
+    { label: "Most time", value: "time_desc" },
+    { label: "Least time", value: "time_asc" },
 ];
 
 
@@ -63,15 +84,8 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
     const activityStats = useSuspenseQuery(activityStatsQueryOptions).data;
     const mediaTypeFilters = createMediaSelectItems(apiData.mediaTypes, { leading: "all", leadingLabel: "All types" });
 
-    const {
-        page = 1,
-        search = "",
-        view = "month",
-        activeTab = "all",
-        hiddenOnly = false,
-        activityKind = ActivityKind.ALL,
-        ...dateFilters
-    } = activeFilters;
+    const { page, view, display, sort, activeTab, hiddenOnly, activityKind, year, month, search = "" } = activeFilters;
+    const hasFilters = search !== "" || activityKind !== ActivityKind.ALL || hiddenOnly || (!fixedMediaType && activeTab !== "all");
 
     const { localSearch, handleInputChange, updateFilters } = useSearchNavigate<MonthlyActivitySearch>({
         search, options: { resetScroll: false },
@@ -92,15 +106,17 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
     };
 
     const periodLabel = view === "year"
-        ? dateFilters.year
-        : `${formatMonth(dateFilters.month)} ${dateFilters.year}`;
+        ? year
+        : `${formatMonth(month)} ${year}`;
 
     const calendarNavigation = (
         <CalendarNav
             view={view}
-            activeYear={Number(dateFilters.year)}
-            activeMonth={Number(dateFilters.month)}
-            onDateChange={(year, month, nextView) => handleFilterChange({ year, month, view: nextView, activeTab: fixedMediaType ?? "all" })}
+            activeYear={Number(year)}
+            activeMonth={Number(month)}
+            onDateChange={(year, month, nextView) => handleFilterChange({
+                year, month, view: nextView, activeTab: fixedMediaType ?? "all",
+            })}
         />
     );
 
@@ -110,101 +126,96 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                 stats={activityStats}
                 showTotalTime={!fixedMediaType}
             />
+            {hasFilters &&
+                <p className="pt-3 text-xs text-muted-foreground">
+                    Stats cover {fixedMediaType ? `all visible ${fixedMediaType} activity` : "all visible media activity"} in this period.
+                    Filters apply to the results below.
+                </p>
+            }
 
             <section className="pt-6">
-                <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
-                    <SearchInput
-                        className="w-full"
-                        value={localSearch}
-                        onChange={handleInputChange}
-                        aria-label="Search recorded activity"
-                        placeholder={view === "year"
-                            ? `Search ${dateFilters.year} activity by title...`
-                            : "Search monthly activity by title..."
-                        }
-                    />
-
-                    <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center lg:ml-auto lg:flex-nowrap">
-                        <Select
-                            value={activityKind}
-                            items={activityKindFilters}
-                            onValueChange={(value) => {
-                                if (value !== null) handleFilterChange({ activityKind: value as ActivityKind });
-                            }}
-                        >
-                            <SelectTrigger aria-label="Filter by activity kind" className="w-full sm:w-42">
-                                <SelectValue placeholder="Activity kind"/>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    {activityKindFilters.map((filter) =>
-                                        <SelectItem key={filter.value} value={filter.value}>
-                                            {filter.label}
-                                        </SelectItem>
-                                    )}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-
-                        {!fixedMediaType &&
-                            <Select
-                                value={activeTab}
-                                items={mediaTypeFilters}
-                                onValueChange={(value) => {
-                                    if (value !== null) handleFilterChange({ activeTab: value as MediaType | "all" });
-                                }}
-                            >
-                                <SelectTrigger aria-label="Filter by media type" className="w-full sm:w-38">
-                                    <SelectValue placeholder="Media type"/>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        {mediaTypeFilters.map((filter) =>
-                                            <SelectItem key={filter.value} value={filter.value}>
-                                                {filter.label}
-                                            </SelectItem>
-                                        )}
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        }
-
-                        {canEdit &&
-                            <Button className="w-full sm:w-auto" onClick={() => setAddActivity(true)}>
-                                <Plus/> Add activity
+                <MediaBrowseToolbar
+                    search={localSearch}
+                    isGrid={display === "grid"}
+                    onSearchChange={handleInputChange}
+                    searchLabel="Search recorded activity"
+                    onGridClick={() => updateFilters({ display: display === "grid" ? "table" : "grid" })}
+                    searchPlaceholder={view === "year"
+                        ? `Search ${year} activity by title...`
+                        : "Search monthly activity by title..."
+                    }
+                    selects={[
+                        {
+                            key: "kind",
+                            value: activityKind,
+                            items: activityKindFilters,
+                            label: "Filter by activity kind",
+                            onChange: (value: string) => handleFilterChange({ activityKind: value as ActivityKind }),
+                        },
+                        ...(!fixedMediaType ? [{
+                            value: activeTab,
+                            key: "media-type",
+                            items: mediaTypeFilters,
+                            label: "Filter by media type",
+                            onChange: (value: string) => handleFilterChange({ activeTab: value as MediaType | "all" }),
+                        }] : []),
+                        {
+                            key: "sort",
+                            value: sort,
+                            label: "Sort activity",
+                            items: activitySortItems,
+                            onChange: (value: string) => handleFilterChange({ sort: value as ActivitySort }),
+                        },
+                    ]}
+                    actions={canEdit &&
+                        <>
+                            <Button onClick={() => setAddActivity(true)}>
+                                <Plus data-icon="inline-start"/>
+                                Add activity
                             </Button>
-                        }
-
-                        {canEdit &&
-                            <div className="flex min-h-9 items-center gap-2 max-sm:px-1">
+                            <div className="flex min-h-9 items-center gap-2">
                                 <Switch
                                     id="hidden-only"
                                     checked={hiddenOnly}
-                                    onCheckedChange={(checked) => handleFilterChange({ hiddenOnly: checked })}
+                                    onCheckedChange={checked => handleFilterChange({ hiddenOnly: checked })}
                                 />
                                 <Label htmlFor="hidden-only" className="whitespace-nowrap text-sm">
                                     Hidden only
                                 </Label>
                             </div>
-                        }
-                    </div>
-                </div>
+                        </>
+                    }
+                />
 
-                <div className="flex items-center justify-between gap-4 pt-6">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Recorded activity
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2 text-xs tabular-nums text-muted-foreground">
-                        <span>
-                            {formatNumber(apiData.total)} media
-                        </span>
-                        {apiData.pages > 1 &&
-                            <>
-                                <span aria-hidden="true">·</span>
-                                <span>Page {page} / {apiData.pages}</span>
-                            </>
-                        }
-                    </div>
+                <div className="pt-3">
+                    <BrowseAppliedFilters
+                        total={apiData.total}
+                        totalPages={apiData.pages}
+                        filters={{ page, search, mediaType: !fixedMediaType && activeTab !== "all" ? activeTab : undefined }}
+                        onRemove={key => handleFilterChange(key === "search" ? { search: undefined } : { activeTab: "all" })}
+                        onReset={() => handleFilterChange({
+                            hiddenOnly: false,
+                            search: undefined,
+                            activityKind: ActivityKind.ALL,
+                            activeTab: fixedMediaType ?? "all",
+                        })}
+                        additionalGroups={[
+                            ...(activityKind !== ActivityKind.ALL ? [{
+                                key: "activityKind", label: "Activity", items: [{
+                                    key: activityKind,
+                                    label: activityKindFilters.find(filter => filter.value === activityKind)!.label,
+                                    removeLabel: "Remove activity kind filter",
+                                    onRemove: () => handleFilterChange({ activityKind: ActivityKind.ALL }),
+                                }],
+                            }] : []),
+                            ...(hiddenOnly ? [{
+                                key: "hiddenOnly", label: "Visibility", items: [{
+                                    key: "hiddenOnly", label: "Hidden only", removeLabel: "Remove hidden-only filter",
+                                    onRemove: () => handleFilterChange({ hiddenOnly: false }),
+                                }],
+                            }] : []),
+                        ]}
+                    />
                 </div>
 
                 {apiData.items.length === 0 &&
@@ -219,15 +230,27 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                     />
                 }
 
-                {apiData.items.length > 0 &&
+                {apiData.items.length > 0 && display === "table" &&
+                    <MonthlyActivityTable
+                        view={view}
+                        canEdit={canEdit}
+                        rows={apiData.items}
+                        onEdit={setEditActivity}
+                        onOccurrences={setOccurrencesActivity}
+                        showMediaType={!fixedMediaType && activeTab === "all"}
+                    />
+                }
+
+                {apiData.items.length > 0 && display === "grid" &&
                     <div className="grid grid-cols-2 gap-4 pt-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                         {apiData.items.map((row) =>
-                            <MediaCard key={row.id} mediaType={row.mediaType} item={{ ...row, mediaCover: row.mediaCover }}>
+                            <MediaCard key={row.id} mediaType={row.mediaType} item={row}>
                                 {row.mediaType !== MediaType.MOVIES && row.mediaType !== MediaType.GAMES &&
                                     <MediaCardLeftCorner>
                                         {formatNumber(row.progressGained)} {getMediaDefinition(row.mediaType).progress.unit.short}
                                     </MediaCardLeftCorner>
                                 }
+
                                 {view === "month" && canEdit &&
                                     <MediaCardRightCorner>
                                         <MediaCardEditAction
@@ -236,6 +259,7 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                                         />
                                     </MediaCardRightCorner>
                                 }
+
                                 {view === "year" && row.occurrences && row.occurrences.length > 1 &&
                                     <MediaCardRightCorner>
                                         <Button
@@ -267,7 +291,9 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                                                     }
                                                 </span>
                                             }
+
                                             {formatMinutes(row.timeGained)}
+
                                             {view === "year" && row.occurrences?.length === 1 &&
                                                 <span>
                                                     {formatMonthYear(row.lastActivityAt, { month: "short" })}
@@ -275,7 +301,9 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
                                             }
                                         </MediaCardDetails>
                                         <MediaCardSignals>
-                                            <MonthlyActivityStatusIcons row={row}/>
+                                            <MonthlyActivityStatusIcons
+                                                row={row}
+                                            />
                                         </MediaCardSignals>
                                     </MediaCardMeta>
                                 </MediaCardFooter>
@@ -293,25 +321,25 @@ export function MonthlyActivityContent(props: MonthlyActivityContentProps) {
 
             {editActivity &&
                 <MonthlyActivityEditDialog
+                    open={true}
                     activity={editActivity}
-                    open={Boolean(editActivity)}
                     onOpenChange={() => setEditActivity(null)}
                 />
             }
 
             {addActivity &&
                 <MonthlyActivityAddDialog
-                    open
+                    open={true}
+                    year={Number(year)}
                     onOpenChange={setAddActivity}
                     mediaTypes={activeMediaTypes}
-                    year={Number(dateFilters.year)}
-                    month={view === "year" ? undefined : Number(dateFilters.month)}
+                    month={view === "year" ? undefined : Number(month)}
                 />
             }
 
             {occurrencesActivity &&
                 <YearlyActivityOccurrencesDialog
-                    open
+                    open={true}
                     activity={occurrencesActivity}
                     onSelect={handleOccurrenceSelect}
                     onOpenChange={() => setOccurrencesActivity(null)}

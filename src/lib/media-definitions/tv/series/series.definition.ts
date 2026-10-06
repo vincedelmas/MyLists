@@ -9,6 +9,19 @@ export const SERIES_FALLBACK_DURATION = 40;
 export const seriesDefinition = defineMediaDefinition({
     continue: tvContinueDefinition,
     statuses: [Status.WATCHING, Status.COMPLETED, Status.ON_HOLD, Status.RANDOM, Status.DROPPED, Status.PLAN_TO_WATCH],
+    sorting: {
+        default: "title_asc",
+        options: [
+            "title_asc", "title_desc", "release_newest", "release_oldest",
+            "provider_rating_highest", "provider_rating_lowest", "added_newest", "added_oldest",
+            "modified_newest", "modified_oldest", "rating_highest", "rating_lowest", "redo_highest",
+        ],
+        labels: {
+            provider_rating_highest: "TMDB Rating +",
+            provider_rating_lowest: "TMDB Rating -",
+            redo_highest: "Re-watched",
+        },
+    },
     identity: {
         mediaType: MediaType.SERIES,
     },

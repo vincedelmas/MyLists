@@ -379,6 +379,27 @@
       "when": 1790947257959,
       "tag": "0053_authenticated_mcp",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1791032949509,
+      "tag": "0054_smart_views",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "6",
+      "when": 1791035210381,
+      "tag": "0055_smart_view_profile_shortcuts",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1791038203578,
+      "tag": "0056_smart_view_profile_limit",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,7 @@ describe("MonthlyActivityService visibility", () => {
         hiddenOnly: true,
         activeTab: "all" as const,
         activityKind: ActivityKind.ALL,
+        sort: "latest" as const,
     };
     const repository = {
         getMonthlyMediaTypes: vi.fn(() => []),
@@ -115,6 +116,7 @@ describe("MonthlyActivityService yearly consolidation", () => {
             hiddenOnly: false,
             activeTab: MediaType.BOOKS,
             activityKind: ActivityKind.ALL,
+            sort: "latest",
         });
 
         expect(result.items[0]).toMatchObject({

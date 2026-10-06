@@ -7,7 +7,7 @@ import {fillMonthlyActivityTimeline} from "@/lib/server/domain/tracking/activity
 import {allocateActivityCorrection, getActivityMonthRange} from "@/lib/utils/media/activity";
 import {resolveMonthlyActivityMedia} from "@/lib/server/domain/media/base/base.monthly-activity";
 import {MonthlyActivityRepository} from "@/lib/server/domain/tracking/monthly-activity.repository";
-import {calendarDateRangeToISOString, compareDateInputs, monthBucketFromDateInput} from "@/lib/utils/formatting/date";
+import {calendarDateRangeToISOString, monthBucketFromDateInput} from "@/lib/utils/formatting/date";
 import {AddMonthlyActivity, MonthlyActivityFilters, MonthlyActivityStatsFilters, UpdateMonthlyActivity} from "@/lib/schemas";
 import {
     ActivityCorrectionChoice,
@@ -134,6 +134,7 @@ export class MonthlyActivityService {
                 ...range,
                 perPage: 48,
                 page: filters.page,
+                sort: filters.sort,
                 search: filters.search,
                 hiddenOnly: filters.hiddenOnly,
                 activityKind: filters.activityKind,
@@ -181,9 +182,11 @@ export class MonthlyActivityService {
             });
         }
 
-        const items = rows.sort((a, b) => compareDateInputs(b.lastActivityAt, a.lastActivityAt));
-
-        return { ...result, items, mediaTypes: availableMediaTypes };
+        return {
+            ...result,
+            items: rows,
+            mediaTypes: availableMediaTypes,
+        };
     }
 
     addMonthlyActivity(userId: number, payload: AddMonthlyActivity) {

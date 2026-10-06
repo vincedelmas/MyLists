@@ -39,10 +39,10 @@ export const getMediaCommunityCollections = createServerFn({ method: "GET" })
 export const getReadCollectionDetails = createServerFn({ method: "GET" })
     .middleware([publicAuthMiddleware])
     .validator(collectionDetailsReadSchema)
-    .handler(async ({ data: { collectionId, page }, context: { currentUser } }) => {
+    .handler(async ({ data: { collectionId, ...filters }, context: { currentUser } }) => {
         const container = await getContainer();
         const collectionService = container.services.collections;
-        return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser), page);
+        return collectionService.getCollectionDetails(collectionId, "read", toActor(currentUser), filters);
     });
 
 

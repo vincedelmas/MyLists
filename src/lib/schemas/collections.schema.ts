@@ -1,5 +1,6 @@
 import * as z from "zod";
 import {PrivacyType} from "@/lib/utils/enums";
+import {mediaBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
 import {
     coercedPositiveIntFieldSchema,
     mediaTypeFieldSchema,
@@ -45,9 +46,7 @@ export const collectionIdSchema = z.object({
     collectionId: coercedPositiveIntFieldSchema,
 });
 
-export const collectionItemsSearchSchema = paginationSchema.pick({ page: true });
-
-export const collectionDetailsReadSchema = collectionItemsSearchSchema.extend({
+export const collectionDetailsReadSchema = mediaBrowseFiltersSchema.extend({
     collectionId: coercedPositiveIntFieldSchema,
 });
 

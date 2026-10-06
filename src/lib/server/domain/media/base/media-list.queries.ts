@@ -1,5 +1,6 @@
 import {MediaListArgs} from "@/lib/schemas";
 import {user} from "@/lib/server/database/schema";
+import type {IdNamePair} from "@/lib/types/media-common.types";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {SQLiteColumn, SQLiteTable} from "drizzle-orm/sqlite-core";
 import {resolvePagination, resolveSorting} from "@/lib/server/database/pagination";
@@ -33,6 +34,21 @@ type MediaColOptionsDefinition = {
     nameColumn: SQLiteColumn;
     mediaTable: SQLiteTable & { id: SQLiteColumn };
     listTable: SQLiteTable & { mediaId: SQLiteColumn; userId: SQLiteColumn };
+};
+
+
+export const getMediaListSelection = <TRepoDef extends AnyMediaRepositoryDefinition>(definition: TRepoDef) => {
+    const { listQuery, tables: { listTable, tagTable } } = definition;
+
+    return {
+        ...listQuery.selection,
+        ratingSystem: user.ratingSystem,
+        tags: sql<IdNamePair[]>`COALESCE((
+            SELECT json_group_array(DISTINCT json_object('id', l.id, 'name', l.name))
+            FROM ${tagTable} l
+            WHERE l.media_id = ${listTable.mediaId} AND l.user_id = ${listTable.userId}
+        ), json_array())`.mapWith(JSON.parse),
+    };
 };
 
 
@@ -165,19 +181,7 @@ export const createMediaListQueries = <TRepoDef extends AnyMediaRepositoryDefini
 
             // Main query builder
             let queryBuilder = getDbClient()
-                .select({
-                    ...listQuery.selection,
-                    ratingSystem: user.ratingSystem,
-                    tags: sql` COALESCE((
-                        SELECT json_group_array(DISTINCT json_object(
-                            'id', l.id,
-                            'name', l.name
-                        ))
-                        FROM ${tagTable} l
-                        WHERE l.media_id = ${listTable.mediaId} AND l.user_id = ${listTable.userId}
-                        ), json_array()
-                    )`.mapWith(JSON.parse),
-                })
+                .select(getMediaListSelection(definition))
                 .from(listTable)
                 .innerJoin(user, eq(listTable.userId, user.id))
                 .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))

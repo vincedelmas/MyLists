@@ -6,6 +6,7 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/l
 
 interface DataTableProps<TFeatures extends TableFeatures, TData extends RowData> {
     className?: string;
+    ariaLabel?: string;
     emptyMessage?: ReactNode;
     table: ReactTable<TFeatures, TData>;
     getIsRowSelected?: (row: Row<TFeatures, TData>) => boolean;
@@ -15,12 +16,12 @@ interface DataTableProps<TFeatures extends TableFeatures, TData extends RowData>
 
 
 export function DataTable<TFeatures extends TableFeatures, TData extends RowData>(props: DataTableProps<TFeatures, TData>) {
-    const { table, emptyMessage = "No results.", className, getIsRowSelected, getRowClassName, getCellStyle } = props;
+    const { table, emptyMessage = "No results.", className, ariaLabel, getIsRowSelected, getRowClassName, getCellStyle } = props;
     const rows = table.getRowModel().rows;
 
     return (
         <div className={cn("overflow-hidden rounded-xl border p-3 pt-0 shadow-xs", className)}>
-            <Table>
+            <Table aria-label={ariaLabel}>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) =>
                         <TableRow key={headerGroup.id}>

@@ -58,7 +58,7 @@ describe("MonthlyActivityRepository", () => {
         dbContext.db = undefined;
     });
 
-    it.each(["month", "year"] as const)("searches all matching titles before %s activity pagination", async (view) => {
+    it.each(["month", "year"] as const)("searches and preserves selected sorting across %s activity pages", async (view) => {
         const books = Array.from({ length: 60 }, (_, index) => ({
             id: index + 1,
             apiId: String(index + 1),
@@ -90,6 +90,7 @@ describe("MonthlyActivityRepository", () => {
             username: "monthly-user",
             activeTab: MediaType.BOOKS,
             activityKind: ActivityKind.ALL,
+            sort: "latest" as const,
         };
 
         const firstPage = await service.getMonthlyActivity(1, { ...filters, page: 1 });
@@ -100,6 +101,9 @@ describe("MonthlyActivityRepository", () => {
         expect(secondPage.items).toHaveLength(2);
         expect([...firstPage.items, ...secondPage.items].map(item => item.mediaId))
             .toEqual(Array.from({ length: 50 }, (_, index) => 60 - index));
+        const titlePages = await Promise.all([1, 2].map(page => service.getMonthlyActivity(1, { ...filters, sort: "title_asc", page })));
+        expect(titlePages.flatMap(result => result.items.map(item => item.mediaId)))
+            .toEqual(Array.from({ length: 50 }, (_, index) => 11 + index));
         expect((await service.getMonthlyActivity(1, { ...filters, search: "Missing", page: 1 })).total).toBe(0);
     });
 
@@ -337,6 +341,53 @@ describe("MonthlyActivityRepository", () => {
 
         expect(secondPage.items).toHaveLength(1);
         expect(secondPage.items[0]).toMatchObject({ mediaId: 11, progressGained: 20 });
+    });
+
+    it.each(["getPaginatedMonthlyActivities", "getPaginatedYearlyActivities"] as const)(
+        "%s sorts titles and media-specific time before pagination", async method => {
+            db.insert(userMediaSettings).values([
+                { userId: 1, mediaType: MediaType.MOVIES, active: true },
+                { userId: 1, mediaType: MediaType.GAMES, active: true },
+            ]).run();
+            db.insert(schema.movies).values({ id: 1, apiId: 1, name: "Alpha", duration: 100, imageCover: "default.jpg" }).run();
+            db.insert(schema.books).values({ id: 2, apiId: "2", name: "beta", pages: 200, imageCover: "default.jpg" }).run();
+            db.insert(schema.games).values({ id: 3, apiId: 3, name: "Zebra", imageCover: "default.jpg" }).run();
+            db.insert(userMediaMonthlyActivity).values([
+                { userId: 1, mediaId: 1, mediaType: MediaType.MOVIES, monthBucket: "2026-06", lastActivityAt: "2026-06-01T12:00:00Z", progressGained: 2 },
+                { userId: 1, mediaId: 2, mediaType: MediaType.BOOKS, monthBucket: "2026-06", lastActivityAt: "2026-06-01 12:00:00", progressGained: 100 },
+                { userId: 1, mediaId: 3, mediaType: MediaType.GAMES, monthBucket: "2026-06", lastActivityAt: "2026-06-10T12:00:00Z", progressGained: 180 },
+            ]).run();
+            const filters = { startMonth: "2026-06", endMonth: "2026-06", perPage: 1 };
+            for (const [sort, expected] of [
+                ["title_asc", [1, 2, 3]], ["title_desc", [3, 2, 1]],
+                ["time_desc", [1, 3, 2]], ["time_asc", [2, 3, 1]],
+                ["latest", [3, 2, 1]], ["oldest", [2, 1, 3]],
+            ] as const) {
+                const pages = await Promise.all([1, 2, 3].map(page => MonthlyActivityRepository[method](1, { ...filters, sort, page })));
+                expect(pages.map(page => page.items[0].mediaId), sort).toEqual(expected);
+                expect(pages.every(page => page.total === 3 && page.pages === 3)).toBe(true);
+            }
+        },
+    );
+
+    it("sorts yearly time by the sum of all matching months and keeps occurrences newest first", async () => {
+        db.insert(schema.books).values([
+            { id: 10, apiId: "10", name: "A longer year", pages: 100, imageCover: "default.jpg" },
+            { id: 11, apiId: "11", name: "A longer month", pages: 100, imageCover: "default.jpg" },
+        ]).run();
+        db.insert(userMediaMonthlyActivity).values([
+            { userId: 1, mediaId: 10, mediaType: MediaType.BOOKS, monthBucket: "2026-01", lastActivityAt: "2026-01-20 12:00:00", progressGained: 60 },
+            { userId: 1, mediaId: 10, mediaType: MediaType.BOOKS, monthBucket: "2026-06", lastActivityAt: "2026-06-20T12:00:00Z", progressGained: 60 },
+            { userId: 1, mediaId: 11, mediaType: MediaType.BOOKS, monthBucket: "2026-07", lastActivityAt: "2026-07-20T12:00:00Z", progressGained: 100 },
+        ]).run();
+        const result = await MonthlyActivityRepository.getPaginatedYearlyActivities(1, {
+            startMonth: "2026-01", endMonth: "2026-12", sort: "time_desc", perPage: 1,
+        });
+        expect(result).toMatchObject({ total: 2, pages: 2, items: [{ mediaId: 10, progressGained: 120 }] });
+        expect(result.items[0].occurrences.map(row => row.monthBucket)).toEqual(["2026-06", "2026-01"]);
+        expect((await MonthlyActivityRepository.getPaginatedYearlyActivities(1, {
+            startMonth: "2026-01", endMonth: "2026-12", sort: "time_asc", perPage: 1,
+        })).items[0].mediaId).toBe(11);
     });
 
     it("merges every contribution when moving activity to another month", async () => {

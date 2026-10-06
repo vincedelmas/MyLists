@@ -102,8 +102,9 @@ function ProfileOnboarding() {
                         <div className="min-h-113 animate-in fade-in duration-300">
                             {effectiveActiveTab === "overview" ?
                                 <OverviewTab
-                                    showContinue
+                                    smartViews={[]}
                                     isCurrent={false}
+                                    showContinue={true}
                                     inProgressMedia={[]}
                                     perMedia={apiData.perMediaSummary}
                                     globalStats={apiData.mediaGlobalSummary}

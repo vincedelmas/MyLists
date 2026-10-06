@@ -1,9 +1,9 @@
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {SERIES_FALLBACK_DURATION, seriesDefinition} from "@/lib/media-definitions/tv/series/series.definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {
     series,
@@ -17,12 +17,20 @@ import {
 } from "@/lib/server/database/schema/media/series.schema";
 
 
+const sortColumns = {
+    ...getCommonMediaSortColumns({ mediaTable: series, listTable: seriesList }),
+    redo: seriesList.redo,
+    providerRating: series.voteAverage,
+};
+
+
 export const seriesServerDefinition = defineServerMediaDefinition({
     identity: {
         mediaType: MediaType.SERIES,
         coverDirectory: "series-covers",
     },
     repository: {
+        sortColumns,
         tables: {
             mediaTable: series,
             listTable: seriesList,
@@ -84,7 +92,7 @@ export const seriesServerDefinition = defineServerMediaDefinition({
                 }),
             },
             defaultSort: getMediaSortLabel(seriesDefinition, seriesDefinition.sorting.default),
-            sorts: createMediaListSorts(seriesDefinition, { mediaTable: series, listTable: seriesList }),
+            sorts: createMediaListSorts(seriesDefinition, sortColumns, series.id),
         },
         communityActivity: {
             aggregates: {

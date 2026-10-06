@@ -2,10 +2,17 @@ import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {and, eq, getTableColumns, like, ne, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {gamesDefinition} from "@/lib/media-definitions/games/games.definition";
-import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {createArrayFilter, createListColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {games, gamesCompanies, gamesGenre, gamesList, gamesPlatforms, gamesTags} from "@/lib/server/database/schema/media/games.schema";
+
+
+const sortColumns = {
+    ...getCommonMediaSortColumns({ mediaTable: games, listTable: gamesList }),
+    playtime: gamesList.playtime,
+    providerRating: games.voteAverage,
+};
 
 
 export const gamesServerDefinition = defineServerMediaDefinition({
@@ -14,6 +21,7 @@ export const gamesServerDefinition = defineServerMediaDefinition({
         coverDirectory: "games-covers",
     },
     repository: {
+        sortColumns,
         tables: {
             mediaTable: games,
             listTable: gamesList,
@@ -50,7 +58,7 @@ export const gamesServerDefinition = defineServerMediaDefinition({
                 }),
             },
             defaultSort: getMediaSortLabel(gamesDefinition, gamesDefinition.sorting.default),
-            sorts: createMediaListSorts(gamesDefinition, { mediaTable: games, listTable: gamesList }),
+            sorts: createMediaListSorts(gamesDefinition, sortColumns, games.id),
         },
         communityActivity: {
             aggregates: {

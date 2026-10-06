@@ -2,10 +2,18 @@ import {getTableColumns, ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
 import {createArrayFilter} from "@/lib/server/domain/media/base/media-list.queries";
-import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {MANGA_FIXED_DURATION_MIN, mangaDefinition} from "@/lib/media-definitions/manga/manga.definition";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {manga, mangaAuthors, mangaGenre, mangaList, mangaTags} from "@/lib/server/database/schema/media/manga.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+
+
+const sortColumns = {
+    ...getCommonMediaSortColumns({ mediaTable: manga, listTable: mangaList }),
+    redo: mangaList.redo,
+    chapters: manga.chapters,
+    providerRating: manga.voteAverage,
+};
 
 
 export const mangaServerDefinition = defineServerMediaDefinition({
@@ -14,6 +22,7 @@ export const mangaServerDefinition = defineServerMediaDefinition({
         coverDirectory: "manga-covers",
     },
     repository: {
+        sortColumns,
         tables: {
             mediaTable: manga,
             listTable: mangaList,
@@ -46,7 +55,7 @@ export const mangaServerDefinition = defineServerMediaDefinition({
             },
             filterOptions: {},
             defaultSort: getMediaSortLabel(mangaDefinition, mangaDefinition.sorting.default),
-            sorts: createMediaListSorts(mangaDefinition, { mediaTable: manga, listTable: mangaList }),
+            sorts: createMediaListSorts(mangaDefinition, sortColumns, manga.id),
         },
         communityActivity: {
             aggregates: {

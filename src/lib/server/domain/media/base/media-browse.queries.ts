@@ -1,54 +1,13 @@
 import type {Status} from "@/lib/utils/enums";
 import {FormattedError} from "@/lib/utils/error-classes";
-import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {getMediaDefinition} from "@/lib/media-definitions/definition.registry";
-import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
-import type {AnyServerMediaDefinition, BaseMediaTables} from "@/lib/media-definitions/base/media.definition.server";
-import {and, asc, eq, exists, inArray, isNotNull, isNull, like, or, type SQL, sql, type SQLWrapper} from "drizzle-orm";
-import {MEDIA_SORT_DEFINITIONS, type MediaSortField, type MediaSortKey} from "@/lib/media-definitions/base/media-sorting";
-
-
-export const getMediaSortColumns = ({ mediaTable, listTable }: Pick<BaseMediaTables, "mediaTable" | "listTable">) => {
-    return {
-        redo: listTable.redo,
-        pages: mediaTable.pages,
-        rating: listTable.rating,
-        playtime: listTable.playtime,
-        chapters: mediaTable.chapters,
-        providerRating: mediaTable.voteAverage,
-        title: sql`${mediaTable.name} COLLATE NOCASE`,
-        addedAt: sql`JULIANDAY(${listTable.addedAt})`,
-        lastUpdated: sql`JULIANDAY(${listTable.lastUpdated})`,
-        releaseDate: sql`JULIANDAY(${mediaTable.releaseDate})`,
-    } satisfies Record<MediaSortField, SQLWrapper | undefined>;
-}
-
-
-const createMediaSortOrder = (key: MediaSortKey, columns: ReturnType<typeof getMediaSortColumns>) => {
-    const sort = MEDIA_SORT_DEFINITIONS[key];
-    const direction = sort.direction === "asc" ? sql`ASC` : sql`DESC`;
-
-    return sql`${columns[sort.field]!} ${direction} NULLS LAST`;
-};
-
-
-export const createMediaListSorts = (definition: Pick<MediaDefinition, "sorting">, tables: Pick<BaseMediaTables, "mediaTable" | "listTable">) => {
-    const columns = getMediaSortColumns(tables);
-
-    return Object.fromEntries(definition.sorting.options.map(key =>
-        [
-            getMediaSortLabel(definition, key),
-            [
-                createMediaSortOrder(key, columns),
-                sql`${tables.mediaTable.name} COLLATE NOCASE ASC`,
-                sql`${tables.mediaTable.id} ASC`] as [SQL, ...SQL[]
-            ],
-        ],
-    ));
-};
+import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
+import {createMediaSortOrder} from "@/lib/server/domain/media/base/media-sorting.queries";
+import type {AnyServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {and, asc, eq, exists, inArray, isNotNull, isNull, like, or, type SQL, sql} from "drizzle-orm";
 
 
 export const createMediaBrowseQueryParts = (definition: AnyServerMediaDefinition, filters: MediaBrowseFilters, viewerId?: number) => {
@@ -118,7 +77,7 @@ export const createMediaBrowseQueryParts = (definition: AnyServerMediaDefinition
     }
 
     const sortOrder = sortKey
-        ? createMediaSortOrder(sortKey, getMediaSortColumns(definition.repository.tables))
+        ? createMediaSortOrder(sortKey, definition.repository.sortColumns)
         : undefined;
 
     return {

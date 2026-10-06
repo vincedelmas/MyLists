@@ -1,11 +1,18 @@
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {getTableColumns, notInArray, sql} from "drizzle-orm";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {ANIME_FALLBACK_DURATION, animeDefinition} from "@/lib/media-definitions/tv/anime/anime.definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
 import {anime, animeActors, animeEpisodesPerSeason, animeGenre, animeList, animeListSeasons, animeNetwork, animeTags} from "@/lib/server/database/schema/media/anime.schema";
+
+
+const sortColumns = {
+    ...getCommonMediaSortColumns({ mediaTable: anime, listTable: animeList }),
+    redo: animeList.redo,
+    providerRating: anime.voteAverage,
+};
 
 
 export const animeServerDefinition = defineServerMediaDefinition({
@@ -14,6 +21,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
         coverDirectory: "anime-covers",
     },
     repository: {
+        sortColumns,
         tables: {
             mediaTable: anime,
             tagTable: animeTags,
@@ -75,7 +83,7 @@ export const animeServerDefinition = defineServerMediaDefinition({
                 }),
             },
             defaultSort: getMediaSortLabel(animeDefinition, animeDefinition.sorting.default),
-            sorts: createMediaListSorts(animeDefinition, { mediaTable: anime, listTable: animeList }),
+            sorts: createMediaListSorts(animeDefinition, sortColumns, anime.id),
         },
         communityActivity: {
             aggregates: {

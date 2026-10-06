@@ -8,7 +8,6 @@ import type {SmartViewSpec} from "@/lib/schemas/smart-views.schema";
 import {user, userMediaSettings} from "@/lib/server/database/schema";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
-import {getMediaSortColumns} from "@/lib/server/domain/media/base/media-browse.queries";
 import {getMediaListSelection} from "@/lib/server/domain/media/base/media-list.queries";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
@@ -32,6 +31,7 @@ type SmartViewItem = SmartViewListItem & {
     imageCover: string;
     mediaType: MediaType;
     rating: number | null;
+    providerRating: number | null;
     addedAt: string | null;
     favorite: boolean | null;
     lastUpdated: string | null;
@@ -46,20 +46,6 @@ const statusGroups = {
     in_progress: [Status.WATCHING, Status.READING, Status.PLAYING],
     planned: [Status.PLAN_TO_WATCH, Status.PLAN_TO_READ, Status.PLAN_TO_PLAY],
 } satisfies Record<NonNullable<SmartViewSpec["filters"]["statusGroup"]>, Status[]>;
-
-
-const sortColumns = {
-    redo: sql`"redo"`,
-    pages: sql`"pages"`,
-    rating: sql`"rating"`,
-    chapters: sql`"chapters"`,
-    playtime: sql`"playtime"`,
-    addedAt: sql`JULIANDAY("addedAt")`,
-    title: sql`"title" COLLATE NOCASE`,
-    providerRating: sql`"providerRating"`,
-    lastUpdated: sql`JULIANDAY("lastUpdated")`,
-    releaseDate: sql`JULIANDAY("releaseDate")`,
-};
 
 
 type SmartViewQueryOptions = {
@@ -99,10 +85,7 @@ const getSmartViewResultPage = (userId: number, spec: SmartViewSpec, { page = 1,
 
     const sources = mediaTypes.map(mediaType => {
         const allowedStatuses = getMediaDefinition(mediaType).statuses;
-        const { mediaTable, listTable, tagTable, genreTable } = getServerMediaDefinition(mediaType).repository.tables;
-
-        // TODO: put in definitions maybe because now we get all possible sort even on media type we they don't ?
-        const sortColumns = getMediaSortColumns({ mediaTable, listTable });
+        const { tables: { mediaTable, listTable, tagTable, genreTable }, sortColumns } = getServerMediaDefinition(mediaType).repository;
         const conditions = [sql`${listTable.userId} = ${userId}`, sql`${userMediaSettings.active} = 1`];
 
         if (filters.search) {
@@ -199,25 +182,20 @@ const getSmartViewResultPage = (userId: number, spec: SmartViewSpec, { page = 1,
             )`);
         }
 
-        const baseQuery = sql`SELECT
+        const selection = sql`
             ${mediaType} AS "mediaType", 
             ${mediaTable.name} AS "title",
             ${listTable.mediaId} AS "mediaId", 
-            ${listTable.favorite} AS "favorite",
             ${mediaTable.releaseDate} AS "releaseDate",
-            ${sortColumns.redo ?? sql`NULL`} AS "redo",
-            ${sortColumns.pages ?? sql`NULL`} AS "pages", 
-            ${sortColumns.chapters ?? sql`NULL`} AS "chapters", 
-            ${sortColumns.playtime ?? sql`NULL`} AS "playtime",
-            ${sortColumns.providerRating ?? sql`NULL`} AS "providerRating", 
-            ${listTable.status} AS "status", ${listTable.rating} AS "rating", 
-            ${listTable.addedAt} AS "addedAt", ${listTable.lastUpdated} AS "lastUpdated", 
-            COALESCE(${listTable.customCover}, ${mediaTable.imageCover}) AS "imageCover"
-            FROM ${listTable}
+            COALESCE(${listTable.customCover}, ${mediaTable.imageCover}) AS "imageCover"`;
+
+        const from = sql`FROM ${listTable}
             INNER JOIN ${mediaTable} ON ${mediaTable.id} = ${listTable.mediaId}
             INNER JOIN ${userMediaSettings} ON ${userMediaSettings.userId} = ${listTable.userId}
                 AND ${userMediaSettings.mediaType} = ${mediaType}
             WHERE ${sql.join(conditions, sql` AND `)}`;
+
+        const baseQuery = sql`SELECT ${selection} ${from}`;
 
         const browseConditions: SQL[] = [];
 
@@ -266,12 +244,12 @@ const getSmartViewResultPage = (userId: number, spec: SmartViewSpec, { page = 1,
 
         return {
             mediaType,
-
+            selection,
+            sortColumns,
             baseQuery,
-
-            query: browseConditions.length
-                ? sql`${baseQuery} AND ${sql.join(browseConditions, sql` AND `)}`
-                : baseQuery,
+            from: browseConditions.length
+                ? sql`${from} AND ${sql.join(browseConditions, sql` AND `)}`
+                : from,
 
             genreQuery: sql`SELECT ${genreTable.name} AS "name" 
                 FROM ${genreTable}
@@ -299,15 +277,20 @@ const getSmartViewResultPage = (userId: number, spec: SmartViewSpec, { page = 1,
     }
 
     const sort = sortKey ? MEDIA_SORT_DEFINITIONS[sortKey] : spec.sort;
-    const union = sql.join(sources.map(source => source.query), sql` UNION ALL `);
+    const union = sql.join(sources.map(source => sql`
+        SELECT ${source.selection}, ${source.sortColumns[sort.field] ?? sql`NULL`} AS "sortValue"
+        ${source.from}
+    `), sql` UNION ALL `);
 
     const direction = sort.direction === "asc" ? sql`ASC` : sql`DESC`;
     const [{ total }] = db.all<{ total: number }>(sql`SELECT COUNT(*) AS "total" FROM (${union})`);
 
+    // Preserve nullable response fields; each media's list projection fills the applicable values.
     const rows = db.all<{ mediaType: MediaType; mediaId: number; title: string; imageCover: string; releaseDate: string | null }>(sql`
-        SELECT * 
+        SELECT "mediaType", "mediaId", "title", "imageCover", "releaseDate",
+            NULL AS "redo", NULL AS "pages", NULL AS "chapters", NULL AS "playtime"
         FROM (${union}) 
-        ORDER BY ${sortColumns[sort.field]} ${direction} NULLS LAST, "title" COLLATE NOCASE ASC, "mediaType" ASC, "mediaId" ASC
+        ORDER BY "sortValue" ${direction} NULLS LAST, "title" COLLATE NOCASE ASC, "mediaType" ASC, "mediaId" ASC
         LIMIT ${perPage} OFFSET ${(page - 1) * perPage}`);
 
     const filterOptions: { genres: string[]; tags: string[] } = { genres: [], tags: [] };
@@ -347,7 +330,7 @@ export const getSmartViewResults = (userId: number, spec: SmartViewSpec, options
     const results = getSmartViewResultPage(userId, spec, options);
 
     const rows = results.items;
-    const listItems = new Map<string, SmartViewListItem>();
+    const listItems = new Map<string, SmartViewListItem & { providerRating: number | null }>();
 
     for (const mediaType of new Set(rows.map(row => row.mediaType))) {
         const definition = getServerMediaDefinition(mediaType);
@@ -356,7 +339,10 @@ export const getSmartViewResults = (userId: number, spec: SmartViewSpec, options
         const mediaIds = rows.filter(row => row.mediaType === mediaType).map(row => row.mediaId);
 
         // Reuse each media's list projection so progress, tags and rating presentation stay identical
-        const selected = db.select(getMediaListSelection(definition.repository))
+        const selected = db.select({
+            ...getMediaListSelection(definition.repository),
+            providerRating: sql<number | null>`${definition.repository.sortColumns.providerRating ?? sql`NULL`}`,
+        })
             .from(listTable)
             .innerJoin(user, eq(listTable.userId, user.id))
             .innerJoin(mediaTable, eq(listTable.mediaId, mediaTable.id))
@@ -364,7 +350,7 @@ export const getSmartViewResults = (userId: number, spec: SmartViewSpec, options
             .all();
 
         for (const item of selected) {
-            const listItem = { ...item, common: false } as SmartViewListItem;
+            const listItem = { ...item, common: false } as SmartViewListItem & { providerRating: number | null };
             listItems.set(`${mediaType}-${item.mediaId}`, listItem);
         }
     }

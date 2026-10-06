@@ -1,11 +1,18 @@
 import {getTableColumns, ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {BOOKS_FIXED_DURATION_MIN, booksDefinition} from "@/lib/media-definitions/books/books.definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {books, booksAuthors, booksGenre, booksList, booksTags} from "@/lib/server/database/schema/media/books.schema";
 import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+
+
+const sortColumns = {
+    ...getCommonMediaSortColumns({ mediaTable: books, listTable: booksList }),
+    redo: booksList.redo,
+    pages: books.pages,
+};
 
 
 export const booksServerDefinition = defineServerMediaDefinition({
@@ -14,6 +21,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
         coverDirectory: "books-covers",
     },
     repository: {
+        sortColumns,
         tables: {
             mediaTable: books,
             listTable: booksList,
@@ -49,7 +57,7 @@ export const booksServerDefinition = defineServerMediaDefinition({
                 }),
             },
             defaultSort: getMediaSortLabel(booksDefinition, booksDefinition.sorting.default),
-            sorts: createMediaListSorts(booksDefinition, { mediaTable: books, listTable: booksList }),
+            sorts: createMediaListSorts(booksDefinition, sortColumns, books.id),
         },
         communityActivity: {
             aggregates: {

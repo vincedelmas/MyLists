@@ -4,6 +4,7 @@ import type {TopAffinityDefinition} from "@/lib/types/stats.types";
 import type {MediaEditFieldByType} from "@/lib/schemas/media-details.schema";
 import type {MediaDefinition} from "@/lib/media-definitions/base/media.definition";
 import type {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
+import type {MediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import type {AnySQLiteColumn, AnySQLiteTable, SelectedFieldsFlat} from "drizzle-orm/sqlite-core";
 import {FilterDefinitions, FilterOptionLoaders} from "@/lib/server/domain/media/base/media-list.queries";
 
@@ -18,13 +19,10 @@ type MediaTableColumns = {
     addedAt: NullableColumn<string>;
     synopsis: NullableColumn<string>;
     imageCover: NotNullColumn<string>;
-    chapters?: NullableColumn<number>;
     releaseDate: NullableColumn<string>;
-    voteAverage?: NullableColumn<number>;
     originalName?: NullableColumn<string>;
     apiId: NotNullColumn<string | number>;
     lastApiUpdate: NullableColumn<string>;
-    pages?: NullableColumn<number> | NotNullColumn<number>;
 };
 
 
@@ -37,7 +35,6 @@ type ListTableColumns = {
     mediaId: NotNullColumn<number>;
     comment: NullableColumn<string>;
     addedAt: NullableColumn<string>;
-    playtime?: NullableColumn<number>;
     favorite: NullableColumn<boolean>;
     lastUpdated: NullableColumn<string>;
     customCover: NullableColumn<string | null>;
@@ -115,8 +112,10 @@ type JobDefinition = {
 interface MediaRepositoryDefinition<
     TTables extends BaseMediaTables = BaseMediaTables,
     TSortDefinitions extends SortDefinitions = SortDefinitions,
+    TSortColumns extends MediaSortColumns = MediaSortColumns,
 > {
     readonly tables: TTables;
+    readonly sortColumns: TSortColumns;
     readonly jobs: Partial<Record<JobType, JobDefinition>>;
     readonly popularity?: {
         readonly eligibility: SQL;
@@ -193,18 +192,20 @@ export interface ServerMediaDefinition<
     TAffinityDefinitions extends AffinityDefinitions = AffinityDefinitions,
     TMediaType extends MediaType = MediaType,
     TIngestion extends MediaIngestionPolicy = MediaIngestionPolicy,
+    TSortColumns extends MediaSortColumns = MediaSortColumns,
 > {
     readonly ingestion: TIngestion;
     readonly attribution: ProviderAttribution;
     readonly identity: MediaIdentity<TMediaType>;
     readonly service: MediaServicePolicy<TTables, TMediaType>;
     readonly statistics: MediaStatisticsDefinition<TAffinityDefinitions>;
-    readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions>;
+    readonly repository: MediaRepositoryDefinition<TTables, TSortDefinitions, TSortColumns>;
 }
 
 
 export type AnyMediaRepositoryDefinition = {
     readonly tables: BaseMediaTables;
+    readonly sortColumns: MediaSortColumns;
     readonly popularity?: { readonly eligibility: SQL };
     readonly jobs: Partial<Record<JobType, JobDefinition>>;
     readonly communityActivity: {
@@ -250,7 +251,8 @@ export const defineServerMediaDefinition = <
     const TAffinityDefinitions extends AffinityDefinitions,
     const TMediaType extends MediaType,
     const TIngestion extends MediaIngestionPolicy,
->(definition: ServerMediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion>) => {
+    const TSortColumns extends MediaSortColumns,
+>(definition: ServerMediaDefinition<TTables, TSortDefinitions, TAffinityDefinitions, TMediaType, TIngestion, TSortColumns>) => {
     return definition;
 }
 

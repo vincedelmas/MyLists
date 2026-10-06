@@ -1,11 +1,18 @@
 import {getTableColumns, ne, sql} from "drizzle-orm";
 import {getMediaSortLabel} from "@/lib/utils/media/sorting";
 import {ApiProviderType, JobType, MediaType, Status} from "@/lib/utils/enums";
-import {createMediaListSorts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {MOVIES_FALLBACK_DURATION, moviesDefinition} from "@/lib/media-definitions/movies/movies.definition";
 import {createArrayFilter, createMediaColOptionsLoader} from "@/lib/server/domain/media/base/media-list.queries";
-import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+import {createMediaListSorts, getCommonMediaSortColumns} from "@/lib/server/domain/media/base/media-sorting.queries";
 import {movies, moviesActors, moviesGenre, moviesList, moviesTags} from "@/lib/server/database/schema/media/movies.schema";
+import {defineAffinityDefinitions, defineServerMediaDefinition} from "@/lib/media-definitions/base/media.definition.server";
+
+
+const sortColumns = {
+    ...getCommonMediaSortColumns({ mediaTable: movies, listTable: moviesList }),
+    redo: moviesList.redo,
+    providerRating: movies.voteAverage,
+};
 
 
 export const moviesServerDefinition = defineServerMediaDefinition({
@@ -14,6 +21,7 @@ export const moviesServerDefinition = defineServerMediaDefinition({
         coverDirectory: "movies-covers",
     },
     repository: {
+        sortColumns,
         tables: {
             mediaTable: movies,
             listTable: moviesList,
@@ -56,7 +64,7 @@ export const moviesServerDefinition = defineServerMediaDefinition({
                 }),
             },
             defaultSort: getMediaSortLabel(moviesDefinition, moviesDefinition.sorting.default),
-            sorts: createMediaListSorts(moviesDefinition, { mediaTable: movies, listTable: moviesList }),
+            sorts: createMediaListSorts(moviesDefinition, sortColumns, movies.id),
         },
         communityActivity: {
             aggregates: {

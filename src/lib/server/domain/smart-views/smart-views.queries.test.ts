@@ -5,9 +5,12 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {MediaType, RatingSystemType, Status} from "@/lib/utils/enums";
 import * as schema from "@/lib/server/database/schema";
-import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
+import {ALL_MEDIA_TYPES, getMediaDefinition} from "@/lib/media-definitions/definition.registry";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import type {SmartViewSpec} from "@/lib/schemas/smart-views.schema";
+import {getMediaSortLabel} from "@/lib/utils/media/sorting";
+import {createMediaListQueries} from "@/lib/server/domain/media/base/media-list.queries";
+import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {getSmartViewEditorFilterOptions, getSmartViewResults, getSmartViewSummary} from "./smart-views.queries";
 
 
@@ -196,27 +199,82 @@ describe("smart list live queries", () => {
         }
     });
 
-    it("applies media-specific list sorting and falls back for orders unsupported by mixed media", () => {
+    it("sorts mixed-case titles across media types with stable ties in either direction", () => {
+        addEntry(MediaType.GAMES, 1, { title: "banana" });
+        addEntry(MediaType.BOOKS, 2, { title: "Apricot" });
+        addEntry(MediaType.ANIME, 3, { title: "cherry" });
+        addEntry(MediaType.MOVIES, 4, { title: "apple" });
+        addEntry(MediaType.SERIES, 5, { title: "Banana" });
+        addEntry(MediaType.MANGA, 6, { title: "Date" });
+        expect(getSmartViewResults(1, { ...spec, sort: { field: "title", direction: "asc" } }).items.map(item => item.mediaId))
+            .toEqual([4, 2, 1, 5, 3, 6]);
+        expect(getSmartViewResults(1, spec, { filters: { sorting: "title_desc" } }).items.map(item => item.mediaId))
+            .toEqual([6, 3, 1, 5, 2, 4]);
+    });
+
+    it.each([
+        { mediaType: MediaType.BOOKS, catalogField: "pages", highest: "pages_highest", lowest: "pages_lowest", personalField: "redo", personalSort: "redo_highest" },
+        { mediaType: MediaType.MANGA, catalogField: "chapters", highest: "chapters_highest", lowest: "chapters_lowest", personalField: "redo", personalSort: "redo_highest" },
+        { mediaType: MediaType.GAMES, catalogField: "voteAverage", highest: "provider_rating_highest", lowest: "provider_rating_lowest", personalField: "playtime", personalSort: "playtime_highest" },
+        { mediaType: MediaType.MOVIES, catalogField: "voteAverage", highest: "provider_rating_highest", lowest: "provider_rating_lowest", personalField: "redo", personalSort: "redo_highest" },
+        { mediaType: MediaType.ANIME, catalogField: "voteAverage", highest: "provider_rating_highest", lowest: "provider_rating_lowest", personalField: "redo", personalSort: "redo_highest" },
+        { mediaType: MediaType.SERIES, catalogField: "voteAverage", highest: "provider_rating_highest", lowest: "provider_rating_lowest", personalField: "redo", personalSort: "redo_highest" },
+    ] as const)("shares $mediaType catalogue and personal ordering across browse, tracking lists and smart lists", async ({ mediaType, catalogField, highest, lowest, personalField, personalSort }) => {
+        const definition = getServerMediaDefinition(mediaType);
+        const { mediaTable, listTable } = definition.repository.tables;
+        const listQueries = createMediaListQueries(definition.repository);
+        const saved: SmartViewSpec = { ...spec, mediaTypes: [mediaType] };
+        const catalogValues = [3, 9, mediaType === MediaType.BOOKS ? 3 : null];
+
+        for (let mediaId = 1; mediaId <= 3; mediaId++) {
+            addEntry(mediaType, mediaId);
+            dbContext.db.update(mediaTable).set({ [catalogField]: catalogValues[mediaId - 1] }).where(eq(mediaTable.id, mediaId)).run();
+            dbContext.db.update(listTable).set({ [personalField]: [1, 3, 0][mediaId - 1] }).where(eq(listTable.mediaId, mediaId)).run();
+        }
+        if (mediaType === MediaType.MANGA) {
+            dbContext.db.update(schema.manga).set({ voteAverage: 9 }).where(eq(schema.manga.id, 2)).run();
+        }
+
+        for (const [sorting, expected] of [
+            [highest, [2, 1, 3]],
+            [lowest, mediaType === MediaType.BOOKS ? [1, 3, 2] : [1, 2, 3]],
+        ] as const) {
+            const browse = createMediaBrowseQueryParts(definition, { sorting });
+            const catalogue = dbContext.db.select({ mediaId: mediaTable.id }).from(mediaTable)
+                .leftJoin(listTable, browse.viewerJoin).orderBy(...browse.orderBy([])).all();
+            const list = await listQueries.getMediaList(undefined, 1, { sorting: getMediaSortLabel(getMediaDefinition(mediaType), sorting) });
+            const smart = getSmartViewResults(1, saved, { filters: { sorting } });
+            expect(catalogue.map(item => item.mediaId)).toEqual(expected);
+            expect(list.items.map(item => item.mediaId)).toEqual(expected);
+            expect(smart.items.map(item => item.mediaId)).toEqual(expected);
+            expect(smart.sorting).toBe(sorting);
+        }
+
+        const personalLabel = getMediaSortLabel(getMediaDefinition(mediaType), personalSort);
+        const list = await listQueries.getMediaList(undefined, 1, { sorting: personalLabel });
+        const smart = getSmartViewResults(1, saved, { filters: { sorting: personalSort } });
+        expect(list.items.map(item => item.mediaId)).toEqual([2, 1, 3]);
+        expect(smart.items.map(item => item.mediaId)).toEqual([2, 1, 3]);
+        expect(smart.items[0]).toMatchObject({
+            providerRating: mediaType === MediaType.BOOKS ? null : 9,
+            redo: mediaType === MediaType.GAMES ? null : 3,
+            pages: mediaType === MediaType.BOOKS ? 9 : null,
+            chapters: mediaType === MediaType.MANGA ? 9 : null,
+            playtime: mediaType === MediaType.GAMES ? 3 : null,
+        });
+        expect(smart.items[0]).not.toHaveProperty("sortValue");
+        if (mediaType === MediaType.GAMES) {
+            expect(getSmartViewResults(1, saved, { filters: { sorting: "playtime_lowest" } }).items.map(item => item.mediaId)).toEqual([3, 1, 2]);
+        }
+    });
+
+    it("falls back for media-specific orders unsupported by mixed media", () => {
         addEntry(MediaType.MOVIES, 1);
-        addEntry(MediaType.MOVIES, 2);
         addEntry(MediaType.BOOKS, 3);
-        addEntry(MediaType.BOOKS, 4);
         addEntry(MediaType.GAMES, 5);
-        addEntry(MediaType.GAMES, 6);
-        dbContext.db.update(schema.movies).set({ voteAverage: 9 }).where(eq(schema.movies.id, 2)).run();
-        dbContext.db.update(schema.books).set({ pages: 300 }).where(eq(schema.books.id, 4)).run();
-        dbContext.db.update(schema.gamesList).set({ playtime: 300 }).where(eq(schema.gamesList.mediaId, 5)).run();
-        dbContext.db.update(schema.gamesList).set({ playtime: 60 }).where(eq(schema.gamesList.mediaId, 6)).run();
-        expect(getSmartViewResults(1, spec, {
-            filters: { mediaType: MediaType.MOVIES, sorting: "provider_rating_highest" },
-        }).items.map(item => item.mediaId)).toEqual([2, 1]);
-        expect(getSmartViewResults(1, spec, {
-            filters: { mediaType: MediaType.BOOKS, sorting: "pages_highest" },
-        }).items.map(item => item.mediaId)).toEqual([4, 3]);
-        expect(getSmartViewResults(1, { ...spec, mediaTypes: [MediaType.GAMES] }, {
-            filters: { sorting: "playtime_lowest" },
-        }).items.map(item => item.mediaId)).toEqual([6, 5]);
         expect(getSmartViewResults(1, spec, { filters: { sorting: "pages_highest" } }).sorting).toBe("default");
+        expect(getSmartViewResults(1, spec, { filters: { mediaType: MediaType.BOOKS, sorting: "pages_highest" } }))
+            .toMatchObject({ sorting: "pages_highest", total: 1, items: [{ mediaType: MediaType.BOOKS, mediaId: 3 }] });
         expect(getSmartViewResults(1, { ...spec, mediaTypes: [MediaType.BOOKS] }, {
             filters: { mediaType: MediaType.MOVIES, sorting: "pages_highest" },
         }).total).toBe(0);

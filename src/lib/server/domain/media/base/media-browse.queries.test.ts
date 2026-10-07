@@ -74,8 +74,8 @@ describe("collection and job media browsing", () => {
             { get: () => movies } as unknown as MediaServiceRegistry,
         );
         collectionId = collections.createCollection({
-            ownerId: 1, mediaType: MediaType.MOVIES, title: "A ranked source", ordered: true, privacy: PrivacyType.PUBLIC,
-            items: Array.from({ length: 55 }, (_, index) => ({ mediaId: index + 1, annotation: index === 54 ? "Keep original rank" : null })),
+            ownerId: 1, title: "A ranked source", ordered: true, privacy: PrivacyType.PUBLIC,
+            items: Array.from({ length: 55 }, (_, index) => ({ mediaType: MediaType.MOVIES, mediaId: index + 1, annotation: index === 54 ? "Keep original rank" : null })),
         });
     });
 

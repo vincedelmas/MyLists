@@ -19,7 +19,7 @@ const createService = () => {
         ordered: false,
         title: "Favorites",
         description: null,
-        mediaType: MediaType.MOVIES,
+        mediaTypes: [MediaType.MOVIES],
         privacy: PrivacyType.PUBLIC as PrivacyType,
         ownerPrivacy: PrivacyType.PUBLIC,
     };
@@ -33,6 +33,7 @@ const createService = () => {
             total: 0,
             items: [],
             perPage: 24,
+            filterOptions: { genres: [], tags: [], mediaTypes: [MediaType.MOVIES] },
         }),
         findLikedCollection: vi.fn().mockReturnValue(null),
         incrementViewCount: vi.fn().mockResolvedValue(undefined),
@@ -159,11 +160,12 @@ describe("CollectionsService authorization", () => {
             total: 50,
             items: [],
             perPage: 24,
+            filterOptions: { genres: [], tags: [], mediaTypes: [MediaType.MOVIES] },
         });
 
         const result = await service.getCollectionDetails(7, "read", actor, { page: 2 });
 
-        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, MediaType.MOVIES, { page: 2 }, undefined);
+        expect(repository.getPaginatedCollectionItems).toHaveBeenCalledWith(7, [MediaType.MOVIES], { page: 2 }, undefined);
         expect(repository.getCollectionItems).not.toHaveBeenCalled();
         expect(result).toMatchObject({ page: 2, pages: 3, total: 50, perPage: 24 });
     });
@@ -188,7 +190,7 @@ describe("CollectionsService authorization", () => {
             title: "Changed",
             ordered: false,
             privacy: PrivacyType.PUBLIC,
-            items: [{ mediaId: 1 }],
+            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }],
         })).toThrow(FormattedError);
 
         expect(repository.updateCollection).not.toHaveBeenCalled();
@@ -224,7 +226,7 @@ describe("CollectionsService authorization", () => {
             title: "Changed",
             ordered: false,
             privacy: PrivacyType.PRIVATE,
-            items: [{ mediaId: 1 }],
+            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }],
         })).toThrow(FormattedError);
         await expect(() => service.deleteCollection(7, actor)).toThrow(FormattedError);
 
@@ -244,7 +246,7 @@ describe("CollectionsService authorization", () => {
             title: "Moderated",
             ordered: false,
             privacy: PrivacyType.PRIVATE,
-            items: [{ mediaId: 1 }],
+            items: [{ mediaType: MediaType.MOVIES, mediaId: 1 }],
         });
         await service.deleteCollection(7, actor);
 

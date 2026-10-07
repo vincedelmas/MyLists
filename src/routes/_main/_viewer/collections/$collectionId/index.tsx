@@ -1,9 +1,7 @@
-import {collectionIdSchema} from "@/lib/schemas";
-import {THEME_ICONS_MAP} from "@/lib/client/theme";
+import {MediaType} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Badge} from "@/lib/client/components/ui/badge";
-import {capitalize} from "@/lib/utils/formatting/text";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
@@ -14,18 +12,20 @@ import {EmptyState} from "@/lib/client/components/general/EmptyState";
 import {Pagination} from "@/lib/client/components/general/Pagination";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
+import {collectionBrowseSearchSchema, collectionIdSchema} from "@/lib/schemas";
 import {Copy, Eye, Heart, Layers3, List, ListOrdered, Pencil} from "lucide-react";
 import {collectionDetailsReadOptions} from "@/lib/client/react-query/query-options";
+import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
 import {MediaBrowseResults} from "@/lib/client/components/media/browse/MediaBrowseResults";
+import {CollectionMediaTypes} from "@/lib/client/components/collections/CollectionMediaTypes";
 import {MEDIA_BROWSE_LIBRARY_OPTIONS} from "@/lib/client/components/media/browse/media-browse.config";
-import {mediaCatalogBrowseSearchSchema, type MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
 import {BrowseAppliedFilters, type MediaBrowseFilterKey} from "@/lib/client/components/media/browse/AppliedFilters";
 import {useCopyCollectionMutation, useToggleCollectionLikeMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 
 export const Route = createFileRoute("/_main/_viewer/collections/$collectionId/")({
-    validateSearch: mediaCatalogBrowseSearchSchema,
+    validateSearch: collectionBrowseSearchSchema,
     loaderDeps: ({ search: { display: _display, ...filters } }) => ({ filters }),
     params: {
         parse: (params) => {
@@ -52,29 +52,31 @@ function CollectionViewer() {
     const { collectionDetailsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(collectionDetailsQueryOptions).data;
     const toggleLikeMutation = useToggleCollectionLikeMutation(collectionId);
-    const searchInput = useSearchNavigate<MediaBrowseFilters>({ search: filters.search ?? "" });
+    const searchInput = useSearchNavigate<typeof filters>({ search: filters.search ?? "" });
 
     const { collection, items, isLiked, capabilities } = apiData;
     const CollectionTypeIcon = collection.ordered ? ListOrdered : List;
     const hasActions = capabilities.like || capabilities.copy || capabilities.edit;
 
     const isGrid = filters.display !== "table";
-    const MediaIcon = THEME_ICONS_MAP[collection.mediaType];
-    const sortingOptions = getMediaSortOptions([collection.mediaType], false);
+    const availableMediaTypes = apiData.filterOptions.mediaTypes;
+    const mediaTypeItems = createMediaSelectItems(availableMediaTypes, { leading: "all", leadingLabel: "All types" });
+    const sortingOptions = getMediaSortOptions(filters.mediaType ? [filters.mediaType] : availableMediaTypes, false);
 
-    const handleFilterChange = (patch: Partial<MediaBrowseFilters>) => {
+    const handleFilterChange = (patch: Partial<typeof filters>) => {
         searchInput.updateFilters({ ...patch, page: 1 });
     };
 
     const handleRemoveFilter = (key: MediaBrowseFilterKey) => {
         if (key === "search") searchInput.setLocalSearch("");
-        handleFilterChange({ [key]: undefined });
+        handleFilterChange({ [key]: undefined, ...(key === "mediaType" && { sorting: undefined }) });
     };
 
     const handleResetFilters = () => {
         searchInput.setLocalSearch("");
         handleFilterChange({
             search: undefined,
+            mediaType: undefined,
             library: undefined,
             sorting: undefined,
         });
@@ -102,11 +104,11 @@ function CollectionViewer() {
             <div className="mb-8 flex min-w-0 flex-col pt-8">
                 <PageHeader
                     asideIcon={Layers3}
-                    eyebrowIcon={MediaIcon}
+                    eyebrow="Collection"
                     title={collection.title}
                     asideLabel="In this collection"
-                    eyebrow={`${capitalize(collection.mediaType)} collection`}
-                    asideValue={<>{formatNumber(collection.itemsCount)} {collection.itemsCount === 1 ? "title" : "titles"}</>}
+                    eyebrowIcon={CollectionTypeIcon}
+                    asideValue={<>{formatNumber(collection.itemsCount)} media</>}
                     description={
                         <span className="inline-flex flex-wrap items-center gap-1.5">
                             Made by
@@ -123,6 +125,9 @@ function CollectionViewer() {
 
                 <div className="flex flex-wrap items-center justify-between gap-4 pt-4 max-sm:flex-col max-sm:items-stretch">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <CollectionMediaTypes
+                            mediaTypes={collection.mediaTypes}
+                        />
                         <Badge variant="outline">
                             {collection.ordered
                                 ? <><ListOrdered className="size-3"/> Ranked</>
@@ -203,6 +208,16 @@ function CollectionViewer() {
                             search: prev => ({ ...prev, display: isGrid ? "table" : "grid" }),
                         })}
                         selects={[
+                            ...(availableMediaTypes.length > 1 ? [{
+                                key: "mediaType",
+                                items: mediaTypeItems,
+                                label: "Filter by media type",
+                                value: filters.mediaType ?? "all",
+                                onChange: (mediaType: string) => handleFilterChange({
+                                    mediaType: mediaType === "all" ? undefined : mediaType as MediaType,
+                                    sorting: undefined,
+                                }),
+                            }] : []),
                             ...(!isAnonymous ? [
                                 {
                                     key: "library",
@@ -210,7 +225,7 @@ function CollectionViewer() {
                                     value: filters.library ?? "all",
                                     items: MEDIA_BROWSE_LIBRARY_OPTIONS,
                                     onChange: (library: string) => handleFilterChange({
-                                        library: library === "all" ? undefined : library as MediaBrowseFilters["library"],
+                                        library: library === "all" ? undefined : library as typeof filters.library,
                                     }),
                                 },
                             ] : []),
@@ -220,7 +235,7 @@ function CollectionViewer() {
                                 value: filters.sorting ?? "default",
                                 items: [{ value: "default", label: "Collection order" }, ...sortingOptions],
                                 onChange: (sorting: string) => handleFilterChange({
-                                    sorting: sorting as MediaBrowseFilters["sorting"],
+                                    sorting: sorting as typeof filters.sorting,
                                 }),
                             },
                         ]}
@@ -249,7 +264,6 @@ function CollectionViewer() {
                             ...item,
                             title: item.mediaName,
                             imageCover: item.mediaCover,
-                            mediaType: collection.mediaType,
                             rank: collection.ordered ? item.orderIndex : undefined,
                         }))}
                     />

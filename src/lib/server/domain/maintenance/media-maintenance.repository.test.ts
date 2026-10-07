@@ -71,7 +71,6 @@ describe("MediaMaintenanceRepository", () => {
             id: 1,
             ownerId: 42,
             title: "Movie collection",
-            mediaType: MediaType.MOVIES,
         });
         await db.insert(collectionItems).values({
             mediaId: 101,

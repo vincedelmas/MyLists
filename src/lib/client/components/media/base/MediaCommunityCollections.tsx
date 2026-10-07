@@ -20,7 +20,6 @@ export const MediaCommunityCollections = ({ queryOptions }: MediaCommunityCollec
                 {collections.map((collection) =>
                     <CollectionCard
                         key={collection.id}
-                        showMediaType={false}
                         collection={collection}
                     />
                 )}

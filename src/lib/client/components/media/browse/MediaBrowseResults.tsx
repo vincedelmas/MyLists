@@ -171,7 +171,10 @@ export const MediaBrowseResults = ({ items, display, personal = true, showMember
                 >
                     <MediaCardLeftCorner>
                         {item.rank !== undefined ?
-                            `#${item.rank}`
+                            <>
+                                <MediaTypeIcon mediaType={item.mediaType}/>
+                                #{item.rank}
+                            </>
                             :
                             <>
                                 <MediaTypeIcon mediaType={item.mediaType}/>
@@ -179,11 +182,13 @@ export const MediaBrowseResults = ({ items, display, personal = true, showMember
                             </>
                         }
                     </MediaCardLeftCorner>
+
                     {item.inUserList &&
                         <MediaCardRightCorner>
                             <DisplayInUserListCheck/>
                         </MediaCardRightCorner>
                     }
+                    
                     <MediaCardFooter>
                         <MediaCardTitle lines={2}>
                             {item.title}

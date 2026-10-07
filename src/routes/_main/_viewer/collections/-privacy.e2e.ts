@@ -1,13 +1,18 @@
-import {expect, signIn, test} from "../../../../../scripts/e2e/fixtures";
+import {expect, runBun, signIn, test} from "../../../../../scripts/e2e/fixtures";
 import {privateCollection, publicCollection} from "../../../../../scripts/e2e/data";
+import {mixedMedia} from "./-mixed.data";
 
 
 test("protects private collection payloads while keeping public collections accessible", async ({ page, browser, baseURL }) => {
+    await runBun(["src/routes/_main/_viewer/collections/-mixed.fixtures.ts", "seed-private"]);
     await signIn(page);
     await page.goto(`/collections/${privateCollection.id}`);
 
     await expect(page.getByRole("heading", { name: privateCollection.title, exact: true })).toBeVisible();
     await expect(page.getByText(privateCollection.description, { exact: true })).toBeVisible();
+    for (const item of mixedMedia) {
+        await expect(page.getByRole("link", { name: `View ${item.name}`, exact: true })).toBeVisible();
+    }
 
     const visitor = await browser.newPage({ baseURL });
     try {
@@ -19,7 +24,9 @@ test("protects private collection payloads while keeping public collections acce
             const response = await visitor.goto(`/collections/${privateCollection.id}`);
 
             await expect(visitor.getByText("This content is private", { exact: true })).toBeVisible();
-            expect(await response!.text()).not.toContain(privateCollection.description);
+            const payload = await response!.text();
+            expect(payload).not.toContain(privateCollection.description);
+            for (const item of mixedMedia) expect(payload).not.toContain(item.name);
             await expect(visitor.getByText(privateCollection.title, { exact: true })).toHaveCount(0);
 
             const outcome = await visitor.evaluate(async collectionId => {

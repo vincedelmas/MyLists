@@ -1,20 +1,18 @@
-import {useForm} from "react-hook-form";
-import {PencilLine, Trash2} from "lucide-react";
+import {useForm, useWatch} from "react-hook-form";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {capitalize} from "@/lib/utils/formatting/text";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {THEME_ICONS_MAP} from "@/lib/client/theme";
 import {Button} from "@/lib/client/components/ui/button";
+import {Layers3, PencilLine, Trash2} from "lucide-react";
 import {useConfirm} from "@/lib/client/hooks/use-confirm";
-import {formatNumber} from "@/lib/utils/formatting/number";
 import {handleServerFormErrors} from "@/lib/client/forms";
+import {formatNumber} from "@/lib/utils/formatting/number";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {collectionDetailsEditOptions} from "@/lib/client/react-query/query-options";
 import {CollectionEditor} from "@/lib/client/components/collections/CollectionEditor";
-import {collectionIdSchema, CreateCollection, createCollectionSchema} from "@/lib/schemas";
+import {collectionIdSchema, type CreateCollection, createCollectionSchema} from "@/lib/schemas";
 import {useDeleteCollectionMutation, useUpdateCollectionMutation} from "@/lib/client/react-query/query-mutations/collections.mutations";
 
 
@@ -29,7 +27,7 @@ export const Route = createFileRoute("/_main/_private/collections/$collectionId/
         collectionDetailsQueryOptions: collectionDetailsEditOptions(collectionId),
     }),
     loader: ({ context }) => {
-        return context.queryClient.ensureQueryData(context.collectionDetailsQueryOptions);
+        return context.queryClient.fetchQuery({ ...context.collectionDetailsQueryOptions, staleTime: 0 });
     },
     component: CollectionEditPage,
 });
@@ -42,20 +40,20 @@ function CollectionEditPage() {
     const { collectionId } = Route.useParams();
     const { collectionDetailsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(collectionDetailsQueryOptions).data;
-    const MediaIcon = THEME_ICONS_MAP[apiData.collection.mediaType];
     const updateMutation = useUpdateCollectionMutation(collectionId, { noErrorToast: true });
     const deleteMutation = useDeleteCollectionMutation(collectionId, { noErrorToast: true });
     const form = useForm<CreateCollection>({
         resolver: zodResolver(createCollectionSchema),
         defaultValues: {
-            items: apiData.items ?? [],
+            items: apiData.items,
             title: apiData.collection.title,
             ordered: apiData.collection.ordered,
             privacy: apiData.collection.privacy,
-            mediaType: apiData.collection.mediaType,
             description: apiData.collection.description ?? "",
         },
     });
+
+    const items = useWatch({ control: form.control, name: "items" });
 
     const handleDelete = async () => {
         if (deleteMutation.isPending) return;
@@ -80,7 +78,7 @@ function CollectionEditPage() {
         });
     };
 
-    const handleSubmit = async (payload: CreateCollection) => {
+    const handleSubmit = (payload: CreateCollection) => {
         updateMutation.mutate({ data: { collectionId, ...payload } }, {
             onError: (error) => {
                 handleServerFormErrors(form, error);
@@ -95,12 +93,12 @@ function CollectionEditPage() {
         <PageTitle title={`Edit ${apiData.collection.title}`} onlyHelmet>
             <div className="mb-8 flex flex-col pt-8">
                 <PageHeader
-                    title={`Edit ${apiData.collection.title}`}
-                    asideIcon={MediaIcon}
+                    asideIcon={Layers3}
                     eyebrowIcon={PencilLine}
-                    eyebrow={`${capitalize(apiData.collection.mediaType)} collection`}
+                    eyebrow="Edit collection"
                     asideLabel="In this collection"
-                    asideValue={<>{formatNumber(apiData.items.length)} {apiData.items.length === 1 ? "title" : "titles"}</>}
+                    title={`Edit ${apiData.collection.title}`}
+                    asideValue={<>{formatNumber(items.length)} media</>}
                     description="Change the name, visibility, order or notes for this collection."
                 />
 
@@ -109,8 +107,7 @@ function CollectionEditPage() {
                         form={form}
                         onSubmit={handleSubmit}
                         submitLabel="Save changes"
-                        isSubmitting={updateMutation.isPending}
-                        mediaType={apiData.collection.mediaType}
+                        isSubmitting={updateMutation.isPending || deleteMutation.isPending}
                         footerStart={
                             <Button
                                 type="button"

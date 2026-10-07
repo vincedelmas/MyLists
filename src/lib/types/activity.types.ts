@@ -3,17 +3,6 @@ import type {ActivitySort} from "@/lib/schemas/activity.schema";
 import {ActivityKind, MediaType, UpdateType} from "@/lib/utils/enums";
 
 
-export type MediaInfo = {
-    id: number;
-    name: string;
-    duration?: number;
-    imageCover: string;
-    releaseDate: string;
-    inUserList?: boolean;
-    customCover: string | null;
-}
-
-
 export type MonthlyActivityEditor = {
     id: number;
     mediaId: number;

@@ -1,6 +1,7 @@
 import {cn} from "@/lib/utils/classnames";
 import {Link} from "@tanstack/react-router";
 import React, {useId, useState} from "react";
+import {useQuery} from "@tanstack/react-query";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {Input} from "@/lib/client/components/ui/input";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
@@ -9,7 +10,6 @@ import {Spinner} from "@/lib/client/components/ui/spinner";
 import {DialogRootChangeEventDetails} from "@base-ui/react";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
 import {ChevronRight, Folder, PlusCircle} from "lucide-react";
-import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {displayContainerError} from "@/lib/client/error-display";
 import {Field, FieldLabel} from "@/lib/client/components/ui/field";
 import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
@@ -28,12 +28,11 @@ interface CollectionsDialogProps {
 export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps) => {
     const fieldId = useId();
     const { currentUser } = useAuth();
-    const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const createMutation = useCreateCollectionMutation({ noErrorToast: true });
-    const addMutation = useAddMediaToCollectionMutation(mediaType, mediaId, { noErrorToast: true });
-    const removeMutation = useRemoveMediaFromCollectionMutation(mediaType, mediaId, { noErrorToast: true });
+    const addMutation = useAddMediaToCollectionMutation({ noErrorToast: true });
+    const removeMutation = useRemoveMediaFromCollectionMutation({ noErrorToast: true });
 
     const isPending = addMutation.isPending || removeMutation.isPending || createMutation.isPending;
     const { data: collections = [], isLoading } = useQuery(userCollectionMembershipsOptions(mediaId, mediaType, isOpen));
@@ -47,17 +46,15 @@ export const CollectionsDialog = ({ mediaType, mediaId }: CollectionsDialogProps
     const handleCreate = () => {
         createMutation.mutate({
             data: {
-                mediaType,
                 ordered: false,
                 description: "",
-                items: [{ mediaId }],
                 title: searchQuery.trim(),
                 privacy: PrivacyType.PRIVATE,
+                items: [{ mediaId, mediaType }],
             }
         }, {
-            onSuccess: async () => {
+            onSuccess: () => {
                 setSearchQuery("");
-                await queryClient.invalidateQueries({ queryKey: userCollectionMembershipsOptions(mediaId, mediaType, isOpen).queryKey });
             },
         });
     };

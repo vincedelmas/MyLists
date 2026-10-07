@@ -1,4 +1,5 @@
 import {SearchType} from "@/lib/schemas";
+import {Badge} from "@/lib/client/components/ui/badge";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
@@ -65,13 +66,19 @@ function AdminCollectionsOverviewPage() {
 
     const columns: ColumnDef<typeof features, typeof apiData.items[number]>[] = [
         {
-            accessorKey: "mediaType",
-            header: ({ column }) => (
-                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting()}>
-                    Type <ChevronsUpDown className="size-3 text-muted-foreground"/>
-                </Button>
+            accessorKey: "mediaTypes",
+            header: "Media types",
+            enableSorting: false,
+            cell: ({ row: { original } }) => (
+                <div className="flex flex-wrap gap-1">
+                    {original.mediaTypes.map(mediaType => (
+                        <Badge key={mediaType} variant="outline">
+                            <MainThemeIcon type={mediaType} data-icon="inline-start"/>
+                            {capitalize(mediaType)}
+                        </Badge>
+                    ))}
+                </div>
             ),
-            cell: ({ row: { original } }) => <MainThemeIcon size={16} type={original.mediaType}/>,
         },
         {
             accessorKey: "privacy",
@@ -241,7 +248,9 @@ function AdminCollectionsOverviewPage() {
                     <Card className="col-span-3 max-sm:col-span-5">
                         <CardHeader>
                             <CardTitle>By Media Type</CardTitle>
-                            <CardDescription>Which Lists Users Build Collections For</CardDescription>
+                            <CardDescription>
+                                Collections containing each type. Mixed collections appear under every type they contain.
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {stats.collectionsPerMediaType.map((entry) =>

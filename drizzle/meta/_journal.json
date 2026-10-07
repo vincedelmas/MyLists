@@ -400,6 +400,13 @@
       "when": 1791038203578,
       "tag": "0056_smart_view_profile_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1791291883760,
+      "tag": "0057_mixed_media_collections",
+      "breakpoints": true
     }
   ]
 }

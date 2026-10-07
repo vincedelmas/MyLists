@@ -13,6 +13,7 @@ import {
 
 
 export type CollectionDetailsReadData = Awaited<ReturnType<typeof getReadCollectionDetails>>;
+export type CollectionSummaryData = Awaited<ReturnType<typeof getCommunityCollections>>["items"][number];
 
 
 export const collectionDetailsReadQueryKey = (collectionId: number) => {

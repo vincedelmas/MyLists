@@ -2,14 +2,46 @@ import {alias} from "drizzle-orm/sqlite-core";
 import {FormattedError} from "@/lib/utils/error-classes";
 import {MediaType, PrivacyType} from "@/lib/utils/enums";
 import {paginate} from "@/lib/server/database/pagination";
+import {getMediaSortOptions} from "@/lib/utils/media/sorting";
+import {getImageUrl} from "@/lib/server/core/images/image-url";
 import {getDbClient} from "@/lib/server/database/async-storage";
 import {CommunitySearch, UserCollectionsSearch} from "@/lib/schemas";
 import type {MediaBrowseFilters} from "@/lib/schemas/media-browse.schema";
+import {MEDIA_SORT_DEFINITIONS} from "@/lib/media-definitions/base/media-sorting";
 import {Actor, profileCollectionVisibilityCondition} from "@/lib/server/authorization";
 import {getServerMediaDefinition} from "@/lib/media-definitions/definition.registry.server";
 import {createMediaBrowseQueryParts} from "@/lib/server/domain/media/base/media-browse.queries";
 import {collectionItems, collectionLikes, collections, user} from "@/lib/server/database/schema";
 import {and, asc, count, desc, eq, getTableColumns, inArray, like, max, or, sql} from "drizzle-orm";
+import {collectionContainsMediaType, getCollectionMediaTypesSelection} from "@/lib/server/domain/collections/collections.queries";
+
+
+const collectionSelection = {
+    ...getTableColumns(collections),
+    ownerName: user.name,
+    ownerImage: user.image,
+    ownerPrivacy: user.privacy,
+    mediaTypes: getCollectionMediaTypesSelection(),
+    itemsCount: sql<number>`(
+        SELECT COUNT(*) 
+        FROM ${collectionItems} 
+        WHERE ${collectionItems.collectionId} = ${collections.id}
+    )`,
+};
+
+
+const previewItemsSelection = sql`(
+    SELECT json_group_array(json_object('mediaId', media_id, 'mediaType', media_type))
+    FROM (
+        SELECT ${collectionItems.mediaId} AS media_id, ${collectionItems.mediaType} AS media_type
+        FROM ${collectionItems}
+        WHERE ${collectionItems.collectionId} = ${collections.id}
+        ORDER BY ${collectionItems.orderIndex} ASC
+        LIMIT 4
+    )
+)`.mapWith((value: string) => {
+    return JSON.parse(value) as { mediaId: number; mediaType: MediaType }[];
+});
 
 
 export class CollectionsRepository {
@@ -34,40 +66,40 @@ export class CollectionsRepository {
     }
 
     static deleteCollection(collectionId: number) {
-        const tx = getDbClient();
-
-        tx
+        getDbClient()
             .delete(collections)
             .where(eq(collections.id, collectionId)).run();
     }
 
     static replaceCollectionItems(collectionId: number, items: (typeof collectionItems.$inferInsert)[]) {
-        if (items.length > 0) {
-            this._assertMediaExists(items[0].mediaType, items.map(item => item.mediaId));
+        const idsByType = new Map<MediaType, number[]>();
+
+        for (const item of items) {
+            const ids = idsByType.get(item.mediaType) ?? [];
+            ids.push(item.mediaId);
+            idsByType.set(item.mediaType, ids);
+        }
+
+        for (const [mediaType, mediaIds] of idsByType) {
+            this._assertMediaExists(mediaType, mediaIds);
         }
 
         getDbClient()
             .delete(collectionItems)
-            .where(eq(collectionItems.collectionId, collectionId)).run();
+            .where(eq(collectionItems.collectionId, collectionId))
+            .run();
 
         if (items.length === 0) return;
 
         getDbClient()
             .insert(collectionItems)
-            .values(items).run();
+            .values(items)
+            .run();
     }
 
     static getCollectionById(collectionId: number) {
         return getDbClient()
-            .select({
-                ownerName: user.name,
-                ownerImage: user.image,
-                ownerPrivacy: user.privacy,
-                itemsCount: sql<number>`
-                    (SELECT COUNT(*) FROM ${collectionItems} ci WHERE ci.collection_id = ${collections.id})
-                `.as("itemsCount"),
-                ...getTableColumns(collections),
-            })
+            .select(collectionSelection)
             .from(collections)
             .innerJoin(user, eq(collections.ownerId, user.id))
             .where(eq(collections.id, collectionId))
@@ -79,50 +111,92 @@ export class CollectionsRepository {
             .select()
             .from(collectionItems)
             .where(eq(collectionItems.collectionId, collectionId))
-            .orderBy(asc(collectionItems.orderIndex)).all();
+            .orderBy(asc(collectionItems.orderIndex))
+            .all();
     }
 
-    static async getPaginatedCollectionItems(collectionId: number, mediaType: MediaType, filters: MediaBrowseFilters, viewerId?: number) {
-        const definition = getServerMediaDefinition(mediaType);
-        const { mediaTable, listTable } = definition.repository.tables;
+    static async getPaginatedCollectionItems(collectionId: number, mediaTypes: MediaType[], filters: MediaBrowseFilters, viewerId?: number) {
+        const selectedTypes = filters.mediaType ? mediaTypes.filter(type => type === filters.mediaType) : mediaTypes;
+        const sortKey = filters.sorting && filters.sorting !== "default" ? filters.sorting : undefined;
+        const sort = sortKey ? MEDIA_SORT_DEFINITIONS[sortKey] : undefined;
 
-        const browse = createMediaBrowseQueryParts(definition, filters, viewerId);
-        const condition = and(eq(collectionItems.collectionId, collectionId), ...browse.conditions);
+        if (sortKey && !getMediaSortOptions(selectedTypes, true).some(option => option.value === sortKey)) {
+            throw new FormattedError("This sorting is not available for these media types.");
+        }
+
+        const db = getDbClient();
+        const queries = selectedTypes.map(mediaType => {
+            const definition = getServerMediaDefinition(mediaType);
+            const { mediaTable, listTable } = definition.repository.tables;
+            const browse = createMediaBrowseQueryParts(definition, filters, viewerId);
+
+            return db
+                .select({
+                    ...getTableColumns(collectionItems),
+                    status: browse.selection.status.as("status"),
+                    rating: browse.selection.rating.as("rating"),
+                    addedAt: browse.selection.addedAt.as("added_at"),
+                    mediaId: browse.selection.mediaId.as("media_id"),
+                    favorite: browse.selection.favorite.as("favorite"),
+                    mediaName: browse.selection.mediaName.as("media_name"),
+                    inUserList: browse.selection.inUserList.as("in_user_list"),
+                    lastUpdated: browse.selection.lastUpdated.as("last_updated"),
+                    releaseDate: browse.selection.releaseDate.as("release_date"),
+                    imageCover: sql<string>`COALESCE(${listTable.customCover}, ${mediaTable.imageCover})`.as("image_cover"),
+                    sortValue: sql`${sort ? definition.repository.sortColumns[sort.field]! : collectionItems.orderIndex}`.as("sort_value"),
+                })
+                .from(collectionItems)
+                .innerJoin(mediaTable, eq(mediaTable.id, collectionItems.mediaId))
+                .leftJoin(listTable, browse.viewerJoin)
+                .where(and(
+                    eq(collectionItems.mediaType, mediaType),
+                    eq(collectionItems.collectionId, collectionId),
+                    ...browse.conditions,
+                ))
+                .$dynamic();
+        });
+
+        const [firstQuery, ...otherQueries] = queries;
+        for (const query of otherQueries) {
+            firstQuery.unionAll(query);
+        }
+
+        const combinedQuery = firstQuery?.as("collection_results");
+        const direction = sort?.direction === "desc" ? sql`DESC` : sql`ASC`;
 
         const result = await paginate({
-            page: filters.page,
             perPage: 24,
             maxPerPage: 24,
-            getTotal: () => {
-                return getDbClient()
+            page: filters.page,
+            getTotal: () => combinedQuery
+                ? db
                     .select({ count: count() })
-                    .from(collectionItems)
-                    .innerJoin(mediaTable, eq(mediaTable.id, collectionItems.mediaId))
-                    .leftJoin(listTable, browse.viewerJoin)
-                    .where(condition)
-                    .get()?.count ?? 0;
-            },
-            getItems: ({ limit, offset }) => {
-                return getDbClient()
-                    .select({
-                        ...getTableColumns(collectionItems),
-                        ...browse.selection,
-                    })
-                    .from(collectionItems)
-                    .innerJoin(mediaTable, eq(mediaTable.id, collectionItems.mediaId))
-                    .leftJoin(listTable, browse.viewerJoin)
-                    .where(condition)
-                    .orderBy(...browse.orderBy([asc(collectionItems.orderIndex)]))
+                    .from(combinedQuery)
+                    .get()!.count
+                : 0,
+            getItems: ({ limit, offset }) => combinedQuery
+                ? db.select()
+                    .from(combinedQuery)
+                    .orderBy(
+                        sql`${combinedQuery.sortValue} ${direction} NULLS LAST`,
+                        sql`${combinedQuery.mediaName} COLLATE NOCASE ASC`,
+                        asc(combinedQuery.mediaType), asc(combinedQuery.mediaId),
+                    )
                     .limit(limit)
-                    .offset(offset);
-            },
+                    .offset(offset)
+                : Promise.resolve([]),
         });
 
         return {
             ...result,
-            items: result.items.map(({ imageCover, ...item }) => ({
+            filterOptions: {
+                tags: [],
+                genres: [],
+                mediaTypes,
+            },
+            items: result.items.map(({ imageCover, sortValue: _sortValue, ...item }) => ({
                 ...item,
-                mediaCover: imageCover,
+                mediaCover: getImageUrl(getServerMediaDefinition(item.mediaType).identity.coverDirectory, imageCover),
             })),
         };
     }
@@ -136,16 +210,16 @@ export class CollectionsRepository {
                 title: collections.title,
                 privacy: collections.privacy,
                 ordered: collections.ordered,
+                itemsCount: collectionSelection.itemsCount,
                 hasMedia: sql<boolean>`CASE WHEN ${matchingItem.id} IS NULL THEN 0 ELSE 1 END`.mapWith(Boolean).as("hasMedia"),
-                itemsCount: sql<number>`(
-                    SELECT COUNT(*)
-                    FROM ${collectionItems} ci
-                    WHERE ci.collection_id = ${collections.id}
-                )`.as("itemsCount"),
             })
             .from(collections)
-            .leftJoin(matchingItem, and(eq(matchingItem.collectionId, collections.id), eq(matchingItem.mediaId, mediaId)))
-            .where(and(eq(collections.ownerId, ownerId), eq(collections.mediaType, mediaType)))
+            .leftJoin(matchingItem, and(
+                eq(matchingItem.mediaId, mediaId),
+                eq(matchingItem.mediaType, mediaType),
+                eq(matchingItem.collectionId, collections.id),
+            ))
+            .where(eq(collections.ownerId, ownerId))
             .orderBy(asc(collections.title));
     }
 
@@ -166,40 +240,27 @@ export class CollectionsRepository {
             .onConflictDoNothing().run();
     }
 
-    static deleteCollectionItem(collectionId: number, mediaId: number) {
+    static deleteCollectionItem(collectionId: number, mediaId: number, mediaType: MediaType) {
         getDbClient()
             .delete(collectionItems)
-            .where(and(eq(collectionItems.collectionId, collectionId), eq(collectionItems.mediaId, mediaId))).run();
+            .where(and(
+                eq(collectionItems.mediaId, mediaId),
+                eq(collectionItems.mediaType, mediaType),
+                eq(collectionItems.collectionId, collectionId),
+            )).run();
     }
 
     static async getUserCollections(targetUserId: number, actor: Actor, mediaType?: MediaType) {
         return getDbClient()
             .select({
-                ownerName: user.name,
-                ownerImage: user.image,
-                ownerPrivacy: user.privacy,
-                itemsCount: sql<number>`(
-                    SELECT COUNT(*) 
-                    FROM ${collectionItems} ci 
-                    WHERE ci.collection_id = ${collections.id}
-                )`.as("itemsCount"),
-                previewItems: sql`(
-                    SELECT json_group_array(media_id)
-                    FROM (
-                        SELECT ${collectionItems.mediaId} as media_id
-                        FROM ${collectionItems}
-                        WHERE ${collectionItems.collectionId} = ${collections.id}
-                        ORDER BY ${collectionItems.orderIndex} ASC
-                        LIMIT 4
-                    )
-                )`.mapWith((val) => JSON.parse(val) as number[]).as("previewItems"),
-                ...getTableColumns(collections),
+                ...collectionSelection,
+                previewItems: previewItemsSelection,
             })
             .from(collections)
             .innerJoin(user, eq(collections.ownerId, user.id))
             .where(and(
                 eq(collections.ownerId, targetUserId),
-                mediaType ? eq(collections.mediaType, mediaType) : undefined,
+                mediaType ? collectionContainsMediaType(mediaType) : undefined,
                 profileCollectionVisibilityCondition(actor, targetUserId),
             ))
             .orderBy(desc(collections.likeCount));
@@ -207,8 +268,8 @@ export class CollectionsRepository {
 
     static async getPaginatedUserCollections(targetUserId: number, actor: Actor, params: Omit<UserCollectionsSearch, "username">) {
         const searchFilter = params.search?.trim();
-        const searchCondition = searchFilter ? like(collections.title, `%${searchFilter}%`) : undefined;
         const visibilityCondition = profileCollectionVisibilityCondition(actor, targetUserId);
+        const searchCondition = searchFilter ? like(collections.title, `%${searchFilter}%`) : undefined;
 
         return paginate({
             perPage: 12,
@@ -222,39 +283,19 @@ export class CollectionsRepository {
                         searchCondition,
                         visibilityCondition,
                         eq(collections.ownerId, targetUserId),
-                        params.mediaType ? eq(collections.mediaType, params.mediaType) : undefined,
+                        params.mediaType ? collectionContainsMediaType(params.mediaType) : undefined,
                     )).get()?.count ?? 0;
             },
             getItems: ({ limit, offset }) => {
                 return getDbClient()
-                    .select({
-                        ownerName: user.name,
-                        ownerImage: user.image,
-                        ownerPrivacy: user.privacy,
-                        itemsCount: sql<number>`(
-                            SELECT COUNT(*)
-                            FROM ${collectionItems} ci
-                            WHERE ci.collection_id = ${collections.id}
-                        )`.as("itemsCount"),
-                        previewItems: sql`(
-                            SELECT json_group_array(media_id)
-                            FROM (
-                                SELECT ${collectionItems.mediaId} as media_id
-                                FROM ${collectionItems}
-                                WHERE ${collectionItems.collectionId} = ${collections.id}
-                                ORDER BY ${collectionItems.orderIndex} ASC
-                                LIMIT 4
-                            )
-                        )`.mapWith((val) => JSON.parse(val) as number[]).as("previewItems"),
-                        ...getTableColumns(collections),
-                    })
+                    .select({ ...collectionSelection, previewItems: previewItemsSelection })
                     .from(collections)
                     .innerJoin(user, eq(collections.ownerId, user.id))
                     .where(and(
                         searchCondition,
                         visibilityCondition,
                         eq(collections.ownerId, targetUserId),
-                        params.mediaType ? eq(collections.mediaType, params.mediaType) : undefined,
+                        params.mediaType ? collectionContainsMediaType(params.mediaType) : undefined,
                     ))
                     .orderBy(desc(collections.likeCount))
                     .limit(limit)
@@ -282,38 +323,21 @@ export class CollectionsRepository {
                     .innerJoin(user, eq(collections.ownerId, user.id))
                     .where(and(
                         eq(collections.privacy, PrivacyType.PUBLIC),
-                        params.mediaType ? eq(collections.mediaType, params.mediaType) : undefined,
+                        params.mediaType ? collectionContainsMediaType(params.mediaType) : undefined,
                         searchCondition,
                     )).get()?.count ?? 0;
             },
             getItems: ({ limit, offset }) => {
                 return getDbClient()
                     .select({
-                        ownerName: user.name,
-                        ownerImage: user.image,
-                        ownerPrivacy: user.privacy,
-                        itemsCount: sql<number>`(
-                            SELECT COUNT(*) 
-                            FROM ${collectionItems} ci 
-                            WHERE ci.collection_id = ${collections.id}
-                        )`.as("itemsCount"),
-                        previewItems: sql`(
-                            SELECT json_group_array(media_id)
-                            FROM (
-                                SELECT ${collectionItems.mediaId} as media_id
-                                FROM ${collectionItems}
-                                WHERE ${collectionItems.collectionId} = ${collections.id}
-                                ORDER BY ${collectionItems.orderIndex} ASC
-                                LIMIT 4
-                            )
-                        )`.mapWith((val) => JSON.parse(val) as number[]).as("previewItems"),
-                        ...getTableColumns(collections),
+                        ...collectionSelection,
+                        previewItems: previewItemsSelection,
                     })
                     .from(collections)
                     .innerJoin(user, eq(collections.ownerId, user.id))
                     .where(and(
                         eq(collections.privacy, PrivacyType.PUBLIC),
-                        params.mediaType ? eq(collections.mediaType, params.mediaType) : undefined,
+                        params.mediaType ? collectionContainsMediaType(params.mediaType) : undefined,
                         searchCondition,
                     ))
                     .orderBy(desc(collections.likeCount))
@@ -326,25 +350,8 @@ export class CollectionsRepository {
     static async getMediaCommunityCollections(mediaId: number, mediaType: MediaType) {
         return getDbClient()
             .select({
-                ownerName: user.name,
-                ownerImage: user.image,
-                ownerPrivacy: user.privacy,
-                itemsCount: sql<number>`(
-                    SELECT COUNT(*) 
-                    FROM ${collectionItems} ci 
-                    WHERE ci.collection_id = ${collections.id}
-                )`.as("itemsCount"),
-                previewItems: sql`(
-                    SELECT json_group_array(media_id)
-                    FROM (
-                        SELECT ${collectionItems.mediaId} as media_id
-                        FROM ${collectionItems}
-                        WHERE ${collectionItems.collectionId} = ${collections.id}
-                        ORDER BY ${collectionItems.orderIndex} ASC
-                        LIMIT 4
-                    )
-                )`.mapWith((val) => JSON.parse(val) as number[]).as("previewItems"),
-                ...getTableColumns(collections),
+                ...collectionSelection,
+                previewItems: previewItemsSelection,
             })
             .from(collections)
             .innerJoin(user, eq(collections.ownerId, user.id))
@@ -395,9 +402,7 @@ export class CollectionsRepository {
     static decrementLikeCount(collectionId: number) {
         getDbClient()
             .update(collections)
-            .set({
-                likeCount: sql`CASE WHEN ${collections.likeCount} > 0 THEN ${collections.likeCount} - 1 ELSE 0 END`,
-            })
+            .set({ likeCount: sql`CASE WHEN ${collections.likeCount} > 0 THEN ${collections.likeCount} - 1 ELSE 0 END` })
             .where(eq(collections.id, collectionId)).run();
     }
 

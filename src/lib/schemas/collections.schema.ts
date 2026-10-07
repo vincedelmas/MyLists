@@ -1,6 +1,6 @@
 import * as z from "zod";
 import {PrivacyType} from "@/lib/utils/enums";
-import {mediaBrowseFiltersSchema} from "@/lib/schemas/media-browse.schema";
+import {mediaBrowseFiltersSchema, mediaCatalogBrowseSearchSchema} from "@/lib/schemas/media-browse.schema";
 import {
     coercedPositiveIntFieldSchema,
     mediaTypeFieldSchema,
@@ -18,9 +18,10 @@ export type UserCollectionsSearch = z.infer<typeof userCollectionsSearchSchema>;
 
 
 const collectionItemSchema = z.object({
+    mediaId: positiveIntFieldSchema,
+    mediaType: mediaTypeFieldSchema,
     mediaName: z.string().optional(),
     mediaCover: z.string().optional(),
-    mediaId: positiveIntFieldSchema,
     annotation: z.string().trim().max(500).optional().nullable(),
 });
 
@@ -34,9 +35,7 @@ const collectionBaseSchema = z.object({
     description: z.string().trim().max(400, "Description cannot exceed 400 characters").optional().nullable(),
 });
 
-export const createCollectionSchema = collectionBaseSchema.extend({
-    mediaType: mediaTypeFieldSchema,
-});
+export const createCollectionSchema = collectionBaseSchema;
 
 export const updateCollectionSchema = collectionBaseSchema.extend({
     collectionId: coercedPositiveIntFieldSchema,
@@ -48,6 +47,10 @@ export const collectionIdSchema = z.object({
 
 export const collectionDetailsReadSchema = mediaBrowseFiltersSchema.extend({
     collectionId: coercedPositiveIntFieldSchema,
+});
+
+export const collectionBrowseSearchSchema = mediaCatalogBrowseSearchSchema.extend({
+    mediaType: mediaTypeFieldSchema.optional().catch(undefined),
 });
 
 export const userCollectionsFiltersSchema = paginationSchema.extend({

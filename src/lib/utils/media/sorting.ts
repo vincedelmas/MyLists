@@ -11,6 +11,7 @@ export const getMediaSortLabel = (definition: Pick<MediaDefinition, "sorting">, 
 
 export const getMediaSortOptions = (mediaTypes: readonly MediaType[], personal: boolean) => {
     const definitions = mediaTypes.map(getMediaDefinition);
+    if (definitions.length === 0) return [];
 
     return definitions[0].sorting.options
         .filter(key => (personal || !MEDIA_SORT_DEFINITIONS[key].personal)

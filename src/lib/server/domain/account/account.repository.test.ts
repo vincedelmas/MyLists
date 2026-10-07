@@ -4,7 +4,7 @@ import {migrate} from "drizzle-orm/bun-sqlite/migrator";
 import {drizzle, type BunSQLiteDatabase} from "drizzle-orm/bun-sqlite";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import * as schema from "@/lib/server/database/schema";
-import {MediaType, PrivacyType} from "@/lib/utils/enums";
+import {PrivacyType} from "@/lib/utils/enums";
 import {AccountService} from "@/lib/server/domain/account/account.service";
 import {AccountRepository} from "@/lib/server/domain/account/account.repository";
 import {InactiveAccountService} from "@/lib/server/domain/account/inactive-account.service";
@@ -57,7 +57,7 @@ describe("collection likes after account deletion", () => {
             { id: 12, ownerId: 3, title: "Other user's like", likeCount: 1 },
             { id: 13, ownerId: 1, title: "Deleted user's collection", likeCount: 3 },
             { id: 14, ownerId: 3, title: "No likes", likeCount: 0 },
-        ].map(collection => ({ ...collection, mediaType: MediaType.MOVIES, privacy: PrivacyType.PUBLIC }))).run();
+        ].map(collection => ({ ...collection, privacy: PrivacyType.PUBLIC }))).run();
         db.insert(schema.collectionLikes).values([
             { collectionId: 10, userId: 1 }, { collectionId: 10, userId: 2 }, { collectionId: 10, userId: 4 },
             { collectionId: 11, userId: 1 }, { collectionId: 12, userId: 2 },

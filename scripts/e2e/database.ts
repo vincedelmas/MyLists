@@ -110,13 +110,11 @@ db.transaction(() => {
                 ...privateCollection,
                 privacy: "private",
                 ownerId: users.owner.id,
-                mediaType: MediaType.MOVIES,
             },
             {
                 ...publicCollection,
                 privacy: "public",
                 ownerId: users.owner.id,
-                mediaType: MediaType.MOVIES,
             },
         ]).run();
 

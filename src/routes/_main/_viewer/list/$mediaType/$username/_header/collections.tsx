@@ -45,7 +45,7 @@ function CollectionsTab() {
                         {isOwner ? "Your" : username} Collections
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                        Curated {mediaType} collections by {isOwner ? "you" : username}.
+                        Collections with {mediaType}, curated by {isOwner ? "you" : username}.
                     </p>
                 </div>
 
@@ -72,8 +72,8 @@ function CollectionsTab() {
                         message={filters.search
                             ? `No collections found matching "${filters.search}".`
                             : isOwner
-                                ? "You have not created any collections yet."
-                                : "No collections yet."
+                                ? `You have not created any collections with ${mediaType} yet.`
+                                : `No collections with ${mediaType} yet.`
                         }
                     />
                     :

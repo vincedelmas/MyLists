@@ -1,8 +1,8 @@
-import {eq} from "drizzle-orm";
+import {and, eq} from "drizzle-orm";
 import {db} from "@/lib/server/database/db";
 import {MediaType, Status} from "@/lib/utils/enums";
 import {movies, users} from "../../../../../scripts/e2e/data";
-import {books, booksList, moviesGenre, moviesList, moviesTags, smartViews, userMediaSettings} from "@/lib/server/database/schema";
+import {books, booksList, manga, mangaList, moviesGenre, moviesList, moviesTags, smartViews, userMediaSettings} from "@/lib/server/database/schema";
 import {SMART_VIEW_PRESETS} from "@/lib/utils/smart-views/presets";
 import {browseFilterGenres} from "../../_viewer/collections/-browse.data";
 
@@ -53,6 +53,31 @@ db.transaction(() => {
         db.insert(smartViews).values([
             { id: 511, userId: users.stranger.id, profilePosition: 1, spec: { ...SMART_VIEW_PRESETS[0], title: "Public smart list" } },
             { id: 512, userId: users.restricted.id, profilePosition: 1, spec: { ...SMART_VIEW_PRESETS[0], title: "Restricted smart list" } },
+            { id: 513, userId: users.stranger.id, spec: { ...SMART_VIEW_PRESETS[0], title: "Unpinned public smart list" } },
+            { id: 514, userId: users.restricted.id, spec: { ...SMART_VIEW_PRESETS[0], title: "Unpinned restricted smart list" } },
+        ]).run();
+    }
+    if (process.argv.includes("seed-tabs")) {
+        db.insert(manga).values({
+            id: 907, apiId: 907, name: "Completed manga outside smart lists", chapters: 10,
+            imageCover: "default.jpg", lockStatus: true,
+        }).run();
+        db.insert(mangaList).values({
+            userId: users.owner.id, mediaId: 907, status: Status.COMPLETED, currentChapter: 10,
+            total: 10, addedAt: "2000-01-01 00:00:00",
+        }).run();
+        db.update(userMediaSettings).set({
+            active: true, totalEntries: 1, statusCounts: { [Status.COMPLETED]: 1 } as Record<Status, number>,
+        }).where(and(eq(userMediaSettings.userId, users.owner.id), eq(userMediaSettings.mediaType, MediaType.MANGA))).run();
+        db.insert(smartViews).values([
+            {
+                id: 521, userId: users.owner.id,
+                spec: { ...SMART_VIEW_PRESETS[1], mediaTypes: [MediaType.MOVIES], title: "Empty movie rules" },
+            },
+            {
+                id: 522, userId: users.owner.id,
+                spec: { ...SMART_VIEW_PRESETS[1], mediaTypes: [MediaType.MANGA], title: "Manga favorites" },
+            },
         ]).run();
     }
 });

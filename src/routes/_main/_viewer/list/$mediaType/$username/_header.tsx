@@ -1,16 +1,16 @@
+import {THEME_ICONS_MAP} from "@/lib/client/theme";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {mediaTypeUsernameSchema} from "@/lib/schemas";
 import {capitalize} from "@/lib/utils/formatting/text";
 import {useSuspenseQuery} from "@tanstack/react-query";
-import {THEME_ICONS_MAP} from "@/lib/client/theme";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {TabHeader} from "@/lib/client/components/general/TabHeader";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
 import {MediaLevel} from "@/lib/client/components/general/MediaLevel";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {userListHeaderOption} from "@/lib/client/react-query/query-options";
-import {Award, ChartNoAxesColumn, Library, ListOrdered, Tags, Zap} from "lucide-react";
 import {createFileRoute, Link, linkOptions, Outlet, useLocation} from "@tanstack/react-router";
+import {Award, ChartNoAxesColumn, Layers3, Library, ListOrdered, Tags, Zap} from "lucide-react";
 
 
 export const Route = createFileRoute("/_main/_viewer/list/$mediaType/$username/_header")({
@@ -38,12 +38,13 @@ function ListHeader() {
     const MediaIcon = THEME_ICONS_MAP[mediaType];
     const isOwner = currentUser?.name === username;
 
-    const activeTab = location.pathname.endsWith("/tags")
-        ? "tags" : location.pathname.endsWith("/collections")
-            ? "collections" : location.pathname.endsWith("/stats")
-                ? "stats" : location.pathname.endsWith("/achievements")
-                    ? "achievements" : location.pathname.endsWith("/activity")
-                        ? "activity" : "list";
+    const activeTab = location.pathname.endsWith("/smart-views")
+        ? "smart-views" : location.pathname.endsWith("/tags")
+            ? "tags" : location.pathname.endsWith("/collections")
+                ? "collections" : location.pathname.endsWith("/stats")
+                    ? "stats" : location.pathname.endsWith("/achievements")
+                        ? "achievements" : location.pathname.endsWith("/activity")
+                            ? "activity" : "list";
 
     const currentDate = new Date();
     const params = { mediaType, username };
@@ -76,6 +77,12 @@ function ListHeader() {
             linkOptions: linkOptions({ params, to: "/list/$mediaType/$username/collections" }),
         }, {
             isAccent: true,
+            id: "smart-views",
+            label: "Smart lists",
+            icon: <Layers3 className="size-4"/>,
+            linkOptions: linkOptions({ params, to: "/list/$mediaType/$username/smart-views" }),
+        }, {
+            isAccent: true,
             id: "achievements",
             label: "achievements",
             icon: <Award className="size-4"/>,
@@ -97,7 +104,10 @@ function ListHeader() {
     ] as const;
 
     return (
-        <PageTitle title={`${username} ${capitalize(mediaType)} ${capitalize(activeTab)}`} onlyHelmet>
+        <PageTitle
+            onlyHelmet={true}
+            title={`${username} ${capitalize(mediaType)} ${activeTab === "smart-views" ? "Smart lists" : capitalize(activeTab)}`}
+        >
             <div className="mb-8 flex flex-col pt-8">
                 <PageHeader
                     eyebrowIcon={MediaIcon}

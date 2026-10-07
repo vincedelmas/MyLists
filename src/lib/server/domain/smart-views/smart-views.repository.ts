@@ -21,7 +21,6 @@ export const smartViewsRepository = {
                 id: user.id,
                 username: user.name,
                 privacy: user.privacy,
-                profilePosition: smartViews.profilePosition,
             })
             .from(smartViews)
             .innerJoin(user, eq(user.id, smartViews.userId))

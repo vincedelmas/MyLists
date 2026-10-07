@@ -54,10 +54,6 @@ export const getSmartView = createServerFn({ method: "GET" })
         const isOwner = currentUser?.id === owner.id;
 
         if (!isOwner) {
-            if (owner.profilePosition === null) {
-                throw new FormattedError("Smart list not found.");
-            }
-
             const container = await getContainer();
             const decision = await container.services.authorization.decideProfile(toActor(currentUser), owner);
 
@@ -132,6 +128,20 @@ export const getProfileSmartViews = createServerFn({ method: "GET" })
         }
 
         return smartViewsRepository.getProfileViews(user.id).map(view => ({
+            ...view, preview: getSmartViewSummary(user.id, view.spec),
+        }));
+    });
+
+
+export const getUserSmartViews = createServerFn({ method: "GET" })
+    .middleware([contentAuthorizationMiddleware])
+    .validator(profileSmartViewsSchema)
+    .handler(({ context: { user } }) => {
+        if (mcpRequestContext.getStore()) {
+            throw new FormattedError("Smart lists are available on the website.");
+        }
+
+        return smartViewsRepository.getAll(user.id).map(view => ({
             ...view, preview: getSmartViewSummary(user.id, view.spec),
         }));
     });

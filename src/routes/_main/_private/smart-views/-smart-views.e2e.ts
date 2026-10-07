@@ -3,7 +3,7 @@ import {movies, users} from "../../../../../scripts/e2e/data";
 import {browseFilterGenres} from "../../_viewer/collections/-browse.data";
 
 
-test("creates, automatically counts, edits and deletes a private smart list", async ({ page, baseURL }) => {
+test("creates, automatically counts, edits and deletes an owner smart list", async ({ page, baseURL }) => {
     await runBun(["src/routes/_main/_private/smart-views/-fixtures.ts"]);
     await signIn(page);
     await page.setViewportSize({ width: 390, height: 844 });
@@ -48,7 +48,7 @@ test("creates, automatically counts, edits and deletes a private smart list", as
     try {
         await signIn(strangerPage, "stranger");
         await strangerPage.goto(viewUrl);
-        await expect(strangerPage.getByText("Smart list not found.", { exact: true })).toBeVisible();
+        await expect(strangerPage.getByText("This content is private", { exact: true })).toBeVisible();
         await expect(strangerPage.getByText("Old movie plans", { exact: true })).toHaveCount(0);
         await expect(strangerPage.getByText(movies.private.name, { exact: true })).toHaveCount(0);
     }
@@ -242,7 +242,7 @@ test("pins four lists from their cards, appends new pins, and hides the profile 
 });
 
 
-test("profile view access follows public, restricted and private profile rules", async ({ page, browser, baseURL }) => {
+test("pinned and unpinned smart lists follow public, restricted and private profile rules", async ({ page, browser, baseURL }) => {
     await runBun(["src/routes/_main/_private/smart-views/-fixtures.ts", "seed-shortcuts"]);
     await signIn(page);
     await page.goto("/smart-views");
@@ -283,8 +283,62 @@ test("profile view access follows public, restricted and private profile rules",
             await expect(visitor.getByText(movies.private.name, { exact: true })).toHaveCount(0);
             if (account !== "stranger") await expect(visitor.getByRole("link", { name: "Edit smart list", exact: true })).toHaveCount(0);
             const unpinnedResponse = await visitor.goto("/smart-views/505");
-            await expect(visitor.getByText("Smart list not found.", { exact: true })).toBeVisible();
-            expect(await unpinnedResponse!.text()).not.toContain("Profile list 5");
+            if (account === "follower") {
+                await expect(visitor.getByRole("heading", { name: "Profile list 5", exact: true })).toBeVisible();
+                await expect(visitor.getByText(movies.private.name, { exact: true })).toBeVisible();
+                await expect(visitor.getByText("A long-awaited book", { exact: true })).toBeVisible();
+                await expect(visitor.getByRole("link", { name: "Edit smart list", exact: true })).toHaveCount(0);
+                await expect(visitor.getByRole("button", { name: "Pin to profile", exact: true })).toHaveCount(0);
+                await expect(visitor.getByRole("button", { name: "Delete smart list", exact: true })).toHaveCount(0);
+                await expect(visitor.getByRole("button", { name: /^Edit / })).toHaveCount(0);
+            }
+            else {
+                await expect(visitor.getByText("This content is private", { exact: true })).toBeVisible();
+                expect(await unpinnedResponse!.text()).not.toContain("Profile list 5");
+                expect(await unpinnedResponse!.text()).not.toContain(movies.private.name);
+            }
+
+            const restrictedUnpinnedResponse = await visitor.goto("/smart-views/514");
+            if (account) {
+                await expect(visitor.getByRole("heading", { name: "Unpinned restricted smart list", exact: true })).toBeVisible();
+                await expect(visitor.getByText(movies.private.name, { exact: true })).toBeVisible();
+                await expect(visitor.getByRole("link", { name: "Edit smart list", exact: true })).toHaveCount(0);
+            }
+            else {
+                await expect(visitor.getByText("This content is restricted", { exact: true })).toBeVisible();
+                expect(await restrictedUnpinnedResponse!.text()).not.toContain("Unpinned restricted smart list");
+                expect(await restrictedUnpinnedResponse!.text()).not.toContain(movies.private.name);
+            }
+            await visitor.goto("/smart-views/513");
+            await expect(visitor.getByRole("heading", { name: "Unpinned public smart list", exact: true })).toBeVisible();
+            if (account !== "stranger") {
+                await expect(visitor.getByRole("link", { name: "Edit smart list", exact: true })).toHaveCount(0);
+                await expect(visitor.getByRole("button", { name: "Pin to profile", exact: true })).toHaveCount(0);
+                await expect(visitor.getByRole("button", { name: "Delete smart list", exact: true })).toHaveCount(0);
+            }
+
+            const privateTabResponse = await visitor.goto(`/list/movies/${users.owner.name}/smart-views`);
+            await expect(visitor.getByRole("heading", { name: `${users.owner.name}'s Movies`, exact: true })).toBeVisible();
+            if (account === "follower") {
+                await expect(visitor.getByRole("article", { name: "Profile list 5", exact: true })).toBeVisible();
+            }
+            else {
+                await expect(visitor.getByText("This content is private", { exact: true })).toBeVisible();
+                await expect(visitor.getByRole("main").getByRole("link", { name: "Smart lists", exact: true })).toBeVisible();
+                expect(await privateTabResponse!.text()).not.toContain("Profile list 5");
+                expect(await privateTabResponse!.text()).not.toContain(movies.private.name);
+            }
+            const restrictedTabResponse = await visitor.goto(`/list/movies/${users.restricted.name}/smart-views`);
+            await expect(visitor.getByRole("heading", { name: `${users.restricted.name}'s Movies`, exact: true })).toBeVisible();
+            if (account) {
+                await expect(visitor.getByRole("article", { name: "Unpinned restricted smart list", exact: true })).toBeVisible();
+            }
+            else {
+                await expect(visitor.getByText("This content is restricted", { exact: true })).toBeVisible();
+                await expect(visitor.getByRole("main").getByRole("link", { name: "Smart lists", exact: true })).toBeVisible();
+                expect(await restrictedTabResponse!.text()).not.toContain("Unpinned restricted smart list");
+                expect(await restrictedTabResponse!.text()).not.toContain(movies.private.name);
+            }
         }
         finally {
             await visitor.context().close();
@@ -453,4 +507,118 @@ test("shares list cards and tables, and refreshes smart list membership after ow
     await expect(page.getByRole("combobox", { name: "Filter by media type", exact: true })).toHaveCount(0);
     await page.goto(`/list/movies/${users.owner.name}?view=list`);
     await expect(page.getByRole("row").filter({ has: page.getByRole("link", { name: movies.private.name, exact: true }) })).toContainText("Completed");
+});
+
+
+test("loads tracking-list smart lists on demand, filters actual matches and opens the full mixed list", async ({ page, browser, baseURL }) => {
+    await runBun(["src/routes/_main/_private/smart-views/-fixtures.ts", "seed-shortcuts", "seed-tabs"]);
+    await signIn(page);
+    const requestUrls: string[] = [];
+    page.on("request", request => requestUrls.push(request.url()));
+    const listResponse = await page.goto(`/list/movies/${users.owner.name}`);
+    expect(await listResponse!.text()).not.toContain("Profile list 1");
+    const smartTab = page.getByRole("main").getByRole("link", { name: "Smart lists", exact: true });
+    await expect(smartTab).toBeVisible();
+    const functionUrl = await page.evaluate(async () => {
+        const modulePath = "/src/lib/server/functions/smart-views.ts";
+        const { getUserSmartViews } = await import(modulePath);
+        return getUserSmartViews.url as string;
+    });
+    const functionPath = new URL(functionUrl, baseURL).pathname;
+    const isSmartViewsUrl = (url: string) => new URL(url).pathname === functionPath;
+    const smartViewsRequestCount = () => requestUrls.filter(isSmartViewsUrl).length;
+    expect(smartViewsRequestCount()).toBe(0);
+    await smartTab.hover();
+    // Observe the interval in which an intent prefetch would otherwise run.
+    const hoverRequest = await page.waitForRequest(request => isSmartViewsUrl(request.url()), { timeout: 300 }).catch(() => null);
+    expect(hoverRequest).toBeNull();
+    expect(smartViewsRequestCount()).toBe(0);
+    for (const tab of ["collections", "stats", "activity"]) {
+        const link = page.getByRole("main").getByRole("link", { name: new RegExp(`^${tab}$`, "i") });
+        await link.click();
+        await expect(link).toHaveAttribute("aria-current", "page");
+        expect(smartViewsRequestCount()).toBe(0);
+    }
+    await smartTab.click();
+    await expect(page).toHaveURL(url => url.pathname === `/list/movies/${users.owner.name}/smart-views`);
+    await expect(smartTab).toHaveAttribute("aria-current", "page");
+    const first = page.getByRole("article", { name: "Profile list 1", exact: true });
+    await expect(first).toBeVisible();
+    expect(smartViewsRequestCount()).toBe(1);
+    await expect(first).toContainText("2 media");
+    await expect(first.getByRole("button", { name: "Pin to profile", exact: true })).toBeVisible();
+    await expect(page.getByRole("article", { name: "Empty movie rules", exact: true })).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+    await page.goto(`/list/books/${users.owner.name}`);
+    await expect(smartTab).toBeVisible();
+    await smartTab.click();
+    await first.getByRole("link", { name: "Profile list 1", exact: true }).click();
+    await expect(page).toHaveURL(url => url.pathname === "/smart-views/501" && !url.searchParams.has("mediaType"));
+    await expect(page.getByText(movies.private.name, { exact: true })).toBeVisible();
+    await expect(page.getByText("A long-awaited book", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Edit smart list", exact: true })).toBeVisible();
+
+    await page.goto(`/list/manga/${users.owner.name}`);
+    await expect(page.getByRole("heading", { name: "Your Manga", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "View Completed manga outside smart lists", exact: true })).toBeVisible();
+    await expect(smartTab).toBeVisible();
+    await smartTab.click();
+    await expect(page.getByText("No smart lists here yet", { exact: true })).toBeVisible();
+    await expect(page.getByRole("article")).toHaveCount(0);
+    await page.goto(`/list/series/${users.owner.name}`);
+    await expect(page.getByRole("heading", { name: "Your Series", exact: true })).toBeVisible();
+    await expect(smartTab).toBeVisible();
+    await smartTab.click();
+    await expect(page.getByText("No smart lists here yet", { exact: true })).toBeVisible();
+    await expect(page.getByRole("article")).toHaveCount(0);
+
+    const follower = await browser.newPage({ baseURL });
+    try {
+        await signIn(follower, "follower");
+        await follower.goto(`/list/books/${users.owner.name}`);
+        await follower.getByRole("main").getByRole("link", { name: "Smart lists", exact: true }).click();
+        const visitorCard = follower.getByRole("article", { name: "Profile list 1", exact: true });
+        await expect(visitorCard).toBeVisible();
+        await expect(visitorCard.getByRole("button", { name: "Pin to profile", exact: true })).toHaveCount(0);
+        await expect(visitorCard.getByRole("link", { name: "Edit Profile list 1", exact: true })).toHaveCount(0);
+        await expect(visitorCard.getByRole("button", { name: "Delete Profile list 1", exact: true })).toHaveCount(0);
+        await visitorCard.getByRole("link", { name: "Profile list 1", exact: true }).click();
+        await expect(follower).toHaveURL(url => url.pathname === "/smart-views/501" && !url.searchParams.has("mediaType"));
+        await expect(follower.getByText(movies.private.name, { exact: true })).toBeVisible();
+        await expect(follower.getByText("A long-awaited book", { exact: true })).toBeVisible();
+        await expect(follower.getByRole("link", { name: "Edit smart list", exact: true })).toHaveCount(0);
+        await expect(follower.getByRole("button", { name: /^Edit / })).toHaveCount(0);
+    }
+    finally {
+        await follower.context().close();
+    }
+
+    await page.goto(`/list/manga/${users.owner.name}`);
+    await expect(smartTab).toBeVisible();
+    const requestsBeforeFavorite = smartViewsRequestCount();
+    await page.getByRole("button", { name: "Edit Completed manga outside smart lists", exact: true }).click();
+    const mediaEditor = page.getByRole("dialog", { name: "Completed manga outside smart lists", exact: true });
+    await mediaEditor.getByRole("button", { name: "Add to favorites", exact: true }).click();
+    await expect(mediaEditor.getByRole("button", { name: "Remove from favorites", exact: true })).toBeEnabled();
+    await mediaEditor.getByRole("button", { name: "Close", exact: true }).click();
+    expect(smartViewsRequestCount()).toBe(requestsBeforeFavorite);
+    await expect(smartTab).toBeVisible();
+    await smartTab.click();
+    const mangaFavorites = page.getByRole("article", { name: "Manga favorites", exact: true });
+    await expect(mangaFavorites).toBeVisible();
+    expect(smartViewsRequestCount()).toBe(requestsBeforeFavorite + 1);
+    await expect(page.getByRole("article")).toHaveCount(1);
+    await mangaFavorites.getByRole("button", { name: "Delete Manga favorites", exact: true }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Delete list", exact: true }).click();
+    await expect(mangaFavorites).toHaveCount(0);
+    await expect(page.getByText("No smart lists here yet", { exact: true })).toBeVisible();
+    await expect(smartTab).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Your Manga", exact: true })).toBeVisible();
+    await expect(page.getByText("No smart lists here yet", { exact: true })).toBeVisible();
+    await expect(smartTab).toBeVisible();
+    await page.goto("/smart-views/521");
+    await expect(page.getByRole("heading", { name: "Empty movie rules", exact: true })).toBeVisible();
 });

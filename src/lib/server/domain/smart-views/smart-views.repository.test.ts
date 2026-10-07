@@ -56,7 +56,7 @@ describe("smart list persistence and profile selection", () => {
         expect(smartViewsRepository.getAll(2)).toHaveLength(1);
     });
 
-    it("keeps views private until selected, orders shortcuts, and swaps positions atomically", () => {
+    it("keeps new views unpinned, orders shortcuts, and swaps positions atomically", () => {
         const views = Array.from({ length: 4 }, (_, index) => smartViewsRepository.create(1, { ...spec, title: `View ${index}` }));
         expect(smartViewsRepository.getProfileViews(1)).toEqual([]);
         expect(smartViewsRepository.get(1, views[0].id).profilePosition).toBeNull();
@@ -82,12 +82,14 @@ describe("smart list persistence and profile selection", () => {
         }
     });
 
-    it("shares only explicitly selected views belonging to the requested profile", () => {
+    it("returns only explicitly selected views for profile shortcuts while owner lookup stays independent of pinning", () => {
         const pinned = smartViewsRepository.create(1, spec);
-        const privateView = smartViewsRepository.create(1, spec);
+        const unpinned = smartViewsRepository.create(1, spec);
         smartViewsRepository.setProfileViews(1, [pinned.id]);
         expect(smartViewsRepository.getProfileViews(1).map(view => view.id)).toEqual([pinned.id]);
-        expect(smartViewsRepository.getOwner(privateView.id)).toMatchObject({ id: 1, username: "user1", profilePosition: null });
+        expect(smartViewsRepository.getOwner(unpinned.id)).toMatchObject({ id: 1, username: "user1" });
+        expect(smartViewsRepository.getOwner(unpinned.id)).not.toHaveProperty("profilePosition");
+        expect(smartViewsRepository.getAll(1).map(view => view.id)).toEqual([unpinned.id, pinned.id]);
         expect(smartViewsRepository.getProfileViews(2)).toEqual([]);
         smartViewsRepository.setProfileViews(1, []);
         expect(smartViewsRepository.getProfileViews(1)).toEqual([]);

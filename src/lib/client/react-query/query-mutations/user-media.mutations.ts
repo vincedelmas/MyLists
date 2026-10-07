@@ -313,6 +313,7 @@ export const useUpdateCustomCoverMutation = (queryOption: UserMediaQueryOption, 
                 queryClient.invalidateQueries({ queryKey: profileOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: continueOptions(currentUser!.name).queryKey }),
                 queryClient.invalidateQueries({ queryKey: ["smart-views"], refetchType: "none" }),
+                queryClient.invalidateQueries({ queryKey: ["smart-views", "user", currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: ["year-recap"] }),
                 ...(queryOption.queryKey[0] === "details"
                     ? [queryClient.invalidateQueries({ queryKey: queryOption.queryKey })]
@@ -337,6 +338,7 @@ export const useEditTagMutation = (mediaType: MediaType, mediaId?: number, meta?
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ["tagsView", mediaType, currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: ["smart-views"], refetchType: "none" }),
+                queryClient.invalidateQueries({ queryKey: ["smart-views", "user", currentUser!.name] }),
                 queryClient.invalidateQueries({ queryKey: ["listFilters", mediaType, currentUser!.name] }),
             ]);
 

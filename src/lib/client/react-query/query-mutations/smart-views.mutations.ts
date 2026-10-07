@@ -25,6 +25,7 @@ export const useDeleteSmartViewMutation = () => {
         onSuccess: () => Promise.all([
             queryClient.invalidateQueries({ queryKey: ["smart-views", "list"] }),
             queryClient.invalidateQueries({ queryKey: ["smart-views", "profile"] }),
+            queryClient.invalidateQueries({ queryKey: ["smart-views", "user"] }),
         ]),
     });
 };
@@ -41,6 +42,7 @@ export const useSetProfileSmartViewsMutation = () => {
             queryClient.invalidateQueries({ queryKey: ["smart-views", "list"] }),
             queryClient.invalidateQueries({ queryKey: ["smart-views", "profile"] }),
             queryClient.invalidateQueries({ queryKey: ["smart-views", "details"] }),
+            queryClient.invalidateQueries({ queryKey: ["smart-views", "user"] }),
         ]),
     });
 };

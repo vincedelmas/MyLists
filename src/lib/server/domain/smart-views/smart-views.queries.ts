@@ -369,10 +369,11 @@ export const getSmartViewResults = (userId: number, spec: SmartViewSpec, options
 
 
 export const getSmartViewSummary = (userId: number, spec: SmartViewSpec) => {
-    const { total, items } = getSmartViewResultPage(userId, spec, { perPage: 4 });
+    const { total, items, mediaTypes } = getSmartViewResultPage(userId, spec, { perPage: 4 });
 
     return {
         total,
+        mediaTypes,
         covers: items.map(({ mediaType, mediaId, title, imageCover }) => ({
             mediaType, mediaId, title,
             imageCover: getImageUrl(getServerMediaDefinition(mediaType).identity.coverDirectory, imageCover),

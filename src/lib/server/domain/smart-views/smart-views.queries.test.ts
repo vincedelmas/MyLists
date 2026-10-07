@@ -110,13 +110,32 @@ describe("smart list live queries", () => {
             .where(and(eq(schema.userMediaSettings.userId, 1), eq(schema.userMediaSettings.mediaType, MediaType.BOOKS))).run();
         const preview = getSmartViewSummary(1, spec);
         expect(preview.total).toBe(6);
+        expect(preview.mediaTypes).toEqual([MediaType.MOVIES]);
         expect(preview.covers).toHaveLength(4);
         expect(preview.covers[0]).toEqual({
             mediaType: MediaType.MOVIES, mediaId: 1, title: "Media 1",
             imageCover: "https://mylists.example.invalid/static/movies-covers/custom.jpg",
         });
         expect(preview.covers.every(cover => Object.keys(cover).sort().join(",") === "imageCover,mediaId,mediaType,title")).toBe(true);
-        expect(getSmartViewSummary(1, { ...spec, filters: { search: "missing" } })).toEqual({ total: 0, covers: [] });
+        expect(getSmartViewSummary(1, { ...spec, filters: { search: "missing" } })).toEqual({ total: 0, mediaTypes: [], covers: [] });
+    });
+
+    it("reports actual matching media types even when they are absent from the first four preview covers", () => {
+        for (let id = 1; id <= 5; id++) addEntry(MediaType.MOVIES, id, { status: Status.COMPLETED, addedAt: "2025-01-01" });
+        addEntry(MediaType.BOOKS, 10, { status: Status.COMPLETED, addedAt: "2026-01-01" });
+        addEntry(MediaType.GAMES, 11, { status: Status.PLAN_TO_PLAY });
+        addEntry(MediaType.MANGA, 12, { status: Status.COMPLETED });
+        addEntry(MediaType.ANIME, 13, { status: Status.COMPLETED, userId: 2 });
+        dbContext.db.update(schema.userMediaSettings).set({ active: false })
+            .where(and(eq(schema.userMediaSettings.userId, 1), eq(schema.userMediaSettings.mediaType, MediaType.MANGA))).run();
+
+        const preview = getSmartViewSummary(1, { ...spec, filters: { statusGroup: "completed" } });
+
+        expect(preview.total).toBe(6);
+        expect(preview.mediaTypes).toEqual([MediaType.MOVIES, MediaType.BOOKS]);
+        expect(preview.covers).toHaveLength(4);
+        expect(preview.covers.every(cover => cover.mediaType === MediaType.MOVIES)).toBe(true);
+        expect(Object.keys(preview).sort()).toEqual(["covers", "mediaTypes", "total"]);
     });
 
     it("resolves planned aliases across all six media types", () => {

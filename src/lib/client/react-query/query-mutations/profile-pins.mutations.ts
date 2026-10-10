@@ -13,7 +13,7 @@ export const useSetProfilePinMutation = () => {
         onSuccess: () => Promise.all([
             queryClient.invalidateQueries({ queryKey: ["profile-pins"] }),
             queryClient.invalidateQueries({ queryKey: ["dynamic-lists"] }),
-            queryClient.invalidateQueries({ queryKey: ["collections", "user"] }),
+            queryClient.invalidateQueries({ queryKey: ["collections"] }),
         ]),
     });
 };

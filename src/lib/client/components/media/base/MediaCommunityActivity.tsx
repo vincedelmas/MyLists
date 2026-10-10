@@ -3,7 +3,7 @@ import {Link} from "@tanstack/react-router";
 import {MediaType} from "@/lib/utils/enums";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
-import {Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
+import {ArrowUpRight, Clock, Eye, Heart, RotateCcw, Star} from "lucide-react";
 import {buttonVariants} from "@/lib/client/components/ui/button";
 import {ExtractFollowByType} from "@/lib/types/query.options.types";
 import {mediaConfig} from "@/lib/client/components/media/media-config";
@@ -60,9 +60,10 @@ export const MediaCommunityActivity = ({ mediaId, mediaType, queryOptions }: Com
                     <Link
                         params={{ mediaType, mediaId }}
                         to="/details/$mediaType/$mediaId/community"
-                        className={buttonVariants({ variant: "hover", size: "sm" })}
+                        className={cn(buttonVariants({ variant: "hover", size: "sm" }))}
                     >
-                        View All
+                        View all
+                        <ArrowUpRight data-icon="inline-end"/>
                     </Link>
                 </div>
             }

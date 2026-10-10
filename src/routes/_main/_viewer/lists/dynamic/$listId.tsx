@@ -2,7 +2,7 @@ import z from "zod";
 import {useState} from "react";
 import {Status} from "@/lib/utils/enums";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {Layers3, PencilLine} from "lucide-react";
+import {Layers3, PencilLine, Pin} from "lucide-react";
 import {formatNumber} from "@/lib/utils/formatting/number";
 import {createFileRoute, Link} from "@tanstack/react-router";
 import {getMediaSortOptions} from "@/lib/utils/media/sorting";
@@ -119,23 +119,30 @@ function DynamicListPage() {
 
     return (
         <PageTitle title={view.spec.title} onlyHelmet>
-            <div className="flex min-w-0 flex-col gap-6 pt-5 pb-12">
+            <div className="flex min-w-0 flex-col gap-6 pt-8 pb-12">
                 <PageHeader
                     asideIcon={Layers3}
                     asideLabel="Dynamic list"
+                    description="Media you track that match these rules. Results update as your tracking changes."
+                    eyebrow={<ListsBackLink username={owner.username}/>}
                     asideValue={<>{formatNumber(results.total)} media</>}
                     title={
-                        <span className="[overflow-wrap:anywhere]">
+                        <span className="flex items-center gap-2 [overflow-wrap:anywhere]">
+                            {view.profilePosition !== null && <Pin className="size-5 shrink-0 fill-brand/20 text-brand" aria-hidden="true"/>}
                             {view.spec.title}
                         </span>
                     }
-                    eyebrow={<ListsBackLink username={owner.username}/>}
                 />
 
                 <section className="flex min-w-0 flex-col gap-4 -mt-2" aria-label="Browse this dynamic list">
                     <MediaBrowseToolbar
                         isGrid={isGrid}
                         search={localSearch}
+                        onGridClick={handleDisplayToggle}
+                        onSearchChange={handleInputChange}
+                        searchLabel="Search this dynamic list"
+                        onFiltersClick={() => setFiltersOpen(true)}
+                        searchPlaceholder="Search within this list..."
                         trailing={
                             <QuickActions username={owner.username} mediaType={filters.mediaType}>
                                 {isOwner &&
@@ -147,11 +154,6 @@ function DynamicListPage() {
                                 }
                             </QuickActions>
                         }
-                        onGridClick={handleDisplayToggle}
-                        onSearchChange={handleInputChange}
-                        searchLabel="Search this dynamic list"
-                        onFiltersClick={() => setFiltersOpen(true)}
-                        searchPlaceholder="Search within this list..."
                         selects={[
                             ...(mediaTypes.length > 1 ? [{
                                 key: "mediaType",
@@ -180,9 +182,9 @@ function DynamicListPage() {
                     />
 
                     <DynamicListBadges
-                        activeMediaTypes={activeMediaTypes}
                         spec={view.spec}
                         sortLabel={sortLabel}
+                        activeMediaTypes={activeMediaTypes}
                     />
 
                     <BrowseAppliedFilters
@@ -191,8 +193,8 @@ function DynamicListPage() {
                         onReset={handleFiltersReset}
                         onRemove={handleFilterRemove}
                         filters={{ ...filters, page }}
-                        additionalGroups={filters.hideCommon ?
-                            [{
+                        additionalGroups={filters.hideCommon
+                            ? [{
                                 key: "hideCommon",
                                 label: "Comparison",
                                 items: [{
@@ -202,8 +204,7 @@ function DynamicListPage() {
                                     onRemove: () => handleFiltersChange({ hideCommon: undefined }),
                                 }],
                             }]
-                            :
-                            []
+                            : []
                         }
                     />
                 </section>

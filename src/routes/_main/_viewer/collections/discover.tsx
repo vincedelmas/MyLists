@@ -50,14 +50,14 @@ function CollectionsDiscoverPage() {
                 <PageHeader
                     asideIcon={UsersRound}
                     eyebrowIcon={ListOrdered}
-                    eyebrow="Made by the community"
                     title="Community collections"
+                    eyebrow="Made by the community"
                     asideLabel={hasFilters ? "Collections found" : "Shared collections"}
                     description="Browse collections that people on MyLists have chosen to share."
                     asideValue={<>{formatNumber(apiData.total)} {apiData.total === 1 ? "collection" : "collections"}</>}
                 />
 
-                <div className="grid grid-cols-[minmax(0,1fr)_11rem_auto] items-center gap-3 pt-5 max-sm:grid-cols-[minmax(0,1fr)_auto]">
+                <div className="grid grid-cols-[minmax(0,1fr)_11rem_auto] items-center gap-3 pt-4 max-sm:grid-cols-[minmax(0,1fr)_auto]">
                     <SearchInput
                         value={localSearch}
                         onChange={handleInputChange}
@@ -127,7 +127,7 @@ function CollectionsDiscoverPage() {
                     :
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {apiData.items.map((collection) =>
-                            <CollectionCard key={collection.id} collection={collection} variant="showcase" communitySearch={filters}/>
+                            <CollectionCard key={collection.id} collection={collection} communitySearch={filters}/>
                         )}
                     </div>
                 }

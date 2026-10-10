@@ -51,54 +51,58 @@ const AppliedFilters = (props: AppliedFiltersProps) => {
     return (
         <div className="flex min-h-6 items-center justify-between gap-3" role="group" aria-label="Browsing results and filters">
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="text-xs text-muted-foreground">
+                <span className="inline-flex h-6 shrink-0 items-center gap-1 text-xs text-muted-foreground">
                     <span className="text-sm font-semibold tabular-nums text-foreground">
                         {formatNumber(total)}
                     </span>
                     {" "}{itemLabel ?? (total === 1 ? "title" : "titles")}
                 </span>
 
-                {groups.map(group =>
-                    <div key={group.key} className="flex min-w-0 flex-wrap items-center gap-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                            {group.label}
-                        </span>
-                        {group.items.map((item, index) =>
-                            <Fragment key={item.key}>
-                                <Badge variant="outline" className="h-auto max-w-full">
-                                    <span className="truncate">
-                                        {item.label}
-                                    </span>
-                                    <Button
-                                        size="bare"
-                                        type="button"
-                                        variant="ghost"
-                                        onClick={item.onRemove}
-                                        aria-label={item.removeLabel}
-                                    >
-                                        <X data-icon="inline-end" aria-hidden="true"/>
-                                    </Button>
-                                </Badge>
+                {groups.length > 0 && <span className="h-4 shrink-0 border-l" aria-hidden="true"/>}
 
-                                {group.alternatives && index < group.items.length - 1 &&
-                                    <span className="px-0.5 text-[10px] font-medium text-muted-foreground">
-                                        OR
-                                    </span>
-                                }
-                            </Fragment>
-                        )}
-                    </div>
-                )}
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
+                    {groups.map(group =>
+                        <div key={group.key} className="flex min-w-0 flex-wrap items-center gap-1.5">
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                {group.label}
+                            </span>
+                            {group.items.map((item, index) =>
+                                <Fragment key={item.key}>
+                                    <Badge variant="outline" className="h-auto max-w-full">
+                                        <span className="truncate">
+                                            {item.label}
+                                        </span>
+                                        <Button
+                                            size="bare"
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={item.onRemove}
+                                            aria-label={item.removeLabel}
+                                        >
+                                            <X data-icon="inline-end" aria-hidden="true"/>
+                                        </Button>
+                                    </Badge>
 
-                {canReset &&
-                    <Button size="xs" type="button" variant="ghost" onClick={onReset}>
-                        {resetLabel}
-                    </Button>
-                }
+                                    {group.alternatives && index < group.items.length - 1 &&
+                                        <span className="px-0.5 text-[10px] font-medium text-muted-foreground">
+                                            OR
+                                        </span>
+                                    }
+                                </Fragment>
+                            )}
+                        </div>
+                    )}
+
+                    {canReset &&
+                        <Button size="xs" type="button" variant="ghost" onClick={onReset} className="-ml-1.5">
+                            {resetLabel}
+                        </Button>
+                    }
+                </div>
             </div>
 
             {totalPages > 1 &&
-                <span className="shrink-0 pt-0.5 text-xs tabular-nums text-muted-foreground">
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                     Page {page} / {totalPages}
                 </span>
             }

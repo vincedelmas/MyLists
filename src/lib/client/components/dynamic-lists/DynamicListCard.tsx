@@ -1,3 +1,4 @@
+import {Pin} from "lucide-react";
 import {Link} from "@tanstack/react-router";
 import {useQuery} from "@tanstack/react-query";
 import type {MediaType} from "@/lib/utils/enums";
@@ -23,7 +24,7 @@ export const DynamicListCard = ({ view, activeMediaTypes, isOwner = true, previe
         : previewQuery.isError ? "Count unavailable" : "Loading media…";
 
     return (
-        <Card className="relative min-w-0 gap-0 py-0 transition-shadow hover:shadow-sm sm:flex-row" role="article" aria-label={view.spec.title}>
+        <Card className="relative min-w-0 gap-0 py-0 transition-shadow hover:ring-brand hover:shadow-sm sm:flex-row" role="article" aria-label={view.spec.title}>
             <Link
                 search={{ page: 1 }}
                 to="/lists/dynamic/$listId"
@@ -38,8 +39,9 @@ export const DynamicListCard = ({ view, activeMediaTypes, isOwner = true, previe
             />
             <div className="pointer-events-none flex min-w-0 flex-1 flex-col gap-3 py-4 sm:py-5">
                 <CardHeader className="min-w-0 gap-y-2" title={view.spec.title}>
-                    <CardTitle className="min-w-0 truncate">
-                        {view.spec.title}
+                    <CardTitle className="flex min-w-0 items-center gap-2">
+                        {view.profilePosition !== null && <Pin className="size-3.5 shrink-0 fill-brand/20 text-brand" aria-label="Pinned to profile"/>}
+                        <span className="truncate">{view.spec.title}</span>
                     </CardTitle>
                     <CardDescription>
                         {countLabel}

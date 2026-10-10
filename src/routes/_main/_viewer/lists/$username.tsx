@@ -116,7 +116,7 @@ function ListsPage() {
                             }
                         }}
                     >
-                        <SelectTrigger aria-label="Filter by kind">
+                        <SelectTrigger aria-label="Filter by kind" className="w-[175px] max-sm:grow">
                             <SelectValue/>
                         </SelectTrigger>
                         <SelectContent>
@@ -138,7 +138,7 @@ function ListsPage() {
                             }
                         }}
                     >
-                        <SelectTrigger aria-label="Filter by media type">
+                        <SelectTrigger aria-label="Filter by media type" className="w-[150px] max-sm:grow">
                             <SelectValue/>
                         </SelectTrigger>
                         <SelectContent>
@@ -177,7 +177,7 @@ function ListsPage() {
                         </h2>
                         <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
                             {visiblePresets.map(preset =>
-                                <Card key={preset.mediaType} size="sm" className="relative transition-shadow hover:shadow-sm">
+                                <Card key={preset.mediaType} size="sm" className="relative transition-shadow hover:ring-brand hover:shadow-sm">
                                     <Link
                                         to="/lists/tracking/$mediaType/$username"
                                         params={{ username, mediaType: preset.mediaType }}
@@ -198,7 +198,7 @@ function ListsPage() {
                                 </Card>
                             )}
                             {showContinue &&
-                                <Card size="sm" className="relative transition-shadow hover:shadow-sm">
+                                <Card size="sm" className="relative transition-shadow hover:ring-brand hover:shadow-sm">
                                     <Link
                                         aria-label="Continue list"
                                         to="/lists/continue/$username" params={{ username }}
@@ -230,28 +230,32 @@ function ListsPage() {
                                     <Layers3 className="size-5 text-brand"/>
                                     Dynamic lists
                                 </h2>
-                                <InfoPopover label="About dynamic lists" title="What is a dynamic list?">
+                                <InfoPopover label="About dynamic lists" title="What is a dynamic list?" iconClassName="mt-0.5">
                                     <div className="space-y-3 text-sm text-muted-foreground font-normal">
                                         <p>
-                                            A dynamic list is a saved view of the media you track. Choose rules such as status,
-                                            rating or tags, and combine one or more media types.
+                                            A dynamic list is a saved view of the media you track.
+                                            Choose rules like: status, rating or tags, and combine one or more media types.
                                         </p>
                                         <p>
-                                            Results update as your tracking changes. For example, show movies and series that
-                                            have been in Plan to for more than six months.
-                                        </p>
-                                        <p>
-                                            Media keep their progress and information from your tracking lists.
+                                            Results update as your tracking changes.
+                                            For example, show movies and series that have been in Plan to Watch for more than six months.
                                         </p>
                                     </div>
                                 </InfoPopover>
                             </div>
-                            {isOwner &&
-                                <Link to="/lists/dynamic/create" className={buttonVariants({ size: "sm" })}>
-                                    <Plus data-icon="inline-start"/>
-                                    Create dynamic list
-                                </Link>
-                            }
+                            <div className="flex flex-wrap items-center gap-3">
+                                {viewsQuery.data.total > 0 &&
+                                    <span className="text-sm tabular-nums text-muted-foreground">
+                                        {formatNumber(viewsQuery.data.total)} dynamic {viewsQuery.data.total === 1 ? "list" : "lists"}
+                                    </span>
+                                }
+                                {isOwner &&
+                                    <Link to="/lists/dynamic/create" className={buttonVariants({ size: "sm" })}>
+                                        <Plus data-icon="inline-start"/>
+                                        Create dynamic list
+                                    </Link>
+                                }
+                            </div>
                         </div>
                         {views.length > 0 ?
                             <>
@@ -323,7 +327,6 @@ function ListsPage() {
                                     {collections.items.map(collection =>
                                         <CollectionCard
                                             showOwner={false}
-                                            variant="showcase"
                                             key={collection.id}
                                             collection={collection}
                                         />

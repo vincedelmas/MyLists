@@ -179,7 +179,7 @@ function ReleaseCalendarPage() {
                                     Week
                                 </ToggleGroupItem>
                             </ToggleGroup>
-                            <InfoPopover label="About the release calendar" title="Which releases are shown?">
+                            <InfoPopover label="About the release calendar" title="Which releases are shown?" align="end">
                                 <div className="flex flex-col gap-3 text-sm text-muted-foreground">
                                     <p>Releases come from media in your lists with a known date. Dropped media are excluded.</p>
                                     <p>Movies and games include past and future releases.</p>

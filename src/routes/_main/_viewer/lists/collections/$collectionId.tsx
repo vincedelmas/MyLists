@@ -1,7 +1,6 @@
 import {useState} from "react";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {MediaType, Status} from "@/lib/utils/enums";
-import type {MediaMetadataFilters} from "@/lib/media-definitions/definition.registry";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatNumber} from "@/lib/utils/formatting/number";
@@ -15,12 +14,13 @@ import {PrivacyIcon} from "@/lib/client/components/general/MainIcons";
 import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
 import {useSearchNavigate} from "@/lib/client/hooks/use-search-navigate";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
-import {CollectionActions} from "@/lib/client/components/collections/CollectionActions";
 import {QuickActions} from "@/lib/client/components/general/QuickActions";
 import {collectionBrowseSearchSchema, collectionIdSchema} from "@/lib/schemas";
 import {useQuery, useQueryClient, useSuspenseQuery} from "@tanstack/react-query";
-import {ArrowLeft, Copy, Eye, Heart, Layers3, List, ListOrdered} from "lucide-react";
+import {ArrowLeft, Copy, Eye, Heart, Layers3, List, ListOrdered, Pin} from "lucide-react";
 import {MediaListResults} from "@/lib/client/components/media/base/MediaListResults";
+import type {MediaMetadataFilters} from "@/lib/media-definitions/definition.registry";
+import {CollectionActions} from "@/lib/client/components/collections/CollectionActions";
 import {createMediaSelectItems} from "@/lib/client/components/general/media-type-options";
 import {MediaBrowseToolbar} from "@/lib/client/components/media/browse/MediaBrowseToolbar";
 import {CollectionMediaTypes} from "@/lib/client/components/collections/CollectionMediaTypes";
@@ -51,14 +51,14 @@ export const Route = createFileRoute("/_main/_viewer/lists/collections/$collecti
 
 
 function CollectionViewer() {
-    const { fromCommunity, ...filters } = Route.useSearch();
     const navigate = Route.useNavigate();
     const queryClient = useQueryClient();
     const { collectionId } = Route.useParams();
     const { isAnonymous, currentUser } = useAuth();
-    const [filtersOpen, setFiltersOpen] = useState(false);
-
+    const { fromCommunity, ...filters } = Route.useSearch();
     const copyMutation = useCopyCollectionMutation(collectionId);
+
+    const [filtersOpen, setFiltersOpen] = useState(false);
     const { collectionDetailsQueryOptions } = Route.useRouteContext();
     const apiData = useSuspenseQuery(collectionDetailsQueryOptions).data;
     const toggleLikeMutation = useToggleCollectionLikeMutation(collectionId);
@@ -71,9 +71,10 @@ function CollectionViewer() {
 
     const { collection, items, isLiked, capabilities } = apiData;
     const CollectionTypeIcon = collection.ordered ? ListOrdered : List;
-    const hasActions = capabilities.like || capabilities.copy;
 
     const isGrid = filters.display !== "table";
+    const hasActions = capabilities.like || capabilities.copy;
+
     const availableMediaTypes = apiData.filterOptions.mediaTypes;
     const selectedMediaTypes = filters.mediaType ? [filters.mediaType] : availableMediaTypes;
 
@@ -173,19 +174,27 @@ function CollectionViewer() {
             <div className="mb-8 flex min-w-0 flex-col pt-8">
                 <PageHeader
                     asideIcon={Layers3}
-                    eyebrow={fromCommunity ?
-                        <Link
-                            to="/collections/discover"
-                            search={fromCommunity}
-                            className="inline-flex items-center gap-2 rounded-sm text-brand outline-none transition-colors hover:text-brand/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        >
-                            <ArrowLeft className="size-4" aria-hidden="true"/> Community collections
-                        </Link>
-                        : <ListsBackLink username={collection.ownerName}/>
-                    }
-                    title={collection.title}
+                    title={<span className="flex items-center gap-2 [overflow-wrap:anywhere]">
+                        {collection.profilePosition !== null && <Pin className="size-5 shrink-0 fill-brand/20 text-brand" aria-hidden="true"/>}
+                        {collection.title}
+                    </span>}
                     asideLabel="In this collection"
                     asideValue={<>{formatNumber(collection.itemsCount)} media</>}
+                    eyebrow={fromCommunity ?
+                        <Link
+                            search={fromCommunity}
+                            to="/collections/discover"
+                            className="inline-flex items-center gap-2 rounded-sm text-brand outline-none transition-colors
+                            hover:text-brand/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                            focus-visible:ring-offset-background"
+                        >
+                            <ArrowLeft className="size-4"/> Community collections
+                        </Link>
+                        :
+                        <ListsBackLink
+                            username={collection.ownerName}
+                        />
+                    }
                     description={
                         <span className="inline-flex flex-wrap items-center gap-1.5">
                             Made by
@@ -200,78 +209,17 @@ function CollectionViewer() {
                     }
                 />
 
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-4 max-sm:flex-col max-sm:items-stretch">
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                        <CollectionMediaTypes
-                            mediaTypes={collection.mediaTypes}
-                        />
-                        <Badge variant="outline">
-                            {collection.ordered
-                                ? <><ListOrdered className="size-3"/> Ranked</>
-                                : <><List className="size-3"/> Unranked</>
-                            }
-                        </Badge>
-                        <Badge variant="outline">
-                            <PrivacyIcon
-                                className="size-4"
-                                type={collection.privacy}
-                            />
-                            {collection.privacy}
-                        </Badge>
-
-                        <span className="h-4 border-l max-sm:hidden" aria-hidden="true"/>
-
-                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="Likes">
-                            <Heart className="size-3.5 text-brand" aria-hidden="true"/>
-                            <span className="tabular-nums">
-                                {formatNumber(collection.likeCount)}
-                            </span>
-                        </span>
-
-                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="Views">
-                            <Eye className="size-3.5 text-brand" aria-hidden="true"/>
-                            <span className="tabular-nums">
-                                {formatNumber(collection.viewCount)}
-                            </span>
-                        </span>
-
-                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="Copies">
-                            <Copy className="size-3.5 text-brand" aria-hidden="true"/>
-                            <span className="tabular-nums">
-                                {formatNumber(collection.copiedCount)}
-                            </span>
-                        </span>
-                    </div>
-
-                    {hasActions &&
-                        <div className="flex flex-wrap items-center gap-2 max-sm:w-full max-sm:[&>button]:flex-1">
-                            {capabilities.like &&
-                                <Button variant="outline" onClick={handleLikeCollection} disabled={toggleLikeMutation.isPending}>
-                                    <Heart className={isLiked ? "fill-favorite text-favorite" : ""}/>
-                                    {isLiked ? "Liked" : "Like"}
-                                </Button>
-                            }
-
-                            {capabilities.copy &&
-                                <Button variant="outline" onClick={handleCopyCollection} disabled={copyMutation.isPending}>
-                                    <Copy/> Copy
-                                </Button>
-                            }
-
-                        </div>
-                    }
-                </div>
-
-                {collection.description &&
-                    <p className="max-w-3xl whitespace-pre-line pt-5 text-sm leading-relaxed text-muted-foreground">
-                        {collection.description}
-                    </p>
-                }
-
                 <div className="flex flex-col gap-4 pb-5 pt-4">
                     <MediaBrowseToolbar
+                        isGrid={isGrid}
+                        search={searchInput.localSearch}
+                        searchLabel="Search this collection"
+                        searchPlaceholder="Search this collection..."
+                        onSearchChange={searchInput.handleInputChange}
+                        onFiltersClick={showTrackingControls ? () => setFiltersOpen(true) : undefined}
+                        onGridClick={() => navigate({ replace: true, search: prev => ({ ...prev, display: isGrid ? "table" : "grid" }) })}
                         trailing={
-                            <QuickActions username={collection.ownerName} mediaType={filters.mediaType}>
+                            <QuickActions mediaType={filters.mediaType} username={collection.ownerName}>
                                 {(currentUser?.id === collection.ownerId || capabilities.edit || capabilities.delete) &&
                                     <CollectionActions
                                         collection={collection}
@@ -289,16 +237,6 @@ function CollectionViewer() {
                                 }
                             </QuickActions>
                         }
-                        isGrid={isGrid}
-                        search={searchInput.localSearch}
-                        searchLabel="Search this collection"
-                        searchPlaceholder="Search this collection..."
-                        onSearchChange={searchInput.handleInputChange}
-                        onFiltersClick={showTrackingControls ? () => setFiltersOpen(true) : undefined}
-                        onGridClick={() => void navigate({
-                            replace: true,
-                            search: prev => ({ ...prev, display: isGrid ? "table" : "grid" }),
-                        })}
                         selects={[
                             ...(availableMediaTypes.length > 1 ? [{
                                 key: "mediaType",
@@ -306,8 +244,8 @@ function CollectionViewer() {
                                 label: "Filter by media type",
                                 value: filters.mediaType ?? "all",
                                 onChange: (mediaType: string) => handleFilterChange({
-                                    mediaType: mediaType === "all" ? undefined : mediaType as MediaType,
                                     sorting: undefined,
+                                    mediaType: mediaType === "all" ? undefined : mediaType as MediaType,
                                 }),
                             }] : []),
                             ...(!isAnonymous ? [
@@ -339,6 +277,68 @@ function CollectionViewer() {
                             },
                         ]}
                     />
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <CollectionMediaTypes
+                                mediaTypes={collection.mediaTypes}
+                            />
+                            <Badge variant="outline">
+                                {collection.ordered
+                                    ? <><ListOrdered className="size-3"/> Ranked</>
+                                    : <><List className="size-3"/> Unranked</>
+                                }
+                            </Badge>
+                            <Badge variant="outline">
+                                <PrivacyIcon
+                                    className="size-4"
+                                    type={collection.privacy}
+                                />
+                                {collection.privacy}
+                            </Badge>
+
+                            <span className="h-4 border-l max-sm:hidden" aria-hidden="true"/>
+
+                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="Likes">
+                                <Heart className="size-3.5 text-brand" aria-hidden="true"/>
+                                <span className="tabular-nums">{formatNumber(collection.likeCount)}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="Views">
+                                <Eye className="size-3.5 text-brand" aria-hidden="true"/>
+                                <span className="tabular-nums">{formatNumber(collection.viewCount)}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground" title="Copies">
+                                <Copy className="size-3.5 text-brand" aria-hidden="true"/>
+                                <span className="tabular-nums">{formatNumber(collection.copiedCount)}</span>
+                            </span>
+                        </div>
+
+                        {hasActions &&
+                            <div className="flex h-6 items-center gap-3 border-l pl-4">
+                                {capabilities.like &&
+                                    <Button variant="ghost" size="bare" className="gap-1.5 text-xs text-muted-foreground" onClick={handleLikeCollection}
+                                            disabled={toggleLikeMutation.isPending}>
+                                        <Heart className={`size-3.5 ${isLiked ? "fill-favorite text-favorite" : "text-brand"}`}/>
+                                        {isLiked ? "Liked" : "Like"}
+                                    </Button>
+                                }
+
+                                {capabilities.copy &&
+                                    <Button variant="ghost" size="bare" className="gap-1.5 text-xs text-muted-foreground" onClick={handleCopyCollection}
+                                            disabled={copyMutation.isPending}>
+                                        <Copy className="size-3.5 text-brand"/> Copy
+                                    </Button>
+                                }
+
+                            </div>
+                        }
+                    </div>
+
+                    {collection.description &&
+                        <p className="w-full whitespace-pre-line rounded-r-lg border-l-2 border-brand/30 bg-muted/30 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
+                            {collection.description}
+                        </p>
+                    }
 
                     <BrowseAppliedFilters
                         filters={filters}

@@ -1,39 +1,40 @@
-import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
-import React, {useId, useMemo, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
-import {MediaType, Status} from "@/lib/utils/enums";
-import {capitalize} from "@/lib/utils/formatting/text";
-import {formatNumber} from "@/lib/utils/formatting/number";
+import {THEME_ICONS_MAP} from "@/lib/client/theme";
 import {useAuth} from "@/lib/client/hooks/use-auth";
-import {useConfirmBlocker} from "@/lib/client/hooks/use-confirm-blocker";
-import {useDebounce} from "@/lib/client/hooks/use-debounce";
+import {MediaType, Status} from "@/lib/utils/enums";
+import React, {useId, useMemo, useState} from "react";
+import {capitalize} from "@/lib/utils/formatting/text";
 import {Input} from "@/lib/client/components/ui/input";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";
 import {Spinner} from "@/lib/client/components/ui/spinner";
+import {formatNumber} from "@/lib/utils/formatting/number";
+import {useDebounce} from "@/lib/client/hooks/use-debounce";
+import {DEFAULT_DASH_FALLBACK} from "@/lib/utils/constants";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
-import {THEME_ICONS_MAP} from "@/lib/client/theme";
-import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
+import {Layers3, LayoutGrid, List, Save} from "lucide-react";
 import {Separator} from "@/lib/client/components/ui/separator";
-import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {PageTitle} from "@/lib/client/components/general/PageTitle";
 import {PageHeader} from "@/lib/client/components/general/PageHeader";
-import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
-import {Layers3, LayoutGrid, List, Save} from "lucide-react";
+import {getActiveMediaTypes} from "@/lib/utils/media/list-activation";
+import {useConfirmBlocker} from "@/lib/client/hooks/use-confirm-blocker";
+import {Alert, AlertDescription} from "@/lib/client/components/ui/alert";
 import {ListsBackLink} from "@/lib/client/components/lists/ListsBackLink";
-import {dynamicListRules} from "@/lib/client/components/dynamic-lists/dynamic-list.utils";
+import {ALL_MEDIA_TYPES} from "@/lib/media-definitions/definition.registry";
+import {MAX_MEDIA_FILTER_VALUES} from "@/lib/media-definitions/base/media-filters";
 import {ToggleGroup, ToggleGroupItem} from "@/lib/client/components/ui/toggle-group";
-import {dynamicListSpecSchema, type DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
+import {dynamicListRules} from "@/lib/client/components/dynamic-lists/dynamic-list.utils";
 import {MediaFilterSearch} from "@/lib/client/components/media/browse/MediaFilterSearch";
 import {MediaSpecificFilters} from "@/lib/client/components/media/browse/MediaSpecificFilters";
+import {dynamicListSpecSchema, type DynamicListSpec} from "@/lib/schemas/dynamic-lists.schema";
 import {getMediaCommonFilterKeys} from "@/lib/client/components/media/browse/media-filter.utils";
 import {createMediaBrowseStatusOptions} from "@/lib/client/components/media/browse/media-browse.config";
-import {useSaveDynamicListMutation} from "@/lib/client/react-query/query-mutations/dynamic-lists.mutations";
-import {dynamicListEditorFiltersOptions, dynamicListSummaryOptions} from "@/lib/client/react-query/query-options/dynamic-lists.options";
-import {DYNAMIC_LIST_SORT_OPTIONS, DYNAMIC_LIST_STATUS_OPTIONS} from "@/lib/client/components/dynamic-lists/dynamic-list.config";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/lib/client/components/ui/card";
+import {useSaveDynamicListMutation} from "@/lib/client/react-query/query-mutations/dynamic-lists.mutations";
 import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue} from "@/lib/client/components/ui/select";
+import {DYNAMIC_LIST_SORT_OPTIONS, DYNAMIC_LIST_STATUS_OPTIONS} from "@/lib/client/components/dynamic-lists/dynamic-list.config";
 import {Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet} from "@/lib/client/components/ui/field";
+import {dynamicListEditorFiltersOptions, dynamicListSummaryOptions} from "@/lib/client/react-query/query-options/dynamic-lists.options";
 
 
 interface DynamicListEditorProps {
@@ -41,7 +42,7 @@ interface DynamicListEditorProps {
     initialSpec: DynamicListSpec;
     onSaved: (listId: number) => void;
     onCancel: () => void;
-    startingPoint?: (disabled: boolean) => React.ReactNode;
+    startingPoint?: (disabled: boolean, id: string) => React.ReactNode;
 }
 
 
@@ -177,63 +178,96 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
             <div className="flex flex-col gap-6 pt-5 pb-8 sm:gap-8 sm:pt-7">
                 <PageHeader
                     eyebrow={<ListsBackLink username={currentUser!.name}/>}
-                    asideValue={startingPoint?.(saveMutation.isPending)}
-                    title={listId === undefined ? "Create a dynamic list" : "Edit dynamic list"}
                     description="Set your rules, choose a layout, and see which titles belong together."
+                    title={listId === undefined
+                        ? "Create a dynamic list"
+                        : "Edit dynamic list"
+                    }
                 />
 
                 <form aria-label="Dynamic list editor" onSubmit={handleSubmit} className="flex flex-col gap-6">
                     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:gap-8">
                         <FieldSet disabled={saveMutation.isPending} className="min-w-0 gap-5">
-                            <FieldLegend className="sr-only">Dynamic list rules</FieldLegend>
+                            <FieldLegend className="sr-only">
+                                Dynamic list rules
+                            </FieldLegend>
+                            {startingPoint &&
+                                <Field className="rounded-xl border border-brand/15 bg-brand/5 p-4">
+                                    <FieldLabel htmlFor={`${fieldId}-starting-point`}>
+                                        Starting point
+                                    </FieldLabel>
+                                    <FieldDescription>
+                                        Start with a blank list or a set of ready-made rules. You can adjust everything below.
+                                    </FieldDescription>
+                                    {startingPoint(saveMutation.isPending, `${fieldId}-starting-point`)}
+                                </Field>
+                            }
                             <EditorSection number="01" title="List details" description="Give it a name and choose which tracking lists to include.">
                                 <Field data-invalid={!!errors.title}>
-                                    <FieldLabel htmlFor={`${fieldId}-title`}>List name</FieldLabel>
+                                    <FieldLabel htmlFor={`${fieldId}-title`}>
+                                        List name
+                                    </FieldLabel>
                                     <Input
-                                        id={`${fieldId}-title`}
-                                        value={spec.title}
                                         maxLength={100}
+                                        value={spec.title}
                                         autoComplete="off"
+                                        id={`${fieldId}-title`}
                                         aria-invalid={!!errors.title}
                                         placeholder="A name for this corner of your library"
-                                        onChange={event => setSpec(current => ({ ...current, title: event.target.value }))}
+                                        onChange={event => setSpec(curr => ({ ...curr, title: event.target.value }))}
                                     />
                                     <FieldError>{errors.title}</FieldError>
                                 </Field>
                                 <FieldSet data-invalid={!!errors.mediaTypes}>
-                                    <FieldLegend variant="label" id={`${fieldId}-media`}>Media types</FieldLegend>
+                                    <FieldLegend variant="label" id={`${fieldId}-media`}>
+                                        Media types
+                                    </FieldLegend>
                                     <ToggleGroup
                                         multiple
                                         variant="brand"
                                         className="max-w-full flex-wrap"
-                                        aria-labelledby={`${fieldId}-media`}
                                         aria-invalid={!!errors.mediaTypes}
+                                        aria-labelledby={`${fieldId}-media`}
                                         onValueChange={handleMediaTypesChange}
                                         value={spec.mediaTypes === "all" ? ["all"] : spec.mediaTypes}
                                     >
-                                        <ToggleGroupItem value="all"><Layers3 data-icon="inline-start"/>All media</ToggleGroupItem>
+                                        <ToggleGroupItem value="all">
+                                            <Layers3 data-icon="inline-start"/>
+                                            All media
+                                        </ToggleGroupItem>
                                         {selectableMediaTypes.map(type => {
                                             const Icon = THEME_ICONS_MAP[type];
-                                            return <ToggleGroupItem key={type} value={type}>
-                                                <Icon data-icon="inline-start"/>{type === "series" ? "TV series" : capitalize(type)}
-                                            </ToggleGroupItem>;
+                                            return (
+                                                <ToggleGroupItem key={type} value={type}>
+                                                    <Icon data-icon="inline-start"/>
+                                                    {type === "series" ? "TV series" : capitalize(type)}
+                                                </ToggleGroupItem>
+                                            );
                                         })}
                                     </ToggleGroup>
-                                    <FieldDescription>Only active tracking lists contribute matching titles.</FieldDescription>
-                                    <FieldError>{errors.mediaTypes}</FieldError>
+                                    <FieldDescription>
+                                        Only active tracking lists contribute matching titles.
+                                    </FieldDescription>
+                                    <FieldError>
+                                        {errors.mediaTypes}
+                                    </FieldError>
                                 </FieldSet>
                                 {availableFilters.has("search") &&
                                     <Field data-invalid={!!errors["filters.search"]}>
-                                        <FieldLabel htmlFor={`${fieldId}-search`}>Title contains</FieldLabel>
+                                        <FieldLabel htmlFor={`${fieldId}-search`}>
+                                            Title contains
+                                        </FieldLabel>
                                         <Input
-                                            id={`${fieldId}-search`}
-                                            value={spec.filters.search ?? ""}
                                             maxLength={100}
                                             placeholder="Any title"
+                                            id={`${fieldId}-search`}
+                                            value={spec.filters.search ?? ""}
                                             aria-invalid={!!errors["filters.search"]}
                                             onChange={event => updateFilters({ search: event.target.value.trim() ? event.target.value : undefined })}
                                         />
-                                        <FieldError>{errors["filters.search"]}</FieldError>
+                                        <FieldError>
+                                            {errors["filters.search"]}
+                                        </FieldError>
                                     </Field>
                                 }
                             </EditorSection>
@@ -242,12 +276,17 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                 <FieldGroup className="grid sm:grid-cols-2">
                                     {availableFilters.has("status") &&
                                         <Field>
-                                            <FieldLabel htmlFor={`${fieldId}-status`}>Status</FieldLabel>
+                                            <FieldLabel htmlFor={`${fieldId}-status`}>
+                                                Status
+                                            </FieldLabel>
                                             <DynamicListSelect
                                                 id={`${fieldId}-status`}
                                                 options={DYNAMIC_LIST_STATUS_OPTIONS}
                                                 value={spec.filters.statusGroup ?? "any"}
-                                                onChange={value => updateFilters({ statuses: undefined, statusGroup: value === "any" ? undefined : value as DynamicListSpec["filters"]["statusGroup"] })}
+                                                onChange={value => updateFilters({
+                                                    statuses: undefined,
+                                                    statusGroup: value === "any" ? undefined : value as DynamicListSpec["filters"]["statusGroup"]
+                                                })}
                                             />
                                         </Field>
                                     }
@@ -255,29 +294,42 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                         .filter(key => availableFilters.has(key === "rated" ? "minRating" : key === "hasComment" ? "comment" : key))
                                         .map(key =>
                                             <Field key={key}>
-                                                <FieldLabel htmlFor={`${fieldId}-${key}`}>{key === "favorite" ? "Favorites" : key === "rated" ? "Rating state" : "Comments"}</FieldLabel>
+                                                <FieldLabel htmlFor={`${fieldId}-${key}`}>
+                                                    {key === "favorite" ? "Favorites" : key === "rated" ? "Rating state" : "Comments"}
+                                                </FieldLabel>
                                                 <DynamicListSelect
                                                     id={`${fieldId}-${key}`}
                                                     value={spec.filters[key] === undefined ? "any" : String(spec.filters[key])}
+                                                    onChange={value => updateFilters({ [key]: value === "any" ? undefined : value === "true" })}
                                                     options={[
                                                         { value: "any", label: "All titles" },
-                                                        { value: "true", label: key === "favorite" ? "Favorites only" : key === "rated" ? "Rated only" : "With a comment" },
-                                                        { value: "false", label: key === "favorite" ? "Exclude favorites" : key === "rated" ? "Unrated only" : "Without a comment" },
+                                                        {
+                                                            value: "true", label: key === "favorite"
+                                                                ? "Favorites only" : key === "rated"
+                                                                    ? "Rated only" : "With a comment"
+                                                        },
+                                                        {
+                                                            value: "false",
+                                                            label: key === "favorite" ? "Exclude favorites" : key === "rated"
+                                                                ? "Unrated only"
+                                                                : "Without a comment"
+                                                        },
                                                     ]}
-                                                    onChange={value => updateFilters({ [key]: value === "any" ? undefined : value === "true" })}
                                                 />
                                             </Field>
-                                    )}
-                                    {availableFilters.has("minRating") && (["minRating", "maxRating"] as const).map((key, index) =>
+                                        )}
+                                    {availableFilters.has("minRating") && (["minRating", "maxRating"] as const).map((key, idx) =>
                                         <Field key={key} data-invalid={!!errors[`filters.${key}`]}>
-                                            <FieldLabel htmlFor={`${fieldId}-${key}`}>{index === 0 ? "Minimum rating / 10" : "Maximum rating / 10"}</FieldLabel>
+                                            <FieldLabel htmlFor={`${fieldId}-${key}`}>
+                                                {idx === 0 ? "Minimum rating / 10" : "Maximum rating / 10"}
+                                            </FieldLabel>
                                             <Input
                                                 id={`${fieldId}-${key}`}
-                                                type="number" min={0} max={10} step={0.5}
                                                 value={spec.filters[key] ?? ""}
-                                                placeholder={index === 0 ? "No minimum" : "No maximum"}
+                                                type="number" min={0} max={10} step={0.5}
                                                 aria-invalid={!!errors[`filters.${key}`]}
-                                                onChange={event => updateFilters({ [key]: event.target.value === "" ? undefined : Number(event.target.value) })}
+                                                placeholder={idx === 0 ? "No minimum" : "No maximum"}
+                                                onChange={ev => updateFilters({ [key]: ev.target.value === "" ? undefined : Number(ev.target.value) })}
                                             />
                                             <FieldError>{errors[`filters.${key}`]}</FieldError>
                                         </Field>
@@ -285,15 +337,27 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                 </FieldGroup>
                                 {availableFilters.has("status") &&
                                     <details className="rounded-lg border px-4 py-3" open={!!spec.filters.statuses?.length}>
-                                        <summary className="cursor-pointer text-sm font-medium">Choose specific statuses</summary>
+                                        <summary className="cursor-pointer text-sm font-medium">
+                                            Choose specific statuses
+                                        </summary>
                                         <FieldSet className="pt-4">
-                                            <FieldLegend className="sr-only">Specific statuses</FieldLegend>
-                                            <FieldDescription>Match any selected status. Selecting one replaces the status group above.</FieldDescription>
+                                            <FieldLegend className="sr-only">
+                                                Specific statuses
+                                            </FieldLegend>
+                                            <FieldDescription>
+                                                Match any selected status. Selecting one replaces the status group above.
+                                            </FieldDescription>
                                             <FieldGroup className="grid grid-cols-2 gap-3">
                                                 {statuses.map((status, index) =>
                                                     <Field key={status} orientation="horizontal">
-                                                        <Checkbox id={`${fieldId}-status-${index}`} checked={spec.filters.statuses?.includes(status) ?? false} onCheckedChange={checked => handleStatusChange(status, checked)}/>
-                                                        <FieldLabel htmlFor={`${fieldId}-status-${index}`}>{status}</FieldLabel>
+                                                        <Checkbox
+                                                            id={`${fieldId}-status-${index}`}
+                                                            checked={spec.filters.statuses?.includes(status) ?? false}
+                                                            onCheckedChange={checked => handleStatusChange(status, checked)}
+                                                        />
+                                                        <FieldLabel htmlFor={`${fieldId}-status-${index}`}>
+                                                            {status}
+                                                        </FieldLabel>
                                                     </Field>
                                                 )}
                                             </FieldGroup>
@@ -307,64 +371,86 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                 {availableFilters.has("genres") &&
                                     <MediaFilterSearch
                                         label="Genres"
-                                        options={filterOptions.data?.genres ?? []}
-                                        value={spec.filters.genres ?? []}
-                                        onChange={values => updateFilters({ genres: values.length ? values : undefined })}
-                                        disabled={saveMutation.isPending || filterOptions.isPending}
                                         error={errors["filters.genres"]}
+                                        value={spec.filters.genres ?? []}
                                         maxSelected={MAX_MEDIA_FILTER_VALUES}
+                                        options={filterOptions.data?.genres ?? []}
+                                        disabled={saveMutation.isPending || filterOptions.isPending}
+                                        onChange={values => updateFilters({ genres: values.length ? values : undefined })}
                                     />
                                 }
+
                                 {availableFilters.has("tags") &&
                                     <>
                                         <MediaFilterSearch
                                             label="Tags"
-                                            options={filterOptions.data?.tags ?? []}
-                                            value={spec.filters.tags ?? []}
-                                            onChange={values => updateFilters({ tags: values.length ? values : undefined })}
-                                            disabled={saveMutation.isPending || filterOptions.isPending}
                                             error={errors["filters.tags"]}
+                                            value={spec.filters.tags ?? []}
                                             maxSelected={MAX_MEDIA_FILTER_VALUES}
+                                            options={filterOptions.data?.tags ?? []}
+                                            disabled={saveMutation.isPending || filterOptions.isPending}
+                                            onChange={values => updateFilters({ tags: values.length ? values : undefined })}
                                         />
                                         <Field>
-                                            <FieldLabel id={`${fieldId}-tags-match`}>Tag matching</FieldLabel>
+                                            <FieldLabel id={`${fieldId}-tags-match`}>
+                                                Tag matching
+                                            </FieldLabel>
                                             <ToggleGroup
                                                 variant="outline"
                                                 aria-labelledby={`${fieldId}-tags-match`}
                                                 value={[spec.filters.tagsMatch ?? "any"]}
                                                 onValueChange={values => values[0] && updateFilters({ tagsMatch: values[0] as "any" | "all" })}
                                             >
-                                                <ToggleGroupItem value="any">Any included tag</ToggleGroupItem>
-                                                <ToggleGroupItem value="all">Every included tag</ToggleGroupItem>
+                                                <ToggleGroupItem value="any">
+                                                    Any included tag
+                                                </ToggleGroupItem>
+                                                <ToggleGroupItem value="all">
+                                                    Every included tag
+                                                </ToggleGroupItem>
                                             </ToggleGroup>
                                         </Field>
                                         <MediaFilterSearch
                                             label="Exclude tags"
-                                            options={filterOptions.data?.tags ?? []}
-                                            value={spec.filters.excludeTags ?? []}
-                                            onChange={values => updateFilters({ excludeTags: values.length ? values : undefined })}
-                                            disabled={saveMutation.isPending || filterOptions.isPending}
                                             error={errors["filters.excludeTags"]}
                                             maxSelected={MAX_MEDIA_FILTER_VALUES}
+                                            value={spec.filters.excludeTags ?? []}
+                                            options={filterOptions.data?.tags ?? []}
+                                            disabled={saveMutation.isPending || filterOptions.isPending}
+                                            onChange={values => updateFilters({ excludeTags: values.length ? values : undefined })}
                                         />
                                     </>
                                 }
-                                <FieldDescription>Genres match any selected value. Excluded tags always remove matching titles.</FieldDescription>
-                                {filterOptions.isError && <Alert variant="destructive"><AlertDescription>We couldn’t load filter options. Your selections are still here. <Button type="button" variant="ghost" size="sm" onClick={() => void filterOptions.refetch()}>Try again</Button></AlertDescription></Alert>}
+                                <FieldDescription>
+                                    Genres match any selected value. Excluded tags always remove matching titles.
+                                </FieldDescription>
+                                {filterOptions.isError &&
+                                    <Alert variant="destructive">
+                                        <AlertDescription>
+                                            We couldn’t load filter options. Your selections are still here.{" "}
+                                            <Button type="button" variant="ghost" size="sm" onClick={() => void filterOptions.refetch()}>
+                                                Try again
+                                            </Button>
+                                        </AlertDescription>
+                                    </Alert>
+                                }
                             </EditorSection>
 
-                            <EditorSection number="04" title="Media details" description="Each group filters only its own media type. Other selected types still follow your common rules.">
+                            <EditorSection
+                                number="04"
+                                title="Media details"
+                                description="Each group filters only its own media type. Other selected types still follow your common rules."
+                            >
                                 {filterMediaTypes.map(mediaType =>
                                     <FieldSet key={mediaType}>
-                                        <FieldLegend variant="label">
-                                            {mediaType === MediaType.SERIES ? "TV series" : capitalize(mediaType)}
+                                        <FieldLegend variant="label" className="capitalize">
+                                            {mediaType}
                                         </FieldLegend>
                                         <MediaSpecificFilters
                                             mediaType={mediaType}
-                                            options={filterOptions.data?.mediaFilters[mediaType] ?? {}}
-                                            filters={spec.filters.mediaFilters?.[mediaType] ?? {}}
-                                            disabled={saveMutation.isPending || filterOptions.isPending}
                                             maxSelected={MAX_MEDIA_FILTER_VALUES}
+                                            filters={spec.filters.mediaFilters?.[mediaType] ?? {}}
+                                            options={filterOptions.data?.mediaFilters[mediaType] ?? {}}
+                                            disabled={saveMutation.isPending || filterOptions.isPending}
                                             errors={Object.fromEntries(Object.entries(errors)
                                                 .filter(([key]) => key.startsWith(`filters.mediaFilters.${mediaType}.`))
                                                 .map(([key, error]) => [key.slice(`filters.mediaFilters.${mediaType}.`.length), error]))}
@@ -391,32 +477,40 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                         { key: "updatedBefore", label: "Not updated for … months" },
                                     ] as const).map(({ key, label }) =>
                                         <Field key={key} data-invalid={!!(errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`])}>
-                                            <FieldLabel htmlFor={`${fieldId}-${key}`}>{label}</FieldLabel>
+                                            <FieldLabel htmlFor={`${fieldId}-${key}`}>
+                                                {label}
+                                            </FieldLabel>
                                             <Input
+                                                placeholder="Any time"
                                                 id={`${fieldId}-${key}`}
                                                 type="number" min={1} max={120} step={1}
                                                 value={spec.filters[key]?.monthsAgo ?? ""}
-                                                placeholder="Any time"
                                                 aria-invalid={!!(errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`])}
-                                                onChange={event => updateFilters({ [key]: event.target.value === "" ? undefined : { monthsAgo: Number(event.target.value) } })}
+                                                onChange={ev => updateFilters({ [key]: ev.target.value === "" ? undefined : { monthsAgo: Number(ev.target.value) } })}
                                             />
-                                            <FieldError>{errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`]}</FieldError>
+                                            <FieldError>
+                                                {errors[`filters.${key}.monthsAgo`] || errors[`filters.${key}`]}
+                                            </FieldError>
                                         </Field>
                                     )}
                                 </FieldGroup>
-                                <FieldDescription>These periods move with the calendar, so a six-month rule stays six months old.</FieldDescription>
+                                <FieldDescription>
+                                    These periods move with the calendar, so a six-month rule stays six months old.
+                                </FieldDescription>
                                 <Separator/>
                                 <FieldGroup className="grid sm:grid-cols-2">
                                     {(["minReleaseYear", "maxReleaseYear"] as const).map((key, index) =>
                                         <Field key={key} data-invalid={!!errors[`filters.${key}`]}>
-                                            <FieldLabel htmlFor={`${fieldId}-${key}`}>{index === 0 ? "First release year" : "Last release year"}</FieldLabel>
+                                            <FieldLabel htmlFor={`${fieldId}-${key}`}>
+                                                {index === 0 ? "First release year" : "Last release year"}
+                                            </FieldLabel>
                                             <Input
-                                                id={`${fieldId}-${key}`}
-                                                type="number" min={1} max={9999} step={1}
-                                                value={spec.filters[key] ?? ""}
                                                 placeholder="Any year"
+                                                id={`${fieldId}-${key}`}
+                                                value={spec.filters[key] ?? ""}
+                                                type="number" min={1} max={9999} step={1}
                                                 aria-invalid={!!errors[`filters.${key}`]}
-                                                onChange={event => updateFilters({ [key]: event.target.value === "" ? undefined : Number(event.target.value) })}
+                                                onChange={ev => updateFilters({ [key]: ev.target.value === "" ? undefined : Number(ev.target.value) })}
                                             />
                                             <FieldError>{errors[`filters.${key}`]}</FieldError>
                                         </Field>
@@ -424,25 +518,64 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                 </FieldGroup>
                             </EditorSection>
 
-                            <EditorSection number="06" title="Default presentation" description="Choose how this list opens. You can always change the display while browsing.">
+                            <EditorSection
+                                number="06"
+                                title="Default presentation"
+                                description="Choose how this list opens. You can always change the display while browsing."
+                            >
                                 <FieldGroup className="grid sm:grid-cols-2">
                                     <Field>
-                                        <FieldLabel htmlFor={`${fieldId}-sort`}>Sort by</FieldLabel>
-                                        <DynamicListSelect id={`${fieldId}-sort`} value={spec.sort.field} options={DYNAMIC_LIST_SORT_OPTIONS} onChange={value => setSpec(current => ({ ...current, sort: { ...current.sort, field: value as DynamicListSpec["sort"]["field"] } }))}/>
+                                        <FieldLabel htmlFor={`${fieldId}-sort`}>
+                                            Sort by
+                                        </FieldLabel>
+                                        <DynamicListSelect
+                                            id={`${fieldId}-sort`}
+                                            value={spec.sort.field}
+                                            options={DYNAMIC_LIST_SORT_OPTIONS}
+                                            onChange={value => setSpec(curr => ({
+                                                ...curr,
+                                                sort: { ...curr.sort, field: value as DynamicListSpec["sort"]["field"] }
+                                            }))}
+                                        />
                                     </Field>
                                     <Field>
-                                        <FieldLabel id={`${fieldId}-order`}>Order</FieldLabel>
-                                        <ToggleGroup variant="outline" value={[spec.sort.direction]} aria-labelledby={`${fieldId}-order`} onValueChange={values => values[0] && setSpec(current => ({ ...current, sort: { ...current.sort, direction: values[0] as "asc" | "desc" } }))}>
-                                            <ToggleGroupItem value="asc">Ascending</ToggleGroupItem>
-                                            <ToggleGroupItem value="desc">Descending</ToggleGroupItem>
+                                        <FieldLabel id={`${fieldId}-order`}>
+                                            Order
+                                        </FieldLabel>
+                                        <ToggleGroup
+                                            variant="outline"
+                                            value={[spec.sort.direction]}
+                                            aria-labelledby={`${fieldId}-order`}
+                                            onValueChange={values => values[0] && setSpec(curr => ({
+                                                ...curr,
+                                                sort: { ...curr.sort, direction: values[0] as "asc" | "desc" }
+                                            }))}
+                                        >
+                                            <ToggleGroupItem value="asc">
+                                                Ascending
+                                            </ToggleGroupItem>
+                                            <ToggleGroupItem value="desc">
+                                                Descending
+                                            </ToggleGroupItem>
                                         </ToggleGroup>
                                     </Field>
                                 </FieldGroup>
                                 <Field>
-                                    <FieldLabel id={`${fieldId}-display`}>Default display</FieldLabel>
-                                    <ToggleGroup variant="outline" value={[spec.display]} aria-labelledby={`${fieldId}-display`} onValueChange={values => values[0] && setSpec(current => ({ ...current, display: values[0] as "grid" | "list" }))}>
-                                        <ToggleGroupItem value="grid"><LayoutGrid data-icon="inline-start"/>Grid</ToggleGroupItem>
-                                        <ToggleGroupItem value="list"><List data-icon="inline-start"/>Table</ToggleGroupItem>
+                                    <FieldLabel id={`${fieldId}-display`}>
+                                        Default display
+                                    </FieldLabel>
+                                    <ToggleGroup
+                                        variant="outline"
+                                        value={[spec.display]}
+                                        aria-labelledby={`${fieldId}-display`}
+                                        onValueChange={values => values[0] && setSpec(curr => ({ ...curr, display: values[0] as "grid" | "list" }))}
+                                    >
+                                        <ToggleGroupItem value="grid">
+                                            <LayoutGrid data-icon="inline-start"/> Grid
+                                        </ToggleGroupItem>
+                                        <ToggleGroupItem value="list">
+                                            <List data-icon="inline-start"/> Table
+                                        </ToggleGroupItem>
                                     </ToggleGroup>
                                 </Field>
                             </EditorSection>
@@ -453,33 +586,79 @@ export const DynamicListEditor = ({ listId, initialSpec, onSaved, onCancel, star
                                 <CardHeader>
                                     <CardTitle>
                                         <h2 aria-live="polite" aria-busy={!countIsCurrent || countQuery.isFetching}>
-                                            {countIsCurrent && countQuery.data ? formatNumber(countQuery.data.total) : "—"} media
+                                            {countIsCurrent && countQuery.data
+                                                ? formatNumber(countQuery.data.total)
+                                                : DEFAULT_DASH_FALLBACK
+                                            } media
                                         </h2>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex flex-col gap-5">
                                     <Separator/>
                                     <div className="flex flex-col gap-3">
-                                        <p className="text-xs font-medium text-muted-foreground">Match every rule below</p>
+                                        <p className="text-xs font-medium text-muted-foreground">
+                                            Match every rule below
+                                        </p>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {rules.length ? rules.map(rule => <Badge key={rule} variant="outline" className="h-auto max-w-full"><span className="whitespace-normal break-words">{rule}</span></Badge>) : <p className="text-sm text-muted-foreground">Every title in the selected tracking lists.</p>}
+                                            {rules.length ?
+                                                rules.map(rule =>
+                                                    <Badge key={rule} variant="outline" className="h-auto max-w-full">
+                                                        <span className="whitespace-normal break-words">
+                                                            {rule}
+                                                        </span>
+                                                    </Badge>
+                                                )
+                                                :
+                                                <p className="text-sm text-muted-foreground">
+                                                    Every title in the selected tracking lists.
+                                                </p>
+                                            }
                                         </div>
                                     </div>
-                                    {countQuery.isError && <Alert variant="destructive"><AlertDescription>We couldn’t count matching media. <Button type="button" variant="ghost" size="sm" onClick={() => void countQuery.refetch()}>Try again</Button></AlertDescription></Alert>}
+                                    {countQuery.isError &&
+                                        <Alert variant="destructive">
+                                            <AlertDescription>
+                                                We couldn’t count matching media.
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => void countQuery.refetch()}>
+                                                    Try again
+                                                </Button>
+                                            </AlertDescription>
+                                        </Alert>
+                                    }
                                 </CardContent>
                             </Card>
                         </aside>
                     </div>
 
                     <div className="sticky bottom-0 flex flex-col gap-3 border-t bg-background/95 py-4 backdrop-blur-sm">
-                        {saveMutation.isError && <Alert variant="destructive"><AlertDescription>We couldn’t save this list. Your changes are still here; try again.</AlertDescription></Alert>}
+                        {saveMutation.isError &&
+                            <Alert variant="destructive">
+                                <AlertDescription>
+                                    We couldn’t save this list. Your changes are still here; try again.
+                                </AlertDescription>
+                            </Alert>
+                        }
+
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            {Object.keys(errors).length > 0 && <p className="text-xs text-muted-foreground">Check the highlighted fields before saving.</p>}
+                            {Object.keys(errors).length > 0 &&
+                                <p className="text-xs text-muted-foreground">
+                                    Check the highlighted fields before saving.
+                                </p>
+                            }
+
                             <div className="ml-auto flex items-center gap-2">
-                                <Button type="button" variant="outline" disabled={saveMutation.isPending} onClick={onCancel}>Cancel</Button>
+                                <Button type="button" variant="outline" disabled={saveMutation.isPending} onClick={onCancel}>
+                                    Cancel
+                                </Button>
                                 <Button type="submit" disabled={saveMutation.isPending}>
-                                    {saveMutation.isPending ? <Spinner data-icon="inline-start"/> : <Save data-icon="inline-start"/>}
-                                    {listId === undefined ? "Create dynamic list" : "Save changes"}
+                                    {saveMutation.isPending
+                                        ? <Spinner data-icon="inline-start"/>
+                                        : <Save data-icon="inline-start"/>
+                                    }
+                                    {listId === undefined
+                                        ? "Create dynamic list"
+                                        : "Save changes"
+                                    }
                                 </Button>
                             </div>
                         </div>

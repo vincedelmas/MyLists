@@ -39,11 +39,11 @@ function DynamicListCreatePage() {
     return <DynamicListEditor
         key={preset ?? "blank"}
         initialSpec={initialSpec}
-        startingPoint={disabled =>
+        startingPoint={(disabled, id) =>
             <Select disabled={disabled} items={startingPoints} value={preset === undefined ? "blank" : String(preset)} onValueChange={value => {
                 if (value !== null) void navigate({ search: { preset: value === "blank" ? undefined : Number(value) }, replace: true });
             }}>
-                <SelectTrigger aria-label="List starting point"><SelectValue/></SelectTrigger>
+                <SelectTrigger id={id} aria-label="List starting point" className="w-full sm:max-w-md"><SelectValue/></SelectTrigger>
                 <SelectContent><SelectGroup>
                     {startingPoints.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
                 </SelectGroup></SelectContent>
